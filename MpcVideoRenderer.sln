@@ -1,0 +1,45 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2036
+MinimumVisualStudioVersion = 15.0.27130.2036
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MpcVideoRenderer", "Source\MpcAudioRenderer.vcxproj", "{C9CEECB2-947C-4902-BEF9-B98DCAF14B1C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BaseClasses", "Source\BaseClasses\BaseClasses.vcxproj", "{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug Filter|x64 = Debug Filter|x64
+		Debug Filter|x86 = Debug Filter|x86
+		Release Filter|x64 = Release Filter|x64
+		Release Filter|x86 = Release Filter|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C9CEECB2-947C-4902-BEF9-B98DCAF14B1C}.Debug Filter|x64.ActiveCfg = Debug Filter|x64
+		{C9CEECB2-947C-4902-BEF9-B98DCAF14B1C}.Debug Filter|x64.Build.0 = Debug Filter|x64
+		{C9CEECB2-947C-4902-BEF9-B98DCAF14B1C}.Debug Filter|x86.ActiveCfg = Debug Filter|Win32
+		{C9CEECB2-947C-4902-BEF9-B98DCAF14B1C}.Debug Filter|x86.Build.0 = Debug Filter|Win32
+		{C9CEECB2-947C-4902-BEF9-B98DCAF14B1C}.Release Filter|x64.ActiveCfg = Release Filter|x64
+		{C9CEECB2-947C-4902-BEF9-B98DCAF14B1C}.Release Filter|x64.Build.0 = Release Filter|x64
+		{C9CEECB2-947C-4902-BEF9-B98DCAF14B1C}.Release Filter|x86.ActiveCfg = Release Filter|Win32
+		{C9CEECB2-947C-4902-BEF9-B98DCAF14B1C}.Release Filter|x86.Build.0 = Release Filter|Win32
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}.Debug Filter|x64.ActiveCfg = Debug Filter|x64
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}.Debug Filter|x64.Build.0 = Debug Filter|x64
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}.Debug Filter|x64.Deploy.0 = Debug Filter|x64
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}.Debug Filter|x86.ActiveCfg = Debug Filter|Win32
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}.Debug Filter|x86.Build.0 = Debug Filter|Win32
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}.Debug Filter|x86.Deploy.0 = Debug Filter|Win32
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}.Release Filter|x64.ActiveCfg = Release Filter|x64
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}.Release Filter|x64.Build.0 = Release Filter|x64
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}.Release Filter|x64.Deploy.0 = Release Filter|x64
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}.Release Filter|x86.ActiveCfg = Release Filter|Win32
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}.Release Filter|x86.Build.0 = Release Filter|Win32
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}.Release Filter|x86.Deploy.0 = Release Filter|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5D7781ED-53B1-4197-9C68-D2EDD94EC59B}
+	EndGlobalSection
+EndGlobal
