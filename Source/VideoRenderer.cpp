@@ -249,7 +249,7 @@ STDMETHODIMP CVideoRendererInputPin::GetVideoWindow(HWND *phwndVideo)
 CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	: CBaseRenderer(__uuidof(this), NAME("MPC Video Renderer"), pUnk, phr)
 {
-	m_pInputPin = DNew CVideoRendererInputPin(this, phr, L"In");
+	m_pInputPin = new CVideoRendererInputPin(this, phr, L"In");
 }
 
 HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)

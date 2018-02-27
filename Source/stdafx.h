@@ -24,20 +24,9 @@
 	#pragma warning(disable:4267) // hide warning C4267: conversion from 'size_t' to 'type', possible loss of data
 #endif
 
-#ifdef _DEBUG
-	// Remove this if you want to see all the "unsafe" functions used
-	// For Release builds _CRT_SECURE_NO_WARNINGS is defined
-	#pragma warning(disable:4996)
+#define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
+#define VC_EXTRALEAN        // Exclude rarely-used stuff from Windows headers
 
-	#define _CRTDBG_MAP_ALLOC // include Microsoft memory leak detection procedures
-	#include <crtdbg.h>
-	#define DNew DEBUG_NEW
-#else
-	#define DNew new
-#endif
-
-#define WIN32_LEAN_AND_MEAN                 // Exclude rarely-used stuff from Windows headers
-#define VC_EXTRALEAN                        // Exclude rarely-used stuff from Windows headers
-#define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS  // some CString constructors will be explicit
-
-#include <afxwin.h>                         // MFC core and standard components
+#include <atlbase.h>
+#include <dmodshow.h>
+#include <windows.h>

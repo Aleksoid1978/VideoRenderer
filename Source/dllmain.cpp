@@ -21,13 +21,12 @@
 #include "stdafx.h"
 #include <InitGuid.h>
 #include "VideoRenderer.h"
-#include "Filters.h"
 
 template <class T>
 static CUnknown* WINAPI CreateInstance(LPUNKNOWN lpunk, HRESULT* phr)
 {
 	*phr = S_OK;
-	CUnknown* punk = DNew T(lpunk, phr);
+	CUnknown* punk = new T(lpunk, phr);
 	if (punk == nullptr) {
 		*phr = E_OUTOFMEMORY;
 	}
@@ -58,4 +57,9 @@ STDAPI DllUnregisterServer()
 	return AMovieDllRegisterServer2(FALSE);
 }
 
-CFilterApp theApp;
+extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
+
+BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD dwReason, LPVOID pReserved)
+{
+	return DllEntryPoint(hDllHandle, dwReason, pReserved);
+}

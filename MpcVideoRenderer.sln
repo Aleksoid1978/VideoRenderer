@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 15.0.27130.2036
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MpcVideoRenderer", "Source\MpcAudioRenderer.vcxproj", "{C9CEECB2-947C-4902-BEF9-B98DCAF14B1C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MpcVideoRenderer", "Source\MpcVideoRenderer.vcxproj", "{C9CEECB2-947C-4902-BEF9-B98DCAF14B1C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BaseClasses", "Source\BaseClasses\BaseClasses.vcxproj", "{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}"
 EndProject
