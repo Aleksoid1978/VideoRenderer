@@ -38,7 +38,7 @@ const AMOVIESETUP_PIN sudpPins[] = {
 };
 
 const AMOVIESETUP_FILTER sudFilter[] = {
-	{&__uuidof(CMpcVideoRenderer), L"MPC Video Renderer", MERIT_NORMAL + 1, _countof(sudpPins), sudpPins, CLSID_LegacyAmFilterCategory},
+	{&__uuidof(CMpcVideoRenderer), L"MPC Video Renderer", MERIT_DO_NOT_USE, _countof(sudpPins), sudpPins, CLSID_LegacyAmFilterCategory},
 };
 
 CFactoryTemplate g_Templates[] = {
