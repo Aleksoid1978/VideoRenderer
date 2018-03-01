@@ -37,6 +37,12 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 {
 private:
 	CMediaType m_mt;
+	RECT m_srcRect = {};
+	RECT m_trgRect = {};
+	UINT m_srcWidth = 0;
+	UINT m_srcHeight = 0;
+	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
+	CComPtr<IDirect3DSurface9> m_pSrcSurface;
 
 	HWND m_hWnd;
 	UINT m_CurrentAdapter;
@@ -50,6 +56,7 @@ private:
 	HMODULE m_hDxva2Lib = nullptr;
 	CComPtr<IDXVAHD_Device>         m_pDXVAHD_Device;
 	CComPtr<IDXVAHD_VideoProcessor> m_pDXVAHD_VP;
+	DXVAHD_VPDEVCAPS m_DXVAHDDevCaps = {};
 
 public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
@@ -61,6 +68,8 @@ protected:
 
 	BOOL InitDirect3D9();
 	BOOL InitializeDXVAHDVP(int width, int height);
+	HRESULT ResizeDXVAHD(IDirect3DSurface9* pSurface);
+	HRESULT ResizeDXVAHD(BYTE* data, const long size);
 
 public:
 	HRESULT DoRenderSample(IMediaSample* pSample) override;

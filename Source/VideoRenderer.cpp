@@ -28,6 +28,7 @@
 #include <evr.h>
 #include <mfapi.h>
 #include <Mferror.h>
+#include <Dvdmedia.h>
 #include "Helper.h"
 
 // dxva.dll
@@ -57,6 +58,47 @@ HRESULT DXVAHD_SetFrameFormat(IDXVAHD_VideoProcessor *pVP, UINT stream, DXVAHD_F
 		DXVAHD_STREAM_STATE_FRAME_FORMAT,
 		sizeof(frame_format),
 		&frame_format
+	);
+
+	return hr;
+}
+
+HRESULT DXVAHD_SetTargetRect(IDXVAHD_VideoProcessor *pVP, BOOL bEnable, const RECT &rect)
+{
+	DXVAHD_BLT_STATE_TARGET_RECT_DATA tr = { bEnable, rect };
+
+	HRESULT hr = pVP->SetVideoProcessBltState(
+		DXVAHD_BLT_STATE_TARGET_RECT,
+		sizeof(tr),
+		&tr
+	);
+
+	return hr;
+}
+
+HRESULT DXVAHD_SetSourceRect(IDXVAHD_VideoProcessor *pVP, UINT stream, BOOL bEnable, const RECT& rect)
+{
+	DXVAHD_STREAM_STATE_SOURCE_RECT_DATA src = { bEnable, rect };
+
+	HRESULT hr = pVP->SetVideoProcessStreamState(
+		stream,
+		DXVAHD_STREAM_STATE_SOURCE_RECT,
+		sizeof(src),
+		&src
+	);
+
+	return hr;
+}
+
+HRESULT DXVAHD_SetDestinationRect(IDXVAHD_VideoProcessor *pVP, UINT stream, BOOL bEnable, const RECT &rect)
+{
+	DXVAHD_STREAM_STATE_DESTINATION_RECT_DATA DstRect = { bEnable, rect };
+
+	HRESULT hr = pVP->SetVideoProcessStreamState(
+		stream,
+		DXVAHD_STREAM_STATE_DESTINATION_RECT,
+		sizeof(DstRect),
+		&DstRect
 	);
 
 	return hr;
@@ -313,6 +355,20 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 	if (S_OK == hr) {
 		m_mt = *pmt;
+
+		if (m_mt.formattype == FORMAT_VideoInfo2) {
+			VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)m_mt.pbFormat;
+			m_srcRect = vih2->rcSource;
+			m_trgRect = vih2->rcTarget;
+			m_srcWidth = vih2->bmiHeader.biWidth;
+			m_srcHeight = vih2->bmiHeader.biHeight;
+
+			if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
+				m_srcFormat = D3DFMT_X8R8G8B8;
+			} else {
+				m_srcFormat = (D3DFORMAT)m_mt.subtype.Data1;
+			}
+		}
 	}
 
 	return hr;
@@ -320,11 +376,17 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 {
-	const bool validate_pmt = std::any_of(std::cbegin(sudPinTypesIn), std::cend(sudPinTypesIn), [&](const AMOVIESETUP_MEDIATYPE& type) {
-		return pmt->majortype == *type.clsMajorType && pmt->subtype == *type.clsMinorType;
-	});
+	if (pmt->formattype != FORMAT_VideoInfo2) {
+		return E_FAIL;
+	}
 
-	return validate_pmt ? S_OK : E_FAIL;
+	for (const auto& type : sudPinTypesIn) {
+		if (pmt->majortype == *type.clsMajorType && pmt->subtype == *type.clsMinorType) {
+			return S_OK;
+		}
+	}
+
+	return E_FAIL;
 }
 
 BOOL CMpcVideoRenderer::InitDirect3D9()
@@ -400,17 +462,16 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(int width, int height)
 	}
 
 	// Get the DXVA-HD device caps.
-	DXVAHD_VPDEVCAPS caps = {};
-	hr = m_pDXVAHD_Device->GetVideoProcessorDeviceCaps(&caps);
-	if (FAILED(hr) || caps.MaxInputStreams < 1) {
+	hr = m_pDXVAHD_Device->GetVideoProcessorDeviceCaps(&m_DXVAHDDevCaps);
+	if (FAILED(hr) || m_DXVAHDDevCaps.MaxInputStreams < 1) {
 		return FALSE;
 	}
 
 	std::vector<D3DFORMAT> Formats;
 
 	// Check the output formats.
-	Formats.resize(caps.OutputFormatCount);
-	hr = m_pDXVAHD_Device->GetVideoProcessorOutputFormats(caps.OutputFormatCount, Formats.data());
+	Formats.resize(m_DXVAHDDevCaps.OutputFormatCount);
+	hr = m_pDXVAHD_Device->GetVideoProcessorOutputFormats(m_DXVAHDDevCaps.OutputFormatCount, Formats.data());
 	if (FAILED(hr)) {
 		return FALSE;
 	}
@@ -428,8 +489,8 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(int width, int height)
 	}
 
 	// Check the input formats.
-	Formats.resize(caps.InputFormatCount);
-	hr = m_pDXVAHD_Device->GetVideoProcessorInputFormats(caps.InputFormatCount, Formats.data());
+	Formats.resize(m_DXVAHDDevCaps.InputFormatCount);
+	hr = m_pDXVAHD_Device->GetVideoProcessorInputFormats(m_DXVAHDDevCaps.InputFormatCount, Formats.data());
 	if (FAILED(hr)) {
 		return FALSE;
 	}
@@ -448,9 +509,9 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(int width, int height)
 
 	// Create the VP device.
 	std::vector<DXVAHD_VPCAPS> VPCaps;
-	VPCaps.resize(caps.VideoProcessorCount);
+	VPCaps.resize(m_DXVAHDDevCaps.VideoProcessorCount);
 
-	hr = m_pDXVAHD_Device->GetVideoProcessorCaps(caps.VideoProcessorCount, VPCaps.data());
+	hr = m_pDXVAHD_Device->GetVideoProcessorCaps(m_DXVAHDDevCaps.VideoProcessorCount, VPCaps.data());
 	if (FAILED(hr)) {
 		return FALSE;
 	}
@@ -475,10 +536,93 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(int width, int height)
 	return TRUE;
 }
 
+HRESULT CMpcVideoRenderer::ResizeDXVAHD(IDirect3DSurface9* pSurface)
+{
+	HRESULT hr = S_OK;
+	D3DSURFACE_DESC desc;
+	if (S_OK != pSurface->GetDesc(&desc)) {
+		return hr;
+	};
+
+	if (!m_pDXVAHD_VP && !InitializeDXVAHDVP(desc.Width, desc.Height)) {
+		return E_FAIL;
+	}
+
+	static DWORD frame = 0;
+
+	CComPtr<IDirect3DSurface9> pRenderTarget;
+	hr = m_pD3DDevEx->GetRenderTarget(0, &pRenderTarget);
+
+	DXVAHD_STREAM_DATA stream_data = {};
+	stream_data.Enable = TRUE;
+	stream_data.OutputIndex = 0;
+	stream_data.InputFrameOrField = frame;
+	stream_data.pInputSurface = pSurface;
+
+	RECT destRect = { 0, 0, m_DisplayMode.Width, m_DisplayMode.Height }; // TODO
+
+	hr = DXVAHD_SetSourceRect(m_pDXVAHD_VP, 0, TRUE, m_srcRect);
+	hr = DXVAHD_SetDestinationRect(m_pDXVAHD_VP, 0, TRUE, destRect);
+
+	// Perform the blit.
+	hr = m_pDXVAHD_VP->VideoProcessBltHD(pRenderTarget, frame, 1, &stream_data);
+	if (FAILED(hr)) {
+		DLog(L"TextureResizeDXVAHD: VideoProcessBltHD() failed with error 0x%x.", hr);
+	}
+	frame++;
+
+	return hr;
+}
+
+HRESULT CMpcVideoRenderer::ResizeDXVAHD(BYTE* data, const long size)
+{
+	if (!m_pDXVAHD_Device && !InitializeDXVAHDVP(m_srcWidth, m_srcHeight)) {
+		return E_FAIL;
+	}
+
+	HRESULT hr = S_OK;
+
+	if (!m_pSrcSurface) {
+		hr = m_pDXVAHD_Device->CreateVideoSurface(
+			m_srcWidth,
+			m_srcHeight,
+			m_srcFormat,
+			m_DXVAHDDevCaps.InputPool,
+			0,
+			DXVAHD_SURFACE_TYPE_VIDEO_INPUT,
+			1,
+			&m_pSrcSurface,
+			NULL
+		);
+	}
+
+	D3DLOCKED_RECT lr;
+	hr = m_pSrcSurface->LockRect(&lr, NULL, D3DLOCK_NOSYSLOCK);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	// TODO
+
+	hr = m_pSrcSurface->UnlockRect();
+
+	return hr;
+}
+
 HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 {
-	if (!m_pDXVAHD_VP) {
-		BOOL ret = InitializeDXVAHDVP(640, 480);
+	if (CComQIPtr<IMFGetService> pService = pSample) {
+		CComPtr<IDirect3DSurface9> pSurface;
+		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
+			ResizeDXVAHD(pSurface);
+		}
+	}
+	else if (m_mt.formattype == FORMAT_VideoInfo2) {
+		BYTE* data = nullptr;
+		long size = pSample->GetActualDataLength();
+		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
+			ResizeDXVAHD(data, size);
+		}
 	}
 
 	return S_OK;
