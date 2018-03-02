@@ -45,6 +45,8 @@ private:
 	RECT m_trgRect = {};
 	UINT m_srcWidth = 0;
 	UINT m_srcHeight = 0;
+	UINT m_srcLines = 0;
+	INT  m_srcPitch = 0;
 	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
 	CComPtr<IDirect3DSurface9> m_pSrcSurface;
 

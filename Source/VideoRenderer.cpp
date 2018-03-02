@@ -299,9 +299,18 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 			if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
 				m_srcFormat = D3DFMT_X8R8G8B8;
-			} else {
-				m_srcFormat = (D3DFORMAT)m_mt.subtype.Data1;
+				m_srcLines = m_srcHeight;
 			}
+			else {
+				m_srcFormat = (D3DFORMAT)m_mt.subtype.Data1;
+				if (m_mt.subtype == MEDIASUBTYPE_NV12 || m_mt.subtype == MEDIASUBTYPE_YV12) {
+					m_srcLines = m_srcHeight * 3 / 2;
+				}
+				else {
+					m_srcLines = m_srcHeight;
+				}
+			}
+			m_srcPitch = vih2->bmiHeader.biSizeImage / m_srcHeight;
 		}
 	}
 
@@ -541,7 +550,18 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(BYTE* data, const long size)
 		return hr;
 	}
 
-	// TODO
+	if (m_srcPitch == lr.Pitch) {
+		memcpy(lr.pBits, data, size);
+	}
+	else if (m_srcPitch < lr.Pitch) {
+		BYTE* src = data;
+		BYTE* dst = (BYTE*)lr.pBits;
+		for (UINT y = 0; y < m_srcLines; ++y) {
+			memcpy(dst, src, m_srcPitch);
+			src += m_srcPitch;
+			dst += lr.Pitch;
+		}
+	}
 
 	hr = m_pSrcSurface->UnlockRect();
 
