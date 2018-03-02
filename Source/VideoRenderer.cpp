@@ -137,6 +137,10 @@ CVideoRendererInputPin::CVideoRendererInputPin(CBaseRenderer *pRenderer, HRESULT
 	: CRendererInputPin(pRenderer, phr, Name)
 	, m_pBaseRenderer(pBaseRenderer)
 {
+#ifdef DEBUG
+	DbgSetModuleLevel(LOG_TRACE, DWORD_MAX);
+	DbgSetModuleLevel(LOG_ERROR, DWORD_MAX);
+#endif
 }
 
 STDMETHODIMP CVideoRendererInputPin::NonDelegatingQueryInterface(REFIID riid, void** ppv)
