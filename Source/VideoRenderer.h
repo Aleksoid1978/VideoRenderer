@@ -21,7 +21,9 @@
 #pragma once
 
 #include "./BaseClasses/streams.h"
+#include <evr.h>
 #include <d3d9.h>
+#include <dxva2api.h>
 #include <dxvahd.h>
 
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
@@ -33,7 +35,9 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 };
 
 class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
-	CMpcVideoRenderer : public CBaseRenderer
+	CMpcVideoRenderer : public CBaseRenderer,
+	public IMFGetService,
+	public IMFVideoDisplayControl
 {
 private:
 	CMediaType m_mt;
@@ -44,23 +48,56 @@ private:
 	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
 	CComPtr<IDirect3DSurface9> m_pSrcSurface;
 
-	HWND m_hWnd;
-	UINT m_CurrentAdapter;
+	HWND m_hWnd = nullptr;
+	UINT m_CurrentAdapter = D3DADAPTER_DEFAULT;
 
 	HMODULE m_hD3D9Lib = nullptr;
 	CComPtr<IDirect3D9Ex>       m_pD3DEx;
 	CComPtr<IDirect3DDevice9Ex> m_pD3DDevEx;
-	D3DDISPLAYMODE m_DisplayMode = { sizeof(D3DDISPLAYMODE) };
 
+	D3DDISPLAYMODE m_DisplayMode = { sizeof(D3DDISPLAYMODE) };
 
 	HMODULE m_hDxva2Lib = nullptr;
 	CComPtr<IDXVAHD_Device>         m_pDXVAHD_Device;
 	CComPtr<IDXVAHD_VideoProcessor> m_pDXVAHD_VP;
 	DXVAHD_VPDEVCAPS m_DXVAHDDevCaps = {};
 
+	typedef HRESULT (__stdcall *PTR_DXVA2CreateDirect3DDeviceManager9)(UINT* pResetToken, IDirect3DDeviceManager9** ppDeviceManager);
+	typedef HRESULT (__stdcall *PTR_DXVA2CreateVideoService)(IDirect3DDevice9* pDD, REFIID riid, void** ppService);
+
+	PTR_DXVA2CreateDirect3DDeviceManager9 pDXVA2CreateDirect3DDeviceManager9 = nullptr;
+	PTR_DXVA2CreateVideoService           pDXVA2CreateVideoService = nullptr;
+	CComPtr<IDirect3DDeviceManager9>      m_pD3DDeviceManager;
+	UINT                                  m_nResetTocken = 0;
+	HANDLE                                m_hDevice = nullptr;
+
 public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
 	~CMpcVideoRenderer();
+
+	DECLARE_IUNKNOWN
+	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv);
+
+	// IMFGetService
+	STDMETHODIMP GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject);
+
+	// IMFVideoDisplayControl
+	STDMETHODIMP GetNativeVideoSize(SIZE *pszVideo, SIZE *pszARVideo) { return E_NOTIMPL; };
+	STDMETHODIMP GetIdealVideoSize(SIZE *pszMin, SIZE *pszMax) { return E_NOTIMPL; };
+	STDMETHODIMP SetVideoPosition(const MFVideoNormalizedRect *pnrcSource, const LPRECT prcDest) { return E_NOTIMPL; };
+	STDMETHODIMP GetVideoPosition(MFVideoNormalizedRect *pnrcSource, LPRECT prcDest) { return E_NOTIMPL; };
+	STDMETHODIMP SetAspectRatioMode(DWORD dwAspectRatioMode) { return E_NOTIMPL; };
+	STDMETHODIMP GetAspectRatioMode(DWORD *pdwAspectRatioMode) { return E_NOTIMPL; };
+	STDMETHODIMP SetVideoWindow(HWND hwndVideo);
+	STDMETHODIMP GetVideoWindow(HWND *phwndVideo);
+	STDMETHODIMP RepaintVideo(void) { return E_NOTIMPL; };
+	STDMETHODIMP GetCurrentImage(BITMAPINFOHEADER *pBih, BYTE **pDib, DWORD *pcbDib, LONGLONG *pTimeStamp) { return E_NOTIMPL; };
+	STDMETHODIMP SetBorderColor(COLORREF Clr) { return E_NOTIMPL; };
+	STDMETHODIMP GetBorderColor(COLORREF *pClr) { return E_NOTIMPL; };
+	STDMETHODIMP SetRenderingPrefs(DWORD dwRenderFlags) { return E_NOTIMPL; };
+	STDMETHODIMP GetRenderingPrefs(DWORD *pdwRenderFlags) { return E_NOTIMPL; };
+	STDMETHODIMP SetFullscreen(BOOL fFullscreen) { return E_NOTIMPL; };
+	STDMETHODIMP GetFullscreen(BOOL *pfFullscreen) { return E_NOTIMPL; };
 
 protected:
 	HRESULT SetMediaType(const CMediaType *pmt) override;
