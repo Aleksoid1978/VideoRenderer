@@ -393,14 +393,14 @@ HRESULT CMpcVideoRenderer::InitDirect3D9()
 	return hr;
 }
 
-BOOL CMpcVideoRenderer::InitializeDXVAHDVP(int width, int height)
+BOOL CMpcVideoRenderer::InitializeDXVAHDVP(const UINT width, const UINT height)
 {
 	if (!m_hDxva2Lib) {
 		return FALSE;
 	}
-	DLog("InitializeDXVAHDVP: start");
+	DLog("CMpcVideoRenderer::InitializeDXVAHDVP()");
 
-	HRESULT(WINAPI *pDXVAHD_CreateDevice)(IDirect3DDevice9Ex  *pD3DDevice, const DXVAHD_CONTENT_DESC *pContentDesc, DXVAHD_DEVICE_USAGE Usage, PDXVAHDSW_Plugin pPlugin, IDXVAHD_Device **ppDevice);
+	HRESULT(WINAPI *pDXVAHD_CreateDevice)(IDirect3DDevice9Ex *pD3DDevice, const DXVAHD_CONTENT_DESC *pContentDesc, DXVAHD_DEVICE_USAGE Usage, PDXVAHDSW_Plugin pPlugin, IDXVAHD_Device **ppDevice);
 	(FARPROC &)pDXVAHD_CreateDevice = GetProcAddress(m_hDxva2Lib, "DXVAHD_CreateDevice");
 	if (!pDXVAHD_CreateDevice) {
 		return FALSE;
@@ -422,7 +422,7 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(int width, int height)
 	// Create the DXVA-HD device.
 	hr = pDXVAHD_CreateDevice(m_pD3DDevEx, &desc, DXVAHD_DEVICE_USAGE_PLAYBACK_NORMAL, nullptr, &m_pDXVAHD_Device);
 	if (FAILED(hr)) {
-		NOTE1("InitializeDXVAHDVP: DXVAHD_CreateDevice() failed with error 0x%x.", hr);
+		DLog(L"InitializeDXVAHDVP() : DXVAHD_CreateDevice() failed with error 0x%08x", hr);
 		return FALSE;
 	}
 
@@ -438,6 +438,7 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(int width, int height)
 	Formats.resize(m_DXVAHDDevCaps.OutputFormatCount);
 	hr = m_pDXVAHD_Device->GetVideoProcessorOutputFormats(m_DXVAHDDevCaps.OutputFormatCount, Formats.data());
 	if (FAILED(hr)) {
+		DLog(L"InitializeDXVAHDVP() : GetVideoProcessorOutputFormats() failed with error 0x%08x", hr);
 		return FALSE;
 	}
 #if _DEBUG
@@ -457,6 +458,7 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(int width, int height)
 	Formats.resize(m_DXVAHDDevCaps.InputFormatCount);
 	hr = m_pDXVAHD_Device->GetVideoProcessorInputFormats(m_DXVAHDDevCaps.InputFormatCount, Formats.data());
 	if (FAILED(hr)) {
+		DLog(L"InitializeDXVAHDVP() : GetVideoProcessorInputFormats() failed with error 0x%08x", hr);
 		return FALSE;
 	}
 #if _DEBUG
@@ -478,23 +480,26 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(int width, int height)
 
 	hr = m_pDXVAHD_Device->GetVideoProcessorCaps(m_DXVAHDDevCaps.VideoProcessorCount, VPCaps.data());
 	if (FAILED(hr)) {
+		DLog(L"InitializeDXVAHDVP() : GetVideoProcessorCaps() failed with error 0x%08x", hr);
 		return FALSE;
 	}
 
 	hr = m_pDXVAHD_Device->CreateVideoProcessor(&VPCaps[0].VPGuid, &m_pDXVAHD_VP);
 	if (FAILED(hr)) {
-		DLog(L"InitializeDXVAHDVP: CreateVideoProcessor() failed with error 0x%x.", hr);
+		DLog(L"InitializeDXVAHDVP() : CreateVideoProcessor() failed with error 0x%08x", hr);
 		return FALSE;
 	}
 
 	// Set the initial stream states for the primary stream.
-	hr = DXVAHD_SetStreamFormat(m_pDXVAHD_VP, 0, D3DFMT_X8R8G8B8);
+	hr = DXVAHD_SetStreamFormat(m_pDXVAHD_VP, 0, m_srcFormat);
 	if (FAILED(hr)) {
+		DLog(L"InitializeDXVAHDVP() : DXVAHD_SetStreamFormat() failed with error 0x%08x, format : %s", hr, D3DFormatToString(m_srcFormat));
 		return FALSE;
 	}
 
 	hr = DXVAHD_SetFrameFormat(m_pDXVAHD_VP, 0, DXVAHD_FRAME_FORMAT_PROGRESSIVE);
 	if (FAILED(hr)) {
+		DLog(L"InitializeDXVAHDVP() : DXVAHD_SetFrameFormat() failed with error 0x%08x", hr);
 		return FALSE;
 	}
 
@@ -529,7 +534,7 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(IDirect3DSurface9* pSurface, IDirect3DSu
 	// Perform the blit.
 	hr = m_pDXVAHD_VP->VideoProcessBltHD(pRenderTarget, frame, 1, &stream_data);
 	if (FAILED(hr)) {
-		DLog(L"TextureResizeDXVAHD: VideoProcessBltHD() failed with error 0x%x.", hr);
+		DLog(L"CMpcVideoRenderer::ResizeDXVAHD() : VideoProcessBltHD() failed with error 0x%08x", hr);
 	}
 	frame++;
 
@@ -627,6 +632,9 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 				}
 			}
 			m_srcPitch = vih2->bmiHeader.biSizeImage / m_srcHeight;
+
+			m_pDXVAHD_VP.Release();
+			m_pDXVAHD_Device.Release();
 		}
 	}
 
@@ -639,6 +647,9 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 
 	CComPtr<IDirect3DSurface9> pBackBuffer;
 	hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+
+	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
+	hr = m_pD3DDevEx->Clear(0, nullptr, D3DCLEAR_TARGET, 0, 1.0f, 0);
 
 	if (CComQIPtr<IMFGetService> pService = pSample) {
 		CComPtr<IDirect3DSurface9> pSurface;
@@ -654,13 +665,9 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 		}
 	}
 
-	// Clear the backbuffer
-	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
-	//hr = m_pD3DDevEx->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_XYUV(rand(), rand(), rand()), 1.0f, 0);
-
 	hr = m_pD3DDevEx->EndScene();
 
-	RECT destRect = { 0, 0, m_DisplayMode.Width, m_DisplayMode.Height }; // todo - use windows size
+	RECT destRect = { 0, 0, m_DisplayMode.Width, m_DisplayMode.Height }; // TODO
 	const RECT rSrcPri(m_srcRect);
 	const RECT rDstPri(destRect);
 	hr = m_pD3DDevEx->PresentEx(&rSrcPri, &rDstPri, nullptr, nullptr, 0);
