@@ -105,8 +105,8 @@ public:
 protected:
 	HRESULT InitDirect3D9();
 	BOOL InitializeDXVAHDVP(int width, int height);
-	HRESULT ResizeDXVAHD(IDirect3DSurface9* pSurface);
-	HRESULT ResizeDXVAHD(BYTE* data, const long size);
+	HRESULT ResizeDXVAHD(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget);
+	HRESULT ResizeDXVAHD(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget);
 
 public:
 	HRESULT CheckMediaType(const CMediaType *pmt) override;

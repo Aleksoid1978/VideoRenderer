@@ -501,7 +501,7 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(int width, int height)
 	return TRUE;
 }
 
-HRESULT CMpcVideoRenderer::ResizeDXVAHD(IDirect3DSurface9* pSurface)
+HRESULT CMpcVideoRenderer::ResizeDXVAHD(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget)
 {
 	HRESULT hr = S_OK;
 	D3DSURFACE_DESC desc;
@@ -514,9 +514,6 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(IDirect3DSurface9* pSurface)
 	}
 
 	static DWORD frame = 0;
-
-	CComPtr<IDirect3DSurface9> pRenderTarget;
-	hr = m_pD3DDevEx->GetRenderTarget(0, &pRenderTarget);
 
 	DXVAHD_STREAM_DATA stream_data = {};
 	stream_data.Enable = TRUE;
@@ -539,7 +536,7 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(IDirect3DSurface9* pSurface)
 	return hr;
 }
 
-HRESULT CMpcVideoRenderer::ResizeDXVAHD(BYTE* data, const long size)
+HRESULT CMpcVideoRenderer::ResizeDXVAHD(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget)
 {
 	if (!m_pDXVAHD_Device && !InitializeDXVAHDVP(m_srcWidth, m_srcHeight)) {
 		return E_FAIL;
@@ -581,6 +578,8 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(BYTE* data, const long size)
 	}
 
 	hr = m_pSrcSurface->UnlockRect();
+
+	return ResizeDXVAHD(m_pSrcSurface, pRenderTarget);
 
 	return hr;
 }
@@ -636,19 +635,35 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 {
+	HRESULT hr = m_pD3DDevEx->BeginScene();
+
+	CComPtr<IDirect3DSurface9> pBackBuffer;
+	hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+
 	if (CComQIPtr<IMFGetService> pService = pSample) {
 		CComPtr<IDirect3DSurface9> pSurface;
 		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
-			ResizeDXVAHD(pSurface);
+			ResizeDXVAHD(pSurface, pBackBuffer);
 		}
 	}
 	else if (m_mt.formattype == FORMAT_VideoInfo2) {
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
-			ResizeDXVAHD(data, size);
+			ResizeDXVAHD(data, size, pBackBuffer);
 		}
 	}
+
+	// Clear the backbuffer
+	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
+	//hr = m_pD3DDevEx->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_XYUV(rand(), rand(), rand()), 1.0f, 0);
+
+	hr = m_pD3DDevEx->EndScene();
+
+	RECT destRect = { 0, 0, m_DisplayMode.Width, m_DisplayMode.Height }; // todo - use windows size
+	const RECT rSrcPri(m_srcRect);
+	const RECT rDstPri(destRect);
+	hr = m_pD3DDevEx->PresentEx(&rSrcPri, &rDstPri, nullptr, nullptr, 0);
 
 	return S_OK;
 }
