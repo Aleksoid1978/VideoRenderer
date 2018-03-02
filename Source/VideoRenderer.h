@@ -57,7 +57,8 @@ private:
 	CComPtr<IDirect3D9Ex>       m_pD3DEx;
 	CComPtr<IDirect3DDevice9Ex> m_pD3DDevEx;
 
-	D3DDISPLAYMODE m_DisplayMode = { sizeof(D3DDISPLAYMODE) };
+	D3DDISPLAYMODEEX m_DisplayMode = { sizeof(D3DDISPLAYMODEEX) };
+	D3DPRESENT_PARAMETERS m_d3dpp = {};
 
 	HMODULE m_hDxva2Lib = nullptr;
 	CComPtr<IDXVAHD_Device>         m_pDXVAHD_Device;
@@ -102,14 +103,13 @@ public:
 	STDMETHODIMP GetFullscreen(BOOL *pfFullscreen) { return E_NOTIMPL; };
 
 protected:
-	HRESULT SetMediaType(const CMediaType *pmt) override;
-	HRESULT CheckMediaType(const CMediaType* pmt) override;
-
-	BOOL InitDirect3D9();
+	HRESULT InitDirect3D9();
 	BOOL InitializeDXVAHDVP(int width, int height);
 	HRESULT ResizeDXVAHD(IDirect3DSurface9* pSurface);
 	HRESULT ResizeDXVAHD(BYTE* data, const long size);
 
 public:
+	HRESULT CheckMediaType(const CMediaType *pmt) override;
+	HRESULT SetMediaType(const CMediaType *pmt) override;
 	HRESULT DoRenderSample(IMediaSample* pSample) override;
 };

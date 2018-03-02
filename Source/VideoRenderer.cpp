@@ -137,10 +137,6 @@ CVideoRendererInputPin::CVideoRendererInputPin(CBaseRenderer *pRenderer, HRESULT
 	: CRendererInputPin(pRenderer, phr, Name)
 	, m_pBaseRenderer(pBaseRenderer)
 {
-#ifdef DEBUG
-	DbgSetModuleLevel(LOG_TRACE, DWORD_MAX);
-	DbgSetModuleLevel(LOG_ERROR, DWORD_MAX);
-#endif
 }
 
 STDMETHODIMP CVideoRendererInputPin::NonDelegatingQueryInterface(REFIID riid, void** ppv)
@@ -186,12 +182,29 @@ STDMETHODIMP CVideoRendererInputPin::SetSurfaceType(DXVA2_SurfaceType dwType)
 CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	: CBaseRenderer(__uuidof(this), NAME("MPC Video Renderer"), pUnk, phr)
 {
+#ifdef DEBUG
+	DbgSetModuleLevel(LOG_TRACE, DWORD_MAX);
+	DbgSetModuleLevel(LOG_ERROR, DWORD_MAX);
+#endif
+
 	ASSERT(S_OK == *phr);
 	m_pInputPin = new CVideoRendererInputPin(this, phr, L"In", this);
 	ASSERT(S_OK == *phr);
 
 	m_hD3D9Lib = LoadLibraryW(L"d3d9.dll");
 	if (!m_hD3D9Lib) {
+		*phr = E_FAIL;
+		return;
+	}
+
+	HRESULT (__stdcall * pDirect3DCreate9Ex)(UINT SDKVersion, IDirect3D9Ex**);
+	(FARPROC &)pDirect3DCreate9Ex = GetProcAddress(m_hD3D9Lib, "Direct3DCreate9Ex");
+
+	HRESULT hr = pDirect3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
+	if (!m_pD3DEx) {
+		hr = pDirect3DCreate9Ex(D3D9b_SDK_VERSION, &m_pD3DEx);
+	}
+	if (!m_pD3DEx) {
 		*phr = E_FAIL;
 		return;
 	}
@@ -210,28 +223,38 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		return;
 	}
 
-	const BOOL ret = InitDirect3D9();
-	if (!ret) {
-		*phr = E_FAIL;
-		return;
+	hr = InitDirect3D9();
+
+	if (S_OK == hr) {
+		hr = m_pD3DDeviceManager->ResetDevice(m_pD3DDevEx, m_nResetTocken);
 	}
+	if (S_OK == hr) {
+		hr = m_pD3DDeviceManager->OpenDeviceHandle(&m_hDevice);
+	}
+
+	*phr = hr;
 }
 
 CMpcVideoRenderer::~CMpcVideoRenderer()
 {
-	m_pDXVAHD_VP.Release(); // release DXVAHD_VP before DXVAHD_Device
-	m_pDXVAHD_Device.Release();
-
 	if (m_pD3DDeviceManager) {
 		if (m_hDevice != INVALID_HANDLE_VALUE) {
 			m_pD3DDeviceManager->CloseDeviceHandle(m_hDevice);
 			m_hDevice = INVALID_HANDLE_VALUE;
 		}
-		m_pD3DDeviceManager = nullptr;
+		m_pD3DDeviceManager.Release();
 	}
 
+	m_pDXVAHD_VP.Release();
+	m_pDXVAHD_Device.Release();
 	if (m_hDxva2Lib) {
 		FreeLibrary(m_hDxva2Lib);
+	}
+
+	m_pD3DDevEx.Release();
+	m_pD3DEx.Release();
+	if (m_hD3D9Lib) {
+		FreeLibrary(m_hD3D9Lib);
 	}
 }
 
@@ -279,7 +302,10 @@ STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPV
 // IMFVideoDisplayControl
 STDMETHODIMP CMpcVideoRenderer::SetVideoWindow(HWND hwndVideo)
 {
-	m_hWnd = hwndVideo;
+	if (m_hWnd != hwndVideo) {
+		m_hWnd = hwndVideo;
+		return InitDirect3D9() ? S_OK : E_FAIL;
+	}
 	return S_OK;
 }
 
@@ -290,97 +316,81 @@ STDMETHODIMP CMpcVideoRenderer::GetVideoWindow(HWND *phwndVideo)
 	return S_OK;
 }
 
-HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
+static UINT GetAdapter(HWND hWnd, IDirect3D9Ex* pD3D)
 {
-	HRESULT hr = __super::SetMediaType(pmt);
+	CheckPointer(hWnd, D3DADAPTER_DEFAULT);
+	CheckPointer(pD3D, D3DADAPTER_DEFAULT);
 
-	if (S_OK == hr) {
-		m_mt = *pmt;
+	const HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+	CheckPointer(hMonitor, D3DADAPTER_DEFAULT);
 
-		if (m_mt.formattype == FORMAT_VideoInfo2) {
-			VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)m_mt.pbFormat;
-			m_srcRect = vih2->rcSource;
-			m_trgRect = vih2->rcTarget;
-			m_srcWidth = vih2->bmiHeader.biWidth;
-			m_srcHeight = vih2->bmiHeader.biHeight;
-
-			if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
-				m_srcFormat = D3DFMT_X8R8G8B8;
-				m_srcLines = m_srcHeight;
-			}
-			else {
-				m_srcFormat = (D3DFORMAT)m_mt.subtype.Data1;
-				if (m_mt.subtype == MEDIASUBTYPE_NV12 || m_mt.subtype == MEDIASUBTYPE_YV12) {
-					m_srcLines = m_srcHeight * 3 / 2;
-				}
-				else {
-					m_srcLines = m_srcHeight;
-				}
-			}
-			m_srcPitch = vih2->bmiHeader.biSizeImage / m_srcHeight;
+	for (UINT adp = 0, num_adp = pD3D->GetAdapterCount(); adp < num_adp; ++adp) {
+		const HMONITOR hAdapterMonitor = pD3D->GetAdapterMonitor(adp);
+		if (hAdapterMonitor == hMonitor) {
+			return adp;
 		}
 	}
 
-	return hr;
+	return D3DADAPTER_DEFAULT;
 }
 
-HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
+HRESULT CMpcVideoRenderer::InitDirect3D9()
 {
-	if (pmt->formattype != FORMAT_VideoInfo2) {
+	DLog(L"CMpcVideoRenderer::InitDirect3D9()");
+
+	const UINT currentAdapter = GetAdapter(m_hWnd, m_pD3DEx);
+	bool bTryToReset = (currentAdapter == m_CurrentAdapter) && m_pD3DDevEx;
+	if (!bTryToReset) {
+		m_pD3DDevEx.Release();
+		m_CurrentAdapter = currentAdapter;
+	}
+
+	ZeroMemory(&m_DisplayMode, sizeof(D3DDISPLAYMODEEX));
+	m_DisplayMode.Size = sizeof(D3DDISPLAYMODEEX);
+	HRESULT hr = m_pD3DEx->GetAdapterDisplayModeEx(m_CurrentAdapter, &m_DisplayMode, nullptr);
+
+	ZeroMemory(&m_d3dpp, sizeof(m_d3dpp));
+
+	m_d3dpp.Windowed = TRUE;
+	m_d3dpp.hDeviceWindow = m_hWnd;
+	m_d3dpp.SwapEffect = D3DSWAPEFFECT_COPY;
+	m_d3dpp.Flags = D3DPRESENTFLAG_VIDEO;
+	m_d3dpp.BackBufferCount = 1;
+	m_d3dpp.BackBufferWidth = m_DisplayMode.Width;
+	m_d3dpp.BackBufferHeight = m_DisplayMode.Height;
+	m_d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+
+	if (bTryToReset) {
+		bTryToReset = SUCCEEDED(hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr));
+		DLog(L"    => ResetEx() : 0x%08x", hr);
+	}
+
+	if (!bTryToReset) {
+		m_pD3DDevEx.Release();
+		hr = m_pD3DEx->CreateDeviceEx(
+			m_CurrentAdapter, D3DDEVTYPE_HAL, m_hWnd,
+			D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS,
+			&m_d3dpp, nullptr, &m_pD3DDevEx);
+		DLog(L"    => CreateDeviceEx() : 0x%08x", hr);
+	}
+
+	if (FAILED(hr)) {
+		return hr;
+	}
+	if (!m_pD3DDevEx) {
 		return E_FAIL;
 	}
 
-	for (const auto& type : sudPinTypesIn) {
-		if (pmt->majortype == *type.clsMajorType && pmt->subtype == *type.clsMinorType) {
-			return S_OK;
-		}
+	while (hr == D3DERR_DEVICELOST) {
+		DLog(L"    => D3DERR_DEVICELOST. Trying to Reset.");
+		hr = m_pD3DDevEx->CheckDeviceState(m_hWnd);
+	}
+	if (hr == D3DERR_DEVICENOTRESET) {
+		DLog(L"    => D3DERR_DEVICENOTRESET");
+		hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
 	}
 
-	return E_FAIL;
-}
-
-BOOL CMpcVideoRenderer::InitDirect3D9()
-{
-	if (!m_hD3D9Lib) {
-		return FALSE;
-	}
-
-	HRESULT (__stdcall * pDirect3DCreate9Ex)(UINT SDKVersion, IDirect3D9Ex**);
-	(FARPROC &)pDirect3DCreate9Ex = GetProcAddress(m_hD3D9Lib, "Direct3DCreate9Ex");
-
-	HRESULT hr = pDirect3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
-	if (!m_pD3DEx) {
-		hr = pDirect3DCreate9Ex(D3D9b_SDK_VERSION, &m_pD3DEx);
-	}
-	if (!m_pD3DEx) {
-		return FALSE;
-	}
-
-	hr = m_pD3DEx->GetAdapterDisplayMode(m_CurrentAdapter, &m_DisplayMode);
-
-	D3DPRESENT_PARAMETERS pp = {};
-	pp.Windowed = TRUE;
-	pp.hDeviceWindow = m_hWnd;
-	pp.SwapEffect = D3DSWAPEFFECT_COPY;
-	pp.Flags = D3DPRESENTFLAG_VIDEO;
-	pp.BackBufferCount = 1;
-	pp.BackBufferWidth = m_DisplayMode.Width;
-	pp.BackBufferHeight = m_DisplayMode.Height;
-	pp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-
-	hr = m_pD3DEx->CreateDeviceEx(
-		m_CurrentAdapter, D3DDEVTYPE_HAL, m_hWnd,
-		D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS,
-		&pp, nullptr, &m_pD3DDevEx);
-
-	if (S_OK == hr) {
-		hr = m_pD3DDeviceManager->ResetDevice(m_pD3DDevEx, m_nResetTocken);
-	}
-	if (S_OK == hr) {
-		hr = m_pD3DDeviceManager->OpenDeviceHandle(&m_hDevice);
-	}
-
-	return (S_OK == hr);
+	return hr;
 }
 
 BOOL CMpcVideoRenderer::InitializeDXVAHDVP(int width, int height)
@@ -571,6 +581,55 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(BYTE* data, const long size)
 	}
 
 	hr = m_pSrcSurface->UnlockRect();
+
+	return hr;
+}
+
+HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
+{
+	if (pmt->formattype != FORMAT_VideoInfo2) {
+		return E_FAIL;
+	}
+
+	for (const auto& type : sudPinTypesIn) {
+		if (pmt->majortype == *type.clsMajorType && pmt->subtype == *type.clsMinorType) {
+			return S_OK;
+		}
+	}
+
+	return E_FAIL;
+}
+
+HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
+{
+	HRESULT hr = __super::SetMediaType(pmt);
+
+	if (S_OK == hr) {
+		m_mt = *pmt;
+
+		if (m_mt.formattype == FORMAT_VideoInfo2) {
+			VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)m_mt.pbFormat;
+			m_srcRect = vih2->rcSource;
+			m_trgRect = vih2->rcTarget;
+			m_srcWidth = vih2->bmiHeader.biWidth;
+			m_srcHeight = vih2->bmiHeader.biHeight;
+
+			if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
+				m_srcFormat = D3DFMT_X8R8G8B8;
+				m_srcLines = m_srcHeight;
+			}
+			else {
+				m_srcFormat = (D3DFORMAT)m_mt.subtype.Data1;
+				if (m_mt.subtype == MEDIASUBTYPE_NV12 || m_mt.subtype == MEDIASUBTYPE_YV12) {
+					m_srcLines = m_srcHeight * 3 / 2;
+				}
+				else {
+					m_srcLines = m_srcHeight;
+				}
+			}
+			m_srcPitch = vih2->bmiHeader.biSizeImage / m_srcHeight;
+		}
+	}
 
 	return hr;
 }
