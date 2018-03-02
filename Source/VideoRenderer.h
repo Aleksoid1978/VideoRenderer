@@ -104,7 +104,8 @@ public:
 
 protected:
 	HRESULT InitDirect3D9();
-	BOOL InitializeDXVAHDVP(const UINT width, const UINT height);
+	BOOL InitializeDXVAHDVP(D3DSURFACE_DESC& desc);
+	BOOL InitializeDXVAHDVP(const UINT width, const UINT height, const D3DFORMAT d3dformat);
 	HRESULT ResizeDXVAHD(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget);
 	HRESULT ResizeDXVAHD(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget);
 

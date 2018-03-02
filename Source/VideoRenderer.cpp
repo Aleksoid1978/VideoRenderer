@@ -393,7 +393,12 @@ HRESULT CMpcVideoRenderer::InitDirect3D9()
 	return hr;
 }
 
-BOOL CMpcVideoRenderer::InitializeDXVAHDVP(const UINT width, const UINT height)
+BOOL CMpcVideoRenderer::InitializeDXVAHDVP(D3DSURFACE_DESC& desc)
+{
+	return InitializeDXVAHDVP(desc.Width, desc.Height, desc.Format);
+}
+
+BOOL CMpcVideoRenderer::InitializeDXVAHDVP(const UINT width, const UINT height, const D3DFORMAT d3dformat)
 {
 	if (!m_hDxva2Lib) {
 		return FALSE;
@@ -450,7 +455,7 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(const UINT width, const UINT height)
 		DLog(dbgstr);
 	}
 #endif
-	if (std::none_of(Formats.cbegin(), Formats.cend(), [](D3DFORMAT f) { return f == D3DFMT_X8R8G8B8; })) {
+	if (std::find(Formats.cbegin(), Formats.cend(), D3DFMT_X8R8G8B8) == Formats.cend()) {
 		return FALSE;
 	}
 
@@ -470,7 +475,7 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(const UINT width, const UINT height)
 		DLog(dbgstr);
 	}
 #endif
-	if (std::none_of(Formats.cbegin(), Formats.cend(), [](D3DFORMAT f) { return f == D3DFMT_X8R8G8B8; })) {
+	if (std::find(Formats.cbegin(), Formats.cend(), d3dformat) == Formats.cend()) {
 		return FALSE;
 	}
 
@@ -491,9 +496,9 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(const UINT width, const UINT height)
 	}
 
 	// Set the initial stream states for the primary stream.
-	hr = DXVAHD_SetStreamFormat(m_pDXVAHD_VP, 0, m_srcFormat);
+	hr = DXVAHD_SetStreamFormat(m_pDXVAHD_VP, 0, d3dformat);
 	if (FAILED(hr)) {
-		DLog(L"InitializeDXVAHDVP() : DXVAHD_SetStreamFormat() failed with error 0x%08x, format : %s", hr, D3DFormatToString(m_srcFormat));
+		DLog(L"InitializeDXVAHDVP() : DXVAHD_SetStreamFormat() failed with error 0x%08x, format : %s", hr, D3DFormatToString(d3dformat));
 		return FALSE;
 	}
 
@@ -514,7 +519,7 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(IDirect3DSurface9* pSurface, IDirect3DSu
 		return hr;
 	};
 
-	if (!m_pDXVAHD_VP && !InitializeDXVAHDVP(desc.Width, desc.Height)) {
+	if (!m_pDXVAHD_VP && !InitializeDXVAHDVP(desc)) {
 		return E_FAIL;
 	}
 
@@ -543,7 +548,7 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(IDirect3DSurface9* pSurface, IDirect3DSu
 
 HRESULT CMpcVideoRenderer::ResizeDXVAHD(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget)
 {
-	if (!m_pDXVAHD_Device && !InitializeDXVAHDVP(m_srcWidth, m_srcHeight)) {
+	if (!m_pDXVAHD_Device && !InitializeDXVAHDVP(m_srcWidth, m_srcHeight, m_srcFormat)) {
 		return E_FAIL;
 	}
 
