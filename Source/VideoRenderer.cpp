@@ -219,6 +219,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 CMpcVideoRenderer::~CMpcVideoRenderer()
 {
+	m_pDXVAHD_VP.Release(); // release DXVAHD_VP before DXVAHD_Device
+	m_pDXVAHD_Device.Release();
+
 	if (m_pD3DDeviceManager) {
 		if (m_hDevice != INVALID_HANDLE_VALUE) {
 			m_pD3DDeviceManager->CloseDeviceHandle(m_hDevice);
