@@ -50,13 +50,14 @@ private:
 	VIDEOPROC_TYPE m_VPType = VP_DXVA2;
 
 	CMediaType m_mt;
-	RECT m_srcRect = {};
-	RECT m_trgRect = {};
+	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
 	UINT m_srcWidth = 0;
 	UINT m_srcHeight = 0;
+	DXVA2_ExtendedFormat m_srcExFmt = {};
+	RECT m_srcRect = {};
+	RECT m_trgRect = {};
 	UINT m_srcLines = 0;
 	INT  m_srcPitch = 0;
-	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
 	CComPtr<IDirect3DSurface9> m_pSrcSurface;
 
 	CRect m_nativeVideoRect;

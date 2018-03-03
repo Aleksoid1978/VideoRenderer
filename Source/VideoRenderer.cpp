@@ -498,12 +498,12 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 	DXVA2_VideoDesc videodesc = {};
 	videodesc.SampleWidth = width;
 	videodesc.SampleHeight = height;
-	videodesc.SampleFormat.VideoChromaSubsampling = DXVA2_VideoChromaSubsampling_Unknown;
-	videodesc.SampleFormat.NominalRange           = DXVA2_NominalRange_Unknown;
-	videodesc.SampleFormat.VideoTransferMatrix    = DXVA2_VideoTransferMatrix_Unknown;
-	videodesc.SampleFormat.VideoLighting          = DXVA2_VideoLighting_Unknown;
-	videodesc.SampleFormat.VideoPrimaries         = DXVA2_VideoPrimaries_Unknown;
-	videodesc.SampleFormat.VideoTransferFunction  = DXVA2_VideoTransFunc_Unknown;
+	videodesc.SampleFormat.VideoChromaSubsampling = m_srcExFmt.VideoChromaSubsampling;
+	videodesc.SampleFormat.NominalRange           = m_srcExFmt.NominalRange;
+	videodesc.SampleFormat.VideoTransferMatrix    = m_srcExFmt.VideoTransferMatrix;
+	videodesc.SampleFormat.VideoLighting          = m_srcExFmt.VideoLighting;
+	videodesc.SampleFormat.VideoPrimaries         = m_srcExFmt.VideoPrimaries;
+	videodesc.SampleFormat.VideoTransferFunction  = m_srcExFmt.VideoTransferFunction;
 	videodesc.SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
 	if (d3dformat == D3DFMT_X8R8G8B8) {
 		videodesc.Format = D3DFMT_YUY2; // hack
@@ -765,12 +765,16 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			m_trgRect = vih2->rcTarget;
 			m_srcWidth = vih2->bmiHeader.biWidth;
 			m_srcHeight = labs(vih2->bmiHeader.biHeight);
+			m_srcExFmt.value = 0;
 
 			if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
 				m_srcFormat = D3DFMT_X8R8G8B8;
 				m_srcLines = m_srcHeight;
 			}
 			else {
+				if (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT)) {
+					m_srcExFmt.value = vih2->dwControlFlags;
+				}
 				m_srcFormat = (D3DFORMAT)m_mt.subtype.Data1;
 				if (m_mt.subtype == MEDIASUBTYPE_NV12 || m_mt.subtype == MEDIASUBTYPE_YV12 || m_mt.subtype == MEDIASUBTYPE_P010) {
 					m_srcLines = m_srcHeight * 3 / 2;
