@@ -46,7 +46,7 @@ private:
 		VP_DXVA2,
 		VP_DXVAHD,
 	};
-	VIDEOPROC_TYPE m_VPType = VP_DXVAHD;
+	VIDEOPROC_TYPE m_VPType = VP_DXVA2;
 
 	CMediaType m_mt;
 	RECT m_srcRect = {};
@@ -73,11 +73,14 @@ private:
 	D3DPRESENT_PARAMETERS m_d3dpp = {};
 
 	HMODULE m_hDxva2Lib = nullptr;
+
 	CComPtr<IDXVAHD_Device>         m_pDXVAHD_Device;
 	CComPtr<IDXVAHD_VideoProcessor> m_pDXVAHD_VP;
 	DXVAHD_VPDEVCAPS m_DXVAHDDevCaps = {};
+
 	CComPtr<IDirectXVideoProcessorService> m_pDXVA2_VPService;
 	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
+	DXVA2_Fixed32 m_DXVA2ProcAmpValues[4] = {};
 
 	typedef HRESULT (__stdcall *PTR_DXVA2CreateDirect3DDeviceManager9)(UINT* pResetToken, IDirect3DDeviceManager9** ppDeviceManager);
 	typedef HRESULT (__stdcall *PTR_DXVA2CreateVideoService)(IDirect3DDevice9* pDD, REFIID riid, void** ppService);

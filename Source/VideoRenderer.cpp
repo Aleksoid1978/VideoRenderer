@@ -635,6 +635,20 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(D3DSURFACE_DESC& desc)
 		return FALSE;
 	}
 
+	// Query ProcAmp ranges.
+	DXVA2_ValueRange range;
+	for (i = 0; i < ARRAYSIZE(m_DXVA2ProcAmpValues); i++) {
+		if (caps.ProcAmpControlCaps & (1 << i)) {
+			hr = m_pDXVA2_VPService->GetProcAmpRange(VPDevGuid, &videodesc, D3DFMT_X8R8G8B8, 1 << i, &range);
+			if (FAILED(hr)) {
+				DLog(L"GetProcAmpRange failed with error 0x%x.", hr);
+				return FALSE;
+			}
+			// Set to default value
+			m_DXVA2ProcAmpValues[i] = range.DefaultValue;
+		}
+	}
+
 	// Finally create a video processor device.
 	hr = m_pDXVA2_VPService->CreateVideoProcessor(VPDevGuid, &videodesc, D3DFMT_X8R8G8B8, 0, &m_pDXVA2_VP);
 	if (FAILED(hr)) {
@@ -684,29 +698,13 @@ HRESULT CMpcVideoRenderer::ResizeDXVA2(IDirect3DSurface9* pSurface, IDirect3DSur
 	blt.DestFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
 
 	// DXVA2_ProcAmp_Brightness/Contrast/Hue/Saturation
-	//blt.ProcAmpValues.Brightness = m_ProcAmpValues[0];
-	//blt.ProcAmpValues.Contrast = m_ProcAmpValues[1];
-	//blt.ProcAmpValues.Hue = m_ProcAmpValues[2];
-	//blt.ProcAmpValues.Saturation = m_ProcAmpValues[3];
+	blt.ProcAmpValues.Brightness = m_DXVA2ProcAmpValues[0];
+	blt.ProcAmpValues.Contrast   = m_DXVA2ProcAmpValues[1];
+	blt.ProcAmpValues.Hue        = m_DXVA2ProcAmpValues[2];
+	blt.ProcAmpValues.Saturation = m_DXVA2ProcAmpValues[3];
 
 	// DXVA2_VideoProcess_AlphaBlend
 	blt.Alpha = DXVA2_Fixed32OpaqueAlpha();
-
-	// DXVA2_VideoProcess_NoiseFilter
-	//blt.NoiseFilterLuma.Level = m_NFilterValues[0];
-	//blt.NoiseFilterLuma.Threshold = m_NFilterValues[1];
-	//blt.NoiseFilterLuma.Radius = m_NFilterValues[2];
-	//blt.NoiseFilterChroma.Level = m_NFilterValues[3];
-	//blt.NoiseFilterChroma.Threshold = m_NFilterValues[4];
-	//blt.NoiseFilterChroma.Radius = m_NFilterValues[5];
-
-	// DXVA2_VideoProcess_DetailFilter
-	//blt.DetailFilterLuma.Level = m_DFilterValues[0];
-	//blt.DetailFilterLuma.Threshold = m_DFilterValues[1];
-	//blt.DetailFilterLuma.Radius = m_DFilterValues[2];
-	//blt.DetailFilterChroma.Level = m_DFilterValues[3];
-	//blt.DetailFilterChroma.Threshold = m_DFilterValues[4];
-	//blt.DetailFilterChroma.Radius = m_DFilterValues[5];
 
 	// Initialize main stream video sample.
 	samples[0].Start = start_100ns;
@@ -729,12 +727,12 @@ HRESULT CMpcVideoRenderer::ResizeDXVA2(IDirect3DSurface9* pSurface, IDirect3DSur
 	samples[0].PlanarAlpha = DXVA2_Fixed32OpaqueAlpha();
 
 	// clear pRenderTarget, need for Nvidia graphics cards and Intel mobile graphics
-	//CRect clientRect;
-	//if (rDstRect.left > 0 || rDstRect.top > 0 ||
-	//	GetClientRect(m_hWnd, clientRect) && (rDstRect.right < clientRect.Width() || rDstRect.bottom < clientRect.Height())) {
-	//	//m_pD3DDevEx->Clear(0, nullptr, D3DCLEAR_TARGET, 0, 1.0f, 0); //  not worked
-	//	m_pD3DDevEx->ColorFill(pRenderTarget, nullptr, 0);
-	//}
+	CRect clientRect;
+	if (rDstVid.left > 0 || rDstVid.top > 0 ||
+		GetClientRect(m_hWnd, clientRect) && (rDstVid.right < clientRect.Width() || rDstVid.bottom < clientRect.Height())) {
+		//m_pD3DDevEx->Clear(0, nullptr, D3DCLEAR_TARGET, 0, 1.0f, 0); //  not worked
+		m_pD3DDevEx->ColorFill(pRenderTarget, nullptr, 0);
+	}
 
 	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &blt, samples, 1, nullptr);
 	if (FAILED(hr)) {
