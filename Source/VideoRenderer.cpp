@@ -605,7 +605,11 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 	videodesc.SampleFormat.VideoPrimaries         = DXVA2_VideoPrimaries_Unknown;
 	videodesc.SampleFormat.VideoTransferFunction  = DXVA2_VideoTransFunc_Unknown;
 	videodesc.SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
-	videodesc.Format = d3dformat;
+	if (d3dformat == D3DFMT_X8R8G8B8) {
+		videodesc.Format = D3DFMT_YUY2; // hack
+	} else {
+		videodesc.Format = d3dformat;
+	}
 	videodesc.InputSampleFreq.Numerator = 60;
 	videodesc.InputSampleFreq.Denominator = 1;
 	videodesc.OutputFrameFreq.Numerator = 60;
