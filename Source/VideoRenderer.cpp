@@ -226,6 +226,17 @@ STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPV
 	return E_NOINTERFACE;
 }
 
+// IBasicVideo
+STDMETHODIMP CMpcVideoRenderer::GetVideoSize(long *pWidth, long *pHeight)
+{
+	CheckPointer(pWidth, E_POINTER);
+	CheckPointer(pHeight, E_POINTER);
+
+	*pWidth = m_srcWidth;
+	*pHeight = m_srcHeight;
+	return S_OK;
+}
+
 // IVideoWindow
 STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 {
@@ -548,7 +559,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			m_srcRect = vih2->rcSource;
 			m_trgRect = vih2->rcTarget;
 			m_srcWidth = vih2->bmiHeader.biWidth;
-			m_srcHeight = vih2->bmiHeader.biHeight;
+			m_srcHeight = labs(vih2->bmiHeader.biHeight);
 
 			if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
 				m_srcFormat = D3DFMT_X8R8G8B8;

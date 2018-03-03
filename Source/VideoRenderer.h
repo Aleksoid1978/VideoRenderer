@@ -119,7 +119,7 @@ public:
 	STDMETHODIMP SetDestinationPosition(long Left, long Top, long Width, long Height) { return E_NOTIMPL; }
 	STDMETHODIMP GetDestinationPosition(long *pLeft, long *pTop, long *pWidth, long *pHeight) { return E_NOTIMPL; }
 	STDMETHODIMP SetDefaultDestinationPosition( void) { return E_NOTIMPL; }
-	STDMETHODIMP GetVideoSize(long *pWidth, long *pHeight) { return E_NOTIMPL; }
+	STDMETHODIMP GetVideoSize(long *pWidth, long *pHeight);
 	STDMETHODIMP GetVideoPaletteEntries(long StartIndex, long Entries, long *pRetrieved, long *pPalette) { return E_NOTIMPL; }
 	STDMETHODIMP GetCurrentImage(long *pBufferSize, long *pDIBImage) { return E_NOTIMPL; }
 	STDMETHODIMP IsUsingDefaultSource( void) { return E_NOTIMPL; }
