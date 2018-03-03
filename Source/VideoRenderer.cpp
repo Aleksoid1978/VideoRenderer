@@ -177,6 +177,8 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 
 	m_pDXVAHD_VP.Release();
 	m_pDXVAHD_Device.Release();
+	m_pDXVA2_VP.Release();
+	m_pDXVA2_VPService.Release();
 	if (m_hDxva2Lib) {
 		FreeLibrary(m_hDxva2Lib);
 	}
@@ -528,6 +530,128 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(BYTE* data, const long size, IDirect3DSu
 	hr = m_pSrcSurface->UnlockRect();
 
 	return ResizeDXVAHD(m_pSrcSurface, pRenderTarget);
+
+	return hr;
+}
+
+BOOL CMpcVideoRenderer::InitializeDXVA2VP(D3DSURFACE_DESC& desc)
+{
+	if (!m_hDxva2Lib) {
+		return FALSE;
+	}
+
+	HRESULT(WINAPI *pDXVA2CreateVideoService)(IDirect3DDevice9* pDD, REFIID riid, void** ppService);
+	(FARPROC &)pDXVA2CreateVideoService = GetProcAddress(m_hDxva2Lib, "DXVA2CreateVideoService");
+	if (!pDXVA2CreateVideoService) {
+		return FALSE;
+	}
+
+	HRESULT hr = S_OK;
+	// Create DXVA2 Video Processor Service.
+	hr = pDXVA2CreateVideoService(m_pD3DDevEx, IID_IDirectXVideoProcessorService, (VOID**)&m_pDXVA2_VPService);
+	if (FAILED(hr)) {
+		DLog(L"DXVA2CreateVideoService failed with error 0x%x.", hr);
+		return FALSE;
+	}
+
+	// Initialize the video descriptor.
+	DXVA2_VideoDesc videodesc = {};
+	videodesc.SampleWidth = desc.Width;
+	videodesc.SampleHeight = desc.Height;
+	videodesc.SampleFormat.VideoChromaSubsampling = DXVA2_VideoChromaSubsampling_Unknown;
+	videodesc.SampleFormat.NominalRange           = DXVA2_NominalRange_Unknown;
+	videodesc.SampleFormat.VideoTransferMatrix    = DXVA2_VideoTransferMatrix_Unknown;
+	videodesc.SampleFormat.VideoLighting          = DXVA2_VideoLighting_Unknown;
+	videodesc.SampleFormat.VideoPrimaries         = DXVA2_VideoPrimaries_Unknown;
+	videodesc.SampleFormat.VideoTransferFunction  = DXVA2_VideoTransFunc_Unknown;
+	videodesc.SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
+	videodesc.Format = desc.Format;
+	videodesc.InputSampleFreq.Numerator = 60;
+	videodesc.InputSampleFreq.Denominator = 1;
+	videodesc.OutputFrameFreq.Numerator = 60;
+	videodesc.OutputFrameFreq.Denominator = 1;
+
+	GUID VPDevGuid = DXVA2_VideoProcProgressiveDevice;
+
+	// Query the supported render target format.
+	UINT i, count;
+	D3DFORMAT* formats = nullptr;
+	hr = m_pDXVA2_VPService->GetVideoProcessorRenderTargets(VPDevGuid, &videodesc, &count, &formats);
+	if (FAILED(hr)) {
+		DLog(L"GetVideoProcessorRenderTargets failed with error 0x%x.", hr);
+		return FALSE;
+	}
+	for (i = 0; i < count; i++) {
+		if (formats[i] == D3DFMT_X8R8G8B8) {
+			break;
+		}
+	}
+	CoTaskMemFree(formats);
+	if (i >= count) {
+		DLog(L"GetVideoProcessorRenderTargets doesn't support that format.");
+		return FALSE;
+	}
+
+	// Query the supported substream format.
+	formats = NULL;
+	hr = m_pDXVA2_VPService->GetVideoProcessorSubStreamFormats(VPDevGuid, &videodesc, D3DFMT_X8R8G8B8, &count, &formats);
+	if (FAILED(hr)) {
+		DLog(L"GetVideoProcessorSubStreamFormats failed with error 0x%x.\n", hr);
+		return FALSE;
+	}
+	for (i = 0; i < count; i++) {
+		if (formats[i] == desc.Format) {
+			break;
+		}
+	}
+	CoTaskMemFree(formats);
+	if (i >= count) {
+		DLog(L"GetVideoProcessorSubStreamFormats doesn't support that format.\n");
+		return FALSE;
+	}
+
+	// Query video processor capabilities.
+	DXVA2_VideoProcessorCaps caps = {};
+	hr = m_pDXVA2_VPService->GetVideoProcessorCaps(VPDevGuid, &videodesc, D3DFMT_X8R8G8B8, &caps);
+	if (FAILED(hr)) {
+		DLog(L"GetVideoProcessorCaps failed with error 0x%x.", hr);
+		return FALSE;
+	}
+	// Check to see if the device is hardware device.
+	if (!(caps.DeviceCaps & DXVA2_VPDev_HardwareDevice)) {
+		DLog(L"The DXVA2 device isn't a hardware device.");
+		return FALSE;
+	}
+	// Check to see if the device supports all the VP operations we want.
+	const UINT VIDEO_REQUIED_OP = DXVA2_VideoProcess_StretchX | DXVA2_VideoProcess_StretchY;
+	if ((caps.VideoProcessorOperations & VIDEO_REQUIED_OP) != VIDEO_REQUIED_OP) {
+		DLog(L"The DXVA2 device doesn't support the VP operations.");
+		return FALSE;
+	}
+
+	// Finally create a video processor device.
+	hr = m_pDXVA2_VPService->CreateVideoProcessor(VPDevGuid, &videodesc, D3DFMT_X8R8G8B8, 0, &m_pDXVA2_VP);
+	if (FAILED(hr)) {
+		DLog(L"CreateVideoProcessor failed with error 0x%x.", hr);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+HRESULT CMpcVideoRenderer::ResizeDXVA2(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget)
+{
+	HRESULT hr = S_OK;
+	D3DSURFACE_DESC desc;
+	if (S_OK != pSurface->GetDesc(&desc)) {
+		return hr;
+	};
+
+	if (!m_pDXVA2_VP && !InitializeDXVA2VP(desc)) {
+		return E_FAIL;
+	}
+
+	// TODO
 
 	return hr;
 }
