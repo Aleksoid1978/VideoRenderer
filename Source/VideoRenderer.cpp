@@ -28,77 +28,7 @@
 #include <Mferror.h>
 #include <Dvdmedia.h>
 #include "Helper.h"
-
-#pragma region DXVAHD
-HRESULT DXVAHD_SetStreamFormat(IDXVAHD_VideoProcessor *pVP, UINT stream, D3DFORMAT format)
-{
-	DXVAHD_STREAM_STATE_D3DFORMAT_DATA d3dformat = { format };
-
-	HRESULT hr = pVP->SetVideoProcessStreamState(
-		stream,
-		DXVAHD_STREAM_STATE_D3DFORMAT,
-		sizeof(d3dformat),
-		&d3dformat
-	);
-
-	return hr;
-}
-
-HRESULT DXVAHD_SetFrameFormat(IDXVAHD_VideoProcessor *pVP, UINT stream, DXVAHD_FRAME_FORMAT format)
-{
-	DXVAHD_STREAM_STATE_FRAME_FORMAT_DATA frame_format = { format };
-
-	HRESULT hr = pVP->SetVideoProcessStreamState(
-		stream,
-		DXVAHD_STREAM_STATE_FRAME_FORMAT,
-		sizeof(frame_format),
-		&frame_format
-	);
-
-	return hr;
-}
-
-HRESULT DXVAHD_SetTargetRect(IDXVAHD_VideoProcessor *pVP, BOOL bEnable, const RECT &rect)
-{
-	DXVAHD_BLT_STATE_TARGET_RECT_DATA tr = { bEnable, rect };
-
-	HRESULT hr = pVP->SetVideoProcessBltState(
-		DXVAHD_BLT_STATE_TARGET_RECT,
-		sizeof(tr),
-		&tr
-	);
-
-	return hr;
-}
-
-HRESULT DXVAHD_SetSourceRect(IDXVAHD_VideoProcessor *pVP, UINT stream, BOOL bEnable, const RECT& rect)
-{
-	DXVAHD_STREAM_STATE_SOURCE_RECT_DATA src = { bEnable, rect };
-
-	HRESULT hr = pVP->SetVideoProcessStreamState(
-		stream,
-		DXVAHD_STREAM_STATE_SOURCE_RECT,
-		sizeof(src),
-		&src
-	);
-
-	return hr;
-}
-
-HRESULT DXVAHD_SetDestinationRect(IDXVAHD_VideoProcessor *pVP, UINT stream, BOOL bEnable, const RECT &rect)
-{
-	DXVAHD_STREAM_STATE_DESTINATION_RECT_DATA DstRect = { bEnable, rect };
-
-	HRESULT hr = pVP->SetVideoProcessStreamState(
-		stream,
-		DXVAHD_STREAM_STATE_DESTINATION_RECT,
-		sizeof(DstRect),
-		&DstRect
-	);
-
-	return hr;
-}
-#pragma endregion DXVAHD
+#include "dxvahd_utils.h"
 
 class CVideoRendererInputPin : public CRendererInputPin,
 	public IMFGetService,
