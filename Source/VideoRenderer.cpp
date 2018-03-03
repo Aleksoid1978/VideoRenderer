@@ -873,7 +873,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 					m_srcLines = m_srcHeight;
 				}
 			}
-			m_srcPitch = vih2->bmiHeader.biSizeImage / m_srcHeight;
+			m_srcPitch = vih2->bmiHeader.biSizeImage / m_srcLines;
 
 			m_pDXVAHD_VP.Release();
 			m_pDXVAHD_Device.Release();
