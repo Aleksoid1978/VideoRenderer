@@ -866,7 +866,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			}
 			else {
 				m_srcFormat = (D3DFORMAT)m_mt.subtype.Data1;
-				if (m_mt.subtype == MEDIASUBTYPE_NV12 || m_mt.subtype == MEDIASUBTYPE_YV12) {
+				if (m_mt.subtype == MEDIASUBTYPE_NV12 || m_mt.subtype == MEDIASUBTYPE_YV12 || m_mt.subtype == MEDIASUBTYPE_P010) {
 					m_srcLines = m_srcHeight * 3 / 2;
 				}
 				else {
