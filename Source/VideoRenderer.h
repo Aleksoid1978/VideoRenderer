@@ -96,6 +96,25 @@ public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
 	~CMpcVideoRenderer();
 
+protected:
+	HRESULT InitDirect3D9();
+
+	BOOL InitializeDXVAHDVP(D3DSURFACE_DESC& desc);
+	BOOL InitializeDXVAHDVP(const UINT width, const UINT height, const D3DFORMAT d3dformat);
+	HRESULT ResizeDXVAHD(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget);
+	HRESULT ResizeDXVAHD(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget);
+
+	BOOL InitializeDXVA2VP(D3DSURFACE_DESC& desc);
+	BOOL InitializeDXVA2VP(const UINT width, const UINT height, const D3DFORMAT d3dformat);
+	HRESULT ResizeDXVA2(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget);
+	HRESULT ResizeDXVA2(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget);
+
+public:
+	// CBaseRenderer
+	HRESULT CheckMediaType(const CMediaType *pmt) override;
+	HRESULT SetMediaType(const CMediaType *pmt) override;
+	HRESULT DoRenderSample(IMediaSample* pSample) override;
+
 	DECLARE_IUNKNOWN
 	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv);
 
@@ -103,10 +122,10 @@ public:
 	STDMETHODIMP GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject);
 
 	// IDispatch
-	STDMETHODIMP GetTypeInfoCount(UINT* pctinfo) {return E_NOTIMPL;}
-	STDMETHODIMP GetTypeInfo(UINT itinfo, LCID lcid, ITypeInfo** pptinfo) {return E_NOTIMPL;}
-	STDMETHODIMP GetIDsOfNames(REFIID riid, OLECHAR** rgszNames, UINT cNames, LCID lcid, DISPID* rgdispid) {return E_NOTIMPL;}
-	STDMETHODIMP Invoke(DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS* pdispparams, VARIANT* pvarResult, EXCEPINFO* pexcepinfo, UINT* puArgErr) {return E_NOTIMPL;}
+	STDMETHODIMP GetTypeInfoCount(UINT* pctinfo) { return E_NOTIMPL; }
+	STDMETHODIMP GetTypeInfo(UINT itinfo, LCID lcid, ITypeInfo** pptinfo) { return E_NOTIMPL; }
+	STDMETHODIMP GetIDsOfNames(REFIID riid, OLECHAR** rgszNames, UINT cNames, LCID lcid, DISPID* rgdispid) { return E_NOTIMPL; }
+	STDMETHODIMP Invoke(DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS* pdispparams, VARIANT* pvarResult, EXCEPINFO* pexcepinfo, UINT* puArgErr) { return E_NOTIMPL; }
 
 	// IBasicVideo
 	STDMETHODIMP get_AvgTimePerFrame(REFTIME *pAvgTimePerFrame) { return E_NOTIMPL; }
@@ -132,15 +151,15 @@ public:
 	STDMETHODIMP get_DestinationHeight(long *pDestinationHeight) { return E_NOTIMPL; }
 	STDMETHODIMP SetSourcePosition(long Left, long Top, long Width, long Height) { return E_NOTIMPL; }
 	STDMETHODIMP GetSourcePosition(long *pLeft, long *pTop, long *pWidth, long *pHeight) { return E_NOTIMPL; }
-	STDMETHODIMP SetDefaultSourcePosition( void) { return E_NOTIMPL; }
+	STDMETHODIMP SetDefaultSourcePosition(void) { return E_NOTIMPL; }
 	STDMETHODIMP SetDestinationPosition(long Left, long Top, long Width, long Height);
 	STDMETHODIMP GetDestinationPosition(long *pLeft, long *pTop, long *pWidth, long *pHeight) { return E_NOTIMPL; }
-	STDMETHODIMP SetDefaultDestinationPosition( void) { return E_NOTIMPL; }
+	STDMETHODIMP SetDefaultDestinationPosition(void) { return E_NOTIMPL; }
 	STDMETHODIMP GetVideoSize(long *pWidth, long *pHeight);
 	STDMETHODIMP GetVideoPaletteEntries(long StartIndex, long Entries, long *pRetrieved, long *pPalette) { return E_NOTIMPL; }
 	STDMETHODIMP GetCurrentImage(long *pBufferSize, long *pDIBImage) { return E_NOTIMPL; }
-	STDMETHODIMP IsUsingDefaultSource( void) { return E_NOTIMPL; }
-	STDMETHODIMP IsUsingDefaultDestination( void) { return E_NOTIMPL; }
+	STDMETHODIMP IsUsingDefaultSource(void) { return E_NOTIMPL; }
+	STDMETHODIMP IsUsingDefaultDestination(void) { return E_NOTIMPL; }
 
 	// IVideoWindow
 	STDMETHODIMP put_Caption(BSTR strCaption) { return E_NOTIMPL; }
@@ -182,22 +201,4 @@ public:
 	STDMETHODIMP GetRestorePosition(long *pLeft, long *pTop, long *pWidth, long *pHeight) { return E_NOTIMPL; }
 	STDMETHODIMP HideCursor(long HideCursor) { return E_NOTIMPL; }
 	STDMETHODIMP IsCursorHidden(long *CursorHidden) { return E_NOTIMPL; }
-
-protected:
-	HRESULT InitDirect3D9();
-
-	BOOL InitializeDXVAHDVP(D3DSURFACE_DESC& desc);
-	BOOL InitializeDXVAHDVP(const UINT width, const UINT height, const D3DFORMAT d3dformat);
-	HRESULT ResizeDXVAHD(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget);
-	HRESULT ResizeDXVAHD(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget);
-
-	BOOL InitializeDXVA2VP(D3DSURFACE_DESC& desc);
-	BOOL InitializeDXVA2VP(const UINT width, const UINT height, const D3DFORMAT d3dformat);
-	HRESULT ResizeDXVA2(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget);
-	HRESULT ResizeDXVA2(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget);
-
-public:
-	HRESULT CheckMediaType(const CMediaType *pmt) override;
-	HRESULT SetMediaType(const CMediaType *pmt) override;
-	HRESULT DoRenderSample(IMediaSample* pSample) override;
 };

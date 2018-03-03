@@ -190,84 +190,6 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 	}
 }
 
-STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** ppv)
-{
-	CheckPointer(ppv, E_POINTER);
-
-	HRESULT hr;
-	if (riid == __uuidof(IMFGetService)) {
-		hr = GetInterface((IMFGetService*)this, ppv);
-	} else if (riid == __uuidof(IBasicVideo)) {
-		hr = GetInterface((IBasicVideo*)this, ppv);
-	} else if (riid == __uuidof(IVideoWindow)) {
-		hr = GetInterface((IVideoWindow*)this, ppv);
-	} else {
-		hr = __super::NonDelegatingQueryInterface(riid, ppv);
-	}
-
-	return hr;
-}
-
-// IMFGetService
-STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject)
-{
-	if (guidService == MR_VIDEO_ACCELERATION_SERVICE) {
-		if (riid == __uuidof(IDirect3DDeviceManager9)) {
-			return m_pD3DDeviceManager->QueryInterface(riid, ppvObject);
-		}
-		/*
-		} else if (riid == __uuidof(IDirectXVideoDecoderService) || riid == __uuidof(IDirectXVideoProcessorService) ) {
-			return m_pD3DDeviceManager->GetVideoService(m_hDevice, riid, ppvObject);
-		} else if (riid == __uuidof(IDirectXVideoAccelerationService)) {
-			// TODO : to be tested....
-			return pDXVA2CreateVideoService(m_pD3DDevEx, riid, ppvObject);
-		}
-		*/
-	}
-
-	return E_NOINTERFACE;
-}
-
-// IBasicVideo
-STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long Width, long Height)
-{
-	m_videoRect.SetRect(Left, Top, Left + Width, Top + Height);
-	return S_OK;
-}
-
-STDMETHODIMP CMpcVideoRenderer::GetVideoSize(long *pWidth, long *pHeight)
-{
-	CheckPointer(pWidth, E_POINTER);
-	CheckPointer(pHeight, E_POINTER);
-
-	*pWidth = m_srcWidth;
-	*pHeight = m_srcHeight;
-	return S_OK;
-}
-
-// IVideoWindow
-STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
-{
-	if (m_hWnd != (HWND)Owner) {
-		m_hWnd = (HWND)Owner;
-		return InitDirect3D9() ? S_OK : E_FAIL;
-	}
-	return S_OK;
-}
-
-STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Width, long Height)
-{
-	m_windowRect.SetRect(Left, Top, Left + Width, Top + Height);
-	return S_OK;
-}
-
-STDMETHODIMP CMpcVideoRenderer::get_Owner(OAHWND *Owner)
-{
-	CheckPointer(Owner, E_POINTER);
-	*Owner = (OAHWND)m_hWnd;
-	return S_OK;
-}
-
 static UINT GetAdapter(HWND hWnd, IDirect3D9Ex* pD3D)
 {
 	CheckPointer(hWnd, D3DADAPTER_DEFAULT);
@@ -831,6 +753,8 @@ HRESULT CMpcVideoRenderer::ResizeDXVA2(BYTE* data, const long size, IDirect3DSur
 	return hr;
 }
 
+// CBaseRenderer
+
 HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 {
 	if (pmt->formattype != FORMAT_VideoInfo2) {
@@ -923,5 +847,86 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 
 	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
 
+	return S_OK;
+}
+
+STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** ppv)
+{
+	CheckPointer(ppv, E_POINTER);
+
+	HRESULT hr;
+	if (riid == __uuidof(IMFGetService)) {
+		hr = GetInterface((IMFGetService*)this, ppv);
+	}
+	else if (riid == __uuidof(IBasicVideo)) {
+		hr = GetInterface((IBasicVideo*)this, ppv);
+	}
+	else if (riid == __uuidof(IVideoWindow)) {
+		hr = GetInterface((IVideoWindow*)this, ppv);
+	}
+	else {
+		hr = __super::NonDelegatingQueryInterface(riid, ppv);
+	}
+
+	return hr;
+}
+
+// IMFGetService
+STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject)
+{
+	if (guidService == MR_VIDEO_ACCELERATION_SERVICE) {
+		if (riid == __uuidof(IDirect3DDeviceManager9)) {
+			return m_pD3DDeviceManager->QueryInterface(riid, ppvObject);
+		}
+		/*
+		} else if (riid == __uuidof(IDirectXVideoDecoderService) || riid == __uuidof(IDirectXVideoProcessorService) ) {
+		return m_pD3DDeviceManager->GetVideoService(m_hDevice, riid, ppvObject);
+		} else if (riid == __uuidof(IDirectXVideoAccelerationService)) {
+		// TODO : to be tested....
+		return pDXVA2CreateVideoService(m_pD3DDevEx, riid, ppvObject);
+		}
+		*/
+	}
+
+	return E_NOINTERFACE;
+}
+
+// IBasicVideo
+STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long Width, long Height)
+{
+	m_videoRect.SetRect(Left, Top, Left + Width, Top + Height);
+	return S_OK;
+}
+
+STDMETHODIMP CMpcVideoRenderer::GetVideoSize(long *pWidth, long *pHeight)
+{
+	CheckPointer(pWidth, E_POINTER);
+	CheckPointer(pHeight, E_POINTER);
+
+	*pWidth = m_srcWidth;
+	*pHeight = m_srcHeight;
+	return S_OK;
+}
+
+// IVideoWindow
+STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
+{
+	if (m_hWnd != (HWND)Owner) {
+		m_hWnd = (HWND)Owner;
+		return InitDirect3D9() ? S_OK : E_FAIL;
+	}
+	return S_OK;
+}
+
+STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Width, long Height)
+{
+	m_windowRect.SetRect(Left, Top, Left + Width, Top + Height);
+	return S_OK;
+}
+
+STDMETHODIMP CMpcVideoRenderer::get_Owner(OAHWND *Owner)
+{
+	CheckPointer(Owner, E_POINTER);
+	*Owner = (OAHWND)m_hWnd;
 	return S_OK;
 }
