@@ -453,29 +453,7 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(BYTE* data, const long size, IDirect3DSu
 		return hr;
 	}
 
-	if (m_srcFormat == D3DFMT_X8R8G8B8) {
-		UINT linesize = m_srcWidth * 4;
-		BYTE* src = data + m_srcPitch * (m_srcHeight - 1);
-		BYTE* dst = (BYTE*)lr.pBits;
-
-		for (UINT y = 0; y < m_srcHeight; ++y) {
-			memcpy(dst, src, linesize);
-			src -= m_srcPitch;
-			dst += lr.Pitch;
-		}
-	}
-	else if (m_srcPitch == lr.Pitch) {
-		memcpy(lr.pBits, data, size);
-	}
-	else if (m_srcPitch < lr.Pitch) {
-		BYTE* src = data;
-		BYTE* dst = (BYTE*)lr.pBits;
-		for (UINT y = 0; y < m_srcLines; ++y) {
-			memcpy(dst, src, m_srcPitch);
-			src += m_srcPitch;
-			dst += lr.Pitch;
-		}
-	}
+	CopyFrameData((BYTE*)lr.pBits, lr.Pitch, data, size);
 
 	hr = m_pSrcSurface->UnlockRect();
 
@@ -722,29 +700,7 @@ HRESULT CMpcVideoRenderer::ResizeDXVA2(BYTE* data, const long size, IDirect3DSur
 		return hr;
 	}
 
-	if (m_srcFormat == D3DFMT_X8R8G8B8) {
-		UINT linesize = m_srcWidth * 4;
-		BYTE* src = data + m_srcPitch * (m_srcHeight - 1);
-		BYTE* dst = (BYTE*)lr.pBits;
-
-		for (UINT y = 0; y < m_srcHeight; ++y) {
-			memcpy(dst, src, linesize);
-			src -= m_srcPitch;
-			dst += lr.Pitch;
-		}
-	}
-	else if (m_srcPitch == lr.Pitch) {
-		memcpy(lr.pBits, data, size);
-	}
-	else if (m_srcPitch < lr.Pitch) {
-		BYTE* src = data;
-		BYTE* dst = (BYTE*)lr.pBits;
-		for (UINT y = 0; y < m_srcLines; ++y) {
-			memcpy(dst, src, m_srcPitch);
-			src += m_srcPitch;
-			dst += lr.Pitch;
-		}
-	}
+	CopyFrameData((BYTE*)lr.pBits, lr.Pitch, data, size);
 
 	hr = m_pSrcSurface->UnlockRect();
 
@@ -753,17 +709,43 @@ HRESULT CMpcVideoRenderer::ResizeDXVA2(BYTE* data, const long size, IDirect3DSur
 	return hr;
 }
 
+void CMpcVideoRenderer::CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, long src_size)
+{
+	if (m_srcFormat == D3DFMT_X8R8G8B8) {
+		UINT linesize = m_srcWidth * 4;
+		src += m_srcPitch * (m_srcHeight - 1);
+
+		for (UINT y = 0; y < m_srcHeight; ++y) {
+			memcpy(dst, src, linesize);
+			src -= m_srcPitch;
+			dst += dst_pitch;
+		}
+	}
+	else if (m_srcPitch == dst_pitch) {
+		memcpy(dst, src, src_size);
+	}
+	else if (m_srcPitch < dst_pitch) {
+		for (UINT y = 0; y < m_srcLines; ++y) {
+			memcpy(dst, src, m_srcPitch);
+			src += m_srcPitch;
+			dst += dst_pitch;
+		}
+	}
+}
+
 // CBaseRenderer
 
 HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 {
-	if (pmt->formattype != FORMAT_VideoInfo2) {
-		return E_FAIL;
-	}
-
-	for (const auto& type : sudPinTypesIn) {
-		if (pmt->majortype == *type.clsMajorType && pmt->subtype == *type.clsMinorType) {
-			return S_OK;
+	if (pmt->majortype == MEDIATYPE_Video && pmt->formattype == FORMAT_VideoInfo2) {
+		unsigned count = _countof(sudPinTypesIn);
+		if (m_VPType == VP_DXVA2) {
+			count--; // skip MEDIASUBTYPE_AYUV
+		}
+		for (unsigned i = 0; i < count; i++) {
+			if (pmt->subtype == *sudPinTypesIn[i].clsMinorType) {
+				return S_OK;
+			}
 		}
 	}
 

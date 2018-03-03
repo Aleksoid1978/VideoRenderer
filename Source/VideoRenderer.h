@@ -32,7 +32,8 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_NV12},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_YUY2},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_RGB32},
-	{&MEDIATYPE_Video, &MEDIASUBTYPE_P010}
+	{&MEDIATYPE_Video, &MEDIASUBTYPE_P010},
+	{&MEDIATYPE_Video, &MEDIASUBTYPE_AYUV}
 };
 
 class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
@@ -96,7 +97,7 @@ public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
 	~CMpcVideoRenderer();
 
-protected:
+private:
 	HRESULT InitDirect3D9();
 
 	BOOL InitializeDXVAHDVP(D3DSURFACE_DESC& desc);
@@ -108,6 +109,8 @@ protected:
 	BOOL InitializeDXVA2VP(const UINT width, const UINT height, const D3DFORMAT d3dformat);
 	HRESULT ResizeDXVA2(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget);
 	HRESULT ResizeDXVA2(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget);
+
+	void CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, long src_size);
 
 public:
 	// CBaseRenderer
