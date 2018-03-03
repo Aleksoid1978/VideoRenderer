@@ -37,7 +37,8 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	CMpcVideoRenderer : public CBaseRenderer,
 	public IMFGetService,
-	public IMFVideoDisplayControl
+	public IBasicVideo,
+	public IVideoWindow
 {
 private:
 	CMediaType m_mt;
@@ -84,23 +85,86 @@ public:
 	// IMFGetService
 	STDMETHODIMP GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject);
 
-	// IMFVideoDisplayControl
-	STDMETHODIMP GetNativeVideoSize(SIZE *pszVideo, SIZE *pszARVideo) { return E_NOTIMPL; };
-	STDMETHODIMP GetIdealVideoSize(SIZE *pszMin, SIZE *pszMax) { return E_NOTIMPL; };
-	STDMETHODIMP SetVideoPosition(const MFVideoNormalizedRect *pnrcSource, const LPRECT prcDest) { return E_NOTIMPL; };
-	STDMETHODIMP GetVideoPosition(MFVideoNormalizedRect *pnrcSource, LPRECT prcDest) { return E_NOTIMPL; };
-	STDMETHODIMP SetAspectRatioMode(DWORD dwAspectRatioMode) { return E_NOTIMPL; };
-	STDMETHODIMP GetAspectRatioMode(DWORD *pdwAspectRatioMode) { return E_NOTIMPL; };
-	STDMETHODIMP SetVideoWindow(HWND hwndVideo);
-	STDMETHODIMP GetVideoWindow(HWND *phwndVideo);
-	STDMETHODIMP RepaintVideo(void) { return E_NOTIMPL; };
-	STDMETHODIMP GetCurrentImage(BITMAPINFOHEADER *pBih, BYTE **pDib, DWORD *pcbDib, LONGLONG *pTimeStamp) { return E_NOTIMPL; };
-	STDMETHODIMP SetBorderColor(COLORREF Clr) { return E_NOTIMPL; };
-	STDMETHODIMP GetBorderColor(COLORREF *pClr) { return E_NOTIMPL; };
-	STDMETHODIMP SetRenderingPrefs(DWORD dwRenderFlags) { return E_NOTIMPL; };
-	STDMETHODIMP GetRenderingPrefs(DWORD *pdwRenderFlags) { return E_NOTIMPL; };
-	STDMETHODIMP SetFullscreen(BOOL fFullscreen) { return E_NOTIMPL; };
-	STDMETHODIMP GetFullscreen(BOOL *pfFullscreen) { return E_NOTIMPL; };
+	// IDispatch
+	STDMETHODIMP GetTypeInfoCount(UINT* pctinfo) {return E_NOTIMPL;}
+	STDMETHODIMP GetTypeInfo(UINT itinfo, LCID lcid, ITypeInfo** pptinfo) {return E_NOTIMPL;}
+	STDMETHODIMP GetIDsOfNames(REFIID riid, OLECHAR** rgszNames, UINT cNames, LCID lcid, DISPID* rgdispid) {return E_NOTIMPL;}
+	STDMETHODIMP Invoke(DISPID dispidMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS* pdispparams, VARIANT* pvarResult, EXCEPINFO* pexcepinfo, UINT* puArgErr) {return E_NOTIMPL;}
+
+	// IBasicVideo
+	STDMETHODIMP get_AvgTimePerFrame(REFTIME *pAvgTimePerFrame) { return E_NOTIMPL; }
+	STDMETHODIMP get_BitRate(long *pBitRate) { return E_NOTIMPL; }
+	STDMETHODIMP get_BitErrorRate(long *pBitErrorRate) { return E_NOTIMPL; }
+	STDMETHODIMP get_VideoWidth(long *pVideoWidth) { return E_NOTIMPL; }
+	STDMETHODIMP get_VideoHeight(long *pVideoHeight) { return E_NOTIMPL; }
+	STDMETHODIMP put_SourceLeft(long SourceLeft) { return E_NOTIMPL; }
+	STDMETHODIMP get_SourceLeft(long *pSourceLeft) { return E_NOTIMPL; }
+	STDMETHODIMP put_SourceWidth(long SourceWidth) { return E_NOTIMPL; }
+	STDMETHODIMP get_SourceWidth(long *pSourceWidth) { return E_NOTIMPL; }
+	STDMETHODIMP put_SourceTop(long SourceTop) { return E_NOTIMPL; }
+	STDMETHODIMP get_SourceTop(long *pSourceTop) { return E_NOTIMPL; }
+	STDMETHODIMP put_SourceHeight(long SourceHeight) { return E_NOTIMPL; }
+	STDMETHODIMP get_SourceHeight(long *pSourceHeight) { return E_NOTIMPL; }
+	STDMETHODIMP put_DestinationLeft(long DestinationLeft) { return E_NOTIMPL; }
+	STDMETHODIMP get_DestinationLeft(long *pDestinationLeft) { return E_NOTIMPL; }
+	STDMETHODIMP put_DestinationWidth(long DestinationWidth) { return E_NOTIMPL; }
+	STDMETHODIMP get_DestinationWidth(long *pDestinationWidth) { return E_NOTIMPL; }
+	STDMETHODIMP put_DestinationTop(long DestinationTop) { return E_NOTIMPL; }
+	STDMETHODIMP get_DestinationTop(long *pDestinationTop) { return E_NOTIMPL; }
+	STDMETHODIMP put_DestinationHeight(long DestinationHeight) { return E_NOTIMPL; }
+	STDMETHODIMP get_DestinationHeight(long *pDestinationHeight) { return E_NOTIMPL; }
+	STDMETHODIMP SetSourcePosition(long Left, long Top, long Width, long Height) { return E_NOTIMPL; }
+	STDMETHODIMP GetSourcePosition(long *pLeft, long *pTop, long *pWidth, long *pHeight) { return E_NOTIMPL; }
+	STDMETHODIMP SetDefaultSourcePosition( void) { return E_NOTIMPL; }
+	STDMETHODIMP SetDestinationPosition(long Left, long Top, long Width, long Height) { return E_NOTIMPL; }
+	STDMETHODIMP GetDestinationPosition(long *pLeft, long *pTop, long *pWidth, long *pHeight) { return E_NOTIMPL; }
+	STDMETHODIMP SetDefaultDestinationPosition( void) { return E_NOTIMPL; }
+	STDMETHODIMP GetVideoSize(long *pWidth, long *pHeight) { return E_NOTIMPL; }
+	STDMETHODIMP GetVideoPaletteEntries(long StartIndex, long Entries, long *pRetrieved, long *pPalette) { return E_NOTIMPL; }
+	STDMETHODIMP GetCurrentImage(long *pBufferSize, long *pDIBImage) { return E_NOTIMPL; }
+	STDMETHODIMP IsUsingDefaultSource( void) { return E_NOTIMPL; }
+	STDMETHODIMP IsUsingDefaultDestination( void) { return E_NOTIMPL; }
+
+	// IVideoWindow
+	STDMETHODIMP put_Caption(BSTR strCaption) { return E_NOTIMPL; }
+	STDMETHODIMP get_Caption(BSTR *strCaption) { return E_NOTIMPL; }
+	STDMETHODIMP put_WindowStyle(long WindowStyle) { return E_NOTIMPL; }
+	STDMETHODIMP get_WindowStyle(long *WindowStyle) { return E_NOTIMPL; }
+	STDMETHODIMP put_WindowStyleEx(long WindowStyleEx) { return E_NOTIMPL; }
+	STDMETHODIMP get_WindowStyleEx(long *WindowStyleEx) { return E_NOTIMPL; }
+	STDMETHODIMP put_AutoShow(long AutoShow) { return E_NOTIMPL; }
+	STDMETHODIMP get_AutoShow(long *AutoShow) { return E_NOTIMPL; }
+	STDMETHODIMP put_WindowState(long WindowState) { return E_NOTIMPL; }
+	STDMETHODIMP get_WindowState(long *WindowState) { return E_NOTIMPL; }
+	STDMETHODIMP put_BackgroundPalette(long BackgroundPalette) { return E_NOTIMPL; }
+	STDMETHODIMP get_BackgroundPalette(long *pBackgroundPalette) { return E_NOTIMPL; }
+	STDMETHODIMP put_Visible(long Visible) { return E_NOTIMPL; }
+	STDMETHODIMP get_Visible(long *pVisible) { return E_NOTIMPL; }
+	STDMETHODIMP put_Left(long Left) { return E_NOTIMPL; }
+	STDMETHODIMP get_Left(long *pLeft) { return E_NOTIMPL; }
+	STDMETHODIMP put_Width(long Width) { return E_NOTIMPL; }
+	STDMETHODIMP get_Width(long *pWidth) { return E_NOTIMPL; }
+	STDMETHODIMP put_Top(long Top) { return E_NOTIMPL; }
+	STDMETHODIMP get_Top(long *pTop) { return E_NOTIMPL; }
+	STDMETHODIMP put_Height(long Height) { return E_NOTIMPL; }
+	STDMETHODIMP get_Height(long *pHeight) { return E_NOTIMPL; }
+	STDMETHODIMP put_Owner(OAHWND Owner);
+	STDMETHODIMP get_Owner(OAHWND *Owner);
+	STDMETHODIMP put_MessageDrain(OAHWND Drain) { return E_NOTIMPL; }
+	STDMETHODIMP get_MessageDrain(OAHWND *Drain) { return E_NOTIMPL; }
+	STDMETHODIMP get_BorderColor(long *Color) { return E_NOTIMPL; }
+	STDMETHODIMP put_BorderColor(long Color) { return E_NOTIMPL; }
+	STDMETHODIMP get_FullScreenMode(long *FullScreenMode) { return E_NOTIMPL; }
+	STDMETHODIMP put_FullScreenMode(long FullScreenMode) { return E_NOTIMPL; }
+	STDMETHODIMP SetWindowForeground(long Focus) { return E_NOTIMPL; }
+	STDMETHODIMP NotifyOwnerMessage(OAHWND hwnd, long uMsg, LONG_PTR wParam, LONG_PTR lParam) { return E_NOTIMPL; }
+	STDMETHODIMP SetWindowPosition(long Left, long Top, long Width, long Height) { return E_NOTIMPL; }
+	STDMETHODIMP GetWindowPosition(long *pLeft, long *pTop, long *pWidth, long *pHeight) { return E_NOTIMPL; }
+	STDMETHODIMP GetMinIdealImageSize(long *pWidth, long *pHeight) { return E_NOTIMPL; }
+	STDMETHODIMP GetMaxIdealImageSize(long *pWidth, long *pHeight) { return E_NOTIMPL; }
+	STDMETHODIMP GetRestorePosition(long *pLeft, long *pTop, long *pWidth, long *pHeight) { return E_NOTIMPL; }
+	STDMETHODIMP HideCursor(long HideCursor) { return E_NOTIMPL; }
+	STDMETHODIMP IsCursorHidden(long *CursorHidden) { return E_NOTIMPL; }
 
 protected:
 	HRESULT InitDirect3D9();

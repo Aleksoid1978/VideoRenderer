@@ -265,8 +265,10 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 	HRESULT hr;
 	if (riid == __uuidof(IMFGetService)) {
 		hr = GetInterface((IMFGetService*)this, ppv);
-	} else if (riid == __uuidof(IMFVideoDisplayControl)) {
-		hr = GetInterface((IMFVideoDisplayControl*)this, ppv);
+	} else if (riid == __uuidof(IBasicVideo)) {
+		hr = GetInterface((IBasicVideo*)this, ppv);
+	} else if (riid == __uuidof(IVideoWindow)) {
+		hr = GetInterface((IVideoWindow*)this, ppv);
 	} else {
 		hr = __super::NonDelegatingQueryInterface(riid, ppv);
 	}
@@ -289,30 +291,25 @@ STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPV
 			return pDXVA2CreateVideoService(m_pD3DDevEx, riid, ppvObject);
 		}
 		*/
-	} else if (guidService == MR_VIDEO_RENDER_SERVICE) {
-		if (riid == __uuidof(IMFVideoDisplayControl)) {
-			GetInterface((IMFVideoDisplayControl*)this, ppvObject);
-			return S_OK;
-		}
 	}
 
 	return E_NOINTERFACE;
 }
 
-// IMFVideoDisplayControl
-STDMETHODIMP CMpcVideoRenderer::SetVideoWindow(HWND hwndVideo)
+// IVideoWindow
+STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 {
-	if (m_hWnd != hwndVideo) {
-		m_hWnd = hwndVideo;
+	if (m_hWnd != (HWND)Owner) {
+		m_hWnd = (HWND)Owner;
 		return InitDirect3D9() ? S_OK : E_FAIL;
 	}
 	return S_OK;
 }
 
-STDMETHODIMP CMpcVideoRenderer::GetVideoWindow(HWND *phwndVideo)
+STDMETHODIMP CMpcVideoRenderer::get_Owner(OAHWND *Owner)
 {
-	CheckPointer(phwndVideo, E_POINTER);
-	*phwndVideo = m_hWnd;
+	CheckPointer(Owner, E_POINTER);
+	*Owner = (OAHWND)m_hWnd;
 	return S_OK;
 }
 
