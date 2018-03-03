@@ -542,12 +542,17 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(BYTE* data, const long size, IDirect3DSu
 
 	hr = m_pSrcSurface->UnlockRect();
 
-	return ResizeDXVAHD(m_pSrcSurface, pRenderTarget);
+	hr = ResizeDXVAHD(m_pSrcSurface, pRenderTarget);
 
 	return hr;
 }
 
 BOOL CMpcVideoRenderer::InitializeDXVA2VP(D3DSURFACE_DESC& desc)
+{
+	return InitializeDXVA2VP(desc.Width, desc.Height, desc.Format);
+}
+
+BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, const D3DFORMAT d3dformat)
 {
 	if (!m_hDxva2Lib) {
 		return FALSE;
@@ -567,12 +572,12 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(D3DSURFACE_DESC& desc)
 		return FALSE;
 	}
 
-	DLog(L"InitializeDXVA2VP: Input surface: %s, %u x %u", D3DFormatToString(desc.Format), desc.Width, desc.Height);
+	DLog(L"InitializeDXVA2VP: Input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
 
 	// Initialize the video descriptor.
 	DXVA2_VideoDesc videodesc = {};
-	videodesc.SampleWidth = desc.Width;
-	videodesc.SampleHeight = desc.Height;
+	videodesc.SampleWidth = width;
+	videodesc.SampleHeight = height;
 	videodesc.SampleFormat.VideoChromaSubsampling = DXVA2_VideoChromaSubsampling_Unknown;
 	videodesc.SampleFormat.NominalRange           = DXVA2_NominalRange_Unknown;
 	videodesc.SampleFormat.VideoTransferMatrix    = DXVA2_VideoTransferMatrix_Unknown;
@@ -580,7 +585,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(D3DSURFACE_DESC& desc)
 	videodesc.SampleFormat.VideoPrimaries         = DXVA2_VideoPrimaries_Unknown;
 	videodesc.SampleFormat.VideoTransferFunction  = DXVA2_VideoTransFunc_Unknown;
 	videodesc.SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
-	videodesc.Format = desc.Format;
+	videodesc.Format = d3dformat;
 	videodesc.InputSampleFreq.Numerator = 60;
 	videodesc.InputSampleFreq.Denominator = 1;
 	videodesc.OutputFrameFreq.Numerator = 60;
@@ -617,20 +622,19 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(D3DSURFACE_DESC& desc)
 	}
 
 	// Query video processor capabilities.
-	DXVA2_VideoProcessorCaps caps = {};
-	hr = m_pDXVA2_VPService->GetVideoProcessorCaps(VPDevGuid, &videodesc, D3DFMT_X8R8G8B8, &caps);
+	hr = m_pDXVA2_VPService->GetVideoProcessorCaps(VPDevGuid, &videodesc, D3DFMT_X8R8G8B8, &m_DXVA2VPcaps);
 	if (FAILED(hr)) {
 		DLog(L"GetVideoProcessorCaps failed with error 0x%x.", hr);
 		return FALSE;
 	}
 	// Check to see if the device is hardware device.
-	if (!(caps.DeviceCaps & DXVA2_VPDev_HardwareDevice)) {
+	if (!(m_DXVA2VPcaps.DeviceCaps & DXVA2_VPDev_HardwareDevice)) {
 		DLog(L"The DXVA2 device isn't a hardware device.");
 		return FALSE;
 	}
 	// Check to see if the device supports all the VP operations we want.
 	const UINT VIDEO_REQUIED_OP = DXVA2_VideoProcess_StretchX | DXVA2_VideoProcess_StretchY;
-	if ((caps.VideoProcessorOperations & VIDEO_REQUIED_OP) != VIDEO_REQUIED_OP) {
+	if ((m_DXVA2VPcaps.VideoProcessorOperations & VIDEO_REQUIED_OP) != VIDEO_REQUIED_OP) {
 		DLog(L"The DXVA2 device doesn't support the VP operations.");
 		return FALSE;
 	}
@@ -638,7 +642,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(D3DSURFACE_DESC& desc)
 	// Query ProcAmp ranges.
 	DXVA2_ValueRange range;
 	for (i = 0; i < ARRAYSIZE(m_DXVA2ProcAmpValues); i++) {
-		if (caps.ProcAmpControlCaps & (1 << i)) {
+		if (m_DXVA2VPcaps.ProcAmpControlCaps & (1 << i)) {
 			hr = m_pDXVA2_VPService->GetProcAmpRange(VPDevGuid, &videodesc, D3DFMT_X8R8G8B8, 1 << i, &range);
 			if (FAILED(hr)) {
 				DLog(L"GetProcAmpRange failed with error 0x%x.", hr);
@@ -744,6 +748,54 @@ HRESULT CMpcVideoRenderer::ResizeDXVA2(IDirect3DSurface9* pSurface, IDirect3DSur
 	return hr;
 }
 
+HRESULT CMpcVideoRenderer::ResizeDXVA2(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget)
+{
+	if (!m_pDXVA2_VP && !InitializeDXVA2VP(m_srcWidth, m_srcHeight, m_srcFormat)) {
+		return E_FAIL;
+	}
+
+	HRESULT hr = S_OK;
+
+	if (!m_pSrcSurface) {
+		hr = m_pDXVA2_VPService->CreateSurface(
+			m_srcWidth,
+			m_srcHeight,
+			0,
+			m_srcFormat,
+			m_DXVA2VPcaps.InputPool,
+			0,
+			DXVA2_VideoProcessorRenderTarget,
+			&m_pSrcSurface,
+			nullptr
+		);
+	}
+
+	D3DLOCKED_RECT lr;
+	hr = m_pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	if (m_srcPitch == lr.Pitch) {
+		memcpy(lr.pBits, data, size);
+	}
+	else if (m_srcPitch < lr.Pitch) {
+		BYTE* src = data;
+		BYTE* dst = (BYTE*)lr.pBits;
+		for (UINT y = 0; y < m_srcLines; ++y) {
+			memcpy(dst, src, m_srcPitch);
+			src += m_srcPitch;
+			dst += lr.Pitch;
+		}
+	}
+
+	hr = m_pSrcSurface->UnlockRect();
+
+	hr = ResizeDXVA2(m_pSrcSurface, pRenderTarget);
+
+	return hr;
+}
+
 HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 {
 	if (pmt->formattype != FORMAT_VideoInfo2) {
@@ -821,7 +873,11 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
-			ResizeDXVAHD(data, size, pBackBuffer);
+			if (m_VPType == VP_DXVAHD) {
+				ResizeDXVAHD(data, size, pBackBuffer);
+			} else {
+				ResizeDXVA2(data, size, pBackBuffer);
+			}
 		}
 	}
 

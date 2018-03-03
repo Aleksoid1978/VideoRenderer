@@ -80,6 +80,7 @@ private:
 
 	CComPtr<IDirectXVideoProcessorService> m_pDXVA2_VPService;
 	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
+	DXVA2_VideoProcessorCaps m_DXVA2VPcaps = {};
 	DXVA2_Fixed32 m_DXVA2ProcAmpValues[4] = {};
 
 	typedef HRESULT (__stdcall *PTR_DXVA2CreateDirect3DDeviceManager9)(UINT* pResetToken, IDirect3DDeviceManager9** ppDeviceManager);
@@ -191,7 +192,9 @@ protected:
 	HRESULT ResizeDXVAHD(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget);
 
 	BOOL InitializeDXVA2VP(D3DSURFACE_DESC& desc);
+	BOOL InitializeDXVA2VP(const UINT width, const UINT height, const D3DFORMAT d3dformat);
 	HRESULT ResizeDXVA2(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget);
+	HRESULT ResizeDXVA2(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget);
 
 public:
 	HRESULT CheckMediaType(const CMediaType *pmt) override;
