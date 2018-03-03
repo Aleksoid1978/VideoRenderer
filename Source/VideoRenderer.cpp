@@ -531,7 +531,18 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(BYTE* data, const long size, IDirect3DSu
 		return hr;
 	}
 
-	if (m_srcPitch == lr.Pitch) {
+	if (m_srcFormat == D3DFMT_X8R8G8B8) {
+		UINT linesize = m_srcWidth * 4;
+		BYTE* src = data + m_srcPitch * (m_srcHeight - 1);
+		BYTE* dst = (BYTE*)lr.pBits;
+
+		for (UINT y = 0; y < m_srcHeight; ++y) {
+			memcpy(dst, src, linesize);
+			src -= m_srcPitch;
+			dst += lr.Pitch;
+		}
+	}
+	else if (m_srcPitch == lr.Pitch) {
 		memcpy(lr.pBits, data, size);
 	}
 	else if (m_srcPitch < lr.Pitch) {
@@ -785,7 +796,18 @@ HRESULT CMpcVideoRenderer::ResizeDXVA2(BYTE* data, const long size, IDirect3DSur
 		return hr;
 	}
 
-	if (m_srcPitch == lr.Pitch) {
+	if (m_srcFormat == D3DFMT_X8R8G8B8) {
+		UINT linesize = m_srcWidth * 4;
+		BYTE* src = data + m_srcPitch * (m_srcHeight - 1);
+		BYTE* dst = (BYTE*)lr.pBits;
+
+		for (UINT y = 0; y < m_srcHeight; ++y) {
+			memcpy(dst, src, linesize);
+			src -= m_srcPitch;
+			dst += lr.Pitch;
+		}
+	}
+	else if (m_srcPitch == lr.Pitch) {
 		memcpy(lr.pBits, data, size);
 	}
 	else if (m_srcPitch < lr.Pitch) {
