@@ -564,12 +564,12 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(BYTE* data, const long size, IDirect3DSu
 			DXVAHD_SURFACE_TYPE_VIDEO_INPUT,
 			1,
 			&m_pSrcSurface,
-			NULL
+			nullptr
 		);
 	}
 
 	D3DLOCKED_RECT lr;
-	hr = m_pSrcSurface->LockRect(&lr, NULL, D3DLOCK_NOSYSLOCK);
+	hr = m_pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -672,10 +672,10 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 
 	hr = m_pD3DDevEx->EndScene();
 
-	RECT destRect = { 0, 0, m_DisplayMode.Width, m_DisplayMode.Height }; // TODO
-	const RECT rSrcPri(m_srcRect);
-	const RECT rDstPri(destRect);
-	hr = m_pD3DDevEx->PresentEx(&rSrcPri, &rDstPri, nullptr, nullptr, 0);
+	//RECT destRect = { 0, 0, m_DisplayMode.Width, m_DisplayMode.Height }; // TODO
+	//const RECT rSrcPri(m_srcRect);
+	//const RECT rDstPri(destRect);
+	hr = m_pD3DDevEx->PresentEx(nullptr, nullptr, nullptr, nullptr, 0);
 
 	return S_OK;
 }
