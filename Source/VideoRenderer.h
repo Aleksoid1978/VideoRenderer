@@ -21,6 +21,7 @@
 #pragma once
 
 #include "./BaseClasses/streams.h"
+#include <atltypes.h>
 #include <evr.h>
 #include <d3d9.h>
 #include <dxva2api.h>
@@ -50,6 +51,10 @@ private:
 	INT  m_srcPitch = 0;
 	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
 	CComPtr<IDirect3DSurface9> m_pSrcSurface;
+
+	CRect m_nativeVideoRect;
+	CRect m_videoRect;
+	CRect m_windowRect;
 
 	HWND m_hWnd = nullptr;
 	UINT m_CurrentAdapter = D3DADAPTER_DEFAULT;
@@ -116,7 +121,7 @@ public:
 	STDMETHODIMP SetSourcePosition(long Left, long Top, long Width, long Height) { return E_NOTIMPL; }
 	STDMETHODIMP GetSourcePosition(long *pLeft, long *pTop, long *pWidth, long *pHeight) { return E_NOTIMPL; }
 	STDMETHODIMP SetDefaultSourcePosition( void) { return E_NOTIMPL; }
-	STDMETHODIMP SetDestinationPosition(long Left, long Top, long Width, long Height) { return E_NOTIMPL; }
+	STDMETHODIMP SetDestinationPosition(long Left, long Top, long Width, long Height);
 	STDMETHODIMP GetDestinationPosition(long *pLeft, long *pTop, long *pWidth, long *pHeight) { return E_NOTIMPL; }
 	STDMETHODIMP SetDefaultDestinationPosition( void) { return E_NOTIMPL; }
 	STDMETHODIMP GetVideoSize(long *pWidth, long *pHeight);
@@ -158,7 +163,7 @@ public:
 	STDMETHODIMP put_FullScreenMode(long FullScreenMode) { return E_NOTIMPL; }
 	STDMETHODIMP SetWindowForeground(long Focus) { return E_NOTIMPL; }
 	STDMETHODIMP NotifyOwnerMessage(OAHWND hwnd, long uMsg, LONG_PTR wParam, LONG_PTR lParam) { return E_NOTIMPL; }
-	STDMETHODIMP SetWindowPosition(long Left, long Top, long Width, long Height) { return E_NOTIMPL; }
+	STDMETHODIMP SetWindowPosition(long Left, long Top, long Width, long Height);
 	STDMETHODIMP GetWindowPosition(long *pLeft, long *pTop, long *pWidth, long *pHeight) { return E_NOTIMPL; }
 	STDMETHODIMP GetMinIdealImageSize(long *pWidth, long *pHeight) { return E_NOTIMPL; }
 	STDMETHODIMP GetMaxIdealImageSize(long *pWidth, long *pHeight) { return E_NOTIMPL; }
