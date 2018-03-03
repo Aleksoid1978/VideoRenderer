@@ -42,6 +42,12 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	public IVideoWindow
 {
 private:
+	enum VIDEOPROC_TYPE {
+		VP_DXVA2,
+		VP_DXVAHD,
+	};
+	VIDEOPROC_TYPE m_VPType = VP_DXVAHD;
+
 	CMediaType m_mt;
 	RECT m_srcRect = {};
 	RECT m_trgRect = {};

@@ -567,6 +567,8 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(D3DSURFACE_DESC& desc)
 		return FALSE;
 	}
 
+	DLog(L"InitializeDXVA2VP: Input surface: %s, %u x %u", D3DFormatToString(desc.Format), desc.Width, desc.Height);
+
 	// Initialize the video descriptor.
 	DXVA2_VideoDesc videodesc = {};
 	videodesc.SampleWidth = desc.Width;
@@ -594,6 +596,15 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(D3DSURFACE_DESC& desc)
 		DLog(L"GetVideoProcessorRenderTargets failed with error 0x%x.", hr);
 		return FALSE;
 	}
+#if _DEBUG
+	{
+		CStringW dbgstr = L"DXVA2-VP output formats:";
+		for (UINT j = 0; j < count; j++) {
+			dbgstr.AppendFormat(L"\n%s", D3DFormatToString(formats[j]));
+		}
+		DLog(dbgstr);
+	}
+#endif
 	for (i = 0; i < count; i++) {
 		if (formats[i] == D3DFMT_X8R8G8B8) {
 			break;
@@ -601,25 +612,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(D3DSURFACE_DESC& desc)
 	}
 	CoTaskMemFree(formats);
 	if (i >= count) {
-		DLog(L"GetVideoProcessorRenderTargets doesn't support that format.");
-		return FALSE;
-	}
-
-	// Query the supported substream format.
-	formats = NULL;
-	hr = m_pDXVA2_VPService->GetVideoProcessorSubStreamFormats(VPDevGuid, &videodesc, D3DFMT_X8R8G8B8, &count, &formats);
-	if (FAILED(hr)) {
-		DLog(L"GetVideoProcessorSubStreamFormats failed with error 0x%x.\n", hr);
-		return FALSE;
-	}
-	for (i = 0; i < count; i++) {
-		if (formats[i] == desc.Format) {
-			break;
-		}
-	}
-	CoTaskMemFree(formats);
-	if (i >= count) {
-		DLog(L"GetVideoProcessorSubStreamFormats doesn't support that format.\n");
+		DLog(L"GetVideoProcessorRenderTargets doesn't support D3DFMT_X8R8G8B8.");
 		return FALSE;
 	}
 
@@ -664,7 +657,91 @@ HRESULT CMpcVideoRenderer::ResizeDXVA2(IDirect3DSurface9* pSurface, IDirect3DSur
 		return E_FAIL;
 	}
 
-	// TODO
+	CRect rSrcVid(CPoint(0, 0), m_nativeVideoRect.Size());
+	CRect rDstVid(m_videoRect);
+
+	DXVA2_VideoProcessBltParams blt = {};
+	DXVA2_VideoSample samples[1] = {};
+
+	static DWORD frame = 0;
+	REFERENCE_TIME start_100ns = frame * 170000i64;
+	REFERENCE_TIME end_100ns = start_100ns + 170000i64;
+
+	// Initialize VPBlt parameters.
+	blt.TargetFrame = start_100ns;
+	blt.TargetRect = rDstVid;
+	// DXVA2_VideoProcess_Constriction
+	blt.ConstrictionSize.cx = rDstVid.Width();
+	blt.ConstrictionSize.cy = rDstVid.Height();
+	blt.BackgroundColor = { 128 * 0x100, 128 * 0x100, 16 * 0x100, 0xFFFF }; // black
+	// DXVA2_VideoProcess_YUV2RGBExtended (not used)
+	blt.DestFormat.VideoChromaSubsampling = DXVA2_VideoChromaSubsampling_Unknown;
+	blt.DestFormat.NominalRange           = DXVA2_NominalRange_Unknown;
+	blt.DestFormat.VideoTransferMatrix    = DXVA2_VideoTransferMatrix_Unknown;
+	blt.DestFormat.VideoLighting          = DXVA2_VideoLighting_Unknown;
+	blt.DestFormat.VideoPrimaries         = DXVA2_VideoPrimaries_Unknown;
+	blt.DestFormat.VideoTransferFunction  = DXVA2_VideoTransFunc_Unknown;
+	blt.DestFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
+
+	// DXVA2_ProcAmp_Brightness/Contrast/Hue/Saturation
+	//blt.ProcAmpValues.Brightness = m_ProcAmpValues[0];
+	//blt.ProcAmpValues.Contrast = m_ProcAmpValues[1];
+	//blt.ProcAmpValues.Hue = m_ProcAmpValues[2];
+	//blt.ProcAmpValues.Saturation = m_ProcAmpValues[3];
+
+	// DXVA2_VideoProcess_AlphaBlend
+	blt.Alpha = DXVA2_Fixed32OpaqueAlpha();
+
+	// DXVA2_VideoProcess_NoiseFilter
+	//blt.NoiseFilterLuma.Level = m_NFilterValues[0];
+	//blt.NoiseFilterLuma.Threshold = m_NFilterValues[1];
+	//blt.NoiseFilterLuma.Radius = m_NFilterValues[2];
+	//blt.NoiseFilterChroma.Level = m_NFilterValues[3];
+	//blt.NoiseFilterChroma.Threshold = m_NFilterValues[4];
+	//blt.NoiseFilterChroma.Radius = m_NFilterValues[5];
+
+	// DXVA2_VideoProcess_DetailFilter
+	//blt.DetailFilterLuma.Level = m_DFilterValues[0];
+	//blt.DetailFilterLuma.Threshold = m_DFilterValues[1];
+	//blt.DetailFilterLuma.Radius = m_DFilterValues[2];
+	//blt.DetailFilterChroma.Level = m_DFilterValues[3];
+	//blt.DetailFilterChroma.Threshold = m_DFilterValues[4];
+	//blt.DetailFilterChroma.Radius = m_DFilterValues[5];
+
+	// Initialize main stream video sample.
+	samples[0].Start = start_100ns;
+	samples[0].End = end_100ns;
+	// DXVA2_VideoProcess_YUV2RGBExtended (not used)
+	samples[0].SampleFormat.VideoChromaSubsampling = DXVA2_VideoChromaSubsampling_Unknown;
+	samples[0].SampleFormat.NominalRange           = DXVA2_NominalRange_Unknown;
+	samples[0].SampleFormat.VideoTransferMatrix    = DXVA2_VideoTransferMatrix_Unknown;
+	samples[0].SampleFormat.VideoLighting          = DXVA2_VideoLighting_Unknown;
+	samples[0].SampleFormat.VideoPrimaries         = DXVA2_VideoPrimaries_Unknown;
+	samples[0].SampleFormat.VideoTransferFunction  = DXVA2_VideoTransFunc_Unknown;
+
+	samples[0].SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
+	samples[0].SrcSurface = pSurface;
+	// DXVA2_VideoProcess_SubRects
+	samples[0].SrcRect = rSrcVid;
+	// DXVA2_VideoProcess_StretchX, Y
+	samples[0].DstRect = rDstVid;
+	// DXVA2_VideoProcess_PlanarAlpha
+	samples[0].PlanarAlpha = DXVA2_Fixed32OpaqueAlpha();
+
+	// clear pRenderTarget, need for Nvidia graphics cards and Intel mobile graphics
+	//CRect clientRect;
+	//if (rDstRect.left > 0 || rDstRect.top > 0 ||
+	//	GetClientRect(m_hWnd, clientRect) && (rDstRect.right < clientRect.Width() || rDstRect.bottom < clientRect.Height())) {
+	//	//m_pD3DDevEx->Clear(0, nullptr, D3DCLEAR_TARGET, 0, 1.0f, 0); //  not worked
+	//	m_pD3DDevEx->ColorFill(pRenderTarget, nullptr, 0);
+	//}
+
+	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &blt, samples, 1, nullptr);
+	if (FAILED(hr)) {
+		DLog(L"TextureResizeDXVA2: VideoProcessBlt() failed with error 0x%x.", hr);
+	}
+
+	frame++;
 
 	return hr;
 }
@@ -734,7 +811,12 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	if (CComQIPtr<IMFGetService> pService = pSample) {
 		CComPtr<IDirect3DSurface9> pSurface;
 		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
-			ResizeDXVAHD(pSurface, pBackBuffer);
+
+			if (m_VPType == VP_DXVAHD) {
+				ResizeDXVAHD(pSurface, pBackBuffer);
+			} else {
+				ResizeDXVA2(pSurface, pBackBuffer);
+			}
 		}
 	}
 	else if (m_mt.formattype == FORMAT_VideoInfo2) {
