@@ -229,6 +229,12 @@ STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPV
 }
 
 // IBasicVideo
+STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long Width, long Height)
+{
+	m_videoRect.SetRect(Left, Top, Left + Width, Top + Height);
+	return S_OK;
+}
+
 STDMETHODIMP CMpcVideoRenderer::GetVideoSize(long *pWidth, long *pHeight)
 {
 	CheckPointer(pWidth, E_POINTER);
@@ -246,6 +252,12 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 		m_hWnd = (HWND)Owner;
 		return InitDirect3D9() ? S_OK : E_FAIL;
 	}
+	return S_OK;
+}
+
+STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Width, long Height)
+{
+	m_windowRect.SetRect(Left, Top, Left + Width, Top + Height);
 	return S_OK;
 }
 
@@ -471,10 +483,11 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(IDirect3DSurface9* pSurface, IDirect3DSu
 	stream_data.InputFrameOrField = frame;
 	stream_data.pInputSurface = pSurface;
 
-	RECT destRect = { 0, 0, m_DisplayMode.Width, m_DisplayMode.Height }; // TODO
+	CRect rSrcVid(CPoint(0, 0), m_nativeVideoRect.Size());
+	CRect rDstVid(m_videoRect);
 
-	hr = DXVAHD_SetSourceRect(m_pDXVAHD_VP, 0, TRUE, m_srcRect);
-	hr = DXVAHD_SetDestinationRect(m_pDXVAHD_VP, 0, TRUE, destRect);
+	hr = DXVAHD_SetSourceRect(m_pDXVAHD_VP, 0, TRUE, rSrcVid);
+	hr = DXVAHD_SetDestinationRect(m_pDXVAHD_VP, 0, TRUE, rDstVid);
 
 	// Perform the blit.
 	hr = m_pDXVAHD_VP->VideoProcessBltHD(pRenderTarget, frame, 1, &stream_data);
@@ -680,7 +693,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 		if (m_mt.formattype == FORMAT_VideoInfo2) {
 			VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)m_mt.pbFormat;
-			m_srcRect = vih2->rcSource;
+			m_nativeVideoRect = m_srcRect = vih2->rcSource;
 			m_trgRect = vih2->rcTarget;
 			m_srcWidth = vih2->bmiHeader.biWidth;
 			m_srcHeight = labs(vih2->bmiHeader.biHeight);
@@ -734,10 +747,10 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 
 	hr = m_pD3DDevEx->EndScene();
 
-	//RECT destRect = { 0, 0, m_DisplayMode.Width, m_DisplayMode.Height }; // TODO
-	//const RECT rSrcPri(m_srcRect);
-	//const RECT rDstPri(destRect);
-	hr = m_pD3DDevEx->PresentEx(nullptr, nullptr, nullptr, nullptr, 0);
+	CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
+	CRect rDstPri(m_windowRect);
+
+	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
 
 	return S_OK;
 }
