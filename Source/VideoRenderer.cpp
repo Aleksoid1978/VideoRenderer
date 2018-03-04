@@ -543,12 +543,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 	DXVA2_VideoDesc videodesc = {};
 	videodesc.SampleWidth = width;
 	videodesc.SampleHeight = height;
-	videodesc.SampleFormat.VideoChromaSubsampling = m_srcExFmt.VideoChromaSubsampling;
-	videodesc.SampleFormat.NominalRange           = m_srcExFmt.NominalRange;
-	videodesc.SampleFormat.VideoTransferMatrix    = m_srcExFmt.VideoTransferMatrix;
-	videodesc.SampleFormat.VideoLighting          = m_srcExFmt.VideoLighting;
-	videodesc.SampleFormat.VideoPrimaries         = m_srcExFmt.VideoPrimaries;
-	videodesc.SampleFormat.VideoTransferFunction  = m_srcExFmt.VideoTransferFunction;
+	//videodesc.SampleFormat.value = 0; // do not need to fill it here
 	videodesc.SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
 	if (d3dformat == D3DFMT_X8R8G8B8) {
 		videodesc.Format = D3DFMT_YUY2; // hack
@@ -661,13 +656,8 @@ HRESULT CMpcVideoRenderer::ResizeDXVA2(IDirect3DSurface9* pSurface, IDirect3DSur
 	blt.ConstrictionSize.cx = rDstVid.Width();
 	blt.ConstrictionSize.cy = rDstVid.Height();
 	blt.BackgroundColor = { 128 * 0x100, 128 * 0x100, 16 * 0x100, 0xFFFF }; // black
-	// DXVA2_VideoProcess_YUV2RGBExtended (not used)
-	blt.DestFormat.VideoChromaSubsampling = DXVA2_VideoChromaSubsampling_Unknown;
-	blt.DestFormat.NominalRange           = DXVA2_NominalRange_Unknown;
-	blt.DestFormat.VideoTransferMatrix    = DXVA2_VideoTransferMatrix_Unknown;
-	blt.DestFormat.VideoLighting          = DXVA2_VideoLighting_Unknown;
-	blt.DestFormat.VideoPrimaries         = DXVA2_VideoPrimaries_Unknown;
-	blt.DestFormat.VideoTransferFunction  = DXVA2_VideoTransFunc_Unknown;
+	// DXVA2_VideoProcess_YUV2RGBExtended
+	//blt.DestFormat.value = 0; // output to RGB
 	blt.DestFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
 
 	// DXVA2_ProcAmp_Brightness/Contrast/Hue/Saturation
@@ -682,13 +672,13 @@ HRESULT CMpcVideoRenderer::ResizeDXVA2(IDirect3DSurface9* pSurface, IDirect3DSur
 	// Initialize main stream video sample.
 	samples[0].Start = start_100ns;
 	samples[0].End = end_100ns;
-	// DXVA2_VideoProcess_YUV2RGBExtended (not used)
-	samples[0].SampleFormat.VideoChromaSubsampling = DXVA2_VideoChromaSubsampling_Unknown;
-	samples[0].SampleFormat.NominalRange           = DXVA2_NominalRange_Unknown;
-	samples[0].SampleFormat.VideoTransferMatrix    = DXVA2_VideoTransferMatrix_Unknown;
-	samples[0].SampleFormat.VideoLighting          = DXVA2_VideoLighting_Unknown;
-	samples[0].SampleFormat.VideoPrimaries         = DXVA2_VideoPrimaries_Unknown;
-	samples[0].SampleFormat.VideoTransferFunction  = DXVA2_VideoTransFunc_Unknown;
+	// DXVA2_VideoProcess_YUV2RGBExtended
+	samples[0].SampleFormat.VideoChromaSubsampling = m_srcExFmt.VideoChromaSubsampling;
+	samples[0].SampleFormat.NominalRange           = m_srcExFmt.NominalRange;
+	samples[0].SampleFormat.VideoTransferMatrix    = m_srcExFmt.VideoTransferMatrix;
+	samples[0].SampleFormat.VideoLighting          = m_srcExFmt.VideoLighting;
+	samples[0].SampleFormat.VideoPrimaries         = m_srcExFmt.VideoPrimaries;
+	samples[0].SampleFormat.VideoTransferFunction  = m_srcExFmt.VideoTransferFunction;
 
 	samples[0].SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
 	samples[0].SrcSurface = pSurface;
