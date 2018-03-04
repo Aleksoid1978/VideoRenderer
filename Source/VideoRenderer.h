@@ -26,6 +26,7 @@
 #include <d3d9.h>
 #include <dxva2api.h>
 #include <dxvahd.h>
+#include <mutex>
 
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_YV12},
@@ -93,6 +94,8 @@ private:
 	CComPtr<IDirect3DDeviceManager9>      m_pD3DDeviceManager;
 	UINT                                  m_nResetTocken = 0;
 	HANDLE                                m_hDevice = nullptr;
+
+	std::mutex m_mutex;
 
 public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);

@@ -760,6 +760,8 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 		m_mt = *pmt;
 
 		if (m_mt.formattype == FORMAT_VideoInfo2) {
+			std::unique_lock<std::mutex> lock(m_mutex);
+
 			VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)m_mt.pbFormat;
 			m_nativeVideoRect = m_srcRect = vih2->rcSource;
 			m_trgRect = vih2->rcTarget;
@@ -785,8 +787,13 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			}
 			m_srcPitch = vih2->bmiHeader.biSizeImage / m_srcLines;
 
+			m_pSrcSurface.Release();
+
 			m_pDXVAHD_VP.Release();
 			m_pDXVAHD_Device.Release();
+
+			m_pDXVA2_VP.Release();
+			m_pDXVA2_VPService.Release();
 		}
 	}
 
@@ -795,6 +802,8 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 {
+	std::unique_lock<std::mutex> lock(m_mutex);
+
 	HRESULT hr = m_pD3DDevEx->BeginScene();
 
 	CComPtr<IDirect3DSurface9> pBackBuffer;
