@@ -812,6 +812,8 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			m_trgRect = vih2->rcTarget;
 			m_srcWidth = vih2->bmiHeader.biWidth;
 			m_srcHeight = labs(vih2->bmiHeader.biHeight);
+			m_srcAspectRatioX = vih2->dwPictAspectRatioX;
+			m_srcAspectRatioY = vih2->dwPictAspectRatioY;
 			m_srcExFmt.value = 0;
 
 			if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
@@ -897,6 +899,9 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 	else if (riid == __uuidof(IBasicVideo)) {
 		hr = GetInterface((IBasicVideo*)this, ppv);
 	}
+	else if (riid == __uuidof(IBasicVideo2)) {
+		hr = GetInterface((IBasicVideo2*)this, ppv);
+	}
 	else if (riid == __uuidof(IVideoWindow)) {
 		hr = GetInterface((IVideoWindow*)this, ppv);
 	}
@@ -941,6 +946,18 @@ STDMETHODIMP CMpcVideoRenderer::GetVideoSize(long *pWidth, long *pHeight)
 
 	*pWidth = m_srcWidth;
 	*pHeight = m_srcHeight;
+	return S_OK;
+}
+
+// IBasicVideo2
+STDMETHODIMP CMpcVideoRenderer::GetPreferredAspectRatio(long *plAspectX, long *plAspectY)
+{
+	CheckPointer(plAspectX, E_POINTER);
+	CheckPointer(plAspectY, E_POINTER);
+
+	*plAspectX = m_srcAspectRatioX;
+	*plAspectY = m_srcAspectRatioY;
+
 	return S_OK;
 }
 

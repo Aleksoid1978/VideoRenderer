@@ -40,7 +40,7 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	CMpcVideoRenderer : public CBaseRenderer,
 	public IMFGetService,
-	public IBasicVideo,
+	public IBasicVideo2,
 	public IVideoWindow
 {
 private:
@@ -54,6 +54,8 @@ private:
 	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
 	UINT m_srcWidth = 0;
 	UINT m_srcHeight = 0;
+	DWORD m_srcAspectRatioX = 0;
+	DWORD m_srcAspectRatioY = 0;
 	DXVA2_ExtendedFormat m_srcExFmt = {};
 	RECT m_srcRect = {};
 	RECT m_trgRect = {};
@@ -167,6 +169,9 @@ public:
 	STDMETHODIMP GetCurrentImage(long *pBufferSize, long *pDIBImage) { return E_NOTIMPL; }
 	STDMETHODIMP IsUsingDefaultSource(void) { return E_NOTIMPL; }
 	STDMETHODIMP IsUsingDefaultDestination(void) { return E_NOTIMPL; }
+
+	// IBasicVideo2
+	STDMETHODIMP GetPreferredAspectRatio(long *plAspectX, long *plAspectY);
 
 	// IVideoWindow
 	STDMETHODIMP put_Caption(BSTR strCaption) { return E_NOTIMPL; }
