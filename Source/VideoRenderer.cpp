@@ -286,7 +286,7 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(const UINT width, const UINT height, 
 	}
 
 	m_pDXVAHD_VP.Release();
-	
+
 	HRESULT hr = S_OK;
 	if (!m_pDXVAHD_Device) {
 		HRESULT(WINAPI *pDXVAHD_CreateDevice)(IDirect3DDevice9Ex *pD3DDevice, const DXVAHD_CONTENT_DESC *pContentDesc, DXVAHD_DEVICE_USAGE Usage, PDXVAHDSW_Plugin pPlugin, IDXVAHD_Device **ppDevice);
@@ -391,6 +391,44 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(const UINT width, const UINT height, 
 		DLog(L"CMpcVideoRenderer::InitializeDXVAHDVP() : DXVAHD_SetFrameFormat() failed with error 0x%08x", hr);
 		return FALSE;
 	}
+
+#define DXVAHD_Range_0_255       0
+#define DXVAHD_Range_16_235      1
+#define DXVAHD_YCbCrMatrix_BT601 0
+#define DXVAHD_YCbCrMatrix_BT709 1
+
+	DXVAHD_STREAM_STATE_INPUT_COLOR_SPACE_DATA InputColorSpaceData = {}; // Type = 0 -Video, YCbCr_xvYCC = 0 - Conventional YCbCr
+	if (m_srcFormat == D3DFMT_X8R8G8B8) {
+		InputColorSpaceData.RGB_Range = DXVAHD_Range_0_255;
+	}
+	else if (m_srcExFmt.value) {
+		if (m_srcExFmt.NominalRange == DXVA2_NominalRange_0_255) {
+			InputColorSpaceData.RGB_Range = DXVAHD_Range_0_255;
+		} else { // Unknown, 16_235, 48_208
+			InputColorSpaceData.RGB_Range = DXVAHD_Range_16_235;
+		}
+
+		if (m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT709) {
+			InputColorSpaceData.YCbCr_Matrix = 1; // ITU-R BT.709
+		} else if (m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601) {
+			InputColorSpaceData.YCbCr_Matrix = DXVAHD_YCbCrMatrix_BT601;
+		} else { // Unknown, SMPTE240M
+			if (m_srcWidth <= 1024 && m_srcHeight <= 576) { // SD
+				InputColorSpaceData.YCbCr_Matrix = DXVAHD_YCbCrMatrix_BT601;
+			} else { // HD
+				InputColorSpaceData.YCbCr_Matrix = DXVAHD_YCbCrMatrix_BT709;
+			}
+		}
+	}
+	else {
+		InputColorSpaceData.RGB_Range = 1; // Limited range (16-235)
+		if (m_srcWidth <= 1024 && m_srcHeight <= 576) { // SD
+			InputColorSpaceData.YCbCr_Matrix = DXVAHD_YCbCrMatrix_BT601;
+		} else { // HD
+			InputColorSpaceData.YCbCr_Matrix = DXVAHD_YCbCrMatrix_BT709;
+		}
+	}
+	hr = m_pDXVAHD_VP->SetVideoProcessStreamState(0, DXVAHD_STREAM_STATE_INPUT_COLOR_SPACE, sizeof(InputColorSpaceData), &InputColorSpaceData);
 
 	return TRUE;
 }
