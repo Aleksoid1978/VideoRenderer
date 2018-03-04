@@ -212,6 +212,12 @@ HRESULT CMpcVideoRenderer::InitDirect3D9()
 {
 	DLog(L"CMpcVideoRenderer::InitDirect3D9()");
 
+	m_pSrcSurface.Release();
+	m_pDXVAHD_VP.Release();
+	m_pDXVAHD_Device.Release();
+	m_pDXVA2_VP.Release();
+	m_pDXVA2_VPService.Release();
+
 	const UINT currentAdapter = GetAdapter(m_hWnd, m_pD3DEx);
 	bool bTryToReset = (currentAdapter == m_CurrentAdapter) && m_pD3DDevEx;
 	if (!bTryToReset) {
@@ -280,33 +286,33 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(const UINT width, const UINT height, 
 	}
 
 	m_pDXVAHD_VP.Release();
-	m_pDXVAHD_Device.Release();
-
-	HRESULT(WINAPI *pDXVAHD_CreateDevice)(IDirect3DDevice9Ex *pD3DDevice, const DXVAHD_CONTENT_DESC *pContentDesc, DXVAHD_DEVICE_USAGE Usage, PDXVAHDSW_Plugin pPlugin, IDXVAHD_Device **ppDevice);
-	(FARPROC &)pDXVAHD_CreateDevice = GetProcAddress(m_hDxva2Lib, "DXVAHD_CreateDevice");
-	if (!pDXVAHD_CreateDevice) {
-		DLog("CMpcVideoRenderer::InitializeDXVAHDVP() : DXVAHD_CreateDevice() not found");
-		return FALSE;
-	}
-
+	
 	HRESULT hr = S_OK;
+	if (!m_pDXVAHD_Device) {
+		HRESULT(WINAPI *pDXVAHD_CreateDevice)(IDirect3DDevice9Ex *pD3DDevice, const DXVAHD_CONTENT_DESC *pContentDesc, DXVAHD_DEVICE_USAGE Usage, PDXVAHDSW_Plugin pPlugin, IDXVAHD_Device **ppDevice);
+		(FARPROC &)pDXVAHD_CreateDevice = GetProcAddress(m_hDxva2Lib, "DXVAHD_CreateDevice");
+		if (!pDXVAHD_CreateDevice) {
+			DLog("CMpcVideoRenderer::InitializeDXVAHDVP() : DXVAHD_CreateDevice() not found");
+			return FALSE;
+		}
 
-	DXVAHD_CONTENT_DESC desc;
-	desc.InputFrameFormat = DXVAHD_FRAME_FORMAT_PROGRESSIVE;
-	desc.InputFrameRate.Numerator = 60;
-	desc.InputFrameRate.Denominator = 1;
-	desc.InputWidth = width;
-	desc.InputHeight = height;
-	desc.OutputFrameRate.Numerator = 60;
-	desc.OutputFrameRate.Denominator = 1;
-	desc.OutputWidth = m_DisplayMode.Width;
-	desc.OutputHeight = m_DisplayMode.Height;
+		DXVAHD_CONTENT_DESC desc;
+		desc.InputFrameFormat = DXVAHD_FRAME_FORMAT_PROGRESSIVE;
+		desc.InputFrameRate.Numerator = 60;
+		desc.InputFrameRate.Denominator = 1;
+		desc.InputWidth = width;
+		desc.InputHeight = height;
+		desc.OutputFrameRate.Numerator = 60;
+		desc.OutputFrameRate.Denominator = 1;
+		desc.OutputWidth = m_DisplayMode.Width;
+		desc.OutputHeight = m_DisplayMode.Height;
 
-	// Create the DXVA-HD device.
-	hr = pDXVAHD_CreateDevice(m_pD3DDevEx, &desc, DXVAHD_DEVICE_USAGE_PLAYBACK_NORMAL, nullptr, &m_pDXVAHD_Device);
-	if (FAILED(hr)) {
-		DLog(L"CMpcVideoRenderer::InitializeDXVAHDVP() : DXVAHD_CreateDevice() failed with error 0x%08x", hr);
-		return FALSE;
+		// Create the DXVA-HD device.
+		hr = pDXVAHD_CreateDevice(m_pD3DDevEx, &desc, DXVAHD_DEVICE_USAGE_PLAYBACK_NORMAL, nullptr, &m_pDXVAHD_Device);
+		if (FAILED(hr)) {
+			DLog(L"CMpcVideoRenderer::InitializeDXVAHDVP() : DXVAHD_CreateDevice() failed with error 0x%08x", hr);
+			return FALSE;
+		}
 	}
 
 	// Get the DXVA-HD device caps.
@@ -427,7 +433,7 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(IDirect3DSurface9* pSurface, IDirect3DSu
 
 HRESULT CMpcVideoRenderer::ResizeDXVAHD(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget)
 {
-	if (!m_pDXVAHD_Device && !InitializeDXVAHDVP(m_srcWidth, m_srcHeight, m_srcFormat)) {
+	if (!m_pDXVAHD_VP && !InitializeDXVAHDVP(m_srcWidth, m_srcHeight, m_srcFormat)) {
 		return E_FAIL;
 	}
 
@@ -475,21 +481,22 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 	}
 
 	m_pDXVA2_VP.Release();
-	m_pDXVA2_VPService.Release();
-
-	HRESULT(WINAPI *pDXVA2CreateVideoService)(IDirect3DDevice9* pDD, REFIID riid, void** ppService);
-	(FARPROC &)pDXVA2CreateVideoService = GetProcAddress(m_hDxva2Lib, "DXVA2CreateVideoService");
-	if (!pDXVA2CreateVideoService) {
-		DLog("CMpcVideoRenderer::InitializeDXVA2VP() : DXVA2CreateVideoService() not found");
-		return FALSE;
-	}
 
 	HRESULT hr = S_OK;
-	// Create DXVA2 Video Processor Service.
-	hr = pDXVA2CreateVideoService(m_pD3DDevEx, IID_IDirectXVideoProcessorService, (VOID**)&m_pDXVA2_VPService);
-	if (FAILED(hr)) {
-		DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : DXVA2CreateVideoService() failed with error 0x%08x", hr);
-		return FALSE;
+	if (!m_pDXVA2_VPService) {
+		HRESULT(WINAPI *pDXVA2CreateVideoService)(IDirect3DDevice9* pDD, REFIID riid, void** ppService);
+		(FARPROC &)pDXVA2CreateVideoService = GetProcAddress(m_hDxva2Lib, "DXVA2CreateVideoService");
+		if (!pDXVA2CreateVideoService) {
+			DLog("CMpcVideoRenderer::InitializeDXVA2VP() : DXVA2CreateVideoService() not found");
+			return FALSE;
+		}
+
+		// Create DXVA2 Video Processor Service.
+		hr = pDXVA2CreateVideoService(m_pD3DDevEx, IID_IDirectXVideoProcessorService, (VOID**)&m_pDXVA2_VPService);
+		if (FAILED(hr)) {
+			DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : DXVA2CreateVideoService() failed with error 0x%08x", hr);
+			return FALSE;
+		}
 	}
 
 	DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : Input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
@@ -788,12 +795,8 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			m_srcPitch = vih2->bmiHeader.biSizeImage / m_srcLines;
 
 			m_pSrcSurface.Release();
-
 			m_pDXVAHD_VP.Release();
-			m_pDXVAHD_Device.Release();
-
 			m_pDXVA2_VP.Release();
-			m_pDXVA2_VPService.Release();
 		}
 	}
 
