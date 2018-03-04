@@ -769,6 +769,26 @@ void CMpcVideoRenderer::CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, long 
 	else if (m_srcPitch == dst_pitch) {
 		memcpy(dst, src, src_size);
 	}
+	else if (m_srcFormat == D3DFMT_YV12) {
+		for (UINT y = 0; y < m_srcHeight; ++y) {
+			memcpy(dst, src, m_srcWidth);
+			src += m_srcPitch;
+			dst += dst_pitch;
+		}
+
+		UINT chromaline = m_srcWidth / 2;
+		UINT chromaheight = m_srcHeight / 2;
+		UINT chromapitch = m_srcPitch / 2;
+		dst_pitch /= 2;
+		for (UINT y = 0; y < chromaheight; ++y) {
+			memcpy(dst, src, chromaline);
+			src += chromapitch;
+			dst += dst_pitch;
+			memcpy(dst, src, chromaline);
+			src += chromapitch;
+			dst += dst_pitch;
+		}
+	}
 	else if (m_srcPitch < dst_pitch) {
 		for (UINT y = 0; y < m_srcLines; ++y) {
 			memcpy(dst, src, m_srcPitch);

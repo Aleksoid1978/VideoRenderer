@@ -30,6 +30,10 @@
                   (((DWORD)(ch4) & 0xFF000000) >> 24))
 #endif
 
+#ifndef D3DFMT_YV12
+#define D3DFMT_YV12 FCC('YV12')
+#endif
+
 #if _DEBUG
 #define DLog(...) DbgLogInfo(LOG_TRACE, 3, __VA_ARGS__)
 #define DLogIf(f,...) {if (f) DbgLogInfo(LOG_TRACE, 3, __VA_ARGS__);}
