@@ -436,6 +436,7 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(const UINT width, const UINT height, 
 HRESULT CMpcVideoRenderer::ResizeDXVAHD(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget)
 {
 	HRESULT hr = S_OK;
+
 	D3DSURFACE_DESC desc;
 	if (S_OK != pSurface->GetDesc(&desc)) {
 		return hr;
@@ -465,43 +466,6 @@ HRESULT CMpcVideoRenderer::ResizeDXVAHD(IDirect3DSurface9* pSurface, IDirect3DSu
 		DLog(L"CMpcVideoRenderer::ResizeDXVAHD() : VideoProcessBltHD() failed with error 0x%08x", hr);
 	}
 	frame++;
-
-	return hr;
-}
-
-HRESULT CMpcVideoRenderer::ResizeDXVAHD(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget)
-{
-	if (!m_pDXVAHD_VP && !InitializeDXVAHDVP(m_srcWidth, m_srcHeight, m_srcFormat)) {
-		return E_FAIL;
-	}
-
-	HRESULT hr = S_OK;
-
-	if (!m_pSrcSurface) {
-		hr = m_pDXVAHD_Device->CreateVideoSurface(
-			m_srcWidth,
-			m_srcHeight,
-			m_srcFormat,
-			m_DXVAHDDevCaps.InputPool,
-			0,
-			DXVAHD_SURFACE_TYPE_VIDEO_INPUT,
-			1,
-			&m_pSrcSurface,
-			nullptr
-		);
-	}
-
-	D3DLOCKED_RECT lr;
-	hr = m_pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	CopyFrameData((BYTE*)lr.pBits, lr.Pitch, data, size);
-
-	hr = m_pSrcSurface->UnlockRect();
-
-	hr = ResizeDXVAHD(m_pSrcSurface, pRenderTarget);
 
 	return hr;
 }
@@ -630,9 +594,10 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 HRESULT CMpcVideoRenderer::ResizeDXVA2(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget)
 {
 	HRESULT hr = S_OK;
+
 	D3DSURFACE_DESC desc;
 	if (S_OK != pSurface->GetDesc(&desc)) {
-		return hr;
+		return E_FAIL;
 	};
 
 	if (!m_pDXVA2_VP && !InitializeDXVA2VP(desc)) {
@@ -707,44 +672,135 @@ HRESULT CMpcVideoRenderer::ResizeDXVA2(IDirect3DSurface9* pSurface, IDirect3DSur
 	return hr;
 }
 
-HRESULT CMpcVideoRenderer::ResizeDXVA2(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget)
+HRESULT CMpcVideoRenderer::CopySample(IMediaSample* pSample)
 {
-	if (!m_pDXVA2_VP && !InitializeDXVA2VP(m_srcWidth, m_srcHeight, m_srcFormat)) {
-		return E_FAIL;
-	}
+	const auto InitVP = [&](const UINT Width, const UINT Height, const D3DFORMAT Format) {
+		if (m_VPType == VP_DXVAHD) {
+			if (!m_pDXVAHD_VP && !InitializeDXVAHDVP(Width, Height, Format)) {
+				return E_FAIL;
+			}
+		} else {
+			if (!m_pDXVA2_VP && !InitializeDXVA2VP(Width, Height, Format)) {
+				return E_FAIL;
+			}
+		}
 
-	HRESULT hr = S_OK;
+		return S_OK;
+	};
 
-	if (!m_pSrcSurface) {
-		hr = m_pDXVA2_VPService->CreateSurface(
-			m_srcWidth,
-			m_srcHeight,
-			0,
-			m_srcFormat,
-			m_DXVA2VPcaps.InputPool,
-			0,
-			DXVA2_VideoProcessorRenderTarget,
-			&m_pSrcSurface,
-			nullptr
-		);
-	}
+	const auto CreateSurface = [&](const UINT Width, const UINT Height, const D3DFORMAT Format) {
+		HRESULT hr = S_OK;
 
-	D3DLOCKED_RECT lr;
-	hr = m_pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
-	if (FAILED(hr)) {
+		if (!m_pSrcSurface) {
+			if (m_VPType == VP_DXVAHD) {
+				hr = m_pDXVAHD_Device->CreateVideoSurface(
+					Width,
+					Height,
+					Format,
+					m_DXVAHDDevCaps.InputPool,
+					0,
+					DXVAHD_SURFACE_TYPE_VIDEO_INPUT,
+					1,
+					&m_pSrcSurface,
+					nullptr
+				);
+			} else {
+				hr = m_pDXVA2_VPService->CreateSurface(
+					Width,
+					Height,
+					0,
+					Format,
+					m_DXVA2VPcaps.InputPool,
+					0,
+					DXVA2_VideoProcessorRenderTarget,
+					&m_pSrcSurface,
+					nullptr
+				);
+			}
+			if (!m_pSrcSurface) {
+				return hr;
+			}
+		}
+
 		return hr;
+	};
+
+	HRESULT hr = E_FAIL;
+	if (CComQIPtr<IMFGetService> pService = pSample) {
+		CComPtr<IDirect3DSurface9> pSurface;
+		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
+			D3DSURFACE_DESC desc;
+			if (S_OK != pSurface->GetDesc(&desc)) {
+				return hr;
+			};
+			hr = InitVP(desc.Width, desc.Height, desc.Format);
+			if (FAILED(hr)) {
+				return hr;
+			}
+			hr = CreateSurface(desc.Width, desc.Height, desc.Format);
+			if (FAILED(hr)) {
+				return hr;
+			}
+
+			m_pD3DDevEx->StretchRect(pSurface, nullptr, m_pSrcSurface, nullptr, D3DTEXF_LINEAR);
+		}
+	} else if (m_mt.formattype == FORMAT_VideoInfo2) {
+		BYTE* data = nullptr;
+		const long size = pSample->GetActualDataLength();
+		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
+			hr = InitVP(m_srcWidth, m_srcHeight, m_srcFormat);
+			if (FAILED(hr)) {
+				return hr;
+			}
+			hr = CreateSurface(m_srcWidth, m_srcHeight, m_srcFormat);
+			if (FAILED(hr)) {
+				return hr;
+			}
+
+			D3DLOCKED_RECT lr;
+			hr = m_pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
+			if (FAILED(hr)) {
+				return hr;
+			}
+
+			CopyFrameData((BYTE*)lr.pBits, lr.Pitch, data, size);
+
+			hr = m_pSrcSurface->UnlockRect();
+		}
 	}
-
-	CopyFrameData((BYTE*)lr.pBits, lr.Pitch, data, size);
-
-	hr = m_pSrcSurface->UnlockRect();
-
-	hr = ResizeDXVA2(m_pSrcSurface, pRenderTarget);
 
 	return hr;
 }
 
-void CMpcVideoRenderer::CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, long src_size)
+HRESULT CMpcVideoRenderer::Render()
+{
+	CheckPointer(m_pSrcSurface, E_POINTER);
+
+	HRESULT hr = m_pD3DDevEx->BeginScene();
+
+	CComPtr<IDirect3DSurface9> pBackBuffer;
+	hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+
+	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
+	hr = m_pD3DDevEx->Clear(0, nullptr, D3DCLEAR_TARGET, 0, 1.0f, 0);
+
+	if (m_VPType == VP_DXVAHD) {
+		ResizeDXVAHD(m_pSrcSurface, pBackBuffer);
+	} else {
+		ResizeDXVA2(m_pSrcSurface, pBackBuffer);
+	}
+
+	hr = m_pD3DDevEx->EndScene();
+
+	CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
+	CRect rDstPri(m_windowRect);
+
+	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
+
+	return hr;
+}
+
+void CMpcVideoRenderer::CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, long const src_size)
 {
 	if (m_srcFormat == D3DFMT_X8R8G8B8) {
 		UINT linesize = m_srcWidth * 4;
@@ -857,45 +913,12 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 {
 	std::unique_lock<std::mutex> lock(m_mutex);
 
-	HRESULT hr = m_pD3DDevEx->BeginScene();
-
-	CComPtr<IDirect3DSurface9> pBackBuffer;
-	hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
-
-	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
-	hr = m_pD3DDevEx->Clear(0, nullptr, D3DCLEAR_TARGET, 0, 1.0f, 0);
-
-	if (CComQIPtr<IMFGetService> pService = pSample) {
-		CComPtr<IDirect3DSurface9> pSurface;
-		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
-
-			if (m_VPType == VP_DXVAHD) {
-				ResizeDXVAHD(pSurface, pBackBuffer);
-			} else {
-				ResizeDXVA2(pSurface, pBackBuffer);
-			}
-		}
-	}
-	else if (m_mt.formattype == FORMAT_VideoInfo2) {
-		BYTE* data = nullptr;
-		const long size = pSample->GetActualDataLength();
-		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
-			if (m_VPType == VP_DXVAHD) {
-				ResizeDXVAHD(data, size, pBackBuffer);
-			} else {
-				ResizeDXVA2(data, size, pBackBuffer);
-			}
-		}
+	HRESULT hr = CopySample(pSample);
+	if (FAILED(hr)) {
+		return hr;
 	}
 
-	hr = m_pD3DDevEx->EndScene();
-
-	CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
-	CRect rDstPri(m_windowRect);
-
-	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
-
-	return S_OK;
+	return Render();
 }
 
 STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** ppv)
@@ -946,6 +969,9 @@ STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPV
 STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long Width, long Height)
 {
 	m_videoRect.SetRect(Left, Top, Left + Width, Top + Height);
+	if (m_State == State_Paused) {
+		Render();
+	}
 	return S_OK;
 }
 
@@ -984,6 +1010,9 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Width, long Height)
 {
 	m_windowRect.SetRect(Left, Top, Left + Width, Top + Height);
+	if (m_State == State_Paused) {
+		Render();
+	}
 	return S_OK;
 }
 

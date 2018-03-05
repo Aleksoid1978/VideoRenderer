@@ -109,14 +109,15 @@ private:
 	BOOL InitializeDXVAHDVP(D3DSURFACE_DESC& desc);
 	BOOL InitializeDXVAHDVP(const UINT width, const UINT height, const D3DFORMAT d3dformat);
 	HRESULT ResizeDXVAHD(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget);
-	HRESULT ResizeDXVAHD(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget);
 
 	BOOL InitializeDXVA2VP(D3DSURFACE_DESC& desc);
 	BOOL InitializeDXVA2VP(const UINT width, const UINT height, const D3DFORMAT d3dformat);
 	HRESULT ResizeDXVA2(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget);
-	HRESULT ResizeDXVA2(BYTE* data, const long size, IDirect3DSurface9* pRenderTarget);
 
-	void CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, long src_size);
+	HRESULT CopySample(IMediaSample* pSample);
+	HRESULT Render();
+
+	void CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, const long src_size);
 
 public:
 	// CBaseRenderer
