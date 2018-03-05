@@ -273,12 +273,23 @@ HRESULT CMpcVideoRenderer::InitDirect3D9()
 	return hr;
 }
 
-BOOL CMpcVideoRenderer::InitializeDXVAHDVP(D3DSURFACE_DESC& desc)
+BOOL CMpcVideoRenderer::InitVideoProc(const UINT width, const UINT height, const D3DFORMAT d3dformat)
 {
-	return InitializeDXVAHDVP(desc.Width, desc.Height, desc.Format);
+	if (m_VPType == VP_DXVAHD) {
+		if (!m_pDXVAHD_VP && !InitializeDXVAHD(width, height, d3dformat)) {
+			return FALSE;
+		}
+	}
+	else {
+		if (!m_pDXVA2_VP && !InitializeDXVA2VP(width, height, d3dformat)) {
+			return FALSE;
+		}
+	}
+
+	return TRUE;
 }
 
-BOOL CMpcVideoRenderer::InitializeDXVAHDVP(const UINT width, const UINT height, const D3DFORMAT d3dformat)
+BOOL CMpcVideoRenderer::InitializeDXVAHD(const UINT width, const UINT height, const D3DFORMAT d3dformat)
 {
 	DLog("CMpcVideoRenderer::InitializeDXVAHDVP()");
 	if (!m_hDxva2Lib) {
@@ -430,49 +441,22 @@ BOOL CMpcVideoRenderer::InitializeDXVAHDVP(const UINT width, const UINT height, 
 	}
 	hr = m_pDXVAHD_VP->SetVideoProcessStreamState(0, DXVAHD_STREAM_STATE_INPUT_COLOR_SPACE, sizeof(InputColorSpaceData), &InputColorSpaceData);
 
-	return TRUE;
-}
-
-HRESULT CMpcVideoRenderer::ResizeDXVAHD(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget)
-{
-	HRESULT hr = S_OK;
-
-	D3DSURFACE_DESC desc;
-	if (S_OK != pSurface->GetDesc(&desc)) {
-		return hr;
-	};
-
-	if (!m_pDXVAHD_VP && !InitializeDXVAHDVP(desc)) {
-		return E_FAIL;
-	}
-
-	static DWORD frame = 0;
-
-	DXVAHD_STREAM_DATA stream_data = {};
-	stream_data.Enable = TRUE;
-	stream_data.OutputIndex = 0;
-	stream_data.InputFrameOrField = frame;
-	stream_data.pInputSurface = pSurface;
-
-	CRect rSrcVid(CPoint(0, 0), m_nativeVideoRect.Size());
-	CRect rDstVid(m_videoRect);
-
-	hr = DXVAHD_SetSourceRect(m_pDXVAHD_VP, 0, TRUE, rSrcVid);
-	hr = DXVAHD_SetDestinationRect(m_pDXVAHD_VP, 0, TRUE, rDstVid);
-
-	// Perform the blit.
-	hr = m_pDXVAHD_VP->VideoProcessBltHD(pRenderTarget, frame, 1, &stream_data);
+	hr = m_pDXVAHD_Device->CreateVideoSurface(
+		width,
+		height,
+		d3dformat,
+		m_DXVAHDDevCaps.InputPool,
+		0,
+		DXVAHD_SURFACE_TYPE_VIDEO_INPUT,
+		1,
+		&m_pSrcSurface,
+		nullptr
+	);
 	if (FAILED(hr)) {
-		DLog(L"CMpcVideoRenderer::ResizeDXVAHD() : VideoProcessBltHD() failed with error 0x%08x", hr);
+		return FALSE;
 	}
-	frame++;
 
-	return hr;
-}
-
-BOOL CMpcVideoRenderer::InitializeDXVA2VP(D3DSURFACE_DESC& desc)
-{
-	return InitializeDXVA2VP(desc.Width, desc.Height, desc.Format);
+	return TRUE;
 }
 
 BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, const D3DFORMAT d3dformat)
@@ -588,173 +572,49 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 		return FALSE;
 	}
 
-	return TRUE;
-}
-
-HRESULT CMpcVideoRenderer::ResizeDXVA2(IDirect3DSurface9* pSurface, IDirect3DSurface9* pRenderTarget)
-{
-	HRESULT hr = S_OK;
-
-	D3DSURFACE_DESC desc;
-	if (S_OK != pSurface->GetDesc(&desc)) {
-		return E_FAIL;
-	};
-
-	if (!m_pDXVA2_VP && !InitializeDXVA2VP(desc)) {
-		return E_FAIL;
-	}
-
-	CRect rSrcVid(CPoint(0, 0), m_nativeVideoRect.Size());
-	CRect rDstVid(m_videoRect);
-
-	DXVA2_VideoProcessBltParams blt = {};
-	DXVA2_VideoSample samples[1] = {};
-
-	static DWORD frame = 0;
-	REFERENCE_TIME start_100ns = frame * 170000i64;
-	REFERENCE_TIME end_100ns = start_100ns + 170000i64;
-
-	// Initialize VPBlt parameters.
-	blt.TargetFrame = start_100ns;
-	blt.TargetRect = rDstVid;
-	// DXVA2_VideoProcess_Constriction
-	blt.ConstrictionSize.cx = rDstVid.Width();
-	blt.ConstrictionSize.cy = rDstVid.Height();
-	blt.BackgroundColor = { 128 * 0x100, 128 * 0x100, 16 * 0x100, 0xFFFF }; // black
-	// DXVA2_VideoProcess_YUV2RGBExtended
-	//blt.DestFormat.value = 0; // output to RGB
-	blt.DestFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
-
-	// DXVA2_ProcAmp_Brightness/Contrast/Hue/Saturation
-	blt.ProcAmpValues.Brightness = m_DXVA2ProcAmpValues[0];
-	blt.ProcAmpValues.Contrast   = m_DXVA2ProcAmpValues[1];
-	blt.ProcAmpValues.Hue        = m_DXVA2ProcAmpValues[2];
-	blt.ProcAmpValues.Saturation = m_DXVA2ProcAmpValues[3];
-
-	// DXVA2_VideoProcess_AlphaBlend
-	blt.Alpha = DXVA2_Fixed32OpaqueAlpha();
-
-	// Initialize main stream video sample.
-	samples[0].Start = start_100ns;
-	samples[0].End = end_100ns;
-	// DXVA2_VideoProcess_YUV2RGBExtended
-	samples[0].SampleFormat.VideoChromaSubsampling = m_srcExFmt.VideoChromaSubsampling;
-	samples[0].SampleFormat.NominalRange           = m_srcExFmt.NominalRange;
-	samples[0].SampleFormat.VideoTransferMatrix    = m_srcExFmt.VideoTransferMatrix;
-	samples[0].SampleFormat.VideoLighting          = m_srcExFmt.VideoLighting;
-	samples[0].SampleFormat.VideoPrimaries         = m_srcExFmt.VideoPrimaries;
-	samples[0].SampleFormat.VideoTransferFunction  = m_srcExFmt.VideoTransferFunction;
-
-	samples[0].SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
-	samples[0].SrcSurface = pSurface;
-	// DXVA2_VideoProcess_SubRects
-	samples[0].SrcRect = rSrcVid;
-	// DXVA2_VideoProcess_StretchX, Y
-	samples[0].DstRect = rDstVid;
-	// DXVA2_VideoProcess_PlanarAlpha
-	samples[0].PlanarAlpha = DXVA2_Fixed32OpaqueAlpha();
-
-	// clear pRenderTarget, need for Nvidia graphics cards and Intel mobile graphics
-	CRect clientRect;
-	if (rDstVid.left > 0 || rDstVid.top > 0 ||
-		GetClientRect(m_hWnd, clientRect) && (rDstVid.right < clientRect.Width() || rDstVid.bottom < clientRect.Height())) {
-		//m_pD3DDevEx->Clear(0, nullptr, D3DCLEAR_TARGET, 0, 1.0f, 0); //  not worked
-		m_pD3DDevEx->ColorFill(pRenderTarget, nullptr, 0);
-	}
-
-	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &blt, samples, 1, nullptr);
+	hr = m_pDXVA2_VPService->CreateSurface(
+		width,
+		height,
+		0,
+		d3dformat,
+		m_DXVA2VPcaps.InputPool,
+		0,
+		DXVA2_VideoProcessorRenderTarget,
+		&m_pSrcSurface,
+		nullptr
+	);
 	if (FAILED(hr)) {
-		DLog(L"TextureResizeDXVA2: VideoProcessBlt() failed with error 0x%x.", hr);
+		return FALSE;
 	}
 
-	frame++;
-
-	return hr;
+	return TRUE;
 }
 
 HRESULT CMpcVideoRenderer::CopySample(IMediaSample* pSample)
 {
-	const auto InitVP = [&](const UINT Width, const UINT Height, const D3DFORMAT Format) {
-		if (m_VPType == VP_DXVAHD) {
-			if (!m_pDXVAHD_VP && !InitializeDXVAHDVP(Width, Height, Format)) {
-				return E_FAIL;
-			}
-		} else {
-			if (!m_pDXVA2_VP && !InitializeDXVA2VP(Width, Height, Format)) {
-				return E_FAIL;
-			}
-		}
+	HRESULT hr = S_OK;
 
-		return S_OK;
-	};
-
-	const auto CreateSurface = [&](const UINT Width, const UINT Height, const D3DFORMAT Format) {
-		HRESULT hr = S_OK;
-
-		if (!m_pSrcSurface) {
-			if (m_VPType == VP_DXVAHD) {
-				hr = m_pDXVAHD_Device->CreateVideoSurface(
-					Width,
-					Height,
-					Format,
-					m_DXVAHDDevCaps.InputPool,
-					0,
-					DXVAHD_SURFACE_TYPE_VIDEO_INPUT,
-					1,
-					&m_pSrcSurface,
-					nullptr
-				);
-			} else {
-				hr = m_pDXVA2_VPService->CreateSurface(
-					Width,
-					Height,
-					0,
-					Format,
-					m_DXVA2VPcaps.InputPool,
-					0,
-					DXVA2_VideoProcessorRenderTarget,
-					&m_pSrcSurface,
-					nullptr
-				);
-			}
-			if (!m_pSrcSurface) {
-				return hr;
-			}
-		}
-
-		return hr;
-	};
-
-	HRESULT hr = E_FAIL;
 	if (CComQIPtr<IMFGetService> pService = pSample) {
 		CComPtr<IDirect3DSurface9> pSurface;
 		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
 			D3DSURFACE_DESC desc;
-			if (S_OK != pSurface->GetDesc(&desc)) {
-				return hr;
-			};
-			hr = InitVP(desc.Width, desc.Height, desc.Format);
+			hr = pSurface->GetDesc(&desc);
 			if (FAILED(hr)) {
 				return hr;
 			}
-			hr = CreateSurface(desc.Width, desc.Height, desc.Format);
-			if (FAILED(hr)) {
-				return hr;
+			if (!InitVideoProc(desc.Width, desc.Height, desc.Format)) {
+				return E_FAIL;
 			}
 
-			m_pD3DDevEx->StretchRect(pSurface, nullptr, m_pSrcSurface, nullptr, D3DTEXF_LINEAR);
+			hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, m_pSrcSurface, nullptr, D3DTEXF_LINEAR);
 		}
-	} else if (m_mt.formattype == FORMAT_VideoInfo2) {
+	}
+	else if (m_mt.formattype == FORMAT_VideoInfo2) {
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
-			hr = InitVP(m_srcWidth, m_srcHeight, m_srcFormat);
-			if (FAILED(hr)) {
-				return hr;
-			}
-			hr = CreateSurface(m_srcWidth, m_srcHeight, m_srcFormat);
-			if (FAILED(hr)) {
-				return hr;
+			if (!InitVideoProc(m_srcWidth, m_srcHeight, m_srcFormat)) {
+				return E_FAIL;
 			}
 
 			D3DLOCKED_RECT lr;
@@ -768,34 +628,6 @@ HRESULT CMpcVideoRenderer::CopySample(IMediaSample* pSample)
 			hr = m_pSrcSurface->UnlockRect();
 		}
 	}
-
-	return hr;
-}
-
-HRESULT CMpcVideoRenderer::Render()
-{
-	CheckPointer(m_pSrcSurface, E_POINTER);
-
-	HRESULT hr = m_pD3DDevEx->BeginScene();
-
-	CComPtr<IDirect3DSurface9> pBackBuffer;
-	hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
-
-	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
-	hr = m_pD3DDevEx->Clear(0, nullptr, D3DCLEAR_TARGET, 0, 1.0f, 0);
-
-	if (m_VPType == VP_DXVAHD) {
-		ResizeDXVAHD(m_pSrcSurface, pBackBuffer);
-	} else {
-		ResizeDXVA2(m_pSrcSurface, pBackBuffer);
-	}
-
-	hr = m_pD3DDevEx->EndScene();
-
-	CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
-	CRect rDstPri(m_windowRect);
-
-	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
 
 	return hr;
 }
@@ -842,6 +674,145 @@ void CMpcVideoRenderer::CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, long 
 			dst += dst_pitch;
 		}
 	}
+}
+
+HRESULT CMpcVideoRenderer::Render()
+{
+	CheckPointer(m_pSrcSurface, E_POINTER);
+
+	HRESULT hr = m_pD3DDevEx->BeginScene();
+
+	CComPtr<IDirect3DSurface9> pBackBuffer;
+	hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+
+	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
+	hr = m_pD3DDevEx->Clear(0, nullptr, D3DCLEAR_TARGET, 0, 1.0f, 0);
+
+	if (m_VPType == VP_DXVAHD) {
+		hr = ProcessDXVAHD(pBackBuffer);
+	}
+	else {
+		hr = ProcessDXVA2(pBackBuffer);
+	}
+
+	hr = m_pD3DDevEx->EndScene();
+
+	CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
+	CRect rDstPri(m_windowRect);
+
+	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
+
+	return hr;
+}
+
+HRESULT CMpcVideoRenderer::ProcessDXVAHD(IDirect3DSurface9* pRenderTarget)
+{
+	HRESULT hr = S_OK;
+
+	D3DSURFACE_DESC desc;
+	if (S_OK != m_pSrcSurface->GetDesc(&desc)) {
+		return hr;
+	};
+
+	static DWORD frame = 0;
+
+	DXVAHD_STREAM_DATA stream_data = {};
+	stream_data.Enable = TRUE;
+	stream_data.OutputIndex = 0;
+	stream_data.InputFrameOrField = frame;
+	stream_data.pInputSurface = m_pSrcSurface;
+
+	CRect rSrcVid(CPoint(0, 0), m_nativeVideoRect.Size());
+	CRect rDstVid(m_videoRect);
+
+	hr = DXVAHD_SetSourceRect(m_pDXVAHD_VP, 0, TRUE, rSrcVid);
+	hr = DXVAHD_SetDestinationRect(m_pDXVAHD_VP, 0, TRUE, rDstVid);
+
+	// Perform the blit.
+	hr = m_pDXVAHD_VP->VideoProcessBltHD(pRenderTarget, frame, 1, &stream_data);
+	if (FAILED(hr)) {
+		DLog(L"CMpcVideoRenderer::ResizeDXVAHD() : VideoProcessBltHD() failed with error 0x%08x", hr);
+	}
+	frame++;
+
+	return hr;
+}
+
+HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
+{
+	HRESULT hr = S_OK;
+
+	D3DSURFACE_DESC desc;
+	if (S_OK != m_pSrcSurface->GetDesc(&desc)) {
+		return E_FAIL;
+	};
+
+	CRect rSrcVid(CPoint(0, 0), m_nativeVideoRect.Size());
+	CRect rDstVid(m_videoRect);
+
+	DXVA2_VideoProcessBltParams blt = {};
+	DXVA2_VideoSample samples[1] = {};
+
+	static DWORD frame = 0;
+	REFERENCE_TIME start_100ns = frame * 170000i64;
+	REFERENCE_TIME end_100ns = start_100ns + 170000i64;
+
+	// Initialize VPBlt parameters.
+	blt.TargetFrame = start_100ns;
+	blt.TargetRect = rDstVid;
+	// DXVA2_VideoProcess_Constriction
+	blt.ConstrictionSize.cx = rDstVid.Width();
+	blt.ConstrictionSize.cy = rDstVid.Height();
+	blt.BackgroundColor = { 128 * 0x100, 128 * 0x100, 16 * 0x100, 0xFFFF }; // black
+	// DXVA2_VideoProcess_YUV2RGBExtended
+	//blt.DestFormat.value = 0; // output to RGB
+	blt.DestFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
+
+	// DXVA2_ProcAmp_Brightness/Contrast/Hue/Saturation
+	blt.ProcAmpValues.Brightness = m_DXVA2ProcAmpValues[0];
+	blt.ProcAmpValues.Contrast   = m_DXVA2ProcAmpValues[1];
+	blt.ProcAmpValues.Hue        = m_DXVA2ProcAmpValues[2];
+	blt.ProcAmpValues.Saturation = m_DXVA2ProcAmpValues[3];
+
+	// DXVA2_VideoProcess_AlphaBlend
+	blt.Alpha = DXVA2_Fixed32OpaqueAlpha();
+
+	// Initialize main stream video sample.
+	samples[0].Start = start_100ns;
+	samples[0].End = end_100ns;
+	// DXVA2_VideoProcess_YUV2RGBExtended
+	samples[0].SampleFormat.VideoChromaSubsampling = m_srcExFmt.VideoChromaSubsampling;
+	samples[0].SampleFormat.NominalRange           = m_srcExFmt.NominalRange;
+	samples[0].SampleFormat.VideoTransferMatrix    = m_srcExFmt.VideoTransferMatrix;
+	samples[0].SampleFormat.VideoLighting          = m_srcExFmt.VideoLighting;
+	samples[0].SampleFormat.VideoPrimaries         = m_srcExFmt.VideoPrimaries;
+	samples[0].SampleFormat.VideoTransferFunction  = m_srcExFmt.VideoTransferFunction;
+
+	samples[0].SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
+	samples[0].SrcSurface = m_pSrcSurface;
+	// DXVA2_VideoProcess_SubRects
+	samples[0].SrcRect = rSrcVid;
+	// DXVA2_VideoProcess_StretchX, Y
+	samples[0].DstRect = rDstVid;
+	// DXVA2_VideoProcess_PlanarAlpha
+	samples[0].PlanarAlpha = DXVA2_Fixed32OpaqueAlpha();
+
+	// clear pRenderTarget, need for Nvidia graphics cards and Intel mobile graphics
+	CRect clientRect;
+	if (rDstVid.left > 0 || rDstVid.top > 0 ||
+		GetClientRect(m_hWnd, clientRect) && (rDstVid.right < clientRect.Width() || rDstVid.bottom < clientRect.Height())) {
+		//m_pD3DDevEx->Clear(0, nullptr, D3DCLEAR_TARGET, 0, 1.0f, 0); //  not worked
+		m_pD3DDevEx->ColorFill(pRenderTarget, nullptr, 0);
+	}
+
+	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &blt, samples, 1, nullptr);
+	if (FAILED(hr)) {
+		DLog(L"TextureResizeDXVA2: VideoProcessBlt() failed with error 0x%x.", hr);
+	}
+
+	frame++;
+
+	return hr;
 }
 
 // CBaseRenderer
