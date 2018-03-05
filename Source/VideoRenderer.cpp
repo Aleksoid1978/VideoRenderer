@@ -606,7 +606,7 @@ HRESULT CMpcVideoRenderer::CopySample(IMediaSample* pSample)
 				return E_FAIL;
 			}
 
-			hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, m_pSrcSurface, nullptr, D3DTEXF_LINEAR);
+			hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, m_pSrcSurface, nullptr, D3DTEXF_POINT);
 		}
 	}
 	else if (m_mt.formattype == FORMAT_VideoInfo2) {
