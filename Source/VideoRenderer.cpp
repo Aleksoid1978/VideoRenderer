@@ -635,7 +635,7 @@ HRESULT CMpcVideoRenderer::CopySample(IMediaSample* pSample)
 void CMpcVideoRenderer::CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, long const src_size)
 {
 	if (m_srcFormat == D3DFMT_X8R8G8B8) {
-		UINT linesize = m_srcWidth * 4;
+		const UINT linesize = m_srcWidth * 4;
 		src += m_srcPitch * (m_srcHeight - 1);
 
 		for (UINT y = 0; y < m_srcHeight; ++y) {
@@ -654,9 +654,9 @@ void CMpcVideoRenderer::CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, long 
 			dst += dst_pitch;
 		}
 
-		UINT chromaline = m_srcWidth / 2;
-		UINT chromaheight = m_srcHeight / 2;
-		UINT chromapitch = m_srcPitch / 2;
+		const UINT chromaline = m_srcWidth / 2;
+		const UINT chromaheight = m_srcHeight / 2;
+		const UINT chromapitch = m_srcPitch / 2;
 		dst_pitch /= 2;
 		for (UINT y = 0; y < chromaheight; ++y) {
 			memcpy(dst, src, chromaline);
@@ -697,8 +697,8 @@ HRESULT CMpcVideoRenderer::Render()
 
 	hr = m_pD3DDevEx->EndScene();
 
-	CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
-	CRect rDstPri(m_windowRect);
+	const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
+	const CRect rDstPri(m_windowRect);
 
 	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
 
@@ -709,11 +709,6 @@ HRESULT CMpcVideoRenderer::ProcessDXVAHD(IDirect3DSurface9* pRenderTarget)
 {
 	HRESULT hr = S_OK;
 
-	D3DSURFACE_DESC desc;
-	if (S_OK != m_pSrcSurface->GetDesc(&desc)) {
-		return hr;
-	};
-
 	static DWORD frame = 0;
 
 	DXVAHD_STREAM_DATA stream_data = {};
@@ -722,8 +717,8 @@ HRESULT CMpcVideoRenderer::ProcessDXVAHD(IDirect3DSurface9* pRenderTarget)
 	stream_data.InputFrameOrField = frame;
 	stream_data.pInputSurface = m_pSrcSurface;
 
-	CRect rSrcVid(CPoint(0, 0), m_nativeVideoRect.Size());
-	CRect rDstVid(m_videoRect);
+	const CRect rSrcVid(CPoint(0, 0), m_nativeVideoRect.Size());
+	const CRect rDstVid(m_videoRect);
 
 	hr = DXVAHD_SetSourceRect(m_pDXVAHD_VP, 0, TRUE, rSrcVid);
 	hr = DXVAHD_SetDestinationRect(m_pDXVAHD_VP, 0, TRUE, rDstVid);
@@ -742,22 +737,15 @@ HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 {
 	HRESULT hr = S_OK;
 
-	D3DSURFACE_DESC desc;
-	if (S_OK != m_pSrcSurface->GetDesc(&desc)) {
-		return E_FAIL;
-	};
-
-	CRect rSrcVid(CPoint(0, 0), m_nativeVideoRect.Size());
-	CRect rDstVid(m_videoRect);
-
-	DXVA2_VideoProcessBltParams blt = {};
-	DXVA2_VideoSample samples[1] = {};
+	const CRect rSrcVid(CPoint(0, 0), m_nativeVideoRect.Size());
+	const CRect rDstVid(m_videoRect);
 
 	static DWORD frame = 0;
-	REFERENCE_TIME start_100ns = frame * 170000i64;
-	REFERENCE_TIME end_100ns = start_100ns + 170000i64;
+	const REFERENCE_TIME start_100ns = frame * 170000i64;
+	const REFERENCE_TIME end_100ns = start_100ns + 170000i64;
 
 	// Initialize VPBlt parameters.
+	DXVA2_VideoProcessBltParams blt = {};
 	blt.TargetFrame = start_100ns;
 	blt.TargetRect = rDstVid;
 	// DXVA2_VideoProcess_Constriction
@@ -778,6 +766,7 @@ HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 	blt.Alpha = DXVA2_Fixed32OpaqueAlpha();
 
 	// Initialize main stream video sample.
+	DXVA2_VideoSample samples[1] = {};
 	samples[0].Start = start_100ns;
 	samples[0].End = end_100ns;
 	// DXVA2_VideoProcess_YUV2RGBExtended
@@ -807,7 +796,7 @@ HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 
 	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &blt, samples, 1, nullptr);
 	if (FAILED(hr)) {
-		DLog(L"TextureResizeDXVA2: VideoProcessBlt() failed with error 0x%x.", hr);
+		DLog(L"CMpcVideoRenderer::ProcessDXVA2() : VideoProcessBlt() failed with error 0x%08x", hr);
 	}
 
 	frame++;
