@@ -21,6 +21,7 @@
 #include "stdafx.h"
 #include <InitGuid.h>
 #include "VideoRenderer.h"
+#include "PropPage.h"
 
 template <class T>
 static CUnknown* WINAPI CreateInstance(LPUNKNOWN lpunk, HRESULT* phr)
@@ -43,6 +44,7 @@ const AMOVIESETUP_FILTER sudFilter[] = {
 
 CFactoryTemplate g_Templates[] = {
 	{sudFilter[0].strName, &__uuidof(CMpcVideoRenderer), CreateInstance<CMpcVideoRenderer>, nullptr, &sudFilter[0]},
+	{L"MainProp", &__uuidof(CVRMainPPage), CreateInstance<CVRMainPPage>, nullptr, nullptr}
 };
 
 int g_cTemplates = _countof(g_Templates);

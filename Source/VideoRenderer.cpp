@@ -29,6 +29,7 @@
 #include <Dvdmedia.h>
 #include "Helper.h"
 #include "dxvahd_utils.h"
+#include "PropPage.h"
 
 class CVideoRendererInputPin : public CRendererInputPin,
 	public IMFGetService,
@@ -898,6 +899,9 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 	else if (riid == __uuidof(IVideoWindow)) {
 		hr = GetInterface((IVideoWindow*)this, ppv);
 	}
+	else if (riid == __uuidof(ISpecifyPropertyPages)) {
+		hr = GetInterface((ISpecifyPropertyPages*)this, ppv);
+	}
 	else {
 		hr = __super::NonDelegatingQueryInterface(riid, ppv);
 	}
@@ -980,5 +984,21 @@ STDMETHODIMP CMpcVideoRenderer::get_Owner(OAHWND *Owner)
 {
 	CheckPointer(Owner, E_POINTER);
 	*Owner = (OAHWND)m_hWnd;
+	return S_OK;
+}
+
+// ISpecifyPropertyPages
+STDMETHODIMP CMpcVideoRenderer::GetPages(CAUUID* pPages)
+{
+	if (!pPages) return E_POINTER;
+
+	pPages->cElems = 1;
+	pPages->pElems = reinterpret_cast<GUID*>(CoTaskMemAlloc(sizeof(GUID)));
+	if (pPages->pElems == nullptr) {
+		return E_OUTOFMEMORY;
+	}
+
+	pPages->pElems[0] = __uuidof(CVRMainPPage);
+
 	return S_OK;
 }

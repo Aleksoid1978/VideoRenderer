@@ -110,6 +110,7 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="dxvahd_utils.cpp" />
     <ClCompile Include="Helper.cpp" />
+    <ClCompile Include="PropPage.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -118,6 +119,7 @@
   <ItemGroup>
     <ClInclude Include="dxvahd_utils.h" />
     <ClInclude Include="Helper.h" />
+    <ClInclude Include="PropPage.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="VideoRenderer.h" />
