@@ -19,8 +19,10 @@
  */
 
 #include "stdafx.h"
-//#include <CommCtrl.h>
 #include "resource.h"
+#include <atlstr.h>
+#include "Helper.h"
+
 #include "PropPage.h"
 
 // CVRMainPPage
@@ -41,6 +43,17 @@ HRESULT CVRMainPPage::OnConnect(IUnknown *pUnk)
 
 HRESULT CVRMainPPage::OnActivate()
 {
+	D3DFORMAT Format = D3DFMT_UNKNOWN;
+	UINT Width = 0;
+	UINT Height = 0;
+
+	CStringW str(L"  Input");
+	str.AppendFormat(L"\r\nFormat: %s", D3DFormatToString(Format));
+	str.AppendFormat(L"\r\nWidth : %u", Width);
+	str.AppendFormat(L"\r\nHeight: %u", Height);
+
+	SetDlgItemTextW(m_hwnd, IDC_EDIT1, str);
+
 	return S_OK;
 }
 
