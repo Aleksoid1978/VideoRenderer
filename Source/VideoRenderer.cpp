@@ -319,7 +319,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 	videodesc.SampleWidth = width;
 	videodesc.SampleHeight = height;
 	//videodesc.SampleFormat.value = 0; // do not need to fill it here
-	videodesc.SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
+	videodesc.SampleFormat.SampleFormat = m_SampleFormat;
 	if (d3dformat == D3DFMT_X8R8G8B8) {
 		videodesc.Format = D3DFMT_YUY2; // hack
 	} else {
@@ -343,8 +343,9 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 		auto& devguid = guids[i];
 		if (CreateDXVA2VPDevice(devguid, videodesc)) {
 			NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
+			ASSERT(NumRefSamples <= MAX_DEINTERLACE_SURFACES);
 
-			if (1) { // need progressive device
+			if (m_SampleFormat == DXVA2_SampleProgressiveFrame) { // need progressive device
 				if (devguid == DXVA2_VideoProcProgressiveDevice) {
 					break;
 				}
@@ -610,7 +611,7 @@ HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 	samples[0].End = end_100ns;
 	// DXVA2_VideoProcess_YUV2RGBExtended
 	samples[0].SampleFormat.value = m_srcExFmt.value;
-	samples[0].SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
+	samples[0].SampleFormat.SampleFormat = m_SampleFormat;
 	samples[0].SrcSurface = m_pSrcSurfaces[0];
 	// DXVA2_VideoProcess_SubRects
 	samples[0].SrcRect = rSrcVid;

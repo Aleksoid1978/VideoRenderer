@@ -49,6 +49,11 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	, public IVideoRenderer
 {
 private:
+	UINT m_SampleFormat = DXVA2_SampleProgressiveFrame;
+	//UINT m_SampleFormat = DXVA2_SampleUnknown;
+	//UINT m_SampleFormat = DXVA2_SampleFieldInterleavedEvenFirst;
+	//UINT m_SampleFormat = DXVA2_SampleFieldInterleavedOddFirst;
+
 	CMediaType m_mt;
 	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
 	UINT m_srcWidth = 0;
