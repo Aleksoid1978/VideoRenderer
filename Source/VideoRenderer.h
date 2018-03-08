@@ -28,13 +28,14 @@
 #include <dxvahd.h>
 #include <mutex>
 
+#define DXVAHD_ENABLE 0
+
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_YV12},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_NV12},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_YUY2},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_RGB32},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_P010},
-	{&MEDIATYPE_Video, &MEDIASUBTYPE_AYUV}
 };
 
 class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
@@ -46,12 +47,6 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	, public ISpecifyPropertyPages
 {
 private:
-	enum VIDEOPROC_TYPE {
-		VP_DXVA2,
-		VP_DXVAHD,
-	};
-	VIDEOPROC_TYPE m_VPType = VP_DXVA2;
-
 	CMediaType m_mt;
 	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
 	UINT m_srcWidth = 0;
@@ -81,14 +76,18 @@ private:
 
 	HMODULE m_hDxva2Lib = nullptr;
 
-	CComPtr<IDXVAHD_Device>         m_pDXVAHD_Device;
-	CComPtr<IDXVAHD_VideoProcessor> m_pDXVAHD_VP;
-	DXVAHD_VPDEVCAPS m_DXVAHDDevCaps = {};
-
+	// DXVA2 VideoProcessor
 	CComPtr<IDirectXVideoProcessorService> m_pDXVA2_VPService;
 	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
 	DXVA2_VideoProcessorCaps m_DXVA2VPcaps = {};
 	DXVA2_Fixed32 m_DXVA2ProcAmpValues[4] = {};
+
+#if DXVAHD_ENABLE
+	// DXVA-HD VideoProcessor
+	CComPtr<IDXVAHD_Device>         m_pDXVAHD_Device;
+	CComPtr<IDXVAHD_VideoProcessor> m_pDXVAHD_VP;
+	DXVAHD_VPDEVCAPS m_DXVAHDDevCaps = {};
+#endif
 
 	typedef HRESULT (__stdcall *PTR_DXVA2CreateDirect3DDeviceManager9)(UINT* pResetToken, IDirect3DDeviceManager9** ppDeviceManager);
 	typedef HRESULT (__stdcall *PTR_DXVA2CreateVideoService)(IDirect3DDevice9* pDD, REFIID riid, void** ppService);
@@ -109,15 +108,18 @@ private:
 	HRESULT InitDirect3D9();
 
 	BOOL InitVideoProc(const UINT width, const UINT height, const D3DFORMAT d3dformat);
-	BOOL InitializeDXVAHD(const UINT width, const UINT height, const D3DFORMAT d3dformat);
 	BOOL InitializeDXVA2VP(const UINT width, const UINT height, const D3DFORMAT d3dformat);
 
 	HRESULT CopySample(IMediaSample* pSample);
 	void CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, const long src_size);
 
 	HRESULT Render();
-	HRESULT ProcessDXVAHD(IDirect3DSurface9* pRenderTarget);
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget);
+
+#if DXVAHD_ENABLE
+	BOOL InitializeDXVAHD(const UINT width, const UINT height, const D3DFORMAT d3dformat);
+	HRESULT ProcessDXVAHD(IDirect3DSurface9* pRenderTarget);
+#endif
 
 public:
 	// CBaseRenderer
