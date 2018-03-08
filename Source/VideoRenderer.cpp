@@ -214,7 +214,7 @@ HRESULT CMpcVideoRenderer::InitDirect3D9()
 {
 	DLog(L"CMpcVideoRenderer::InitDirect3D9()");
 
-	m_pSrcSurface.Release();
+	m_pSrcSurfaces.clear();
 	m_pDXVA2_VP.Release();
 	m_pDXVA2_VPService.Release();
 #if DXVAHD_ENABLE
@@ -338,16 +338,19 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 		DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : GetVideoProcessorDeviceGuids failed with error 0x%x.\n", hr);
 		return FALSE;
 	}
+	UINT NumRefSamples;
 	for (i = 0; i < count; i++) {
 		auto& devguid = guids[i];
 		if (CreateDXVA2VPDevice(devguid, videodesc)) {
+			NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
+
 			if (1) { // need progressive device
 				if (devguid == DXVA2_VideoProcProgressiveDevice) {
 					break;
 				}
 			} else { // need deinterlace device
-				const UINT NumRefSamples = m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
-				if ((m_DXVA2VPcaps.DeinterlaceTechnology & DXVA2_DeinterlaceTech_Mask) && NumRefSamples == 0) {
+				if ((m_DXVA2VPcaps.DeinterlaceTechnology & DXVA2_DeinterlaceTech_Mask) && NumRefSamples == 1) {
+					// TODO: remove check "NumRefSamples == 1"
 					break;
 				}
 			}
@@ -359,19 +362,24 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 		return FALSE;
 	}
 
-	hr = m_pDXVA2_VPService->CreateSurface(
-		width,
-		height,
-		0,
-		d3dformat,
-		m_DXVA2VPcaps.InputPool,
-		0,
-		DXVA2_VideoProcessorRenderTarget,
-		&m_pSrcSurface,
-		nullptr
-	);
-	if (FAILED(hr)) {
-		return FALSE;
+	m_pSrcSurfaces.resize(NumRefSamples);
+
+	for (auto& pSurface : m_pSrcSurfaces) {
+		hr = m_pDXVA2_VPService->CreateSurface(
+			width,
+			height,
+			0,
+			d3dformat,
+			m_DXVA2VPcaps.InputPool,
+			0,
+			DXVA2_VideoProcessorRenderTarget,
+			&pSurface,
+			nullptr
+		);
+		if (FAILED(hr)) {
+			m_pSrcSurfaces.clear();
+			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -470,7 +478,7 @@ HRESULT CMpcVideoRenderer::CopySample(IMediaSample* pSample)
 				return E_FAIL;
 			}
 
-			hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, m_pSrcSurface, nullptr, D3DTEXF_POINT);
+			hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, m_pSrcSurfaces[0], nullptr, D3DTEXF_POINT);
 		}
 	}
 	else if (m_mt.formattype == FORMAT_VideoInfo2) {
@@ -482,14 +490,14 @@ HRESULT CMpcVideoRenderer::CopySample(IMediaSample* pSample)
 			}
 
 			D3DLOCKED_RECT lr;
-			hr = m_pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
+			hr = m_pSrcSurfaces[0]->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
 			if (FAILED(hr)) {
 				return hr;
 			}
 
 			CopyFrameData((BYTE*)lr.pBits, lr.Pitch, data, size);
 
-			hr = m_pSrcSurface->UnlockRect();
+			hr = m_pSrcSurfaces[0]->UnlockRect();
 		}
 	}
 
@@ -542,7 +550,7 @@ void CMpcVideoRenderer::CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, long 
 
 HRESULT CMpcVideoRenderer::Render()
 {
-	CheckPointer(m_pSrcSurface, E_POINTER);
+	if (m_pSrcSurfaces.empty()) return E_POINTER;
 
 	HRESULT hr = m_pD3DDevEx->BeginScene();
 
@@ -609,7 +617,7 @@ HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 	samples[0].SampleFormat.VideoTransferFunction  = m_srcExFmt.VideoTransferFunction;
 
 	samples[0].SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
-	samples[0].SrcSurface = m_pSrcSurface;
+	samples[0].SrcSurface = m_pSrcSurfaces[0];
 	// DXVA2_VideoProcess_SubRects
 	samples[0].SrcRect = rSrcVid;
 	// DXVA2_VideoProcess_StretchX, Y
@@ -892,7 +900,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			}
 			m_srcPitch = vih2->bmiHeader.biSizeImage / m_srcLines;
 
-			m_pSrcSurface.Release();
+			m_pSrcSurfaces.clear();
 			m_pDXVA2_VP.Release();
 #if DXVAHD_ENABLE
 			m_pDXVAHD_VP.Release();

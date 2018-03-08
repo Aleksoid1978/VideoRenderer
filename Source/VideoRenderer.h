@@ -60,7 +60,7 @@ private:
 	RECT m_trgRect = {};
 	UINT m_srcLines = 0;
 	INT  m_srcPitch = 0;
-	CComPtr<IDirect3DSurface9> m_pSrcSurface;
+	std::vector<CComPtr<IDirect3DSurface9>> m_pSrcSurfaces;
 
 	CRect m_nativeVideoRect;
 	CRect m_videoRect;
