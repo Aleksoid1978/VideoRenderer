@@ -33,6 +33,14 @@ CVRMainPPage::CVRMainPPage(LPUNKNOWN lpunk, HRESULT* phr) :
 {
 }
 
+CVRMainPPage::~CVRMainPPage()
+{
+	if (m_hMonoFont) {
+		DeleteObject(m_hMonoFont);
+		m_hMonoFont = 0;
+	}
+}
+
 HRESULT CVRMainPPage::OnConnect(IUnknown *pUnk)
 {
 	if (pUnk == NULL) return E_POINTER;
@@ -42,16 +50,28 @@ HRESULT CVRMainPPage::OnConnect(IUnknown *pUnk)
 
 HRESULT CVRMainPPage::OnActivate()
 {
+	// set m_hWnd for CWindow
+	m_hWnd = m_hwnd;
+
+	// init monospace font
+	LOGFONTW lf = {};
+	HDC hdc = GetWindowDC();
+	lf.lfHeight = -MulDiv(10, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+	ReleaseDC(hdc);
+	lf.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
+	wcscpy_s(lf.lfFaceName, L"Consolas");
+	m_hMonoFont = CreateFontIndirectW(&lf);
+
+	GetDlgItem(IDC_EDIT1).SetFont(m_hMonoFont);
+
 	D3DFORMAT Format = D3DFMT_UNKNOWN;
 	UINT Width = 0;
 	UINT Height = 0;
-
 	CStringW str(L"  Input");
 	str.AppendFormat(L"\r\nFormat: %s", D3DFormatToString(Format));
 	str.AppendFormat(L"\r\nWidth : %u", Width);
 	str.AppendFormat(L"\r\nHeight: %u", Height);
-
-	SetDlgItemTextW(m_hwnd, IDC_EDIT1, str);
+	SetDlgItemText(IDC_EDIT1, str);
 
 	return S_OK;
 }

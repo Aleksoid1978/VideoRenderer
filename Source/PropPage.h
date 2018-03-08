@@ -23,10 +23,13 @@
 #include "BaseClasses\streams.h"
 
 class __declspec(uuid("DA46D181-07D6-441D-B314-019AEB10148A"))
-	CVRMainPPage : public CBasePropertyPage
+	CVRMainPPage : public CBasePropertyPage, public CWindow
 {
+	HFONT m_hMonoFont = nullptr;
+
 public:
 	CVRMainPPage(LPUNKNOWN lpunk, HRESULT* phr);
+	~CVRMainPPage();
 
 private:
 	HRESULT OnConnect(IUnknown* pUnknown) override;
