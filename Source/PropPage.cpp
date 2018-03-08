@@ -20,7 +20,6 @@
 
 #include "stdafx.h"
 #include "resource.h"
-#include <atlstr.h>
 #include "Helper.h"
 
 #include "PropPage.h"
