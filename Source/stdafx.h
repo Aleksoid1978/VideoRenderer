@@ -28,5 +28,7 @@
 #define VC_EXTRALEAN        // Exclude rarely-used stuff from Windows headers
 
 #include <atlbase.h>
+#include <atlstr.h>
+#include <atlwin.h>
+
 #include <dmodshow.h>
-#include <windows.h>

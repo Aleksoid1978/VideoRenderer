@@ -23,7 +23,6 @@
 
 #include <algorithm>
 #include <vector>
-#include <atlstr.h>
 #include <mfapi.h>
 #include <Mferror.h>
 #include <Dvdmedia.h>
