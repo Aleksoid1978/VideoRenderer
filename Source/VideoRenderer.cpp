@@ -609,13 +609,7 @@ HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 	samples[0].Start = start_100ns;
 	samples[0].End = end_100ns;
 	// DXVA2_VideoProcess_YUV2RGBExtended
-	samples[0].SampleFormat.VideoChromaSubsampling = m_srcExFmt.VideoChromaSubsampling;
-	samples[0].SampleFormat.NominalRange           = m_srcExFmt.NominalRange;
-	samples[0].SampleFormat.VideoTransferMatrix    = m_srcExFmt.VideoTransferMatrix;
-	samples[0].SampleFormat.VideoLighting          = m_srcExFmt.VideoLighting;
-	samples[0].SampleFormat.VideoPrimaries         = m_srcExFmt.VideoPrimaries;
-	samples[0].SampleFormat.VideoTransferFunction  = m_srcExFmt.VideoTransferFunction;
-
+	samples[0].SampleFormat.value = m_srcExFmt.value;
 	samples[0].SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
 	samples[0].SrcSurface = m_pSrcSurfaces[0];
 	// DXVA2_VideoProcess_SubRects
@@ -889,6 +883,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			else {
 				if (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT)) {
 					m_srcExFmt.value = vih2->dwControlFlags;
+					m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
 				}
 				m_srcFormat = (D3DFORMAT)m_mt.subtype.Data1;
 				if (m_mt.subtype == MEDIASUBTYPE_NV12 || m_mt.subtype == MEDIASUBTYPE_YV12 || m_mt.subtype == MEDIASUBTYPE_P010) {
