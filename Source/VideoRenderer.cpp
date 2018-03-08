@@ -274,6 +274,8 @@ HRESULT CMpcVideoRenderer::InitDirect3D9()
 	return hr;
 }
 
+#define ALIGN(x, a) (((x)+(a)-1)&~((a)-1))
+
 BOOL CMpcVideoRenderer::InitVideoProc(const UINT width, const UINT height, const D3DFORMAT d3dformat)
 {
 	if (m_VPType == VP_DXVAHD) {
@@ -283,6 +285,20 @@ BOOL CMpcVideoRenderer::InitVideoProc(const UINT width, const UINT height, const
 	}
 	else {
 		if (!m_pDXVA2_VP && !InitializeDXVA2VP(width, height, d3dformat)) {
+			return FALSE;
+		}
+	}
+
+	if (!m_pSrcSurface) {
+		HRESULT hr = m_pD3DDevEx->CreateOffscreenPlainSurface(
+						ALIGN(width, 16),
+						ALIGN(height, 16),
+						d3dformat,
+						D3DPOOL_DEFAULT,
+						&m_pSrcSurface,
+						nullptr);
+		if (FAILED(hr)) {
+			DLog(L"CMpcVideoRenderer::InitVideoProc() : CreateOffscreenPlainSurface() failed with error 0x%08x", hr);
 			return FALSE;
 		}
 	}
@@ -441,19 +457,8 @@ BOOL CMpcVideoRenderer::InitializeDXVAHD(const UINT width, const UINT height, co
 		}
 	}
 	hr = m_pDXVAHD_VP->SetVideoProcessStreamState(0, DXVAHD_STREAM_STATE_INPUT_COLOR_SPACE, sizeof(InputColorSpaceData), &InputColorSpaceData);
-
-	hr = m_pDXVAHD_Device->CreateVideoSurface(
-		width,
-		height,
-		d3dformat,
-		m_DXVAHDDevCaps.InputPool,
-		0,
-		DXVAHD_SURFACE_TYPE_VIDEO_INPUT,
-		1,
-		&m_pSrcSurface,
-		nullptr
-	);
 	if (FAILED(hr)) {
+		DLog(L"CMpcVideoRenderer::InitializeDXVAHDVP() : SetVideoProcessStreamState() failed with error 0x%08x", hr);
 		return FALSE;
 	}
 
@@ -569,22 +574,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 	// Finally create a video processor device.
 	hr = m_pDXVA2_VPService->CreateVideoProcessor(VPDevGuid, &videodesc, D3DFMT_X8R8G8B8, 0, &m_pDXVA2_VP);
 	if (FAILED(hr)) {
-		DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : CreateVideoProcessor failed with error 0x%08x", hr);
-		return FALSE;
-	}
-
-	hr = m_pDXVA2_VPService->CreateSurface(
-		width,
-		height,
-		0,
-		d3dformat,
-		m_DXVA2VPcaps.InputPool,
-		0,
-		DXVA2_VideoProcessorRenderTarget,
-		&m_pSrcSurface,
-		nullptr
-	);
-	if (FAILED(hr)) {
+		DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : CreateVideoProcessor() failed with error 0x%08x", hr);
 		return FALSE;
 	}
 
