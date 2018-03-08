@@ -119,6 +119,7 @@
   <ItemGroup>
     <ClInclude Include="dxvahd_utils.h" />
     <ClInclude Include="Helper.h" />
+    <ClInclude Include="IVideoRenderer.h" />
     <ClInclude Include="PropPage.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />

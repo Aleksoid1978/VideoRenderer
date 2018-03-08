@@ -20,30 +20,16 @@
 
 #pragma once
 
-#include "BaseClasses\streams.h"
-#include "IVideoRenderer.h"
+#include <dxva2api.h>
 
-class __declspec(uuid("DA46D181-07D6-441D-B314-019AEB10148A"))
-	CVRMainPPage : public CBasePropertyPage, public CWindow
-{
-	HFONT m_hMonoFont = nullptr;
-	CComQIPtr<IVideoRenderer> m_pVideoRenderer;
+struct VRFrameInfo {
+	unsigned Width;
+	unsigned Height;
+	D3DFORMAT D3dFormat;
+	DXVA2_ExtendedFormat ExtFormat;
+};
 
-public:
-	CVRMainPPage(LPUNKNOWN lpunk, HRESULT* phr);
-	~CVRMainPPage();
-
-private:
-	HRESULT OnConnect(IUnknown* pUnknown) override;
-	HRESULT OnDisconnect() override;
-	HRESULT OnActivate() override;
-	void SetDirty()
-	{
-		m_bDirty = TRUE;
-		if (m_pPageSite) {
-			m_pPageSite->OnStatusChange(PROPPAGESTATUS_DIRTY);
-		}
-	}
-	INT_PTR OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) override;
-	HRESULT OnApplyChanges() override;
+interface __declspec(uuid("1AB00F10-5F55-42AC-B53F-38649F11BE3E"))
+IVideoRenderer : public IUnknown {
+	STDMETHOD(get_FrameInfo) (VRFrameInfo* pFrameInfo) PURE;
 };

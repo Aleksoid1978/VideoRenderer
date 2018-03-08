@@ -43,7 +43,23 @@ CVRMainPPage::~CVRMainPPage()
 
 HRESULT CVRMainPPage::OnConnect(IUnknown *pUnk)
 {
-	if (pUnk == NULL) return E_POINTER;
+	if (pUnk == nullptr) return E_POINTER;
+
+	m_pVideoRenderer = pUnk;
+	if (!m_pVideoRenderer) {
+		return E_NOINTERFACE;
+	}
+
+	return S_OK;
+}
+
+HRESULT CVRMainPPage::OnDisconnect()
+{
+	if (m_pVideoRenderer == nullptr) {
+		return E_UNEXPECTED;
+	}
+
+	m_pVideoRenderer.Release();
 
 	return S_OK;
 }
@@ -64,13 +80,14 @@ HRESULT CVRMainPPage::OnActivate()
 
 	GetDlgItem(IDC_EDIT1).SetFont(m_hMonoFont);
 
-	D3DFORMAT Format = D3DFMT_UNKNOWN;
-	UINT Width = 0;
-	UINT Height = 0;
+	ASSERT(m_pVideoRenderer);
+	VRFrameInfo frameinfo;
+	m_pVideoRenderer->get_FrameInfo(&frameinfo);
+
 	CStringW str(L"  Input");
-	str.AppendFormat(L"\r\nFormat: %s", D3DFormatToString(Format));
-	str.AppendFormat(L"\r\nWidth : %u", Width);
-	str.AppendFormat(L"\r\nHeight: %u", Height);
+	str.AppendFormat(L"\r\nFormat: %s", D3DFormatToString(frameinfo.D3dFormat));
+	str.AppendFormat(L"\r\nWidth : %u", frameinfo.Width);
+	str.AppendFormat(L"\r\nHeight: %u", frameinfo.Height);
 	SetDlgItemText(IDC_EDIT1, str);
 
 	return S_OK;
@@ -93,11 +110,6 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 }
 
 HRESULT CVRMainPPage::OnApplyChanges()
-{
-	return S_OK;
-}
-
-HRESULT CVRMainPPage::OnDisconnect()
 {
 	return S_OK;
 }

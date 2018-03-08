@@ -27,6 +27,7 @@
 #include <dxva2api.h>
 #include <dxvahd.h>
 #include <mutex>
+#include "IVideoRenderer.h"
 
 #define DXVAHD_ENABLE 0
 
@@ -45,6 +46,7 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	, public IBasicVideo2
 	, public IVideoWindow
 	, public ISpecifyPropertyPages
+	, public IVideoRenderer
 {
 private:
 	CMediaType m_mt;
@@ -219,4 +221,7 @@ public:
 
 	// ISpecifyPropertyPages
 	STDMETHODIMP GetPages(CAUUID* pPages);
+
+	// IVideoRenderer
+	STDMETHODIMP get_FrameInfo(VRFrameInfo* pFrameInfo);
 };

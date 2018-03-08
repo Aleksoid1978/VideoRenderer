@@ -898,6 +898,9 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 	else if (riid == __uuidof(ISpecifyPropertyPages)) {
 		hr = GetInterface((ISpecifyPropertyPages*)this, ppv);
 	}
+	else if (riid == __uuidof(IVideoRenderer)) {
+		hr = GetInterface((IVideoRenderer*)this, ppv);
+	}
 	else {
 		hr = __super::NonDelegatingQueryInterface(riid, ppv);
 	}
@@ -995,6 +998,19 @@ STDMETHODIMP CMpcVideoRenderer::GetPages(CAUUID* pPages)
 	}
 
 	pPages->pElems[0] = __uuidof(CVRMainPPage);
+
+	return S_OK;
+}
+
+// IVideoRenderer
+STDMETHODIMP CMpcVideoRenderer::get_FrameInfo(VRFrameInfo* pFrameInfo)
+{
+	if (!pFrameInfo) return E_POINTER;
+
+	pFrameInfo->Width = m_srcWidth;
+	pFrameInfo->Height = m_srcHeight;
+	pFrameInfo->D3dFormat = m_srcFormat;
+	pFrameInfo->ExtFormat.value = m_srcExFmt.value;
 
 	return S_OK;
 }
