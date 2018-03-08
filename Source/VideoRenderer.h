@@ -111,6 +111,7 @@ private:
 
 	BOOL InitVideoProc(const UINT width, const UINT height, const D3DFORMAT d3dformat);
 	BOOL InitializeDXVA2VP(const UINT width, const UINT height, const D3DFORMAT d3dformat);
+	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
 
 	HRESULT CopySample(IMediaSample* pSample);
 	void CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, const long src_size);

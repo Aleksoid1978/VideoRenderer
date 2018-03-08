@@ -330,12 +330,64 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 	videodesc.OutputFrameFreq.Numerator = 60;
 	videodesc.OutputFrameFreq.Denominator = 1;
 
-	GUID VPDevGuid = DXVA2_VideoProcProgressiveDevice;
+	// Query the video processor GUID.
+	UINT i, count;
+	GUID* guids = NULL;
+	hr = m_pDXVA2_VPService->GetVideoProcessorDeviceGuids(&videodesc, &count, &guids);
+	if (FAILED(hr)) {
+		DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : GetVideoProcessorDeviceGuids failed with error 0x%x.\n", hr);
+		return FALSE;
+	}
+	for (i = 0; i < count; i++) {
+		auto& devguid = guids[i];
+		if (CreateDXVA2VPDevice(devguid, videodesc)) {
+			if (1) { // need progressive device
+				if (devguid == DXVA2_VideoProcProgressiveDevice) {
+					break;
+				}
+			} else { // need deinterlace device
+				const UINT NumRefSamples = m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
+				if ((m_DXVA2VPcaps.DeinterlaceTechnology & DXVA2_DeinterlaceTech_Mask) && NumRefSamples == 0) {
+					break;
+				}
+			}
+		}
+		m_pDXVA2_VP.Release();
+	}
+	CoTaskMemFree(guids);
+	if (!m_pDXVA2_VP) {
+		return FALSE;
+	}
 
+	hr = m_pDXVA2_VPService->CreateSurface(
+		width,
+		height,
+		0,
+		d3dformat,
+		m_DXVA2VPcaps.InputPool,
+		0,
+		DXVA2_VideoProcessorRenderTarget,
+		&m_pSrcSurface,
+		nullptr
+	);
+	if (FAILED(hr)) {
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+BOOL CMpcVideoRenderer::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc)
+{
+	if (!m_pDXVA2_VPService) {
+		return FALSE;
+	}
+
+	HRESULT hr = S_OK;
 	// Query the supported render target format.
 	UINT i, count;
 	D3DFORMAT* formats = nullptr;
-	hr = m_pDXVA2_VPService->GetVideoProcessorRenderTargets(VPDevGuid, &videodesc, &count, &formats);
+	hr = m_pDXVA2_VPService->GetVideoProcessorRenderTargets(devguid, &videodesc, &count, &formats);
 	if (FAILED(hr)) {
 		DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : GetVideoProcessorRenderTargets() failed with error 0x%08x", hr);
 		return FALSE;
@@ -361,7 +413,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 	}
 
 	// Query video processor capabilities.
-	hr = m_pDXVA2_VPService->GetVideoProcessorCaps(VPDevGuid, &videodesc, D3DFMT_X8R8G8B8, &m_DXVA2VPcaps);
+	hr = m_pDXVA2_VPService->GetVideoProcessorCaps(devguid, &videodesc, D3DFMT_X8R8G8B8, &m_DXVA2VPcaps);
 	if (FAILED(hr)) {
 		DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : GetVideoProcessorCaps() failed with error 0x%08x", hr);
 		return FALSE;
@@ -372,7 +424,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 		return FALSE;
 	}
 	// Check to see if the device supports all the VP operations we want.
-	const UINT VIDEO_REQUIED_OP = DXVA2_VideoProcess_StretchX | DXVA2_VideoProcess_StretchY;
+	const UINT VIDEO_REQUIED_OP = DXVA2_VideoProcess_YUV2RGB | DXVA2_VideoProcess_StretchX | DXVA2_VideoProcess_StretchY;
 	if ((m_DXVA2VPcaps.VideoProcessorOperations & VIDEO_REQUIED_OP) != VIDEO_REQUIED_OP) {
 		DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : The DXVA2 device doesn't support the VP operations");
 		return FALSE;
@@ -382,7 +434,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 	DXVA2_ValueRange range;
 	for (i = 0; i < ARRAYSIZE(m_DXVA2ProcAmpValues); i++) {
 		if (m_DXVA2VPcaps.ProcAmpControlCaps & (1 << i)) {
-			hr = m_pDXVA2_VPService->GetProcAmpRange(VPDevGuid, &videodesc, D3DFMT_X8R8G8B8, 1 << i, &range);
+			hr = m_pDXVA2_VPService->GetProcAmpRange(devguid, &videodesc, D3DFMT_X8R8G8B8, 1 << i, &range);
 			if (FAILED(hr)) {
 				DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : GetProcAmpRange() failed with error 0x%08x", hr);
 				return FALSE;
@@ -393,24 +445,9 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 	}
 
 	// Finally create a video processor device.
-	hr = m_pDXVA2_VPService->CreateVideoProcessor(VPDevGuid, &videodesc, D3DFMT_X8R8G8B8, 0, &m_pDXVA2_VP);
+	hr = m_pDXVA2_VPService->CreateVideoProcessor(devguid, &videodesc, D3DFMT_X8R8G8B8, 0, &m_pDXVA2_VP);
 	if (FAILED(hr)) {
 		DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : CreateVideoProcessor failed with error 0x%08x", hr);
-		return FALSE;
-	}
-
-	hr = m_pDXVA2_VPService->CreateSurface(
-		width,
-		height,
-		0,
-		d3dformat,
-		m_DXVA2VPcaps.InputPool,
-		0,
-		DXVA2_VideoProcessorRenderTarget,
-		&m_pSrcSurface,
-		nullptr
-	);
-	if (FAILED(hr)) {
 		return FALSE;
 	}
 
