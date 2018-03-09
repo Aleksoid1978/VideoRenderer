@@ -21,7 +21,6 @@
 #pragma once
 
 #include <d3d9.h>
-#define DbgLog(_x_) DbgLogInfo _x_
 
 #ifndef FCC
 #define FCC(ch4) ((((DWORD)(ch4) & 0xFF) << 24) |     \
