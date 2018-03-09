@@ -79,12 +79,19 @@ HRESULT CVRMainPPage::OnActivate()
 	m_hMonoFont = CreateFontIndirectW(&lf);
 
 	GetDlgItem(IDC_EDIT1).SetFont(m_hMonoFont);
-
 	ASSERT(m_pVideoRenderer);
+	CStringW str;
+
+	int chars;
+	LPWSTR pstr = nullptr;
+	if (S_OK == m_pVideoRenderer->get_AdapterDescription(&pstr, &chars)) {
+		str.Format(L"Graphics adapter: %s\r\n", pstr);
+		LocalFree(pstr);
+	}
+
 	VRFrameInfo frameinfo;
 	m_pVideoRenderer->get_FrameInfo(&frameinfo);
-
-	CStringW str(L"  Input");
+	str.Append(L"\r\n  Input");
 	str.AppendFormat(L"\r\nFormat: %s", D3DFormatToString(frameinfo.D3dFormat));
 	str.AppendFormat(L"\r\nWidth : %u", frameinfo.Width);
 	str.AppendFormat(L"\r\nHeight: %u", frameinfo.Height);

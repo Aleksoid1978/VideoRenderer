@@ -31,5 +31,9 @@ struct VRFrameInfo {
 
 interface __declspec(uuid("1AB00F10-5F55-42AC-B53F-38649F11BE3E"))
 IVideoRenderer : public IUnknown {
+	// The memory for strings and binary data is allocated by the callee
+	// by using LocalAlloc. It is the caller's responsibility to release the
+	// memory by calling LocalFree.
+	STDMETHOD(get_AdapterDescription) (LPWSTR* pstr, int* chars) PURE;
 	STDMETHOD(get_FrameInfo) (VRFrameInfo* pFrameInfo) PURE;
 };

@@ -230,6 +230,11 @@ HRESULT CMpcVideoRenderer::InitDirect3D9()
 		m_CurrentAdapter = currentAdapter;
 	}
 
+	D3DADAPTER_IDENTIFIER9 AdapID9 = {};
+	if (S_OK == m_pD3DEx->GetAdapterIdentifier(m_CurrentAdapter, 0, &AdapID9)) {
+		m_strAdapterDescription.Format(L"%S (%04X:%04X)", AdapID9.Description, AdapID9.VendorId, AdapID9.DeviceId);
+	}
+
 	ZeroMemory(&m_DisplayMode, sizeof(D3DDISPLAYMODEEX));
 	m_DisplayMode.Size = sizeof(D3DDISPLAYMODEEX);
 	HRESULT hr = m_pD3DEx->GetAdapterDisplayModeEx(m_CurrentAdapter, &m_DisplayMode, nullptr);
@@ -1110,6 +1115,23 @@ STDMETHODIMP CMpcVideoRenderer::GetPages(CAUUID* pPages)
 }
 
 // IVideoRenderer
+STDMETHODIMP CMpcVideoRenderer::get_AdapterDescription(LPWSTR* pstr, int* chars)
+{
+	CheckPointer(pstr, E_POINTER);
+
+	const int len = m_strAdapterDescription.GetLength();
+	const size_t sz = (len + 1) * sizeof(WCHAR);
+	LPWSTR buf = (LPWSTR)LocalAlloc(LPTR, sz);
+	if (!buf) {
+		return E_OUTOFMEMORY;
+	}
+	wcscpy_s(buf, len + 1, m_strAdapterDescription);
+	*chars = len;
+	*pstr = buf;
+
+	return S_OK;
+}
+
 STDMETHODIMP CMpcVideoRenderer::get_FrameInfo(VRFrameInfo* pFrameInfo)
 {
 	CheckPointer(pFrameInfo, E_POINTER);
