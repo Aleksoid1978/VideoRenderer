@@ -32,11 +32,11 @@
 #define DXVAHD_ENABLE 0
 
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
-	{&MEDIATYPE_Video, &MEDIASUBTYPE_YV12},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_NV12},
+	{&MEDIATYPE_Video, &MEDIASUBTYPE_YV12},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_YUY2},
-	{&MEDIATYPE_Video, &MEDIASUBTYPE_RGB32},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_P010},
+	{&MEDIATYPE_Video, &MEDIASUBTYPE_RGB32},
 };
 
 struct VideoSurface {
@@ -156,6 +156,8 @@ public:
 
 private:
 	HRESULT InitDirect3D9();
+
+	BOOL CheckVideoProc(const UINT width, const UINT height, const D3DFORMAT d3dformat);
 
 	BOOL InitVideoProc(const UINT width, const UINT height, const D3DFORMAT d3dformat);
 	BOOL InitializeDXVA2VP(const UINT width, const UINT height, const D3DFORMAT d3dformat);

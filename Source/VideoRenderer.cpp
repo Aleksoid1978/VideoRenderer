@@ -278,6 +278,29 @@ HRESULT CMpcVideoRenderer::InitDirect3D9()
 	return hr;
 }
 
+BOOL CMpcVideoRenderer::CheckVideoProc(const UINT width, const UINT height, const D3DFORMAT d3dformat)
+{
+	m_SrcSamples.Clear();
+	m_DXVA2Samples.clear();
+	m_pDXVA2_VP.Release();
+#if DXVAHD_ENABLE
+	m_pDXVAHD_VP.Release();
+#endif
+
+	if (!InitVideoProc(width, height, d3dformat)) {
+		return FALSE;
+	}
+
+	m_SrcSamples.Clear();
+	m_DXVA2Samples.clear();
+	m_pDXVA2_VP.Release();
+#if DXVAHD_ENABLE
+	m_pDXVAHD_VP.Release();
+#endif
+
+	return TRUE;
+}
+
 BOOL CMpcVideoRenderer::InitVideoProc(const UINT width, const UINT height, const D3DFORMAT d3dformat)
 {
 	if (!m_pDXVA2_VP && !InitializeDXVA2VP(width, height, d3dformat)) {
@@ -863,9 +886,29 @@ HRESULT CMpcVideoRenderer::ProcessDXVAHD(IDirect3DSurface9* pRenderTarget)
 
 HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 {
+	CheckPointer(pmt, E_POINTER);
+	CheckPointer(pmt->pbFormat, E_POINTER);
+
 	if (pmt->majortype == MEDIATYPE_Video && pmt->formattype == FORMAT_VideoInfo2) {
 		for (unsigned i = 0; i < _countof(sudPinTypesIn); i++) {
 			if (pmt->subtype == *sudPinTypesIn[i].clsMinorType) {
+				std::unique_lock<std::mutex> lock(m_mutex);
+
+				const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
+				m_srcWidth = vih2->bmiHeader.biWidth;
+				m_srcHeight = labs(vih2->bmiHeader.biHeight);
+				m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
+
+				if (pmt->subtype == MEDIASUBTYPE_RGB32 || pmt->subtype == MEDIASUBTYPE_ARGB32) {
+					m_srcFormat = D3DFMT_X8R8G8B8;
+				} else {
+					m_srcFormat = (D3DFORMAT)pmt->subtype.Data1;
+				}
+
+				if (!CheckVideoProc(m_srcWidth, m_srcHeight, m_srcFormat)) {
+					return E_FAIL;
+				}
+
 				return S_OK;
 			}
 		}
@@ -876,15 +919,17 @@ HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 
 HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 {
-	HRESULT hr = __super::SetMediaType(pmt);
+	CheckPointer(pmt, E_POINTER);
+	CheckPointer(pmt->pbFormat, E_POINTER);
 
+	HRESULT hr = __super::SetMediaType(pmt);
 	if (S_OK == hr) {
 		m_mt = *pmt;
 
 		if (m_mt.formattype == FORMAT_VideoInfo2) {
 			std::unique_lock<std::mutex> lock(m_mutex);
 
-			VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)m_mt.pbFormat;
+			const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)m_mt.pbFormat;
 			m_nativeVideoRect = m_srcRect = vih2->rcSource;
 			m_trgRect = vih2->rcTarget;
 			m_srcWidth = vih2->bmiHeader.biWidth;
@@ -914,12 +959,9 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			}
 			m_srcPitch = vih2->bmiHeader.biSizeImage / m_srcLines;
 
-			m_SrcSamples.Clear();
-			m_DXVA2Samples.clear();
-			m_pDXVA2_VP.Release();
-#if DXVAHD_ENABLE
-			m_pDXVAHD_VP.Release();
-#endif
+			if (!CheckVideoProc(m_srcWidth, m_srcHeight, m_srcFormat)) {
+				return E_FAIL;
+			}
 		}
 	}
 
