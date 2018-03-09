@@ -340,9 +340,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 		return FALSE;
 	}
 	UINT NumRefSamples = 1;
-	if (!m_bInterlaced) {
-		CreateDXVA2VPDevice(DXVA2_VideoProcProgressiveDevice, videodesc);
-	} else {
+	if (m_bInterlaced) {
 		UINT PreferredDeintTech = DXVA2_DeinterlaceTech_EdgeFiltering // Intel
 								| DXVA2_DeinterlaceTech_FieldAdaptive
 								| DXVA2_DeinterlaceTech_PixelAdaptive // Nvidia, AMD
@@ -359,13 +357,14 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 		if (!m_pDXVA2_VP) {
 			CreateDXVA2VPDevice(DXVA2_VideoProcBobDevice, videodesc);
 		}
-
-		if (!m_pDXVA2_VP) {
-			CreateDXVA2VPDevice(DXVA2_VideoProcProgressiveDevice, videodesc); // last try for RGB
-		}
 	}
 
 	CoTaskMemFree(guids);
+
+	if (!m_pDXVA2_VP) {
+		CreateDXVA2VPDevice(DXVA2_VideoProcProgressiveDevice, videodesc); // Progressive or fall-back for interlaced
+	}
+
 	if (!m_pDXVA2_VP) {
 		return FALSE;
 	}
