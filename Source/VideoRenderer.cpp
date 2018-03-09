@@ -278,32 +278,13 @@ HRESULT CMpcVideoRenderer::InitDirect3D9()
 	return hr;
 }
 
-BOOL CMpcVideoRenderer::CheckVideoProc(const UINT width, const UINT height, const D3DFORMAT d3dformat)
-{
-	m_SrcSamples.Clear();
-	m_DXVA2Samples.clear();
-	m_pDXVA2_VP.Release();
-#if DXVAHD_ENABLE
-	m_pDXVAHD_VP.Release();
-#endif
-
-	if (!InitVideoProc(width, height, d3dformat)) {
-		return FALSE;
-	}
-
-	m_SrcSamples.Clear();
-	m_DXVA2Samples.clear();
-	m_pDXVA2_VP.Release();
-#if DXVAHD_ENABLE
-	m_pDXVAHD_VP.Release();
-#endif
-
-	return TRUE;
-}
-
 BOOL CMpcVideoRenderer::InitVideoProc(const UINT width, const UINT height, const D3DFORMAT d3dformat)
 {
-	if (!m_pDXVA2_VP && !InitializeDXVA2VP(width, height, d3dformat)) {
+	const bool bReinitialize = !m_pDXVA2_VP
+		|| width != m_DXVA2_VP_Width
+		|| height != m_DXVA2_VP_Height
+		|| d3dformat!= m_DXVA2_VP_Format;
+	if (bReinitialize && !InitializeDXVA2VP(width, height, d3dformat)) {
 		return FALSE;
 	}
 
@@ -317,6 +298,8 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 		return FALSE;
 	}
 
+	m_SrcSamples.Clear();
+	m_DXVA2Samples.clear();
 	m_pDXVA2_VP.Release();
 
 	HRESULT hr = S_OK;
@@ -420,6 +403,10 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 		m_DXVA2Samples[i].SrcRect = {0, 0, m_nativeVideoRect.Width(), m_nativeVideoRect.Height()};
 		m_DXVA2Samples[i].PlanarAlpha = DXVA2_Fixed32OpaqueAlpha();
 	}
+
+	m_DXVA2_VP_Format = d3dformat;
+	m_DXVA2_VP_Width = width;
+	m_DXVA2_VP_Height = height;
 
 	return TRUE;
 }
@@ -882,6 +869,57 @@ HRESULT CMpcVideoRenderer::ProcessDXVAHD(IDirect3DSurface9* pRenderTarget)
 }
 #endif
 
+BOOL CMpcVideoRenderer::InitMediaType(const CMediaType* pmt)
+{
+	m_mt = *pmt;
+
+	if (m_mt.formattype == FORMAT_VideoInfo2) {
+		std::unique_lock<std::mutex> lock(m_mutex);
+
+		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)m_mt.pbFormat;
+		m_nativeVideoRect = m_srcRect = vih2->rcSource;
+		m_trgRect = vih2->rcTarget;
+		m_srcWidth = vih2->bmiHeader.biWidth;
+		m_srcHeight = labs(vih2->bmiHeader.biHeight);
+		m_srcAspectRatioX = vih2->dwPictAspectRatioX;
+		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
+		m_srcExFmt.value = 0;
+
+		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
+
+		if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
+			m_srcFormat = D3DFMT_X8R8G8B8;
+			m_srcLines = m_srcHeight;
+		}
+		else {
+			if (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT)) {
+				m_srcExFmt.value = vih2->dwControlFlags;
+				m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
+			}
+			m_srcFormat = (D3DFORMAT)m_mt.subtype.Data1;
+			if (m_mt.subtype == MEDIASUBTYPE_NV12 || m_mt.subtype == MEDIASUBTYPE_YV12 || m_mt.subtype == MEDIASUBTYPE_P010) {
+				m_srcLines = m_srcHeight * 3 / 2;
+			}
+			else {
+				m_srcLines = m_srcHeight;
+			}
+		}
+		m_srcPitch = vih2->bmiHeader.biSizeImage / m_srcLines;
+
+#if DXVAHD_ENABLE
+		m_pDXVAHD_VP.Release();
+#endif
+
+		if (!InitVideoProc(m_srcWidth, m_srcHeight, m_srcFormat)) {
+			return FALSE;
+		}
+
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 // CBaseRenderer
 
 HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
@@ -892,23 +930,9 @@ HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 	if (pmt->majortype == MEDIATYPE_Video && pmt->formattype == FORMAT_VideoInfo2) {
 		for (unsigned i = 0; i < _countof(sudPinTypesIn); i++) {
 			if (pmt->subtype == *sudPinTypesIn[i].clsMinorType) {
-				std::unique_lock<std::mutex> lock(m_mutex);
-
-				const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
-				m_srcWidth = vih2->bmiHeader.biWidth;
-				m_srcHeight = labs(vih2->bmiHeader.biHeight);
-				m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
-
-				if (pmt->subtype == MEDIASUBTYPE_RGB32 || pmt->subtype == MEDIASUBTYPE_ARGB32) {
-					m_srcFormat = D3DFMT_X8R8G8B8;
-				} else {
-					m_srcFormat = (D3DFORMAT)pmt->subtype.Data1;
+				if (!InitMediaType(pmt)) {
+					return VFW_E_UNSUPPORTED_VIDEO;
 				}
-
-				if (!CheckVideoProc(m_srcWidth, m_srcHeight, m_srcFormat)) {
-					return E_FAIL;
-				}
-
 				return S_OK;
 			}
 		}
@@ -924,44 +948,8 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 	HRESULT hr = __super::SetMediaType(pmt);
 	if (S_OK == hr) {
-		m_mt = *pmt;
-
-		if (m_mt.formattype == FORMAT_VideoInfo2) {
-			std::unique_lock<std::mutex> lock(m_mutex);
-
-			const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)m_mt.pbFormat;
-			m_nativeVideoRect = m_srcRect = vih2->rcSource;
-			m_trgRect = vih2->rcTarget;
-			m_srcWidth = vih2->bmiHeader.biWidth;
-			m_srcHeight = labs(vih2->bmiHeader.biHeight);
-			m_srcAspectRatioX = vih2->dwPictAspectRatioX;
-			m_srcAspectRatioY = vih2->dwPictAspectRatioY;
-			m_srcExFmt.value = 0;
-
-			m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
-
-			if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
-				m_srcFormat = D3DFMT_X8R8G8B8;
-				m_srcLines = m_srcHeight;
-			}
-			else {
-				if (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT)) {
-					m_srcExFmt.value = vih2->dwControlFlags;
-					m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
-				}
-				m_srcFormat = (D3DFORMAT)m_mt.subtype.Data1;
-				if (m_mt.subtype == MEDIASUBTYPE_NV12 || m_mt.subtype == MEDIASUBTYPE_YV12 || m_mt.subtype == MEDIASUBTYPE_P010) {
-					m_srcLines = m_srcHeight * 3 / 2;
-				}
-				else {
-					m_srcLines = m_srcHeight;
-				}
-			}
-			m_srcPitch = vih2->bmiHeader.biSizeImage / m_srcLines;
-
-			if (!CheckVideoProc(m_srcWidth, m_srcHeight, m_srcFormat)) {
-				return E_FAIL;
-			}
+		if (!InitMediaType(pmt)) {
+			return VFW_E_UNSUPPORTED_VIDEO;
 		}
 	}
 
@@ -1108,7 +1096,7 @@ STDMETHODIMP CMpcVideoRenderer::get_Owner(OAHWND *Owner)
 // ISpecifyPropertyPages
 STDMETHODIMP CMpcVideoRenderer::GetPages(CAUUID* pPages)
 {
-	if (!pPages) return E_POINTER;
+	CheckPointer(pPages, E_POINTER);
 
 	pPages->cElems = 1;
 	pPages->pElems = reinterpret_cast<GUID*>(CoTaskMemAlloc(sizeof(GUID)));
@@ -1124,7 +1112,7 @@ STDMETHODIMP CMpcVideoRenderer::GetPages(CAUUID* pPages)
 // IVideoRenderer
 STDMETHODIMP CMpcVideoRenderer::get_FrameInfo(VRFrameInfo* pFrameInfo)
 {
-	if (!pFrameInfo) return E_POINTER;
+	CheckPointer(pFrameInfo, E_POINTER);
 
 	pFrameInfo->Width = m_srcWidth;
 	pFrameInfo->Height = m_srcHeight;

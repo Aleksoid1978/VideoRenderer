@@ -132,6 +132,10 @@ private:
 	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
 	DWORD m_frame = 0;
 
+	D3DFORMAT m_DXVA2_VP_Format = D3DFMT_UNKNOWN;
+	UINT m_DXVA2_VP_Width = 0;
+	UINT m_DXVA2_VP_Height = 0;
+
 #if DXVAHD_ENABLE
 	// DXVA-HD VideoProcessor
 	CComPtr<IDXVAHD_Device>         m_pDXVAHD_Device;
@@ -157,7 +161,7 @@ public:
 private:
 	HRESULT InitDirect3D9();
 
-	BOOL CheckVideoProc(const UINT width, const UINT height, const D3DFORMAT d3dformat);
+	BOOL InitMediaType(const CMediaType* pmt);
 
 	BOOL InitVideoProc(const UINT width, const UINT height, const D3DFORMAT d3dformat);
 	BOOL InitializeDXVA2VP(const UINT width, const UINT height, const D3DFORMAT d3dformat);
