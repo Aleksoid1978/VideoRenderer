@@ -343,18 +343,21 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 	if (!m_bInterlaced) {
 		CreateDXVA2VPDevice(DXVA2_VideoProcProgressiveDevice, videodesc);
 	} else {
+		UINT PreferredDeintTech = DXVA2_DeinterlaceTech_EdgeFiltering // Intel
+								| DXVA2_DeinterlaceTech_FieldAdaptive
+								| DXVA2_DeinterlaceTech_PixelAdaptive // Nvidia, AMD
+								| DXVA2_DeinterlaceTech_MotionVectorSteered;
+
 		for (UINT i = 0; i < count; i++) {
 			auto& devguid = guids[i];
-			if (CreateDXVA2VPDevice(devguid, videodesc)
-					&& m_DXVA2VPcaps.DeinterlaceTechnology & DXVA2_DeinterlaceTech_Mask) { // TODO - maybe check DXVA2_DeinterlaceTech_PixelAdaptive ??
-				break;
+			if (CreateDXVA2VPDevice(devguid, videodesc) && m_DXVA2VPcaps.DeinterlaceTechnology & PreferredDeintTech) {
+				break; // found!
 			}
-
 			m_pDXVA2_VP.Release();
 		}
 
 		if (!m_pDXVA2_VP) {
-			CreateDXVA2VPDevice(DXVA2_VideoProcProgressiveDevice, videodesc);
+			CreateDXVA2VPDevice(DXVA2_VideoProcBobDevice, videodesc);
 		}
 	}
 
