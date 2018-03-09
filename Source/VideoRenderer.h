@@ -39,6 +39,49 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_P010},
 };
 
+struct VideoSurface {
+	REFERENCE_TIME Start = 0;
+	REFERENCE_TIME End = 0;
+	CComPtr<IDirect3DSurface9> pSrcSurface;
+	DWORD SampleFormat = DXVA2_SampleUnknown;
+};
+
+class VideoSurfaceBuffer
+{
+	std::vector<VideoSurface> m_Surfaces;
+	unsigned m_LastPos = 0;
+
+public:
+	unsigned Size() {
+		return (unsigned)m_Surfaces.size();
+	}
+	bool Empty() {
+		return m_Surfaces.empty();
+	}
+	void Clear() {
+		m_Surfaces.clear();
+	}
+	void Resize(const unsigned size) {
+		Clear();
+		m_Surfaces.resize(size);
+		m_LastPos = Size() - 1;
+	}
+	VideoSurface& Get() {
+		return m_Surfaces[m_LastPos];
+	}
+	VideoSurface& GetAt(const unsigned pos) {
+		unsigned InternalPos = (m_LastPos + 1 + pos) % Size();
+		return m_Surfaces[InternalPos];
+	}
+	void Next() {
+		m_LastPos++;
+		if (m_LastPos >= Size()) {
+			m_LastPos = 0;
+		}
+	}
+};
+
+
 class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	CMpcVideoRenderer
 	: public CBaseRenderer
@@ -49,10 +92,7 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	, public IVideoRenderer
 {
 private:
-	//UINT m_SampleFormat = DXVA2_SampleProgressiveFrame;
-	//UINT m_SampleFormat = DXVA2_SampleUnknown;
-	//UINT m_SampleFormat = DXVA2_SampleFieldInterleavedEvenFirst;
-	UINT m_SampleFormat = DXVA2_SampleFieldInterleavedOddFirst;
+	UINT m_SampleFormat = DXVA2_SampleProgressiveFrame;
 
 	CMediaType m_mt;
 	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
@@ -66,7 +106,7 @@ private:
 	RECT m_trgRect = {};
 	UINT m_srcLines = 0;
 	INT  m_srcPitch = 0;
-	std::vector<CComPtr<IDirect3DSurface9>> m_pSrcSurfaces;
+	VideoSurfaceBuffer m_SrcSamples;
 
 	CRect m_nativeVideoRect;
 	CRect m_videoRect;
@@ -89,6 +129,8 @@ private:
 	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
 	DXVA2_VideoProcessorCaps m_DXVA2VPcaps = {};
 	DXVA2_Fixed32 m_DXVA2ProcAmpValues[4] = {};
+	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
+	DWORD m_frame = 0;
 
 #if DXVAHD_ENABLE
 	// DXVA-HD VideoProcessor
