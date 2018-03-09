@@ -359,6 +359,10 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 		if (!m_pDXVA2_VP) {
 			CreateDXVA2VPDevice(DXVA2_VideoProcBobDevice, videodesc);
 		}
+
+		if (!m_pDXVA2_VP) {
+			CreateDXVA2VPDevice(DXVA2_VideoProcProgressiveDevice, videodesc); // last try for RGB
+		}
 	}
 
 	CoTaskMemFree(guids);
