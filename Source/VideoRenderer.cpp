@@ -877,6 +877,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			m_srcAspectRatioY = vih2->dwPictAspectRatioY;
 			m_srcExFmt.value = 0;
 
+			m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
 			if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
 				m_srcFormat = D3DFMT_X8R8G8B8;
 				m_srcLines = m_srcHeight;
@@ -909,7 +910,24 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 {
+	CheckPointer(pSample, E_POINTER);
 	std::unique_lock<std::mutex> lock(m_mutex);
+
+	// Get frame type
+	m_SampleFormat = DXVA2_SampleProgressiveFrame; // Progressive
+	if (m_bInterlaced) {
+		if (CComQIPtr<IMediaSample2> pMS2 = pSample) {
+			AM_SAMPLE2_PROPERTIES props;
+			if (SUCCEEDED(pMS2->GetProperties(sizeof(props), (BYTE*)&props))) {
+				m_SampleFormat = DXVA2_SampleFieldInterleavedOddFirst;      // Bottom-field first
+				if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_WEAVE) {
+					m_SampleFormat = DXVA2_SampleProgressiveFrame;          // Progressive
+				} else if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_FIELD1FIRST) {
+					m_SampleFormat = DXVA2_SampleFieldInterleavedEvenFirst; // Top-field first
+				}
+			}
+		}
+	}
 
 	HRESULT hr = CopySample(pSample);
 	if (FAILED(hr)) {
