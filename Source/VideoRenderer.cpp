@@ -338,7 +338,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 		DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : GetVideoProcessorDeviceGuids failed with error 0x%x.\n", hr);
 		return FALSE;
 	}
-	UINT NumRefSamples;
+	UINT NumRefSamples = 0;
 	for (i = 0; i < count; i++) {
 		auto& devguid = guids[i];
 		if (CreateDXVA2VPDevice(devguid, videodesc)) {
@@ -594,7 +594,7 @@ HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 	blt.BackgroundColor = { 128 * 0x100, 128 * 0x100, 16 * 0x100, 0xFFFF }; // black
 	// DXVA2_VideoProcess_YUV2RGBExtended
 	//blt.DestFormat.value = 0; // output to RGB
-	blt.DestFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
+	blt.DestFormat.SampleFormat = m_SampleFormat;
 
 	// DXVA2_ProcAmp_Brightness/Contrast/Hue/Saturation
 	blt.ProcAmpValues.Brightness = m_DXVA2ProcAmpValues[0];
