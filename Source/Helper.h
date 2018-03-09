@@ -45,3 +45,11 @@
 #endif
 
 const wchar_t* D3DFormatToString(D3DFORMAT format);
+
+inline CString CStringFromGUID(const GUID& guid)
+{
+	WCHAR null[128] = {}, buff[128] = {};
+	StringFromGUID2(GUID_NULL, null, 127);
+	return CString(StringFromGUID2(guid, buff, 127) > 0 ? buff : null);
+}
+

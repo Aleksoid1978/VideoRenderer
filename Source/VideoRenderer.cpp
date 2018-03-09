@@ -320,7 +320,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 	videodesc.SampleWidth = width;
 	videodesc.SampleHeight = height;
 	//videodesc.SampleFormat.value = 0; // do not need to fill it here
-	videodesc.SampleFormat.SampleFormat = m_SampleFormat;
+	videodesc.SampleFormat.SampleFormat = m_bInterlaced ? DXVA2_SampleFieldInterleavedOddFirst : DXVA2_SampleProgressiveFrame;
 	if (d3dformat == D3DFMT_X8R8G8B8) {
 		videodesc.Format = D3DFMT_YUY2; // hack
 	} else {
@@ -332,33 +332,34 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 	videodesc.OutputFrameFreq.Denominator = 1;
 
 	// Query the video processor GUID.
-	UINT i, count;
+	UINT count;
 	GUID* guids = NULL;
 	hr = m_pDXVA2_VPService->GetVideoProcessorDeviceGuids(&videodesc, &count, &guids);
 	if (FAILED(hr)) {
-		DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : GetVideoProcessorDeviceGuids failed with error 0x%x.\n", hr);
+		DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : GetVideoProcessorDeviceGuids() failed with error 0x%08x", hr);
 		return FALSE;
 	}
-	UINT NumRefSamples;
-	for (i = 0; i < count; i++) {
-		auto& devguid = guids[i];
-		if (CreateDXVA2VPDevice(devguid, videodesc)) {
-			NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
-			ASSERT(NumRefSamples <= MAX_DEINTERLACE_SURFACES);
-
-			if (m_SampleFormat == DXVA2_SampleProgressiveFrame) { // need progressive device
-				if (devguid == DXVA2_VideoProcProgressiveDevice) {
-					break;
-				}
-			} else { // need deinterlace device
-				if ((m_DXVA2VPcaps.DeinterlaceTechnology & DXVA2_DeinterlaceTech_Mask) && NumRefSamples == 1) {
-					// TODO: remove check "NumRefSamples == 1"
-					break;
-				}
+	UINT NumRefSamples = 1;
+	if (!m_bInterlaced) {
+		CreateDXVA2VPDevice(DXVA2_VideoProcProgressiveDevice, videodesc);
+	} else {
+		for (UINT i = 0; i < count; i++) {
+			auto& devguid = guids[i];
+			if (CreateDXVA2VPDevice(devguid, videodesc)
+					&& m_DXVA2VPcaps.DeinterlaceTechnology & DXVA2_DeinterlaceTech_Mask) { // TODO - maybe check DXVA2_DeinterlaceTech_PixelAdaptive ??
+				NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
+				ASSERT(NumRefSamples <= MAX_DEINTERLACE_SURFACES);
+				break;
 			}
+
+			m_pDXVA2_VP.Release();
 		}
-		m_pDXVA2_VP.Release();
+
+		if (!m_pDXVA2_VP) {
+			CreateDXVA2VPDevice(DXVA2_VideoProcProgressiveDevice, videodesc);
+		}
 	}
+
 	CoTaskMemFree(guids);
 	if (!m_pDXVA2_VP) {
 		return FALSE;
@@ -442,7 +443,7 @@ BOOL CMpcVideoRenderer::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vide
 	// Check to see if the device supports all the VP operations we want.
 	const UINT VIDEO_REQUIED_OP = DXVA2_VideoProcess_YUV2RGB | DXVA2_VideoProcess_StretchX | DXVA2_VideoProcess_StretchY;
 	if ((m_DXVA2VPcaps.VideoProcessorOperations & VIDEO_REQUIED_OP) != VIDEO_REQUIED_OP) {
-		DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : The DXVA2 device doesn't support the VP operations");
+		DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : The DXVA2 device doesn't support the YUV2RGB & VP operations");
 		return FALSE;
 	}
 
@@ -466,6 +467,8 @@ BOOL CMpcVideoRenderer::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vide
 		DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : CreateVideoProcessor failed with error 0x%08x", hr);
 		return FALSE;
 	}
+
+	DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : create %s processor ", CStringFromGUID(devguid));
 
 	return TRUE;
 }
@@ -617,7 +620,8 @@ HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 	blt.Alpha = DXVA2_Fixed32OpaqueAlpha();
 
 	// Initialize main stream video samples
-	for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
+	const size_t numSamples = m_SampleFormat == DXVA2_SampleProgressiveFrame ? 1 : m_DXVA2Samples.size();
+	for (unsigned i = 0; i < numSamples; i++) {
 		auto & SrcSample = m_SrcSamples.GetAt(i);
 
 		m_DXVA2Samples[i].Start = SrcSample.Start;
@@ -635,7 +639,7 @@ HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 		m_pD3DDevEx->ColorFill(pRenderTarget, nullptr, 0);
 	}
 
-	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &blt, m_DXVA2Samples.data(), m_DXVA2Samples.size(), nullptr);
+	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &blt, m_DXVA2Samples.data(), numSamples, nullptr);
 	if (FAILED(hr)) {
 		DLog(L"CMpcVideoRenderer::ProcessDXVA2() : VideoProcessBlt() failed with error 0x%08x", hr);
 	}
@@ -883,6 +887,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			m_srcExFmt.value = 0;
 
 			m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
+
 			if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
 				m_srcFormat = D3DFMT_X8R8G8B8;
 				m_srcLines = m_srcHeight;
