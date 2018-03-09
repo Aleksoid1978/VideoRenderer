@@ -347,8 +347,6 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 			auto& devguid = guids[i];
 			if (CreateDXVA2VPDevice(devguid, videodesc)
 					&& m_DXVA2VPcaps.DeinterlaceTechnology & DXVA2_DeinterlaceTech_Mask) { // TODO - maybe check DXVA2_DeinterlaceTech_PixelAdaptive ??
-				NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
-				ASSERT(NumRefSamples <= MAX_DEINTERLACE_SURFACES);
 				break;
 			}
 
@@ -364,6 +362,9 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 	if (!m_pDXVA2_VP) {
 		return FALSE;
 	}
+
+	NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
+	ASSERT(NumRefSamples <= MAX_DEINTERLACE_SURFACES);
 
 	m_SrcSamples.Resize(NumRefSamples);
 	m_DXVA2Samples.resize(NumRefSamples);
