@@ -602,10 +602,9 @@ HRESULT CMpcVideoRenderer::Render()
 	hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
 
 	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
+	m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
 
-	if (m_State == State_Stopped) {
-		m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
-	} else {
+	if (m_filterState == State_Running) {
 		hr = ProcessDXVA2(pBackBuffer);
 	}
 
@@ -655,13 +654,6 @@ HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 		m_DXVA2Samples[i].SampleFormat.SampleFormat = SrcSample.SampleFormat;
 		m_DXVA2Samples[i].SrcSurface = SrcSample.pSrcSurface;
 		m_DXVA2Samples[i].DstRect = rDstVid;
-	}
-
-	// clear pRenderTarget, need for Nvidia graphics cards and Intel mobile graphics
-	CRect clientRect;
-	if (rDstVid.left > 0 || rDstVid.top > 0
-			|| GetClientRect(m_hWnd, clientRect) && (rDstVid.right < clientRect.Width() || rDstVid.bottom < clientRect.Height())) {
-		m_pD3DDevEx->ColorFill(pRenderTarget, nullptr, 0);
 	}
 
 	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &blt, m_DXVA2Samples.data(), numSamples, nullptr);
@@ -1024,11 +1016,28 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 }
 
 // IMediaFilter
+STDMETHODIMP CMpcVideoRenderer::Run(REFERENCE_TIME rtStart)
+{
+	DLog(L"CMpcVideoRenderer::Run()");
+
+	if (m_State == State_Running) {
+		return NOERROR;
+	}
+
+	m_filterState = State_Running;
+
+	return CBaseRenderer::Run(rtStart);
+}
+
 STDMETHODIMP CMpcVideoRenderer::Stop()
 {
+	DLog(L"CMpcVideoRenderer::Stop()");
+
 	for (unsigned i = 0; i < m_SrcSamples.Size(); i++) {
 		m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(i).pSrcSurface, nullptr, 0);
 	}
+
+	m_filterState = State_Stopped;
 
 	return CBaseRenderer::Stop();
 }

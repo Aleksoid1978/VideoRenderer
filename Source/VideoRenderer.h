@@ -154,6 +154,8 @@ private:
 	HANDLE                                m_hDevice = nullptr;
 
 	std::mutex m_mutex;
+	
+	FILTER_STATE m_filterState = State_Stopped;
 
 public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
@@ -189,6 +191,7 @@ public:
 	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv);
 
 	// IMediaFilter
+	STDMETHODIMP Run(REFERENCE_TIME rtStart) override;
 	STDMETHODIMP Stop() override;
 
 	// IMFGetService
