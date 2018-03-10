@@ -403,6 +403,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 			m_DXVA2Samples.clear();
 			return FALSE;
 		}
+		m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(i).pSrcSurface, nullptr, 0);
 
 		m_DXVA2Samples[i].SampleFormat.value = m_srcExFmt.value;
 		m_DXVA2Samples[i].SrcRect = {0, 0, m_nativeVideoRect.Width(), m_nativeVideoRect.Height()};
@@ -601,9 +602,12 @@ HRESULT CMpcVideoRenderer::Render()
 	hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
 
 	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
-	hr = m_pD3DDevEx->Clear(0, nullptr, D3DCLEAR_TARGET, 0, 1.0f, 0);
 
-	hr = ProcessDXVA2(pBackBuffer);
+	if (m_State == State_Stopped) {
+		m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
+	} else {
+		hr = ProcessDXVA2(pBackBuffer);
+	}
 
 	hr = m_pD3DDevEx->EndScene();
 
@@ -655,9 +659,8 @@ HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 
 	// clear pRenderTarget, need for Nvidia graphics cards and Intel mobile graphics
 	CRect clientRect;
-	if (rDstVid.left > 0 || rDstVid.top > 0 ||
-		GetClientRect(m_hWnd, clientRect) && (rDstVid.right < clientRect.Width() || rDstVid.bottom < clientRect.Height())) {
-		//m_pD3DDevEx->Clear(0, nullptr, D3DCLEAR_TARGET, 0, 1.0f, 0); //  not worked
+	if (rDstVid.left > 0 || rDstVid.top > 0
+			|| GetClientRect(m_hWnd, clientRect) && (rDstVid.right < clientRect.Width() || rDstVid.bottom < clientRect.Height())) {
 		m_pD3DDevEx->ColorFill(pRenderTarget, nullptr, 0);
 	}
 
@@ -1020,6 +1023,16 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 	return hr;
 }
 
+// IMediaFilter
+STDMETHODIMP CMpcVideoRenderer::Stop()
+{
+	for (unsigned i = 0; i < m_SrcSamples.Size(); i++) {
+		m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(i).pSrcSurface, nullptr, 0);
+	}
+
+	return CBaseRenderer::Stop();
+}
+
 // IMFGetService
 STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject)
 {
@@ -1044,7 +1057,7 @@ STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPV
 STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long Width, long Height)
 {
 	m_videoRect.SetRect(Left, Top, Left + Width, Top + Height);
-	if (m_State == State_Paused) {
+	if (m_State != State_Running) {
 		Render();
 	}
 	return S_OK;
@@ -1085,7 +1098,7 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Width, long Height)
 {
 	m_windowRect.SetRect(Left, Top, Left + Width, Top + Height);
-	if (m_State == State_Paused) {
+	if (m_State != State_Running) {
 		Render();
 	}
 	return S_OK;
