@@ -43,7 +43,7 @@ struct VideoSurface {
 	REFERENCE_TIME Start = 0;
 	REFERENCE_TIME End = 0;
 	CComPtr<IDirect3DSurface9> pSrcSurface;
-	DWORD SampleFormat = DXVA2_SampleUnknown;
+	DXVA2_SampleFormat SampleFormat = DXVA2_SampleUnknown;
 };
 
 class VideoSurfaceBuffer
@@ -92,7 +92,7 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	, public IVideoRenderer
 {
 private:
-	UINT m_SampleFormat = DXVA2_SampleProgressiveFrame;
+	DXVA2_SampleFormat m_SampleFormat = DXVA2_SampleProgressiveFrame;
 
 	CMediaType m_mt;
 	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
