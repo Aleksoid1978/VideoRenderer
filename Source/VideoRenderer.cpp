@@ -408,6 +408,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 		m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(i).pSrcSurface, nullptr, 0);
 
 		m_DXVA2Samples[i].SampleFormat.value = m_srcExFmt.value;
+		m_DXVA2Samples[i].SampleFormat.SampleFormat = DXVA2_SampleUnknown; // samples that are not used yet
 		m_DXVA2Samples[i].SrcRect = {0, 0, m_nativeVideoRect.Width(), m_nativeVideoRect.Height()};
 		m_DXVA2Samples[i].PlanarAlpha = DXVA2_Fixed32OpaqueAlpha();
 	}
