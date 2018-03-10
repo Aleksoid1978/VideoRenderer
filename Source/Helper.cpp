@@ -111,7 +111,7 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
 		return L"BobDevice";
 	}
 	else if (guid == DXVA2_VideoProcSoftwareDevice) {
-		return L"SoftwareDevicee";
+		return L"SoftwareDevice";
 	}
 
 	return CStringFromGUID(guid);
