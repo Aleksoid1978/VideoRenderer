@@ -22,6 +22,11 @@
 
 #include <dxva2api.h>
 
+enum :int {
+	ID_AdapterDesc = 1,
+	ID_DXVA2VPCaps,
+};
+
 struct VRFrameInfo {
 	unsigned Width;
 	unsigned Height;
@@ -34,6 +39,7 @@ IVideoRenderer : public IUnknown {
 	// The memory for strings and binary data is allocated by the callee
 	// by using LocalAlloc. It is the caller's responsibility to release the
 	// memory by calling LocalFree.
-	STDMETHOD(get_AdapterDescription) (LPWSTR* pstr, int* chars) PURE;
+	STDMETHOD(get_String) (int id, LPWSTR* pstr, int* chars) PURE;
+	STDMETHOD(get_Binary) (int id, LPVOID* pbin, int* size) PURE;
 	STDMETHOD(get_FrameInfo) (VRFrameInfo* pFrameInfo) PURE;
 };

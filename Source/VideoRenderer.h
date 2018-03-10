@@ -118,6 +118,7 @@ private:
 	HMODULE m_hD3D9Lib = nullptr;
 	CComPtr<IDirect3D9Ex>       m_pD3DEx;
 	CComPtr<IDirect3DDevice9Ex> m_pD3DDevEx;
+	DWORD m_VendorId;
 	CString m_strAdapterDescription;
 
 	D3DDISPLAYMODEEX m_DisplayMode = { sizeof(D3DDISPLAYMODEEX) };
@@ -285,6 +286,7 @@ public:
 	STDMETHODIMP GetPages(CAUUID* pPages);
 
 	// IVideoRenderer
-	STDMETHODIMP get_AdapterDescription(LPWSTR* pstr, int* chars);
+	STDMETHODIMP get_String(int id, LPWSTR* pstr, int* chars);
+	STDMETHODIMP get_Binary(int id, LPVOID* pbin, int* size);
 	STDMETHODIMP get_FrameInfo(VRFrameInfo* pFrameInfo);
 };

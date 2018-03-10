@@ -101,3 +101,18 @@ const wchar_t* D3DFormatToString(D3DFORMAT format)
 
 	return L"D3DFMT_UNKNOWN";
 }
+
+const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
+{
+	if (guid == DXVA2_VideoProcProgressiveDevice) {
+		return L"ProgressiveDevice";
+	}
+	else if (guid == DXVA2_VideoProcBobDevice) {
+		return L"BobDevice";
+	}
+	else if (guid == DXVA2_VideoProcSoftwareDevice) {
+		return L"SoftwareDevicee";
+	}
+
+	return CStringFromGUID(guid);
+}

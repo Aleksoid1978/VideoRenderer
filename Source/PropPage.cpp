@@ -84,7 +84,7 @@ HRESULT CVRMainPPage::OnActivate()
 
 	int chars;
 	LPWSTR pstr = nullptr;
-	if (S_OK == m_pVideoRenderer->get_AdapterDescription(&pstr, &chars)) {
+	if (S_OK == m_pVideoRenderer->get_String(ID_AdapterDesc, &pstr, &chars)) {
 		str.Format(L"Graphics adapter: %s\r\n", pstr);
 		LocalFree(pstr);
 	}

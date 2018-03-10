@@ -21,6 +21,7 @@
 #pragma once
 
 #include <d3d9.h>
+#include <dxva2api.h>
 
 #ifndef FCC
 #define FCC(ch4) ((((DWORD)(ch4) & 0xFF) << 24) |     \
@@ -44,6 +45,7 @@
 #endif
 
 const wchar_t* D3DFormatToString(D3DFORMAT format);
+const wchar_t* DXVA2VPDeviceToString(const GUID& guid);
 
 inline CString CStringFromGUID(const GUID& guid)
 {

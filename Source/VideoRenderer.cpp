@@ -232,6 +232,7 @@ HRESULT CMpcVideoRenderer::InitDirect3D9()
 
 	D3DADAPTER_IDENTIFIER9 AdapID9 = {};
 	if (S_OK == m_pD3DEx->GetAdapterIdentifier(m_CurrentAdapter, 0, &AdapID9)) {
+		m_VendorId = AdapID9.VendorId;
 		m_strAdapterDescription.Format(L"%S (%04X:%04X)", AdapID9.Description, AdapID9.VendorId, AdapID9.DeviceId);
 	}
 
@@ -1137,19 +1138,59 @@ STDMETHODIMP CMpcVideoRenderer::GetPages(CAUUID* pPages)
 }
 
 // IVideoRenderer
-STDMETHODIMP CMpcVideoRenderer::get_AdapterDescription(LPWSTR* pstr, int* chars)
+STDMETHODIMP CMpcVideoRenderer::get_String(int id, LPWSTR* pstr, int* chars)
 {
 	CheckPointer(pstr, E_POINTER);
+	CheckPointer(chars, E_POINTER);
 
-	const int len = m_strAdapterDescription.GetLength();
+	LPWSTR string = nullptr;
+	int len = 0;
+
+	switch (id) {
+	case ID_AdapterDesc:
+		string = m_strAdapterDescription.GetBuffer();
+		len = m_strAdapterDescription.GetLength();
+		break;
+	default:
+		return E_INVALIDARG;
+	}
+
 	const size_t sz = (len + 1) * sizeof(WCHAR);
 	LPWSTR buf = (LPWSTR)LocalAlloc(LPTR, sz);
 	if (!buf) {
 		return E_OUTOFMEMORY;
 	}
-	wcscpy_s(buf, len + 1, m_strAdapterDescription);
+	wcscpy_s(buf, len + 1, string);
 	*chars = len;
 	*pstr = buf;
+
+	return S_OK;
+}
+
+STDMETHODIMP CMpcVideoRenderer::get_Binary(int id, LPVOID* pbin, int* size)
+{
+	CheckPointer(pbin, E_POINTER);
+	CheckPointer(size, E_POINTER);
+
+	LPVOID binary = nullptr;
+	size_t sz = 0;
+
+	switch (id) {
+	case ID_DXVA2VPCaps:
+		binary = &m_DXVA2VPcaps;
+		sz = sizeof(m_DXVA2VPcaps);
+		break;
+	default:
+		return E_INVALIDARG;
+	}
+
+	LPVOID buf = (LPVOID)LocalAlloc(LPTR, sz);
+	if (!buf) {
+		return E_OUTOFMEMORY;
+	}
+	memcpy(buf, binary, sz);
+	*size = sz;
+	*pbin = buf;
 
 	return S_OK;
 }
