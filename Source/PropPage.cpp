@@ -85,13 +85,44 @@ HRESULT CVRMainPPage::OnActivate()
 	int chars;
 	LPWSTR pstr = nullptr;
 	if (S_OK == m_pVideoRenderer->get_String(ID_AdapterDesc, &pstr, &chars)) {
-		str.Format(L"Graphics adapter: %s\r\n", pstr);
+		str.Format(L"Graphics adapter: %s", pstr);
 		LocalFree(pstr);
+	}
+
+	GUID guid = {};
+	m_pVideoRenderer->get_VPDeviceGuid(&guid);
+	str.AppendFormat(L"\r\nDXVA2 Video Processor: %s", DXVA2VPDeviceToString(guid));
+
+	int size;
+	LPVOID pbin = nullptr;
+	if (S_OK == m_pVideoRenderer->get_Binary(ID_DXVA2VPCaps, &pbin, &size)) {
+		auto pCaps = (DXVA2_VideoProcessorCaps*)pbin;
+		UINT dt = pCaps->DeinterlaceTechnology;
+		if (dt & DXVA2_DeinterlaceTech_Mask) {
+			str.Append(L"\r\nDeinterlaceTechnology:");
+			if (dt & DXVA2_DeinterlaceTech_BOBLineReplicate)       str.Append(L" BOBLineReplicate,");
+			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch)     str.Append(L" BOBVerticalStretch,");
+			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch4Tap) str.Append(L" BOBVerticalStretch4Tap,");
+			if (dt & DXVA2_DeinterlaceTech_MedianFiltering)        str.Append(L" MedianFiltering,");
+			if (dt & DXVA2_DeinterlaceTech_EdgeFiltering)          str.Append(L" EdgeFiltering,");
+			if (dt & DXVA2_DeinterlaceTech_FieldAdaptive)          str.Append(L" FieldAdaptive,");
+			if (dt & DXVA2_DeinterlaceTech_PixelAdaptive)          str.Append(L" PixelAdaptive,");
+			if (dt & DXVA2_DeinterlaceTech_MotionVectorSteered)    str.Append(L" MotionVectorSteered,");
+			if (dt & DXVA2_DeinterlaceTech_InverseTelecine)        str.Append(L" InverseTelecine");
+			str.TrimRight(',');
+		}
+		if (pCaps->NumForwardRefSamples) {
+			str.AppendFormat(L"\r\nForwardRefSamples: %u", pCaps->NumForwardRefSamples);
+		}
+		if (pCaps->NumBackwardRefSamples) {
+			str.AppendFormat(L"\r\nBackwardRefSamples: %u", pCaps->NumBackwardRefSamples);
+		}
+		LocalFree(pbin);
 	}
 
 	VRFrameInfo frameinfo;
 	m_pVideoRenderer->get_FrameInfo(&frameinfo);
-	str.Append(L"\r\n  Input");
+	str.Append(L"\r\n\r\n  Input");
 	str.AppendFormat(L"\r\nFormat: %s", D3DFormatToString(frameinfo.D3dFormat));
 	str.AppendFormat(L"\r\nWidth : %u", frameinfo.Width);
 	str.AppendFormat(L"\r\nHeight: %u", frameinfo.Height);

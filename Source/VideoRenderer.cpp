@@ -361,20 +361,21 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 		for (UINT i = 0; i < count; i++) {
 			auto& devguid = guids[i];
 			if (CreateDXVA2VPDevice(devguid, videodesc) && m_DXVA2VPcaps.DeinterlaceTechnology & PreferredDeintTech) {
+				m_DXVA2VPGuid = devguid;
 				break; // found!
 			}
 			m_pDXVA2_VP.Release();
 		}
 
-		if (!m_pDXVA2_VP) {
-			CreateDXVA2VPDevice(DXVA2_VideoProcBobDevice, videodesc);
+		if (!m_pDXVA2_VP && CreateDXVA2VPDevice(DXVA2_VideoProcBobDevice, videodesc)) {
+			m_DXVA2VPGuid = DXVA2_VideoProcBobDevice;
 		}
 	}
 
 	CoTaskMemFree(guids);
 
-	if (!m_pDXVA2_VP) {
-		CreateDXVA2VPDevice(DXVA2_VideoProcProgressiveDevice, videodesc); // Progressive or fall-back for interlaced
+	if (!m_pDXVA2_VP && CreateDXVA2VPDevice(DXVA2_VideoProcProgressiveDevice, videodesc)) { // Progressive or fall-back for interlaced
+		m_DXVA2VPGuid = DXVA2_VideoProcProgressiveDevice;
 	}
 
 	if (!m_pDXVA2_VP) {
@@ -1203,6 +1204,15 @@ STDMETHODIMP CMpcVideoRenderer::get_FrameInfo(VRFrameInfo* pFrameInfo)
 	pFrameInfo->Height = m_srcHeight;
 	pFrameInfo->D3dFormat = m_srcFormat;
 	pFrameInfo->ExtFormat.value = m_srcExFmt.value;
+
+	return S_OK;
+}
+
+STDMETHODIMP CMpcVideoRenderer::get_VPDeviceGuid(GUID* pVPDevGuid)
+{
+	CheckPointer(pVPDevGuid, E_POINTER);
+
+	*pVPDevGuid = m_DXVA2VPGuid;
 
 	return S_OK;
 }

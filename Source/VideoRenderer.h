@@ -129,6 +129,7 @@ private:
 	// DXVA2 VideoProcessor
 	CComPtr<IDirectXVideoProcessorService> m_pDXVA2_VPService;
 	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
+	GUID m_DXVA2VPGuid = GUID_NULL;
 	DXVA2_VideoProcessorCaps m_DXVA2VPcaps = {};
 	DXVA2_Fixed32 m_DXVA2ProcAmpValues[4] = {};
 	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
@@ -289,4 +290,5 @@ public:
 	STDMETHODIMP get_String(int id, LPWSTR* pstr, int* chars);
 	STDMETHODIMP get_Binary(int id, LPVOID* pbin, int* size);
 	STDMETHODIMP get_FrameInfo(VRFrameInfo* pFrameInfo);
+	STDMETHODIMP get_VPDeviceGuid(GUID* pVPDevGuid);
 };
