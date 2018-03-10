@@ -646,8 +646,7 @@ HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 	blt.Alpha = DXVA2_Fixed32OpaqueAlpha();
 
 	// Initialize main stream video samples
-	const size_t numSamples = m_SampleFormat == DXVA2_SampleProgressiveFrame ? 1 : m_DXVA2Samples.size();
-	for (unsigned i = 0; i < numSamples; i++) {
+	for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
 		auto & SrcSample = m_SrcSamples.GetAt(i);
 
 		m_DXVA2Samples[i].Start = SrcSample.Start;
@@ -657,7 +656,7 @@ HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 		m_DXVA2Samples[i].DstRect = rDstVid;
 	}
 
-	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &blt, m_DXVA2Samples.data(), numSamples, nullptr);
+	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &blt, m_DXVA2Samples.data(), m_DXVA2Samples.size(), nullptr);
 	if (FAILED(hr)) {
 		DLog(L"CMpcVideoRenderer::ProcessDXVA2() : VideoProcessBlt() failed with error 0x%08x", hr);
 	}
