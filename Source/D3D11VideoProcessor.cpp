@@ -46,11 +46,11 @@ CD3D11VideoProcessor::CD3D11VideoProcessor()
 		return;
 	}
 
+	HRESULT hr = S_OK;
 	D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0, D3D_FEATURE_LEVEL_9_3, D3D_FEATURE_LEVEL_9_2, D3D_FEATURE_LEVEL_9_1 };
 	D3D_FEATURE_LEVEL featurelevel;
-	// D3D_FEATURE_LEVEL_11_0  - Windows 7 SP1 with Platform update (KB2670838)
 
-	HRESULT hr = pD3D11CreateDevice(
+	hr = pD3D11CreateDevice(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
@@ -64,6 +64,12 @@ CD3D11VideoProcessor::CD3D11VideoProcessor()
 	if (FAILED(hr)) {
 		return;
 	}
+
+	hr = m_pD3D11Device->QueryInterface(__uuidof(ID3D11VideoDevice), (void**)&m_pD3D11VideoDevice);
+	if (FAILED(hr)) {
+		return; // need Windows 8+
+	}
+
 
 	m_bInit = true;
 }
