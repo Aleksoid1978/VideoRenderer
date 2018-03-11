@@ -30,6 +30,10 @@
 #include "dxvahd_utils.h"
 #include "PropPage.h"
 
+#if D3D10_ENABLE
+#include "D3D11VideoProcessor.h"
+#endif
+
 class CVideoRendererInputPin : public CRendererInputPin,
 	public IMFGetService,
 	public IDirectXVideoMemoryConfiguration
@@ -161,6 +165,10 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	if (S_OK == hr) {
 		hr = m_pD3DDeviceManager->OpenDeviceHandle(&m_hDevice);
 	}
+
+#if D3D10_ENABLE
+	CD3D11VideoProcessor d3d11vp;
+#endif
 
 	*phr = hr;
 }

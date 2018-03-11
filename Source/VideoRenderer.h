@@ -30,6 +30,7 @@
 #include "IVideoRenderer.h"
 
 #define DXVAHD_ENABLE 0
+#define D3D10_ENABLE 0
 
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_NV12},
