@@ -516,7 +516,21 @@ HRESULT CMpcVideoRenderer::CopySample(IMediaSample* pSample)
 			}
 
 			m_SrcSamples.Next();
-			hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, m_SrcSamples.Get().pSrcSurface, nullptr, D3DTEXF_POINT);
+			hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, m_SrcSamples.Get().pSrcSurface, nullptr, D3DTEXF_NONE);
+			if (FAILED(hr)) {
+				// sometimes StretchRect does not work on non-primary display on Intel GPU
+				D3DLOCKED_RECT lr_dst;
+				hr = m_SrcSamples.Get().pSrcSurface->LockRect(&lr_dst, nullptr, D3DLOCK_NOSYSLOCK);
+				if (S_OK == hr) {
+					D3DLOCKED_RECT lr_src;
+					hr = pSurface->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
+					if (S_OK == hr) {
+						memcpy((BYTE*)lr_dst.pBits, (BYTE*)lr_src.pBits, lr_src.Pitch * desc.Height * 3 / 2);
+						hr = pSurface->UnlockRect();
+					}
+					hr = m_SrcSamples.Get().pSrcSurface->UnlockRect();
+				}
+			}
 		}
 	}
 	else if (m_mt.formattype == FORMAT_VideoInfo2) {
@@ -623,6 +637,8 @@ HRESULT CMpcVideoRenderer::Render()
 
 HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 {
+	// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx
+
 	HRESULT hr = S_OK;
 	ASSERT(m_SrcSamples.Size() == m_DXVA2Samples.size());
 
