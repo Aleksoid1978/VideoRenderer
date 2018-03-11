@@ -27,7 +27,6 @@
 #include <Mferror.h>
 #include <Dvdmedia.h>
 #include "Helper.h"
-#include "dxvahd_utils.h"
 #include "PropPage.h"
 
 #if D3D10_ENABLE
@@ -185,10 +184,7 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 
 	m_pDXVA2_VP.Release();
 	m_pDXVA2_VPService.Release();
-#if DXVAHD_ENABLE
-	m_pDXVAHD_VP.Release();
-	m_pDXVAHD_Device.Release();
-#endif
+
 	if (m_hDxva2Lib) {
 		FreeLibrary(m_hDxva2Lib);
 	}
@@ -226,10 +222,6 @@ HRESULT CMpcVideoRenderer::InitDirect3D9()
 	m_DXVA2Samples.clear();
 	m_pDXVA2_VP.Release();
 	m_pDXVA2_VPService.Release();
-#if DXVAHD_ENABLE
-	m_pDXVAHD_VP.Release();
-	m_pDXVAHD_Device.Release();
-#endif
 
 	const UINT currentAdapter = GetAdapter(m_hWnd, m_pD3DEx);
 	bool bTryToReset = (currentAdapter == m_CurrentAdapter) && m_pD3DDevEx;
@@ -690,211 +682,6 @@ HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 	return hr;
 }
 
-#if DXVAHD_ENABLE
-BOOL CMpcVideoRenderer::InitializeDXVAHD(const UINT width, const UINT height, const D3DFORMAT d3dformat)
-{
-	DLog("CMpcVideoRenderer::InitializeDXVAHDVP()");
-	if (!m_hDxva2Lib) {
-		return FALSE;
-	}
-
-	m_pDXVAHD_VP.Release();
-
-	HRESULT hr = S_OK;
-	if (!m_pDXVAHD_Device) {
-		HRESULT(WINAPI *pDXVAHD_CreateDevice)(IDirect3DDevice9Ex *pD3DDevice, const DXVAHD_CONTENT_DESC *pContentDesc, DXVAHD_DEVICE_USAGE Usage, PDXVAHDSW_Plugin pPlugin, IDXVAHD_Device **ppDevice);
-		(FARPROC &)pDXVAHD_CreateDevice = GetProcAddress(m_hDxva2Lib, "DXVAHD_CreateDevice");
-		if (!pDXVAHD_CreateDevice) {
-			DLog("CMpcVideoRenderer::InitializeDXVAHDVP() : DXVAHD_CreateDevice() not found");
-			return FALSE;
-		}
-
-		DXVAHD_CONTENT_DESC desc;
-		desc.InputFrameFormat = DXVAHD_FRAME_FORMAT_PROGRESSIVE;
-		desc.InputFrameRate.Numerator = 60;
-		desc.InputFrameRate.Denominator = 1;
-		desc.InputWidth = width;
-		desc.InputHeight = height;
-		desc.OutputFrameRate.Numerator = 60;
-		desc.OutputFrameRate.Denominator = 1;
-		desc.OutputWidth = m_DisplayMode.Width;
-		desc.OutputHeight = m_DisplayMode.Height;
-
-		// Create the DXVA-HD device.
-		hr = pDXVAHD_CreateDevice(m_pD3DDevEx, &desc, DXVAHD_DEVICE_USAGE_PLAYBACK_NORMAL, nullptr, &m_pDXVAHD_Device);
-		if (FAILED(hr)) {
-			DLog(L"CMpcVideoRenderer::InitializeDXVAHDVP() : DXVAHD_CreateDevice() failed with error 0x%08x", hr);
-			return FALSE;
-		}
-	}
-
-	// Get the DXVA-HD device caps.
-	hr = m_pDXVAHD_Device->GetVideoProcessorDeviceCaps(&m_DXVAHDDevCaps);
-	if (FAILED(hr) || m_DXVAHDDevCaps.MaxInputStreams < 1) {
-		return FALSE;
-	}
-
-	std::vector<D3DFORMAT> Formats;
-
-	// Check the output formats.
-	Formats.resize(m_DXVAHDDevCaps.OutputFormatCount);
-	hr = m_pDXVAHD_Device->GetVideoProcessorOutputFormats(m_DXVAHDDevCaps.OutputFormatCount, Formats.data());
-	if (FAILED(hr)) {
-		DLog(L"CMpcVideoRenderer::InitializeDXVAHDVP() : GetVideoProcessorOutputFormats() failed with error 0x%08x", hr);
-		return FALSE;
-	}
-#if _DEBUG
-	{
-		CStringW dbgstr = L"DXVA-HD output formats:";
-		for (const auto& format : Formats) {
-			dbgstr.AppendFormat(L"\n%s", D3DFormatToString(format));
-		}
-		DLog(dbgstr);
-	}
-#endif
-	if (std::find(Formats.cbegin(), Formats.cend(), D3DFMT_X8R8G8B8) == Formats.cend()) {
-		return FALSE;
-	}
-
-	// Check the input formats.
-	Formats.resize(m_DXVAHDDevCaps.InputFormatCount);
-	hr = m_pDXVAHD_Device->GetVideoProcessorInputFormats(m_DXVAHDDevCaps.InputFormatCount, Formats.data());
-	if (FAILED(hr)) {
-		DLog(L"CMpcVideoRenderer::InitializeDXVAHDVP() : GetVideoProcessorInputFormats() failed with error 0x%08x", hr);
-		return FALSE;
-	}
-#if _DEBUG
-	{
-		CStringW dbgstr = L"DXVA-HD input formats:";
-		for (const auto& format : Formats) {
-			dbgstr.AppendFormat(L"\n%s", D3DFormatToString(format));
-		}
-		DLog(dbgstr);
-	}
-#endif
-	if (std::find(Formats.cbegin(), Formats.cend(), d3dformat) == Formats.cend()) {
-		return FALSE;
-	}
-
-	// Create the VP device.
-	std::vector<DXVAHD_VPCAPS> VPCaps;
-	VPCaps.resize(m_DXVAHDDevCaps.VideoProcessorCount);
-
-	hr = m_pDXVAHD_Device->GetVideoProcessorCaps(m_DXVAHDDevCaps.VideoProcessorCount, VPCaps.data());
-	if (FAILED(hr)) {
-		DLog(L"CMpcVideoRenderer::InitializeDXVAHDVP() : GetVideoProcessorCaps() failed with error 0x%08x", hr);
-		return FALSE;
-	}
-
-	hr = m_pDXVAHD_Device->CreateVideoProcessor(&VPCaps[0].VPGuid, &m_pDXVAHD_VP);
-	if (FAILED(hr)) {
-		DLog(L"CMpcVideoRenderer::InitializeDXVAHDVP() : CreateVideoProcessor() failed with error 0x%08x", hr);
-		return FALSE;
-	}
-
-	// Set the initial stream states for the primary stream.
-	hr = DXVAHD_SetStreamFormat(m_pDXVAHD_VP, 0, d3dformat);
-	if (FAILED(hr)) {
-		DLog(L"CMpcVideoRenderer::InitializeDXVAHDVP() : DXVAHD_SetStreamFormat() failed with error 0x%08x, format : %s", hr, D3DFormatToString(d3dformat));
-		return FALSE;
-	}
-
-	hr = DXVAHD_SetFrameFormat(m_pDXVAHD_VP, 0, DXVAHD_FRAME_FORMAT_PROGRESSIVE);
-	if (FAILED(hr)) {
-		DLog(L"CMpcVideoRenderer::InitializeDXVAHDVP() : DXVAHD_SetFrameFormat() failed with error 0x%08x", hr);
-		return FALSE;
-	}
-
-#define DXVAHD_Range_0_255       0
-#define DXVAHD_Range_16_235      1
-#define DXVAHD_YCbCrMatrix_BT601 0
-#define DXVAHD_YCbCrMatrix_BT709 1
-
-	DXVAHD_STREAM_STATE_INPUT_COLOR_SPACE_DATA InputColorSpaceData = {}; // Type = 0 -Video, YCbCr_xvYCC = 0 - Conventional YCbCr
-	if (m_srcFormat == D3DFMT_X8R8G8B8) {
-		InputColorSpaceData.RGB_Range = DXVAHD_Range_0_255;
-	}
-	else if (m_srcExFmt.value) {
-		if (m_srcExFmt.NominalRange == DXVA2_NominalRange_0_255) {
-			InputColorSpaceData.RGB_Range = DXVAHD_Range_0_255;
-		}
-		else { // Unknown, 16_235, 48_208
-			InputColorSpaceData.RGB_Range = DXVAHD_Range_16_235;
-		}
-
-		if (m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT709) {
-			InputColorSpaceData.YCbCr_Matrix = 1; // ITU-R BT.709
-		}
-		else if (m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601) {
-			InputColorSpaceData.YCbCr_Matrix = DXVAHD_YCbCrMatrix_BT601;
-		}
-		else { // Unknown, SMPTE240M
-			if (m_srcWidth <= 1024 && m_srcHeight <= 576) { // SD
-				InputColorSpaceData.YCbCr_Matrix = DXVAHD_YCbCrMatrix_BT601;
-			}
-			else { // HD
-				InputColorSpaceData.YCbCr_Matrix = DXVAHD_YCbCrMatrix_BT709;
-			}
-		}
-	}
-	else {
-		InputColorSpaceData.RGB_Range = 1; // Limited range (16-235)
-		if (m_srcWidth <= 1024 && m_srcHeight <= 576) { // SD
-			InputColorSpaceData.YCbCr_Matrix = DXVAHD_YCbCrMatrix_BT601;
-		}
-		else { // HD
-			InputColorSpaceData.YCbCr_Matrix = DXVAHD_YCbCrMatrix_BT709;
-		}
-	}
-	hr = m_pDXVAHD_VP->SetVideoProcessStreamState(0, DXVAHD_STREAM_STATE_INPUT_COLOR_SPACE, sizeof(InputColorSpaceData), &InputColorSpaceData);
-
-	hr = m_pDXVAHD_Device->CreateVideoSurface(
-		width,
-		height,
-		d3dformat,
-		m_DXVAHDDevCaps.InputPool,
-		0,
-		DXVAHD_SURFACE_TYPE_VIDEO_INPUT,
-		1,
-		&m_pSrcSurface,
-		nullptr
-	);
-	if (FAILED(hr)) {
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-HRESULT CMpcVideoRenderer::ProcessDXVAHD(IDirect3DSurface9* pRenderTarget)
-{
-	HRESULT hr = S_OK;
-
-	static DWORD frame = 0;
-
-	DXVAHD_STREAM_DATA stream_data = {};
-	stream_data.Enable = TRUE;
-	stream_data.OutputIndex = 0;
-	stream_data.InputFrameOrField = frame;
-	stream_data.pInputSurface = m_pSrcSurface;
-
-	const CRect rSrcVid(CPoint(0, 0), m_nativeVideoRect.Size());
-	const CRect rDstVid(m_videoRect);
-
-	hr = DXVAHD_SetSourceRect(m_pDXVAHD_VP, 0, TRUE, rSrcVid);
-	hr = DXVAHD_SetDestinationRect(m_pDXVAHD_VP, 0, TRUE, rDstVid);
-
-	// Perform the blit.
-	hr = m_pDXVAHD_VP->VideoProcessBltHD(pRenderTarget, frame, 1, &stream_data);
-	if (FAILED(hr)) {
-		DLog(L"CMpcVideoRenderer::ResizeDXVAHD() : VideoProcessBltHD() failed with error 0x%08x", hr);
-	}
-	frame++;
-
-	return hr;
-}
-#endif
-
 BOOL CMpcVideoRenderer::InitMediaType(const CMediaType* pmt)
 {
 	m_mt = *pmt;
@@ -931,10 +718,6 @@ BOOL CMpcVideoRenderer::InitMediaType(const CMediaType* pmt)
 			}
 		}
 		m_srcPitch = vih2->bmiHeader.biSizeImage / m_srcLines;
-
-#if DXVAHD_ENABLE
-		m_pDXVAHD_VP.Release();
-#endif
 
 		if (!InitVideoProc(m_srcWidth, m_srcHeight, m_srcFormat)) {
 			return FALSE;

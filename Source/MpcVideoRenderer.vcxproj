@@ -109,7 +109,6 @@
   <ItemGroup>
     <ClCompile Include="D3D11VideoProcessor.cpp" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="dxvahd_utils.cpp" />
     <ClCompile Include="Helper.cpp" />
     <ClCompile Include="PropPage.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -119,7 +118,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3D11VideoProcessor.h" />
-    <ClInclude Include="dxvahd_utils.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="IVideoRenderer.h" />
     <ClInclude Include="PropPage.h" />

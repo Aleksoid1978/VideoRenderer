@@ -29,7 +29,6 @@
 #include <mutex>
 #include "IVideoRenderer.h"
 
-#define DXVAHD_ENABLE 0
 #define D3D10_ENABLE 0
 
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
@@ -140,13 +139,6 @@ private:
 	UINT m_DXVA2_VP_Width = 0;
 	UINT m_DXVA2_VP_Height = 0;
 
-#if DXVAHD_ENABLE
-	// DXVA-HD VideoProcessor
-	CComPtr<IDXVAHD_Device>         m_pDXVAHD_Device;
-	CComPtr<IDXVAHD_VideoProcessor> m_pDXVAHD_VP;
-	DXVAHD_VPDEVCAPS m_DXVAHDDevCaps = {};
-#endif
-
 	typedef HRESULT (__stdcall *PTR_DXVA2CreateDirect3DDeviceManager9)(UINT* pResetToken, IDirect3DDeviceManager9** ppDeviceManager);
 	typedef HRESULT (__stdcall *PTR_DXVA2CreateVideoService)(IDirect3DDevice9* pDD, REFIID riid, void** ppService);
 
@@ -178,11 +170,6 @@ private:
 
 	HRESULT Render();
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget);
-
-#if DXVAHD_ENABLE
-	BOOL InitializeDXVAHD(const UINT width, const UINT height, const D3DFORMAT d3dformat);
-	HRESULT ProcessDXVAHD(IDirect3DSurface9* pRenderTarget);
-#endif
 
 public:
 	// CBaseRenderer
