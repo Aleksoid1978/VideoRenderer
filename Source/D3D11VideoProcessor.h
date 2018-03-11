@@ -26,7 +26,6 @@
 class CD3D11VideoProcessor
 {
 private:
-	bool m_bInit = false;
 	HMODULE m_hD3D11Lib = nullptr;
 	CComPtr<ID3D11Device> m_pD3D11Device;
 	CComPtr<ID3D11VideoDevice> m_pD3D11VideoDevice;
@@ -34,5 +33,7 @@ private:
 public:
 	CD3D11VideoProcessor();
 	~CD3D11VideoProcessor();
+
+	HRESULT Initialize(UINT width, UINT height);
 };
 

@@ -29,7 +29,7 @@
 #include "Helper.h"
 #include "PropPage.h"
 
-#if D3D10_ENABLE
+#if D3D11_ENABLE
 #include "D3D11VideoProcessor.h"
 #endif
 
@@ -130,12 +130,12 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		return;
 	}
 
-	HRESULT (__stdcall * pDirect3DCreate9Ex)(UINT SDKVersion, IDirect3D9Ex**);
-	(FARPROC &)pDirect3DCreate9Ex = GetProcAddress(m_hD3D9Lib, "Direct3DCreate9Ex");
+	HRESULT (__stdcall * pfnDirect3DCreate9Ex)(UINT SDKVersion, IDirect3D9Ex**);
+	(FARPROC &)pfnDirect3DCreate9Ex = GetProcAddress(m_hD3D9Lib, "Direct3DCreate9Ex");
 
-	HRESULT hr = pDirect3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
+	HRESULT hr = pfnDirect3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
 	if (!m_pD3DEx) {
-		hr = pDirect3DCreate9Ex(D3D9b_SDK_VERSION, &m_pD3DEx);
+		hr = pfnDirect3DCreate9Ex(D3D9b_SDK_VERSION, &m_pD3DEx);
 	}
 	if (!m_pD3DEx) {
 		*phr = E_FAIL;
@@ -148,9 +148,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		return;
 	}
 
-	(FARPROC &)pDXVA2CreateDirect3DDeviceManager9 = GetProcAddress(m_hDxva2Lib, "DXVA2CreateDirect3DDeviceManager9");
-	(FARPROC &)pDXVA2CreateVideoService = GetProcAddress(m_hDxva2Lib, "DXVA2CreateVideoService");
-	pDXVA2CreateDirect3DDeviceManager9(&m_nResetTocken, &m_pD3DDeviceManager);
+	(FARPROC &)pfnDXVA2CreateDirect3DDeviceManager9 = GetProcAddress(m_hDxva2Lib, "DXVA2CreateDirect3DDeviceManager9");
+	(FARPROC &)pfnDXVA2CreateVideoService = GetProcAddress(m_hDxva2Lib, "DXVA2CreateVideoService");
+	pfnDXVA2CreateDirect3DDeviceManager9(&m_nResetTocken, &m_pD3DDeviceManager);
 	if (!m_pD3DDeviceManager) {
 		*phr = E_FAIL;
 		return;
@@ -165,8 +165,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		hr = m_pD3DDeviceManager->OpenDeviceHandle(&m_hDevice);
 	}
 
-#if D3D10_ENABLE
+#if D3D11_ENABLE
 	CD3D11VideoProcessor d3d11vp;
+	d3d11vp.Initialize(1920, 1080); // for test only
 #endif
 
 	*phr = hr;
@@ -310,15 +311,15 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 
 	HRESULT hr = S_OK;
 	if (!m_pDXVA2_VPService) {
-		HRESULT(WINAPI *pDXVA2CreateVideoService)(IDirect3DDevice9* pDD, REFIID riid, void** ppService);
-		(FARPROC &)pDXVA2CreateVideoService = GetProcAddress(m_hDxva2Lib, "DXVA2CreateVideoService");
-		if (!pDXVA2CreateVideoService) {
+		HRESULT(WINAPI *pfnDXVA2CreateVideoService)(IDirect3DDevice9* pDD, REFIID riid, void** ppService);
+		(FARPROC &)pfnDXVA2CreateVideoService = GetProcAddress(m_hDxva2Lib, "DXVA2CreateVideoService");
+		if (!pfnDXVA2CreateVideoService) {
 			DLog("CMpcVideoRenderer::InitializeDXVA2VP() : DXVA2CreateVideoService() not found");
 			return FALSE;
 		}
 
 		// Create DXVA2 Video Processor Service.
-		hr = pDXVA2CreateVideoService(m_pD3DDevEx, IID_IDirectXVideoProcessorService, (VOID**)&m_pDXVA2_VPService);
+		hr = pfnDXVA2CreateVideoService(m_pD3DDevEx, IID_IDirectXVideoProcessorService, (VOID**)&m_pDXVA2_VPService);
 		if (FAILED(hr)) {
 			DLog(L"CMpcVideoRenderer::InitializeDXVA2VP() : DXVA2CreateVideoService() failed with error 0x%08x", hr);
 			return FALSE;
