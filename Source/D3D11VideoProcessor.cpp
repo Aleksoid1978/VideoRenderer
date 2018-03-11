@@ -19,8 +19,22 @@
 */
 
 #include "stdafx.h"
+#include <uuids.h>
 #include <Mferror.h>
 #include "D3D11VideoProcessor.h"
+
+static const struct FormatEntry {
+	GUID            Subtype;
+	DXGI_FORMAT     DXGIFormat;
+}
+s_DXGIFormatMapping[] = {
+	{ MEDIASUBTYPE_RGB32,   DXGI_FORMAT_B8G8R8X8_UNORM },
+	{ MEDIASUBTYPE_ARGB32,  DXGI_FORMAT_R8G8B8A8_UNORM },
+	{ MEDIASUBTYPE_AYUV,    DXGI_FORMAT_AYUV },
+	{ MEDIASUBTYPE_YUY2,    DXGI_FORMAT_YUY2 },
+	{ MEDIASUBTYPE_NV12,    DXGI_FORMAT_NV12 },
+	{ MEDIASUBTYPE_P010,    DXGI_FORMAT_P010 },
+};
 
 CD3D11VideoProcessor::CD3D11VideoProcessor()
 {
@@ -81,6 +95,56 @@ CD3D11VideoProcessor::~CD3D11VideoProcessor()
 		FreeLibrary(m_hD3D11Lib);
 	}
 }
+
+HRESULT CD3D11VideoProcessor::IsMediaTypeSupported(const GUID subtype, const UINT width, const UINT height)
+{
+	if (!m_pD3D11VideoDevice) {
+		return E_FAIL;
+	}
+
+	DXGI_FORMAT dxgiFormat = DXGI_FORMAT_UNKNOWN;
+	for (unsigned i = 0; i < ARRAYSIZE(s_DXGIFormatMapping); i++) {
+		const FormatEntry& e = s_DXGIFormatMapping[i];
+		if (e.Subtype == subtype) {
+			dxgiFormat = e.DXGIFormat;
+			break;
+		}
+	}
+	if (dxgiFormat == DXGI_FORMAT_UNKNOWN) {
+		return E_FAIL;
+	}
+
+	HRESULT hr = S_OK;
+	
+	//Check if the format is supported
+	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
+	ZeroMemory(&ContentDesc, sizeof(ContentDesc));
+	ContentDesc.InputFrameFormat = D3D11_VIDEO_FRAME_FORMAT_INTERLACED_TOP_FIELD_FIRST;
+	ContentDesc.InputWidth = width;
+	ContentDesc.InputHeight = height;
+	ContentDesc.OutputWidth = ContentDesc.InputWidth;
+	ContentDesc.OutputHeight = ContentDesc.InputHeight;
+	ContentDesc.InputFrameRate.Numerator = 30000;
+	ContentDesc.InputFrameRate.Denominator = 1001;
+	ContentDesc.OutputFrameRate.Numerator = 30000;
+	ContentDesc.OutputFrameRate.Denominator = 1001;
+	ContentDesc.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
+
+	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcessorEnum = nullptr;
+	hr = m_pD3D11VideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pVideoProcessorEnum);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	UINT uiFlags;
+	hr = pVideoProcessorEnum->CheckVideoProcessorFormat(dxgiFormat, &uiFlags);
+	if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT)) {
+		return MF_E_UNSUPPORTED_D3D_TYPE;
+	}
+
+	return hr;
+}
+
 
 HRESULT CD3D11VideoProcessor::Initialize(UINT width, UINT height)
 {

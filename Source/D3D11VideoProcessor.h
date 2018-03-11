@@ -34,6 +34,7 @@ public:
 	CD3D11VideoProcessor();
 	~CD3D11VideoProcessor();
 
+	HRESULT IsMediaTypeSupported(const GUID subtype, const UINT width, const UINT height);
 	HRESULT Initialize(UINT width, UINT height);
 };
 

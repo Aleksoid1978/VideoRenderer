@@ -29,10 +29,6 @@
 #include "Helper.h"
 #include "PropPage.h"
 
-#if D3D11_ENABLE
-#include "D3D11VideoProcessor.h"
-#endif
-
 class CVideoRendererInputPin : public CRendererInputPin,
 	public IMFGetService,
 	public IDirectXVideoMemoryConfiguration
@@ -164,11 +160,6 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	if (S_OK == hr) {
 		hr = m_pD3DDeviceManager->OpenDeviceHandle(&m_hDevice);
 	}
-
-#if D3D11_ENABLE
-	CD3D11VideoProcessor d3d11vp;
-	d3d11vp.Initialize(1920, 1080); // for test only
-#endif
 
 	*phr = hr;
 }
@@ -743,6 +734,9 @@ HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 				if (!InitMediaType(pmt)) {
 					return VFW_E_UNSUPPORTED_VIDEO;
 				}
+#if D3D11_ENABLE
+				HRESULT hr2 = m_D3D11_VP.IsMediaTypeSupported(m_mt.subtype, m_srcWidth, m_srcHeight);
+#endif
 				return S_OK;
 			}
 		}
@@ -762,6 +756,10 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			return VFW_E_UNSUPPORTED_VIDEO;
 		}
 	}
+
+#if D3D11_ENABLE
+	HRESULT hr2 = m_D3D11_VP.Initialize(m_srcWidth, m_srcHeight);
+#endif
 
 	return hr;
 }
