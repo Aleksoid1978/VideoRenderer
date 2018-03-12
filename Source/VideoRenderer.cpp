@@ -397,7 +397,17 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 			m_DXVA2Samples.clear();
 			return FALSE;
 		}
-		m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(i).pSrcSurface, nullptr, 0);
+
+		if (m_VendorId == PCIV_AMDATI) {
+			// fix AMD driver bug, fill the surface in black
+			// use memset, because ColorFill can not fill NV12 and P010
+			D3DLOCKED_RECT lr;
+			if (S_OK == m_SrcSamples.GetAt(i).pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK)) {
+				memset(lr.pBits, 0, lr.Pitch * height);
+				memset((BYTE*)lr.pBits + lr.Pitch * height, 128, lr.Pitch * height / 2);
+				hr = m_SrcSamples.GetAt(i).pSrcSurface->UnlockRect();
+			}
+		}
 
 		m_DXVA2Samples[i].SampleFormat.value = m_srcExFmt.value;
 		m_DXVA2Samples[i].SampleFormat.SampleFormat = DXVA2_SampleUnknown; // samples that are not used yet
