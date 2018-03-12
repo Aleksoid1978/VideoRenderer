@@ -122,7 +122,7 @@ private:
 	HMODULE m_hD3D9Lib = nullptr;
 	CComPtr<IDirect3D9Ex>       m_pD3DEx;
 	CComPtr<IDirect3DDevice9Ex> m_pD3DDevEx;
-	DWORD m_VendorId;
+	DWORD m_VendorId = 0;
 	CString m_strAdapterDescription;
 
 	D3DDISPLAYMODEEX m_DisplayMode = { sizeof(D3DDISPLAYMODEEX) };

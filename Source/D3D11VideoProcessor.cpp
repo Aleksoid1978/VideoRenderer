@@ -130,7 +130,7 @@ HRESULT CD3D11VideoProcessor::IsMediaTypeSupported(const GUID subtype, const UIN
 	ContentDesc.OutputFrameRate.Denominator = 1001;
 	ContentDesc.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
 
-	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcessorEnum = nullptr;
+	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcessorEnum;
 	hr = m_pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pVideoProcessorEnum);
 	if (FAILED(hr)) {
 		return hr;
@@ -154,8 +154,8 @@ HRESULT CD3D11VideoProcessor::Initialize(UINT width, UINT height)
 
 	HRESULT hr = S_OK;
 
-	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcessorEnum = nullptr;
-	CComPtr<ID3D11VideoProcessor>           pVideoProcessor = nullptr;
+	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcessorEnum;
+	CComPtr<ID3D11VideoProcessor>           pVideoProcessor;
 
 	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
 	ZeroMemory(&ContentDesc, sizeof(ContentDesc));

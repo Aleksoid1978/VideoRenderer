@@ -34,6 +34,10 @@
 #define D3DFMT_YV12 FCC('YV12')
 #endif
 
+#define PCIV_AMDATI      0x1002
+#define PCIV_NVIDIA      0x10DE
+#define PCIV_INTEL       0x8086
+
 #if _DEBUG
 #define DLog(...) DbgLogInfo(LOG_TRACE, 3, __VA_ARGS__)
 #define DLogIf(f,...) {if (f) DbgLogInfo(LOG_TRACE, 3, __VA_ARGS__);}
