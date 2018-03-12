@@ -27,8 +27,9 @@ class CD3D11VideoProcessor
 {
 private:
 	HMODULE m_hD3D11Lib = nullptr;
-	CComPtr<ID3D11Device> m_pD3D11Device;
-	CComPtr<ID3D11VideoDevice> m_pD3D11VideoDevice;
+	CComPtr<ID3D11Device> m_pDevice;
+	CComPtr<ID3D11VideoDevice> m_pVideoDevice;
+	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
 
 public:
 	CD3D11VideoProcessor();

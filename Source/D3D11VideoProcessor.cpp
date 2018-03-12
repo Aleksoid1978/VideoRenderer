@@ -72,14 +72,14 @@ CD3D11VideoProcessor::CD3D11VideoProcessor()
 		featureLevels,
 		ARRAYSIZE(featureLevels),
 		D3D11_SDK_VERSION,
-		&m_pD3D11Device,
+		&m_pDevice,
 		&featurelevel,
 		nullptr);
 	if (FAILED(hr)) {
 		return;
 	}
 
-	hr = m_pD3D11Device->QueryInterface(__uuidof(ID3D11VideoDevice), (void**)&m_pD3D11VideoDevice);
+	hr = m_pDevice->QueryInterface(__uuidof(ID3D11VideoDevice), (void**)&m_pVideoDevice);
 	if (FAILED(hr)) {
 		// TODO DLog here
 		return; // need Windows 8+
@@ -88,8 +88,8 @@ CD3D11VideoProcessor::CD3D11VideoProcessor()
 
 CD3D11VideoProcessor::~CD3D11VideoProcessor()
 {
-	m_pD3D11VideoDevice.Release();
-	m_pD3D11Device.Release();
+	m_pVideoDevice.Release();
+	m_pDevice.Release();
 
 	if (m_hD3D11Lib) {
 		FreeLibrary(m_hD3D11Lib);
@@ -98,7 +98,7 @@ CD3D11VideoProcessor::~CD3D11VideoProcessor()
 
 HRESULT CD3D11VideoProcessor::IsMediaTypeSupported(const GUID subtype, const UINT width, const UINT height)
 {
-	if (!m_pD3D11VideoDevice) {
+	if (!m_pVideoDevice) {
 		return E_FAIL;
 	}
 
@@ -131,7 +131,7 @@ HRESULT CD3D11VideoProcessor::IsMediaTypeSupported(const GUID subtype, const UIN
 	ContentDesc.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
 
 	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcessorEnum = nullptr;
-	hr = m_pD3D11VideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pVideoProcessorEnum);
+	hr = m_pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pVideoProcessorEnum);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -148,7 +148,7 @@ HRESULT CD3D11VideoProcessor::IsMediaTypeSupported(const GUID subtype, const UIN
 
 HRESULT CD3D11VideoProcessor::Initialize(UINT width, UINT height)
 {
-	if (!m_pD3D11VideoDevice) {
+	if (!m_pVideoDevice) {
 		return E_FAIL;
 	}
 
@@ -166,7 +166,7 @@ HRESULT CD3D11VideoProcessor::Initialize(UINT width, UINT height)
 	ContentDesc.OutputHeight = ContentDesc.InputHeight;
 	ContentDesc.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
 
-	hr = m_pD3D11VideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pVideoProcessorEnum);
+	hr = m_pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pVideoProcessorEnum);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -177,6 +177,33 @@ HRESULT CD3D11VideoProcessor::Initialize(UINT width, UINT height)
 	hr = pVideoProcessorEnum->CheckVideoProcessorFormat(VP_Output_Format, &uiFlags);
 	if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
 		return MF_E_UNSUPPORTED_D3D_TYPE;
+	}
+
+	D3D11_VIDEO_PROCESSOR_CAPS caps = {};
+	hr = pVideoProcessorEnum->GetVideoProcessorCaps(&caps);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	UINT proccaps = D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND + D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB + D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_ADAPTIVE + D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_MOTION_COMPENSATION;
+	D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS convCaps = {};	
+	UINT index;
+	for (index = 0; index < caps.RateConversionCapsCount; index++) {
+		hr = pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(index, &convCaps);
+		if (S_OK == hr) {
+			// Check the caps to see which deinterlacer is supported
+			if ((convCaps.ProcessorCaps & proccaps) != 0) {
+				break;
+			}
+		}
+	}
+	if (index >= caps.RateConversionCapsCount) {
+		return E_FAIL;
+	}
+
+	hr = m_pVideoDevice->CreateVideoProcessor(pVideoProcessorEnum, index, &m_pVideoProcessor);
+	if (FAILED(hr)) {
+		return hr;
 	}
 
 	return S_OK;
