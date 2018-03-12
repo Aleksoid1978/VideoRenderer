@@ -666,6 +666,21 @@ HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 		m_DXVA2Samples[i].DstRect = rDstVid;
 	}
 
+#ifdef _DEBUG
+	if (m_frame < 5) {
+		CStringW dbgstr = L"DXVA2Samples:";
+		for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
+			auto& sample = m_DXVA2Samples[i];
+			dbgstr.AppendFormat(L"\n%u: samplefmt = %u, sampledata = %u, surface = %s, srcrect = [%d, %d, %d, %d], dstrect = [%d, %d, %d, %d],  start = %I64d, end = %I64d",
+				i, sample.SampleFormat.SampleFormat, sample.SampleData, sample.SrcSurface ? L"ok" : L"invalid",
+				sample.SrcRect.left, sample.SrcRect.top, sample.SrcRect.right, sample.SrcRect.bottom,
+				sample.DstRect.left, sample.DstRect.top, sample.DstRect.right, sample.DstRect.bottom,
+				sample.Start, sample.End);
+		}
+		DLog(dbgstr);
+	}
+#endif
+
 	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &blt, m_DXVA2Samples.data(), m_DXVA2Samples.size(), nullptr);
 	if (FAILED(hr)) {
 		DLog(L"CMpcVideoRenderer::ProcessDXVA2() : VideoProcessBlt() failed with error 0x%08x", hr);
