@@ -399,6 +399,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 		}
 
 		if (m_VendorId == PCIV_AMDATI) {
+			// fix AMD driver bug, fill the surface in black
 			m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(i).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
 		}
 
@@ -776,7 +777,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 	}
 
 #if D3D11_ENABLE
-	HRESULT hr2 = m_D3D11_VP.Initialize(m_srcWidth, m_srcHeight);
+	HRESULT hr2 = m_D3D11_VP.Initialize(pmt->subtype, m_srcWidth, m_srcHeight);
 #endif
 
 	return hr;

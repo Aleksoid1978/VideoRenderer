@@ -20,7 +20,9 @@
 
 #include "stdafx.h"
 #include <uuids.h>
+#include <dvdmedia.h>
 #include <Mferror.h>
+#include <Mfidl.h>
 #include "D3D11VideoProcessor.h"
 
 static const struct FormatEntry {
@@ -35,6 +37,21 @@ s_DXGIFormatMapping[] = {
 	{ MEDIASUBTYPE_NV12,    DXGI_FORMAT_NV12 },
 	{ MEDIASUBTYPE_P010,    DXGI_FORMAT_P010 },
 };
+
+DXGI_FORMAT MediaSubtype2DXGIFormat(GUID subtype)
+{
+	DXGI_FORMAT dxgiFormat = DXGI_FORMAT_UNKNOWN;
+	for (unsigned i = 0; i < ARRAYSIZE(s_DXGIFormatMapping); i++) {
+		const FormatEntry& e = s_DXGIFormatMapping[i];
+		if (e.Subtype == subtype) {
+			dxgiFormat = e.DXGIFormat;
+			break;
+		}
+	}
+	return dxgiFormat;
+}
+
+// CD3D11VideoProcessor
 
 CD3D11VideoProcessor::CD3D11VideoProcessor()
 {
@@ -96,26 +113,15 @@ CD3D11VideoProcessor::~CD3D11VideoProcessor()
 	}
 }
 
-HRESULT CD3D11VideoProcessor::IsMediaTypeSupported(const GUID subtype, const UINT width, const UINT height)
+HRESULT CheckInputMediaType(ID3D11VideoDevice* pVideoDevice, const GUID subtype, const UINT width, const UINT height)
 {
-	if (!m_pVideoDevice) {
-		return E_FAIL;
-	}
-
-	DXGI_FORMAT dxgiFormat = DXGI_FORMAT_UNKNOWN;
-	for (unsigned i = 0; i < ARRAYSIZE(s_DXGIFormatMapping); i++) {
-		const FormatEntry& e = s_DXGIFormatMapping[i];
-		if (e.Subtype == subtype) {
-			dxgiFormat = e.DXGIFormat;
-			break;
-		}
-	}
+	DXGI_FORMAT dxgiFormat = MediaSubtype2DXGIFormat(subtype);
 	if (dxgiFormat == DXGI_FORMAT_UNKNOWN) {
 		return E_FAIL;
 	}
 
 	HRESULT hr = S_OK;
-	
+
 	//Check if the format is supported
 	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
 	ZeroMemory(&ContentDesc, sizeof(ContentDesc));
@@ -131,7 +137,7 @@ HRESULT CD3D11VideoProcessor::IsMediaTypeSupported(const GUID subtype, const UIN
 	ContentDesc.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
 
 	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcessorEnum;
-	hr = m_pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pVideoProcessorEnum);
+	hr = pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pVideoProcessorEnum);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -145,8 +151,17 @@ HRESULT CD3D11VideoProcessor::IsMediaTypeSupported(const GUID subtype, const UIN
 	return hr;
 }
 
+HRESULT CD3D11VideoProcessor::IsMediaTypeSupported(const GUID subtype, const UINT width, const UINT height)
+{
+	if (!m_pVideoDevice) {
+		return E_FAIL;
+	}
 
-HRESULT CD3D11VideoProcessor::Initialize(UINT width, UINT height)
+	return CheckInputMediaType(m_pVideoDevice, subtype, width, height);
+}
+
+
+HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, const UINT height)
 {
 	if (!m_pVideoDevice) {
 		return E_FAIL;
@@ -154,8 +169,13 @@ HRESULT CD3D11VideoProcessor::Initialize(UINT width, UINT height)
 
 	HRESULT hr = S_OK;
 
+	hr = CheckInputMediaType(m_pVideoDevice, subtype, width, height);
+	if (FAILED(hr)) {
+		return hr;
+	}
+	DXGI_FORMAT dxgiFormat = MediaSubtype2DXGIFormat(subtype);
+
 	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcessorEnum;
-	CComPtr<ID3D11VideoProcessor>           pVideoProcessor;
 
 	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
 	ZeroMemory(&ContentDesc, sizeof(ContentDesc));
@@ -206,5 +226,54 @@ HRESULT CD3D11VideoProcessor::Initialize(UINT width, UINT height)
 		return hr;
 	}
 
+	D3D11_TEXTURE2D_DESC desc;
+	desc.Width = width;
+	desc.Height = height;
+	desc.MipLevels = desc.ArraySize = 1;
+	desc.Format = dxgiFormat;
+	desc.SampleDesc.Count = 1;
+	desc.Usage = D3D11_USAGE_DYNAMIC;
+	desc.BindFlags = D3D11_BIND_STREAM_OUTPUT; // ???
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	desc.MiscFlags = 0;
+	hr = m_pDevice->CreateTexture2D(&desc, NULL, &m_pSrcTexture2D);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	m_srcFormat = dxgiFormat;
+	m_srcWidth  = width;
+	m_srcHeight = height;
+
 	return S_OK;
+}
+
+HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt)
+{
+	HRESULT hr = S_OK;
+
+	if (CComQIPtr<IMFGetService> pService = pSample) {
+		return S_FALSE;
+	}
+	else if (pmt->formattype == FORMAT_VideoInfo2) {
+		BYTE* data = nullptr;
+		const long size = pSample->GetActualDataLength();
+		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
+			const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)(pmt->pbFormat);
+
+			UINT srcLines = vih2->bmiHeader.biHeight;
+			if (pmt->subtype == MEDIASUBTYPE_NV12 || pmt->subtype == MEDIASUBTYPE_YV12 || pmt->subtype == MEDIASUBTYPE_P010) {
+					srcLines = srcLines * 3 / 2;
+			}
+			UINT srcPitch = size / srcLines;
+
+			CComPtr<ID3D11DeviceContext> pImmediateContext;
+			m_pDevice->GetImmediateContext(&pImmediateContext);
+			if (pImmediateContext) {
+				pImmediateContext->UpdateSubresource(m_pSrcTexture2D, 0, NULL, data, srcPitch, size);
+			}
+		}
+	}
+	
+	return hr;
 }

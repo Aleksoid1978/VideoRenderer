@@ -21,6 +21,7 @@
 #pragma once
 
 #include <atltypes.h>
+#include <strmif.h>
 #include "d3d11.h"
 
 class CD3D11VideoProcessor
@@ -30,12 +31,18 @@ private:
 	CComPtr<ID3D11Device> m_pDevice;
 	CComPtr<ID3D11VideoDevice> m_pVideoDevice;
 	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
+	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;
+
+	DXGI_FORMAT m_srcFormat = DXGI_FORMAT_UNKNOWN;
+	UINT m_srcWidth = 0;
+	UINT m_srcHeight = 0;
 
 public:
 	CD3D11VideoProcessor();
 	~CD3D11VideoProcessor();
 
 	HRESULT IsMediaTypeSupported(const GUID subtype, const UINT width, const UINT height);
-	HRESULT Initialize(UINT width, UINT height);
-};
+	HRESULT Initialize(const GUID subtype, const UINT width, const UINT height);
 
+	HRESULT CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt);
+};
