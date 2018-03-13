@@ -85,7 +85,11 @@ CD3D11VideoProcessor::CD3D11VideoProcessor()
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
+#ifdef _DEBUG
+		D3D11_CREATE_DEVICE_DEBUG, // need SDK for Windows 8
+#else
 		0,
+#endif
 		featureLevels,
 		ARRAYSIZE(featureLevels),
 		D3D11_SDK_VERSION,
