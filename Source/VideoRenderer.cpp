@@ -808,6 +808,9 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	if (FAILED(hr)) {
 		return hr;
 	}
+#if D3D11_ENABLE
+	HRESULT hr2 = m_D3D11_VP.CopySample(pSample, &m_mt);
+#endif
 
 	return Render();
 }

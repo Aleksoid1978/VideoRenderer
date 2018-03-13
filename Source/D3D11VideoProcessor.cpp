@@ -105,6 +105,8 @@ CD3D11VideoProcessor::CD3D11VideoProcessor()
 
 CD3D11VideoProcessor::~CD3D11VideoProcessor()
 {
+	m_pSrcTexture2D.Release();
+	m_pVideoProcessor.Release();
 	m_pVideoDevice.Release();
 	m_pDevice.Release();
 
@@ -226,7 +228,7 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 		return hr;
 	}
 
-	D3D11_TEXTURE2D_DESC desc;
+	D3D11_TEXTURE2D_DESC desc = {};
 	desc.Width = width;
 	desc.Height = height;
 	desc.MipLevels = desc.ArraySize = 1;
@@ -250,6 +252,10 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 
 HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt)
 {
+	if (!m_pSrcTexture2D) {
+		return E_FAIL;
+	}
+
 	HRESULT hr = S_OK;
 
 	if (CComQIPtr<IMFGetService> pService = pSample) {
