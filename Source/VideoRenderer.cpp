@@ -797,6 +797,10 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	CheckPointer(pSample, E_POINTER);
 	std::unique_lock<std::mutex> lock(m_mutex);
 
+	HRESULT hr = S_OK;
+#if D3D11_ENABLE
+	hr = m_D3D11_VP.CopySample(pSample, &m_mt, m_pD3DDevEx, m_bInterlaced);
+#else
 	// Get frame type
 	m_SampleFormat = DXVA2_SampleProgressiveFrame; // Progressive
 	if (m_bInterlaced) {
@@ -813,10 +817,6 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 		}
 	}
 
-	HRESULT hr = S_OK;
-#if D3D11_ENABLE
-	hr = m_D3D11_VP.CopySample(pSample, &m_mt, m_pD3DDevEx);
-#else
 	hr = CopySample(pSample);
 #endif
 	if (FAILED(hr)) {

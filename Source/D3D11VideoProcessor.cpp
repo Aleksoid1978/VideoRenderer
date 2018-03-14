@@ -177,7 +177,7 @@ HRESULT CD3D11VideoProcessor::InitSwapChain(HWND hwnd, UINT width, UINT height)
 
 	HRESULT hr = S_OK;
 	if (m_pDXGISwapChain) {
-		hr = m_pDXGISwapChain->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+		hr = m_pDXGISwapChain->ResizeBuffers(1, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
 		if (SUCCEEDED(hr)) {
 			return hr;
 		}
@@ -188,7 +188,7 @@ HRESULT CD3D11VideoProcessor::InitSwapChain(HWND hwnd, UINT width, UINT height)
 	DXGI_SWAP_CHAIN_DESC1 desc = {};
 	desc.Width = width;
 	desc.Height = height;
-	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -338,6 +338,7 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 
 	desc.Usage = D3D11_USAGE_DEFAULT;
 	desc.BindFlags = D3D11_BIND_DECODER;
+	desc.CPUAccessFlags = 0;
 	hr = m_pDevice->CreateTexture2D(&desc, NULL, &m_pSrcTexture2D_Decode);
 	if (FAILED(hr)) {
 		return hr;
@@ -351,10 +352,26 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 	return S_OK;
 }
 
-HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt, IDirect3DDevice9Ex* pD3DDevEx)
+HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt, IDirect3DDevice9Ex* pD3DDevEx, const bool bInterlaced)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
 	CheckPointer(m_pDXGISwapChain, E_FAIL);
+
+	// Get frame type
+	m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE; // Progressive
+	if (bInterlaced) {
+		if (CComQIPtr<IMediaSample2> pMS2 = pSample) {
+			AM_SAMPLE2_PROPERTIES props;
+			if (SUCCEEDED(pMS2->GetProperties(sizeof(props), (BYTE*)&props))) {
+				m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_INTERLACED_BOTTOM_FIELD_FIRST;  // Bottom-field first
+				if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_WEAVE) {
+					m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;                // Progressive
+				} else if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_FIELD1FIRST) {
+					m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_INTERLACED_TOP_FIELD_FIRST; // Top-field first
+				}
+			}
+		}
+	}
 
 	HRESULT hr = S_OK;
 
@@ -379,7 +396,7 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_T
 				if (pImmediateContext) {
 					D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 					if (hr = pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource) == S_OK) {
-						memcpy(mappedResource.pData, (BYTE*)lr_src.pBits, lr_src.Pitch * desc.Height * 3 / 2);
+						memcpy(mappedResource.pData, lr_src.pBits, lr_src.Pitch * desc.Height * 3 / 2);
 						pImmediateContext->Unmap(m_pSrcTexture2D, 0);
 					}
 				}
@@ -415,18 +432,17 @@ HRESULT CD3D11VideoProcessor::Render()
 	HRESULT hr = S_OK;
 
 	// input format
-	D3D11_VIDEO_FRAME_FORMAT FrameFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
+	D3D11_VIDEO_FRAME_FORMAT FrameFormat = m_SampleFormat;
 	m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, FrameFormat);
 
     // Output rate (repeat frames)
 	m_pVideoContext->VideoProcessorSetStreamOutputRate(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_OUTPUT_RATE_NORMAL, TRUE, NULL);
+	
+	// disable automatic video quality by driver
+	m_pVideoContext->VideoProcessorSetStreamAutoProcessingMode(m_pVideoProcessor, 0, FALSE);
 
 	// Output background color (black)
-	D3D11_VIDEO_COLOR backgroundColor = {};
-	backgroundColor.RGBA.A = 1.0F;
-	backgroundColor.RGBA.R = 1.0F * static_cast<float>(GetRValue(0)) / 255.0F;
-	backgroundColor.RGBA.G = 1.0F * static_cast<float>(GetGValue(0)) / 255.0F;
-	backgroundColor.RGBA.B = 1.0F * static_cast<float>(GetBValue(0)) / 255.0F;
+	static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f};
 	m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, FALSE, &backgroundColor);
 
 	m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
@@ -453,20 +469,14 @@ HRESULT CD3D11VideoProcessor::Render()
 		return hr;
 	}
 
-	/*
 	D3D11_VIDEO_PROCESSOR_STREAM StreamData = {};
+	StreamData.Enable = TRUE;
 	StreamData.pInputSurface = pInputView;
 	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, 0, 1, &StreamData);
 	if (FAILED(hr)) {
 		return hr;
 	}
-	*/
 
-	// just for present test ...
-	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
-	hr = m_pDevice->CreateRenderTargetView(pDXGIBackBuffer, nullptr, &pRenderTargetView);
-
-	m_pImmediateContext->ClearRenderTargetView(pRenderTargetView, DirectX::Colors::MediumSlateBlue); 
 	hr = m_pDXGISwapChain->Present(0, 0);
 
 	return hr;

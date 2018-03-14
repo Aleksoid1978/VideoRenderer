@@ -46,6 +46,8 @@ private:
 	UINT m_srcWidth = 0;
 	UINT m_srcHeight = 0;
 
+	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
+
 public:
 	CD3D11VideoProcessor();
 	~CD3D11VideoProcessor();
@@ -55,6 +57,6 @@ public:
 	HRESULT IsMediaTypeSupported(const GUID subtype, const UINT width, const UINT height);
 	HRESULT Initialize(const GUID subtype, const UINT width, const UINT height);
 
-	HRESULT CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt, IDirect3DDevice9Ex* pD3DDevEx);
+	HRESULT CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt, IDirect3DDevice9Ex* pD3DDevEx, const bool bInterlaced);
 	HRESULT Render();
 };
