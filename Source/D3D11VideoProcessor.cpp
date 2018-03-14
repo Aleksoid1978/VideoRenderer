@@ -96,7 +96,7 @@ CD3D11VideoProcessor::CD3D11VideoProcessor()
 		D3D11_SDK_VERSION,
 		&m_pDevice,
 		&featurelevel,
-		nullptr);
+		&m_pImmediateContext);
 	if (FAILED(hr)) {
 		return;
 	}
@@ -106,13 +106,23 @@ CD3D11VideoProcessor::CD3D11VideoProcessor()
 		// TODO DLog here
 		return; // need Windows 8+
 	}
+
+	hr = m_pImmediateContext->QueryInterface(__uuidof(ID3D11VideoContext), (void**)&m_pVideoContext);
+	if (FAILED(hr)) {
+		m_pImmediateContext.Release();
+		m_pVideoDevice.Release();
+		return;
+	}
 }
 
 CD3D11VideoProcessor::~CD3D11VideoProcessor()
 {
 	m_pSrcTexture2D.Release();
+	m_pSrcTexture2D_Decode.Release();
 	m_pVideoProcessor.Release();
+	m_pVideoProcessorEnum.Release();
 	m_pVideoDevice.Release();
+	m_pImmediateContext.Release();
 	m_pDevice.Release();
 
 	if (m_hD3D11Lib) {
@@ -176,14 +186,13 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 
 	m_pSrcTexture2D.Release();
 	m_pVideoProcessor.Release();
+	m_pVideoProcessorEnum.Release();
 
 	hr = CheckInputMediaType(m_pVideoDevice, subtype, width, height);
 	if (FAILED(hr)) {
 		return hr;
 	}
 	DXGI_FORMAT dxgiFormat = MediaSubtype2DXGIFormat(subtype);
-
-	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcessorEnum;
 
 	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
 	ZeroMemory(&ContentDesc, sizeof(ContentDesc));
@@ -194,7 +203,7 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 	ContentDesc.OutputHeight = ContentDesc.InputHeight;
 	ContentDesc.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
 
-	hr = m_pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pVideoProcessorEnum);
+	hr = m_pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &m_pVideoProcessorEnum);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -202,13 +211,13 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 	UINT uiFlags;
 	DXGI_FORMAT VP_Output_Format = DXGI_FORMAT_B8G8R8X8_UNORM;
 
-	hr = pVideoProcessorEnum->CheckVideoProcessorFormat(VP_Output_Format, &uiFlags);
+	hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(VP_Output_Format, &uiFlags);
 	if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
 		return MF_E_UNSUPPORTED_D3D_TYPE;
 	}
 
 	D3D11_VIDEO_PROCESSOR_CAPS caps = {};
-	hr = pVideoProcessorEnum->GetVideoProcessorCaps(&caps);
+	hr = m_pVideoProcessorEnum->GetVideoProcessorCaps(&caps);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -217,7 +226,7 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 	D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS convCaps = {};	
 	UINT index;
 	for (index = 0; index < caps.RateConversionCapsCount; index++) {
-		hr = pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(index, &convCaps);
+		hr = m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(index, &convCaps);
 		if (S_OK == hr) {
 			// Check the caps to see which deinterlacer is supported
 			if ((convCaps.ProcessorCaps & proccaps) != 0) {
@@ -229,7 +238,7 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 		return E_FAIL;
 	}
 
-	hr = m_pVideoDevice->CreateVideoProcessor(pVideoProcessorEnum, index, &m_pVideoProcessor);
+	hr = m_pVideoDevice->CreateVideoProcessor(m_pVideoProcessorEnum, index, &m_pVideoProcessor);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -248,6 +257,14 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 	if (FAILED(hr)) {
 		return hr;
 	}
+
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.BindFlags = D3D11_BIND_DECODER;
+	hr = m_pDevice->CreateTexture2D(&desc, NULL, &m_pSrcTexture2D_Decode);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
 
 	m_srcFormat = dxgiFormat;
 	m_srcSubtype = subtype;
@@ -309,5 +326,52 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_T
 		}
 	}
 	
+	return hr;
+}
+
+HRESULT CD3D11VideoProcessor::Render()
+{
+	CheckPointer(m_pSrcTexture2D, E_FAIL);
+
+	HRESULT hr = S_OK;
+
+	// input format
+	D3D11_VIDEO_FRAME_FORMAT FrameFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
+	m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, FrameFormat);
+
+    // Output rate (repeat frames)
+	m_pVideoContext->VideoProcessorSetStreamOutputRate(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_OUTPUT_RATE_NORMAL, TRUE, NULL);
+
+	// Output background color (black)
+	D3D11_VIDEO_COLOR backgroundColor = {};
+	backgroundColor.RGBA.A = 1.0F;
+	backgroundColor.RGBA.R = 1.0F * static_cast<float>(GetRValue(0)) / 255.0F;
+	backgroundColor.RGBA.G = 1.0F * static_cast<float>(GetGValue(0)) / 255.0F;
+	backgroundColor.RGBA.B = 1.0F * static_cast<float>(GetBValue(0)) / 255.0F;
+	m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, FALSE, &backgroundColor);
+
+	m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
+
+	D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputViewDesc = {};
+	inputViewDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
+	CComPtr<ID3D11VideoProcessorInputView> pInputView;
+	hr = m_pVideoDevice->CreateVideoProcessorInputView(m_pSrcTexture2D_Decode, m_pVideoProcessorEnum, &inputViewDesc, &pInputView);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc = {};
+	OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
+	CComPtr<ID3D11VideoProcessorOutputView> pOutputView;
+	CComPtr<ID3D11Texture2D> pDXGIBackBuffer; // TODO - create IDXGISwapChain1 using IDXGIFactory2::CreateSwapChainForHwnd() and get backbuffer using IDXGISwapChain1::GetBuffer()
+	hr = m_pVideoDevice->CreateVideoProcessorOutputView(pDXGIBackBuffer, m_pVideoProcessorEnum, &OutputViewDesc, &pOutputView);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	D3D11_VIDEO_PROCESSOR_STREAM StreamData = {};
+	StreamData.pInputSurface = pInputView;
+	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, 0, 1, &StreamData);
+
 	return hr;
 }

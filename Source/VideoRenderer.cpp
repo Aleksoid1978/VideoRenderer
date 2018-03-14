@@ -823,7 +823,11 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 		return hr;
 	}
 
+#if D3D11_ENABLE
+	return m_D3D11_VP.Render();
+#else
 	return Render();
+#endif
 }
 
 STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** ppv)

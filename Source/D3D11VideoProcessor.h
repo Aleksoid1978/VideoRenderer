@@ -30,9 +30,13 @@ class CD3D11VideoProcessor
 private:
 	HMODULE m_hD3D11Lib = nullptr;
 	CComPtr<ID3D11Device> m_pDevice;
+	CComPtr<ID3D11DeviceContext> m_pImmediateContext;
+	CComPtr<ID3D11VideoContext> m_pVideoContext;
 	CComPtr<ID3D11VideoDevice> m_pVideoDevice;
 	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
+	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;
+	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_Decode;
 
 	DXGI_FORMAT m_srcFormat = DXGI_FORMAT_UNKNOWN;
 	GUID m_srcSubtype = GUID_NULL;
@@ -47,4 +51,5 @@ public:
 	HRESULT Initialize(const GUID subtype, const UINT width, const UINT height);
 
 	HRESULT CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt, IDirect3DDevice9Ex* pD3DDevEx);
+	HRESULT Render();
 };
