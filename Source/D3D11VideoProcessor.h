@@ -37,6 +37,7 @@ private:
 	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_Decode;
+	CComPtr<IDXGISwapChain> m_pDXGISwapChain;
 
 	DXGI_FORMAT m_srcFormat = DXGI_FORMAT_UNKNOWN;
 	GUID m_srcSubtype = GUID_NULL;
@@ -46,6 +47,8 @@ private:
 public:
 	CD3D11VideoProcessor();
 	~CD3D11VideoProcessor();
+
+	HRESULT InitSwapChain(HWND hwnd, UINT width, UINT height);
 
 	HRESULT IsMediaTypeSupported(const GUID subtype, const UINT width, const UINT height);
 	HRESULT Initialize(const GUID subtype, const UINT width, const UINT height);

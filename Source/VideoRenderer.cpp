@@ -944,7 +944,11 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 {
 	if (m_hWnd != (HWND)Owner) {
 		m_hWnd = (HWND)Owner;
-		return InitDirect3D9() ? S_OK : E_FAIL;
+		HRESULT hr = InitDirect3D9();
+#if D3D11_ENABLE
+		hr = m_D3D11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height());
+#endif
+		return hr;
 	}
 	return S_OK;
 }
@@ -955,6 +959,9 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 	if (m_State != State_Running) {
 		Render();
 	}
+#if D3D11_ENABLE
+	m_D3D11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height());
+#endif
 	return S_OK;
 }
 

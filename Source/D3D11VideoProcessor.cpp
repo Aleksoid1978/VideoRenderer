@@ -24,6 +24,8 @@
 #include <evr.h>
 #include <Mferror.h>
 #include <Mfidl.h>
+#include <DXGI1_2.h>
+#include <directxcolors.h>
 #include "D3D11VideoProcessor.h"
 
 static const struct FormatEntry {
@@ -130,7 +132,75 @@ CD3D11VideoProcessor::~CD3D11VideoProcessor()
 	}
 }
 
-HRESULT CheckInputMediaType(ID3D11VideoDevice* pVideoDevice, const GUID subtype, const UINT width, const UINT height)
+HRESULT CD3D11VideoProcessor::InitSwapChain(HWND hwnd, UINT width, UINT height)
+{
+	CheckPointer(hwnd, E_FAIL);
+	CheckPointer(m_pVideoDevice, E_FAIL);
+
+	if (!width || !height) {
+		RECT rc;
+		GetClientRect(hwnd, &rc);
+		width = rc.right - rc.left;
+		height = rc.bottom - rc.top;
+	}
+
+	HRESULT hr = S_OK;
+	if (m_pDXGISwapChain) {
+		hr = m_pDXGISwapChain->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+		if (SUCCEEDED(hr)) {
+			return hr;
+		}
+	}
+
+	m_pDXGISwapChain.Release();
+
+	CComPtr<IDXGIDevice> pDXGIDevice;
+	hr = m_pDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDXGIDevice);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	CComPtr<IDXGIAdapter> pDXGIAdapter;
+	hr = pDXGIDevice->GetAdapter(&pDXGIAdapter);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	CComPtr<IDXGIFactory1> pDXGIFactory1;
+	hr = pDXGIAdapter->GetParent(__uuidof(IDXGIFactory1), (void**)&pDXGIFactory1);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	CComPtr<IDXGIFactory2> pDXGIFactory2;
+	hr = pDXGIFactory1->QueryInterface(__uuidof(IDXGIFactory2), (void**)&pDXGIFactory2);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	DXGI_SWAP_CHAIN_DESC1 desc = {};
+	desc.Width = width;
+	desc.Height = height;
+	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	desc.SampleDesc.Count = 1;
+	desc.SampleDesc.Quality = 0;
+	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	desc.BufferCount = 1;
+	CComPtr<IDXGISwapChain1> pDXGISwapChain1;
+	hr = pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, hwnd, &desc, nullptr, nullptr, &pDXGISwapChain1);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	hr = pDXGISwapChain1->QueryInterface(__uuidof(IDXGISwapChain), (void**)&m_pDXGISwapChain);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	return hr;
+}
+
+static HRESULT CheckInputMediaType(ID3D11VideoDevice* pVideoDevice, const GUID subtype, const UINT width, const UINT height)
 {
 	DXGI_FORMAT dxgiFormat = MediaSubtype2DXGIFormat(subtype);
 	if (dxgiFormat == DXGI_FORMAT_UNKNOWN) {
@@ -185,6 +255,7 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 	HRESULT hr = S_OK;
 
 	m_pSrcTexture2D.Release();
+	m_pSrcTexture2D_Decode.Release();
 	m_pVideoProcessor.Release();
 	m_pVideoProcessorEnum.Release();
 
@@ -265,7 +336,6 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 		return hr;
 	}
 
-
 	m_srcFormat = dxgiFormat;
 	m_srcSubtype = subtype;
 	m_srcWidth  = width;
@@ -277,6 +347,7 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt, IDirect3DDevice9Ex* pD3DDevEx)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
+	CheckPointer(m_pDXGISwapChain, E_FAIL);
 
 	HRESULT hr = S_OK;
 
@@ -332,6 +403,7 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_T
 HRESULT CD3D11VideoProcessor::Render()
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
+	CheckPointer(m_pDXGISwapChain, E_FAIL);
 
 	HRESULT hr = S_OK;
 
@@ -360,18 +432,35 @@ HRESULT CD3D11VideoProcessor::Render()
 		return hr;
 	}
 
+	CComPtr<ID3D11Texture2D> pDXGIBackBuffer;
+	hr = m_pDXGISwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pDXGIBackBuffer);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
 	D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc = {};
 	OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
 	CComPtr<ID3D11VideoProcessorOutputView> pOutputView;
-	CComPtr<ID3D11Texture2D> pDXGIBackBuffer; // TODO - create IDXGISwapChain1 using IDXGIFactory2::CreateSwapChainForHwnd() and get backbuffer using IDXGISwapChain1::GetBuffer()
 	hr = m_pVideoDevice->CreateVideoProcessorOutputView(pDXGIBackBuffer, m_pVideoProcessorEnum, &OutputViewDesc, &pOutputView);
 	if (FAILED(hr)) {
 		return hr;
 	}
 
+	/*
 	D3D11_VIDEO_PROCESSOR_STREAM StreamData = {};
 	StreamData.pInputSurface = pInputView;
 	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, 0, 1, &StreamData);
+	if (FAILED(hr)) {
+		return hr;
+	}
+	*/
+
+	// just for present test ...
+	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
+	hr = m_pDevice->CreateRenderTargetView(pDXGIBackBuffer, nullptr, &pRenderTargetView);
+
+	m_pImmediateContext->ClearRenderTargetView(pRenderTargetView, DirectX::Colors::MediumSlateBlue); 
+	hr = m_pDXGISwapChain->Present(0, 0);
 
 	return hr;
 }
