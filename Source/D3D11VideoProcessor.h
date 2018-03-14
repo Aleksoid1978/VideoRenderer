@@ -22,6 +22,7 @@
 
 #include <atltypes.h>
 #include <d3d9.h>
+#include <DXGI1_2.h>
 #include <strmif.h>
 #include "d3d11.h"
 
@@ -37,6 +38,7 @@ private:
 	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_Decode;
+	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain> m_pDXGISwapChain;
 
 	DXGI_FORMAT m_srcFormat = DXGI_FORMAT_UNKNOWN;

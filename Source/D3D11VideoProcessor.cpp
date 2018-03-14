@@ -24,7 +24,6 @@
 #include <evr.h>
 #include <Mferror.h>
 #include <Mfidl.h>
-#include <DXGI1_2.h>
 #include <directxcolors.h>
 #include "D3D11VideoProcessor.h"
 
@@ -105,11 +104,41 @@ CD3D11VideoProcessor::CD3D11VideoProcessor()
 
 	hr = m_pDevice->QueryInterface(__uuidof(ID3D11VideoDevice), (void**)&m_pVideoDevice);
 	if (FAILED(hr)) {
-		// TODO DLog here
-		return; // need Windows 8+
+		return;
 	}
 
 	hr = m_pImmediateContext->QueryInterface(__uuidof(ID3D11VideoContext), (void**)&m_pVideoContext);
+	if (FAILED(hr)) {
+		m_pImmediateContext.Release();
+		m_pVideoDevice.Release();
+		return;
+	}
+
+	CComPtr<IDXGIDevice> pDXGIDevice;
+	hr = m_pDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDXGIDevice);
+	if (FAILED(hr)) {
+		m_pImmediateContext.Release();
+		m_pVideoDevice.Release();
+		return;
+	}
+
+	CComPtr<IDXGIAdapter> pDXGIAdapter;
+	hr = pDXGIDevice->GetAdapter(&pDXGIAdapter);
+	if (FAILED(hr)) {
+		m_pImmediateContext.Release();
+		m_pVideoDevice.Release();
+		return;
+	}
+
+	CComPtr<IDXGIFactory1> pDXGIFactory1;
+	hr = pDXGIAdapter->GetParent(__uuidof(IDXGIFactory1), (void**)&pDXGIFactory1);
+	if (FAILED(hr)) {
+		m_pImmediateContext.Release();
+		m_pVideoDevice.Release();
+		return;
+	}
+
+	hr = pDXGIFactory1->QueryInterface(__uuidof(IDXGIFactory2), (void**)&m_pDXGIFactory2);
 	if (FAILED(hr)) {
 		m_pImmediateContext.Release();
 		m_pVideoDevice.Release();
@@ -125,6 +154,8 @@ CD3D11VideoProcessor::~CD3D11VideoProcessor()
 	m_pVideoProcessorEnum.Release();
 	m_pVideoDevice.Release();
 	m_pImmediateContext.Release();
+	m_pDXGISwapChain.Release();
+	m_pDXGIFactory2.Release();
 	m_pDevice.Release();
 
 	if (m_hD3D11Lib) {
@@ -154,30 +185,6 @@ HRESULT CD3D11VideoProcessor::InitSwapChain(HWND hwnd, UINT width, UINT height)
 
 	m_pDXGISwapChain.Release();
 
-	CComPtr<IDXGIDevice> pDXGIDevice;
-	hr = m_pDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDXGIDevice);
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	CComPtr<IDXGIAdapter> pDXGIAdapter;
-	hr = pDXGIDevice->GetAdapter(&pDXGIAdapter);
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	CComPtr<IDXGIFactory1> pDXGIFactory1;
-	hr = pDXGIAdapter->GetParent(__uuidof(IDXGIFactory1), (void**)&pDXGIFactory1);
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	CComPtr<IDXGIFactory2> pDXGIFactory2;
-	hr = pDXGIFactory1->QueryInterface(__uuidof(IDXGIFactory2), (void**)&pDXGIFactory2);
-	if (FAILED(hr)) {
-		return hr;
-	}
-
 	DXGI_SWAP_CHAIN_DESC1 desc = {};
 	desc.Width = width;
 	desc.Height = height;
@@ -187,7 +194,7 @@ HRESULT CD3D11VideoProcessor::InitSwapChain(HWND hwnd, UINT width, UINT height)
 	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	desc.BufferCount = 1;
 	CComPtr<IDXGISwapChain1> pDXGISwapChain1;
-	hr = pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, hwnd, &desc, nullptr, nullptr, &pDXGISwapChain1);
+	hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, hwnd, &desc, nullptr, nullptr, &pDXGISwapChain1);
 	if (FAILED(hr)) {
 		return hr;
 	}
