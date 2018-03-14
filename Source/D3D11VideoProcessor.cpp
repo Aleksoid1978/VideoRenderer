@@ -21,6 +21,7 @@
 #include "stdafx.h"
 #include <uuids.h>
 #include <dvdmedia.h>
+#include <evr.h>
 #include <Mferror.h>
 #include <Mfidl.h>
 #include "D3D11VideoProcessor.h"
@@ -159,21 +160,22 @@ HRESULT CheckInputMediaType(ID3D11VideoDevice* pVideoDevice, const GUID subtype,
 
 HRESULT CD3D11VideoProcessor::IsMediaTypeSupported(const GUID subtype, const UINT width, const UINT height)
 {
-	if (!m_pVideoDevice) {
-		return E_FAIL;
-	}
-
+	CheckPointer(m_pVideoDevice, E_FAIL);
 	return CheckInputMediaType(m_pVideoDevice, subtype, width, height);
 }
 
 
 HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, const UINT height)
 {
-	if (!m_pVideoDevice) {
-		return E_FAIL;
+	CheckPointer(m_pVideoDevice, E_FAIL);
+	if (subtype == m_srcSubtype && width == m_srcWidth && height == m_srcHeight) {
+		return S_OK;
 	}
 
 	HRESULT hr = S_OK;
+
+	m_pSrcTexture2D.Release();
+	m_pVideoProcessor.Release();
 
 	hr = CheckInputMediaType(m_pVideoDevice, subtype, width, height);
 	if (FAILED(hr)) {
@@ -248,22 +250,48 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 	}
 
 	m_srcFormat = dxgiFormat;
+	m_srcSubtype = subtype;
 	m_srcWidth  = width;
 	m_srcHeight = height;
 
 	return S_OK;
 }
 
-HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt)
+HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt, IDirect3DDevice9Ex* pD3DDevEx)
 {
-	if (!m_pSrcTexture2D) {
-		return E_FAIL;
-	}
+	CheckPointer(m_pSrcTexture2D, E_FAIL);
 
 	HRESULT hr = S_OK;
 
 	if (CComQIPtr<IMFGetService> pService = pSample) {
-		return S_FALSE;
+		CComPtr<IDirect3DSurface9> pSurface;
+		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
+			D3DSURFACE_DESC desc;
+			hr = pSurface->GetDesc(&desc);
+			if (FAILED(hr)) {
+				return hr;
+			}
+			hr = Initialize(pmt->subtype, desc.Width, desc.Height);
+			if (FAILED(hr)) {
+				return hr;
+			}
+
+			D3DLOCKED_RECT lr_src;
+			hr = pSurface->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
+			if (S_OK == hr) {
+				CComPtr<ID3D11DeviceContext> pImmediateContext;
+				m_pDevice->GetImmediateContext(&pImmediateContext);
+				if (pImmediateContext) {
+					D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+					if (hr = pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource) == S_OK) {
+						memcpy(mappedResource.pData, (BYTE*)lr_src.pBits, lr_src.Pitch * desc.Height * 3 / 2);
+						pImmediateContext->Unmap(m_pSrcTexture2D, 0);
+					}
+				}
+
+				hr = pSurface->UnlockRect();
+			}
+		}
 	}
 	else if (pmt->formattype == FORMAT_VideoInfo2) {
 		BYTE* data = nullptr;

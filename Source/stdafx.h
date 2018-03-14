@@ -32,3 +32,4 @@
 #include <atlwin.h>
 
 #include <dmodshow.h>
+#include "./BaseClasses/streams.h"

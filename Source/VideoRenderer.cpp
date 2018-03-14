@@ -607,6 +607,9 @@ void CMpcVideoRenderer::CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, long 
 
 HRESULT CMpcVideoRenderer::Render()
 {
+#if D3D11_ENABLE
+	return S_OK;
+#else
 	if (m_SrcSamples.Empty()) return E_POINTER;
 
 	HRESULT hr = m_pD3DDevEx->BeginScene();
@@ -629,6 +632,7 @@ HRESULT CMpcVideoRenderer::Render()
 	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
 
 	return hr;
+#endif
 }
 
 HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
@@ -730,9 +734,11 @@ BOOL CMpcVideoRenderer::InitMediaType(const CMediaType* pmt)
 		}
 		m_srcPitch = vih2->bmiHeader.biSizeImage / m_srcLines;
 
+#if (!D3D11_ENABLE)
 		if (!InitVideoProc(m_srcWidth, m_srcHeight, m_srcFormat)) {
 			return FALSE;
 		}
+#endif
 
 		return TRUE;
 	}
@@ -754,7 +760,9 @@ HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 					return VFW_E_UNSUPPORTED_VIDEO;
 				}
 #if D3D11_ENABLE
-				HRESULT hr2 = m_D3D11_VP.IsMediaTypeSupported(m_mt.subtype, m_srcWidth, m_srcHeight);
+				if (FAILED(m_D3D11_VP.Initialize(pmt->subtype, m_srcWidth, m_srcHeight))) {
+					return VFW_E_UNSUPPORTED_VIDEO;
+				}
 #endif
 				return S_OK;
 			}
@@ -774,11 +782,12 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 		if (!InitMediaType(pmt)) {
 			return VFW_E_UNSUPPORTED_VIDEO;
 		}
-	}
-
 #if D3D11_ENABLE
-	HRESULT hr2 = m_D3D11_VP.Initialize(pmt->subtype, m_srcWidth, m_srcHeight);
+		if (FAILED(m_D3D11_VP.Initialize(pmt->subtype, m_srcWidth, m_srcHeight))) {
+			return VFW_E_UNSUPPORTED_VIDEO;
+		}
 #endif
+	}
 
 	return hr;
 }
@@ -804,13 +813,15 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 		}
 	}
 
-	HRESULT hr = CopySample(pSample);
+	HRESULT hr = S_OK;
+#if D3D11_ENABLE
+	hr = m_D3D11_VP.CopySample(pSample, &m_mt, m_pD3DDevEx);
+#else
+	hr = CopySample(pSample);
+#endif
 	if (FAILED(hr)) {
 		return hr;
 	}
-#if D3D11_ENABLE
-	HRESULT hr2 = m_D3D11_VP.CopySample(pSample, &m_mt);
-#endif
 
 	return Render();
 }

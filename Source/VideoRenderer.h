@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include "./BaseClasses/streams.h"
 #include <atltypes.h>
 #include <evr.h>
 #include <d3d9.h>
