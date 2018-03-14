@@ -239,7 +239,7 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 	desc.Format = dxgiFormat;
 	desc.SampleDesc.Count = 1;
 	desc.Usage = D3D11_USAGE_DYNAMIC;
-	desc.BindFlags = D3D11_BIND_STREAM_OUTPUT; // ???
+	desc.BindFlags = D3D10_BIND_SHADER_RESOURCE;
 	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	desc.MiscFlags = 0;
 	hr = m_pDevice->CreateTexture2D(&desc, NULL, &m_pSrcTexture2D);
@@ -269,18 +269,14 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_T
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
-			const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)(pmt->pbFormat);
-
-			UINT srcLines = vih2->bmiHeader.biHeight;
-			if (pmt->subtype == MEDIASUBTYPE_NV12 || pmt->subtype == MEDIASUBTYPE_YV12 || pmt->subtype == MEDIASUBTYPE_P010) {
-					srcLines = srcLines * 3 / 2;
-			}
-			UINT srcPitch = size / srcLines;
-
 			CComPtr<ID3D11DeviceContext> pImmediateContext;
 			m_pDevice->GetImmediateContext(&pImmediateContext);
 			if (pImmediateContext) {
-				pImmediateContext->UpdateSubresource(m_pSrcTexture2D, 0, NULL, data, srcPitch, size);
+				D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+				if (hr = pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource) == S_OK) {
+					memcpy(mappedResource.pData, data, size);
+					pImmediateContext->Unmap(m_pSrcTexture2D, 0);
+				}
 			}
 		}
 	}
