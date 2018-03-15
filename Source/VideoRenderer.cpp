@@ -596,9 +596,9 @@ void CMpcVideoRenderer::CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, long 
 			dst += dst_pitch;
 		}
 	}
-	else if (m_srcPitch < dst_pitch) {
+	else {
 		for (UINT y = 0; y < m_srcLines; ++y) {
-			memcpy(dst, src, m_srcPitch);
+			memcpy(dst, src, m_srcWidth);
 			src += m_srcPitch;
 			dst += dst_pitch;
 		}

@@ -363,9 +363,9 @@ void CD3D11VideoProcessor::CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, co
 	else if (m_srcPitch == dst_pitch) {
 		memcpy(dst, src, src_size);
 	}
-	else if (m_srcPitch < dst_pitch) {
+	else {
 		for (UINT y = 0; y < m_srcLines; ++y) {
-			memcpy(dst, src, m_srcPitch);
+			memcpy(dst, src, m_srcWidth);
 			src += m_srcPitch;
 			dst += dst_pitch;
 		}
@@ -403,7 +403,7 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample)
 			//if (FAILED(hr)) {
 			//	return hr;
 			//}
-			D3DSURFACE_DESC desc;
+			D3DSURFACE_DESC desc = {};
 			hr = pSurface->GetDesc(&desc);
 			if (FAILED(hr)) {
 				return hr;
@@ -419,7 +419,19 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample)
 				D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 				hr = m_pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 				if (SUCCEEDED(hr)) {
-					memcpy(mappedResource.pData, lr_src.pBits, mappedResource.DepthPitch);
+					BYTE* src = (BYTE*)lr_src.pBits;
+					BYTE* dst = (BYTE*)mappedResource.pData;
+					if (lr_src.Pitch == mappedResource.RowPitch) {
+						memcpy(dst, src, mappedResource.DepthPitch);
+					}
+					else {
+						const UINT lines = desc.Height * 3 / 2;
+						for (UINT y = 0; y < lines; ++y) {
+							memcpy(dst, src, desc.Width);
+							src += lr_src.Pitch;
+							dst += mappedResource.RowPitch;
+						}
+					}
 					m_pImmediateContext->Unmap(m_pSrcTexture2D, 0);
 				}
 
@@ -452,8 +464,7 @@ HRESULT CD3D11VideoProcessor::Render(const FILTER_STATE filterState)
 
 	if (filterState == State_Running) {
 		// input format
-		D3D11_VIDEO_FRAME_FORMAT FrameFormat = m_SampleFormat;
-		m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, FrameFormat);
+		m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, m_SampleFormat);
 
 		// Output rate (repeat frames)
 		m_pVideoContext->VideoProcessorSetStreamOutputRate(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_OUTPUT_RATE_NORMAL, TRUE, NULL);
