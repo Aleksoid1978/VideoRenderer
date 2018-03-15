@@ -65,6 +65,9 @@ private:
 	CRect m_videoRect;
 	CRect m_windowRect;
 
+	DWORD m_VendorId = 0;
+	CString m_strAdapterDescription;
+
 	void CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, const long src_size);
 
 public:

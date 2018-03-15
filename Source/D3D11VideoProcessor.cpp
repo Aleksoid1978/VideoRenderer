@@ -131,6 +131,13 @@ CD3D11VideoProcessor::CD3D11VideoProcessor()
 		return;
 	}
 
+	DXGI_ADAPTER_DESC dxgiAdapterDesc = {};
+	hr = pDXGIAdapter->GetDesc(&dxgiAdapterDesc);
+	if (SUCCEEDED(hr)) {
+		m_VendorId = dxgiAdapterDesc.VendorId;
+		m_strAdapterDescription.Format(L"%S (%04X:%04X)", dxgiAdapterDesc.Description, dxgiAdapterDesc.VendorId, dxgiAdapterDesc.DeviceId);
+	}
+
 	CComPtr<IDXGIFactory1> pDXGIFactory1;
 	hr = pDXGIAdapter->GetParent(__uuidof(IDXGIFactory1), (void**)&pDXGIFactory1);
 	if (FAILED(hr)) {
