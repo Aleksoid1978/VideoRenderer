@@ -823,7 +823,7 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	}
 
 #if D3D11_ENABLE
-	return m_D3D11_VP.Render();
+	return m_D3D11_VP.Render(m_filterState);
 #else
 	return Render();
 #endif
@@ -919,13 +919,13 @@ STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long
 	m_D3D11_VP.SetVideoRect(m_videoRect);
 #endif
 
-	if (m_State != State_Running) {
+	std::unique_lock<std::mutex> lock(m_mutex);
 #if D3D11_ENABLE
-		m_D3D11_VP.Render();
+	m_D3D11_VP.Render(m_filterState);
 #else
-		Render();
+	Render();
 #endif
-	}
+
 	return S_OK;
 }
 
@@ -974,13 +974,13 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 	m_D3D11_VP.SetWindowRect(m_windowRect);
 #endif
 
-	if (m_State != State_Running) {
+	std::unique_lock<std::mutex> lock(m_mutex);
 #if D3D11_ENABLE
-		m_D3D11_VP.Render();
+	m_D3D11_VP.Render(m_filterState);
 #else
-		Render();
+	Render();
 #endif
-	}
+
 	return S_OK;
 }
 

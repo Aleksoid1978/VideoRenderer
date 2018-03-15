@@ -80,7 +80,7 @@ public:
 	HRESULT Initialize(const UINT width, const UINT height, const DXGI_FORMAT dxgiFormat);
 
 	HRESULT CopySample(IMediaSample* pSample);
-	HRESULT Render();
+	HRESULT Render(const FILTER_STATE filterState);
 
 	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
 	void SetWindowRect(const CRect& windowRect) { m_windowRect = windowRect; }

@@ -416,14 +416,11 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample)
 			D3DLOCKED_RECT lr_src;
 			hr = pSurface->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
 			if (S_OK == hr) {
-				CComPtr<ID3D11DeviceContext> pImmediateContext;
-				m_pDevice->GetImmediateContext(&pImmediateContext);
-				if (pImmediateContext) {
-					D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-					if (hr = pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource) == S_OK) {
-						memcpy(mappedResource.pData, lr_src.pBits, mappedResource.DepthPitch);
-						pImmediateContext->Unmap(m_pSrcTexture2D, 0);
-					}
+				D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+				hr = m_pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+				if (SUCCEEDED(hr)) {
+					memcpy(mappedResource.pData, lr_src.pBits, mappedResource.DepthPitch);
+					m_pImmediateContext->Unmap(m_pSrcTexture2D, 0);
 				}
 
 				hr = pSurface->UnlockRect();
@@ -434,14 +431,11 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample)
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
-			CComPtr<ID3D11DeviceContext> pImmediateContext;
-			m_pDevice->GetImmediateContext(&pImmediateContext);
-			if (pImmediateContext) {
-				D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-				if (hr = pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource) == S_OK) {
-					CopyFrameData((BYTE*)mappedResource.pData, mappedResource.RowPitch, data, size);
-					pImmediateContext->Unmap(m_pSrcTexture2D, 0);
-				}
+			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+			hr = m_pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+			if (SUCCEEDED(hr)) {
+				CopyFrameData((BYTE*)mappedResource.pData, mappedResource.RowPitch, data, size);
+				m_pImmediateContext->Unmap(m_pSrcTexture2D, 0);
 			}
 		}
 	}
@@ -449,64 +443,66 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample)
 	return hr;
 }
 
-HRESULT CD3D11VideoProcessor::Render()
+HRESULT CD3D11VideoProcessor::Render(const FILTER_STATE filterState)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
 	CheckPointer(m_pDXGISwapChain, E_FAIL);
 
 	HRESULT hr = S_OK;
 
-	// input format
-	D3D11_VIDEO_FRAME_FORMAT FrameFormat = m_SampleFormat;
-	m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, FrameFormat);
+	if (filterState == State_Running) {
+		// input format
+		D3D11_VIDEO_FRAME_FORMAT FrameFormat = m_SampleFormat;
+		m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, FrameFormat);
 
-    // Output rate (repeat frames)
-	m_pVideoContext->VideoProcessorSetStreamOutputRate(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_OUTPUT_RATE_NORMAL, TRUE, NULL);
+		// Output rate (repeat frames)
+		m_pVideoContext->VideoProcessorSetStreamOutputRate(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_OUTPUT_RATE_NORMAL, TRUE, NULL);
 	
-	// disable automatic video quality by driver
-	m_pVideoContext->VideoProcessorSetStreamAutoProcessingMode(m_pVideoProcessor, 0, FALSE);
+		// disable automatic video quality by driver
+		m_pVideoContext->VideoProcessorSetStreamAutoProcessingMode(m_pVideoProcessor, 0, FALSE);
 
-	// Source rect
-	m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, TRUE, m_nativeVideoRect);
+		// Source rect
+		m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, TRUE, m_nativeVideoRect);
 
-	// Dest rect
-	m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, m_videoRect);
-	m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, TRUE, m_windowRect);
+		// Dest rect
+		m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, m_videoRect);
+		m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, TRUE, m_windowRect);
 
-	// Output background color (black)
-	static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f};
-	m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, FALSE, &backgroundColor);
+		// Output background color (black)
+		static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f};
+		m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, FALSE, &backgroundColor);
 
-	m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
+		m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
 
-	D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputViewDesc = {};
-	inputViewDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
-	CComPtr<ID3D11VideoProcessorInputView> pInputView;
-	hr = m_pVideoDevice->CreateVideoProcessorInputView(m_pSrcTexture2D_Decode, m_pVideoProcessorEnum, &inputViewDesc, &pInputView);
-	if (FAILED(hr)) {
-		return hr;
-	}
+		D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputViewDesc = {};
+		inputViewDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
+		CComPtr<ID3D11VideoProcessorInputView> pInputView;
+		hr = m_pVideoDevice->CreateVideoProcessorInputView(m_pSrcTexture2D_Decode, m_pVideoProcessorEnum, &inputViewDesc, &pInputView);
+		if (FAILED(hr)) {
+			return hr;
+		}
 
-	CComPtr<ID3D11Texture2D> pDXGIBackBuffer;
-	hr = m_pDXGISwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pDXGIBackBuffer);
-	if (FAILED(hr)) {
-		return hr;
-	}
+		CComPtr<ID3D11Texture2D> pDXGIBackBuffer;
+		hr = m_pDXGISwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pDXGIBackBuffer);
+		if (FAILED(hr)) {
+			return hr;
+		}
 
-	D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc = {};
-	OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
-	CComPtr<ID3D11VideoProcessorOutputView> pOutputView;
-	hr = m_pVideoDevice->CreateVideoProcessorOutputView(pDXGIBackBuffer, m_pVideoProcessorEnum, &OutputViewDesc, &pOutputView);
-	if (FAILED(hr)) {
-		return hr;
-	}
+		D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc = {};
+		OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
+		CComPtr<ID3D11VideoProcessorOutputView> pOutputView;
+		hr = m_pVideoDevice->CreateVideoProcessorOutputView(pDXGIBackBuffer, m_pVideoProcessorEnum, &OutputViewDesc, &pOutputView);
+		if (FAILED(hr)) {
+			return hr;
+		}
 
-	D3D11_VIDEO_PROCESSOR_STREAM StreamData = {};
-	StreamData.Enable = TRUE;
-	StreamData.pInputSurface = pInputView;
-	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, 0, 1, &StreamData);
-	if (FAILED(hr)) {
-		return hr;
+		D3D11_VIDEO_PROCESSOR_STREAM StreamData = {};
+		StreamData.Enable = TRUE;
+		StreamData.pInputSurface = pInputView;
+		hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, 0, 1, &StreamData);
+		if (FAILED(hr)) {
+			return hr;
+		}
 	}
 
 	hr = m_pDXGISwapChain->Present(0, 0);
