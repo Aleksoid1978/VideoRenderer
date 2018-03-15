@@ -728,7 +728,7 @@ BOOL CMpcVideoRenderer::InitMediaType(const CMediaType* pmt)
 				m_srcLines = m_srcHeight;
 			}
 		}
-		m_srcPitch = vih2->bmiHeader.biSizeImage / m_srcLines;
+		m_srcPitch = (vih2->bmiHeader.biBitCount ? (m_srcWidth * m_srcHeight * vih2->bmiHeader.biBitCount / 8) : vih2->bmiHeader.biSizeImage) / m_srcLines;
 
 #if (!D3D11_ENABLE)
 		if (!InitVideoProc(m_srcWidth, m_srcHeight, m_srcFormat)) {
