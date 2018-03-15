@@ -603,9 +603,6 @@ void CMpcVideoRenderer::CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, long 
 
 HRESULT CMpcVideoRenderer::Render()
 {
-#if D3D11_ENABLE
-	return S_OK;
-#else
 	if (m_SrcSamples.Empty()) return E_POINTER;
 
 	HRESULT hr = m_pD3DDevEx->BeginScene();
@@ -628,7 +625,6 @@ HRESULT CMpcVideoRenderer::Render()
 	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
 
 	return hr;
-#endif
 }
 
 HRESULT CMpcVideoRenderer::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
@@ -874,9 +870,14 @@ STDMETHODIMP CMpcVideoRenderer::Stop()
 {
 	DLog(L"CMpcVideoRenderer::Stop()");
 
-	for (unsigned i = 0; i < m_SrcSamples.Size(); i++) {
-		m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(i).pSrcSurface, nullptr, 0);
+#if (!D3D11_ENABLE)
+	if (m_VendorId == PCIV_AMDATI) {
+		// fix AMD driver bug, fill the surface in black
+		for (unsigned i = 0; i < m_SrcSamples.Size(); i++) {
+			m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(i).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+		}
 	}
+#endif
 
 	m_filterState = State_Stopped;
 
@@ -907,12 +908,17 @@ STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPV
 STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long Width, long Height)
 {
 	m_videoRect.SetRect(Left, Top, Left + Width, Top + Height);
-	if (m_State != State_Running) {
-		Render();
-	}
 #if D3D11_ENABLE
 	m_D3D11_VP.SetVideoRect(m_videoRect);
 #endif
+
+	if (m_State != State_Running) {
+#if D3D11_ENABLE
+		m_D3D11_VP.Render();
+#else
+		Render();
+#endif
+	}
 	return S_OK;
 }
 
@@ -955,13 +961,18 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Width, long Height)
 {
 	m_windowRect.SetRect(Left, Top, Left + Width, Top + Height);
-	if (m_State != State_Running) {
-		Render();
-	}
 #if D3D11_ENABLE
 	m_D3D11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height());
 	m_D3D11_VP.SetWindowRect(m_windowRect);
 #endif
+
+	if (m_State != State_Running) {
+#if D3D11_ENABLE
+		m_D3D11_VP.Render();
+#else
+		Render();
+#endif
+	}
 	return S_OK;
 }
 
