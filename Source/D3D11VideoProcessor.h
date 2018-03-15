@@ -22,6 +22,7 @@
 
 #include <atltypes.h>
 #include <DXGI1_2.h>
+#include <dxva2api.h>
 #include <strmif.h>
 #include "d3d11.h"
 
@@ -40,16 +41,31 @@ private:
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain> m_pDXGISwapChain;
 
+	CMediaType m_mt;
 	DXGI_FORMAT m_srcFormat = DXGI_FORMAT_UNKNOWN;
 	GUID m_srcSubtype = GUID_NULL;
 	UINT m_srcWidth = 0;
 	UINT m_srcHeight = 0;
+	DWORD m_srcAspectRatioX = 0;
+	DWORD m_srcAspectRatioY = 0;
+	DXVA2_ExtendedFormat m_srcExFmt = {};
+	bool m_bInterlaced = false;
+	RECT m_srcRect = {};
+	RECT m_trgRect = {};
+	UINT m_srcLines = 0;
+	INT  m_srcPitch = 0;
 
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
+
+	DXGI_FORMAT m_D3D11_Src_Format = DXGI_FORMAT_UNKNOWN;
+	UINT m_D3D11_Src_Width = 0;
+	UINT m_D3D11_Src_Height = 0;
 
 	CRect m_nativeVideoRect;
 	CRect m_videoRect;
 	CRect m_windowRect;
+
+	void CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, const long src_size);
 
 public:
 	CD3D11VideoProcessor();
@@ -57,13 +73,12 @@ public:
 
 	HRESULT InitSwapChain(HWND hwnd, UINT width, UINT height, const bool bReinit = false);
 
-	HRESULT IsMediaTypeSupported(const GUID subtype, const UINT width, const UINT height);
-	HRESULT Initialize(const GUID subtype, const UINT width, const UINT height);
+	BOOL InitMediaType(const CMediaType* pmt);
+	HRESULT Initialize(const UINT width, const UINT height, const DXGI_FORMAT dxgiFormat);
 
-	HRESULT CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt, const bool bInterlaced);
+	HRESULT CopySample(IMediaSample* pSample);
 	HRESULT Render();
 
-	void SetNativeVideoRect(const CRect& nativeVideoRect) { m_nativeVideoRect = nativeVideoRect; }
 	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
 	void SetWindowRect(const CRect& windowRect) { m_windowRect = windowRect; }
 };

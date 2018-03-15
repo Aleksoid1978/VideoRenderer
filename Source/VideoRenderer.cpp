@@ -698,8 +698,6 @@ BOOL CMpcVideoRenderer::InitMediaType(const CMediaType* pmt)
 	m_mt = *pmt;
 
 	if (m_mt.formattype == FORMAT_VideoInfo2) {
-		std::unique_lock<std::mutex> lock(m_mutex);
-
 		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)m_mt.pbFormat;
 		m_nativeVideoRect = m_srcRect = vih2->rcSource;
 		m_trgRect = vih2->rcTarget;
@@ -707,6 +705,8 @@ BOOL CMpcVideoRenderer::InitMediaType(const CMediaType* pmt)
 		m_srcHeight = labs(vih2->bmiHeader.biHeight);
 		m_srcAspectRatioX = vih2->dwPictAspectRatioX;
 		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
+
+#if (!D3D11_ENABLE)
 		m_srcExFmt.value = 0;
 
 		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
@@ -730,7 +730,6 @@ BOOL CMpcVideoRenderer::InitMediaType(const CMediaType* pmt)
 		}
 		m_srcPitch = (vih2->bmiHeader.biBitCount ? (m_srcWidth * m_srcHeight * vih2->bmiHeader.biBitCount / 8) : vih2->bmiHeader.biSizeImage) / m_srcLines;
 
-#if (!D3D11_ENABLE)
 		if (!InitVideoProc(m_srcWidth, m_srcHeight, m_srcFormat)) {
 			return FALSE;
 		}
@@ -752,14 +751,15 @@ HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 	if (pmt->majortype == MEDIATYPE_Video && pmt->formattype == FORMAT_VideoInfo2) {
 		for (unsigned i = 0; i < _countof(sudPinTypesIn); i++) {
 			if (pmt->subtype == *sudPinTypesIn[i].clsMinorType) {
+				std::unique_lock<std::mutex> lock(m_mutex);
+
 				if (!InitMediaType(pmt)) {
 					return VFW_E_UNSUPPORTED_VIDEO;
 				}
 #if D3D11_ENABLE
-				if (FAILED(m_D3D11_VP.Initialize(pmt->subtype, m_srcWidth, m_srcHeight))) {
+				if (!m_D3D11_VP.InitMediaType(pmt)) {
 					return VFW_E_UNSUPPORTED_VIDEO;
 				}
-				m_D3D11_VP.SetNativeVideoRect(m_nativeVideoRect);
 #endif
 				return S_OK;
 			}
@@ -776,14 +776,15 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 	HRESULT hr = __super::SetMediaType(pmt);
 	if (S_OK == hr) {
+		std::unique_lock<std::mutex> lock(m_mutex);
+
 		if (!InitMediaType(pmt)) {
 			return VFW_E_UNSUPPORTED_VIDEO;
 		}
 #if D3D11_ENABLE
-		if (FAILED(m_D3D11_VP.Initialize(pmt->subtype, m_srcWidth, m_srcHeight))) {
+		if (!m_D3D11_VP.InitMediaType(pmt)) {
 			return VFW_E_UNSUPPORTED_VIDEO;
 		}
-		m_D3D11_VP.SetNativeVideoRect(m_nativeVideoRect);
 #endif
 	}
 
@@ -797,7 +798,7 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 
 	HRESULT hr = S_OK;
 #if D3D11_ENABLE
-	hr = m_D3D11_VP.CopySample(pSample, &m_mt, m_bInterlaced);
+	hr = m_D3D11_VP.CopySample(pSample);
 #else
 	// Get frame type
 	m_SampleFormat = DXVA2_SampleProgressiveFrame; // Progressive
@@ -935,6 +936,7 @@ STDMETHODIMP CMpcVideoRenderer::GetVideoSize(long *pWidth, long *pHeight)
 
 	*pWidth = m_srcWidth;
 	*pHeight = m_srcHeight;
+
 	return S_OK;
 }
 

@@ -203,55 +203,55 @@ HRESULT CD3D11VideoProcessor::InitSwapChain(HWND hwnd, UINT width, UINT height, 
 	return hr;
 }
 
-static HRESULT CheckInputMediaType(ID3D11VideoDevice* pVideoDevice, const GUID subtype, const UINT width, const UINT height)
+BOOL CD3D11VideoProcessor::InitMediaType(const CMediaType* pmt)
 {
-	DXGI_FORMAT dxgiFormat = MediaSubtype2DXGIFormat(subtype);
-	if (dxgiFormat == DXGI_FORMAT_UNKNOWN) {
-		return E_FAIL;
+	m_mt = *pmt;
+
+	if (m_mt.formattype == FORMAT_VideoInfo2) {
+		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)m_mt.pbFormat;
+		m_nativeVideoRect = m_srcRect = vih2->rcSource;
+		m_trgRect = vih2->rcTarget;
+		m_srcWidth = vih2->bmiHeader.biWidth;
+		m_srcHeight = labs(vih2->bmiHeader.biHeight);
+		m_srcAspectRatioX = vih2->dwPictAspectRatioX;
+		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
+		m_srcExFmt.value = 0;
+
+		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
+		m_srcFormat = MediaSubtype2DXGIFormat(pmt->subtype);
+
+		if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
+			m_srcLines = m_srcHeight;
+		}
+		else {
+			if (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT)) {
+				m_srcExFmt.value = vih2->dwControlFlags;
+				m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
+			}
+			if (m_mt.subtype == MEDIASUBTYPE_NV12 || m_mt.subtype == MEDIASUBTYPE_YV12 || m_mt.subtype == MEDIASUBTYPE_P010) {
+				m_srcLines = m_srcHeight * 3 / 2;
+			}
+			else {
+				m_srcLines = m_srcHeight;
+			}
+		}
+		m_srcPitch = (vih2->bmiHeader.biBitCount ? (m_srcWidth * m_srcHeight * vih2->bmiHeader.biBitCount / 8) : vih2->bmiHeader.biSizeImage) / m_srcLines;
+
+		if (FAILED(Initialize(m_srcWidth, m_srcHeight, m_srcFormat))) {
+			return FALSE;
+		}
+
+		return TRUE;
 	}
 
-	HRESULT hr = S_OK;
-
-	//Check if the format is supported
-	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
-	ZeroMemory(&ContentDesc, sizeof(ContentDesc));
-	ContentDesc.InputFrameFormat = D3D11_VIDEO_FRAME_FORMAT_INTERLACED_TOP_FIELD_FIRST;
-	ContentDesc.InputWidth = width;
-	ContentDesc.InputHeight = height;
-	ContentDesc.OutputWidth = ContentDesc.InputWidth;
-	ContentDesc.OutputHeight = ContentDesc.InputHeight;
-	ContentDesc.InputFrameRate.Numerator = 30000;
-	ContentDesc.InputFrameRate.Denominator = 1001;
-	ContentDesc.OutputFrameRate.Numerator = 30000;
-	ContentDesc.OutputFrameRate.Denominator = 1001;
-	ContentDesc.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
-
-	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcessorEnum;
-	hr = pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pVideoProcessorEnum);
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	UINT uiFlags;
-	hr = pVideoProcessorEnum->CheckVideoProcessorFormat(dxgiFormat, &uiFlags);
-	if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT)) {
-		return MF_E_UNSUPPORTED_D3D_TYPE;
-	}
-
-	return hr;
+	return FALSE;
 }
 
-HRESULT CD3D11VideoProcessor::IsMediaTypeSupported(const GUID subtype, const UINT width, const UINT height)
+HRESULT CD3D11VideoProcessor::Initialize(const UINT width, const UINT height, const DXGI_FORMAT dxgiFormat)
 {
 	CheckPointer(m_pVideoDevice, E_FAIL);
-	return CheckInputMediaType(m_pVideoDevice, subtype, width, height);
-}
 
-
-HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, const UINT height)
-{
-	CheckPointer(m_pVideoDevice, E_FAIL);
-	if (subtype == m_srcSubtype && width == m_srcWidth && height == m_srcHeight) {
+	if (dxgiFormat == m_D3D11_Src_Format && width == m_D3D11_Src_Width && height == m_D3D11_Src_Height) {
 		return S_OK;
 	}
 
@@ -261,13 +261,6 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 	m_pSrcTexture2D_Decode.Release();
 	m_pVideoProcessor.Release();
 	m_pVideoProcessorEnum.Release();
-
-	hr = CheckInputMediaType(m_pVideoDevice, subtype, width, height);
-	if (FAILED(hr)) {
-		return hr;
-	}
-	
-	DXGI_FORMAT dxgiFormat = MediaSubtype2DXGIFormat(subtype);
 
 	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
 	ZeroMemory(&ContentDesc, sizeof(ContentDesc));
@@ -341,22 +334,45 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 		return hr;
 	}
 
-	m_srcFormat = dxgiFormat;
-	m_srcSubtype = subtype;
-	m_srcWidth  = width;
-	m_srcHeight = height;
+	m_D3D11_Src_Format = dxgiFormat;
+	m_D3D11_Src_Width = width;
+	m_D3D11_Src_Height = height;
 
 	return S_OK;
 }
 
-HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt, const bool bInterlaced)
+void CD3D11VideoProcessor::CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, const long src_size)
+{
+	if (m_srcFormat == DXGI_FORMAT_B8G8R8X8_UNORM || m_srcFormat == DXGI_FORMAT_R8G8B8A8_UNORM) {
+		const UINT linesize = m_srcWidth * 4;
+		src += m_srcPitch * (m_srcHeight - 1);
+
+		for (UINT y = 0; y < m_srcHeight; ++y) {
+			memcpy(dst, src, linesize);
+			src -= m_srcPitch;
+			dst += dst_pitch;
+		}
+	}
+	else if (m_srcPitch == dst_pitch) {
+		memcpy(dst, src, src_size);
+	}
+	else if (m_srcPitch < dst_pitch) {
+		for (UINT y = 0; y < m_srcLines; ++y) {
+			memcpy(dst, src, m_srcPitch);
+			src += m_srcPitch;
+			dst += dst_pitch;
+		}
+	}
+}
+
+HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
 	CheckPointer(m_pDXGISwapChain, E_FAIL);
 
 	// Get frame type
 	m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE; // Progressive
-	if (bInterlaced) {
+	if (m_bInterlaced) {
 		if (CComQIPtr<IMediaSample2> pMS2 = pSample) {
 			AM_SAMPLE2_PROPERTIES props;
 			if (SUCCEEDED(pMS2->GetProperties(sizeof(props), (BYTE*)&props))) {
@@ -385,7 +401,7 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_T
 			if (FAILED(hr)) {
 				return hr;
 			}
-			hr = Initialize(pmt->subtype, desc.Width, desc.Height);
+			hr = Initialize(desc.Width, desc.Height, m_srcFormat);
 			if (FAILED(hr)) {
 				return hr;
 			}
@@ -398,7 +414,7 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_T
 				if (pImmediateContext) {
 					D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 					if (hr = pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource) == S_OK) {
-						memcpy(mappedResource.pData, lr_src.pBits, lr_src.Pitch * desc.Height * 3 / 2);
+						memcpy(mappedResource.pData, lr_src.pBits, mappedResource.DepthPitch);
 						pImmediateContext->Unmap(m_pSrcTexture2D, 0);
 					}
 				}
@@ -407,7 +423,7 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_T
 			}
 		}
 	}
-	else if (pmt->formattype == FORMAT_VideoInfo2) {
+	else if (m_mt.formattype == FORMAT_VideoInfo2) {
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
@@ -416,7 +432,7 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_T
 			if (pImmediateContext) {
 				D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 				if (hr = pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource) == S_OK) {
-					memcpy(mappedResource.pData, data, size);
+					CopyFrameData((BYTE*)mappedResource.pData, mappedResource.RowPitch, data, size);
 					pImmediateContext->Unmap(m_pSrcTexture2D, 0);
 				}
 			}
@@ -446,7 +462,7 @@ HRESULT CD3D11VideoProcessor::Render()
 	// Source rect
 	m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, TRUE, m_nativeVideoRect);
 
-	// Stream dest rect
+	// Dest rect
 	m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, m_videoRect);
 	m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, TRUE, m_windowRect);
 
