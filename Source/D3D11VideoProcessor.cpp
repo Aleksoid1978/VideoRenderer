@@ -283,7 +283,7 @@ HRESULT CD3D11VideoProcessor::Initialize(const UINT width, const UINT height, co
 
 	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
 	ZeroMemory(&ContentDesc, sizeof(ContentDesc));
-	ContentDesc.InputFrameFormat = D3D11_VIDEO_FRAME_FORMAT_INTERLACED_TOP_FIELD_FIRST;
+	ContentDesc.InputFrameFormat = m_bInterlaced ? D3D11_VIDEO_FRAME_FORMAT_INTERLACED_TOP_FIELD_FIRST : D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 	ContentDesc.InputWidth = width;
 	ContentDesc.InputHeight = height;
 	ContentDesc.OutputWidth = ContentDesc.InputWidth;
@@ -303,26 +303,28 @@ HRESULT CD3D11VideoProcessor::Initialize(const UINT width, const UINT height, co
 		return MF_E_UNSUPPORTED_D3D_TYPE;
 	}
 
-	D3D11_VIDEO_PROCESSOR_CAPS caps = {};
-	hr = m_pVideoProcessorEnum->GetVideoProcessorCaps(&caps);
-	if (FAILED(hr)) {
-		return hr;
-	}
+	UINT index = 0;
+	if (m_bInterlaced) {
+		D3D11_VIDEO_PROCESSOR_CAPS caps = {};
+		hr = m_pVideoProcessorEnum->GetVideoProcessorCaps(&caps);
+		if (FAILED(hr)) {
+			return hr;
+		}
 
-	UINT proccaps = D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND + D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB + D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_ADAPTIVE + D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_MOTION_COMPENSATION;
-	D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS convCaps = {};	
-	UINT index;
-	for (index = 0; index < caps.RateConversionCapsCount; index++) {
-		hr = m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(index, &convCaps);
-		if (S_OK == hr) {
-			// Check the caps to see which deinterlacer is supported
-			if ((convCaps.ProcessorCaps & proccaps) != 0) {
-				break;
+		UINT proccaps = D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND + D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB + D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_ADAPTIVE + D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_MOTION_COMPENSATION;
+		D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS convCaps = {};
+		for (index = 0; index < caps.RateConversionCapsCount; index++) {
+			hr = m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(index, &convCaps);
+			if (S_OK == hr) {
+				// Check the caps to see which deinterlacer is supported
+				if ((convCaps.ProcessorCaps & proccaps) != 0) {
+					break;
+				}
 			}
 		}
-	}
-	if (index >= caps.RateConversionCapsCount) {
-		return E_FAIL;
+		if (index >= caps.RateConversionCapsCount) {
+			return E_FAIL;
+		}
 	}
 
 	hr = m_pVideoDevice->CreateVideoProcessor(m_pVideoProcessorEnum, index, &m_pVideoProcessor);
@@ -407,19 +409,7 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample)
 				D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 				hr = m_pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 				if (SUCCEEDED(hr)) {
-					BYTE* src = (BYTE*)lr_src.pBits;
-					BYTE* dst = (BYTE*)mappedResource.pData;
-					if (lr_src.Pitch == mappedResource.RowPitch) {
-						memcpy(dst, src, mappedResource.DepthPitch);
-					}
-					else {
-						const UINT lines = desc.Height * 3 / 2;
-						for (UINT y = 0; y < lines; ++y) {
-							memcpy(dst, src, desc.Width);
-							src += lr_src.Pitch;
-							dst += mappedResource.RowPitch;
-						}
-					}
+					CopyFrameData(m_srcD3DFormat, desc.Width, desc.Height, (BYTE*)mappedResource.pData, mappedResource.RowPitch, (BYTE*)lr_src.pBits, lr_src.Pitch, mappedResource.DepthPitch);
 					m_pImmediateContext->Unmap(m_pSrcTexture2D, 0);
 				}
 

@@ -80,7 +80,7 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
 	return CStringFromGUID(guid);
 }
 
-void CopyFrameData(D3DFORMAT format, UINT width, UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch, UINT src_size)
+void CopyFrameData(const D3DFORMAT format, const UINT width, const UINT height, BYTE* dst, const UINT dst_pitch, BYTE* src, const UINT src_pitch, const UINT src_size)
 {
 	//UINT linesize = std::min(src_pitch, dst_pitch); // TODO
 
@@ -98,29 +98,30 @@ void CopyFrameData(D3DFORMAT format, UINT width, UINT height, BYTE* dst, UINT ds
 		memcpy(dst, src, src_size);
 	}
 	else if (format == D3DFMT_YV12) {
+		UINT _dst_pitch = dst_pitch;
 		for (UINT y = 0; y < height; ++y) {
 			memcpy(dst, src, width);
 			src += src_pitch;
-			dst += dst_pitch;
+			dst += _dst_pitch;
 		}
 
 		const UINT chromaline = width / 2;
 		const UINT chromaheight = height / 2;
 		const UINT chromapitch = src_pitch / 2;
-		dst_pitch /= 2;
+		_dst_pitch /= 2;
 		for (UINT y = 0; y < chromaheight; ++y) {
 			memcpy(dst, src, chromaline);
 			src += chromapitch;
-			dst += dst_pitch;
+			dst += _dst_pitch;
 			memcpy(dst, src, chromaline);
 			src += chromapitch;
-			dst += dst_pitch;
+			dst += _dst_pitch;
 		}
 	}
 	else {
 		UINT linesize = width;
 		UINT lines = height;
-		if (format == D3DFMT_YUY2 || format == D3DFMT_P010) {
+		if (format == D3DFMT_YUY2) {
 			linesize *= 2;
 		} else if (format == D3DFMT_AYUV) {
 			linesize *= 4;
