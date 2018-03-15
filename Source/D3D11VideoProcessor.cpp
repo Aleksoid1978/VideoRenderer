@@ -26,32 +26,43 @@
 #include <Mferror.h>
 #include <Mfidl.h>
 #include <directxcolors.h>
+#include "Helper.h"
 #include "D3D11VideoProcessor.h"
 
 static const struct FormatEntry {
 	GUID            Subtype;
+	D3DFORMAT       D3DFormat;
 	DXGI_FORMAT     DXGIFormat;
 }
 s_DXGIFormatMapping[] = {
-	{ MEDIASUBTYPE_RGB32,   DXGI_FORMAT_B8G8R8X8_UNORM },
-	{ MEDIASUBTYPE_ARGB32,  DXGI_FORMAT_R8G8B8A8_UNORM },
-	{ MEDIASUBTYPE_AYUV,    DXGI_FORMAT_AYUV },
-	{ MEDIASUBTYPE_YUY2,    DXGI_FORMAT_YUY2 },
-	{ MEDIASUBTYPE_NV12,    DXGI_FORMAT_NV12 },
-	{ MEDIASUBTYPE_P010,    DXGI_FORMAT_P010 },
+	{ MEDIASUBTYPE_RGB32,  D3DFMT_X8R8G8B8, DXGI_FORMAT_B8G8R8X8_UNORM },
+	{ MEDIASUBTYPE_ARGB32, D3DFMT_A8R8G8B8, DXGI_FORMAT_R8G8B8A8_UNORM },
+	{ MEDIASUBTYPE_AYUV,   D3DFMT_AYUV,     DXGI_FORMAT_AYUV },
+	{ MEDIASUBTYPE_YUY2,   D3DFMT_YUY2,     DXGI_FORMAT_YUY2 },
+	{ MEDIASUBTYPE_NV12,   D3DFMT_NV12,     DXGI_FORMAT_NV12 },
+	{ MEDIASUBTYPE_P010,   D3DFMT_P010,     DXGI_FORMAT_P010 },
 };
 
-DXGI_FORMAT MediaSubtype2DXGIFormat(GUID subtype)
+D3DFORMAT MediaSubtype2D3DFormat(GUID subtype)
 {
-	DXGI_FORMAT dxgiFormat = DXGI_FORMAT_UNKNOWN;
 	for (unsigned i = 0; i < ARRAYSIZE(s_DXGIFormatMapping); i++) {
 		const FormatEntry& e = s_DXGIFormatMapping[i];
 		if (e.Subtype == subtype) {
-			dxgiFormat = e.DXGIFormat;
-			break;
+			return e.D3DFormat;
 		}
 	}
-	return dxgiFormat;
+	return D3DFMT_UNKNOWN;
+}
+
+DXGI_FORMAT MediaSubtype2DXGIFormat(GUID subtype)
+{
+	for (unsigned i = 0; i < ARRAYSIZE(s_DXGIFormatMapping); i++) {
+		const FormatEntry& e = s_DXGIFormatMapping[i];
+		if (e.Subtype == subtype) {
+			return e.DXGIFormat;
+		}
+	}
+	return DXGI_FORMAT_UNKNOWN;
 }
 
 // CD3D11VideoProcessor
@@ -225,7 +236,8 @@ BOOL CD3D11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcExFmt.value = 0;
 
 		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
-		m_srcFormat = MediaSubtype2DXGIFormat(pmt->subtype);
+		m_srcD3DFormat = MediaSubtype2D3DFormat(pmt->subtype);
+		m_srcDXGIFormat = MediaSubtype2DXGIFormat(pmt->subtype);
 
 		if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
 			m_srcLines = m_srcHeight;
@@ -244,7 +256,7 @@ BOOL CD3D11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		}
 		m_srcPitch = (vih2->bmiHeader.biBitCount ? (m_srcWidth * m_srcHeight * vih2->bmiHeader.biBitCount / 8) : vih2->bmiHeader.biSizeImage) / m_srcLines;
 
-		if (FAILED(Initialize(m_srcWidth, m_srcHeight, m_srcFormat))) {
+		if (FAILED(Initialize(m_srcWidth, m_srcHeight, m_srcDXGIFormat))) {
 			return FALSE;
 		}
 
@@ -348,30 +360,6 @@ HRESULT CD3D11VideoProcessor::Initialize(const UINT width, const UINT height, co
 	return S_OK;
 }
 
-void CD3D11VideoProcessor::CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, const long src_size)
-{
-	if (m_srcFormat == DXGI_FORMAT_B8G8R8X8_UNORM || m_srcFormat == DXGI_FORMAT_R8G8B8A8_UNORM) {
-		const UINT linesize = m_srcWidth * 4;
-		src += m_srcPitch * (m_srcHeight - 1);
-
-		for (UINT y = 0; y < m_srcHeight; ++y) {
-			memcpy(dst, src, linesize);
-			src -= m_srcPitch;
-			dst += dst_pitch;
-		}
-	}
-	else if (m_srcPitch == dst_pitch) {
-		memcpy(dst, src, src_size);
-	}
-	else {
-		for (UINT y = 0; y < m_srcLines; ++y) {
-			memcpy(dst, src, m_srcWidth);
-			src += m_srcPitch;
-			dst += dst_pitch;
-		}
-	}
-}
-
 HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
@@ -408,7 +396,7 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample)
 			if (FAILED(hr)) {
 				return hr;
 			}
-			hr = Initialize(desc.Width, desc.Height, m_srcFormat);
+			hr = Initialize(desc.Width, desc.Height, m_srcDXGIFormat);
 			if (FAILED(hr)) {
 				return hr;
 			}
@@ -446,7 +434,7 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample)
 			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 			hr = m_pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 			if (SUCCEEDED(hr)) {
-				CopyFrameData((BYTE*)mappedResource.pData, mappedResource.RowPitch, data, size);
+				CopyFrameData(m_srcD3DFormat, m_srcWidth, m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, m_srcPitch, size);
 				m_pImmediateContext->Unmap(m_pSrcTexture2D, 0);
 			}
 		}

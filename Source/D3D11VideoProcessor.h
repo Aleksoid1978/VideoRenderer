@@ -42,7 +42,8 @@ private:
 	CComPtr<IDXGISwapChain> m_pDXGISwapChain;
 
 	CMediaType m_mt;
-	DXGI_FORMAT m_srcFormat = DXGI_FORMAT_UNKNOWN;
+	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;
+	DXGI_FORMAT m_srcDXGIFormat = DXGI_FORMAT_UNKNOWN;
 	GUID m_srcSubtype = GUID_NULL;
 	UINT m_srcWidth = 0;
 	UINT m_srcHeight = 0;
@@ -67,8 +68,6 @@ private:
 
 	DWORD m_VendorId = 0;
 	CString m_strAdapterDescription;
-
-	void CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, const long src_size);
 
 public:
 	CD3D11VideoProcessor();

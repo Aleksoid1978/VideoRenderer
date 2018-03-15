@@ -533,7 +533,7 @@ HRESULT CMpcVideoRenderer::CopySample(IMediaSample* pSample)
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
-			if (!InitVideoProc(m_srcWidth, m_srcHeight, m_srcFormat)) {
+			if (!InitVideoProc(m_srcWidth, m_srcHeight, m_srcD3DFormat)) {
 				return E_FAIL;
 			}
 
@@ -544,7 +544,7 @@ HRESULT CMpcVideoRenderer::CopySample(IMediaSample* pSample)
 				return hr;
 			}
 
-			CopyFrameData((BYTE*)lr.pBits, lr.Pitch, data, size);
+			CopyFrameData(m_srcD3DFormat, m_srcWidth, m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, data, m_srcPitch, size);
 
 			hr = m_SrcSamples.Get().pSrcSurface->UnlockRect();
 		}
@@ -559,50 +559,6 @@ HRESULT CMpcVideoRenderer::CopySample(IMediaSample* pSample)
 	m_frame++;
 
 	return hr;
-}
-
-void CMpcVideoRenderer::CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, long const src_size)
-{
-	if (m_srcFormat == D3DFMT_X8R8G8B8) {
-		const UINT linesize = m_srcWidth * 4;
-		src += m_srcPitch * (m_srcHeight - 1);
-
-		for (UINT y = 0; y < m_srcHeight; ++y) {
-			memcpy(dst, src, linesize);
-			src -= m_srcPitch;
-			dst += dst_pitch;
-		}
-	}
-	else if (m_srcPitch == dst_pitch) {
-		memcpy(dst, src, src_size);
-	}
-	else if (m_srcFormat == D3DFMT_YV12) {
-		for (UINT y = 0; y < m_srcHeight; ++y) {
-			memcpy(dst, src, m_srcWidth);
-			src += m_srcPitch;
-			dst += dst_pitch;
-		}
-
-		const UINT chromaline = m_srcWidth / 2;
-		const UINT chromaheight = m_srcHeight / 2;
-		const UINT chromapitch = m_srcPitch / 2;
-		dst_pitch /= 2;
-		for (UINT y = 0; y < chromaheight; ++y) {
-			memcpy(dst, src, chromaline);
-			src += chromapitch;
-			dst += dst_pitch;
-			memcpy(dst, src, chromaline);
-			src += chromapitch;
-			dst += dst_pitch;
-		}
-	}
-	else {
-		for (UINT y = 0; y < m_srcLines; ++y) {
-			memcpy(dst, src, m_srcWidth);
-			src += m_srcPitch;
-			dst += dst_pitch;
-		}
-	}
 }
 
 HRESULT CMpcVideoRenderer::Render()
@@ -712,7 +668,7 @@ BOOL CMpcVideoRenderer::InitMediaType(const CMediaType* pmt)
 		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
 
 		if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
-			m_srcFormat = D3DFMT_X8R8G8B8;
+			m_srcD3DFormat = D3DFMT_X8R8G8B8;
 			m_srcLines = m_srcHeight;
 		}
 		else {
@@ -720,7 +676,7 @@ BOOL CMpcVideoRenderer::InitMediaType(const CMediaType* pmt)
 				m_srcExFmt.value = vih2->dwControlFlags;
 				m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
 			}
-			m_srcFormat = (D3DFORMAT)m_mt.subtype.Data1;
+			m_srcD3DFormat = (D3DFORMAT)m_mt.subtype.Data1;
 			if (m_mt.subtype == MEDIASUBTYPE_NV12 || m_mt.subtype == MEDIASUBTYPE_YV12 || m_mt.subtype == MEDIASUBTYPE_P010) {
 				m_srcLines = m_srcHeight * 3 / 2;
 			}
@@ -730,7 +686,7 @@ BOOL CMpcVideoRenderer::InitMediaType(const CMediaType* pmt)
 		}
 		m_srcPitch = (vih2->bmiHeader.biBitCount ? (m_srcWidth * m_srcHeight * vih2->bmiHeader.biBitCount / 8) : vih2->bmiHeader.biSizeImage) / m_srcLines;
 
-		if (!InitVideoProc(m_srcWidth, m_srcHeight, m_srcFormat)) {
+		if (!InitVideoProc(m_srcWidth, m_srcHeight, m_srcD3DFormat)) {
 			return FALSE;
 		}
 #endif
@@ -1071,7 +1027,7 @@ STDMETHODIMP CMpcVideoRenderer::get_FrameInfo(VRFrameInfo* pFrameInfo)
 
 	pFrameInfo->Width = m_srcWidth;
 	pFrameInfo->Height = m_srcHeight;
-	pFrameInfo->D3dFormat = m_srcFormat;
+	pFrameInfo->D3dFormat = m_srcD3DFormat;
 	pFrameInfo->ExtFormat.value = m_srcExFmt.value;
 
 	return S_OK;

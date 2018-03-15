@@ -97,7 +97,7 @@ private:
 	DXVA2_SampleFormat m_SampleFormat = DXVA2_SampleProgressiveFrame;
 
 	CMediaType m_mt;
-	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
+	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;
 	UINT m_srcWidth = 0;
 	UINT m_srcHeight = 0;
 	DWORD m_srcAspectRatioX = 0;
@@ -173,8 +173,6 @@ private:
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
 
 	HRESULT CopySample(IMediaSample* pSample);
-	void CopyFrameData(BYTE* dst, int dst_pitch, BYTE* src, const long src_size);
-
 	HRESULT Render();
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget);
 
