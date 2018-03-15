@@ -23,7 +23,7 @@
 
 #include <algorithm>
 #include <vector>
-#include <mfapi.h>
+#include <evr.h> // for MR_VIDEO_ACCELERATION_SERVICE, because the <mfapi.h> does not contain it
 #include <Mferror.h>
 #include <Dvdmedia.h>
 #include "Helper.h"

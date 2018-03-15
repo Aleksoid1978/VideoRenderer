@@ -22,7 +22,7 @@
 #include <uuids.h>
 #include <dvdmedia.h>
 #include <d3d9.h>
-#include <evr.h> // for MR_BUFFER_SERVICE
+#include <mfapi.h> // for MR_BUFFER_SERVICE
 #include <Mferror.h>
 #include <Mfidl.h>
 #include <directxcolors.h>

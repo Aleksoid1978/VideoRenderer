@@ -21,10 +21,9 @@
 #pragma once
 
 #include <atltypes.h>
-#include <evr.h>
 #include <d3d9.h>
+#include <mfidl.h>
 #include <dxva2api.h>
-#include <dxvahd.h>
 #include <mutex>
 #include "IVideoRenderer.h"
 
