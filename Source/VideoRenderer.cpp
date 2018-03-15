@@ -797,7 +797,7 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 
 	HRESULT hr = S_OK;
 #if D3D11_ENABLE
-	hr = m_D3D11_VP.CopySample(pSample, &m_mt, m_pD3DDevEx, m_bInterlaced);
+	hr = m_D3D11_VP.CopySample(pSample, &m_mt, m_bInterlaced);
 #else
 	// Get frame type
 	m_SampleFormat = DXVA2_SampleProgressiveFrame; // Progressive
