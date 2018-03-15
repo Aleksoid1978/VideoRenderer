@@ -21,7 +21,8 @@
 #include "stdafx.h"
 #include <uuids.h>
 #include <dvdmedia.h>
-#include <evr.h>
+#include <d3d9.h>
+#include <evr.h> // for MR_BUFFER_SERVICE
 #include <Mferror.h>
 #include <Mfidl.h>
 #include <directxcolors.h>
@@ -348,7 +349,7 @@ HRESULT CD3D11VideoProcessor::Initialize(const GUID subtype, const UINT width, c
 	return S_OK;
 }
 
-HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt, IDirect3DDevice9Ex* pD3DDevEx, const bool bInterlaced)
+HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt, const bool bInterlaced)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
 	CheckPointer(m_pDXGISwapChain, E_FAIL);
@@ -374,6 +375,11 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample, const AM_MEDIA_T
 	if (CComQIPtr<IMFGetService> pService = pSample) {
 		CComPtr<IDirect3DSurface9> pSurface;
 		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
+			//IDirect3DDevice9* pD3DDev;
+			//pSurface->GetDevice(&pD3DDev);
+			//if (FAILED(hr)) {
+			//	return hr;
+			//}
 			D3DSURFACE_DESC desc;
 			hr = pSurface->GetDesc(&desc);
 			if (FAILED(hr)) {

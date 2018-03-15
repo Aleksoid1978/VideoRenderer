@@ -21,7 +21,6 @@
 #pragma once
 
 #include <atltypes.h>
-#include <d3d9.h>
 #include <DXGI1_2.h>
 #include <strmif.h>
 #include "d3d11.h"
@@ -61,7 +60,7 @@ public:
 	HRESULT IsMediaTypeSupported(const GUID subtype, const UINT width, const UINT height);
 	HRESULT Initialize(const GUID subtype, const UINT width, const UINT height);
 
-	HRESULT CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt, IDirect3DDevice9Ex* pD3DDevEx, const bool bInterlaced);
+	HRESULT CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt, const bool bInterlaced);
 	HRESULT Render();
 
 	void SetNativeVideoRect(const CRect& nativeVideoRect) { m_nativeVideoRect = nativeVideoRect; }
