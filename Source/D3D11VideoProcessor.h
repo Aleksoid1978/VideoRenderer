@@ -48,15 +48,23 @@ private:
 
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 
+	CRect m_nativeVideoRect;
+	CRect m_videoRect;
+	CRect m_windowRect;
+
 public:
 	CD3D11VideoProcessor();
 	~CD3D11VideoProcessor();
 
-	HRESULT InitSwapChain(HWND hwnd, UINT width, UINT height);
+	HRESULT InitSwapChain(HWND hwnd, UINT width, UINT height, const bool bReinit = false);
 
 	HRESULT IsMediaTypeSupported(const GUID subtype, const UINT width, const UINT height);
 	HRESULT Initialize(const GUID subtype, const UINT width, const UINT height);
 
 	HRESULT CopySample(IMediaSample* pSample, const AM_MEDIA_TYPE* pmt, IDirect3DDevice9Ex* pD3DDevEx, const bool bInterlaced);
 	HRESULT Render();
+
+	void SetNativeVideoRect(const CRect& nativeVideoRect) { m_nativeVideoRect = nativeVideoRect; }
+	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
+	void SetWindowRect(const CRect& windowRect) { m_windowRect = windowRect; }
 };

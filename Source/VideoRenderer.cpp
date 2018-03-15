@@ -763,6 +763,7 @@ HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 				if (FAILED(m_D3D11_VP.Initialize(pmt->subtype, m_srcWidth, m_srcHeight))) {
 					return VFW_E_UNSUPPORTED_VIDEO;
 				}
+				m_D3D11_VP.SetNativeVideoRect(m_nativeVideoRect);
 #endif
 				return S_OK;
 			}
@@ -786,6 +787,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 		if (FAILED(m_D3D11_VP.Initialize(pmt->subtype, m_srcWidth, m_srcHeight))) {
 			return VFW_E_UNSUPPORTED_VIDEO;
 		}
+		m_D3D11_VP.SetNativeVideoRect(m_nativeVideoRect);
 #endif
 	}
 
@@ -914,6 +916,9 @@ STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long
 	if (m_State != State_Running) {
 		Render();
 	}
+#if D3D11_ENABLE
+	m_D3D11_VP.SetVideoRect(m_videoRect);
+#endif
 	return S_OK;
 }
 
@@ -946,7 +951,7 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 		m_hWnd = (HWND)Owner;
 		HRESULT hr = InitDirect3D9();
 #if D3D11_ENABLE
-		hr = m_D3D11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height());
+		hr = m_D3D11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height(), true);
 #endif
 		return hr;
 	}
@@ -961,6 +966,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 	}
 #if D3D11_ENABLE
 	m_D3D11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height());
+	m_D3D11_VP.SetWindowRect(m_windowRect);
 #endif
 	return S_OK;
 }

@@ -163,7 +163,7 @@ CD3D11VideoProcessor::~CD3D11VideoProcessor()
 	}
 }
 
-HRESULT CD3D11VideoProcessor::InitSwapChain(HWND hwnd, UINT width, UINT height)
+HRESULT CD3D11VideoProcessor::InitSwapChain(HWND hwnd, UINT width, UINT height, const bool bReinit/* = false*/)
 {
 	CheckPointer(hwnd, E_FAIL);
 	CheckPointer(m_pVideoDevice, E_FAIL);
@@ -176,7 +176,7 @@ HRESULT CD3D11VideoProcessor::InitSwapChain(HWND hwnd, UINT width, UINT height)
 	}
 
 	HRESULT hr = S_OK;
-	if (m_pDXGISwapChain) {
+	if (!bReinit && m_pDXGISwapChain) {
 		hr = m_pDXGISwapChain->ResizeBuffers(1, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
 		if (SUCCEEDED(hr)) {
 			return hr;
@@ -440,6 +440,13 @@ HRESULT CD3D11VideoProcessor::Render()
 	
 	// disable automatic video quality by driver
 	m_pVideoContext->VideoProcessorSetStreamAutoProcessingMode(m_pVideoProcessor, 0, FALSE);
+
+	// Source rect
+	m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, TRUE, m_nativeVideoRect);
+
+	// Stream dest rect
+	m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, m_videoRect);
+	m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, TRUE, m_windowRect);
 
 	// Output background color (black)
 	static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f};
