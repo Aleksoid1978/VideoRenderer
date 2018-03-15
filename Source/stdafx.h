@@ -33,3 +33,5 @@
 
 #include <dmodshow.h>
 #include "./BaseClasses/streams.h"
+
+#define CHECK_HR(hr) { if (FAILED(hr)) return hr; }

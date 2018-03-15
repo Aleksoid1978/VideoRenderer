@@ -504,9 +504,7 @@ HRESULT CMpcVideoRenderer::CopySample(IMediaSample* pSample)
 		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
 			D3DSURFACE_DESC desc;
 			hr = pSurface->GetDesc(&desc);
-			if (FAILED(hr)) {
-				return hr;
-			}
+			CHECK_HR(hr);
 			if (!InitVideoProc(desc.Width, desc.Height, desc.Format)) {
 				return E_FAIL;
 			}
@@ -540,9 +538,7 @@ HRESULT CMpcVideoRenderer::CopySample(IMediaSample* pSample)
 			m_SrcSamples.Next();
 			D3DLOCKED_RECT lr;
 			hr = m_SrcSamples.Get().pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
-			if (FAILED(hr)) {
-				return hr;
-			}
+			CHECK_HR(hr);
 
 			CopyFrameData((BYTE*)lr.pBits, lr.Pitch, data, size);
 
@@ -821,9 +817,7 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 
 	hr = CopySample(pSample);
 #endif
-	if (FAILED(hr)) {
-		return hr;
-	}
+	CHECK_HR(hr);
 
 #if D3D11_ENABLE
 	return m_D3D11_VP.Render();
