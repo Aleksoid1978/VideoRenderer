@@ -472,6 +472,25 @@ HRESULT CD3D11VideoProcessor::Render(const FILTER_STATE filterState)
 		static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f};
 		m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, FALSE, &backgroundColor);
 
+		// Stream color space
+		D3D11_VIDEO_PROCESSOR_COLOR_SPACE colorSpace = {};
+		if (m_srcExFmt.value) {
+			colorSpace.RGB_Range = m_srcExFmt.NominalRange == DXVA2_NominalRange_16_235 ? 1 : 0;
+			colorSpace.YCbCr_Matrix = m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601 ? 0 : 1;
+		} else {
+			colorSpace.RGB_Range = 1;
+			if (m_srcWidth <= 1024 && m_srcHeight <= 576) { // SD
+				colorSpace.YCbCr_Matrix = 0;
+			} else { // HD
+				colorSpace.YCbCr_Matrix = 1;
+			}
+		}
+		m_pVideoContext->VideoProcessorSetStreamColorSpace(m_pVideoProcessor, 0, &colorSpace);
+
+		// Output color space
+		colorSpace.RGB_Range = 0;
+		m_pVideoContext->VideoProcessorSetOutputColorSpace(m_pVideoProcessor, &colorSpace);
+
 		m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
 
 		D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputViewDesc = {};
