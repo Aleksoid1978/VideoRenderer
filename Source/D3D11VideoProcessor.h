@@ -66,12 +66,18 @@ private:
 	CRect m_videoRect;
 	CRect m_windowRect;
 
+	HWND m_hWnd = nullptr;
+
 	DWORD m_VendorId = 0;
 	CString m_strAdapterDescription;
 
 public:
 	CD3D11VideoProcessor();
 	~CD3D11VideoProcessor();
+
+	void ClearD3D11();
+
+	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
 
 	HRESULT InitSwapChain(HWND hwnd, UINT width, UINT height, const bool bReinit = false);
 

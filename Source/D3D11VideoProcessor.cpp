@@ -28,6 +28,7 @@
 #include <directxcolors.h>
 #include "Helper.h"
 #include "D3D11VideoProcessor.h"
+#include "./Include/ID3DVideoMemoryConfiguration.h"
 
 static const struct FormatEntry {
 	GUID            Subtype;
@@ -95,6 +96,8 @@ CD3D11VideoProcessor::CD3D11VideoProcessor()
 	D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0, D3D_FEATURE_LEVEL_9_3, D3D_FEATURE_LEVEL_9_2, D3D_FEATURE_LEVEL_9_1 };
 	D3D_FEATURE_LEVEL featurelevel;
 
+	ID3D11Device *pDevice = nullptr;
+	ID3D11DeviceContext *pImmediateContext = nullptr;
 	HRESULT hr = pfnD3D11CreateDevice(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
@@ -107,64 +110,26 @@ CD3D11VideoProcessor::CD3D11VideoProcessor()
 		featureLevels,
 		ARRAYSIZE(featureLevels),
 		D3D11_SDK_VERSION,
-		&m_pDevice,
+		&pDevice,
 		&featurelevel,
-		&m_pImmediateContext);
+		&pImmediateContext);
 	if (FAILED(hr)) {
 		return;
 	}
 
-	hr = m_pDevice->QueryInterface(__uuidof(ID3D11VideoDevice), (void**)&m_pVideoDevice);
-	if (FAILED(hr)) {
-		return;
-	}
-
-	hr = m_pImmediateContext->QueryInterface(__uuidof(ID3D11VideoContext), (void**)&m_pVideoContext);
-	if (FAILED(hr)) {
-		m_pImmediateContext.Release();
-		m_pVideoDevice.Release();
-		return;
-	}
-
-	CComPtr<IDXGIDevice> pDXGIDevice;
-	hr = m_pDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDXGIDevice);
-	if (FAILED(hr)) {
-		m_pImmediateContext.Release();
-		m_pVideoDevice.Release();
-		return;
-	}
-
-	CComPtr<IDXGIAdapter> pDXGIAdapter;
-	hr = pDXGIDevice->GetAdapter(&pDXGIAdapter);
-	if (FAILED(hr)) {
-		m_pImmediateContext.Release();
-		m_pVideoDevice.Release();
-		return;
-	}
-
-	DXGI_ADAPTER_DESC dxgiAdapterDesc = {};
-	hr = pDXGIAdapter->GetDesc(&dxgiAdapterDesc);
-	if (SUCCEEDED(hr)) {
-		m_VendorId = dxgiAdapterDesc.VendorId;
-		m_strAdapterDescription.Format(L"%S (%04X:%04X)", dxgiAdapterDesc.Description, dxgiAdapterDesc.VendorId, dxgiAdapterDesc.DeviceId);
-	}
-
-	CComPtr<IDXGIFactory1> pDXGIFactory1;
-	hr = pDXGIAdapter->GetParent(__uuidof(IDXGIFactory1), (void**)&pDXGIFactory1);
-	if (FAILED(hr)) {
-		m_pImmediateContext.Release();
-		m_pVideoDevice.Release();
-		return;
-	}
-
-	hr = pDXGIFactory1->QueryInterface(__uuidof(IDXGIFactory2), (void**)&m_pDXGIFactory2);
-	if (FAILED(hr)) {
-		m_pImmediateContext.Release();
-		m_pVideoDevice.Release();
-	}
+	SetDevice(pDevice, pImmediateContext);
 }
 
 CD3D11VideoProcessor::~CD3D11VideoProcessor()
+{
+	ClearD3D11();
+
+	if (m_hD3D11Lib) {
+		FreeLibrary(m_hD3D11Lib);
+	}
+}
+
+void CD3D11VideoProcessor::ClearD3D11()
 {
 	m_pSrcTexture2D.Release();
 	m_pSrcTexture2D_Decode.Release();
@@ -176,16 +141,103 @@ CD3D11VideoProcessor::~CD3D11VideoProcessor()
 	m_pDXGISwapChain.Release();
 	m_pDXGIFactory2.Release();
 	m_pDevice.Release();
+}
 
-	if (m_hD3D11Lib) {
-		FreeLibrary(m_hD3D11Lib);
+HRESULT CD3D11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
+{
+	ClearD3D11();
+
+	CheckPointer(pDevice, E_POINTER);
+	CheckPointer(pContext, E_POINTER);
+
+	m_pDevice = pDevice;
+	m_pImmediateContext = pContext;
+
+	HRESULT hr = m_pDevice->QueryInterface(__uuidof(ID3D11VideoDevice), (void**)&m_pVideoDevice);
+	if (FAILED(hr)) {
+		m_pDevice.Release();
+		return hr;
 	}
+
+	hr = m_pImmediateContext->QueryInterface(__uuidof(ID3D11VideoContext), (void**)&m_pVideoContext);
+	if (FAILED(hr)) {
+		m_pDevice.Release();
+		m_pImmediateContext.Release();
+		m_pVideoDevice.Release();
+		return hr;
+	}
+
+	CComPtr<IDXGIDevice> pDXGIDevice;
+	hr = m_pDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDXGIDevice);
+	if (FAILED(hr)) {
+		m_pDevice.Release();
+		m_pImmediateContext.Release();
+		m_pVideoDevice.Release();
+		return hr;
+	}
+
+	CComPtr<IDXGIAdapter> pDXGIAdapter;
+	hr = pDXGIDevice->GetAdapter(&pDXGIAdapter);
+	if (FAILED(hr)) {
+		m_pImmediateContext.Release();
+		m_pVideoDevice.Release();
+		return hr;
+	}
+
+	CComPtr<IDXGIFactory1> pDXGIFactory1;
+	hr = pDXGIAdapter->GetParent(__uuidof(IDXGIFactory1), (void**)&pDXGIFactory1);
+	if (FAILED(hr)) {
+		m_pDevice.Release();
+		m_pImmediateContext.Release();
+		m_pVideoDevice.Release();
+	}
+
+	hr = pDXGIFactory1->QueryInterface(__uuidof(IDXGIFactory2), (void**)&m_pDXGIFactory2);
+	if (FAILED(hr)) {
+		m_pDevice.Release();
+		m_pImmediateContext.Release();
+		m_pVideoDevice.Release();
+	}
+
+	if (m_mt.IsValid()) {
+		m_D3D11_Src_Format = DXGI_FORMAT_UNKNOWN;
+		m_D3D11_Src_Width = 0;
+		m_D3D11_Src_Height = 0;
+
+		if (!InitMediaType(&m_mt)) {
+			m_pDevice.Release();
+			m_pImmediateContext.Release();
+			m_pVideoDevice.Release();
+			return E_FAIL;
+		}
+	}
+
+	if (m_hWnd) {
+		hr = InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height(), true);
+		if (FAILED(hr)) {
+			m_pDevice.Release();
+			m_pImmediateContext.Release();
+			m_pVideoDevice.Release();
+			return hr;
+		}
+	}
+
+	DXGI_ADAPTER_DESC dxgiAdapterDesc = {};
+	hr = pDXGIAdapter->GetDesc(&dxgiAdapterDesc);
+	if (SUCCEEDED(hr)) {
+		m_VendorId = dxgiAdapterDesc.VendorId;
+		m_strAdapterDescription.Format(L"%S (%04X:%04X)", dxgiAdapterDesc.Description, dxgiAdapterDesc.VendorId, dxgiAdapterDesc.DeviceId);
+	}
+
+	return hr;
 }
 
 HRESULT CD3D11VideoProcessor::InitSwapChain(HWND hwnd, UINT width, UINT height, const bool bReinit/* = false*/)
 {
 	CheckPointer(hwnd, E_FAIL);
 	CheckPointer(m_pVideoDevice, E_FAIL);
+
+	m_hWnd = hwnd;
 
 	if (!width || !height) {
 		RECT rc;
@@ -386,7 +438,23 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample)
 
 	HRESULT hr = S_OK;
 
-	if (CComQIPtr<IMFGetService> pService = pSample) {
+	if (CComQIPtr<IMediaSampleD3D11> pMSD3D11 = pSample) {
+		CComQIPtr<ID3D11Texture2D> pD3D11Texture2D;
+		UINT ArraySlice = 0;
+		hr = pMSD3D11->GetD3D11Texture(0, &pD3D11Texture2D, &ArraySlice);
+		if (FAILED(hr)) {
+			return hr;
+		}
+
+		D3D11_TEXTURE2D_DESC desc = {};
+		pD3D11Texture2D->GetDesc(&desc);
+		hr = Initialize(desc.Width, desc.Height, desc.Format);
+		if (FAILED(hr)) {
+			return hr;
+		}
+
+		m_pImmediateContext->CopySubresourceRegion(m_pSrcTexture2D_Decode, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
+	} else if (CComQIPtr<IMFGetService> pService = pSample) {
 		CComPtr<IDirect3DSurface9> pSurface;
 		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
 			//IDirect3DDevice9* pD3DDev;
@@ -412,6 +480,7 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample)
 				if (SUCCEEDED(hr)) {
 					CopyFrameData(m_srcD3DFormat, desc.Width, desc.Height, (BYTE*)mappedResource.pData, mappedResource.RowPitch, (BYTE*)lr_src.pBits, lr_src.Pitch, mappedResource.DepthPitch);
 					m_pImmediateContext->Unmap(m_pSrcTexture2D, 0);
+					m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
 				}
 
 				hr = pSurface->UnlockRect();
@@ -427,6 +496,7 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample)
 			if (SUCCEEDED(hr)) {
 				CopyFrameData(m_srcD3DFormat, m_srcWidth, m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, m_srcPitch, size);
 				m_pImmediateContext->Unmap(m_pSrcTexture2D, 0);
+				m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
 			}
 		}
 	}
@@ -480,8 +550,6 @@ HRESULT CD3D11VideoProcessor::Render(const FILTER_STATE filterState)
 		// Output color space
 		colorSpace.RGB_Range = 0;
 		m_pVideoContext->VideoProcessorSetOutputColorSpace(m_pVideoProcessor, &colorSpace);
-
-		m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
 
 		D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputViewDesc = {};
 		inputViewDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;

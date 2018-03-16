@@ -83,6 +83,7 @@ public:
 	}
 };
 
+class CVideoRendererInputPin;
 
 class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	CMpcVideoRenderer
@@ -94,6 +95,8 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	, public IVideoRenderer
 {
 private:
+	friend class CVideoRendererInputPin;
+
 	DXVA2_SampleFormat m_SampleFormat = DXVA2_SampleProgressiveFrame;
 
 	CMediaType m_mt;
