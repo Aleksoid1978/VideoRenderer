@@ -27,7 +27,7 @@
 #include <mutex>
 #include "IVideoRenderer.h"
 
-#define D3D11_ENABLE 0
+#define D3D11_ENABLE 1
 
 #if D3D11_ENABLE
 #include "D3D11VideoProcessor.h"

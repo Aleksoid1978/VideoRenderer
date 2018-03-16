@@ -24,7 +24,8 @@
 #include <DXGI1_2.h>
 #include <dxva2api.h>
 #include <strmif.h>
-#include "d3d11.h"
+#include <d3d11.h>
+#include "IVideoRenderer.h"
 
 class CD3D11VideoProcessor
 {
@@ -88,4 +89,6 @@ public:
 
 	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
 	void SetWindowRect(const CRect& windowRect) { m_windowRect = windowRect; }
+
+	HRESULT GetFrameInfo(VRFrameInfo* pFrameInfo);
 };

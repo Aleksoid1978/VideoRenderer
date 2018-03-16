@@ -559,3 +559,15 @@ HRESULT CD3D11VideoProcessor::Render(const FILTER_STATE filterState)
 
 	return hr;
 }
+
+HRESULT CD3D11VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
+{
+	CheckPointer(pFrameInfo, E_POINTER);
+
+	pFrameInfo->Width = m_srcWidth;
+	pFrameInfo->Height = m_srcHeight;
+	pFrameInfo->D3dFormat = m_srcD3DFormat;
+	pFrameInfo->ExtFormat.value = m_srcExFmt.value;
+
+	return S_OK;
+}

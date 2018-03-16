@@ -1058,6 +1058,9 @@ STDMETHODIMP CMpcVideoRenderer::get_Binary(int id, LPVOID* pbin, int* size)
 
 STDMETHODIMP CMpcVideoRenderer::get_FrameInfo(VRFrameInfo* pFrameInfo)
 {
+#if D3D11_ENABLE
+	return m_D3D11_VP.GetFrameInfo(pFrameInfo);
+#else
 	CheckPointer(pFrameInfo, E_POINTER);
 
 	pFrameInfo->Width = m_srcWidth;
@@ -1066,6 +1069,7 @@ STDMETHODIMP CMpcVideoRenderer::get_FrameInfo(VRFrameInfo* pFrameInfo)
 	pFrameInfo->ExtFormat.value = m_srcExFmt.value;
 
 	return S_OK;
+#endif
 }
 
 STDMETHODIMP CMpcVideoRenderer::get_VPDeviceGuid(GUID* pVPDevGuid)
