@@ -144,14 +144,14 @@ void CopyFrameData(const D3DFORMAT format, const UINT width, const UINT height, 
 
 		const UINT chromaline = width / 2;
 		const UINT chromaheight = height / 2;
-		const UINT chromapitch = src_pitch / 2;
+		src_pitch /= 2;
 		dst_pitch /= 2;
 		for (UINT y = 0; y < chromaheight; ++y) {
 			memcpy(dst, src, chromaline);
-			src += chromapitch;
+			src += src_pitch;
 			dst += dst_pitch;
 			memcpy(dst, src, chromaline);
-			src += chromapitch;
+			src += src_pitch;
 			dst += dst_pitch;
 		}
 	}
