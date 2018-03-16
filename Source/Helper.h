@@ -60,4 +60,7 @@ const wchar_t* D3DFormatToString(D3DFORMAT format);
 const wchar_t* DXGIFormatToString(DXGI_FORMAT format);
 const wchar_t* DXVA2VPDeviceToString(const GUID& guid);
 
-void CopyFrameData(const D3DFORMAT format, const UINT width, const UINT height, BYTE* dst, const UINT dst_pitch, BYTE* src, const UINT src_pitch, const UINT src_size);
+D3DFORMAT MediaSubtype2D3DFormat(GUID subtype);
+DXGI_FORMAT MediaSubtype2DXGIFormat(GUID subtype);
+
+void CopyFrameData(const D3DFORMAT format, const UINT width, const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch, const UINT src_size);

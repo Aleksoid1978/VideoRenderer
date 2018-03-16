@@ -53,7 +53,6 @@ private:
 	bool m_bInterlaced = false;
 	RECT m_srcRect = {};
 	RECT m_trgRect = {};
-	UINT m_srcLines = 0;
 	INT  m_srcPitch = 0;
 
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;

@@ -692,28 +692,34 @@ BOOL CMpcVideoRenderer::InitMediaType(const CMediaType* pmt)
 		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
 
 #if (!D3D11_ENABLE)
+		m_srcD3DFormat = MediaSubtype2D3DFormat(pmt->subtype);
 		m_srcExFmt.value = 0;
-
 		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
 
-		if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
-			m_srcD3DFormat = D3DFMT_X8R8G8B8;
-			m_srcLines = m_srcHeight;
+		if (m_srcD3DFormat == D3DFMT_X8R8G8B8 || m_srcD3DFormat == D3DFMT_A8R8G8B8) {
+			m_srcPitch = m_srcWidth * 4;
 		}
 		else {
 			if (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT)) {
 				m_srcExFmt.value = vih2->dwControlFlags;
 				m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
 			}
-			m_srcD3DFormat = (D3DFORMAT)m_mt.subtype.Data1;
-			if (m_mt.subtype == MEDIASUBTYPE_NV12 || m_mt.subtype == MEDIASUBTYPE_YV12 || m_mt.subtype == MEDIASUBTYPE_P010) {
-				m_srcLines = m_srcHeight * 3 / 2;
-			}
-			else {
-				m_srcLines = m_srcHeight;
+
+			switch (m_srcD3DFormat) {
+			case D3DFMT_NV12:
+			case D3DFMT_YV12:
+			default:
+				m_srcPitch = m_srcWidth;
+				break;
+			case D3DFMT_YUY2:
+			case D3DFMT_P010:
+				m_srcPitch = m_srcWidth * 2;
+				break;
+			case D3DFMT_AYUV:
+				m_srcPitch = m_srcWidth * 4;
+				break;
 			}
 		}
-		m_srcPitch = (vih2->bmiHeader.biBitCount ? (m_srcWidth * m_srcHeight * vih2->bmiHeader.biBitCount / 8) : vih2->bmiHeader.biSizeImage) / m_srcLines;
 
 		if (!InitVideoProc(m_srcWidth, m_srcHeight, m_srcD3DFormat)) {
 			return FALSE;

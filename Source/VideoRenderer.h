@@ -109,7 +109,6 @@ private:
 	bool m_bInterlaced = false;
 	RECT m_srcRect = {};
 	RECT m_trgRect = {};
-	UINT m_srcLines = 0;
 	INT  m_srcPitch = 0;
 	VideoSurfaceBuffer m_SrcSamples;
 

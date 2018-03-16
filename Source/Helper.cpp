@@ -80,7 +80,45 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
 	return CStringFromGUID(guid);
 }
 
-void CopyFrameData(const D3DFORMAT format, const UINT width, const UINT height, BYTE* dst, const UINT dst_pitch, BYTE* src, const UINT src_pitch, const UINT src_size)
+static const struct FormatEntry {
+	GUID            Subtype;
+	D3DFORMAT       D3DFormat;
+	DXGI_FORMAT     DXGIFormat;
+}
+s_DXGIFormatMapping[] = {
+	{ MEDIASUBTYPE_NV12,   D3DFMT_NV12,     DXGI_FORMAT_NV12 },
+	{ MEDIASUBTYPE_YV12,   D3DFMT_YV12,     DXGI_FORMAT_UNKNOWN },
+	{ MEDIASUBTYPE_P010,   D3DFMT_P010,     DXGI_FORMAT_P010 },
+	{ MEDIASUBTYPE_YUY2,   D3DFMT_YUY2,     DXGI_FORMAT_YUY2 },
+	{ MEDIASUBTYPE_AYUV,   D3DFMT_AYUV,     DXGI_FORMAT_AYUV },
+	{ MEDIASUBTYPE_RGB32,  D3DFMT_X8R8G8B8, DXGI_FORMAT_B8G8R8X8_UNORM },
+	{ MEDIASUBTYPE_ARGB32, D3DFMT_X8R8G8B8, DXGI_FORMAT_R8G8B8A8_UNORM },
+};
+
+D3DFORMAT MediaSubtype2D3DFormat(GUID subtype)
+{
+	for (unsigned i = 0; i < ARRAYSIZE(s_DXGIFormatMapping); i++) {
+		const FormatEntry& e = s_DXGIFormatMapping[i];
+		if (e.Subtype == subtype) {
+			return e.D3DFormat;
+		}
+	}
+	return D3DFMT_UNKNOWN;
+}
+
+DXGI_FORMAT MediaSubtype2DXGIFormat(GUID subtype)
+{
+	for (unsigned i = 0; i < ARRAYSIZE(s_DXGIFormatMapping); i++) {
+		const FormatEntry& e = s_DXGIFormatMapping[i];
+		if (e.Subtype == subtype) {
+			return e.DXGIFormat;
+		}
+	}
+	return DXGI_FORMAT_UNKNOWN;
+}
+
+
+void CopyFrameData(const D3DFORMAT format, const UINT width, const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch, const UINT src_size)
 {
 	//UINT linesize = std::min(src_pitch, dst_pitch); // TODO
 
@@ -98,30 +136,29 @@ void CopyFrameData(const D3DFORMAT format, const UINT width, const UINT height, 
 		memcpy(dst, src, src_size);
 	}
 	else if (format == D3DFMT_YV12) {
-		UINT _dst_pitch = dst_pitch;
 		for (UINT y = 0; y < height; ++y) {
 			memcpy(dst, src, width);
 			src += src_pitch;
-			dst += _dst_pitch;
+			dst += dst_pitch;
 		}
 
 		const UINT chromaline = width / 2;
 		const UINT chromaheight = height / 2;
 		const UINT chromapitch = src_pitch / 2;
-		_dst_pitch /= 2;
+		dst_pitch /= 2;
 		for (UINT y = 0; y < chromaheight; ++y) {
 			memcpy(dst, src, chromaline);
 			src += chromapitch;
-			dst += _dst_pitch;
+			dst += dst_pitch;
 			memcpy(dst, src, chromaline);
 			src += chromapitch;
-			dst += _dst_pitch;
+			dst += dst_pitch;
 		}
 	}
 	else {
 		UINT linesize = width;
 		UINT lines = height;
-		if (format == D3DFMT_YUY2) {
+		if (format == D3DFMT_YUY2 || format == D3DFMT_P010) {
 			linesize *= 2;
 		} else if (format == D3DFMT_AYUV) {
 			linesize *= 4;

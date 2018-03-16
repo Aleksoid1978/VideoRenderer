@@ -30,41 +30,6 @@
 #include "D3D11VideoProcessor.h"
 #include "./Include/ID3DVideoMemoryConfiguration.h"
 
-static const struct FormatEntry {
-	GUID            Subtype;
-	D3DFORMAT       D3DFormat;
-	DXGI_FORMAT     DXGIFormat;
-}
-s_DXGIFormatMapping[] = {
-	{ MEDIASUBTYPE_RGB32,  D3DFMT_X8R8G8B8, DXGI_FORMAT_B8G8R8X8_UNORM },
-	{ MEDIASUBTYPE_ARGB32, D3DFMT_A8R8G8B8, DXGI_FORMAT_R8G8B8A8_UNORM },
-	{ MEDIASUBTYPE_AYUV,   D3DFMT_AYUV,     DXGI_FORMAT_AYUV },
-	{ MEDIASUBTYPE_YUY2,   D3DFMT_YUY2,     DXGI_FORMAT_YUY2 },
-	{ MEDIASUBTYPE_NV12,   D3DFMT_NV12,     DXGI_FORMAT_NV12 },
-	{ MEDIASUBTYPE_P010,   D3DFMT_P010,     DXGI_FORMAT_P010 },
-};
-
-D3DFORMAT MediaSubtype2D3DFormat(GUID subtype)
-{
-	for (unsigned i = 0; i < ARRAYSIZE(s_DXGIFormatMapping); i++) {
-		const FormatEntry& e = s_DXGIFormatMapping[i];
-		if (e.Subtype == subtype) {
-			return e.D3DFormat;
-		}
-	}
-	return D3DFMT_UNKNOWN;
-}
-
-DXGI_FORMAT MediaSubtype2DXGIFormat(GUID subtype)
-{
-	for (unsigned i = 0; i < ARRAYSIZE(s_DXGIFormatMapping); i++) {
-		const FormatEntry& e = s_DXGIFormatMapping[i];
-		if (e.Subtype == subtype) {
-			return e.DXGIFormat;
-		}
-	}
-	return DXGI_FORMAT_UNKNOWN;
-}
 
 // CD3D11VideoProcessor
 
@@ -292,22 +257,30 @@ BOOL CD3D11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcD3DFormat = MediaSubtype2D3DFormat(pmt->subtype);
 		m_srcDXGIFormat = MediaSubtype2DXGIFormat(pmt->subtype);
 
-		if (m_mt.subtype == MEDIASUBTYPE_RGB32 || m_mt.subtype == MEDIASUBTYPE_ARGB32) {
-			m_srcLines = m_srcHeight;
+		if (m_srcD3DFormat == D3DFMT_X8R8G8B8 || m_srcD3DFormat == D3DFMT_A8R8G8B8) {
+			m_srcPitch = m_srcWidth * 4;
 		}
 		else {
 			if (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT)) {
 				m_srcExFmt.value = vih2->dwControlFlags;
 				m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
 			}
-			if (m_mt.subtype == MEDIASUBTYPE_NV12 || m_mt.subtype == MEDIASUBTYPE_YV12 || m_mt.subtype == MEDIASUBTYPE_P010) {
-				m_srcLines = m_srcHeight * 3 / 2;
-			}
-			else {
-				m_srcLines = m_srcHeight;
+
+			switch (m_srcD3DFormat) {
+			case D3DFMT_NV12:
+			case D3DFMT_YV12:
+			default:
+				m_srcPitch = m_srcWidth;
+				break;
+			case D3DFMT_YUY2:
+			case D3DFMT_P010:
+				m_srcPitch = m_srcWidth * 2;
+				break;
+			case D3DFMT_AYUV:
+				m_srcPitch = m_srcWidth * 4;
+				break;
 			}
 		}
-		m_srcPitch = (vih2->bmiHeader.biBitCount ? (m_srcWidth * m_srcHeight * vih2->bmiHeader.biBitCount / 8) : vih2->bmiHeader.biSizeImage) / m_srcLines;
 
 		if (FAILED(Initialize(m_srcWidth, m_srcHeight, m_srcDXGIFormat))) {
 			return FALSE;
