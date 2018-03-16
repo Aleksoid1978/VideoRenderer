@@ -171,6 +171,7 @@ CD3D11VideoProcessor::~CD3D11VideoProcessor()
 	m_pVideoProcessor.Release();
 	m_pVideoProcessorEnum.Release();
 	m_pVideoDevice.Release();
+	m_pVideoContext.Release();
 	m_pImmediateContext.Release();
 	m_pDXGISwapChain.Release();
 	m_pDXGIFactory2.Release();
@@ -348,7 +349,7 @@ HRESULT CD3D11VideoProcessor::Initialize(const UINT width, const UINT height, co
 	}
 
 	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.BindFlags = D3D11_BIND_DECODER;
+	desc.BindFlags = 0;
 	desc.CPUAccessFlags = 0;
 	hr = m_pDevice->CreateTexture2D(&desc, NULL, &m_pSrcTexture2D_Decode);
 	if (FAILED(hr)) {
