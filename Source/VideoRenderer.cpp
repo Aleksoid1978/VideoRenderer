@@ -118,7 +118,7 @@ STDMETHODIMP CVideoRendererInputPin::SetSurfaceType(DXVA2_SurfaceType dwType)
 // ID3D11DecoderConfiguration
 STDMETHODIMP CVideoRendererInputPin::ActivateD3D11Decoding(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, HANDLE hMutex, UINT nFlags)
 {
-	return m_pBaseRenderer->m_D3D11_VP.SetDevice(pDevice, pContext);
+	return m_pBaseRenderer->m_bUsedD3D11 ? m_pBaseRenderer->m_D3D11_VP.SetDevice(pDevice, pContext) : E_FAIL;
 }
 
 UINT STDMETHODCALLTYPE CVideoRendererInputPin::GetD3D11AdapterIndex()
