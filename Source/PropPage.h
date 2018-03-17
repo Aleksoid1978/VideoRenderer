@@ -29,6 +29,8 @@ class __declspec(uuid("DA46D181-07D6-441D-B314-019AEB10148A"))
 	HFONT m_hMonoFont = nullptr;
 	CComQIPtr<IVideoRenderer> m_pVideoRenderer;
 
+	bool m_bUseD3D11 = true;
+
 public:
 	CVRMainPPage(LPUNKNOWN lpunk, HRESULT* phr);
 	~CVRMainPPage();

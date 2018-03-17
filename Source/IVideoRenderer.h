@@ -45,4 +45,7 @@ IVideoRenderer : public IUnknown {
 	STDMETHOD(get_Binary) (int id, LPVOID* pbin, int* size) PURE;
 	STDMETHOD(get_FrameInfo) (VRFrameInfo* pFrameInfo) PURE;
 	STDMETHOD(get_VPDeviceGuid) (GUID* pVPDevGuid) PURE;
+
+	STDMETHOD_(bool, GetOptionUseD3D11()) PURE;
+	STDMETHOD(SetOptionUseD3D11(bool value)) PURE;
 };

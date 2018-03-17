@@ -1080,3 +1080,15 @@ STDMETHODIMP CMpcVideoRenderer::get_VPDeviceGuid(GUID* pVPDevGuid)
 
 	return S_OK;
 }
+
+STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionUseD3D11()
+{
+	return m_bUseD3D11;
+}
+
+STDMETHODIMP CMpcVideoRenderer::SetOptionUseD3D11(bool value)
+{
+	m_bUseD3D11 = value;
+
+	return S_OK;
+}

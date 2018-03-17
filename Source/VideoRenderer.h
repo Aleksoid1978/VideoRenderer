@@ -95,6 +95,12 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 private:
 	friend class CVideoRendererInputPin;
 
+#if D3D11_ENABLE
+	bool m_bUseD3D11 = true;
+#else
+	bool m_bUseD3D11 = false;
+#endif
+
 	DXVA2_SampleFormat m_SampleFormat = DXVA2_SampleProgressiveFrame;
 
 	CMediaType m_mt;
@@ -284,4 +290,7 @@ public:
 	STDMETHODIMP get_Binary(int id, LPVOID* pbin, int* size);
 	STDMETHODIMP get_FrameInfo(VRFrameInfo* pFrameInfo);
 	STDMETHODIMP get_VPDeviceGuid(GUID* pVPDevGuid);
+
+	STDMETHODIMP_(bool) GetOptionUseD3D11();
+	STDMETHODIMP SetOptionUseD3D11(bool value);
 };

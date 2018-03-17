@@ -69,12 +69,9 @@ HRESULT CVRMainPPage::OnActivate()
 	// set m_hWnd for CWindow
 	m_hWnd = m_hwnd;
 
-	GetDlgItem(IDC_CHECK1).EnableWindow(FALSE);
-#if D3D11_ENABLE
-	CheckDlgButton(IDC_CHECK1, BST_CHECKED);
-#else
-	CheckDlgButton(IDC_CHECK1, BST_UNCHECKED);
-#endif
+	GetDlgItem(IDC_CHECK1).EnableWindow(FALSE); // TODO remove it
+	m_bUseD3D11 = m_pVideoRenderer->GetOptionUseD3D11();
+	CheckDlgButton(IDC_CHECK1, m_bUseD3D11 ? BST_CHECKED : BST_UNCHECKED);
 
 	// init monospace font
 	LOGFONTW lf = {};
@@ -140,15 +137,15 @@ HRESULT CVRMainPPage::OnActivate()
 
 INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	/*switch (uMsg) {
+	switch (uMsg) {
 	case WM_COMMAND:
-		if (LOWORD(wParam) == IDC_DEFAULT) {
-			// User clicked the 'Revert to Default' button.
+		if (LOWORD(wParam) == IDC_CHECK1) {
+			m_bUseD3D11 = IsDlgButtonChecked(IDC_CHECK1) == BST_CHECKED;
 			SetDirty();
 			return (LRESULT)1;
 		}
 		break;
-	}*/
+	}
 
 	// Let the parent class handle the message.
 	return CBasePropertyPage::OnReceiveMessage(hwnd, uMsg, wParam, lParam);
@@ -156,5 +153,7 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 
 HRESULT CVRMainPPage::OnApplyChanges()
 {
+	m_pVideoRenderer->SetOptionUseD3D11(m_bUseD3D11);
+
 	return S_OK;
 }
