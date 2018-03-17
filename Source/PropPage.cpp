@@ -69,6 +69,13 @@ HRESULT CVRMainPPage::OnActivate()
 	// set m_hWnd for CWindow
 	m_hWnd = m_hwnd;
 
+	GetDlgItem(IDC_CHECK1).EnableWindow(FALSE);
+#if D3D11_ENABLE
+	CheckDlgButton(IDC_CHECK1, BST_CHECKED);
+#else
+	CheckDlgButton(IDC_CHECK1, BST_UNCHECKED);
+#endif
+
 	// init monospace font
 	LOGFONTW lf = {};
 	HDC hdc = GetWindowDC();
