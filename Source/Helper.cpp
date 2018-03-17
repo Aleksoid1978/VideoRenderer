@@ -81,9 +81,9 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
 }
 
 static const struct FormatEntry {
-	GUID            Subtype;
-	D3DFORMAT       D3DFormat;
-	DXGI_FORMAT     DXGIFormat;
+	GUID        Subtype;
+	D3DFORMAT   D3DFormat;
+	DXGI_FORMAT DXGIFormat;
 }
 s_DXGIFormatMapping[] = {
 	{ MEDIASUBTYPE_NV12,   D3DFMT_NV12,     DXGI_FORMAT_NV12 },

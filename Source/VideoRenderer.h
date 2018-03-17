@@ -52,10 +52,10 @@ class VideoSurfaceBuffer
 	unsigned m_LastPos = 0;
 
 public:
-	unsigned Size() {
+	unsigned Size() const {
 		return (unsigned)m_Surfaces.size();
 	}
-	bool Empty() {
+	bool Empty() const {
 		return m_Surfaces.empty();
 	}
 	void Clear() {
