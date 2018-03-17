@@ -153,14 +153,9 @@ private:
 	CD3D11VideoProcessor m_D3D11_VP;
 #endif
 
-	typedef HRESULT (__stdcall *PTR_DXVA2CreateDirect3DDeviceManager9)(UINT* pResetToken, IDirect3DDeviceManager9** ppDeviceManager);
-	typedef HRESULT (__stdcall *PTR_DXVA2CreateVideoService)(IDirect3DDevice9* pDD, REFIID riid, void** ppService);
-
-	PTR_DXVA2CreateDirect3DDeviceManager9 pfnDXVA2CreateDirect3DDeviceManager9 = nullptr;
-	PTR_DXVA2CreateVideoService           pfnDXVA2CreateVideoService = nullptr;
-	CComPtr<IDirect3DDeviceManager9>      m_pD3DDeviceManager;
-	UINT                                  m_nResetTocken = 0;
-	HANDLE                                m_hDevice = nullptr;
+	CComPtr<IDirect3DDeviceManager9> m_pD3DDeviceManager;
+	UINT                             m_nResetTocken = 0;
+	HANDLE                           m_hDevice = nullptr;
 
 	std::mutex m_mutex;
 	

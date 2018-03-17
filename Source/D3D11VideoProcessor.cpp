@@ -40,7 +40,7 @@ CD3D11VideoProcessor::CD3D11VideoProcessor()
 		return;
 	}
 
-	HRESULT(WINAPI *pfnD3D11CreateDevice)(
+	HRESULT (WINAPI *pfnD3D11CreateDevice)(
 		IDXGIAdapter            *pAdapter,
 		D3D_DRIVER_TYPE         DriverType,
 		HMODULE                 Software,

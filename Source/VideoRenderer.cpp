@@ -156,7 +156,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		return;
 	}
 
-	HRESULT (__stdcall * pfnDirect3DCreate9Ex)(UINT SDKVersion, IDirect3D9Ex**);
+	HRESULT (WINAPI *pfnDirect3DCreate9Ex)(UINT SDKVersion, IDirect3D9Ex**);
 	(FARPROC &)pfnDirect3DCreate9Ex = GetProcAddress(m_hD3D9Lib, "Direct3DCreate9Ex");
 
 	HRESULT hr = pfnDirect3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
@@ -174,8 +174,8 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		return;
 	}
 
+	HRESULT (WINAPI *pfnDXVA2CreateDirect3DDeviceManager9)(UINT* pResetToken, IDirect3DDeviceManager9** ppDeviceManager);
 	(FARPROC &)pfnDXVA2CreateDirect3DDeviceManager9 = GetProcAddress(m_hDxva2Lib, "DXVA2CreateDirect3DDeviceManager9");
-	(FARPROC &)pfnDXVA2CreateVideoService = GetProcAddress(m_hDxva2Lib, "DXVA2CreateVideoService");
 	pfnDXVA2CreateDirect3DDeviceManager9(&m_nResetTocken, &m_pD3DDeviceManager);
 	if (!m_pD3DDeviceManager) {
 		*phr = E_FAIL;
@@ -334,7 +334,7 @@ BOOL CMpcVideoRenderer::InitializeDXVA2VP(const UINT width, const UINT height, c
 
 	HRESULT hr = S_OK;
 	if (!m_pDXVA2_VPService) {
-		HRESULT(WINAPI *pfnDXVA2CreateVideoService)(IDirect3DDevice9* pDD, REFIID riid, void** ppService);
+		HRESULT (WINAPI *pfnDXVA2CreateVideoService)(IDirect3DDevice9* pDD, REFIID riid, void** ppService);
 		(FARPROC &)pfnDXVA2CreateVideoService = GetProcAddress(m_hDxva2Lib, "DXVA2CreateVideoService");
 		if (!pfnDXVA2CreateVideoService) {
 			DLog("CMpcVideoRenderer::InitializeDXVA2VP() : DXVA2CreateVideoService() not found");
