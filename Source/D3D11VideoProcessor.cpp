@@ -35,9 +35,22 @@
 
 CD3D11VideoProcessor::CD3D11VideoProcessor()
 {
+}
+
+CD3D11VideoProcessor::~CD3D11VideoProcessor()
+{
+	ClearD3D11();
+
+	if (m_hD3D11Lib) {
+		FreeLibrary(m_hD3D11Lib);
+	}
+}
+
+HRESULT CD3D11VideoProcessor::Init()
+{
 	m_hD3D11Lib = LoadLibraryW(L"d3d11.dll");
 	if (!m_hD3D11Lib) {
-		return;
+		return E_FAIL;
 	}
 
 	HRESULT (WINAPI *pfnD3D11CreateDevice)(
@@ -55,7 +68,7 @@ CD3D11VideoProcessor::CD3D11VideoProcessor()
 
 	(FARPROC &)pfnD3D11CreateDevice = GetProcAddress(m_hD3D11Lib, "D3D11CreateDevice");
 	if (!pfnD3D11CreateDevice) {
-		return;
+		return E_FAIL;
 	}
 
 	D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0, D3D_FEATURE_LEVEL_9_3, D3D_FEATURE_LEVEL_9_2, D3D_FEATURE_LEVEL_9_1 };
@@ -79,19 +92,10 @@ CD3D11VideoProcessor::CD3D11VideoProcessor()
 		&featurelevel,
 		&pImmediateContext);
 	if (FAILED(hr)) {
-		return;
+		return hr;
 	}
 
-	SetDevice(pDevice, pImmediateContext);
-}
-
-CD3D11VideoProcessor::~CD3D11VideoProcessor()
-{
-	ClearD3D11();
-
-	if (m_hD3D11Lib) {
-		FreeLibrary(m_hD3D11Lib);
-	}
+	return SetDevice(pDevice, pImmediateContext);
 }
 
 void CD3D11VideoProcessor::ClearD3D11()

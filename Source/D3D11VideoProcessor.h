@@ -75,6 +75,7 @@ public:
 	CD3D11VideoProcessor();
 	~CD3D11VideoProcessor();
 
+	HRESULT Init();
 	void ClearD3D11();
 
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
