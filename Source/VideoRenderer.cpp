@@ -31,6 +31,9 @@
 #include "PropPage.h"
 #include "./Include/ID3DVideoMemoryConfiguration.h"
 
+#define OPT_REGKEY_VIDEORENDERER L"Software\\MPC-BE Filters\\MPC Video Renderer"
+#define OPT_UseD3D11             L"UseD3D11"
+
 class CVideoRendererInputPin : public CRendererInputPin
 	, public IMFGetService
 	, public IDirectXVideoMemoryConfiguration
@@ -138,6 +141,14 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	ASSERT(S_OK == *phr);
 	m_pInputPin = new CVideoRendererInputPin(this, phr, L"In", this);
 	ASSERT(S_OK == *phr);
+
+	CRegKey key;
+	if (ERROR_SUCCESS == key.Open(HKEY_CURRENT_USER, OPT_REGKEY_VIDEORENDERER, KEY_READ)) {
+		DWORD dw;
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_UseD3D11, dw)) {
+			m_bOptionUseD3D11 = !!dw;
+		}
+	}
 
 	m_hD3D9Lib = LoadLibraryW(L"d3d9.dll");
 	if (!m_hD3D9Lib) {
@@ -1086,6 +1097,16 @@ STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionUseD3D11()
 STDMETHODIMP CMpcVideoRenderer::SetOptionUseD3D11(bool value)
 {
 	m_bOptionUseD3D11 = value;
+
+	return S_OK;
+}
+
+STDMETHODIMP CMpcVideoRenderer::SaveSettings()
+{
+	CRegKey key;
+	if (ERROR_SUCCESS == key.Create(HKEY_CURRENT_USER, OPT_REGKEY_VIDEORENDERER)) {
+		key.SetDWORDValue(OPT_UseD3D11, m_bOptionUseD3D11);
+	}
 
 	return S_OK;
 }

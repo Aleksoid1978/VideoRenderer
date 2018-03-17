@@ -46,4 +46,5 @@ IVideoRenderer : public IUnknown {
 
 	STDMETHOD_(bool, GetOptionUseD3D11()) PURE;
 	STDMETHOD(SetOptionUseD3D11(bool value)) PURE;
+	STDMETHOD(SaveSettings()) PURE;
 };

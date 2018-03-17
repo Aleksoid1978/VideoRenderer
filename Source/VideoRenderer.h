@@ -28,7 +28,6 @@
 #include "IVideoRenderer.h"
 #include "D3D11VideoProcessor.h"
 
-#define D3D11_ENABLE 0
 
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_NV12},
@@ -94,11 +93,8 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 private:
 	friend class CVideoRendererInputPin;
 
-#if D3D11_ENABLE
-	bool m_bOptionUseD3D11 = true;
-#else
 	bool m_bOptionUseD3D11 = false;
-#endif
+
 	bool m_bUsedD3D11 = false; // current state
 
 	DXVA2_SampleFormat m_SampleFormat = DXVA2_SampleProgressiveFrame;
@@ -286,4 +282,5 @@ public:
 
 	STDMETHODIMP_(bool) GetOptionUseD3D11();
 	STDMETHODIMP SetOptionUseD3D11(bool value);
+	STDMETHODIMP SaveSettings();
 };

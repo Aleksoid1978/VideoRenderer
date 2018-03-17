@@ -69,7 +69,6 @@ HRESULT CVRMainPPage::OnActivate()
 	// set m_hWnd for CWindow
 	m_hWnd = m_hwnd;
 
-	GetDlgItem(IDC_CHECK1).EnableWindow(FALSE); // TODO remove it
 	m_bUseD3D11 = m_pVideoRenderer->GetOptionUseD3D11();
 	CheckDlgButton(IDC_CHECK1, m_bUseD3D11 ? BST_CHECKED : BST_UNCHECKED);
 
@@ -154,6 +153,7 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 HRESULT CVRMainPPage::OnApplyChanges()
 {
 	m_pVideoRenderer->SetOptionUseD3D11(m_bUseD3D11);
+	m_pVideoRenderer->SaveSettings();
 
 	return S_OK;
 }
