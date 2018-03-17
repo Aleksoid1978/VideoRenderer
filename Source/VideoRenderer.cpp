@@ -683,40 +683,40 @@ BOOL CMpcVideoRenderer::InitMediaType(const CMediaType* pmt)
 		m_srcAspectRatioX = vih2->dwPictAspectRatioX;
 		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
 
-#if (!D3D11_ENABLE)
-		m_srcD3DFormat = MediaSubtype2D3DFormat(pmt->subtype);
-		m_srcExFmt.value = 0;
-		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
+		if (!m_bUsedD3D11) {
+			m_srcD3DFormat = MediaSubtype2D3DFormat(pmt->subtype);
+			m_srcExFmt.value = 0;
+			m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
 
-		if (m_srcD3DFormat == D3DFMT_X8R8G8B8 || m_srcD3DFormat == D3DFMT_A8R8G8B8) {
-			m_srcPitch = m_srcWidth * 4;
-		}
-		else {
-			if (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT)) {
-				m_srcExFmt.value = vih2->dwControlFlags;
-				m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
-			}
-
-			switch (m_srcD3DFormat) {
-			case D3DFMT_NV12:
-			case D3DFMT_YV12:
-			default:
-				m_srcPitch = m_srcWidth;
-				break;
-			case D3DFMT_YUY2:
-			case D3DFMT_P010:
-				m_srcPitch = m_srcWidth * 2;
-				break;
-			case D3DFMT_AYUV:
+			if (m_srcD3DFormat == D3DFMT_X8R8G8B8 || m_srcD3DFormat == D3DFMT_A8R8G8B8) {
 				m_srcPitch = m_srcWidth * 4;
-				break;
+			}
+			else {
+				if (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT)) {
+					m_srcExFmt.value = vih2->dwControlFlags;
+					m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
+				}
+
+				switch (m_srcD3DFormat) {
+				case D3DFMT_NV12:
+				case D3DFMT_YV12:
+				default:
+					m_srcPitch = m_srcWidth;
+					break;
+				case D3DFMT_YUY2:
+				case D3DFMT_P010:
+					m_srcPitch = m_srcWidth * 2;
+					break;
+				case D3DFMT_AYUV:
+					m_srcPitch = m_srcWidth * 4;
+					break;
+				}
+			}
+
+			if (!InitVideoProc(m_srcWidth, m_srcHeight, m_srcD3DFormat)) {
+				return FALSE;
 			}
 		}
-
-		if (!InitVideoProc(m_srcWidth, m_srcHeight, m_srcD3DFormat)) {
-			return FALSE;
-		}
-#endif
 
 		return TRUE;
 	}
@@ -739,11 +739,13 @@ HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 				if (!InitMediaType(pmt)) {
 					return VFW_E_UNSUPPORTED_VIDEO;
 				}
-#if D3D11_ENABLE
-				if (!m_D3D11_VP.InitMediaType(pmt)) {
-					return VFW_E_UNSUPPORTED_VIDEO;
+
+				if (m_bUsedD3D11) {
+					if (!m_D3D11_VP.InitMediaType(pmt)) {
+						return VFW_E_UNSUPPORTED_VIDEO;
+					}
 				}
-#endif
+
 				return S_OK;
 			}
 		}
@@ -764,11 +766,12 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 		if (!InitMediaType(pmt)) {
 			return VFW_E_UNSUPPORTED_VIDEO;
 		}
-#if D3D11_ENABLE
-		if (!m_D3D11_VP.InitMediaType(pmt)) {
-			return VFW_E_UNSUPPORTED_VIDEO;
+
+		if (m_bUsedD3D11) {
+			if (!m_D3D11_VP.InitMediaType(pmt)) {
+				return VFW_E_UNSUPPORTED_VIDEO;
+			}
 		}
-#endif
 	}
 
 	return hr;
@@ -780,36 +783,38 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	std::unique_lock<std::mutex> lock(m_mutex);
 
 	HRESULT hr = S_OK;
-#if D3D11_ENABLE
-	hr = m_D3D11_VP.CopySample(pSample);
-#else
-	// Get frame type
-	m_SampleFormat = DXVA2_SampleProgressiveFrame; // Progressive
-	if (m_bInterlaced) {
-		if (CComQIPtr<IMediaSample2> pMS2 = pSample) {
-			AM_SAMPLE2_PROPERTIES props;
-			if (SUCCEEDED(pMS2->GetProperties(sizeof(props), (BYTE*)&props))) {
-				m_SampleFormat = DXVA2_SampleFieldInterleavedOddFirst;      // Bottom-field first
-				if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_WEAVE) {
-					m_SampleFormat = DXVA2_SampleProgressiveFrame;          // Progressive
-				} else if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_FIELD1FIRST) {
-					m_SampleFormat = DXVA2_SampleFieldInterleavedEvenFirst; // Top-field first
+
+	if (m_bUsedD3D11) {
+		hr = m_D3D11_VP.CopySample(pSample);
+	} else {
+		// Get frame type
+		m_SampleFormat = DXVA2_SampleProgressiveFrame; // Progressive
+		if (m_bInterlaced) {
+			if (CComQIPtr<IMediaSample2> pMS2 = pSample) {
+				AM_SAMPLE2_PROPERTIES props;
+				if (SUCCEEDED(pMS2->GetProperties(sizeof(props), (BYTE*)&props))) {
+					m_SampleFormat = DXVA2_SampleFieldInterleavedOddFirst;      // Bottom-field first
+					if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_WEAVE) {
+						m_SampleFormat = DXVA2_SampleProgressiveFrame;          // Progressive
+					}
+					else if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_FIELD1FIRST) {
+						m_SampleFormat = DXVA2_SampleFieldInterleavedEvenFirst; // Top-field first
+					}
 				}
 			}
 		}
-	}
 
-	hr = CopySample(pSample);
-#endif
+		hr = CopySample(pSample);
+	}
 	if (FAILED(hr)) {
 		return hr;
 	}
 
-#if D3D11_ENABLE
-	return m_D3D11_VP.Render(m_filterState);
-#else
-	return Render();
-#endif
+	if (m_bUsedD3D11) {
+		return m_D3D11_VP.Render(m_filterState);
+	} else {
+		return Render();
+	}
 }
 
 STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** ppv)
@@ -860,14 +865,14 @@ STDMETHODIMP CMpcVideoRenderer::Stop()
 {
 	DLog(L"CMpcVideoRenderer::Stop()");
 
-#if (!D3D11_ENABLE)
-	if (m_VendorId == PCIV_AMDATI) {
-		// fix AMD driver bug, fill the surface in black
-		for (unsigned i = 0; i < m_SrcSamples.Size(); i++) {
-			m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(i).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+	if (!m_bUsedD3D11) {
+		if (m_VendorId == PCIV_AMDATI) {
+			// fix AMD driver bug, fill the surface in black
+			for (unsigned i = 0; i < m_SrcSamples.Size(); i++) {
+				m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(i).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+			}
 		}
 	}
-#endif
 
 	m_filterState = State_Stopped;
 
@@ -898,16 +903,16 @@ STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPV
 STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long Width, long Height)
 {
 	m_videoRect.SetRect(Left, Top, Left + Width, Top + Height);
-#if D3D11_ENABLE
-	m_D3D11_VP.SetVideoRect(m_videoRect);
-#endif
+	if (m_bUsedD3D11) {
+		m_D3D11_VP.SetVideoRect(m_videoRect);
+	}
 
 	std::unique_lock<std::mutex> lock(m_mutex);
-#if D3D11_ENABLE
-	m_D3D11_VP.Render(m_filterState);
-#else
-	Render();
-#endif
+	if (m_bUsedD3D11) {
+		m_D3D11_VP.Render(m_filterState);
+	} else {
+		Render();
+	}
 
 	return S_OK;
 }
@@ -941,9 +946,9 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 	if (m_hWnd != (HWND)Owner) {
 		m_hWnd = (HWND)Owner;
 		HRESULT hr = InitDirect3D9();
-#if D3D11_ENABLE
-		hr = m_D3D11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height(), true);
-#endif
+		if (m_bUsedD3D11) {
+			hr = m_D3D11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height(), true);
+		}
 		return hr;
 	}
 	return S_OK;
@@ -952,17 +957,17 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Width, long Height)
 {
 	m_windowRect.SetRect(Left, Top, Left + Width, Top + Height);
-#if D3D11_ENABLE
-	m_D3D11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height());
-	m_D3D11_VP.SetWindowRect(m_windowRect);
-#endif
+	if (m_bUsedD3D11) {
+		m_D3D11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height());
+		m_D3D11_VP.SetWindowRect(m_windowRect);
+	}
 
 	std::unique_lock<std::mutex> lock(m_mutex);
-#if D3D11_ENABLE
-	m_D3D11_VP.Render(m_filterState);
-#else
-	Render();
-#endif
+	if (m_bUsedD3D11) {
+		m_D3D11_VP.Render(m_filterState);
+	} else {
+		Render();
+	}
 
 	return S_OK;
 }
@@ -1050,18 +1055,18 @@ STDMETHODIMP CMpcVideoRenderer::get_Binary(int id, LPVOID* pbin, int* size)
 
 STDMETHODIMP CMpcVideoRenderer::get_FrameInfo(VRFrameInfo* pFrameInfo)
 {
-#if D3D11_ENABLE
-	return m_D3D11_VP.GetFrameInfo(pFrameInfo);
-#else
-	CheckPointer(pFrameInfo, E_POINTER);
+	if (m_bUsedD3D11) {
+		return m_D3D11_VP.GetFrameInfo(pFrameInfo);
+	} else {
+		CheckPointer(pFrameInfo, E_POINTER);
 
-	pFrameInfo->Width = m_srcWidth;
-	pFrameInfo->Height = m_srcHeight;
-	pFrameInfo->D3dFormat = m_srcD3DFormat;
-	pFrameInfo->ExtFormat.value = m_srcExFmt.value;
+		pFrameInfo->Width = m_srcWidth;
+		pFrameInfo->Height = m_srcHeight;
+		pFrameInfo->D3dFormat = m_srcD3DFormat;
+		pFrameInfo->ExtFormat.value = m_srcExFmt.value;
 
-	return S_OK;
-#endif
+		return S_OK;
+	}
 }
 
 STDMETHODIMP CMpcVideoRenderer::get_VPDeviceGuid(GUID* pVPDevGuid)

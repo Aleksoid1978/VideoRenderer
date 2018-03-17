@@ -26,8 +26,9 @@
 #include <dxva2api.h>
 #include <mutex>
 #include "IVideoRenderer.h"
-
 #include "D3D11VideoProcessor.h"
+
+#define D3D11_ENABLE 0
 
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_NV12},

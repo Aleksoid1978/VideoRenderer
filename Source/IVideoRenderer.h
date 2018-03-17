@@ -22,8 +22,6 @@
 
 #include <dxva2api.h>
 
-#define D3D11_ENABLE 0
-
 enum :int {
 	ID_AdapterDesc = 1,
 	ID_DXVA2VPCaps,
