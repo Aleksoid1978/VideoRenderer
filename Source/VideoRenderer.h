@@ -96,10 +96,11 @@ private:
 	friend class CVideoRendererInputPin;
 
 #if D3D11_ENABLE
-	bool m_bUseD3D11 = true;
+	bool m_bOptionUseD3D11 = true;
 #else
-	bool m_bUseD3D11 = false;
+	bool m_bOptionUseD3D11 = false;
 #endif
+	bool m_bUsedD3D11 = false; // current state
 
 	DXVA2_SampleFormat m_SampleFormat = DXVA2_SampleProgressiveFrame;
 

@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <VersionHelpers.h>
 #include <evr.h> // for MR_VIDEO_ACCELERATION_SERVICE, because the <mfapi.h> does not contain it
 #include <Mferror.h>
 #include <Dvdmedia.h>
@@ -33,9 +34,9 @@
 #include "./Include/ID3DVideoMemoryConfiguration.h"
 #endif
 
-class CVideoRendererInputPin : public CRendererInputPin,
-	public IMFGetService,
-	public IDirectXVideoMemoryConfiguration
+class CVideoRendererInputPin : public CRendererInputPin
+	, public IMFGetService
+	, public IDirectXVideoMemoryConfiguration
 #if D3D11_ENABLE
 	, public ID3D11DecoderConfiguration
 #endif
@@ -189,6 +190,8 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	if (S_OK == hr) {
 		hr = m_pD3DDeviceManager->OpenDeviceHandle(&m_hDevice);
 	}
+
+	m_bUsedD3D11 = m_bOptionUseD3D11 && IsWindows8OrGreater();
 
 	*phr = hr;
 }
@@ -1083,12 +1086,12 @@ STDMETHODIMP CMpcVideoRenderer::get_VPDeviceGuid(GUID* pVPDevGuid)
 
 STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionUseD3D11()
 {
-	return m_bUseD3D11;
+	return m_bOptionUseD3D11;
 }
 
 STDMETHODIMP CMpcVideoRenderer::SetOptionUseD3D11(bool value)
 {
-	m_bUseD3D11 = value;
+	m_bOptionUseD3D11 = value;
 
 	return S_OK;
 }
