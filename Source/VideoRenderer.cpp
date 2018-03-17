@@ -29,17 +29,12 @@
 #include <Dvdmedia.h>
 #include "Helper.h"
 #include "PropPage.h"
-
-#if D3D11_ENABLE
 #include "./Include/ID3DVideoMemoryConfiguration.h"
-#endif
 
 class CVideoRendererInputPin : public CRendererInputPin
 	, public IMFGetService
 	, public IDirectXVideoMemoryConfiguration
-#if D3D11_ENABLE
 	, public ID3D11DecoderConfiguration
-#endif
 {
 public :
 	CVideoRendererInputPin(CBaseRenderer *pRenderer, HRESULT *phr, LPCWSTR Name, CMpcVideoRenderer* pBaseRenderer);
@@ -66,11 +61,9 @@ public :
 	STDMETHODIMP GetAvailableSurfaceTypeByIndex(DWORD dwTypeIndex, DXVA2_SurfaceType *pdwType);
 	STDMETHODIMP SetSurfaceType(DXVA2_SurfaceType dwType);
 
-#if D3D11_ENABLE
 	// ID3D11DecoderConfiguration
 	STDMETHODIMP ActivateD3D11Decoding(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, HANDLE hMutex, UINT nFlags);
 	UINT STDMETHODCALLTYPE GetD3D11AdapterIndex();
-#endif
 
 private:
 	CMpcVideoRenderer* m_pBaseRenderer;
@@ -88,9 +81,7 @@ STDMETHODIMP CVideoRendererInputPin::NonDelegatingQueryInterface(REFIID riid, vo
 
 	return
 		(riid == __uuidof(IMFGetService)) ? GetInterface((IMFGetService*)this, ppv) :
-#if D3D11_ENABLE
 		(riid == __uuidof(ID3D11DecoderConfiguration)) ? GetInterface((ID3D11DecoderConfiguration*)this, ppv) :
-#endif
 		__super::NonDelegatingQueryInterface(riid, ppv);
 }
 
@@ -121,7 +112,6 @@ STDMETHODIMP CVideoRendererInputPin::SetSurfaceType(DXVA2_SurfaceType dwType)
 	return S_OK;
 }
 
-#if D3D11_ENABLE
 // ID3D11DecoderConfiguration
 STDMETHODIMP CVideoRendererInputPin::ActivateD3D11Decoding(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, HANDLE hMutex, UINT nFlags)
 {
@@ -132,7 +122,6 @@ UINT STDMETHODCALLTYPE CVideoRendererInputPin::GetD3D11AdapterIndex()
 {
 	return 0;
 }
-#endif
 
 //
 // CMpcVideoRenderer

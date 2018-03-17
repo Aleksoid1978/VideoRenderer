@@ -27,9 +27,7 @@
 #include <mutex>
 #include "IVideoRenderer.h"
 
-#if D3D11_ENABLE
 #include "D3D11VideoProcessor.h"
-#endif
 
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_NV12},
@@ -148,10 +146,8 @@ private:
 	UINT m_DXVA2_VP_Width = 0;
 	UINT m_DXVA2_VP_Height = 0;
 
-#if D3D11_ENABLE
 	// D3D11 VideoProcessor
 	CD3D11VideoProcessor m_D3D11_VP;
-#endif
 
 	typedef HRESULT (__stdcall *PTR_DXVA2CreateDirect3DDeviceManager9)(UINT* pResetToken, IDirect3DDeviceManager9** ppDeviceManager);
 	typedef HRESULT (__stdcall *PTR_DXVA2CreateVideoService)(IDirect3DDevice9* pDD, REFIID riid, void** ppService);
