@@ -118,7 +118,8 @@ public:
 	void ClearDX9();
 
 private:
-	BOOL InitializeDXVA2VP(const UINT width, const UINT height, const D3DFORMAT d3dformat);
+	BOOL CheckInput(const D3DFORMAT d3dformat, const UINT width, const UINT height);
+	BOOL InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height);
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
 
 public:
