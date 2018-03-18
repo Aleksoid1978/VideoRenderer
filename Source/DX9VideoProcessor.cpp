@@ -54,14 +54,6 @@ CDX9VideoProcessor::CDX9VideoProcessor()
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
 {
-	if (m_pD3DDeviceManager) {
-		if (m_hDevice != INVALID_HANDLE_VALUE) {
-			m_pD3DDeviceManager->CloseDeviceHandle(m_hDevice);
-			m_hDevice = INVALID_HANDLE_VALUE;
-		}
-		m_pD3DDeviceManager.Release();
-	}
-
 	ClearDX9();
 
 	if (m_hDxva2Lib) {
@@ -176,7 +168,13 @@ HRESULT CDX9VideoProcessor::Init(HWND hwnd)
 
 void CDX9VideoProcessor::ClearDX9()
 {
-	m_pD3DDeviceManager.Release();
+	if (m_pD3DDeviceManager) {
+		if (m_hDevice != INVALID_HANDLE_VALUE) {
+			m_pD3DDeviceManager->CloseDeviceHandle(m_hDevice);
+			m_hDevice = INVALID_HANDLE_VALUE;
+		}
+		m_pD3DDeviceManager.Release();
+	}
 	m_nResetTocken = 0;
 
 	m_pDXVA2_VP.Release();

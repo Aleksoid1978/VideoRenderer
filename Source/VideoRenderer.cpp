@@ -150,40 +150,21 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 	}
 
-	m_bUsedD3D11 = m_bOptionUseD3D11 && IsWindows8OrGreater();
-
-	if (m_bUsedD3D11) {
-		*phr = m_DX11_VP.Init();
-		if (FAILED(*phr)) {
-			m_bUsedD3D11 = false;
-		}
+	*phr = m_DX9_VP.Init(m_hWnd);
+	if (FAILED(*phr)) {
+		return;
 	}
 
-	if (!m_bUsedD3D11) {
-		*phr = m_DX9_VP.Init(m_hWnd);
+	m_bUsedD3D11 = m_bOptionUseD3D11 && IsWindows8OrGreater();
+	if (m_bUsedD3D11) {
+		if (FAILED(m_DX11_VP.Init())) {
+			m_bUsedD3D11 = false;
+		}
 	}
 }
 
 CMpcVideoRenderer::~CMpcVideoRenderer()
 {
-}
-
-static UINT GetAdapter(HWND hWnd, IDirect3D9Ex* pD3D)
-{
-	CheckPointer(hWnd, D3DADAPTER_DEFAULT);
-	CheckPointer(pD3D, D3DADAPTER_DEFAULT);
-
-	const HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
-	CheckPointer(hMonitor, D3DADAPTER_DEFAULT);
-
-	for (UINT adp = 0, num_adp = pD3D->GetAdapterCount(); adp < num_adp; ++adp) {
-		const HMONITOR hAdapterMonitor = pD3D->GetAdapterMonitor(adp);
-		if (hAdapterMonitor == hMonitor) {
-			return adp;
-		}
-	}
-
-	return D3DADAPTER_DEFAULT;
 }
 
 // CBaseRenderer
