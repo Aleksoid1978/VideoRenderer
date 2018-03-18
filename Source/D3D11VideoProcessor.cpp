@@ -48,7 +48,9 @@ CD3D11VideoProcessor::~CD3D11VideoProcessor()
 
 HRESULT CD3D11VideoProcessor::Init()
 {
-	m_hD3D11Lib = LoadLibraryW(L"d3d11.dll");
+	if (!m_hD3D11Lib) {
+		m_hD3D11Lib = LoadLibraryW(L"d3d11.dll");
+	}
 	if (!m_hD3D11Lib) {
 		return E_FAIL;
 	}
