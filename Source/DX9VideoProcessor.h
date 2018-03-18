@@ -21,6 +21,7 @@
 #pragma once
 
 #include <atltypes.h>
+#include "IVideoRenderer.h"
 
 struct VideoSurface {
 	REFERENCE_TIME Start = 0;
@@ -126,8 +127,15 @@ public:
 	BOOL InitMediaType(const CMediaType* pmt);
 	HRESULT CopySample(IMediaSample* pSample);
 	HRESULT Render(const FILTER_STATE filterState);
+	void StopInputBuffer();
+
 	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
 	void SetWindowRect(const CRect& windowRect) { m_windowRect = windowRect; }
+
+	IDirect3DDeviceManager9* GetDeviceManager9() { return m_pD3DDeviceManager; }
+	HRESULT GetVideoSize(long *pWidth, long *pHeight);
+	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
+	HRESULT GetFrameInfo(VRFrameInfo* pFrameInfo);
 
 private:
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget);

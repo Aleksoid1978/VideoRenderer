@@ -84,6 +84,8 @@ HRESULT CDX9VideoProcessor::Init(HWND hwnd)
 		return E_FAIL;
 	}
 
+	ClearDX9();
+
 	HRESULT(WINAPI *pfnDirect3DCreate9Ex)(UINT SDKVersion, IDirect3D9Ex**);
 	(FARPROC &)pfnDirect3DCreate9Ex = GetProcAddress(m_hD3D9Lib, "Direct3DCreate9Ex");
 
@@ -174,6 +176,9 @@ HRESULT CDX9VideoProcessor::Init(HWND hwnd)
 
 void CDX9VideoProcessor::ClearDX9()
 {
+	m_pD3DDeviceManager.Release();
+	m_nResetTocken = 0;
+
 	m_pDXVA2_VP.Release();
 	m_pDXVA2_VPService.Release();
 	m_pD3DDevEx.Release();
@@ -437,7 +442,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 			}
 		}
 
-		if (CheckInput(m_srcD3DFormat, m_srcWidth, m_srcHeight)) {
+		if (!CheckInput(m_srcD3DFormat, m_srcWidth, m_srcHeight)) {
 			return FALSE;
 		}
 
@@ -450,6 +455,23 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 {
 	HRESULT hr = S_OK;
+
+	// Get frame type
+	m_CurrentSampleFmt = DXVA2_SampleProgressiveFrame; // Progressive
+	if (m_bInterlaced) {
+		if (CComQIPtr<IMediaSample2> pMS2 = pSample) {
+			AM_SAMPLE2_PROPERTIES props;
+			if (SUCCEEDED(pMS2->GetProperties(sizeof(props), (BYTE*)&props))) {
+				m_CurrentSampleFmt = DXVA2_SampleFieldInterleavedOddFirst;      // Bottom-field first
+				if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_WEAVE) {
+					m_CurrentSampleFmt = DXVA2_SampleProgressiveFrame;          // Progressive
+				}
+				else if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_FIELD1FIRST) {
+					m_CurrentSampleFmt = DXVA2_SampleFieldInterleavedEvenFirst; // Top-field first
+				}
+			}
+		}
+	}
 
 	if (CComQIPtr<IMFGetService> pService = pSample) {
 		CComPtr<IDirect3DSurface9> pSurface;
@@ -537,6 +559,50 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState)
 	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
 
 	return hr;
+}
+
+void CDX9VideoProcessor::StopInputBuffer()
+{
+	for (unsigned i = 0; i < m_SrcSamples.Size(); i++) {
+		m_SrcSamples.GetAt(i).SampleFormat = DXVA2_SampleUnknown;
+		if (m_VendorId == PCIV_AMDATI) {
+			m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(i).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+		}
+	}
+}
+
+HRESULT CDX9VideoProcessor::GetVideoSize(long *pWidth, long *pHeight)
+{
+	CheckPointer(pWidth, E_POINTER);
+	CheckPointer(pHeight, E_POINTER);
+
+	*pWidth = m_srcWidth;
+	*pHeight = m_srcHeight;
+
+	return S_OK;
+}
+
+HRESULT CDX9VideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
+{
+	CheckPointer(plAspectX, E_POINTER);
+	CheckPointer(plAspectY, E_POINTER);
+
+	*plAspectX = m_srcAspectRatioX;
+	*plAspectY = m_srcAspectRatioY;
+
+	return S_OK;
+}
+
+HRESULT CDX9VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
+{
+	CheckPointer(pFrameInfo, E_POINTER);
+
+	pFrameInfo->Width = m_srcWidth;
+	pFrameInfo->Height = m_srcHeight;
+	pFrameInfo->D3dFormat = m_srcD3DFormat;
+	pFrameInfo->ExtFormat.value = m_srcExFmt.value;
+
+	return S_OK;
 }
 
 HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)

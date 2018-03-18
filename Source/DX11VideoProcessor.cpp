@@ -566,6 +566,28 @@ HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState)
 	return hr;
 }
 
+HRESULT CDX11VideoProcessor::GetVideoSize(long *pWidth, long *pHeight)
+{
+	CheckPointer(pWidth, E_POINTER);
+	CheckPointer(pHeight, E_POINTER);
+
+	*pWidth = m_srcWidth;
+	*pHeight = m_srcHeight;
+
+	return S_OK;
+}
+
+HRESULT CDX11VideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
+{
+	CheckPointer(plAspectX, E_POINTER);
+	CheckPointer(plAspectY, E_POINTER);
+
+	*plAspectX = m_srcAspectRatioX;
+	*plAspectY = m_srcAspectRatioY;
+
+	return S_OK;
+}
+
 HRESULT CDX11VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
 {
 	CheckPointer(pFrameInfo, E_POINTER);
