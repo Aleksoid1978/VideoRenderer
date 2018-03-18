@@ -97,27 +97,27 @@ private:
 
 	bool m_bUsedD3D11 = false; // current state
 
+	HWND m_hWnd = nullptr;
+	UINT m_CurrentAdapter = D3DADAPTER_DEFAULT;
+
 	DXVA2_SampleFormat m_SampleFormat = DXVA2_SampleProgressiveFrame;
 
 	CMediaType m_mt;
 	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;
 	UINT m_srcWidth = 0;
 	UINT m_srcHeight = 0;
+	UINT m_srcPitch = 0;
 	DWORD m_srcAspectRatioX = 0;
 	DWORD m_srcAspectRatioY = 0;
 	DXVA2_ExtendedFormat m_srcExFmt = {};
 	bool m_bInterlaced = false;
 	RECT m_srcRect = {};
 	RECT m_trgRect = {};
-	INT  m_srcPitch = 0;
 	VideoSurfaceBuffer m_SrcSamples;
 
 	CRect m_nativeVideoRect;
 	CRect m_videoRect;
 	CRect m_windowRect;
-
-	HWND m_hWnd = nullptr;
-	UINT m_CurrentAdapter = D3DADAPTER_DEFAULT;
 
 	HMODULE m_hD3D9Lib = nullptr;
 	CComPtr<IDirect3D9Ex>       m_pD3DEx;

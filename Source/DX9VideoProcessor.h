@@ -22,24 +22,88 @@
 
 #include <atltypes.h>
 
+struct VideoSurface {
+	REFERENCE_TIME Start = 0;
+	REFERENCE_TIME End = 0;
+	CComPtr<IDirect3DSurface9> pSrcSurface;
+	DXVA2_SampleFormat SampleFormat = DXVA2_SampleUnknown;
+};
+
+class VideoSurfaceBuffer
+{
+	std::vector<VideoSurface> m_Surfaces;
+	unsigned m_LastPos = 0;
+
+public:
+	unsigned Size() const {
+		return (unsigned)m_Surfaces.size();
+	}
+	bool Empty() const {
+		return m_Surfaces.empty();
+	}
+	void Clear() {
+		m_Surfaces.clear();
+	}
+	void Resize(const unsigned size) {
+		Clear();
+		m_Surfaces.resize(size);
+		m_LastPos = Size() - 1;
+	}
+	VideoSurface& Get() {
+		return m_Surfaces[m_LastPos];
+	}
+	VideoSurface& GetAt(const unsigned pos) {
+		unsigned InternalPos = (m_LastPos + 1 + pos) % Size();
+		return m_Surfaces[InternalPos];
+	}
+	void Next() {
+		m_LastPos++;
+		if (m_LastPos >= Size()) {
+			m_LastPos = 0;
+		}
+	}
+};
+
 class CDX9VideoProcessor
 {
 private:
+	// Direct3D 9
 	HMODULE m_hD3D9Lib = nullptr;
 	HMODULE m_hDxva2Lib = nullptr;
-	CComPtr<IDirect3D9Ex>       m_pD3DEx;
-	CComPtr<IDirect3DDevice9Ex> m_pD3DDevEx;
+	CComPtr<IDirect3D9Ex>            m_pD3DEx;
+	CComPtr<IDirect3DDevice9Ex>      m_pD3DDevEx;
 	CComPtr<IDirect3DDeviceManager9> m_pD3DDeviceManager;
-	UINT m_nResetTocken = 0;
-	HANDLE m_hDevice = nullptr;
+	UINT    m_nResetTocken = 0;
+	HANDLE  m_hDevice = nullptr;
+	DWORD   m_VendorId = 0;
+	CString m_strAdapterDescription;
 
+	// DXVA2 Video Processor
 	CComPtr<IDirectXVideoProcessorService> m_pDXVA2_VPService;
 	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
 	GUID m_DXVA2VPGuid = GUID_NULL;
 	DXVA2_VideoProcessorCaps m_DXVA2VPcaps = {};
 	DXVA2_Fixed32 m_DXVA2ProcAmpValues[4] = {};
-	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
+
+	// Input parameters
+	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;
+	UINT m_srcWidth = 0;
+	UINT m_srcHeight = 0;
+	UINT m_srcPitch = 0;
+	DWORD m_srcAspectRatioX = 0;
+	DWORD m_srcAspectRatioY = 0;
+	DXVA2_ExtendedFormat m_srcExFmt = {};
+	bool m_bInterlaced = false;
+	RECT m_srcRect = {};
+	RECT m_trgRect = {};
+
+	// Processing parameters
 	DWORD m_frame = 0;
+	VideoSurfaceBuffer m_SrcSamples;
+	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
+	DXVA2_SampleFormat m_CurrentSampleFmt = DXVA2_SampleProgressiveFrame;
+	CRect m_videoRect;
+	CRect m_windowRect;
 
 public:
 	CDX9VideoProcessor();
@@ -47,4 +111,17 @@ public:
 
 	HRESULT Init();
 	void ClearDX9();
+
+private:
+	BOOL InitializeDXVA2VP(const UINT width, const UINT height, const D3DFORMAT d3dformat);
+	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
+
+public:
+	HRESULT CopySample(IMediaSample* pSample);
+	HRESULT Render(const FILTER_STATE filterState);
+	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
+	void SetWindowRect(const CRect& windowRect) { m_windowRect = windowRect; }
+
+private:
+	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget);
 };

@@ -45,16 +45,15 @@ private:
 	CMediaType m_mt;
 	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;
 	DXGI_FORMAT m_srcDXGIFormat = DXGI_FORMAT_UNKNOWN;
-	GUID m_srcSubtype = GUID_NULL;
 	UINT m_srcWidth = 0;
 	UINT m_srcHeight = 0;
+	UINT m_srcPitch = 0;
 	DWORD m_srcAspectRatioX = 0;
 	DWORD m_srcAspectRatioY = 0;
 	DXVA2_ExtendedFormat m_srcExFmt = {};
 	bool m_bInterlaced = false;
 	RECT m_srcRect = {};
 	RECT m_trgRect = {};
-	INT  m_srcPitch = 0;
 
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 
