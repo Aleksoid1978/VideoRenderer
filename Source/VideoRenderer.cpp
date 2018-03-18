@@ -1094,6 +1094,11 @@ STDMETHODIMP CMpcVideoRenderer::get_VPDeviceGuid(GUID* pVPDevGuid)
 	return S_OK;
 }
 
+STDMETHODIMP_(bool) CMpcVideoRenderer::GetActive()
+{
+	return m_pInputPin && m_pInputPin->GetConnected();
+}
+
 STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionUseD3D11()
 {
 	return m_bOptionUseD3D11;

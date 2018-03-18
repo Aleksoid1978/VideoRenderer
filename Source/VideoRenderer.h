@@ -280,6 +280,7 @@ public:
 	STDMETHODIMP get_FrameInfo(VRFrameInfo* pFrameInfo);
 	STDMETHODIMP get_VPDeviceGuid(GUID* pVPDevGuid);
 
+	STDMETHODIMP_(bool) GetActive();
 	STDMETHODIMP_(bool) GetOptionUseD3D11();
 	STDMETHODIMP SetOptionUseD3D11(bool value);
 	STDMETHODIMP SaveSettings();

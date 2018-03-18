@@ -72,6 +72,10 @@ HRESULT CVRMainPPage::OnActivate()
 	m_bUseD3D11 = m_pVideoRenderer->GetOptionUseD3D11();
 	CheckDlgButton(IDC_CHECK1, m_bUseD3D11 ? BST_CHECKED : BST_UNCHECKED);
 
+	if (!m_pVideoRenderer->GetActive()) {
+		GetDlgItem(IDC_EDIT1).ShowWindow(SW_HIDE);
+		return S_OK;
+	}
 	// init monospace font
 	LOGFONTW lf = {};
 	HDC hdc = GetWindowDC();
