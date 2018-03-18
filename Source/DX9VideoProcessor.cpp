@@ -22,6 +22,7 @@
 
 #include <vector>
 #include <d3d9.h>
+#include <dvdmedia.h>
 #include <mfapi.h> // for MR_BUFFER_SERVICE
 #include <mfidl.h>
 #include "Helper.h"
@@ -394,6 +395,56 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : create %s processor ", CStringFromGUID(devguid));
 
 	return TRUE;
+}
+
+BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
+{
+	if (pmt->formattype == FORMAT_VideoInfo2) {
+		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
+		 m_srcRect = vih2->rcSource;
+		m_trgRect = vih2->rcTarget;
+		m_srcWidth = vih2->bmiHeader.biWidth;
+		m_srcHeight = labs(vih2->bmiHeader.biHeight);
+		m_srcAspectRatioX = vih2->dwPictAspectRatioX;
+		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
+		m_srcExFmt.value = 0;
+
+		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
+		m_srcD3DFormat = MediaSubtype2D3DFormat(pmt->subtype);
+
+		if (m_srcD3DFormat == D3DFMT_X8R8G8B8 || m_srcD3DFormat == D3DFMT_A8R8G8B8) {
+			m_srcPitch = m_srcWidth * 4;
+		}
+		else {
+			if (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT)) {
+				m_srcExFmt.value = vih2->dwControlFlags;
+				m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
+			}
+
+			switch (m_srcD3DFormat) {
+			case D3DFMT_NV12:
+			case D3DFMT_YV12:
+			default:
+				m_srcPitch = m_srcWidth;
+				break;
+			case D3DFMT_YUY2:
+			case D3DFMT_P010:
+				m_srcPitch = m_srcWidth * 2;
+				break;
+			case D3DFMT_AYUV:
+				m_srcPitch = m_srcWidth * 4;
+				break;
+			}
+		}
+
+		if (CheckInput(m_srcD3DFormat, m_srcWidth, m_srcHeight)) {
+			return FALSE;
+		}
+
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)

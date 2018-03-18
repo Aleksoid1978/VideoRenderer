@@ -123,6 +123,7 @@ private:
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
 
 public:
+	BOOL InitMediaType(const CMediaType* pmt);
 	HRESULT CopySample(IMediaSample* pSample);
 	HRESULT Render(const FILTER_STATE filterState);
 	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
