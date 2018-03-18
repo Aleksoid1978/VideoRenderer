@@ -26,6 +26,7 @@
 #include <dxva2api.h>
 #include <mutex>
 #include "IVideoRenderer.h"
+#include "DX9VideoProcessor.h"
 #include "DX11VideoProcessor.h"
 
 
@@ -35,48 +36,6 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_YUY2},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_P010},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_RGB32},
-};
-
-struct VideoSurface {
-	REFERENCE_TIME Start = 0;
-	REFERENCE_TIME End = 0;
-	CComPtr<IDirect3DSurface9> pSrcSurface;
-	DXVA2_SampleFormat SampleFormat = DXVA2_SampleUnknown;
-};
-
-class VideoSurfaceBuffer
-{
-	std::vector<VideoSurface> m_Surfaces;
-	unsigned m_LastPos = 0;
-
-public:
-	unsigned Size() const {
-		return (unsigned)m_Surfaces.size();
-	}
-	bool Empty() const {
-		return m_Surfaces.empty();
-	}
-	void Clear() {
-		m_Surfaces.clear();
-	}
-	void Resize(const unsigned size) {
-		Clear();
-		m_Surfaces.resize(size);
-		m_LastPos = Size() - 1;
-	}
-	VideoSurface& Get() {
-		return m_Surfaces[m_LastPos];
-	}
-	VideoSurface& GetAt(const unsigned pos) {
-		unsigned InternalPos = (m_LastPos + 1 + pos) % Size();
-		return m_Surfaces[InternalPos];
-	}
-	void Next() {
-		m_LastPos++;
-		if (m_LastPos >= Size()) {
-			m_LastPos = 0;
-		}
-	}
 };
 
 class CVideoRendererInputPin;
@@ -131,6 +90,8 @@ private:
 	HMODULE m_hDxva2Lib = nullptr;
 
 	// DXVA2 VideoProcessor
+	CDX9VideoProcessor m_DX9_VP;
+
 	CComPtr<IDirectXVideoProcessorService> m_pDXVA2_VPService;
 	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
 	GUID m_DXVA2VPGuid = GUID_NULL;
@@ -144,7 +105,7 @@ private:
 	UINT m_DXVA2_VP_Height = 0;
 
 	// D3D11 VideoProcessor
-	CDX11VideoProcessor m_D3D11_VP;
+	CDX11VideoProcessor m_DX11_VP;
 
 	CComPtr<IDirect3DDeviceManager9> m_pD3DDeviceManager;
 	UINT                             m_nResetTocken = 0;

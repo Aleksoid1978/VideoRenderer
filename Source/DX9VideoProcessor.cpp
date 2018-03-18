@@ -71,7 +71,7 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	}
 }
 
-HRESULT CDX9VideoProcessor::Init()
+HRESULT CDX9VideoProcessor::Init(HWND hwnd)
 {
 	if (!m_hD3D9Lib) {
 		m_hD3D9Lib = LoadLibraryW(L"d3d9.dll");
@@ -99,6 +99,73 @@ HRESULT CDX9VideoProcessor::Init()
 	pfnDXVA2CreateDirect3DDeviceManager9(&m_nResetTocken, &m_pD3DDeviceManager);
 	if (!m_pD3DDeviceManager) {
 		return E_FAIL;
+	}
+
+	m_hWnd = hwnd;
+
+	const UINT currentAdapter = GetAdapter(m_hWnd, m_pD3DEx);
+	bool bTryToReset = (currentAdapter == m_CurrentAdapter) && m_pD3DDevEx;
+	if (!bTryToReset) {
+		m_pD3DDevEx.Release();
+		m_CurrentAdapter = currentAdapter;
+	}
+
+	D3DADAPTER_IDENTIFIER9 AdapID9 = {};
+	if (S_OK == m_pD3DEx->GetAdapterIdentifier(m_CurrentAdapter, 0, &AdapID9)) {
+		m_VendorId = AdapID9.VendorId;
+		m_strAdapterDescription.Format(L"%S (%04X:%04X)", AdapID9.Description, AdapID9.VendorId, AdapID9.DeviceId);
+	}
+
+	ZeroMemory(&m_DisplayMode, sizeof(D3DDISPLAYMODEEX));
+	m_DisplayMode.Size = sizeof(D3DDISPLAYMODEEX);
+	hr = m_pD3DEx->GetAdapterDisplayModeEx(m_CurrentAdapter, &m_DisplayMode, nullptr);
+
+	ZeroMemory(&m_d3dpp, sizeof(m_d3dpp));
+
+	m_d3dpp.Windowed = TRUE;
+	m_d3dpp.hDeviceWindow = m_hWnd;
+	m_d3dpp.SwapEffect = D3DSWAPEFFECT_COPY;
+	m_d3dpp.Flags = D3DPRESENTFLAG_VIDEO;
+	m_d3dpp.BackBufferCount = 1;
+	m_d3dpp.BackBufferWidth = m_DisplayMode.Width;
+	m_d3dpp.BackBufferHeight = m_DisplayMode.Height;
+	m_d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+
+	if (bTryToReset) {
+		bTryToReset = SUCCEEDED(hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr));
+		DLog(L"    => ResetEx() : 0x%08x", hr);
+	}
+
+	if (!bTryToReset) {
+		m_pD3DDevEx.Release();
+		hr = m_pD3DEx->CreateDeviceEx(
+			m_CurrentAdapter, D3DDEVTYPE_HAL, m_hWnd,
+			D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS,
+			&m_d3dpp, nullptr, &m_pD3DDevEx);
+		DLog(L"    => CreateDeviceEx() : 0x%08x", hr);
+	}
+
+	if (FAILED(hr)) {
+		return hr;
+	}
+	if (!m_pD3DDevEx) {
+		return E_FAIL;
+	}
+
+	while (hr == D3DERR_DEVICELOST) {
+		DLog(L"    => D3DERR_DEVICELOST. Trying to Reset.");
+		hr = m_pD3DDevEx->CheckDeviceState(m_hWnd);
+	}
+	if (hr == D3DERR_DEVICENOTRESET) {
+		DLog(L"    => D3DERR_DEVICENOTRESET");
+		hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
+	}
+
+	if (S_OK == hr) {
+		hr = m_pD3DDeviceManager->ResetDevice(m_pD3DDevEx, m_nResetTocken);
+	}
+	if (S_OK == hr) {
+		hr = m_pD3DDeviceManager->OpenDeviceHandle(&m_hDevice);
 	}
 
 	return S_OK;

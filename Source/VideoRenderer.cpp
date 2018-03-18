@@ -118,7 +118,7 @@ STDMETHODIMP CVideoRendererInputPin::SetSurfaceType(DXVA2_SurfaceType dwType)
 // ID3D11DecoderConfiguration
 STDMETHODIMP CVideoRendererInputPin::ActivateD3D11Decoding(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, HANDLE hMutex, UINT nFlags)
 {
-	return m_pBaseRenderer->m_bUsedD3D11 ? m_pBaseRenderer->m_D3D11_VP.SetDevice(pDevice, pContext) : E_FAIL;
+	return m_pBaseRenderer->m_bUsedD3D11 ? m_pBaseRenderer->m_DX11_VP.SetDevice(pDevice, pContext) : E_FAIL;
 }
 
 UINT STDMETHODCALLTYPE CVideoRendererInputPin::GetD3D11AdapterIndex()
@@ -193,7 +193,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	m_bUsedD3D11 = m_bOptionUseD3D11 && IsWindows8OrGreater();
 	if (m_bUsedD3D11) {
-		if (FAILED(m_D3D11_VP.Init())) {
+		if (FAILED(m_DX11_VP.Init())) {
 			m_bUsedD3D11 = false;
 		}
 	}
@@ -757,7 +757,7 @@ HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 				}
 
 				if (m_bUsedD3D11) {
-					if (!m_D3D11_VP.InitMediaType(pmt)) {
+					if (!m_DX11_VP.InitMediaType(pmt)) {
 						return VFW_E_UNSUPPORTED_VIDEO;
 					}
 				}
@@ -784,7 +784,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 		}
 
 		if (m_bUsedD3D11) {
-			if (!m_D3D11_VP.InitMediaType(pmt)) {
+			if (!m_DX11_VP.InitMediaType(pmt)) {
 				return VFW_E_UNSUPPORTED_VIDEO;
 			}
 		}
@@ -801,7 +801,7 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	HRESULT hr = S_OK;
 
 	if (m_bUsedD3D11) {
-		hr = m_D3D11_VP.CopySample(pSample);
+		hr = m_DX11_VP.CopySample(pSample);
 	} else {
 		// Get frame type
 		m_SampleFormat = DXVA2_SampleProgressiveFrame; // Progressive
@@ -827,7 +827,7 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	}
 
 	if (m_bUsedD3D11) {
-		return m_D3D11_VP.Render(m_filterState);
+		return m_DX11_VP.Render(m_filterState);
 	} else {
 		return Render();
 	}
@@ -920,12 +920,12 @@ STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long
 {
 	m_videoRect.SetRect(Left, Top, Left + Width, Top + Height);
 	if (m_bUsedD3D11) {
-		m_D3D11_VP.SetVideoRect(m_videoRect);
+		m_DX11_VP.SetVideoRect(m_videoRect);
 	}
 
 	std::unique_lock<std::mutex> lock(m_mutex);
 	if (m_bUsedD3D11) {
-		m_D3D11_VP.Render(m_filterState);
+		m_DX11_VP.Render(m_filterState);
 	} else {
 		Render();
 	}
@@ -963,7 +963,7 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 		m_hWnd = (HWND)Owner;
 		HRESULT hr = InitDirect3D9();
 		if (m_bUsedD3D11) {
-			hr = m_D3D11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height(), true);
+			hr = m_DX11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height(), true);
 		}
 		return hr;
 	}
@@ -974,13 +974,13 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 {
 	m_windowRect.SetRect(Left, Top, Left + Width, Top + Height);
 	if (m_bUsedD3D11) {
-		m_D3D11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height());
-		m_D3D11_VP.SetWindowRect(m_windowRect);
+		m_DX11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height());
+		m_DX11_VP.SetWindowRect(m_windowRect);
 	}
 
 	std::unique_lock<std::mutex> lock(m_mutex);
 	if (m_bUsedD3D11) {
-		m_D3D11_VP.Render(m_filterState);
+		m_DX11_VP.Render(m_filterState);
 	} else {
 		Render();
 	}
@@ -1072,7 +1072,7 @@ STDMETHODIMP CMpcVideoRenderer::get_Binary(int id, LPVOID* pbin, int* size)
 STDMETHODIMP CMpcVideoRenderer::get_FrameInfo(VRFrameInfo* pFrameInfo)
 {
 	if (m_bUsedD3D11) {
-		return m_D3D11_VP.GetFrameInfo(pFrameInfo);
+		return m_DX11_VP.GetFrameInfo(pFrameInfo);
 	} else {
 		CheckPointer(pFrameInfo, E_POINTER);
 

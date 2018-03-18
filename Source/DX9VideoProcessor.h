@@ -78,6 +78,11 @@ private:
 	DWORD   m_VendorId = 0;
 	CString m_strAdapterDescription;
 
+	HWND m_hWnd = nullptr;
+	UINT m_CurrentAdapter = D3DADAPTER_DEFAULT;
+	D3DDISPLAYMODEEX m_DisplayMode = { sizeof(D3DDISPLAYMODEEX) };
+	D3DPRESENT_PARAMETERS m_d3dpp = {};
+
 	// DXVA2 Video Processor
 	CComPtr<IDirectXVideoProcessorService> m_pDXVA2_VPService;
 	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
@@ -109,7 +114,7 @@ public:
 	CDX9VideoProcessor();
 	~CDX9VideoProcessor();
 
-	HRESULT Init();
+	HRESULT Init(HWND hwnd);
 	void ClearDX9();
 
 private:
