@@ -26,7 +26,7 @@
 #include <dxva2api.h>
 #include <mutex>
 #include "IVideoRenderer.h"
-#include "D3D11VideoProcessor.h"
+#include "DX11VideoProcessor.h"
 
 
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
@@ -144,7 +144,7 @@ private:
 	UINT m_DXVA2_VP_Height = 0;
 
 	// D3D11 VideoProcessor
-	CD3D11VideoProcessor m_D3D11_VP;
+	CDX11VideoProcessor m_D3D11_VP;
 
 	CComPtr<IDirect3DDeviceManager9> m_pD3DDeviceManager;
 	UINT                             m_nResetTocken = 0;

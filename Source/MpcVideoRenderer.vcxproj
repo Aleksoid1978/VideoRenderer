@@ -107,8 +107,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="D3D11VideoProcessor.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="DX11VideoProcessor.cpp" />
     <ClCompile Include="DX9VideoProcessor.cpp" />
     <ClCompile Include="Helper.cpp" />
     <ClCompile Include="PropPage.cpp" />
@@ -118,7 +118,7 @@
     <ClCompile Include="VideoRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="D3D11VideoProcessor.h" />
+    <ClInclude Include="DX11VideoProcessor.h" />
     <ClInclude Include="DX9VideoProcessor.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="IVideoRenderer.h" />

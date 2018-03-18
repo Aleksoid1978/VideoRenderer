@@ -27,17 +27,17 @@
 #include <Mfidl.h>
 #include <directxcolors.h>
 #include "Helper.h"
-#include "D3D11VideoProcessor.h"
+#include "DX11VideoProcessor.h"
 #include "./Include/ID3DVideoMemoryConfiguration.h"
 
 
-// CD3D11VideoProcessor
+// CDX11VideoProcessor
 
-CD3D11VideoProcessor::CD3D11VideoProcessor()
+CDX11VideoProcessor::CDX11VideoProcessor()
 {
 }
 
-CD3D11VideoProcessor::~CD3D11VideoProcessor()
+CDX11VideoProcessor::~CDX11VideoProcessor()
 {
 	ClearD3D11();
 
@@ -46,7 +46,7 @@ CD3D11VideoProcessor::~CD3D11VideoProcessor()
 	}
 }
 
-HRESULT CD3D11VideoProcessor::Init()
+HRESULT CDX11VideoProcessor::Init()
 {
 	if (!m_hD3D11Lib) {
 		m_hD3D11Lib = LoadLibraryW(L"d3d11.dll");
@@ -100,7 +100,7 @@ HRESULT CD3D11VideoProcessor::Init()
 	return SetDevice(pDevice, pImmediateContext);
 }
 
-void CD3D11VideoProcessor::ClearD3D11()
+void CDX11VideoProcessor::ClearD3D11()
 {
 	m_pSrcTexture2D.Release();
 	m_pSrcTexture2D_Decode.Release();
@@ -114,7 +114,7 @@ void CD3D11VideoProcessor::ClearD3D11()
 	m_pDevice.Release();
 }
 
-HRESULT CD3D11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
+HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
 {
 	ClearD3D11();
 
@@ -203,7 +203,7 @@ HRESULT CD3D11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceConte
 	return hr;
 }
 
-HRESULT CD3D11VideoProcessor::InitSwapChain(HWND hwnd, UINT width, UINT height, const bool bReinit/* = false*/)
+HRESULT CDX11VideoProcessor::InitSwapChain(HWND hwnd, UINT width, UINT height, const bool bReinit/* = false*/)
 {
 	CheckPointer(hwnd, E_FAIL);
 	CheckPointer(m_pVideoDevice, E_FAIL);
@@ -245,7 +245,7 @@ HRESULT CD3D11VideoProcessor::InitSwapChain(HWND hwnd, UINT width, UINT height, 
 	return hr;
 }
 
-BOOL CD3D11VideoProcessor::InitMediaType(const CMediaType* pmt)
+BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 {
 	m_mt = *pmt;
 
@@ -298,7 +298,7 @@ BOOL CD3D11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	return FALSE;
 }
 
-HRESULT CD3D11VideoProcessor::Initialize(const UINT width, const UINT height, const DXGI_FORMAT dxgiFormat)
+HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, const DXGI_FORMAT dxgiFormat)
 {
 	CheckPointer(m_pVideoDevice, E_FAIL);
 
@@ -394,7 +394,7 @@ HRESULT CD3D11VideoProcessor::Initialize(const UINT width, const UINT height, co
 	return S_OK;
 }
 
-HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample)
+HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
 	CheckPointer(m_pDXGISwapChain, E_FAIL);
@@ -483,7 +483,7 @@ HRESULT CD3D11VideoProcessor::CopySample(IMediaSample* pSample)
 	return hr;
 }
 
-HRESULT CD3D11VideoProcessor::Render(const FILTER_STATE filterState)
+HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
 	CheckPointer(m_pDXGISwapChain, E_FAIL);
@@ -566,7 +566,7 @@ HRESULT CD3D11VideoProcessor::Render(const FILTER_STATE filterState)
 	return hr;
 }
 
-HRESULT CD3D11VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
+HRESULT CDX11VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
 {
 	CheckPointer(pFrameInfo, E_POINTER);
 

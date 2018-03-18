@@ -27,7 +27,7 @@
 #include <d3d11.h>
 #include "IVideoRenderer.h"
 
-class CD3D11VideoProcessor
+class CDX11VideoProcessor
 {
 private:
 	HMODULE m_hD3D11Lib = nullptr;
@@ -71,8 +71,8 @@ private:
 	CString m_strAdapterDescription;
 
 public:
-	CD3D11VideoProcessor();
-	~CD3D11VideoProcessor();
+	CDX11VideoProcessor();
+	~CDX11VideoProcessor();
 
 	HRESULT Init();
 	void ClearD3D11();
