@@ -193,7 +193,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	m_bUsedD3D11 = m_bOptionUseD3D11 && IsWindows8OrGreater();
 	if (m_bUsedD3D11) {
-		hr = m_D3D11_VP.Init();
+		if (FAILED(m_D3D11_VP.Init())) {
+			m_bUsedD3D11 = false;
+		}
 	}
 
 	*phr = hr;
