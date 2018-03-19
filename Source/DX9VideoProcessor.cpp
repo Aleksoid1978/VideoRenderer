@@ -50,11 +50,50 @@ static UINT GetAdapter(HWND hWnd, IDirect3D9Ex* pD3D)
 
 CDX9VideoProcessor::CDX9VideoProcessor()
 {
+	if (!m_hD3D9Lib) {
+		m_hD3D9Lib = LoadLibraryW(L"d3d9.dll");
+	}
+	if (!m_hDxva2Lib) {
+		m_hDxva2Lib = LoadLibraryW(L"dxva2.dll");
+	}
+	if (!m_hD3D9Lib || !m_hDxva2Lib) {
+		return;
+	}
+
+	HRESULT(WINAPI *pfnDirect3DCreate9Ex)(UINT SDKVersion, IDirect3D9Ex**);
+	(FARPROC &)pfnDirect3DCreate9Ex = GetProcAddress(m_hD3D9Lib, "Direct3DCreate9Ex");
+
+	HRESULT hr = pfnDirect3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
+	if (!m_pD3DEx) {
+		hr = pfnDirect3DCreate9Ex(D3D9b_SDK_VERSION, &m_pD3DEx);
+	}
+	if (!m_pD3DEx) {
+		return;
+	}
+
+	HRESULT(WINAPI *pfnDXVA2CreateDirect3DDeviceManager9)(UINT* pResetToken, IDirect3DDeviceManager9** ppDeviceManager);
+	(FARPROC &)pfnDXVA2CreateDirect3DDeviceManager9 = GetProcAddress(m_hDxva2Lib, "DXVA2CreateDirect3DDeviceManager9");
+	pfnDXVA2CreateDirect3DDeviceManager9(&m_nResetTocken, &m_pD3DDeviceManager);
+	if (!m_pD3DDeviceManager) {
+		m_pD3DEx.Release();
+	}
 }
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
 {
-	ClearDX9();
+	if (m_pD3DDeviceManager) {
+		if (m_hDevice != INVALID_HANDLE_VALUE) {
+			m_pD3DDeviceManager->CloseDeviceHandle(m_hDevice);
+			m_hDevice = INVALID_HANDLE_VALUE;
+		}
+		m_pD3DDeviceManager.Release();
+	}
+	m_nResetTocken = 0;
+
+	m_pDXVA2_VP.Release();
+	m_pDXVA2_VPService.Release();
+	m_pD3DDevEx.Release();
+	m_pD3DEx.Release();
 
 	if (m_hDxva2Lib) {
 		FreeLibrary(m_hDxva2Lib);
@@ -66,35 +105,7 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 
 HRESULT CDX9VideoProcessor::Init(HWND hwnd)
 {
-	if (!m_hD3D9Lib) {
-		m_hD3D9Lib = LoadLibraryW(L"d3d9.dll");
-	}
-	if (!m_hDxva2Lib) {
-		m_hDxva2Lib = LoadLibraryW(L"dxva2.dll");
-	}
-	if (!m_hD3D9Lib || !m_hDxva2Lib) {
-		return E_FAIL;
-	}
-
-	ClearDX9();
-
-	HRESULT(WINAPI *pfnDirect3DCreate9Ex)(UINT SDKVersion, IDirect3D9Ex**);
-	(FARPROC &)pfnDirect3DCreate9Ex = GetProcAddress(m_hD3D9Lib, "Direct3DCreate9Ex");
-
-	HRESULT hr = pfnDirect3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
-	if (!m_pD3DEx) {
-		hr = pfnDirect3DCreate9Ex(D3D9b_SDK_VERSION, &m_pD3DEx);
-	}
-	if (!m_pD3DEx) {
-		return E_FAIL;
-	}
-
-	HRESULT(WINAPI *pfnDXVA2CreateDirect3DDeviceManager9)(UINT* pResetToken, IDirect3DDeviceManager9** ppDeviceManager);
-	(FARPROC &)pfnDXVA2CreateDirect3DDeviceManager9 = GetProcAddress(m_hDxva2Lib, "DXVA2CreateDirect3DDeviceManager9");
-	pfnDXVA2CreateDirect3DDeviceManager9(&m_nResetTocken, &m_pD3DDeviceManager);
-	if (!m_pD3DDeviceManager) {
-		return E_FAIL;
-	}
+	CheckPointer(m_pD3DEx, E_FAIL);
 
 	m_hWnd = hwnd;
 
@@ -113,7 +124,7 @@ HRESULT CDX9VideoProcessor::Init(HWND hwnd)
 
 	ZeroMemory(&m_DisplayMode, sizeof(D3DDISPLAYMODEEX));
 	m_DisplayMode.Size = sizeof(D3DDISPLAYMODEEX);
-	hr = m_pD3DEx->GetAdapterDisplayModeEx(m_CurrentAdapter, &m_DisplayMode, nullptr);
+	HRESULT hr = m_pD3DEx->GetAdapterDisplayModeEx(m_CurrentAdapter, &m_DisplayMode, nullptr);
 
 	ZeroMemory(&m_d3dpp, sizeof(m_d3dpp));
 
@@ -132,6 +143,9 @@ HRESULT CDX9VideoProcessor::Init(HWND hwnd)
 	}
 
 	if (!bTryToReset) {
+		m_pDXVA2_VP.Release();
+		m_pDXVA2_VPService.Release();
+
 		m_pD3DDevEx.Release();
 		hr = m_pD3DEx->CreateDeviceEx(
 			m_CurrentAdapter, D3DDEVTYPE_HAL, m_hWnd,
@@ -156,37 +170,22 @@ HRESULT CDX9VideoProcessor::Init(HWND hwnd)
 		hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
 	}
 
-	if (S_OK == hr) {
-		hr = m_pD3DDeviceManager->ResetDevice(m_pD3DDevEx, m_nResetTocken);
-	}
-	if (S_OK == hr) {
-		hr = m_pD3DDeviceManager->OpenDeviceHandle(&m_hDevice);
-	}
-
-	return S_OK;
-}
-
-void CDX9VideoProcessor::ClearDX9()
-{
-	if (m_pD3DDeviceManager) {
-		if (m_hDevice != INVALID_HANDLE_VALUE) {
-			m_pD3DDeviceManager->CloseDeviceHandle(m_hDevice);
-			m_hDevice = INVALID_HANDLE_VALUE;
+	if (!m_hDevice) {
+		if (S_OK == hr) {
+			hr = m_pD3DDeviceManager->ResetDevice(m_pD3DDevEx, m_nResetTocken);
 		}
-		m_pD3DDeviceManager.Release();
+		if (S_OK == hr) {
+			hr = m_pD3DDeviceManager->OpenDeviceHandle(&m_hDevice);
+		}
 	}
-	m_nResetTocken = 0;
 
-	m_pDXVA2_VP.Release();
-	m_pDXVA2_VPService.Release();
-	m_pD3DDevEx.Release();
-	m_pD3DEx.Release();
+	return hr;
 }
 
 BOOL CDX9VideoProcessor::CheckInput(const D3DFORMAT d3dformat, const UINT width, const UINT height)
 {
-	if (!m_pDXVA2_VP || d3dformat != m_srcD3DFormat || width != m_srcWidth || height != m_srcHeight) {
-
+	if (!m_pDXVA2_VP
+			|| d3dformat != m_D3D9_Src_Format || width != m_D3D9_Src_Width || height != m_D3D9_Src_Height) {
 		return InitializeDXVA2VP(d3dformat, width, height);
 	}
 
@@ -203,10 +202,6 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 	m_SrcSamples.Clear();
 	m_DXVA2Samples.clear();
 	m_pDXVA2_VP.Release();
-
-	m_srcD3DFormat = d3dformat;
-	m_srcWidth = width;
-	m_srcHeight = height;
 
 	HRESULT hr = S_OK;
 	if (!m_pDXVA2_VPService) {
@@ -317,6 +312,10 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 		m_DXVA2Samples[i].SrcRect = { 0, 0, (LONG)width, (LONG)height };
 		m_DXVA2Samples[i].PlanarAlpha = DXVA2_Fixed32OpaqueAlpha();
 	}
+
+	m_D3D9_Src_Format = d3dformat;
+	m_D3D9_Src_Width = width;
+	m_D3D9_Src_Height = height;
 
 	return TRUE;
 }

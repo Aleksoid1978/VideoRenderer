@@ -111,12 +111,15 @@ private:
 	CRect m_videoRect;
 	CRect m_windowRect;
 
+	D3DFORMAT m_D3D9_Src_Format = D3DFMT_UNKNOWN;
+	UINT m_D3D9_Src_Width = 0;
+	UINT m_D3D9_Src_Height = 0;
+
 public:
 	CDX9VideoProcessor();
 	~CDX9VideoProcessor();
 
 	HRESULT Init(HWND hwnd);
-	void ClearDX9();
 
 private:
 	BOOL CheckInput(const D3DFORMAT d3dformat, const UINT width, const UINT height);

@@ -58,7 +58,6 @@ private:
 	bool m_bUsedD3D11 = false; // current state
 
 	HWND m_hWnd = nullptr;
-	CRect m_windowRect;
 
 	std::mutex m_mutex;
 	FILTER_STATE m_filterState = State_Stopped;

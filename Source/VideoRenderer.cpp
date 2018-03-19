@@ -363,7 +363,7 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 		m_hWnd = (HWND)Owner;
 		HRESULT hr = S_OK;
 		if (m_bUsedD3D11) {
-			hr = m_DX11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height(), true);
+			hr = m_DX11_VP.InitSwapChain(m_hWnd, 0, 0, true);
 		} else {
 			hr = m_DX9_VP.Init(m_hWnd);
 		}
@@ -372,29 +372,27 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 	return S_OK;
 }
 
-STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Width, long Height)
-{
-	m_windowRect.SetRect(Left, Top, Left + Width, Top + Height);
-	if (m_bUsedD3D11) {
-		m_DX11_VP.InitSwapChain(m_hWnd, m_windowRect.Width(), m_windowRect.Height());
-	}
-
-	std::unique_lock<std::mutex> lock(m_mutex);
-	if (m_bUsedD3D11) {
-		m_DX11_VP.SetWindowRect(m_windowRect);
-		m_DX11_VP.Render(m_filterState);
-	} else {
-		m_DX9_VP.SetWindowRect(m_windowRect);
-		m_DX9_VP.Render(m_filterState);
-	}
-
-	return S_OK;
-}
-
 STDMETHODIMP CMpcVideoRenderer::get_Owner(OAHWND *Owner)
 {
 	CheckPointer(Owner, E_POINTER);
 	*Owner = (OAHWND)m_hWnd;
+	return S_OK;
+}
+
+STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Width, long Height)
+{
+	CRect windowRect(Left, Top, Left + Width, Top + Height);
+
+	std::unique_lock<std::mutex> lock(m_mutex);
+	if (m_bUsedD3D11) {
+		m_DX11_VP.InitSwapChain(m_hWnd, windowRect.Width(), windowRect.Height());
+		m_DX11_VP.SetWindowRect(windowRect);
+		m_DX11_VP.Render(m_filterState);
+	} else {
+		m_DX9_VP.SetWindowRect(windowRect);
+		m_DX9_VP.Render(m_filterState);
+	}
+
 	return S_OK;
 }
 
