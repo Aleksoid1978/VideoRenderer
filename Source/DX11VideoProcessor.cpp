@@ -486,6 +486,45 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	return hr;
 }
 
+static bool ClipToSurface(ID3D11Texture2D* pTexture, CRect& s, CRect& d)
+{
+	D3D11_TEXTURE2D_DESC desc = {};
+	pTexture->GetDesc(&desc);
+	if (!desc.Width || !desc.Height) {
+		return false;
+	}
+
+	const int w = desc.Width, h = desc.Height;
+	const int sw = s.Width(), sh = s.Height();
+	const int dw = d.Width(), dh = d.Height();
+
+	if (d.left >= w || d.right < 0 || d.top >= h || d.bottom < 0
+			|| sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0) {
+		s.SetRectEmpty();
+		d.SetRectEmpty();
+		return true;
+	}
+
+	if (d.right > w) {
+		s.right -= (d.right - w) * sw / dw;
+		d.right = w;
+	}
+	if (d.bottom > h) {
+		s.bottom -= (d.bottom - h) * sh / dh;
+		d.bottom = h;
+	}
+	if (d.left < 0) {
+		s.left += (0 - d.left) * sw / dw;
+		d.left = 0;
+	}
+	if (d.top < 0) {
+		s.top += (0 - d.top) * sh / dh;
+		d.top = 0;
+	}
+
+	return true;
+}
+
 HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
@@ -494,110 +533,118 @@ HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState)
 	HRESULT hr = S_OK;
 
 	if (filterState == State_Running) {
-		// input format
-		m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, m_SampleFormat);
-
-		// Output rate (repeat frames)
-		m_pVideoContext->VideoProcessorSetStreamOutputRate(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_OUTPUT_RATE_NORMAL, TRUE, NULL);
-	
-		// disable automatic video quality by driver
-		m_pVideoContext->VideoProcessorSetStreamAutoProcessingMode(m_pVideoProcessor, 0, FALSE);
-
-		// Source rect
-		m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, TRUE, m_nativeVideoRect);
-
-		// Dest rect
-		m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, m_videoRect);
-		m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, TRUE, m_windowRect);
-
-		// Output background color (black)
-		static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f};
-		m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, FALSE, &backgroundColor);
-
-		if (m_pVideoContext1) {
-			DXGI_COLOR_SPACE_TYPE ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
-			if (m_srcExFmt.value) {
-				if (m_srcExFmt.VideoTransferFunction == 15 || m_srcExFmt.VideoTransferFunction == 16) { // SMPTE ST 2084
-					ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020;
-				} else if (m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601) { // BT.601
-					if (m_srcExFmt.NominalRange == DXVA2_NominalRange_16_235) {
-						ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P601;
-					} else {
-						ColorSpace = DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601;
-					}
-				} else { // BT.709
-					if (m_srcExFmt.NominalRange == DXVA2_NominalRange_16_235) {
-						ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
-					} else {
-						ColorSpace = DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601;
-					}				
-				}
-			} else {
-				if (m_srcDXGIFormat == DXGI_FORMAT_B8G8R8X8_UNORM) {
-					ColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
-				} else {
-					if (m_srcWidth <= 1024 && m_srcHeight <= 576) { // SD
-						ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
-					} else { // HD
-						ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
-					}
-				}
-			}
-			m_pVideoContext1->VideoProcessorSetStreamColorSpace1(m_pVideoProcessor, 0, ColorSpace);
-			m_pVideoContext1->VideoProcessorSetOutputColorSpace1(m_pVideoProcessor, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
-		} else {
-			// Stream color space
-			D3D11_VIDEO_PROCESSOR_COLOR_SPACE colorSpace = {};
-			if (m_srcExFmt.value) {
-				colorSpace.RGB_Range = m_srcExFmt.NominalRange == DXVA2_NominalRange_16_235 ? 1 : 0;
-				colorSpace.YCbCr_Matrix = m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601 ? 0 : 1;
-			} else {
-				colorSpace.RGB_Range = 1;
-				if (m_srcWidth <= 1024 && m_srcHeight <= 576) { // SD
-					colorSpace.YCbCr_Matrix = 0;
-				} else { // HD
-					colorSpace.YCbCr_Matrix = 1;
-				}
-			}
-			m_pVideoContext->VideoProcessorSetStreamColorSpace(m_pVideoProcessor, 0, &colorSpace);
-
-			// Output color space
-			colorSpace.RGB_Range = 0;
-			m_pVideoContext->VideoProcessorSetOutputColorSpace(m_pVideoProcessor, &colorSpace);
-		}
-
-		D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputViewDesc = {};
-		inputViewDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
-		CComPtr<ID3D11VideoProcessorInputView> pInputView;
-		hr = m_pVideoDevice->CreateVideoProcessorInputView(m_pSrcTexture2D_Decode, m_pVideoProcessorEnum, &inputViewDesc, &pInputView);
+		CComPtr<ID3D11Texture2D> pBackBuffer;
+		hr = m_pDXGISwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
 		if (FAILED(hr)) {
 			return hr;
 		}
 
-		CComPtr<ID3D11Texture2D> pDXGIBackBuffer;
-		hr = m_pDXGISwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pDXGIBackBuffer);
-		if (FAILED(hr)) {
-			return hr;
-		}
-
-		D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc = {};
-		OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
-		CComPtr<ID3D11VideoProcessorOutputView> pOutputView;
-		hr = m_pVideoDevice->CreateVideoProcessorOutputView(pDXGIBackBuffer, m_pVideoProcessorEnum, &OutputViewDesc, &pOutputView);
-		if (FAILED(hr)) {
-			return hr;
-		}
-
-		D3D11_VIDEO_PROCESSOR_STREAM StreamData = {};
-		StreamData.Enable = TRUE;
-		StreamData.pInputSurface = pInputView;
-		hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, 0, 1, &StreamData);
-		if (FAILED(hr)) {
-			return hr;
-		}
+		hr = ProcessDX11(pBackBuffer);
 	}
 
 	hr = m_pDXGISwapChain->Present(0, 0);
+
+	return hr;
+}
+
+HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget)
+{
+	CRect rSrcRect(m_nativeVideoRect);
+	CRect rDstRect(m_videoRect);
+	ClipToSurface(pRenderTarget, rSrcRect, rDstRect);
+
+	// input format
+	m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, m_SampleFormat);
+
+	// Output rate (repeat frames)
+	m_pVideoContext->VideoProcessorSetStreamOutputRate(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_OUTPUT_RATE_NORMAL, TRUE, NULL);
+	
+	// disable automatic video quality by driver
+	m_pVideoContext->VideoProcessorSetStreamAutoProcessingMode(m_pVideoProcessor, 0, FALSE);
+
+	// Source rect
+	m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, TRUE, rSrcRect);
+
+	// Dest rect
+	m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, rDstRect);
+	m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, TRUE, m_windowRect);
+
+	// Output background color (black)
+	static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f};
+	m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, FALSE, &backgroundColor);
+
+	if (m_pVideoContext1) {
+		DXGI_COLOR_SPACE_TYPE ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
+		if (m_srcExFmt.value) {
+			if (m_srcExFmt.VideoTransferFunction == 15 || m_srcExFmt.VideoTransferFunction == 16) { // SMPTE ST 2084
+				ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020;
+			} else if (m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601) { // BT.601
+				if (m_srcExFmt.NominalRange == DXVA2_NominalRange_16_235) {
+					ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P601;
+				} else {
+					ColorSpace = DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601;
+				}
+			} else { // BT.709
+				if (m_srcExFmt.NominalRange == DXVA2_NominalRange_16_235) {
+					ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
+				} else {
+					ColorSpace = DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601;
+				}				
+			}
+		} else {
+			if (m_srcDXGIFormat == DXGI_FORMAT_B8G8R8X8_UNORM) {
+				ColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+			} else {
+				if (m_srcWidth <= 1024 && m_srcHeight <= 576) { // SD
+					ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
+				} else { // HD
+					ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
+				}
+			}
+		}
+		m_pVideoContext1->VideoProcessorSetStreamColorSpace1(m_pVideoProcessor, 0, ColorSpace);
+		m_pVideoContext1->VideoProcessorSetOutputColorSpace1(m_pVideoProcessor, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
+	} else {
+		// Stream color space
+		D3D11_VIDEO_PROCESSOR_COLOR_SPACE colorSpace = {};
+		if (m_srcExFmt.value) {
+			colorSpace.RGB_Range = m_srcExFmt.NominalRange == DXVA2_NominalRange_16_235 ? 1 : 0;
+			colorSpace.YCbCr_Matrix = m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601 ? 0 : 1;
+		} else {
+			colorSpace.RGB_Range = 1;
+			if (m_srcWidth <= 1024 && m_srcHeight <= 576) { // SD
+				colorSpace.YCbCr_Matrix = 0;
+			} else { // HD
+				colorSpace.YCbCr_Matrix = 1;
+			}
+		}
+		m_pVideoContext->VideoProcessorSetStreamColorSpace(m_pVideoProcessor, 0, &colorSpace);
+
+		// Output color space
+		colorSpace.RGB_Range = 0;
+		m_pVideoContext->VideoProcessorSetOutputColorSpace(m_pVideoProcessor, &colorSpace);
+	}
+
+	D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputViewDesc = {};
+	inputViewDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
+	CComPtr<ID3D11VideoProcessorInputView> pInputView;
+	HRESULT hr = m_pVideoDevice->CreateVideoProcessorInputView(m_pSrcTexture2D_Decode, m_pVideoProcessorEnum, &inputViewDesc, &pInputView);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc = {};
+	OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
+	CComPtr<ID3D11VideoProcessorOutputView> pOutputView;
+	hr = m_pVideoDevice->CreateVideoProcessorOutputView(pRenderTarget, m_pVideoProcessorEnum, &OutputViewDesc, &pOutputView);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	D3D11_VIDEO_PROCESSOR_STREAM StreamData = {};
+	StreamData.Enable = TRUE;
+	StreamData.pInputSurface = pInputView;
+	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, 0, 1, &StreamData);
 
 	return hr;
 }

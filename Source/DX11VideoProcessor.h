@@ -96,4 +96,7 @@ public:
 	HRESULT GetVideoSize(long *pWidth, long *pHeight);
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
 	HRESULT GetFrameInfo(VRFrameInfo* pFrameInfo);
+
+private:
+	HRESULT ProcessDX11(ID3D11Texture2D* pRenderTarget);
 };
