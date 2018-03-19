@@ -486,7 +486,29 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	return hr;
 }
 
-static bool ClipToSurface(ID3D11Texture2D* pTexture, CRect& s, CRect& d)
+HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState)
+{
+	CheckPointer(m_pSrcTexture2D, E_FAIL);
+	CheckPointer(m_pDXGISwapChain, E_FAIL);
+
+	HRESULT hr = S_OK;
+
+	if (filterState == State_Running) {
+		CComPtr<ID3D11Texture2D> pBackBuffer;
+		hr = m_pDXGISwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
+		if (FAILED(hr)) {
+			return hr;
+		}
+
+		hr = ProcessDX11(pBackBuffer);
+	}
+
+	hr = m_pDXGISwapChain->Present(0, 0);
+
+	return hr;
+}
+
+static bool ClipToTexture(ID3D11Texture2D* pTexture, CRect& s, CRect& d)
 {
 	D3D11_TEXTURE2D_DESC desc = {};
 	pTexture->GetDesc(&desc);
@@ -525,33 +547,11 @@ static bool ClipToSurface(ID3D11Texture2D* pTexture, CRect& s, CRect& d)
 	return true;
 }
 
-HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState)
-{
-	CheckPointer(m_pSrcTexture2D, E_FAIL);
-	CheckPointer(m_pDXGISwapChain, E_FAIL);
-
-	HRESULT hr = S_OK;
-
-	if (filterState == State_Running) {
-		CComPtr<ID3D11Texture2D> pBackBuffer;
-		hr = m_pDXGISwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
-		if (FAILED(hr)) {
-			return hr;
-		}
-
-		hr = ProcessDX11(pBackBuffer);
-	}
-
-	hr = m_pDXGISwapChain->Present(0, 0);
-
-	return hr;
-}
-
 HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget)
 {
 	CRect rSrcRect(m_nativeVideoRect);
 	CRect rDstRect(m_videoRect);
-	ClipToSurface(pRenderTarget, rSrcRect, rDstRect);
+	ClipToTexture(pRenderTarget, rSrcRect, rDstRect);
 
 	// input format
 	m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, m_SampleFormat);
