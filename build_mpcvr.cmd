@@ -4,6 +4,7 @@ CD /D %~dp0
 SET "MSBUILD_SWITCHES=/nologo /consoleloggerparameters:Verbosity=minimal /maxcpucount /nodeReuse:true"
 SET "BUILDTYPE=Build"
 SET "BUILDCFG="Release Filter""
+SET "PCKG_NAME=MPCVideoRenderer"
 
 CALL :SubVSPath
 SET "TOOLSET=%VS_PATH%\Common7\Tools\vsdevcmd"
@@ -23,6 +24,23 @@ REM again set the source directory (fix possible bug in VS2017)
 CD /D %~dp0
 CALL :SubMPCVR x64
 
+CALL :SubDetectSevenzipPath
+IF DEFINED SEVENZIP (
+    IF EXIST "bin\%PCKG_NAME%.zip" DEL "bin\%PCKG_NAME%.zip"
+    IF EXIST "bin\%PCKG_NAME%"     RD /Q /S "bin\%PCKG_NAME%"
+    TITLE Copying %PCKG_NAME%...
+    IF NOT EXIST "bin\%PCKG_NAME%" MD "bin\%PCKG_NAME%"
+    COPY /Y /V "bin\Filters_x86\MpcVideoRenderer.ax"   "bin\%PCKG_NAME%\MpcVideoRenderer.ax" >NUL
+    COPY /Y /V "bin\Filters_x64\MpcVideoRenderer64.ax" "bin\%PCKG_NAME%\MpcVideoRenderer64.ax" >NUL
+    COPY /Y /V "distrib\Install_MPCVR.cmd"             "bin\%PCKG_NAME%\Install_MPCVR.cmd" >NUL
+    COPY /Y /V "distrib\Uninstall_MPCVR.cmd"           "bin\%PCKG_NAME%\Uninstall_MPCVR.cmd" >NUL
+
+    TITLE Creating archive %PCKG_NAME%.zip...
+    START "7z" /B /WAIT "%SEVENZIP%" a -tzip -mx9 "bin\%PCKG_NAME%.zip" ".\bin\%PCKG_NAME%\*"
+    IF %ERRORLEVEL% NEQ 0 CALL :SubMsg "ERROR" "Unable to create %PCKG_NAME%.zip!"
+    CALL :SubMsg "INFO" "%PCKG_NAME%.zip successfully created"
+)
+
 TITLE Compiling MPC Video Renderer [FINISHED]
 TIMEOUT /T 3
 ENDLOCAL
@@ -30,6 +48,18 @@ EXIT
 
 :SubVSPath
 FOR /f "delims=" %%A IN ('"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -property installationPath -latest -requires Microsoft.Component.MSBuild') DO SET VS_PATH=%%A
+EXIT /B
+
+:SubDetectSevenzipPath
+FOR %%G IN (7z.exe) DO (SET "SEVENZIP_PATH=%%~$PATH:G")
+IF EXIST "%SEVENZIP_PATH%" (SET "SEVENZIP=%SEVENZIP_PATH%" & EXIT /B)
+
+FOR %%G IN (7za.exe) DO (SET "SEVENZIP_PATH=%%~$PATH:G")
+IF EXIST "%SEVENZIP_PATH%" (SET "SEVENZIP=%SEVENZIP_PATH%" & EXIT /B)
+
+FOR /F "tokens=2*" %%A IN (
+  'REG QUERY "HKLM\SOFTWARE\7-Zip" /v "Path" 2^>NUL ^| FIND "REG_SZ" ^|^|
+   REG QUERY "HKLM\SOFTWARE\Wow6432Node\7-Zip" /v "Path" 2^>NUL ^| FIND "REG_SZ"') DO SET "SEVENZIP=%%B\7z.exe"
 EXIT /B
 
 :SubMPCVR
