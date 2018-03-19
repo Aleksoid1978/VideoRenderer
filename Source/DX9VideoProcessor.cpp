@@ -403,7 +403,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 {
 	if (pmt->formattype == FORMAT_VideoInfo2) {
 		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
-		 m_srcRect = vih2->rcSource;
+		m_nativeVideoRect = m_srcRect = vih2->rcSource;
 		m_trgRect = vih2->rcTarget;
 		m_srcWidth = vih2->bmiHeader.biWidth;
 		m_srcHeight = labs(vih2->bmiHeader.biHeight);
@@ -602,6 +602,44 @@ HRESULT CDX9VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
 	return S_OK;
 }
 
+static bool ClipToSurface(IDirect3DSurface9* pSurface, CRect& s, CRect& d)
+{
+	D3DSURFACE_DESC d3dsd = {};
+	if (FAILED(pSurface->GetDesc(&d3dsd))) {
+		return false;
+	}
+
+	const int w = d3dsd.Width, h = d3dsd.Height;
+	const int sw = s.Width(), sh = s.Height();
+	const int dw = d.Width(), dh = d.Height();
+
+	if (d.left >= w || d.right < 0 || d.top >= h || d.bottom < 0
+			|| sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0) {
+		s.SetRectEmpty();
+		d.SetRectEmpty();
+		return true;
+	}
+
+	if (d.right > w) {
+		s.right -= (d.right - w) * sw / dw;
+		d.right = w;
+	}
+	if (d.bottom > h) {
+		s.bottom -= (d.bottom - h) * sh / dh;
+		d.bottom = h;
+	}
+	if (d.left < 0) {
+		s.left += (0 - d.left) * sw / dw;
+		d.left = 0;
+	}
+	if (d.top < 0) {
+		s.top += (0 - d.top) * sh / dh;
+		d.top = 0;
+	}
+
+	return true;
+}
+
 HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 {
 	// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx
@@ -609,20 +647,23 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 	HRESULT hr = S_OK;
 	ASSERT(m_SrcSamples.Size() == m_DXVA2Samples.size());
 
-	const CRect rDstVid(m_videoRect);
+	CRect rSrcRect(m_nativeVideoRect);
+	CRect rDstRect(m_videoRect);
+	ClipToSurface(pRenderTarget, rSrcRect, rDstRect);
 
 	// Initialize VPBlt parameters.
 	DXVA2_VideoProcessBltParams blt = {};
 	blt.TargetFrame = m_SrcSamples.Get().Start; // Hmm
-	blt.TargetRect = rDstVid;
+	blt.TargetRect = rDstRect;
 	// DXVA2_VideoProcess_Constriction
-	blt.ConstrictionSize.cx = rDstVid.Width();
-	blt.ConstrictionSize.cy = rDstVid.Height();
+	blt.ConstrictionSize.cx = rDstRect.Width();
+	blt.ConstrictionSize.cy = rDstRect.Height();
 	blt.BackgroundColor = { 128 * 0x100, 128 * 0x100, 16 * 0x100, 0xFFFF }; // black
-																			// DXVA2_VideoProcess_YUV2RGBExtended
-																			//blt.DestFormat.value = 0; // output to RGB
+
+	// DXVA2_VideoProcess_YUV2RGBExtended
+	//blt.DestFormat.value = 0; // output to RGB
+
 	blt.DestFormat.SampleFormat = DXVA2_SampleProgressiveFrame; // output to progressive RGB
-																// DXVA2_ProcAmp_Brightness/Contrast/Hue/Saturation
 	blt.ProcAmpValues.Brightness = m_DXVA2ProcAmpValues[0];
 	blt.ProcAmpValues.Contrast = m_DXVA2ProcAmpValues[1];
 	blt.ProcAmpValues.Hue = m_DXVA2ProcAmpValues[2];
@@ -638,7 +679,8 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 		m_DXVA2Samples[i].End = SrcSample.End;
 		m_DXVA2Samples[i].SampleFormat.SampleFormat = SrcSample.SampleFormat;
 		m_DXVA2Samples[i].SrcSurface = SrcSample.pSrcSurface;
-		m_DXVA2Samples[i].DstRect = rDstVid;
+		m_DXVA2Samples[i].SrcRect = rSrcRect;
+		m_DXVA2Samples[i].DstRect = rDstRect;
 	}
 
 #ifdef _DEBUG
