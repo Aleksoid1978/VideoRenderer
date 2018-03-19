@@ -103,7 +103,7 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	}
 }
 
-HRESULT CDX9VideoProcessor::Init(HWND hwnd)
+HRESULT CDX9VideoProcessor::Init(const HWND hwnd)
 {
 	CheckPointer(m_pD3DEx, E_FAIL);
 

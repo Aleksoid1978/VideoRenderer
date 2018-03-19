@@ -81,7 +81,7 @@ public:
 
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
 
-	HRESULT InitSwapChain(HWND hwnd, UINT width, UINT height, const bool bReinit = false);
+	HRESULT InitSwapChain(const HWND hwnd);
 
 	BOOL InitMediaType(const CMediaType* pmt);
 	HRESULT Initialize(const UINT width, const UINT height, const DXGI_FORMAT dxgiFormat);
