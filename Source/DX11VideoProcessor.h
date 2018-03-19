@@ -25,6 +25,7 @@
 #include <dxva2api.h>
 #include <strmif.h>
 #include <d3d11.h>
+#include <D3d11_1.h>
 #include "IVideoRenderer.h"
 
 class CDX11VideoProcessor
@@ -34,6 +35,7 @@ private:
 	CComPtr<ID3D11Device> m_pDevice;
 	CComPtr<ID3D11DeviceContext> m_pImmediateContext;
 	CComPtr<ID3D11VideoContext> m_pVideoContext;
+	CComPtr<ID3D11VideoContext1> m_pVideoContext1;
 	CComPtr<ID3D11VideoDevice> m_pVideoDevice;
 	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
 	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
