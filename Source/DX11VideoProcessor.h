@@ -25,15 +25,17 @@
 #include <dxva2api.h>
 #include <strmif.h>
 #include <d3d11.h>
+#include <D3d11_1.h>
 #include "IVideoRenderer.h"
 
-class CD3D11VideoProcessor
+class CDX11VideoProcessor
 {
 private:
 	HMODULE m_hD3D11Lib = nullptr;
 	CComPtr<ID3D11Device> m_pDevice;
 	CComPtr<ID3D11DeviceContext> m_pImmediateContext;
 	CComPtr<ID3D11VideoContext> m_pVideoContext;
+	CComPtr<ID3D11VideoContext1> m_pVideoContext1;
 	CComPtr<ID3D11VideoDevice> m_pVideoDevice;
 	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
 	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
@@ -45,16 +47,15 @@ private:
 	CMediaType m_mt;
 	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;
 	DXGI_FORMAT m_srcDXGIFormat = DXGI_FORMAT_UNKNOWN;
-	GUID m_srcSubtype = GUID_NULL;
 	UINT m_srcWidth = 0;
 	UINT m_srcHeight = 0;
+	UINT m_srcPitch = 0;
 	DWORD m_srcAspectRatioX = 0;
 	DWORD m_srcAspectRatioY = 0;
 	DXVA2_ExtendedFormat m_srcExFmt = {};
 	bool m_bInterlaced = false;
 	RECT m_srcRect = {};
 	RECT m_trgRect = {};
-	INT  m_srcPitch = 0;
 
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 
@@ -72,24 +73,30 @@ private:
 	CString m_strAdapterDescription;
 
 public:
-	CD3D11VideoProcessor();
-	~CD3D11VideoProcessor();
+	CDX11VideoProcessor();
+	~CDX11VideoProcessor();
 
 	HRESULT Init();
 	void ClearD3D11();
 
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
 
-	HRESULT InitSwapChain(HWND hwnd, UINT width, UINT height, const bool bReinit = false);
+	HRESULT InitSwapChain(const HWND hwnd);
 
 	BOOL InitMediaType(const CMediaType* pmt);
 	HRESULT Initialize(const UINT width, const UINT height, const DXGI_FORMAT dxgiFormat);
 
 	HRESULT CopySample(IMediaSample* pSample);
 	HRESULT Render(const FILTER_STATE filterState);
+	void StopInputBuffer() {}
 
 	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
 	void SetWindowRect(const CRect& windowRect) { m_windowRect = windowRect; }
 
+	HRESULT GetVideoSize(long *pWidth, long *pHeight);
+	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
 	HRESULT GetFrameInfo(VRFrameInfo* pFrameInfo);
+
+private:
+	HRESULT ProcessDX11(ID3D11Texture2D* pRenderTarget);
 };

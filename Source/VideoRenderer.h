@@ -26,7 +26,8 @@
 #include <dxva2api.h>
 #include <mutex>
 #include "IVideoRenderer.h"
-#include "D3D11VideoProcessor.h"
+#include "DX9VideoProcessor.h"
+#include "DX11VideoProcessor.h"
 
 
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
@@ -35,48 +36,6 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_YUY2},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_P010},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_RGB32},
-};
-
-struct VideoSurface {
-	REFERENCE_TIME Start = 0;
-	REFERENCE_TIME End = 0;
-	CComPtr<IDirect3DSurface9> pSrcSurface;
-	DXVA2_SampleFormat SampleFormat = DXVA2_SampleUnknown;
-};
-
-class VideoSurfaceBuffer
-{
-	std::vector<VideoSurface> m_Surfaces;
-	unsigned m_LastPos = 0;
-
-public:
-	unsigned Size() const {
-		return (unsigned)m_Surfaces.size();
-	}
-	bool Empty() const {
-		return m_Surfaces.empty();
-	}
-	void Clear() {
-		m_Surfaces.clear();
-	}
-	void Resize(const unsigned size) {
-		Clear();
-		m_Surfaces.resize(size);
-		m_LastPos = Size() - 1;
-	}
-	VideoSurface& Get() {
-		return m_Surfaces[m_LastPos];
-	}
-	VideoSurface& GetAt(const unsigned pos) {
-		unsigned InternalPos = (m_LastPos + 1 + pos) % Size();
-		return m_Surfaces[InternalPos];
-	}
-	void Next() {
-		m_LastPos++;
-		if (m_LastPos >= Size()) {
-			m_LastPos = 0;
-		}
-	}
 };
 
 class CVideoRendererInputPin;
@@ -93,83 +52,27 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 private:
 	friend class CVideoRendererInputPin;
 
+	// options
 	bool m_bOptionUseD3D11 = false;
 
 	bool m_bUsedD3D11 = false; // current state
 
-	DXVA2_SampleFormat m_SampleFormat = DXVA2_SampleProgressiveFrame;
-
-	CMediaType m_mt;
-	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;
-	UINT m_srcWidth = 0;
-	UINT m_srcHeight = 0;
-	DWORD m_srcAspectRatioX = 0;
-	DWORD m_srcAspectRatioY = 0;
-	DXVA2_ExtendedFormat m_srcExFmt = {};
-	bool m_bInterlaced = false;
-	RECT m_srcRect = {};
-	RECT m_trgRect = {};
-	INT  m_srcPitch = 0;
-	VideoSurfaceBuffer m_SrcSamples;
-
-	CRect m_nativeVideoRect;
-	CRect m_videoRect;
-	CRect m_windowRect;
-
 	HWND m_hWnd = nullptr;
-	UINT m_CurrentAdapter = D3DADAPTER_DEFAULT;
-
-	HMODULE m_hD3D9Lib = nullptr;
-	CComPtr<IDirect3D9Ex>       m_pD3DEx;
-	CComPtr<IDirect3DDevice9Ex> m_pD3DDevEx;
-	DWORD m_VendorId = 0;
-	CString m_strAdapterDescription;
-
-	D3DDISPLAYMODEEX m_DisplayMode = { sizeof(D3DDISPLAYMODEEX) };
-	D3DPRESENT_PARAMETERS m_d3dpp = {};
-
-	HMODULE m_hDxva2Lib = nullptr;
-
-	// DXVA2 VideoProcessor
-	CComPtr<IDirectXVideoProcessorService> m_pDXVA2_VPService;
-	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
-	GUID m_DXVA2VPGuid = GUID_NULL;
-	DXVA2_VideoProcessorCaps m_DXVA2VPcaps = {};
-	DXVA2_Fixed32 m_DXVA2ProcAmpValues[4] = {};
-	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
-	DWORD m_frame = 0;
-
-	D3DFORMAT m_DXVA2_VP_Format = D3DFMT_UNKNOWN;
-	UINT m_DXVA2_VP_Width = 0;
-	UINT m_DXVA2_VP_Height = 0;
-
-	// D3D11 VideoProcessor
-	CD3D11VideoProcessor m_D3D11_VP;
-
-	CComPtr<IDirect3DDeviceManager9> m_pD3DDeviceManager;
-	UINT                             m_nResetTocken = 0;
-	HANDLE                           m_hDevice = nullptr;
 
 	std::mutex m_mutex;
-	
 	FILTER_STATE m_filterState = State_Stopped;
+
+	// DXVA2 VideoProcessor
+	CDX9VideoProcessor m_DX9_VP;
+
+	// D3D11 VideoProcessor
+	CDX11VideoProcessor m_DX11_VP;
 
 public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
 	~CMpcVideoRenderer();
 
 private:
-	HRESULT InitDirect3D9();
-
-	BOOL InitMediaType(const CMediaType* pmt);
-
-	BOOL InitVideoProc(const UINT width, const UINT height, const D3DFORMAT d3dformat);
-	BOOL InitializeDXVA2VP(const UINT width, const UINT height, const D3DFORMAT d3dformat);
-	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
-
-	HRESULT CopySample(IMediaSample* pSample);
-	HRESULT Render();
-	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget);
 
 public:
 	// CBaseRenderer
@@ -275,10 +178,9 @@ public:
 	STDMETHODIMP GetPages(CAUUID* pPages);
 
 	// IVideoRenderer
-	STDMETHODIMP get_String(int id, LPWSTR* pstr, int* chars);
-	STDMETHODIMP get_Binary(int id, LPVOID* pbin, int* size);
+	STDMETHODIMP get_String(int id, LPWSTR* pstr, int* chars) { return E_NOTIMPL; }
+	STDMETHODIMP get_Binary(int id, LPVOID* pbin, int* size) { return E_NOTIMPL; }
 	STDMETHODIMP get_FrameInfo(VRFrameInfo* pFrameInfo);
-	STDMETHODIMP get_VPDeviceGuid(GUID* pVPDevGuid);
 
 	STDMETHODIMP_(bool) GetActive();
 	STDMETHODIMP_(bool) GetOptionUseD3D11();

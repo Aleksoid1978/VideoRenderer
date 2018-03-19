@@ -96,10 +96,6 @@ HRESULT CVRMainPPage::OnActivate()
 		LocalFree(pstr);
 	}
 
-	GUID guid = {};
-	m_pVideoRenderer->get_VPDeviceGuid(&guid);
-	str.AppendFormat(L"\r\nDXVA2 Video Processor: %s", DXVA2VPDeviceToString(guid));
-
 	int size;
 	LPVOID pbin = nullptr;
 	if (S_OK == m_pVideoRenderer->get_Binary(ID_DXVA2VPCaps, &pbin, &size)) {
