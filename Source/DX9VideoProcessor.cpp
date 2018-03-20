@@ -482,6 +482,15 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				return E_FAIL;
 			}
 
+#ifdef _DEBUG
+			if (m_frame < 2) {
+				CComPtr<IDirect3DDevice9> pD3DDev;
+				pSurface->GetDevice(&pD3DDev);
+				if (pD3DDev != m_pD3DDevEx) {
+					DLog("WARNING: Different adapters for decoding and processing! StretchRect will fail.");
+				}
+			}
+#endif
 			m_SrcSamples.Next();
 			hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, m_SrcSamples.Get().pSrcSurface, nullptr, D3DTEXF_NONE);
 			if (FAILED(hr)) {
