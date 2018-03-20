@@ -211,7 +211,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	hr = pDXGIAdapter->GetDesc(&dxgiAdapterDesc);
 	if (SUCCEEDED(hr)) {
 		m_VendorId = dxgiAdapterDesc.VendorId;
-		m_strAdapterDescription.Format(L"%S (%04X:%04X)", dxgiAdapterDesc.Description, dxgiAdapterDesc.VendorId, dxgiAdapterDesc.DeviceId);
+		m_strAdapterDescription.Format(L"%s (%04X:%04X)", dxgiAdapterDesc.Description, dxgiAdapterDesc.VendorId, dxgiAdapterDesc.DeviceId);
 	}
 
 	return hr;
