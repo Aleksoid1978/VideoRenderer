@@ -107,7 +107,7 @@ void CDX11VideoProcessor::ClearD3D11()
 	m_pVideoProcessor.Release();
 	m_pVideoProcessorEnum.Release();
 	m_pVideoDevice.Release();
-#if D3D11_SDK_VERSION > 7
+#if VER_PRODUCTBUILD > 10000
 	m_pVideoContext1.Release();
 #endif
 	m_pVideoContext.Release();
@@ -141,7 +141,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		return hr;
 	}
 
-#if D3D11_SDK_VERSION > 7
+#if VER_PRODUCTBUILD > 10000
 	m_pVideoContext->QueryInterface(__uuidof(ID3D11VideoContext1), (void**)&m_pVideoContext1);
 #endif
 
@@ -591,7 +591,7 @@ HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget)
 	static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f};
 	m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, FALSE, &backgroundColor);
 
-#if D3D11_SDK_VERSION > 7
+#if VER_PRODUCTBUILD > 10000
 	if (m_pVideoContext1) {
 		DXGI_COLOR_SPACE_TYPE ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
 		if (m_srcExFmt.value) {

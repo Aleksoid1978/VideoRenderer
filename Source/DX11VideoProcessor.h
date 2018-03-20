@@ -21,6 +21,7 @@
 #pragma once
 
 #include <atltypes.h>
+#include <ntverp.h>
 #include <DXGI1_2.h>
 #include <dxva2api.h>
 #include <strmif.h>
@@ -35,7 +36,7 @@ private:
 	CComPtr<ID3D11Device> m_pDevice;
 	CComPtr<ID3D11DeviceContext> m_pImmediateContext;
 	CComPtr<ID3D11VideoContext> m_pVideoContext;
-#if D3D11_SDK_VERSION > 7
+#if VER_PRODUCTBUILD >= 10000
 	CComPtr<ID3D11VideoContext1> m_pVideoContext1;
 #endif
 	CComPtr<ID3D11VideoDevice> m_pVideoDevice;
