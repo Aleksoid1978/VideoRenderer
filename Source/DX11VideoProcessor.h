@@ -21,11 +21,12 @@
 #pragma once
 
 #include <atltypes.h>
+#include <ntverp.h>
 #include <DXGI1_2.h>
 #include <dxva2api.h>
 #include <strmif.h>
 #include <d3d11.h>
-#include <D3d11_1.h>
+#include <d3d11_1.h>
 #include "IVideoRenderer.h"
 
 class CDX11VideoProcessor
@@ -35,14 +36,21 @@ private:
 	CComPtr<ID3D11Device> m_pDevice;
 	CComPtr<ID3D11DeviceContext> m_pImmediateContext;
 	CComPtr<ID3D11VideoContext> m_pVideoContext;
+#if VER_PRODUCTBUILD >= 10000
 	CComPtr<ID3D11VideoContext1> m_pVideoContext1;
+#endif
 	CComPtr<ID3D11VideoDevice> m_pVideoDevice;
 	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
 	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_Decode;
+	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_RGB;
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
-	CComPtr<IDXGISwapChain> m_pDXGISwapChain;
+	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
+
+	CComPtr<IDirect3DSurface9> m_pSrcSurface9;
+	HANDLE m_sharedHandle = nullptr;
+	bool m_bCanUseSharedHandle = true;
 
 	CMediaType m_mt;
 	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;
