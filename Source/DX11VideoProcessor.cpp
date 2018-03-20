@@ -102,6 +102,13 @@ HRESULT CDX11VideoProcessor::Init()
 
 void CDX11VideoProcessor::ClearD3D11()
 {
+	m_pSrcTexture2D_RGB.Release();
+	if (m_sharedHandle) {
+		CloseHandle(m_sharedHandle);
+		m_sharedHandle = nullptr;
+	}
+	m_pSrcSurface9.Release();
+
 	m_pSrcTexture2D.Release();
 	m_pSrcTexture2D_Decode.Release();
 	m_pVideoProcessor.Release();
@@ -322,6 +329,13 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 
 	HRESULT hr = S_OK;
 
+	m_pSrcTexture2D_RGB.Release();
+	if (m_sharedHandle) {
+		CloseHandle(m_sharedHandle);
+		m_sharedHandle = nullptr;
+	}
+	m_pSrcSurface9.Release();
+
 	m_pSrcTexture2D.Release();
 	m_pSrcTexture2D_Decode.Release();
 	m_pVideoProcessor.Release();
@@ -450,11 +464,6 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	} else if (CComQIPtr<IMFGetService> pService = pSample) {
 		CComPtr<IDirect3DSurface9> pSurface;
 		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
-			//IDirect3DDevice9* pD3DDev;
-			//pSurface->GetDevice(&pD3DDev);
-			//if (FAILED(hr)) {
-			//	return hr;
-			//}
 			D3DSURFACE_DESC desc = {};
 			hr = pSurface->GetDesc(&desc);
 			if (FAILED(hr)) {
@@ -465,18 +474,60 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				return hr;
 			}
 
-			D3DLOCKED_RECT lr_src;
-			hr = pSurface->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
-			if (S_OK == hr) {
-				D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-				hr = m_pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-				if (SUCCEEDED(hr)) {
-					CopyFrameData(m_srcD3DFormat, desc.Width, desc.Height, (BYTE*)mappedResource.pData, mappedResource.RowPitch, (BYTE*)lr_src.pBits, lr_src.Pitch, mappedResource.DepthPitch);
-					m_pImmediateContext->Unmap(m_pSrcTexture2D, 0);
-					m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
-				}
+			if (m_bCanUseSharedHandle) {
+				for (;;) {
+					CComPtr<IDirect3DDevice9> pD3DDev;
+					pSurface->GetDevice(&pD3DDev);
+					if (FAILED(hr)) {
+						m_bCanUseSharedHandle = false;
+						break;
+					}
 
-				hr = pSurface->UnlockRect();
+					if (!m_pSrcSurface9) {
+						hr = pD3DDev->CreateOffscreenPlainSurface(
+							desc.Width,
+							desc.Height,
+							D3DFMT_A8R8G8B8,
+							D3DPOOL_DEFAULT,
+							&m_pSrcSurface9,
+							&m_sharedHandle);
+						if (FAILED(hr)) {
+							m_bCanUseSharedHandle = false;
+							break;
+						}
+					}
+
+					if (!m_pSrcTexture2D_RGB) {
+						hr = m_pDevice->OpenSharedResource(m_sharedHandle, __uuidof(ID3D11Texture2D), (void**)(&m_pSrcTexture2D_RGB));
+						if (FAILED(hr)) {
+							m_bCanUseSharedHandle = false;
+							break;
+						}
+					}
+
+					hr = pD3DDev->StretchRect(pSurface, nullptr, m_pSrcSurface9, nullptr, D3DTEXF_NONE);
+					if (FAILED(hr)) {
+						m_bCanUseSharedHandle = false;
+					}
+
+					break;
+				}
+			}
+
+			if (!m_bCanUseSharedHandle) {
+				D3DLOCKED_RECT lr_src;
+				hr = pSurface->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
+				if (S_OK == hr) {
+					D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+					hr = m_pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+					if (SUCCEEDED(hr)) {
+						CopyFrameData(m_srcD3DFormat, desc.Width, desc.Height, (BYTE*)mappedResource.pData, mappedResource.RowPitch, (BYTE*)lr_src.pBits, lr_src.Pitch, mappedResource.DepthPitch);
+						m_pImmediateContext->Unmap(m_pSrcTexture2D, 0);
+						m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
+					}
+
+					hr = pSurface->UnlockRect();
+				}
 			}
 		}
 	}
@@ -566,6 +617,10 @@ static bool ClipToTexture(ID3D11Texture2D* pTexture, CRect& s, CRect& d, const C
 
 HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget)
 {
+	if (m_videoRect.IsRectEmpty() || m_windowRect.IsRectEmpty()) {
+		return S_OK;
+	}
+
 	CRect rSrcRect(m_nativeVideoRect);
 	CRect rDstRect(m_videoRect);
 
@@ -649,7 +704,7 @@ HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget)
 	D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputViewDesc = {};
 	inputViewDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
 	CComPtr<ID3D11VideoProcessorInputView> pInputView;
-	HRESULT hr = m_pVideoDevice->CreateVideoProcessorInputView(m_pSrcTexture2D_Decode, m_pVideoProcessorEnum, &inputViewDesc, &pInputView);
+	HRESULT hr = m_pVideoDevice->CreateVideoProcessorInputView(m_bCanUseSharedHandle ? m_pSrcTexture2D_RGB : m_pSrcTexture2D_Decode, m_pVideoProcessorEnum, &inputViewDesc, &pInputView);
 	if (FAILED(hr)) {
 		return hr;
 	}
