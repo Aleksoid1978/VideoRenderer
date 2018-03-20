@@ -446,6 +446,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	HRESULT hr = S_OK;
 
 	if (CComQIPtr<IMediaSampleD3D11> pMSD3D11 = pSample) {
+		m_bCanUseSharedHandle = false;
+
 		CComQIPtr<ID3D11Texture2D> pD3D11Texture2D;
 		UINT ArraySlice = 0;
 		hr = pMSD3D11->GetD3D11Texture(0, &pD3D11Texture2D, &ArraySlice);
