@@ -44,8 +44,13 @@ private:
 	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_Decode;
+	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_RGB;
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain> m_pDXGISwapChain;
+
+	CComPtr<IDirect3DSurface9> m_pSrcSurface9;
+	HANDLE m_sharedHandle = nullptr;
+	bool m_bCanUseSharedHandle = true;
 
 	CMediaType m_mt;
 	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;

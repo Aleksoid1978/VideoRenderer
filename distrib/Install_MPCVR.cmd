@@ -1,6 +1,6 @@
 @cd /d "%~dp0"
 @regsvr32.exe MpcVideoRenderer.ax /s
-@if not errorlevel 0 goto error
+@if %errorlevel% NEQ 0 goto error
 @if not exist "%SystemRoot%\SysWOW64\cmd.exe" goto success
 @regsvr32.exe MpcVideoRenderer64.ax /s
 :success

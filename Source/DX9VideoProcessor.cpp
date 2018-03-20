@@ -643,6 +643,9 @@ static bool ClipToSurface(IDirect3DSurface9* pSurface, CRect& s, CRect& d)
 HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 {
 	// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx
+	if (m_videoRect.IsRectEmpty()) {
+		return S_OK;
+	}
 
 	HRESULT hr = S_OK;
 	ASSERT(m_SrcSamples.Size() == m_DXVA2Samples.size());
