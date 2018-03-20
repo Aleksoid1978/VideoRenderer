@@ -89,18 +89,20 @@ HRESULT CVRMainPPage::OnActivate()
 	ASSERT(m_pVideoRenderer);
 	CStringW str;
 
-	int chars;
-	LPWSTR pstr = nullptr;
-	if (S_OK == m_pVideoRenderer->get_String(ID_AdapterDesc, &pstr, &chars)) {
-		str.Format(L"Graphics adapter: %s", pstr);
-		LocalFree(pstr);
+	CStringW value;
+	if (S_OK == m_pVideoRenderer->get_AdapterDecription(value)) {
+		str.Format(L"Graphics adapter: %s", value);
 	}
 
-	int size;
-	LPVOID pbin = nullptr;
-	if (S_OK == m_pVideoRenderer->get_Binary(ID_DXVA2VPCaps, &pbin, &size)) {
-		auto pCaps = (DXVA2_VideoProcessorCaps*)pbin;
-		UINT dt = pCaps->DeinterlaceTechnology;
+	if (m_pVideoRenderer->get_UsedD3D11()) {
+		str.Append(L"\r\nVideoProcessor: Direct3D 11");
+	} else {
+		str.Append(L"\r\nVideoProcessor: DXVA2");
+	}
+
+	DXVA2_VideoProcessorCaps dxva2vpcaps;
+	if (S_OK == m_pVideoRenderer->get_DXVA2VPCaps(&dxva2vpcaps)) {
+		UINT dt = dxva2vpcaps.DeinterlaceTechnology;
 		if (dt & DXVA2_DeinterlaceTech_Mask) {
 			str.Append(L"\r\nDeinterlaceTechnology:");
 			if (dt & DXVA2_DeinterlaceTech_BOBLineReplicate)       str.Append(L" BOBLineReplicate,");
@@ -114,13 +116,12 @@ HRESULT CVRMainPPage::OnActivate()
 			if (dt & DXVA2_DeinterlaceTech_InverseTelecine)        str.Append(L" InverseTelecine");
 			str.TrimRight(',');
 		}
-		if (pCaps->NumForwardRefSamples) {
-			str.AppendFormat(L"\r\nForwardRefSamples: %u", pCaps->NumForwardRefSamples);
+		if (dxva2vpcaps.NumForwardRefSamples) {
+			str.AppendFormat(L"\r\nForwardRefSamples: %u", dxva2vpcaps.NumForwardRefSamples);
 		}
-		if (pCaps->NumBackwardRefSamples) {
-			str.AppendFormat(L"\r\nBackwardRefSamples: %u", pCaps->NumBackwardRefSamples);
+		if (dxva2vpcaps.NumBackwardRefSamples) {
+			str.AppendFormat(L"\r\nBackwardRefSamples: %u", dxva2vpcaps.NumBackwardRefSamples);
 		}
-		LocalFree(pbin);
 	}
 
 	VRFrameInfo frameinfo;

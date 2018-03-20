@@ -141,6 +141,8 @@ public:
 	HRESULT GetVideoSize(long *pWidth, long *pHeight);
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
 	HRESULT GetFrameInfo(VRFrameInfo* pFrameInfo);
+	HRESULT GetAdapterDecription(CStringW& str);
+	HRESULT GetDXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCaps);
 
 private:
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget);

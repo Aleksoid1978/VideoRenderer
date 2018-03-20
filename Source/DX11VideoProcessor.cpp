@@ -756,3 +756,9 @@ HRESULT CDX11VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
 
 	return S_OK;
 }
+
+HRESULT CDX11VideoProcessor::GetAdapterDecription(CStringW& str)
+{
+	str = m_strAdapterDescription;
+	return S_OK;
+}

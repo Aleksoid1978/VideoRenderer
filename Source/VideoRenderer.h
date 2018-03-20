@@ -178,9 +178,10 @@ public:
 	STDMETHODIMP GetPages(CAUUID* pPages);
 
 	// IVideoRenderer
-	STDMETHODIMP get_String(int id, LPWSTR* pstr, int* chars) { return E_NOTIMPL; }
-	STDMETHODIMP get_Binary(int id, LPVOID* pbin, int* size) { return E_NOTIMPL; }
+	STDMETHODIMP get_AdapterDecription(CStringW& str);
+	STDMETHODIMP_(bool) get_UsedD3D11() { return m_bUsedD3D11; }
 	STDMETHODIMP get_FrameInfo(VRFrameInfo* pFrameInfo);
+	STDMETHODIMP get_DXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCaps);
 
 	STDMETHODIMP_(bool) GetActive();
 	STDMETHODIMP_(bool) GetOptionUseD3D11();

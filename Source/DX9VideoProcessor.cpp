@@ -602,6 +602,19 @@ HRESULT CDX9VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
 	return S_OK;
 }
 
+HRESULT CDX9VideoProcessor::GetAdapterDecription(CStringW& str)
+{
+	str = m_strAdapterDescription;
+	return S_OK;
+}
+
+HRESULT CDX9VideoProcessor::GetDXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCaps)
+{
+	CheckPointer(pDXVA2VPCaps, E_POINTER);
+	memcpy(pDXVA2VPCaps, &m_DXVA2VPcaps, sizeof(DXVA2_VideoProcessorCaps));
+	return S_OK;
+}
+
 static bool ClipToSurface(IDirect3DSurface9* pSurface, CRect& s, CRect& d)
 {
 	D3DSURFACE_DESC d3dsd = {};
