@@ -1,15 +1,30 @@
-REM @ECHO OFF
+@ECHO OFF
+REM (C) 2018 see Authors.txt
+REM
+REM This file is part of MPC-BE.
+REM
+REM MPC-BE is free software; you can redistribute it and/or modify
+REM it under the terms of the GNU General Public License as published by
+REM the Free Software Foundation; either version 3 of the License, or
+REM (at your option) any later version.
+REM
+REM MPC-BE is distributed in the hope that it will be useful,
+REM but WITHOUT ANY WARRANTY; without even the implied warranty of
+REM MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+REM GNU General Public License for more details.
+REM
+REM You should have received a copy of the GNU General Public License
+REM along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 CD /D %~dp0
 
 SET "MSBUILD_SWITCHES=/nologo /consoleloggerparameters:Verbosity=minimal /maxcpucount /nodeReuse:true"
 SET "BUILDTYPE=Build"
-SET "BUILDCFG="Release Filter""
+SET "BUILDCFG=Release"
 SET "PCKG_NAME=MPCVideoRenderer"
 
 CALL :SubVSPath
 SET "TOOLSET=%VS_PATH%\Common7\Tools\vsdevcmd"
-SET VS_PATH
-SET TOOLSET
 
 SET "LOG_DIR=bin\logs"
 IF NOT EXIST "%LOG_DIR%" MD "%LOG_DIR%"
@@ -63,15 +78,15 @@ FOR /F "tokens=2*" %%A IN (
 EXIT /B
 
 :SubMPCVR
-TITLE Compiling MPC Video Renderer - %BUILDCFG%^|%1...
+TITLE Compiling MPC Video Renderer - %BUILDCFG% Filter^|%1...
 MSBuild.exe MpcVideoRenderer.sln %MSBUILD_SWITCHES%^
- /target:%BUILDTYPE% /p:Configuration=%BUILDCFG% /p:Platform=%1^
+ /target:%BUILDTYPE% /p:Configuration="%BUILDCFG% Filter" /p:Platform=%1^
  /flp1:LogFile=%LOG_DIR%\errors_%BUILDCFG%_%1.log;errorsonly;Verbosity=diagnostic^
  /flp2:LogFile=%LOG_DIR%\warnings_%BUILDCFG%_%1.log;warningsonly;Verbosity=diagnostic
 IF %ERRORLEVEL% NEQ 0 (
-  CALL :SubMsg "ERROR" "MpcVideoRenderer.sln %BUILDCFG% %1 - Compilation failed!"
+  CALL :SubMsg "ERROR" "MpcVideoRenderer.sln %BUILDCFG% Filter %1 - Compilation failed!"
 ) ELSE (
-  CALL :SubMsg "INFO" "MpcVideoRenderer.sln %BUILDCFG% %1 compiled successfully"
+  CALL :SubMsg "INFO" "MpcVideoRenderer.sln %BUILDCFG% Filter %1 compiled successfully"
 )
 EXIT /B
 
