@@ -534,6 +534,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 	else if (m_mt.formattype == FORMAT_VideoInfo2) {
+		m_bCanUseSharedHandle = false;
+
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
