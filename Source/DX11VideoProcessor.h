@@ -46,7 +46,7 @@ private:
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_Decode;
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_RGB;
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
-	CComPtr<IDXGISwapChain> m_pDXGISwapChain;
+	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
 
 	CComPtr<IDirect3DSurface9> m_pSrcSurface9;
 	HANDLE m_sharedHandle = nullptr;

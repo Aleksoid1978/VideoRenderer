@@ -119,7 +119,7 @@ void CDX11VideoProcessor::ClearD3D11()
 #endif
 	m_pVideoContext.Release();
 	m_pImmediateContext.Release();
-	m_pDXGISwapChain.Release();
+	m_pDXGISwapChain1.Release();
 	m_pDXGIFactory2.Release();
 	m_pDevice.Release();
 }
@@ -224,7 +224,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd)
 
 	HRESULT hr = S_OK;
 
-	if (m_hWnd && m_pDXGISwapChain) {
+	if (m_hWnd && m_pDXGISwapChain1) {
 		const HMONITOR hCurMonitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 		const HMONITOR hNewMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
 		if (hCurMonitor == hNewMonitor) {
@@ -232,7 +232,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd)
 		}
 	}
 
-	m_pDXGISwapChain.Release();
+	m_pDXGISwapChain1.Release();
 
 	MONITORINFOEX monitorInfo = {};
 	monitorInfo.cbSize = sizeof(MONITORINFOEX);
@@ -250,13 +250,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd)
 	desc.SampleDesc.Quality = 0;
 	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	desc.BufferCount = 1;
-	CComPtr<IDXGISwapChain1> pDXGISwapChain1;
-	hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, hwnd, &desc, nullptr, nullptr, &pDXGISwapChain1);
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	hr = pDXGISwapChain1->QueryInterface(__uuidof(IDXGISwapChain), (void**)&m_pDXGISwapChain);
+	hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, hwnd, &desc, nullptr, nullptr, &m_pDXGISwapChain1);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -425,7 +419,7 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
-	CheckPointer(m_pDXGISwapChain, E_FAIL);
+	CheckPointer(m_pDXGISwapChain1, E_FAIL);
 
 	// Get frame type
 	m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE; // Progressive
@@ -555,13 +549,13 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
-	CheckPointer(m_pDXGISwapChain, E_FAIL);
+	CheckPointer(m_pDXGISwapChain1, E_FAIL);
 
 	HRESULT hr = S_OK;
 
 	if (filterState == State_Running) {
 		CComPtr<ID3D11Texture2D> pBackBuffer;
-		hr = m_pDXGISwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
+		hr = m_pDXGISwapChain1->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
 		if (FAILED(hr)) {
 			return hr;
 		}
@@ -569,7 +563,7 @@ HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState)
 		hr = ProcessDX11(pBackBuffer);
 	}
 
-	hr = m_pDXGISwapChain->Present(0, 0);
+	hr = m_pDXGISwapChain1->Present(0, 0);
 
 	return hr;
 }
