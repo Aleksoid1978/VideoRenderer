@@ -71,6 +71,8 @@ HRESULT CVRMainPPage::OnActivate()
 
 	m_bUseD3D11 = m_pVideoRenderer->GetOptionUseD3D11();
 	CheckDlgButton(IDC_CHECK1, m_bUseD3D11 ? BST_CHECKED : BST_UNCHECKED);
+	m_bDoubleFrateDeint = m_pVideoRenderer->GetOptionDoubleFrateDeint();
+	CheckDlgButton(IDC_CHECK2, m_bDoubleFrateDeint ? BST_CHECKED : BST_UNCHECKED);
 
 	if (!m_pVideoRenderer->GetActive()) {
 		GetDlgItem(IDC_EDIT1).ShowWindow(SW_HIDE);
@@ -144,6 +146,11 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			SetDirty();
 			return (LRESULT)1;
 		}
+		if (LOWORD(wParam) == IDC_CHECK2) {
+			m_bDoubleFrateDeint = IsDlgButtonChecked(IDC_CHECK2) == BST_CHECKED;
+			SetDirty();
+			return (LRESULT)1;
+		}
 		break;
 	}
 
@@ -154,6 +161,7 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 HRESULT CVRMainPPage::OnApplyChanges()
 {
 	m_pVideoRenderer->SetOptionUseD3D11(m_bUseD3D11);
+	m_pVideoRenderer->SetOptionDoubleFrateDeint(m_bDoubleFrateDeint);
 	m_pVideoRenderer->SaveSettings();
 
 	return S_OK;

@@ -32,6 +32,7 @@
 
 #define OPT_REGKEY_VIDEORENDERER L"Software\\MPC-BE Filters\\MPC Video Renderer"
 #define OPT_UseD3D11             L"UseD3D11"
+#define OPT_DoubleFrateDeint     L"DoubleFramerateDeinterlace"
 
 class CVideoRendererInputPin : public CRendererInputPin
 	, public IMFGetService
@@ -146,6 +147,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		DWORD dw;
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_UseD3D11, dw)) {
 			m_bOptionUseD3D11 = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_DoubleFrateDeint, dw)) {
+			m_bOptionDoubleFrateDeint = !!dw;
 		}
 	}
 
@@ -450,7 +454,17 @@ STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionUseD3D11()
 STDMETHODIMP CMpcVideoRenderer::SetOptionUseD3D11(bool value)
 {
 	m_bOptionUseD3D11 = value;
+	return S_OK;
+}
 
+STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionDoubleFrateDeint()
+{
+	return m_bOptionDoubleFrateDeint;
+}
+
+STDMETHODIMP CMpcVideoRenderer::SetOptionDoubleFrateDeint(bool value)
+{
+	m_bOptionDoubleFrateDeint = value;
 	return S_OK;
 }
 
@@ -459,6 +473,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 	CRegKey key;
 	if (ERROR_SUCCESS == key.Create(HKEY_CURRENT_USER, OPT_REGKEY_VIDEORENDERER)) {
 		key.SetDWORDValue(OPT_UseD3D11, m_bOptionUseD3D11);
+		key.SetDWORDValue(OPT_DoubleFrateDeint, m_bOptionDoubleFrateDeint);
 	}
 
 	return S_OK;

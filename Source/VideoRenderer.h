@@ -54,6 +54,7 @@ private:
 
 	// options
 	bool m_bOptionUseD3D11 = false;
+	bool m_bOptionDoubleFrateDeint = false;
 
 	bool m_bUsedD3D11 = false; // current state
 
@@ -186,5 +187,7 @@ public:
 	STDMETHODIMP_(bool) GetActive();
 	STDMETHODIMP_(bool) GetOptionUseD3D11();
 	STDMETHODIMP SetOptionUseD3D11(bool value);
+	STDMETHODIMP_(bool) GetOptionDoubleFrateDeint();
+	STDMETHODIMP SetOptionDoubleFrateDeint(bool value);
 	STDMETHODIMP SaveSettings();
 };

@@ -39,5 +39,7 @@ IVideoRenderer : public IUnknown {
 	STDMETHOD_(bool, GetActive()) PURE;
 	STDMETHOD_(bool, GetOptionUseD3D11()) PURE;
 	STDMETHOD(SetOptionUseD3D11(bool value)) PURE;
+	STDMETHOD_(bool) GetOptionDoubleFrateDeint() PURE;
+	STDMETHOD(SetOptionDoubleFrateDeint(bool value)) PURE;
 	STDMETHOD(SaveSettings()) PURE;
 };
