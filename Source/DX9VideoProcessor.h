@@ -75,7 +75,6 @@ private:
 	CComPtr<IDirect3DDevice9Ex>      m_pD3DDevEx;
 	CComPtr<IDirect3DDeviceManager9> m_pD3DDeviceManager;
 	UINT    m_nResetTocken = 0;
-	HANDLE  m_hDevice = nullptr;
 	DWORD   m_VendorId = 0;
 	CString m_strAdapterDescription;
 
@@ -141,6 +140,8 @@ public:
 	HRESULT GetVideoSize(long *pWidth, long *pHeight);
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
 	HRESULT GetFrameInfo(VRFrameInfo* pFrameInfo);
+	HRESULT GetAdapterDecription(CStringW& str);
+	HRESULT GetDXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCaps);
 
 private:
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget);

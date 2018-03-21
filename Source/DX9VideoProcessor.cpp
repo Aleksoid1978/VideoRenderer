@@ -19,7 +19,6 @@
 */
 
 #include "stdafx.h"
-
 #include <vector>
 #include <d3d9.h>
 #include <dvdmedia.h>
@@ -81,13 +80,7 @@ CDX9VideoProcessor::CDX9VideoProcessor()
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
 {
-	if (m_pD3DDeviceManager) {
-		if (m_hDevice != INVALID_HANDLE_VALUE) {
-			m_pD3DDeviceManager->CloseDeviceHandle(m_hDevice);
-			m_hDevice = INVALID_HANDLE_VALUE;
-		}
-		m_pD3DDeviceManager.Release();
-	}
+	m_pD3DDeviceManager.Release();
 	m_nResetTocken = 0;
 
 	m_pDXVA2_VP.Release();
@@ -170,13 +163,8 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd)
 		hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
 	}
 
-	if (!m_hDevice) {
-		if (S_OK == hr) {
-			hr = m_pD3DDeviceManager->ResetDevice(m_pD3DDevEx, m_nResetTocken);
-		}
-		if (S_OK == hr) {
-			hr = m_pD3DDeviceManager->OpenDeviceHandle(&m_hDevice);
-		}
+	if (S_OK == hr && !bTryToReset) {
+		hr = m_pD3DDeviceManager->ResetDevice(m_pD3DDevEx, m_nResetTocken);
 	}
 
 	return hr;
@@ -199,6 +187,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 		return FALSE;
 	}
 
+	m_frame = 0;
 	m_SrcSamples.Clear();
 	m_DXVA2Samples.clear();
 	m_pDXVA2_VP.Release();
@@ -482,6 +471,15 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				return E_FAIL;
 			}
 
+#ifdef _DEBUG
+			if (m_frame < 2) {
+				CComPtr<IDirect3DDevice9> pD3DDev;
+				pSurface->GetDevice(&pD3DDev);
+				if (pD3DDev != m_pD3DDevEx) {
+					DLog("WARNING: Different adapters for decoding and processing! StretchRect will fail.");
+				}
+			}
+#endif
 			m_SrcSamples.Next();
 			hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, m_SrcSamples.Get().pSrcSurface, nullptr, D3DTEXF_NONE);
 			if (FAILED(hr)) {
@@ -599,6 +597,19 @@ HRESULT CDX9VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
 	pFrameInfo->D3dFormat = m_srcD3DFormat;
 	pFrameInfo->ExtFormat.value = m_srcExFmt.value;
 
+	return S_OK;
+}
+
+HRESULT CDX9VideoProcessor::GetAdapterDecription(CStringW& str)
+{
+	str = m_strAdapterDescription;
+	return S_OK;
+}
+
+HRESULT CDX9VideoProcessor::GetDXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCaps)
+{
+	CheckPointer(pDXVA2VPCaps, E_POINTER);
+	memcpy(pDXVA2VPCaps, &m_DXVA2VPcaps, sizeof(DXVA2_VideoProcessorCaps));
 	return S_OK;
 }
 
