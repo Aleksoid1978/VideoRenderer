@@ -107,6 +107,7 @@ private:
 	VideoSurfaceBuffer m_SrcSamples;
 	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
 	DXVA2_SampleFormat m_CurrentSampleFmt = DXVA2_SampleProgressiveFrame;
+	DXVA2_VideoProcessBltParams m_BltParams = {};
 
 	CRect m_videoRect;
 	CRect m_windowRect;

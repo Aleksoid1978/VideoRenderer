@@ -375,6 +375,46 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 			m_DXVA2ProcAmpValues[i] = range.DefaultValue;
 		}
 	}
+	// Query Noise Filter ranges.
+	DXVA2_Fixed32 NFilterValues[6] = {};
+	if (m_DXVA2VPcaps.VideoProcessorOperations & DXVA2_VideoProcess_NoiseFilter) {
+		for (i = 0; i < 6u; i++) {
+			if (S_OK == m_pDXVA2_VPService->GetFilterPropertyRange(devguid, &videodesc, D3DFMT_X8R8G8B8, DXVA2_NoiseFilterLumaLevel + i, &range)) {
+				NFilterValues[i] = range.DefaultValue;
+			}
+		}
+	}
+	// Query Detail Filter ranges.
+	DXVA2_Fixed32 DFilterValues[6] = {};
+	if (m_DXVA2VPcaps.VideoProcessorOperations & DXVA2_VideoProcess_DetailFilter) {
+		for (i = 0; i < 6u; i++) {
+			if (S_OK == m_pDXVA2_VPService->GetFilterPropertyRange(devguid, &videodesc, D3DFMT_X8R8G8B8, DXVA2_DetailFilterLumaLevel + i, &range)) {
+				DFilterValues[i] = range.DefaultValue;
+			}
+		}
+	}
+
+	ZeroMemory(&m_BltParams, sizeof(m_BltParams));
+	m_BltParams.BackgroundColor              = { 128 * 0x100, 128 * 0x100, 16 * 0x100, 0xFFFF }; // black
+	//m_BltParams.DestFormat.value           = 0; // output to RGB
+	m_BltParams.DestFormat.SampleFormat      = DXVA2_SampleProgressiveFrame; // output to progressive RGB
+	m_BltParams.ProcAmpValues.Brightness     = m_DXVA2ProcAmpValues[0];
+	m_BltParams.ProcAmpValues.Contrast       = m_DXVA2ProcAmpValues[1];
+	m_BltParams.ProcAmpValues.Hue            = m_DXVA2ProcAmpValues[2];
+	m_BltParams.ProcAmpValues.Saturation     = m_DXVA2ProcAmpValues[3];
+	m_BltParams.Alpha                        = DXVA2_Fixed32OpaqueAlpha();
+	m_BltParams.NoiseFilterLuma.Level        = NFilterValues[0];
+	m_BltParams.NoiseFilterLuma.Threshold    = NFilterValues[1];
+	m_BltParams.NoiseFilterLuma.Radius       = NFilterValues[2];
+	m_BltParams.NoiseFilterChroma.Level      = NFilterValues[3];
+	m_BltParams.NoiseFilterChroma.Threshold  = NFilterValues[4];
+	m_BltParams.NoiseFilterChroma.Radius     = NFilterValues[5];
+	m_BltParams.DetailFilterLuma.Level       = DFilterValues[0];
+	m_BltParams.DetailFilterLuma.Threshold   = DFilterValues[1];
+	m_BltParams.DetailFilterLuma.Radius      = DFilterValues[2];
+	m_BltParams.DetailFilterChroma.Level     = DFilterValues[3];
+	m_BltParams.DetailFilterChroma.Threshold = DFilterValues[4];
+	m_BltParams.DetailFilterChroma.Radius    = DFilterValues[5];
 
 	// Finally create a video processor device.
 	hr = m_pDXVA2_VPService->CreateVideoProcessor(devguid, &videodesc, D3DFMT_X8R8G8B8, 0, &m_pDXVA2_VP);
@@ -666,31 +706,17 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 	ClipToSurface(pRenderTarget, rSrcRect, rDstRect);
 
 	// Initialize VPBlt parameters.
-	DXVA2_VideoProcessBltParams blt = {};
-	blt.TargetFrame = m_SrcSamples.Get().Start; // Hmm
-	blt.TargetRect = rDstRect;
-	// DXVA2_VideoProcess_Constriction
-	blt.ConstrictionSize.cx = rDstRect.Width();
-	blt.ConstrictionSize.cy = rDstRect.Height();
-	blt.BackgroundColor = { 128 * 0x100, 128 * 0x100, 16 * 0x100, 0xFFFF }; // black
-
-	// DXVA2_VideoProcess_YUV2RGBExtended
-	//blt.DestFormat.value = 0; // output to RGB
-
-	blt.DestFormat.SampleFormat = DXVA2_SampleProgressiveFrame; // output to progressive RGB
-	blt.ProcAmpValues.Brightness = m_DXVA2ProcAmpValues[0];
-	blt.ProcAmpValues.Contrast = m_DXVA2ProcAmpValues[1];
-	blt.ProcAmpValues.Hue = m_DXVA2ProcAmpValues[2];
-	blt.ProcAmpValues.Saturation = m_DXVA2ProcAmpValues[3];
-	// DXVA2_VideoProcess_AlphaBlend
-	blt.Alpha = DXVA2_Fixed32OpaqueAlpha();
+	m_BltParams.TargetFrame         = m_SrcSamples.Get().Start;
+	m_BltParams.TargetRect          = rDstRect;
+	m_BltParams.ConstrictionSize.cx = rDstRect.Width();
+	m_BltParams.ConstrictionSize.cy = rDstRect.Height();
 
 	// Initialize main stream video samples
 	for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
 		auto & SrcSample = m_SrcSamples.GetAt(i);
 
 		m_DXVA2Samples[i].Start = SrcSample.Start;
-		m_DXVA2Samples[i].End = SrcSample.End;
+		m_DXVA2Samples[i].End   = SrcSample.End;
 		m_DXVA2Samples[i].SampleFormat.SampleFormat = SrcSample.SampleFormat;
 		m_DXVA2Samples[i].SrcSurface = SrcSample.pSrcSurface;
 		m_DXVA2Samples[i].SrcRect = rSrcRect;
@@ -712,7 +738,7 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 	}
 #endif
 
-	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &blt, m_DXVA2Samples.data(), m_DXVA2Samples.size(), nullptr);
+	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &m_BltParams, m_DXVA2Samples.data(), m_DXVA2Samples.size(), nullptr);
 	if (FAILED(hr)) {
 		DLog(L"CDX9VideoProcessor::ProcessDXVA2 : VideoProcessBlt() failed with error 0x%08x", hr);
 	}
