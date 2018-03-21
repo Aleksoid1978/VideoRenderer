@@ -187,6 +187,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 		return FALSE;
 	}
 
+	m_frame = 0;
 	m_SrcSamples.Clear();
 	m_DXVA2Samples.clear();
 	m_pDXVA2_VP.Release();
