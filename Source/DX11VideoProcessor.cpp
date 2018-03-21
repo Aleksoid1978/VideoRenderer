@@ -103,10 +103,6 @@ HRESULT CDX11VideoProcessor::Init()
 void CDX11VideoProcessor::ClearD3D11()
 {
 	m_pSrcTexture2D_RGB.Release();
-	if (m_sharedHandle) {
-		CloseHandle(m_sharedHandle);
-		m_sharedHandle = nullptr;
-	}
 	m_pSrcSurface9.Release();
 
 	m_pSrcTexture2D.Release();
@@ -324,10 +320,6 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 	HRESULT hr = S_OK;
 
 	m_pSrcTexture2D_RGB.Release();
-	if (m_sharedHandle) {
-		CloseHandle(m_sharedHandle);
-		m_sharedHandle = nullptr;
-	}
 	m_pSrcSurface9.Release();
 
 	m_pSrcTexture2D.Release();
