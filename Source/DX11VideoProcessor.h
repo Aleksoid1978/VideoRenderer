@@ -71,7 +71,6 @@ private:
 	UINT m_D3D11_Src_Width = 0;
 	UINT m_D3D11_Src_Height = 0;
 
-	CRect m_nativeVideoRect;
 	CRect m_videoRect;
 	CRect m_windowRect;
 

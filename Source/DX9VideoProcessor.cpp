@@ -392,7 +392,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 {
 	if (pmt->formattype == FORMAT_VideoInfo2) {
 		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
-		m_nativeVideoRect = m_srcRect = vih2->rcSource;
+		m_srcRect = vih2->rcSource;
 		m_trgRect = vih2->rcTarget;
 		m_srcWidth = vih2->bmiHeader.biWidth;
 		m_srcHeight = labs(vih2->bmiHeader.biHeight);
@@ -661,7 +661,7 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 	HRESULT hr = S_OK;
 	ASSERT(m_SrcSamples.Size() == m_DXVA2Samples.size());
 
-	CRect rSrcRect(m_nativeVideoRect);
+	CRect rSrcRect(m_srcRect);
 	CRect rDstRect(m_videoRect);
 	ClipToSurface(pRenderTarget, rSrcRect, rDstRect);
 

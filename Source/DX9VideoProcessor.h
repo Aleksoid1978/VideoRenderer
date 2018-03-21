@@ -108,7 +108,6 @@ private:
 	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
 	DXVA2_SampleFormat m_CurrentSampleFmt = DXVA2_SampleProgressiveFrame;
 
-	CRect m_nativeVideoRect;
 	CRect m_videoRect;
 	CRect m_windowRect;
 

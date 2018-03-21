@@ -262,7 +262,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	if (m_mt.formattype == FORMAT_VideoInfo2) {
 		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)m_mt.pbFormat;
-		m_nativeVideoRect = m_srcRect = vih2->rcSource;
+		m_srcRect = vih2->rcSource;
 		m_trgRect = vih2->rcTarget;
 		m_srcWidth = vih2->bmiHeader.biWidth;
 		m_srcHeight = labs(vih2->bmiHeader.biHeight);
@@ -611,7 +611,7 @@ HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget)
 		return S_OK;
 	}
 
-	CRect rSrcRect(m_nativeVideoRect);
+	CRect rSrcRect(m_srcRect);
 	CRect rDstRect(m_videoRect);
 
 	ClipToTexture(pRenderTarget, rSrcRect, rDstRect, m_windowRect);
