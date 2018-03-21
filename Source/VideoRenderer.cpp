@@ -20,7 +20,6 @@
 
 #include "stdafx.h"
 #include "VideoRenderer.h"
-
 #include <algorithm>
 #include <vector>
 #include <VersionHelpers.h>
@@ -304,7 +303,7 @@ STDMETHODIMP CMpcVideoRenderer::Stop()
 STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject)
 {
 	if (guidService == MR_VIDEO_ACCELERATION_SERVICE) {
-		if (riid == __uuidof(IDirect3DDeviceManager9) && m_DX9_VP.GetDeviceManager9()) {
+		if (riid == __uuidof(IDirect3DDeviceManager9)) {
 			return m_DX9_VP.GetDeviceManager9()->QueryInterface(riid, ppvObject);
 		}
 		/*
@@ -361,11 +360,9 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 {
 	if (m_hWnd != (HWND)Owner) {
 		m_hWnd = (HWND)Owner;
-		HRESULT hr = S_OK;
-		if (m_bUsedD3D11) {
+		HRESULT hr = m_DX9_VP.Init(m_hWnd);
+		if (S_OK == hr && m_bUsedD3D11) {
 			hr = m_DX11_VP.InitSwapChain(m_hWnd);
-		} else {
-			hr = m_DX9_VP.Init(m_hWnd);
 		}
 		return hr;
 	}

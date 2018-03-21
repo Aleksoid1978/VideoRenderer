@@ -75,7 +75,6 @@ private:
 	CComPtr<IDirect3DDevice9Ex>      m_pD3DDevEx;
 	CComPtr<IDirect3DDeviceManager9> m_pD3DDeviceManager;
 	UINT    m_nResetTocken = 0;
-	HANDLE  m_hDevice = nullptr;
 	DWORD   m_VendorId = 0;
 	CString m_strAdapterDescription;
 

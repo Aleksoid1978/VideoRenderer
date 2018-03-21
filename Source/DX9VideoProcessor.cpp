@@ -19,7 +19,6 @@
 */
 
 #include "stdafx.h"
-
 #include <vector>
 #include <d3d9.h>
 #include <dvdmedia.h>
@@ -81,13 +80,7 @@ CDX9VideoProcessor::CDX9VideoProcessor()
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
 {
-	if (m_pD3DDeviceManager) {
-		if (m_hDevice != INVALID_HANDLE_VALUE) {
-			m_pD3DDeviceManager->CloseDeviceHandle(m_hDevice);
-			m_hDevice = INVALID_HANDLE_VALUE;
-		}
-		m_pD3DDeviceManager.Release();
-	}
+	m_pD3DDeviceManager.Release();
 	m_nResetTocken = 0;
 
 	m_pDXVA2_VP.Release();
@@ -170,13 +163,8 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd)
 		hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
 	}
 
-	if (!m_hDevice) {
-		if (S_OK == hr) {
-			hr = m_pD3DDeviceManager->ResetDevice(m_pD3DDevEx, m_nResetTocken);
-		}
-		if (S_OK == hr) {
-			hr = m_pD3DDeviceManager->OpenDeviceHandle(&m_hDevice);
-		}
+	if (S_OK == hr && !bTryToReset) {
+		hr = m_pD3DDeviceManager->ResetDevice(m_pD3DDevEx, m_nResetTocken);
 	}
 
 	return hr;
