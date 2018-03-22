@@ -569,6 +569,14 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 	m_SrcSamples.Get().End = end_100ns;
 	m_SrcSamples.Get().SampleFormat = m_CurrentSampleFmt;
 
+	for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
+		auto & SrcSample = m_SrcSamples.GetAt(i);
+		m_DXVA2Samples[i].Start = SrcSample.Start;
+		m_DXVA2Samples[i].End   = SrcSample.End;
+		m_DXVA2Samples[i].SampleFormat.SampleFormat = SrcSample.SampleFormat;
+		m_DXVA2Samples[i].SrcSurface = SrcSample.pSrcSurface;
+	}
+
 	m_frame++;
 
 	return hr;
@@ -603,10 +611,18 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState)
 void CDX9VideoProcessor::StopInputBuffer()
 {
 	for (unsigned i = 0; i < m_SrcSamples.Size(); i++) {
-		m_SrcSamples.GetAt(i).SampleFormat = DXVA2_SampleUnknown;
+		auto & SrcSample = m_SrcSamples.GetAt(i);
+		SrcSample.Start = 0;
+		SrcSample.End   = 0;
+		SrcSample.SampleFormat = DXVA2_SampleUnknown;
 		if (m_VendorId == PCIV_AMDATI) {
-			m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(i).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+			m_pD3DDevEx->ColorFill(SrcSample.pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
 		}
+	}
+	for (auto& DXVA2Sample : m_DXVA2Samples) {
+		DXVA2Sample.Start = 0;
+		DXVA2Sample.End   = 0;
+		DXVA2Sample.SampleFormat.SampleFormat = DXVA2_SampleUnknown;
 	}
 }
 
@@ -718,29 +734,9 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 	// Initialize main stream video samples
 	for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
 		auto & SrcSample = m_SrcSamples.GetAt(i);
-
-		m_DXVA2Samples[i].Start = SrcSample.Start;
-		m_DXVA2Samples[i].End   = SrcSample.End;
-		m_DXVA2Samples[i].SampleFormat.SampleFormat = SrcSample.SampleFormat;
-		m_DXVA2Samples[i].SrcSurface = SrcSample.pSrcSurface;
 		m_DXVA2Samples[i].SrcRect = rSrcRect;
 		m_DXVA2Samples[i].DstRect = rDstRect;
 	}
-
-#ifdef _DEBUG
-	if (m_frame < 5) {
-		CStringW dbgstr = L"DXVA2Samples:";
-		for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
-			auto& sample = m_DXVA2Samples[i];
-			dbgstr.AppendFormat(L"\n%u: samplefmt = %u, sampledata = %u, surface = %s, srcrect = [%d, %d, %d, %d], dstrect = [%d, %d, %d, %d],  start = %I64d, end = %I64d",
-				i, sample.SampleFormat.SampleFormat, sample.SampleData, sample.SrcSurface ? L"ok" : L"invalid",
-				sample.SrcRect.left, sample.SrcRect.top, sample.SrcRect.right, sample.SrcRect.bottom,
-				sample.DstRect.left, sample.DstRect.top, sample.DstRect.right, sample.DstRect.bottom,
-				sample.Start, sample.End);
-		}
-		DLog(dbgstr);
-	}
-#endif
 
 	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &m_BltParams, m_DXVA2Samples.data(), m_DXVA2Samples.size(), nullptr);
 	if (FAILED(hr)) {
