@@ -364,9 +364,14 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 {
 	if (m_hWnd != (HWND)Owner) {
 		m_hWnd = (HWND)Owner;
-		HRESULT hr = m_DX9_VP.Init(m_hWnd);
+		bool bChangeDevice = false;
+		HRESULT hr = m_DX9_VP.Init(m_hWnd, &bChangeDevice);
 		if (S_OK == hr && m_bUsedD3D11) {
 			hr = m_DX11_VP.InitSwapChain(m_hWnd);
+		}
+
+		if (bChangeDevice) {
+			OnDisplayChange();
 		}
 		return hr;
 	}

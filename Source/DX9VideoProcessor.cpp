@@ -96,7 +96,7 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	}
 }
 
-HRESULT CDX9VideoProcessor::Init(const HWND hwnd)
+HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
 {
 	CheckPointer(m_pD3DEx, E_FAIL);
 
@@ -165,6 +165,10 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd)
 
 	if (S_OK == hr && !bTryToReset) {
 		hr = m_pD3DDeviceManager->ResetDevice(m_pD3DDevEx, m_nResetTocken);
+	}
+
+	if (pChangeDevice) {
+		*pChangeDevice = !bTryToReset;
 	}
 
 	return hr;
