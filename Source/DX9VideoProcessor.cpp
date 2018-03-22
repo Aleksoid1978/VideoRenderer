@@ -123,7 +123,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 
 	m_d3dpp.Windowed = TRUE;
 	m_d3dpp.hDeviceWindow = m_hWnd;
-	m_d3dpp.SwapEffect = D3DSWAPEFFECT_COPY;
+	m_d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
 	m_d3dpp.Flags = D3DPRESENTFLAG_VIDEO;
 	m_d3dpp.BackBufferCount = 1;
 	m_d3dpp.BackBufferWidth = m_DisplayMode.Width;
