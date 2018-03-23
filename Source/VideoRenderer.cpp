@@ -149,7 +149,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			m_bOptionUseD3D11 = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_DoubleFrateDeint, dw)) {
-			m_bOptionDoubleFrateDeint = !!dw;
+			m_bOptionDeintDouble = !!dw;
 		}
 	}
 
@@ -242,7 +242,7 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	if (m_bUsedD3D11) {
 		return m_DX11_VP.Render(m_filterState);
 	} else {
-		return m_DX9_VP.Render(m_filterState);
+		return m_DX9_VP.Render(m_filterState, m_bOptionDeintDouble);
 	}
 }
 
@@ -462,14 +462,14 @@ STDMETHODIMP CMpcVideoRenderer::SetOptionUseD3D11(bool value)
 	return S_OK;
 }
 
-STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionDoubleFrateDeint()
+STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionDeintDouble()
 {
-	return m_bOptionDoubleFrateDeint;
+	return m_bOptionDeintDouble;
 }
 
-STDMETHODIMP CMpcVideoRenderer::SetOptionDoubleFrateDeint(bool value)
+STDMETHODIMP CMpcVideoRenderer::SetOptionDeintDouble(bool value)
 {
-	m_bOptionDoubleFrateDeint = value;
+	m_bOptionDeintDouble = value;
 	return S_OK;
 }
 
@@ -478,7 +478,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 	CRegKey key;
 	if (ERROR_SUCCESS == key.Create(HKEY_CURRENT_USER, OPT_REGKEY_VIDEORENDERER)) {
 		key.SetDWORDValue(OPT_UseD3D11, m_bOptionUseD3D11);
-		key.SetDWORDValue(OPT_DoubleFrateDeint, m_bOptionDoubleFrateDeint);
+		key.SetDWORDValue(OPT_DoubleFrateDeint, m_bOptionDeintDouble);
 	}
 
 	return S_OK;

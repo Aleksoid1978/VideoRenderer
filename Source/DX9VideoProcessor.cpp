@@ -582,7 +582,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 	return hr;
 }
 
-HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState)
+HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState, bool deintDouble)
 {
 	if (m_SrcSamples.Empty()) return E_POINTER;
 
@@ -595,7 +595,7 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState)
 	m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
 
 	if (filterState == State_Running) {
-		hr = ProcessDXVA2(pBackBuffer);
+		hr = ProcessDXVA2(pBackBuffer, false);
 	}
 
 	hr = m_pD3DDevEx->EndScene();
@@ -604,6 +604,27 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState)
 	const CRect rDstPri(m_windowRect);
 
 	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
+
+	if (deintDouble && m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
+		hr = m_pD3DDevEx->BeginScene();
+
+		CComPtr<IDirect3DSurface9> pBackBuffer;
+		hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+
+		hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
+		m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
+
+		if (filterState == State_Running) {
+			hr = ProcessDXVA2(pBackBuffer, true);
+		}
+
+		hr = m_pD3DDevEx->EndScene();
+
+		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
+		const CRect rDstPri(m_windowRect);
+
+		hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
+	}
 
 	return hr;
 }
@@ -711,7 +732,7 @@ static bool ClipToSurface(IDirect3DSurface9* pSurface, CRect& s, CRect& d)
 	return true;
 }
 
-HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
+HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, bool second)
 {
 	// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx
 	if (m_videoRect.IsRectEmpty()) {
@@ -721,21 +742,27 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget)
 	HRESULT hr = S_OK;
 	ASSERT(m_SrcSamples.Size() == m_DXVA2Samples.size());
 
-	CRect rSrcRect(m_srcRect);
-	CRect rDstRect(m_videoRect);
-	ClipToSurface(pRenderTarget, rSrcRect, rDstRect);
+	if (second) {
+		m_BltParams.TargetFrame = (m_SrcSamples.Get().Start + m_SrcSamples.Get().End) / 2;
+	}
+	else {
+		CRect rSrcRect(m_srcRect);
+		CRect rDstRect(m_videoRect);
+		ClipToSurface(pRenderTarget, rSrcRect, rDstRect);
 
-	// Initialize VPBlt parameters.
-	m_BltParams.TargetFrame         = m_SrcSamples.Get().Start;
-	m_BltParams.TargetRect          = rDstRect;
-	m_BltParams.ConstrictionSize.cx = rDstRect.Width();
-	m_BltParams.ConstrictionSize.cy = rDstRect.Height();
+		// Initialize VPBlt parameters
 
-	// Initialize main stream video samples
-	for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
-		auto & SrcSample = m_SrcSamples.GetAt(i);
-		m_DXVA2Samples[i].SrcRect = rSrcRect;
-		m_DXVA2Samples[i].DstRect = rDstRect;
+		m_BltParams.TargetFrame = m_SrcSamples.Get().Start;
+		m_BltParams.TargetRect = rDstRect;
+		m_BltParams.ConstrictionSize.cx = rDstRect.Width();
+		m_BltParams.ConstrictionSize.cy = rDstRect.Height();
+
+		// Initialize main stream video samples
+		for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
+			auto & SrcSample = m_SrcSamples.GetAt(i);
+			m_DXVA2Samples[i].SrcRect = rSrcRect;
+			m_DXVA2Samples[i].DstRect = rDstRect;
+		}
 	}
 
 	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &m_BltParams, m_DXVA2Samples.data(), m_DXVA2Samples.size(), nullptr);
