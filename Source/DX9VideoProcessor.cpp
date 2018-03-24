@@ -582,7 +582,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 	return hr;
 }
 
-HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState, bool deintDouble)
+HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState, const bool deintDouble/* = false*/)
 {
 	if (m_SrcSamples.Empty()) return E_POINTER;
 
@@ -732,7 +732,7 @@ static bool ClipToSurface(IDirect3DSurface9* pSurface, CRect& s, CRect& d)
 	return true;
 }
 
-HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, bool second)
+HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const bool second)
 {
 	// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx
 	if (m_videoRect.IsRectEmpty()) {

@@ -94,7 +94,7 @@ public:
 	HRESULT Initialize(const UINT width, const UINT height, const DXGI_FORMAT dxgiFormat);
 
 	HRESULT CopySample(IMediaSample* pSample);
-	HRESULT Render(const FILTER_STATE filterState);
+	HRESULT Render(const FILTER_STATE filterState, const bool deintDouble = false);
 	void StopInputBuffer() {}
 
 	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
@@ -106,5 +106,5 @@ public:
 	HRESULT GetAdapterDecription(CStringW& str);
 
 private:
-	HRESULT ProcessDX11(ID3D11Texture2D* pRenderTarget);
+	HRESULT ProcessDX11(ID3D11Texture2D* pRenderTarget, const bool second);
 };

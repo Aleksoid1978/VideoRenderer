@@ -240,7 +240,7 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	}
 
 	if (m_bUsedD3D11) {
-		return m_DX11_VP.Render(m_filterState);
+		return m_DX11_VP.Render(m_filterState, m_bOptionDeintDouble);
 	} else {
 		return m_DX9_VP.Render(m_filterState, m_bOptionDeintDouble);
 	}

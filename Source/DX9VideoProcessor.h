@@ -130,7 +130,7 @@ private:
 public:
 	BOOL InitMediaType(const CMediaType* pmt);
 	HRESULT CopySample(IMediaSample* pSample);
-	HRESULT Render(const FILTER_STATE filterState, bool deintDouble = false);
+	HRESULT Render(const FILTER_STATE filterState, const bool deintDouble = false);
 	void StopInputBuffer();
 
 	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
@@ -144,5 +144,5 @@ public:
 	HRESULT GetDXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCaps);
 
 private:
-	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, bool second);
+	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const bool second);
 };
