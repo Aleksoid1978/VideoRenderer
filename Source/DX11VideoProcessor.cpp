@@ -213,34 +213,36 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd)
+HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, UINT height/* = 0*/)
 {
 	CheckPointer(hwnd, E_FAIL);
 	CheckPointer(m_pVideoDevice, E_FAIL);
 
 	HRESULT hr = S_OK;
 
+	if (!width || !height) {
+		RECT rc;
+		GetClientRect(hwnd, &rc);
+		width = rc.right - rc.left;
+		height = rc.bottom - rc.top;
+	}
+
 	if (m_hWnd && m_pDXGISwapChain1) {
 		const HMONITOR hCurMonitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 		const HMONITOR hNewMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
 		if (hCurMonitor == hNewMonitor) {
-			return hr;
+			hr = m_pDXGISwapChain1->ResizeBuffers(1, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+			if (SUCCEEDED(hr)) {
+				return hr;
+			}
 		}
 	}
 
 	m_pDXGISwapChain1.Release();
 
-	MONITORINFOEX monitorInfo = {};
-	monitorInfo.cbSize = sizeof(MONITORINFOEX);
-	GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST), &monitorInfo);
-	DEVMODE devMode = {};
-	devMode.dmSize = sizeof(DEVMODE);
-	devMode.dmDriverExtra = 0;
-	EnumDisplaySettingsW(monitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
-
 	DXGI_SWAP_CHAIN_DESC1 desc = {};
-	desc.Width = devMode.dmPelsWidth;
-	desc.Height = devMode.dmPelsHeight;
+	desc.Width = width;
+	desc.Height = height;
 	desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
@@ -565,7 +567,7 @@ HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState, const bool d
 	return hr;
 }
 
-static bool ClipToTexture(ID3D11Texture2D* pTexture, CRect& s, CRect& d, const CRect& windowRect)
+static bool ClipToTexture(ID3D11Texture2D* pTexture, CRect& s, CRect& d)
 {
 	D3D11_TEXTURE2D_DESC desc = {};
 	pTexture->GetDesc(&desc);
@@ -575,7 +577,7 @@ static bool ClipToTexture(ID3D11Texture2D* pTexture, CRect& s, CRect& d, const C
 
 	const int w = desc.Width, h = desc.Height;
 	const int sw = s.Width(), sh = s.Height();
-	int dw = d.Width(), dh = d.Height();
+	const int dw = d.Width(), dh = d.Height();
 
 	if (d.left >= w || d.right < 0 || d.top >= h || d.bottom < 0
 			|| sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0) {
@@ -584,12 +586,6 @@ static bool ClipToTexture(ID3D11Texture2D* pTexture, CRect& s, CRect& d, const C
 		return true;
 	}
 
-	d.left = MulDiv(d.left, w, windowRect.Width());
-	d.right = MulDiv(d.right, w, windowRect.Width());
-	d.top = MulDiv(d.top, h, windowRect.Height());
-	d.bottom = MulDiv(d.bottom, h, windowRect.Height());
-
-	dw = d.Width(), dh = d.Height();
 	if (d.right > w) {
 		s.right -= (d.right - w) * sw / dw;
 		d.right = w;
@@ -620,7 +616,7 @@ HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget, const b
 		CRect rSrcRect(m_srcRect);
 		CRect rDstRect(m_videoRect);
 
-		ClipToTexture(pRenderTarget, rSrcRect, rDstRect, m_windowRect);
+		ClipToTexture(pRenderTarget, rSrcRect, rDstRect);
 
 		// input format
 		m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, m_SampleFormat);
@@ -636,7 +632,7 @@ HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget, const b
 
 		// Dest rect
 		m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, rDstRect);
-		//m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, TRUE, m_windowRect);
+		m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, TRUE, m_windowRect);
 
 		// Output background color (black)
 		static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f};

@@ -391,6 +391,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 
 	std::unique_lock<std::mutex> lock(m_mutex);
 	if (m_bUsedD3D11) {
+		m_DX11_VP.InitSwapChain(m_hWnd, windowRect.Width(), windowRect.Height());
 		m_DX11_VP.SetWindowRect(windowRect);
 		m_DX11_VP.Render(m_filterState);
 	} else {
