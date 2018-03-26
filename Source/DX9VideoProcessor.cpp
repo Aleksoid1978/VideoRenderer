@@ -52,10 +52,7 @@ CDX9VideoProcessor::CDX9VideoProcessor()
 	if (!m_hD3D9Lib) {
 		m_hD3D9Lib = LoadLibraryW(L"d3d9.dll");
 	}
-	if (!m_hDxva2Lib) {
-		m_hDxva2Lib = LoadLibraryW(L"dxva2.dll");
-	}
-	if (!m_hD3D9Lib || !m_hDxva2Lib) {
+	if (!m_hD3D9Lib) {
 		return;
 	}
 
@@ -70,9 +67,7 @@ CDX9VideoProcessor::CDX9VideoProcessor()
 		return;
 	}
 
-	HRESULT(WINAPI *pfnDXVA2CreateDirect3DDeviceManager9)(UINT* pResetToken, IDirect3DDeviceManager9** ppDeviceManager);
-	(FARPROC &)pfnDXVA2CreateDirect3DDeviceManager9 = GetProcAddress(m_hDxva2Lib, "DXVA2CreateDirect3DDeviceManager9");
-	pfnDXVA2CreateDirect3DDeviceManager9(&m_nResetTocken, &m_pD3DDeviceManager);
+	DXVA2CreateDirect3DDeviceManager9(&m_nResetTocken, &m_pD3DDeviceManager);
 	if (!m_pD3DDeviceManager) {
 		m_pD3DEx.Release();
 	}
@@ -88,9 +83,6 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	m_pD3DDevEx.Release();
 	m_pD3DEx.Release();
 
-	if (m_hDxva2Lib) {
-		FreeLibrary(m_hDxva2Lib);
-	}
 	if (m_hD3D9Lib) {
 		FreeLibrary(m_hD3D9Lib);
 	}
@@ -187,9 +179,6 @@ BOOL CDX9VideoProcessor::CheckInput(const D3DFORMAT d3dformat, const UINT width,
 BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height)
 {
 	DLog("CDX9VideoProcessor::InitializeDXVA2VP: begin");
-	if (!m_hDxva2Lib) {
-		return FALSE;
-	}
 
 	m_frame = 0;
 	m_SrcSamples.Clear();
@@ -198,15 +187,8 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 
 	HRESULT hr = S_OK;
 	if (!m_pDXVA2_VPService) {
-		HRESULT(WINAPI *pfnDXVA2CreateVideoService)(IDirect3DDevice9* pDD, REFIID riid, void** ppService);
-		(FARPROC &)pfnDXVA2CreateVideoService = GetProcAddress(m_hDxva2Lib, "DXVA2CreateVideoService");
-		if (!pfnDXVA2CreateVideoService) {
-			DLog("CDX9VideoProcessor::InitializeDXVA2VP : DXVA2CreateVideoService() not found");
-			return FALSE;
-		}
-
 		// Create DXVA2 Video Processor Service.
-		hr = pfnDXVA2CreateVideoService(m_pD3DDevEx, IID_IDirectXVideoProcessorService, (VOID**)&m_pDXVA2_VPService);
+		hr = DXVA2CreateVideoService(m_pD3DDevEx, IID_IDirectXVideoProcessorService, (VOID**)&m_pDXVA2_VPService);
 		if (FAILED(hr)) {
 			DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : DXVA2CreateVideoService() failed with error 0x%08x", hr);
 			return FALSE;
