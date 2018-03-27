@@ -71,6 +71,9 @@ CDX9VideoProcessor::CDX9VideoProcessor()
 	if (!m_pD3DDeviceManager) {
 		m_pD3DEx.Release();
 	}
+
+	// GDI+ handling
+	Gdiplus::GdiplusStartup(&m_gdiplusToken, &m_gdiplusStartupInput, nullptr);
 }
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
@@ -86,6 +89,9 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	if (m_hD3D9Lib) {
 		FreeLibrary(m_hD3D9Lib);
 	}
+
+	// GDI+ handling
+	Gdiplus::GdiplusShutdown(m_gdiplusToken);
 }
 
 HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
@@ -161,6 +167,12 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 
 	if (pChangeDevice) {
 		*pChangeDevice = !bTryToReset;
+	}
+
+	m_pMemSurface.Release();
+	m_pOSDTexture.Release();
+	if (S_OK == m_pD3DDevEx->CreateTexture(256, 64, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_pOSDTexture, nullptr)) {
+		m_pD3DDevEx->CreateOffscreenPlainSurface(256, 64, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &m_pMemSurface, nullptr);
 	}
 
 	return hr;
@@ -578,6 +590,10 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState, const bool de
 
 	if (filterState == State_Running) {
 		hr = ProcessDXVA2(pBackBuffer, false);
+		if (S_OK == hr) {
+			DrawOSD();
+			HRESULT hr2 = AlphaBlt(CRect(0, 0, 256, 64), CRect(10, 10, 256 + 10, 64 + 10), m_pOSDTexture);
+		}
 	}
 
 	hr = m_pD3DDevEx->EndScene();
@@ -598,6 +614,10 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState, const bool de
 
 		if (filterState == State_Running) {
 			hr = ProcessDXVA2(pBackBuffer, true);
+			if (S_OK == hr) {
+				DrawOSD();
+				HRESULT hr2 = AlphaBlt(CRect(0, 0, 256, 64), CRect(10, 10, 256 + 10, 64 + 10), m_pOSDTexture);
+			}
 		}
 
 		hr = m_pD3DDevEx->EndScene();
@@ -750,6 +770,126 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &m_BltParams, m_DXVA2Samples.data(), m_DXVA2Samples.size(), nullptr);
 	if (FAILED(hr)) {
 		DLog(L"CDX9VideoProcessor::ProcessDXVA2 : VideoProcessBlt() failed with error 0x%08x", hr);
+	}
+
+	return hr;
+}
+
+HRESULT CDX9VideoProcessor::AlphaBlt(RECT* pSrc, RECT* pDst, IDirect3DTexture9* pTexture)
+{
+	if (!pSrc || !pDst) {
+		return E_POINTER;
+	}
+
+	CRect src(*pSrc), dst(*pDst);
+
+	HRESULT hr;
+
+	D3DSURFACE_DESC d3dsd;
+	if (FAILED(pTexture->GetLevelDesc(0, &d3dsd))) {
+		return E_FAIL;
+	}
+
+	float w = (float)d3dsd.Width;
+	float h = (float)d3dsd.Height;
+
+	struct {
+		float x, y, z, rhw;
+		float tu, tv;
+	}
+	pVertices[] = {
+		{ (float)dst.left, (float)dst.top, 0.5f, 2.0f, (float)src.left / w, (float)src.top / h },
+	{ (float)dst.right, (float)dst.top, 0.5f, 2.0f, (float)src.right / w, (float)src.top / h },
+	{ (float)dst.left, (float)dst.bottom, 0.5f, 2.0f, (float)src.left / w, (float)src.bottom / h },
+	{ (float)dst.right, (float)dst.bottom, 0.5f, 2.0f, (float)src.right / w, (float)src.bottom / h },
+	};
+
+	for (unsigned i = 0; i < _countof(pVertices); i++) {
+		pVertices[i].x -= 0.5f;
+		pVertices[i].y -= 0.5f;
+	}
+
+	hr = m_pD3DDevEx->SetTexture(0, pTexture);
+
+	// GetRenderState fails for devices created with D3DCREATE_PUREDEVICE
+	// so we need to provide default values in case GetRenderState fails
+	DWORD abe, sb, db;
+	if (FAILED(m_pD3DDevEx->GetRenderState(D3DRS_ALPHABLENDENABLE, &abe)))
+		abe = FALSE;
+	if (FAILED(m_pD3DDevEx->GetRenderState(D3DRS_SRCBLEND, &sb)))
+		sb = D3DBLEND_ONE;
+	if (FAILED(m_pD3DDevEx->GetRenderState(D3DRS_DESTBLEND, &db)))
+		db = D3DBLEND_ZERO;
+
+	hr = m_pD3DDevEx->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+	hr = m_pD3DDevEx->SetRenderState(D3DRS_LIGHTING, FALSE);
+	hr = m_pD3DDevEx->SetRenderState(D3DRS_ZENABLE, FALSE);
+	hr = m_pD3DDevEx->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+	hr = m_pD3DDevEx->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE); // pre-multiplied src and ...
+	hr = m_pD3DDevEx->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_SRCALPHA); // ... inverse alpha channel for dst
+
+	hr = m_pD3DDevEx->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+	hr = m_pD3DDevEx->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+	hr = m_pD3DDevEx->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+
+	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+
+	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+
+
+	hr = m_pD3DDevEx->SetPixelShader(nullptr);
+
+	hr = m_pD3DDevEx->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX1);
+	hr = m_pD3DDevEx->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, pVertices, sizeof(pVertices[0]));
+
+	m_pD3DDevEx->SetTexture(0, nullptr);
+
+	m_pD3DDevEx->SetRenderState(D3DRS_ALPHABLENDENABLE, abe);
+	m_pD3DDevEx->SetRenderState(D3DRS_SRCBLEND, sb);
+	m_pD3DDevEx->SetRenderState(D3DRS_DESTBLEND, db);
+
+	return S_OK;
+}
+
+HRESULT CDX9VideoProcessor::DrawOSD()
+{
+	if (!m_pMemSurface) {
+		return E_ABORT;
+	}
+
+	D3DSURFACE_DESC desc = {};
+	HRESULT hr = m_pMemSurface->GetDesc(&desc);
+
+	CStringW str = L"Direct3D 9Ex";
+	
+	HDC hdc;
+	if (S_OK == m_pMemSurface->GetDC(&hdc)) {
+		using namespace Gdiplus;
+
+		Graphics   graphics(hdc);
+		FontFamily fontFamily(L"Consolas");
+		Font       font(&fontFamily, 20, FontStyleRegular, UnitPixel);
+		PointF     pointF(5.0f, 10.0f);
+		SolidBrush solidBrush(Color(255, 255, 255, 224));
+
+		Status status = Gdiplus::Ok;
+
+		status = graphics.Clear(Color(224, 0, 0, 0));
+		status = graphics.DrawString(str, -1, &font, pointF, &solidBrush);
+		graphics.Flush();
+
+		m_pMemSurface->ReleaseDC(hdc);
+	}
+	
+
+	CComPtr<IDirect3DSurface9> pOSDSurface;
+	hr = m_pOSDTexture->GetSurfaceLevel(0, &pOSDSurface);
+	if (S_OK == hr) {
+		//hr = m_pD3DDevEx->StretchRect(m_pDCSurface, nullptr, pOSDSurface, nullptr, D3DTEXF_POINT);
+		hr = m_pD3DDevEx->UpdateSurface(m_pMemSurface, nullptr, pOSDSurface, nullptr);
 	}
 
 	return hr;

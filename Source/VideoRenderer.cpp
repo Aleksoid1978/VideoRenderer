@@ -20,7 +20,6 @@
 
 #include "stdafx.h"
 #include "VideoRenderer.h"
-#include <algorithm>
 #include <vector>
 #include <VersionHelpers.h>
 #include <evr.h> // for MR_VIDEO_ACCELERATION_SERVICE, because the <mfapi.h> does not contain it

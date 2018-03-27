@@ -21,6 +21,7 @@
 #pragma once
 
 #include <atltypes.h>
+#include <gdiplus.h>
 #include "IVideoRenderer.h"
 
 struct VideoSurface {
@@ -115,6 +116,13 @@ private:
 	UINT m_D3D9_Src_Width = 0;
 	UINT m_D3D9_Src_Height = 0;
 
+	CComPtr<IDirect3DTexture9> m_pOSDTexture;
+	CComPtr<IDirect3DSurface9> m_pMemSurface;
+
+	// GDI+ handling
+	ULONG_PTR m_gdiplusToken;
+	Gdiplus::GdiplusStartupInput m_gdiplusStartupInput;
+
 public:
 	CDX9VideoProcessor();
 	~CDX9VideoProcessor();
@@ -144,4 +152,6 @@ public:
 
 private:
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const bool second);
+	HRESULT AlphaBlt(RECT* pSrc, RECT* pDst, IDirect3DTexture9* pTexture);
+	HRESULT DrawOSD();
 };

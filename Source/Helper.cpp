@@ -19,7 +19,6 @@
 */
 
 #include "stdafx.h"
-#include <algorithm>
 #include "Helper.h"
 
 const wchar_t* D3DFormatToString(D3DFORMAT format)
