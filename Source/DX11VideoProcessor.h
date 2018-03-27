@@ -27,6 +27,8 @@
 #include <strmif.h>
 #include <d3d11.h>
 #include <d3d11_1.h>
+#include <d2d1.h>
+#include <dwrite.h>
 #include "IVideoRenderer.h"
 
 class CDX11VideoProcessor
@@ -78,6 +80,10 @@ private:
 
 	DWORD m_VendorId = 0;
 	CString m_strAdapterDescription;
+
+	CComPtr<ID2D1Factory> m_pD2DFactory;
+	CComPtr<IDWriteFactory> m_pDWriteFactory;
+	CComPtr<IDWriteTextFormat> m_pTextFormat;
 
 public:
 	CDX11VideoProcessor();
