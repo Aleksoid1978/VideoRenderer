@@ -591,8 +591,7 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState, const bool de
 	if (filterState == State_Running) {
 		hr = ProcessDXVA2(pBackBuffer, false);
 		if (S_OK == hr) {
-			DrawOSD();
-			HRESULT hr2 = AlphaBlt(CRect(0, 0, 256, 64), CRect(10, 10, 256 + 10, 64 + 10), m_pOSDTexture);
+			hr = DrawOSD();
 		}
 	}
 
@@ -615,8 +614,7 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState, const bool de
 		if (filterState == State_Running) {
 			hr = ProcessDXVA2(pBackBuffer, true);
 			if (S_OK == hr) {
-				DrawOSD();
-				HRESULT hr2 = AlphaBlt(CRect(0, 0, 256, 64), CRect(10, 10, 256 + 10, 64 + 10), m_pOSDTexture);
+				hr = DrawOSD();
 			}
 		}
 
@@ -891,6 +889,8 @@ HRESULT CDX9VideoProcessor::DrawOSD()
 		//hr = m_pD3DDevEx->StretchRect(m_pDCSurface, nullptr, pOSDSurface, nullptr, D3DTEXF_POINT);
 		hr = m_pD3DDevEx->UpdateSurface(m_pMemSurface, nullptr, pOSDSurface, nullptr);
 	}
+
+	hr = AlphaBlt(CRect(0, 0, 256, 64), CRect(10, 10, 256 + 10, 64 + 10), m_pOSDTexture);
 
 	return hr;
 }

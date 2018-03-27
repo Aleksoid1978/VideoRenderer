@@ -113,4 +113,5 @@ public:
 
 private:
 	HRESULT ProcessDX11(ID3D11Texture2D* pRenderTarget, const bool second);
+	HRESULT DrawOSD(ID3D11Texture2D* pBackBuffer);
 };

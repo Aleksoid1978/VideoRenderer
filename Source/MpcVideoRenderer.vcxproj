@@ -48,7 +48,7 @@
   <ItemDefinitionGroup>
     <Link>
       <AdditionalOptions>/ignore:4049 /ignore:4217 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>Winmm.lib;dxva2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>MpcVideoRenderer.def</ModuleDefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <DelayLoadDLLs Condition="'$(Configuration)|$(Platform)'=='Debug Filter|Win32'">gdiplus.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
