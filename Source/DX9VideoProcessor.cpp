@@ -78,6 +78,9 @@ CDX9VideoProcessor::CDX9VideoProcessor()
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
 {
+	m_pMemSurface.Release();
+	m_pOSDTexture.Release();
+
 	m_pD3DDeviceManager.Release();
 	m_nResetTocken = 0;
 
