@@ -51,10 +51,7 @@
       <AdditionalDependencies>Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>MpcVideoRenderer.def</ModuleDefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <DelayLoadDLLs Condition="'$(Configuration)|$(Platform)'=='Debug Filter|Win32'">gdiplus.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
-      <DelayLoadDLLs Condition="'$(Configuration)|$(Platform)'=='Release Filter|Win32'">gdiplus.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
-      <DelayLoadDLLs Condition="'$(Configuration)|$(Platform)'=='Debug Filter|x64'">gdiplus.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
-      <DelayLoadDLLs Condition="'$(Configuration)|$(Platform)'=='Release Filter|x64'">gdiplus.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <DelayLoadDLLs>gdiplus.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

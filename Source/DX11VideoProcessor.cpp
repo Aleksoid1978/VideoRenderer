@@ -106,6 +106,9 @@ void CDX11VideoProcessor::ClearD3D11()
 	m_pDWriteFactory.Release();
 	m_pD2DFactory.Release();
 
+	m_pD2DBrush.Release();
+	m_pD2D1RenderTarget.Release();
+
 	m_pSrcTexture2D_RGB.Release();
 	m_pSrcSurface9.Release();
 
@@ -259,11 +262,12 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 
 	m_hWnd = hwnd;
 
-	HRESULT hr2 = S_OK;
 	m_pTextFormat.Release();
 	m_pDWriteFactory.Release();
 	m_pD2DFactory.Release();
-	hr2 = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
+	m_pD2DBrush.Release();
+	m_pD2D1RenderTarget.Release();
+	HRESULT hr2 = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
 	if (S_OK == hr2) {
 		hr2 = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(m_pDWriteFactory), reinterpret_cast<IUnknown**>(&m_pDWriteFactory));
 		if (S_OK == hr2) {
@@ -275,8 +279,27 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 				DWRITE_FONT_STRETCH_NORMAL,
 				20,
 				L"", //locale
-				&m_pTextFormat
-			);
+				&m_pTextFormat);
+			if (S_OK == hr2) {
+				CComPtr<IDXGISurface> pDXGISurface;
+				hr2 = m_pDXGISwapChain1->GetBuffer(0, IID_PPV_ARGS(&pDXGISurface));
+				if (S_OK == hr2) {
+					FLOAT dpiX;
+					FLOAT dpiY;
+					m_pD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
+
+					D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
+						D2D1_RENDER_TARGET_TYPE_DEFAULT,
+						D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
+						dpiX,
+						dpiY);
+
+					hr2 = m_pD2DFactory->CreateDxgiSurfaceRenderTarget(pDXGISurface, &props, &m_pD2D1RenderTarget);
+					if (S_OK == hr2) {
+						hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LightYellow), &m_pD2DBrush);
+					}
+				}
+			}
 		}
 	}
 
@@ -583,7 +606,7 @@ HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState, const bool d
 	}
 
 	if (S_OK == hr) {
-		hr = DrawOSD(pBackBuffer);
+		hr = DrawOSD();
 	}
 
 	hr = m_pDXGISwapChain1->Present(0, 0);
@@ -591,7 +614,7 @@ HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState, const bool d
 	if (filterState == State_Running && deintDouble && m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
 		hr = ProcessDX11(pBackBuffer, true);
 		if (S_OK == hr) {
-			hr = DrawOSD(pBackBuffer);
+			hr = DrawOSD();
 		}
 		hr = m_pDXGISwapChain1->Present(0, 0);
 	}
@@ -791,46 +814,22 @@ HRESULT CDX11VideoProcessor::GetAdapterDecription(CStringW& str)
 	return S_OK;
 }
 
-HRESULT CDX11VideoProcessor::DrawOSD(ID3D11Texture2D* pBackBuffer)
+HRESULT CDX11VideoProcessor::DrawOSD()
 {
-	if (!m_pTextFormat) {
+	if (!m_pD2DBrush || m_windowRect.IsRectEmpty()) {
 		return E_ABORT;
 	}
 	
-	HRESULT hr = S_OK;
-	CComPtr<IDXGISurface> pDXGISurface;
-	hr = pBackBuffer->QueryInterface(&pDXGISurface);
-	//hr = m_pDXGISwapChain1->GetBuffer(0, IID_PPV_ARGS(&pDXGISurface));
-	if (S_OK == hr) {
-		FLOAT dpiX;
-		FLOAT dpiY;
-		m_pD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
+	CStringW str = L"Direct3D 11";
 
-		D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
-			D2D1_RENDER_TARGET_TYPE_DEFAULT,
-			D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
-			dpiX,
-			dpiY);
+	m_pD2D1RenderTarget->BeginDraw();
+	m_pD2D1RenderTarget->DrawTextW(
+		str,
+		str.GetLength(),
+		m_pTextFormat,
+		D2D1::RectF(10.0f, 10.0f, m_windowRect.right, m_windowRect.bottom),
+		m_pD2DBrush);
+	m_pD2D1RenderTarget->EndDraw();
 
-		CComPtr<ID2D1RenderTarget> pD2D1RenderTarget;
-		hr = m_pD2DFactory->CreateDxgiSurfaceRenderTarget(pDXGISurface, &props, &pD2D1RenderTarget);
-		if (S_OK == hr) {
-			CComPtr<ID2D1SolidColorBrush> pD2DBrush;
-			hr = pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LightYellow), &pD2DBrush);
-			if (S_OK == hr) {
-				CStringW str = L"Direct3D 11";
-
-				pD2D1RenderTarget->BeginDraw();
-				pD2D1RenderTarget->DrawTextW(
-					str,
-					str.GetLength(),
-					m_pTextFormat,
-					D2D1::RectF(0.0f, 0.0f, m_windowRect.right, m_windowRect.bottom),
-					pD2DBrush);
-				pD2D1RenderTarget->EndDraw();
-			}
-		}
-	}
-
-	return hr;
+	return S_OK;
 }

@@ -84,6 +84,8 @@ private:
 	CComPtr<ID2D1Factory> m_pD2DFactory;
 	CComPtr<IDWriteFactory> m_pDWriteFactory;
 	CComPtr<IDWriteTextFormat> m_pTextFormat;
+	CComPtr<ID2D1RenderTarget> m_pD2D1RenderTarget;
+	CComPtr<ID2D1SolidColorBrush> m_pD2DBrush;
 
 public:
 	CDX11VideoProcessor();
@@ -113,5 +115,5 @@ public:
 
 private:
 	HRESULT ProcessDX11(ID3D11Texture2D* pRenderTarget, const bool second);
-	HRESULT DrawOSD(ID3D11Texture2D* pBackBuffer);
+	HRESULT DrawOSD();
 };
