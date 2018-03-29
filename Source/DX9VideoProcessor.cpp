@@ -579,7 +579,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 	return hr;
 }
 
-HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState, const bool deintDouble/* = false*/)
+HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState)
 {
 	if (m_SrcSamples.Empty()) return E_POINTER;
 
@@ -605,7 +605,7 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState, const bool de
 
 	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
 
-	if (deintDouble && m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
+	if (m_bDeintDouble && m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
 		hr = m_pD3DDevEx->BeginScene();
 
 		CComPtr<IDirect3DSurface9> pBackBuffer;

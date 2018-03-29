@@ -594,7 +594,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState, const bool deintDouble/* = false*/)
+HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
@@ -617,7 +617,7 @@ HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState, const bool d
 
 	hr = m_pDXGISwapChain1->Present(0, 0);
 	
-	if (filterState == State_Running && deintDouble && m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
+	if (filterState == State_Running && m_bDeintDouble && m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
 		hr = ProcessDX11(pBackBuffer, true);
 		if (S_OK == hr && m_bShowStats) {
 			hr = DrawStats();

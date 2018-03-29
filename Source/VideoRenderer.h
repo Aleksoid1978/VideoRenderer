@@ -52,11 +52,8 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 private:
 	friend class CVideoRendererInputPin;
 
-	// options
-	bool m_bOptionUseD3D11 = false;
-	bool m_bOptionDeintDouble = false;
-
-	bool m_bUsedD3D11 = false; // current state
+	bool m_bOptionUseD3D11 = false; // option
+	bool m_bUsedD3D11 = false;      // current state
 
 	HWND m_hWnd = nullptr;
 
@@ -189,7 +186,7 @@ public:
 	STDMETHODIMP SetOptionUseD3D11(bool value);
 	STDMETHODIMP_(bool) GetOptionDeintDouble();
 	STDMETHODIMP SetOptionDeintDouble(bool value);
-	STDMETHODIMP_(bool) GetShowStatistics();
-	STDMETHODIMP SetShowStatistics(bool value);
+	STDMETHODIMP_(bool) GetOptionShowStatistics();
+	STDMETHODIMP SetOptionShowStatistics(bool value);
 	STDMETHODIMP SaveSettings();
 };

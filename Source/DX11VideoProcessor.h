@@ -34,6 +34,9 @@
 class CDX11VideoProcessor
 {
 private:
+	bool m_bDeintDouble = false;
+	bool m_bShowStats = false;
+
 	HMODULE m_hD3D11Lib = nullptr;
 	CComPtr<ID3D11Device> m_pDevice;
 	CComPtr<ID3D11DeviceContext> m_pImmediateContext;
@@ -81,7 +84,6 @@ private:
 	DWORD m_VendorId = 0;
 	CString m_strAdapterDescription;
 
-	bool m_bShowStats = false;
 	CComPtr<ID2D1Factory> m_pD2DFactory;
 	CComPtr<IDWriteFactory> m_pDWriteFactory;
 	CComPtr<IDWriteTextFormat> m_pTextFormat;
@@ -103,7 +105,7 @@ public:
 	HRESULT Initialize(const UINT width, const UINT height, const DXGI_FORMAT dxgiFormat);
 
 	HRESULT CopySample(IMediaSample* pSample);
-	HRESULT Render(const FILTER_STATE filterState, const bool deintDouble = false);
+	HRESULT Render(const FILTER_STATE filterState);
 	void StopInputBuffer() {}
 
 	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
@@ -113,6 +115,9 @@ public:
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
 	HRESULT GetFrameInfo(VRFrameInfo* pFrameInfo);
 	HRESULT GetAdapterDecription(CStringW& str);
+
+	bool GetDeintDouble() { return m_bDeintDouble; }
+	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
 	bool GetShowStats() { return m_bShowStats; }
 	void SetShowStats(bool value) { m_bShowStats = value; };
 

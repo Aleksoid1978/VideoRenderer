@@ -149,10 +149,10 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			m_bOptionUseD3D11 = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_DoubleFrateDeint, dw)) {
-			m_bOptionDeintDouble = !!dw;
+			SetOptionDeintDouble(!!dw);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ShowStatistics, dw)) {
-			SetShowStatistics(!!dw);
+			SetOptionShowStatistics(!!dw);
 		}
 	}
 
@@ -243,9 +243,9 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	}
 
 	if (m_bUsedD3D11) {
-		return m_DX11_VP.Render(m_filterState, m_bOptionDeintDouble);
+		return m_DX11_VP.Render(m_filterState);
 	} else {
-		return m_DX9_VP.Render(m_filterState, m_bOptionDeintDouble);
+		return m_DX9_VP.Render(m_filterState);
 	}
 }
 
@@ -468,26 +468,30 @@ STDMETHODIMP CMpcVideoRenderer::SetOptionUseD3D11(bool value)
 
 STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionDeintDouble()
 {
-	return m_bOptionDeintDouble;
+	if (m_bUsedD3D11) {
+		return m_DX11_VP.GetDeintDouble();
+	} else {
+		return m_DX9_VP.GetDeintDouble();
+	}
 }
 
 STDMETHODIMP CMpcVideoRenderer::SetOptionDeintDouble(bool value)
 {
-	m_bOptionDeintDouble = value;
+	m_DX11_VP.SetDeintDouble(value);
+	m_DX9_VP.SetDeintDouble(value);
 	return S_OK;
 }
 
-STDMETHODIMP_(bool) CMpcVideoRenderer::GetShowStatistics()
+STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionShowStatistics()
 {
 	if (m_bUsedD3D11) {
 		return m_DX11_VP.GetShowStats();
-	}
-	else {
+	} else {
 		return m_DX9_VP.GetShowStats();
 	}
 }
 
-STDMETHODIMP CMpcVideoRenderer::SetShowStatistics(bool value)
+STDMETHODIMP CMpcVideoRenderer::SetOptionShowStatistics(bool value)
 {
 	m_DX11_VP.SetShowStats(value);
 	m_DX9_VP.SetShowStats(value);
@@ -499,8 +503,8 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 	CRegKey key;
 	if (ERROR_SUCCESS == key.Create(HKEY_CURRENT_USER, OPT_REGKEY_VIDEORENDERER)) {
 		key.SetDWORDValue(OPT_UseD3D11, m_bOptionUseD3D11);
-		key.SetDWORDValue(OPT_DoubleFrateDeint, m_bOptionDeintDouble);
-		key.SetDWORDValue(OPT_ShowStatistics, GetShowStatistics());
+		key.SetDWORDValue(OPT_DoubleFrateDeint, GetOptionDeintDouble());
+		key.SetDWORDValue(OPT_ShowStatistics, GetOptionShowStatistics());
 	}
 
 	return S_OK;

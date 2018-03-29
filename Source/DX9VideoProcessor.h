@@ -69,6 +69,9 @@ public:
 class CDX9VideoProcessor
 {
 private:
+	bool m_bDeintDouble = false;
+	bool m_bShowStats = false;
+
 	// Direct3D 9
 	HMODULE m_hD3D9Lib = nullptr;
 	CComPtr<IDirect3D9Ex>            m_pD3DEx;
@@ -116,7 +119,6 @@ private:
 	UINT m_D3D9_Src_Width = 0;
 	UINT m_D3D9_Src_Height = 0;
 
-	bool m_bShowStats = false;
 	CComPtr<IDirect3DTexture9> m_pOSDTexture;
 	CComPtr<IDirect3DSurface9> m_pMemSurface;
 
@@ -138,7 +140,7 @@ private:
 public:
 	BOOL InitMediaType(const CMediaType* pmt);
 	HRESULT CopySample(IMediaSample* pSample);
-	HRESULT Render(const FILTER_STATE filterState, const bool deintDouble = false);
+	HRESULT Render(const FILTER_STATE filterState);
 	void StopInputBuffer();
 
 	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
@@ -150,6 +152,9 @@ public:
 	HRESULT GetFrameInfo(VRFrameInfo* pFrameInfo);
 	HRESULT GetAdapterDecription(CStringW& str);
 	HRESULT GetDXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCaps);
+
+	bool GetDeintDouble() { return m_bDeintDouble; }
+	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
 	bool GetShowStats() { return m_bShowStats; }
 	void SetShowStats(bool value) { m_bShowStats = value; };
 

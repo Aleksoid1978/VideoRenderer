@@ -71,11 +71,11 @@ HRESULT CVRMainPPage::OnActivate()
 
 	m_bUseD3D11    = m_pVideoRenderer->GetOptionUseD3D11();
 	m_bDeintDouble = m_pVideoRenderer->GetOptionDeintDouble();
-	m_bShowStats   = m_pVideoRenderer->GetShowStatistics();
+	m_bShowStats   = m_pVideoRenderer->GetOptionShowStatistics();
 
 	CheckDlgButton(IDC_CHECK1, m_bUseD3D11    ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK2, m_bDeintDouble ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK2, m_bShowStats   ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK3, m_bShowStats   ? BST_CHECKED : BST_UNCHECKED);
 
 	if (!m_pVideoRenderer->GetActive()) {
 		GetDlgItem(IDC_EDIT1).ShowWindow(SW_HIDE);
@@ -170,7 +170,7 @@ HRESULT CVRMainPPage::OnApplyChanges()
 {
 	m_pVideoRenderer->SetOptionUseD3D11(m_bUseD3D11);
 	m_pVideoRenderer->SetOptionDeintDouble(m_bDeintDouble);
-	m_pVideoRenderer->SetShowStatistics(m_bShowStats);
+	m_pVideoRenderer->SetOptionShowStatistics(m_bShowStats);
 	m_pVideoRenderer->SaveSettings();
 
 	return S_OK;
