@@ -69,10 +69,13 @@ HRESULT CVRMainPPage::OnActivate()
 	// set m_hWnd for CWindow
 	m_hWnd = m_hwnd;
 
-	m_bUseD3D11 = m_pVideoRenderer->GetOptionUseD3D11();
-	CheckDlgButton(IDC_CHECK1, m_bUseD3D11 ? BST_CHECKED : BST_UNCHECKED);
+	m_bUseD3D11    = m_pVideoRenderer->GetOptionUseD3D11();
 	m_bDeintDouble = m_pVideoRenderer->GetOptionDeintDouble();
+	m_bShowStats   = m_pVideoRenderer->GetShowStatistics();
+
+	CheckDlgButton(IDC_CHECK1, m_bUseD3D11    ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK2, m_bDeintDouble ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK2, m_bShowStats   ? BST_CHECKED : BST_UNCHECKED);
 
 	if (!m_pVideoRenderer->GetActive()) {
 		GetDlgItem(IDC_EDIT1).ShowWindow(SW_HIDE);
@@ -151,6 +154,11 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			SetDirty();
 			return (LRESULT)1;
 		}
+		if (LOWORD(wParam) == IDC_CHECK3) {
+			m_bShowStats = IsDlgButtonChecked(IDC_CHECK3) == BST_CHECKED;
+			SetDirty();
+			return (LRESULT)1;
+		}
 		break;
 	}
 
@@ -162,6 +170,7 @@ HRESULT CVRMainPPage::OnApplyChanges()
 {
 	m_pVideoRenderer->SetOptionUseD3D11(m_bUseD3D11);
 	m_pVideoRenderer->SetOptionDeintDouble(m_bDeintDouble);
+	m_pVideoRenderer->SetShowStatistics(m_bShowStats);
 	m_pVideoRenderer->SaveSettings();
 
 	return S_OK;
