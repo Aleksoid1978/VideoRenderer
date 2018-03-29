@@ -593,8 +593,8 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState, const bool de
 
 	if (filterState == State_Running) {
 		hr = ProcessDXVA2(pBackBuffer, false);
-		if (S_OK == hr) {
-			hr = DrawOSD();
+		if (S_OK == hr && m_bShowStats) {
+			hr = DrawStats();
 		}
 	}
 
@@ -616,8 +616,8 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState, const bool de
 
 		if (filterState == State_Running) {
 			hr = ProcessDXVA2(pBackBuffer, true);
-			if (S_OK == hr) {
-				hr = DrawOSD();
+			if (S_OK == hr && m_bShowStats) {
+				hr = DrawStats();
 			}
 		}
 
@@ -855,7 +855,7 @@ HRESULT CDX9VideoProcessor::AlphaBlt(RECT* pSrc, RECT* pDst, IDirect3DTexture9* 
 	return S_OK;
 }
 
-HRESULT CDX9VideoProcessor::DrawOSD()
+HRESULT CDX9VideoProcessor::DrawStats()
 {
 	if (!m_pMemSurface) {
 		return E_ABORT;

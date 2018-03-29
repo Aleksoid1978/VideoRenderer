@@ -473,6 +473,26 @@ STDMETHODIMP CMpcVideoRenderer::SetOptionDeintDouble(bool value)
 	return S_OK;
 }
 
+STDMETHODIMP_(bool) CMpcVideoRenderer::GetShowStatistics()
+{
+	if (m_bUsedD3D11) {
+		return m_DX11_VP.GetShowStats();
+	}
+	else {
+		return m_DX9_VP.GetShowStats();
+	}
+}
+
+STDMETHODIMP CMpcVideoRenderer::SetShowStatistics(bool value)
+{
+	if (m_bUsedD3D11) {
+		m_DX11_VP.SetShowStats(value);
+	} else {
+		m_DX9_VP.SetShowStats(value);
+	}
+	return S_OK;
+}
+
 STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 {
 	CRegKey key;

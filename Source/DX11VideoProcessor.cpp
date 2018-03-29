@@ -611,16 +611,16 @@ HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState, const bool d
 		hr = ProcessDX11(pBackBuffer, false);
 	}
 
-	if (S_OK == hr) {
-		hr = DrawOSD();
+	if (S_OK == hr && m_bShowStats) {
+		hr = DrawStats();
 	}
 
 	hr = m_pDXGISwapChain1->Present(0, 0);
 	
 	if (filterState == State_Running && deintDouble && m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
 		hr = ProcessDX11(pBackBuffer, true);
-		if (S_OK == hr) {
-			hr = DrawOSD();
+		if (S_OK == hr && m_bShowStats) {
+			hr = DrawStats();
 		}
 		hr = m_pDXGISwapChain1->Present(0, 0);
 	}
@@ -820,7 +820,7 @@ HRESULT CDX11VideoProcessor::GetAdapterDecription(CStringW& str)
 	return S_OK;
 }
 
-HRESULT CDX11VideoProcessor::DrawOSD()
+HRESULT CDX11VideoProcessor::DrawStats()
 {
 	if (!m_pD2DBrush || m_windowRect.IsRectEmpty()) {
 		return E_ABORT;

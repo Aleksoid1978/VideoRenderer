@@ -81,6 +81,7 @@ private:
 	DWORD m_VendorId = 0;
 	CString m_strAdapterDescription;
 
+	bool m_bShowStats = false;
 	CComPtr<ID2D1Factory> m_pD2DFactory;
 	CComPtr<IDWriteFactory> m_pDWriteFactory;
 	CComPtr<IDWriteTextFormat> m_pTextFormat;
@@ -112,8 +113,10 @@ public:
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
 	HRESULT GetFrameInfo(VRFrameInfo* pFrameInfo);
 	HRESULT GetAdapterDecription(CStringW& str);
+	bool GetShowStats() { return m_bShowStats; }
+	void SetShowStats(bool value) { m_bShowStats = value; };
 
 private:
 	HRESULT ProcessDX11(ID3D11Texture2D* pRenderTarget, const bool second);
-	HRESULT DrawOSD();
+	HRESULT DrawStats();
 };

@@ -116,6 +116,7 @@ private:
 	UINT m_D3D9_Src_Width = 0;
 	UINT m_D3D9_Src_Height = 0;
 
+	bool m_bShowStats = false;
 	CComPtr<IDirect3DTexture9> m_pOSDTexture;
 	CComPtr<IDirect3DSurface9> m_pMemSurface;
 
@@ -149,9 +150,11 @@ public:
 	HRESULT GetFrameInfo(VRFrameInfo* pFrameInfo);
 	HRESULT GetAdapterDecription(CStringW& str);
 	HRESULT GetDXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCaps);
+	bool GetShowStats() { return m_bShowStats; }
+	void SetShowStats(bool value) { m_bShowStats = value; };
 
 private:
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const bool second);
 	HRESULT AlphaBlt(RECT* pSrc, RECT* pDst, IDirect3DTexture9* pTexture);
-	HRESULT DrawOSD();
+	HRESULT DrawStats();
 };

@@ -41,5 +41,7 @@ IVideoRenderer : public IUnknown {
 	STDMETHOD(SetOptionUseD3D11(bool value)) PURE;
 	STDMETHOD_(bool, GetOptionDeintDouble()) PURE;
 	STDMETHOD(SetOptionDeintDouble(bool value)) PURE;
+	STDMETHOD_(bool, GetShowStatistics()) PURE;
+	STDMETHOD(SetShowStatistics(bool value)) PURE;
 	STDMETHOD(SaveSettings()) PURE;
 };

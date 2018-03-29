@@ -189,5 +189,7 @@ public:
 	STDMETHODIMP SetOptionUseD3D11(bool value);
 	STDMETHODIMP_(bool) GetOptionDeintDouble();
 	STDMETHODIMP SetOptionDeintDouble(bool value);
+	STDMETHODIMP_(bool) GetShowStatistics();
+	STDMETHODIMP SetShowStatistics(bool value);
 	STDMETHODIMP SaveSettings();
 };
