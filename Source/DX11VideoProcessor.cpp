@@ -78,15 +78,15 @@ HRESULT CDX11VideoProcessor::Init()
 
 	ID3D11Device *pDevice = nullptr;
 	ID3D11DeviceContext *pImmediateContext = nullptr;
+	UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+#ifdef _DEBUG
+	Flags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
 	HRESULT hr = pfnD3D11CreateDevice(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
-#ifdef _DEBUG
-		D3D11_CREATE_DEVICE_DEBUG, // need SDK for Windows 8
-#else
-		0,
-#endif
+		Flags,
 		featureLevels,
 		ARRAYSIZE(featureLevels),
 		D3D11_SDK_VERSION,
@@ -216,6 +216,8 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		m_VendorId = dxgiAdapterDesc.VendorId;
 		m_strAdapterDescription.Format(L"%s (%04X:%04X)", dxgiAdapterDesc.Description, dxgiAdapterDesc.VendorId, dxgiAdapterDesc.DeviceId);
 	}
+
+	m_bCanUseSharedHandle = (m_VendorId != PCIV_NVIDIA);
 
 	return hr;
 }
