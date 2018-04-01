@@ -30,6 +30,7 @@
 #include <d2d1.h>
 #include <dwrite.h>
 #include "IVideoRenderer.h"
+#include "FrameStats.h"
 
 class CDX11VideoProcessor
 {
@@ -89,6 +90,8 @@ private:
 	CComPtr<IDWriteTextFormat> m_pTextFormat;
 	CComPtr<ID2D1RenderTarget> m_pD2D1RenderTarget;
 	CComPtr<ID2D1SolidColorBrush> m_pD2DBrush;
+
+	CFrameStats m_FrameStats;
 
 public:
 	CDX11VideoProcessor();

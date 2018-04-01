@@ -23,6 +23,7 @@
 #include <atltypes.h>
 #include <gdiplus.h>
 #include "IVideoRenderer.h"
+#include "FrameStats.h"
 
 struct VideoSurface {
 	REFERENCE_TIME Start = 0;
@@ -106,7 +107,6 @@ private:
 	RECT m_trgRect = {};
 
 	// Processing parameters
-	DWORD m_frame = 0;
 	VideoSurfaceBuffer m_SrcSamples;
 	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
 	DXVA2_SampleFormat m_CurrentSampleFmt = DXVA2_SampleProgressiveFrame;
@@ -121,6 +121,8 @@ private:
 
 	CComPtr<IDirect3DTexture9> m_pOSDTexture;
 	CComPtr<IDirect3DSurface9> m_pMemSurface;
+
+	CFrameStats m_FrameStats;
 
 	// GDI+ handling
 	ULONG_PTR m_gdiplusToken;

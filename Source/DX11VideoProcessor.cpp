@@ -377,6 +377,7 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 
 	HRESULT hr = S_OK;
 
+	m_FrameStats.Reset();
 	m_pSrcTexture2D_RGB.Release();
 	m_pSrcSurface9.Release();
 
@@ -592,7 +593,11 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 		}
 	}
-	
+
+	REFERENCE_TIME rtStart, rtEnd;
+	pSample->GetTime(&rtStart, &rtEnd);
+	m_FrameStats.Add(rtStart);
+
 	return hr;
 }
 
@@ -829,6 +834,10 @@ HRESULT CDX11VideoProcessor::DrawStats()
 	}
 	
 	CStringW str = L"Direct3D 11";
+	str.AppendFormat(L"\nFrame rate: %7.03f", m_FrameStats.GetAverageFps());
+	if (m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
+		str.Append(L" i");
+	}
 
 	m_pD2D1RenderTarget->BeginDraw();
 	m_pD2D1RenderTarget->DrawTextW(

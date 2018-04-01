@@ -195,7 +195,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 {
 	DLog("CDX9VideoProcessor::InitializeDXVA2VP: begin");
 
-	m_frame = 0;
+	m_FrameStats.Reset();
 	m_SrcSamples.Clear();
 	m_DXVA2Samples.clear();
 	m_pDXVA2_VP.Release();
@@ -513,7 +513,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 
 #ifdef _DEBUG
-			if (m_frame < 2) {
+			if (m_FrameStats.GetFrames() < 2) {
 				CComPtr<IDirect3DDevice9> pD3DDev;
 				pSurface->GetDevice(&pD3DDev);
 				if (pD3DDev != m_pD3DDevEx) {
@@ -560,7 +560,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 
-	const REFERENCE_TIME start_100ns = m_frame * 170000i64;
+	const REFERENCE_TIME start_100ns = m_FrameStats.GetFrames() * 170000i64;
 	const REFERENCE_TIME end_100ns = start_100ns + 170000i64;
 	m_SrcSamples.Get().Start = start_100ns;
 	m_SrcSamples.Get().End = end_100ns;
@@ -574,7 +574,9 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		m_DXVA2Samples[i].SrcSurface = SrcSample.pSrcSurface;
 	}
 
-	m_frame++;
+	REFERENCE_TIME rtStart, rtEnd;
+	pSample->GetTime(&rtStart, &rtEnd);
+	m_FrameStats.Add(rtStart);
 
 	return hr;
 }
@@ -865,6 +867,10 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	HRESULT hr = m_pMemSurface->GetDesc(&desc);
 
 	CStringW str = L"Direct3D 9Ex";
+	str.AppendFormat(L"\nFrame rate: %7.03f", m_FrameStats.GetAverageFps());
+	if (m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
+		str.Append(L" i");
+	}
 	
 	HDC hdc;
 	if (S_OK == m_pMemSurface->GetDC(&hdc)) {

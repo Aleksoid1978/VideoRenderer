@@ -68,6 +68,7 @@
   <ItemGroup>
     <ClInclude Include="DX11VideoProcessor.h" />
     <ClInclude Include="DX9VideoProcessor.h" />
+    <ClInclude Include="FrameStats.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="IVideoRenderer.h" />
     <ClInclude Include="PropPage.h" />
