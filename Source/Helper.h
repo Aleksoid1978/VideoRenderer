@@ -39,7 +39,7 @@
 #define PCIV_NVIDIA      0x10DE
 #define PCIV_INTEL       0x8086
 
-#if _DEBUG
+#ifdef _DEBUG
 #define DLog(...) DbgLogInfo(LOG_TRACE, 3, __VA_ARGS__)
 #define DLogIf(f,...) {if (f) DbgLogInfo(LOG_TRACE, 3, __VA_ARGS__);}
 #define DLogError(...) DbgLogInfo(LOG_ERROR, 3, __VA_ARGS__)
@@ -64,3 +64,5 @@ D3DFORMAT MediaSubtype2D3DFormat(GUID subtype);
 DXGI_FORMAT MediaSubtype2DXGIFormat(GUID subtype);
 
 void CopyFrameData(const D3DFORMAT format, const UINT width, const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch, const UINT src_size);
+
+void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d);

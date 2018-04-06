@@ -120,8 +120,21 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 	m_DisplayMode.Size = sizeof(D3DDISPLAYMODEEX);
 	HRESULT hr = m_pD3DEx->GetAdapterDisplayModeEx(m_CurrentAdapter, &m_DisplayMode, nullptr);
 
-	ZeroMemory(&m_d3dpp, sizeof(m_d3dpp));
+#ifdef _DEBUG
+	D3DCAPS9 DevCaps = {};
+	if (S_OK == m_pD3DEx->GetDeviceCaps(m_CurrentAdapter, D3DDEVTYPE_HAL, &DevCaps)) {
+		CStringW dbgstr = L"DeviceCaps:";
+		dbgstr.AppendFormat(L"\nMaxTextureWidth                 : %u", DevCaps.MaxTextureWidth);
+		dbgstr.AppendFormat(L"\nMaxTextureHeight                : %u", DevCaps.MaxTextureHeight);
+		dbgstr.AppendFormat(L"\nPresentationInterval IMMEDIATE  : %s", DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_IMMEDIATE ? L"supported" : L"NOT supported");
+		dbgstr.AppendFormat(L"\nPresentationInterval ONE        : %s", DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_ONE ? L"supported" : L"NOT supported");
+		dbgstr.AppendFormat(L"\nPixelShaderVersion              : %u.%u", D3DSHADER_VERSION_MAJOR(DevCaps.PixelShaderVersion), D3DSHADER_VERSION_MINOR(DevCaps.PixelShaderVersion));
+		dbgstr.AppendFormat(L"\nMaxPixelShader30InstructionSlots: %u", DevCaps.MaxPixelShader30InstructionSlots);
+		DLog(dbgstr);
+	}
+#endif
 
+	ZeroMemory(&m_d3dpp, sizeof(m_d3dpp));
 	m_d3dpp.Windowed = TRUE;
 	m_d3dpp.hDeviceWindow = m_hWnd;
 	m_d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
@@ -325,7 +338,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : GetVideoProcessorRenderTargets() failed with error 0x%08x", hr);
 		return FALSE;
 	}
-#if _DEBUG
+#ifdef _DEBUG
 	{
 		CStringW dbgstr = L"DXVA2-VP output formats:";
 		for (UINT j = 0; j < count; j++) {
@@ -699,44 +712,6 @@ HRESULT CDX9VideoProcessor::GetDXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCap
 	return S_OK;
 }
 
-static bool ClipToSurface(IDirect3DSurface9* pSurface, CRect& s, CRect& d)
-{
-	D3DSURFACE_DESC d3dsd = {};
-	if (FAILED(pSurface->GetDesc(&d3dsd))) {
-		return false;
-	}
-
-	const int w = d3dsd.Width, h = d3dsd.Height;
-	const int sw = s.Width(), sh = s.Height();
-	const int dw = d.Width(), dh = d.Height();
-
-	if (d.left >= w || d.right < 0 || d.top >= h || d.bottom < 0
-			|| sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0) {
-		s.SetRectEmpty();
-		d.SetRectEmpty();
-		return true;
-	}
-
-	if (d.right > w) {
-		s.right -= (d.right - w) * sw / dw;
-		d.right = w;
-	}
-	if (d.bottom > h) {
-		s.bottom -= (d.bottom - h) * sh / dh;
-		d.bottom = h;
-	}
-	if (d.left < 0) {
-		s.left += (0 - d.left) * sw / dw;
-		d.left = 0;
-	}
-	if (d.top < 0) {
-		s.top += (0 - d.top) * sh / dh;
-		d.top = 0;
-	}
-
-	return true;
-}
-
 HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const bool second)
 {
 	// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx
@@ -753,10 +728,12 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 	else {
 		CRect rSrcRect(m_srcRect);
 		CRect rDstRect(m_videoRect);
-		ClipToSurface(pRenderTarget, rSrcRect, rDstRect);
+		D3DSURFACE_DESC desc = {};
+		if (S_OK == pRenderTarget->GetDesc(&desc)) {
+			ClipToSurface(desc.Width, desc.Height, rSrcRect, rDstRect);
+		}
 
 		// Initialize VPBlt parameters
-
 		m_BltParams.TargetFrame = m_SrcSamples.Get().Start;
 		m_BltParams.TargetRect = rDstRect;
 		m_BltParams.ConstrictionSize.cx = rDstRect.Width();

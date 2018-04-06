@@ -78,15 +78,16 @@ HRESULT CDX11VideoProcessor::Init()
 
 	ID3D11Device *pDevice = nullptr;
 	ID3D11DeviceContext *pImmediateContext = nullptr;
-	UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-#ifdef _DEBUG
-	Flags |= D3D11_CREATE_DEVICE_DEBUG;
-#endif
+
 	HRESULT hr = pfnD3D11CreateDevice(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
-		Flags,
+#ifdef _DEBUG
+		D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG,
+#else
+		D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+#endif
 		featureLevels,
 		ARRAYSIZE(featureLevels),
 		D3D11_SDK_VERSION,
@@ -635,45 +636,6 @@ HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState)
 	return hr;
 }
 
-static bool ClipToTexture(ID3D11Texture2D* pTexture, CRect& s, CRect& d)
-{
-	D3D11_TEXTURE2D_DESC desc = {};
-	pTexture->GetDesc(&desc);
-	if (!desc.Width || !desc.Height) {
-		return false;
-	}
-
-	const int w = desc.Width, h = desc.Height;
-	const int sw = s.Width(), sh = s.Height();
-	const int dw = d.Width(), dh = d.Height();
-
-	if (d.left >= w || d.right < 0 || d.top >= h || d.bottom < 0
-			|| sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0) {
-		s.SetRectEmpty();
-		d.SetRectEmpty();
-		return true;
-	}
-
-	if (d.right > w) {
-		s.right -= (d.right - w) * sw / dw;
-		d.right = w;
-	}
-	if (d.bottom > h) {
-		s.bottom -= (d.bottom - h) * sh / dh;
-		d.bottom = h;
-	}
-	if (d.left < 0) {
-		s.left += (0 - d.left) * sw / dw;
-		d.left = 0;
-	}
-	if (d.top < 0) {
-		s.top += (0 - d.top) * sh / dh;
-		d.top = 0;
-	}
-
-	return true;
-}
-
 HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget, const bool second)
 {
 	if (m_videoRect.IsRectEmpty() || m_windowRect.IsRectEmpty()) {
@@ -683,8 +645,11 @@ HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget, const b
 	if (!second) {
 		CRect rSrcRect(m_srcRect);
 		CRect rDstRect(m_videoRect);
-
-		ClipToTexture(pRenderTarget, rSrcRect, rDstRect);
+		D3D11_TEXTURE2D_DESC desc = {};
+		pRenderTarget->GetDesc(&desc);
+		if (desc.Width && desc.Height) {
+			ClipToSurface(desc.Width, desc.Height, rSrcRect, rDstRect);
+		}
 
 		// input format
 		m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, m_SampleFormat);

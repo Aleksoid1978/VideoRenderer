@@ -173,3 +173,37 @@ void CopyFrameData(const D3DFORMAT format, const UINT width, const UINT height, 
 		}
 	}
 }
+
+void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d)
+{
+	const int sw = s.right - s.left;
+	const int sh = s.bottom - s.top;
+	const int dw = d.right - d.left;
+	const int dh = d.bottom - d.top;
+
+	if (d.left >= texW || d.right < 0 || d.top >= texH || d.bottom < 0
+		|| sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0) {
+		SetRectEmpty(&s);
+		SetRectEmpty(&d);
+		return;
+	}
+
+	if (d.right > texW) {
+		s.right -= (d.right - texW) * sw / dw;
+		d.right = texW;
+	}
+	if (d.bottom > texH) {
+		s.bottom -= (d.bottom - texH) * sh / dh;
+		d.bottom = texH;
+	}
+	if (d.left < 0) {
+		s.left += (0 - d.left) * sw / dw;
+		d.left = 0;
+	}
+	if (d.top < 0) {
+		s.top += (0 - d.top) * sh / dh;
+		d.top = 0;
+	}
+
+	return;
+}
