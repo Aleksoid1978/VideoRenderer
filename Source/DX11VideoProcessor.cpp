@@ -282,7 +282,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 		if (S_OK == hr2) {
 			hr2 = m_pDWriteFactory->CreateTextFormat(
 				L"Consolas",
-				NULL,
+				nullptr,
 				DWRITE_FONT_WEIGHT_NORMAL,
 				DWRITE_FONT_STYLE_NORMAL,
 				DWRITE_FONT_STRETCH_NORMAL,
@@ -448,7 +448,7 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 	desc.BindFlags = D3D10_BIND_SHADER_RESOURCE;
 	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	desc.MiscFlags = 0;
-	hr = m_pDevice->CreateTexture2D(&desc, NULL, &m_pSrcTexture2D);
+	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pSrcTexture2D);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -456,7 +456,7 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 	desc.Usage = D3D11_USAGE_DEFAULT;
 	desc.BindFlags = 0;
 	desc.CPUAccessFlags = 0;
-	hr = m_pDevice->CreateTexture2D(&desc, NULL, &m_pSrcTexture2D_Decode);
+	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pSrcTexture2D_Decode);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -655,7 +655,7 @@ HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget, const b
 		m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, m_SampleFormat);
 
 		// Output rate (repeat frames)
-		m_pVideoContext->VideoProcessorSetStreamOutputRate(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_OUTPUT_RATE_NORMAL, TRUE, NULL);
+		m_pVideoContext->VideoProcessorSetStreamOutputRate(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_OUTPUT_RATE_NORMAL, TRUE, nullptr);
 	
 		// disable automatic video quality by driver
 		m_pVideoContext->VideoProcessorSetStreamAutoProcessingMode(m_pVideoProcessor, 0, FALSE);

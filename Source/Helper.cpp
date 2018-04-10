@@ -96,10 +96,9 @@ s_DXGIFormatMapping[] = {
 
 D3DFORMAT MediaSubtype2D3DFormat(GUID subtype)
 {
-	for (unsigned i = 0; i < ARRAYSIZE(s_DXGIFormatMapping); i++) {
-		const FormatEntry& e = s_DXGIFormatMapping[i];
-		if (e.Subtype == subtype) {
-			return e.D3DFormat;
+	for (const auto& fe : s_DXGIFormatMapping) {
+		if (fe.Subtype == subtype) {
+			return fe.D3DFormat;
 		}
 	}
 	return D3DFMT_UNKNOWN;
@@ -107,10 +106,9 @@ D3DFORMAT MediaSubtype2D3DFormat(GUID subtype)
 
 DXGI_FORMAT MediaSubtype2DXGIFormat(GUID subtype)
 {
-	for (unsigned i = 0; i < ARRAYSIZE(s_DXGIFormatMapping); i++) {
-		const FormatEntry& e = s_DXGIFormatMapping[i];
-		if (e.Subtype == subtype) {
-			return e.DXGIFormat;
+	for (const auto& fe : s_DXGIFormatMapping) {
+		if (fe.Subtype == subtype) {
+			return fe.DXGIFormat;
 		}
 	}
 	return DXGI_FORMAT_UNKNOWN;
