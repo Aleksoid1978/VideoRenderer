@@ -235,18 +235,29 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 
 	if (m_bUsedD3D11) {
 		hr = m_DX11_VP.CopySample(pSample);
+		if (FAILED(hr)) {
+			return hr;
+		}
+
+		hr = m_DX11_VP.Render(m_filterState);
+
+		if (m_DX11_VP.SecondFramePossible()) {
+			hr = m_DX11_VP.Render(m_filterState);
+		}
 	} else {
 		hr = m_DX9_VP.CopySample(pSample);
-	}
-	if (FAILED(hr)) {
-		return hr;
+		if (FAILED(hr)) {
+			return hr;
+		}
+
+		hr = m_DX9_VP.Render(m_filterState);
+
+		if (m_DX9_VP.SecondFramePossible()) {
+			hr = m_DX9_VP.Render(m_filterState);
+		}
 	}
 
-	if (m_bUsedD3D11) {
-		return m_DX11_VP.Render(m_filterState);
-	} else {
-		return m_DX9_VP.Render(m_filterState);
-	}
+	return hr;
 }
 
 STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** ppv)

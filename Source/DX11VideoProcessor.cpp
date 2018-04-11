@@ -489,6 +489,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 
+	m_FieldDrawn = 0;
+
 	HRESULT hr = S_OK;
 
 	if (CComQIPtr<IMediaSampleD3D11> pMSD3D11 = pSample) {
@@ -607,16 +609,18 @@ HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState)
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
 
-	HRESULT hr = S_OK;
-
 	CComPtr<ID3D11Texture2D> pBackBuffer;
-	hr = m_pDXGISwapChain1->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
+	HRESULT hr = m_pDXGISwapChain1->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
 	if (FAILED(hr)) {
 		return hr;
 	}
 
 	if (filterState == State_Running) {
-		hr = ProcessDX11(pBackBuffer, false);
+		if (m_FieldDrawn == 0 || m_FieldDrawn == 1 && SecondFramePossible()) {
+			m_FieldDrawn++;
+		}
+
+		hr = ProcessDX11(pBackBuffer, m_FieldDrawn == 2);
 	}
 
 	if (S_OK == hr && m_bShowStats) {
@@ -624,14 +628,6 @@ HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState)
 	}
 
 	hr = m_pDXGISwapChain1->Present(0, 0);
-	
-	if (filterState == State_Running && m_bDeintDouble && m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
-		hr = ProcessDX11(pBackBuffer, true);
-		if (S_OK == hr && m_bShowStats) {
-			hr = DrawStats();
-		}
-		hr = m_pDXGISwapChain1->Present(0, 0);
-	}
 
 	return hr;
 }

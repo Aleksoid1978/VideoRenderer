@@ -72,6 +72,7 @@ private:
 	RECT m_trgRect = {};
 
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
+	int m_FieldDrawn = 0;
 
 	DXGI_FORMAT m_D3D11_Src_Format = DXGI_FORMAT_UNKNOWN;
 	UINT m_D3D11_Src_Width = 0;
@@ -110,6 +111,7 @@ public:
 	HRESULT CopySample(IMediaSample* pSample);
 	HRESULT Render(const FILTER_STATE filterState);
 	void StopInputBuffer() {}
+	bool SecondFramePossible() { return m_bDeintDouble && m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE; }
 
 	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
 	void SetWindowRect(const CRect& windowRect) { m_windowRect = windowRect; }

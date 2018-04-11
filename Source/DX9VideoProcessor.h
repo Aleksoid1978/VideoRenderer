@@ -111,6 +111,7 @@ private:
 	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
 	DXVA2_SampleFormat m_CurrentSampleFmt = DXVA2_SampleProgressiveFrame;
 	DXVA2_VideoProcessBltParams m_BltParams = {};
+	int m_FieldDrawn = 0;
 
 	CRect m_videoRect;
 	CRect m_windowRect;
@@ -144,6 +145,7 @@ public:
 	HRESULT CopySample(IMediaSample* pSample);
 	HRESULT Render(const FILTER_STATE filterState);
 	void StopInputBuffer();
+	bool SecondFramePossible() { return m_bDeintDouble && m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd; }
 
 	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
 	void SetWindowRect(const CRect& windowRect) { m_windowRect = windowRect; }

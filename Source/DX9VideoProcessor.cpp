@@ -513,6 +513,8 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 
+	m_FieldDrawn = 0;
+
 	if (CComQIPtr<IMFGetService> pService = pSample) {
 		CComPtr<IDirect3DSurface9> pSurface;
 		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
@@ -607,7 +609,11 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState)
 	m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
 
 	if (filterState == State_Running) {
-		hr = ProcessDXVA2(pBackBuffer, false);
+		if (m_FieldDrawn == 0 || m_FieldDrawn == 1 && SecondFramePossible()) {
+			m_FieldDrawn++;
+		}
+
+		hr = ProcessDXVA2(pBackBuffer, m_FieldDrawn == 2);
 		if (S_OK == hr && m_bShowStats) {
 			hr = DrawStats();
 		}
@@ -619,30 +625,6 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState)
 	const CRect rDstPri(m_windowRect);
 
 	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
-
-	if (m_bDeintDouble && m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
-		hr = m_pD3DDevEx->BeginScene();
-
-		CComPtr<IDirect3DSurface9> pBackBuffer;
-		hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
-
-		hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
-		m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
-
-		if (filterState == State_Running) {
-			hr = ProcessDXVA2(pBackBuffer, true);
-			if (S_OK == hr && m_bShowStats) {
-				hr = DrawStats();
-			}
-		}
-
-		hr = m_pD3DDevEx->EndScene();
-
-		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
-		const CRect rDstPri(m_windowRect);
-
-		hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
-	}
 
 	return hr;
 }
