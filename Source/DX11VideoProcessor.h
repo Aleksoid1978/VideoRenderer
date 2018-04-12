@@ -102,11 +102,11 @@ public:
 	void ClearD3D11();
 
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
-
 	HRESULT InitSwapChain(const HWND hwnd, UINT width = 0, UINT height = 0);
 
 	BOOL InitMediaType(const CMediaType* pmt);
 	HRESULT Initialize(const UINT width, const UINT height, const DXGI_FORMAT dxgiFormat);
+	void Start();
 
 	HRESULT CopySample(IMediaSample* pSample);
 	HRESULT Render(const FILTER_STATE filterState);

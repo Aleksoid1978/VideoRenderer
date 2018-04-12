@@ -300,6 +300,11 @@ STDMETHODIMP CMpcVideoRenderer::Run(REFERENCE_TIME rtStart)
 	}
 
 	m_filterState = State_Running;
+	if (m_bUsedD3D11) {
+		m_DX11_VP.Start();
+	} else {
+		m_DX9_VP.Start();
+	}
 
 	return CBaseRenderer::Run(rtStart);
 }

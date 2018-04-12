@@ -27,6 +27,9 @@
 #include "Helper.h"
 #include "DX9VideoProcessor.h"
 
+#define STATS_W 256
+#define STATS_H  60
+
 // CDX9VideoProcessor
 
 static UINT GetAdapter(HWND hWnd, IDirect3D9Ex* pD3D)
@@ -187,8 +190,8 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 
 	m_pMemSurface.Release();
 	m_pOSDTexture.Release();
-	if (S_OK == m_pD3DDevEx->CreateTexture(256, 64, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_pOSDTexture, nullptr)) {
-		m_pD3DDevEx->CreateOffscreenPlainSurface(256, 64, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &m_pMemSurface, nullptr);
+	if (S_OK == m_pD3DDevEx->CreateTexture(STATS_W, STATS_H, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_pOSDTexture, nullptr)) {
+		m_pD3DDevEx->CreateOffscreenPlainSurface(STATS_W, STATS_H, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &m_pMemSurface, nullptr);
 	}
 
 	return hr;
@@ -491,6 +494,12 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	return FALSE;
 }
+
+void CDX9VideoProcessor::Start()
+{
+	m_FrameStats.Reset();
+}
+
 
 HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 {
@@ -830,7 +839,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	if (m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
 		str.Append(L" i");
 	}
-	
+
 	HDC hdc;
 	if (S_OK == m_pMemSurface->GetDC(&hdc)) {
 		using namespace Gdiplus;
@@ -838,7 +847,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 		Graphics   graphics(hdc);
 		FontFamily fontFamily(L"Consolas");
 		Font       font(&fontFamily, 20, FontStyleRegular, UnitPixel);
-		PointF     pointF(5.0f, 10.0f);
+		PointF     pointF(5.0f, 5.0f);
 		SolidBrush solidBrush(Color(255, 255, 255, 224));
 
 		Status status = Gdiplus::Ok;
@@ -858,7 +867,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 		hr = m_pD3DDevEx->UpdateSurface(m_pMemSurface, nullptr, pOSDSurface, nullptr);
 	}
 
-	hr = AlphaBlt(CRect(0, 0, 256, 64), CRect(10, 10, 256 + 10, 64 + 10), m_pOSDTexture);
+	hr = AlphaBlt(CRect(0, 0, STATS_W, STATS_H), CRect(10, 10, STATS_W + 10, STATS_H + 10), m_pOSDTexture);
 
 	return hr;
 }

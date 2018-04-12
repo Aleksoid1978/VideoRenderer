@@ -142,6 +142,8 @@ private:
 
 public:
 	BOOL InitMediaType(const CMediaType* pmt);
+	void Start();
+
 	HRESULT CopySample(IMediaSample* pSample);
 	HRESULT Render(const FILTER_STATE filterState);
 	void StopInputBuffer();

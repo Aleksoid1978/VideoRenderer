@@ -468,6 +468,11 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 	return S_OK;
 }
 
+void CDX11VideoProcessor::Start()
+{
+	m_FrameStats.Reset();
+}
+
 HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
