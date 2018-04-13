@@ -50,9 +50,11 @@ public:
 			unsigned last_index = ((m_index == 0) ? _countof(m_times) : m_index) - 1;
 			return (double)(UNITS * (_countof(m_times) - 1)) / (m_times[last_index] - m_times[m_index]);
 		}
+
 		if (m_frames > 1) {
-			return (double)(UNITS * (m_frames - 1)) / (m_times[m_index - 1] - m_times[m_index]);
+			return (double)(UNITS * (m_frames - 1)) / (m_times[m_frames - 1] - m_times[0]);
 		}
+
 		return 0.0;
 	}
 };
