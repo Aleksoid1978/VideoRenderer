@@ -63,6 +63,7 @@
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Time.cpp" />
     <ClCompile Include="VideoRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -74,6 +75,7 @@
     <ClInclude Include="PropPage.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="Time.h" />
     <ClInclude Include="VideoRenderer.h" />
   </ItemGroup>
   <ItemGroup>

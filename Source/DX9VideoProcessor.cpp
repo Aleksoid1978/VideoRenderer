@@ -25,6 +25,7 @@
 #include <mfapi.h> // for MR_BUFFER_SERVICE
 #include <mfidl.h>
 #include "Helper.h"
+#include "Time.h"
 #include "DX9VideoProcessor.h"
 
 #define STATS_W 256
@@ -131,6 +132,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 		dbgstr.AppendFormat(L"\nMaxTextureHeight                : %u", DevCaps.MaxTextureHeight);
 		dbgstr.AppendFormat(L"\nPresentationInterval IMMEDIATE  : %s", DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_IMMEDIATE ? L"supported" : L"NOT supported");
 		dbgstr.AppendFormat(L"\nPresentationInterval ONE        : %s", DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_ONE ? L"supported" : L"NOT supported");
+		dbgstr.AppendFormat(L"\nCaps READ_SCANLINE              : %s", DevCaps.Caps & D3DCAPS_READ_SCANLINE ? L"supported" : L"NOT supported");
 		dbgstr.AppendFormat(L"\nPixelShaderVersion              : %u.%u", D3DSHADER_VERSION_MAJOR(DevCaps.PixelShaderVersion), D3DSHADER_VERSION_MINOR(DevCaps.PixelShaderVersion));
 		dbgstr.AppendFormat(L"\nMaxPixelShader30InstructionSlots: %u", DevCaps.MaxPixelShader30InstructionSlots);
 		DLog(dbgstr);
@@ -193,6 +195,62 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 	if (S_OK == m_pD3DDevEx->CreateTexture(STATS_W, STATS_H, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_pOSDTexture, nullptr)) {
 		m_pD3DDevEx->CreateOffscreenPlainSurface(STATS_W, STATS_H, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &m_pMemSurface, nullptr);
 	}
+
+#if 0
+	{
+		D3DRASTER_STATUS rasterStatus;
+		if (S_OK == m_pD3DDevEx->GetRasterStatus(0, &rasterStatus)) {
+			while (rasterStatus.ScanLine != 0) {
+				m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
+			}
+			while (rasterStatus.ScanLine == 0) {
+				m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
+			}
+			uint64_t startTick = GetPreciseTick();
+			UINT startLine = rasterStatus.ScanLine; // most likely there will be 1
+
+			uint64_t endTick = 0;
+			UINT endLine = 0;
+			while (rasterStatus.ScanLine != 0) {
+				endTick = GetPreciseTick();
+				endLine = rasterStatus.ScanLine;
+				m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
+			}
+
+			UINT DetectedScanlines = endLine + 1;
+			double DetectedScanlineTicks = (double)(endTick - startTick) / (endLine - startLine + 1);
+			DLog(L"DetectedScanlines   : %u", DetectedScanlines);
+			DLog(L"DetectedScanlineTime: %7.03f ms", DetectedScanlineTicks * GetPreciseSecondsPerTick() * 1000);
+
+			// Estimate the display refresh rate from the vsyncs
+			rasterStatus = { FALSE, 1 };
+			while (rasterStatus.ScanLine != 0) {
+				m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
+			}
+			// Now we're at the start of a vsync
+			startTick = GetPreciseTick();
+			uint64_t enoughTick = startTick + GetPreciseTicksPerSecondI();
+			UINT i = 0;
+			while (endTick < enoughTick) {
+				while (rasterStatus.ScanLine == 0) {
+					m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
+				}
+				while (rasterStatus.ScanLine != 0) {
+					m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
+				}
+				i++;
+				// Now we're at the next vsync
+				endTick = GetPreciseTick();
+			}
+
+			double DetectedRefreshRate = (double)i / (GetPreciseSecondsPerTick() * (endTick - startTick));
+			double EstRefreshCycle = GetPreciseSecondsPerTick() * (endTick - startTick) / i;
+			DLog(L"RefreshRate         : %3u Hz", m_DisplayMode.RefreshRate);
+			DLog(L"DetectedRefreshRate : %7.03f Hz", DetectedRefreshRate);
+			DLog(L"EstRefreshCycle     : %7.03f ms", EstRefreshCycle * 1000);
+		}
+	}
+#endif
 
 	return hr;
 }
@@ -499,7 +557,6 @@ void CDX9VideoProcessor::Start()
 {
 	m_FrameStats.Reset();
 }
-
 
 HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 {
