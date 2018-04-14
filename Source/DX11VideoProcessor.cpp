@@ -26,7 +26,9 @@
 #include <Mferror.h>
 #include <Mfidl.h>
 #include <directxcolors.h>
+#include <dwmapi.h>
 #include "Helper.h"
+#include "Time.h"
 #include "DX11VideoProcessor.h"
 #include "./Include/ID3DVideoMemoryConfiguration.h"
 
@@ -98,7 +100,26 @@ HRESULT CDX11VideoProcessor::Init()
 		return hr;
 	}
 
-	return SetDevice(pDevice, pImmediateContext);
+	hr = SetDevice(pDevice, pImmediateContext);
+
+#if 0
+	DWM_TIMING_INFO timinginfo = { sizeof(DWM_TIMING_INFO) };
+	if (S_OK == DwmGetCompositionTimingInfo(nullptr, &timinginfo)) {
+		ULONGLONG t = 0;
+		UINT i;
+		for (i = 0; i < 10; i++) {
+			t += timinginfo.qpcRefreshPeriod;
+			Sleep(50);
+			DwmGetCompositionTimingInfo(nullptr, &timinginfo);
+		}
+
+		double DetectedRefreshRate = GetPreciseTicksPerSecond() * i / t;
+		DLog(L"RefreshRate         : %7.03f Hz", (double)timinginfo.rateRefresh.uiNumerator / timinginfo.rateRefresh.uiDenominator);
+		DLog(L"DetectedRefreshRate : %7.03f Hz", DetectedRefreshRate);
+	}
+#endif
+
+	return hr;
 }
 
 void CDX11VideoProcessor::ClearD3D11()

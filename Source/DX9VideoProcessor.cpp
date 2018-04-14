@@ -197,58 +197,56 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 	}
 
 #if 0
-	{
-		D3DRASTER_STATUS rasterStatus;
-		if (S_OK == m_pD3DDevEx->GetRasterStatus(0, &rasterStatus)) {
-			while (rasterStatus.ScanLine != 0) {
-				m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
-			}
+	D3DRASTER_STATUS rasterStatus;
+	if (S_OK == m_pD3DDevEx->GetRasterStatus(0, &rasterStatus)) {
+		while (rasterStatus.ScanLine != 0) {
+			m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
+		}
+		while (rasterStatus.ScanLine == 0) {
+			m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
+		}
+		uint64_t startTick = GetPreciseTick();
+		UINT startLine = rasterStatus.ScanLine; // most likely there will be 1
+
+		uint64_t endTick = 0;
+		UINT endLine = 0;
+		while (rasterStatus.ScanLine != 0) {
+			endTick = GetPreciseTick();
+			endLine = rasterStatus.ScanLine;
+			m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
+		}
+
+		UINT DetectedScanlines = endLine + 1;
+		double DetectedScanlineTicks = (double)(endTick - startTick) / (endLine - startLine + 1);
+		DLog(L"DetectedScanlines   : %u", DetectedScanlines);
+		DLog(L"DetectedScanlineTime: %7.03f ms", DetectedScanlineTicks * GetPreciseSecondsPerTick() * 1000);
+
+		// Estimate the display refresh rate from the vsyncs
+		rasterStatus = { FALSE, 1 };
+		while (rasterStatus.ScanLine != 0) {
+			m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
+		}
+		// Now we're at the start of a vsync
+		startTick = GetPreciseTick();
+		uint64_t enoughTick = startTick + GetPreciseTicksPerSecondI();
+		UINT i = 0;
+		while (endTick < enoughTick) {
 			while (rasterStatus.ScanLine == 0) {
 				m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
 			}
-			uint64_t startTick = GetPreciseTick();
-			UINT startLine = rasterStatus.ScanLine; // most likely there will be 1
-
-			uint64_t endTick = 0;
-			UINT endLine = 0;
-			while (rasterStatus.ScanLine != 0) {
-				endTick = GetPreciseTick();
-				endLine = rasterStatus.ScanLine;
-				m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
-			}
-
-			UINT DetectedScanlines = endLine + 1;
-			double DetectedScanlineTicks = (double)(endTick - startTick) / (endLine - startLine + 1);
-			DLog(L"DetectedScanlines   : %u", DetectedScanlines);
-			DLog(L"DetectedScanlineTime: %7.03f ms", DetectedScanlineTicks * GetPreciseSecondsPerTick() * 1000);
-
-			// Estimate the display refresh rate from the vsyncs
-			rasterStatus = { FALSE, 1 };
 			while (rasterStatus.ScanLine != 0) {
 				m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
 			}
-			// Now we're at the start of a vsync
-			startTick = GetPreciseTick();
-			uint64_t enoughTick = startTick + GetPreciseTicksPerSecondI();
-			UINT i = 0;
-			while (endTick < enoughTick) {
-				while (rasterStatus.ScanLine == 0) {
-					m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
-				}
-				while (rasterStatus.ScanLine != 0) {
-					m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
-				}
-				i++;
-				// Now we're at the next vsync
-				endTick = GetPreciseTick();
-			}
-
-			double DetectedRefreshRate = (double)i / (GetPreciseSecondsPerTick() * (endTick - startTick));
-			double EstRefreshCycle = GetPreciseSecondsPerTick() * (endTick - startTick) / i;
-			DLog(L"RefreshRate         : %3u Hz", m_DisplayMode.RefreshRate);
-			DLog(L"DetectedRefreshRate : %7.03f Hz", DetectedRefreshRate);
-			DLog(L"EstRefreshCycle     : %7.03f ms", EstRefreshCycle * 1000);
+			i++;
+			// Now we're at the next vsync
+			endTick = GetPreciseTick();
 		}
+
+		double DetectedRefreshRate = (double)i / (GetPreciseSecondsPerTick() * (endTick - startTick));
+		double EstRefreshCycle = GetPreciseSecondsPerTick() * (endTick - startTick) / i;
+		DLog(L"RefreshRate         : %3u Hz", m_DisplayMode.RefreshRate);
+		DLog(L"DetectedRefreshRate : %7.03f Hz", DetectedRefreshRate);
+		DLog(L"EstRefreshCycle     : %7.03f ms", EstRefreshCycle * 1000);
 	}
 #endif
 
