@@ -31,6 +31,7 @@ class __declspec(uuid("DA46D181-07D6-441D-B314-019AEB10148A"))
 
 	bool m_bUseD3D11    = false;
 	bool m_bDeintDouble = false;
+	bool m_bAllow10Bit  = false;
 	bool m_bShowStats   = false;
 
 public:

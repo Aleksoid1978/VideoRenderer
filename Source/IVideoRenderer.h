@@ -38,10 +38,12 @@ IVideoRenderer : public IUnknown {
 
 	STDMETHOD_(bool, GetActive()) PURE;
 	STDMETHOD_(bool, GetOptionUseD3D11()) PURE;
-	STDMETHOD(SetOptionUseD3D11(bool value)) PURE;
+	STDMETHOD_(void, SetOptionUseD3D11(bool value)) PURE;
 	STDMETHOD_(bool, GetOptionDeintDouble()) PURE;
-	STDMETHOD(SetOptionDeintDouble(bool value)) PURE;
+	STDMETHOD_(void, SetOptionDeintDouble(bool value)) PURE;
+	STDMETHOD_(bool, GetOptionAllow10Bit()) PURE;
+	STDMETHOD_(void, SetOptionAllow10Bit(bool value)) PURE;
 	STDMETHOD_(bool, GetOptionShowStatistics()) PURE;
-	STDMETHOD(SetOptionShowStatistics(bool value)) PURE;
+	STDMETHOD_(void, SetOptionShowStatistics(bool value)) PURE;
 	STDMETHOD(SaveSettings()) PURE;
 };

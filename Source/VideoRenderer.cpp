@@ -32,6 +32,7 @@
 #define OPT_REGKEY_VIDEORENDERER L"Software\\MPC-BE Filters\\MPC Video Renderer"
 #define OPT_UseD3D11             L"UseD3D11"
 #define OPT_DoubleFrateDeint     L"DoubleFramerateDeinterlace"
+#define OPT_Allow10Bit           L"OPT_Allow10Bit"
 #define OPT_ShowStatistics       L"ShowStatistics"
 
 class CVideoRendererInputPin : public CRendererInputPin
@@ -151,12 +152,15 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_DoubleFrateDeint, dw)) {
 			SetOptionDeintDouble(!!dw);
 		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_Allow10Bit, dw)) {
+			m_bOptionAllow10Bit = !!dw;
+		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ShowStatistics, dw)) {
 			SetOptionShowStatistics(!!dw);
 		}
 	}
 
-	*phr = m_DX9_VP.Init(m_hWnd);
+	*phr = m_DX9_VP.Init(m_hWnd, m_bOptionAllow10Bit);
 	if (FAILED(*phr)) {
 		return;
 	}
@@ -476,10 +480,9 @@ STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionUseD3D11()
 	return m_bOptionUseD3D11;
 }
 
-STDMETHODIMP CMpcVideoRenderer::SetOptionUseD3D11(bool value)
+STDMETHODIMP_(void) CMpcVideoRenderer::SetOptionUseD3D11(bool value)
 {
 	m_bOptionUseD3D11 = value;
-	return S_OK;
 }
 
 STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionDeintDouble()
@@ -491,11 +494,20 @@ STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionDeintDouble()
 	}
 }
 
-STDMETHODIMP CMpcVideoRenderer::SetOptionDeintDouble(bool value)
+STDMETHODIMP_(void) CMpcVideoRenderer::SetOptionDeintDouble(bool value)
 {
 	m_DX11_VP.SetDeintDouble(value);
 	m_DX9_VP.SetDeintDouble(value);
-	return S_OK;
+}
+
+STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionAllow10Bit()
+{
+	return m_bOptionAllow10Bit;
+}
+
+STDMETHODIMP_(void) CMpcVideoRenderer::SetOptionAllow10Bit(bool value)
+{
+	m_bOptionAllow10Bit = value;
 }
 
 STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionShowStatistics()
@@ -507,11 +519,10 @@ STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionShowStatistics()
 	}
 }
 
-STDMETHODIMP CMpcVideoRenderer::SetOptionShowStatistics(bool value)
+STDMETHODIMP_(void) CMpcVideoRenderer::SetOptionShowStatistics(bool value)
 {
 	m_DX11_VP.SetShowStats(value);
 	m_DX9_VP.SetShowStats(value);
-	return S_OK;
 }
 
 STDMETHODIMP CMpcVideoRenderer::SaveSettings()
@@ -520,6 +531,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 	if (ERROR_SUCCESS == key.Create(HKEY_CURRENT_USER, OPT_REGKEY_VIDEORENDERER)) {
 		key.SetDWORDValue(OPT_UseD3D11, m_bOptionUseD3D11);
 		key.SetDWORDValue(OPT_DoubleFrateDeint, GetOptionDeintDouble());
+		key.SetDWORDValue(OPT_Allow10Bit, m_bOptionAllow10Bit);
 		key.SetDWORDValue(OPT_ShowStatistics, GetOptionShowStatistics());
 	}
 

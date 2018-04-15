@@ -86,6 +86,7 @@ private:
 	UINT m_CurrentAdapter = D3DADAPTER_DEFAULT;
 	D3DDISPLAYMODEEX m_DisplayMode = { sizeof(D3DDISPLAYMODEEX) };
 	D3DPRESENT_PARAMETERS m_d3dpp = {};
+	D3DFORMAT m_VPOutputFmt = D3DFMT_X8R8G8B8;
 
 	// DXVA2 Video Processor
 	CComPtr<IDirectXVideoProcessorService> m_pDXVA2_VPService;
@@ -133,7 +134,7 @@ public:
 	CDX9VideoProcessor();
 	~CDX9VideoProcessor();
 
-	HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr);
+	HRESULT Init(const HWND hwnd, bool bVP10bit, bool* pChangeDevice = nullptr);
 
 private:
 	BOOL CheckInput(const D3DFORMAT d3dformat, const UINT width, const UINT height);

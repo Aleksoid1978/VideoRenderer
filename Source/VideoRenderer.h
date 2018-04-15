@@ -53,6 +53,8 @@ private:
 	friend class CVideoRendererInputPin;
 
 	bool m_bOptionUseD3D11 = false; // option
+	bool m_bOptionAllow10Bit = false; // option
+
 	bool m_bUsedD3D11 = false;      // current state
 
 	HWND m_hWnd = nullptr;
@@ -183,10 +185,12 @@ public:
 
 	STDMETHODIMP_(bool) GetActive();
 	STDMETHODIMP_(bool) GetOptionUseD3D11();
-	STDMETHODIMP SetOptionUseD3D11(bool value);
+	STDMETHODIMP_(void) SetOptionUseD3D11(bool value);
 	STDMETHODIMP_(bool) GetOptionDeintDouble();
-	STDMETHODIMP SetOptionDeintDouble(bool value);
+	STDMETHODIMP_(void) SetOptionDeintDouble(bool value);
+	STDMETHODIMP_(bool) GetOptionAllow10Bit();
+	STDMETHODIMP_(void) SetOptionAllow10Bit(bool value);
 	STDMETHODIMP_(bool) GetOptionShowStatistics();
-	STDMETHODIMP SetOptionShowStatistics(bool value);
+	STDMETHODIMP_(void) SetOptionShowStatistics(bool value);
 	STDMETHODIMP SaveSettings();
 };
