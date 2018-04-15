@@ -70,6 +70,7 @@ private:
 	bool m_bInterlaced = false;
 	RECT m_srcRect = {};
 	RECT m_trgRect = {};
+	DXGI_FORMAT m_VPOutputFmt = DXGI_FORMAT_B8G8R8X8_UNORM;
 
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 	int m_FieldDrawn = 0;
@@ -99,7 +100,7 @@ public:
 	CDX11VideoProcessor();
 	~CDX11VideoProcessor();
 
-	HRESULT Init();
+	HRESULT Init(const bool bVP10bit);
 	void ClearD3D11();
 
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);

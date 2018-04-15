@@ -28,8 +28,8 @@
 #include "Time.h"
 #include "DX9VideoProcessor.h"
 
-#define STATS_W 256
-#define STATS_H  60
+#define STATS_W 310
+#define STATS_H 100
 
 // CDX9VideoProcessor
 
@@ -101,7 +101,7 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	Gdiplus::GdiplusShutdown(m_gdiplusToken);
 }
 
-HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool bVP10bit, bool* pChangeDevice/* = nullptr*/)
+HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const bool bVP10bit, bool* pChangeDevice/* = nullptr*/)
 {
 	CheckPointer(m_pD3DEx, E_FAIL);
 
@@ -907,6 +907,8 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	if (m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
 		str.Append(L" i");
 	}
+	str.AppendFormat(L"\nInput format : %s", D3DFormatToString(m_srcD3DFormat));
+	str.AppendFormat(L"\nVP output fmt: %s", D3DFormatToString(m_VPOutputFmt));
 
 	HDC hdc;
 	if (S_OK == m_pMemSurface->GetDC(&hdc)) {

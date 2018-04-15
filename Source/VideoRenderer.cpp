@@ -167,7 +167,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	m_bUsedD3D11 = m_bOptionUseD3D11 && IsWindows8OrGreater();
 	if (m_bUsedD3D11) {
-		if (FAILED(m_DX11_VP.Init())) {
+		if (FAILED(m_DX11_VP.Init(m_bOptionAllow10Bit))) {
 			m_bUsedD3D11 = false;
 		}
 	}

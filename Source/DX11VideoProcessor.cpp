@@ -48,7 +48,7 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 	}
 }
 
-HRESULT CDX11VideoProcessor::Init()
+HRESULT CDX11VideoProcessor::Init(const bool bVP10bit)
 {
 	if (!m_hD3D11Lib) {
 		m_hD3D11Lib = LoadLibraryW(L"d3d11.dll");
@@ -74,6 +74,8 @@ HRESULT CDX11VideoProcessor::Init()
 	if (!pfnD3D11CreateDevice) {
 		return E_FAIL;
 	}
+
+	m_VPOutputFmt = bVP10bit ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8X8_UNORM;
 
 	D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0, D3D_FEATURE_LEVEL_9_3, D3D_FEATURE_LEVEL_9_2, D3D_FEATURE_LEVEL_9_1 };
 	D3D_FEATURE_LEVEL featurelevel;
@@ -426,11 +428,18 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 	}
 
 	UINT uiFlags;
-	DXGI_FORMAT VP_Output_Format = DXGI_FORMAT_B8G8R8X8_UNORM;
 
-	hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(VP_Output_Format, &uiFlags);
-	if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
-		return MF_E_UNSUPPORTED_D3D_TYPE;
+	if (m_VPOutputFmt == DXGI_FORMAT_R10G10B10A2_UNORM) {
+		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(DXGI_FORMAT_R10G10B10A2_UNORM, &uiFlags);
+		if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
+			m_VPOutputFmt = DXGI_FORMAT_B8G8R8X8_UNORM;
+		}
+	}
+	if (m_VPOutputFmt == DXGI_FORMAT_B8G8R8X8_UNORM) {
+		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(DXGI_FORMAT_B8G8R8X8_UNORM, &uiFlags);
+		if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
+			return MF_E_UNSUPPORTED_D3D_TYPE;
+		}
 	}
 
 	UINT index = 0;
@@ -824,10 +833,12 @@ HRESULT CDX11VideoProcessor::DrawStats()
 	}
 
 	CStringW str = L"Direct3D 11";
-	str.AppendFormat(L"\nFrame rate: %7.03f", m_FrameStats.GetAverageFps());
+	str.AppendFormat(L"\nFrame  rate  : %7.03f", m_FrameStats.GetAverageFps());
 	if (m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
 		str.Append(L" i");
 	}
+	str.AppendFormat(L"\nInput format : %s", DXGIFormatToString(m_srcDXGIFormat));
+	str.AppendFormat(L"\nVP output fmt: %s", DXGIFormatToString(m_VPOutputFmt));
 
 	CComPtr<IDWriteTextLayout> pTextLayout;
 	if (S_OK == m_pDWriteFactory->CreateTextLayout(str, str.GetLength(), m_pTextFormat, m_windowRect.right - 10, m_windowRect.bottom - 10, &pTextLayout)) {
