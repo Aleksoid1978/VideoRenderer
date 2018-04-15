@@ -23,23 +23,28 @@
 
 class CFrameStats
 {
+private:
 	unsigned m_frames = 0;
 	REFERENCE_TIME m_times[30] = {};
-	unsigned m_index = 0;
+	unsigned m_index = _countof(m_times) - 1;
+
+	inline unsigned GetNextIndex(unsigned idx) {
+		if (idx >= _countof(m_times) - 1) {
+			return 0;
+		}
+		return idx + 1;
+	}
 
 public:
 	void Reset() {
 		m_frames = 0;
 		ZeroMemory(m_times, sizeof(m_times));
-		m_index = 0;
+		m_index = _countof(m_times) - 1;
 	};
 
 	void Add(REFERENCE_TIME time) {
+		m_index = GetNextIndex(m_index);
 		m_times[m_index] = time;
-		m_index++;
-		if (m_index >= _countof(m_times)) {
-			m_index = 0;
-		}
 		m_frames++;
 	}
 
@@ -47,8 +52,8 @@ public:
 
 	double GetAverageFps() {
 		if (m_frames >= _countof(m_times)) {
-			unsigned last_index = ((m_index == 0) ? _countof(m_times) : m_index) - 1;
-			return (double)(UNITS * (_countof(m_times) - 1)) / (m_times[last_index] - m_times[m_index]);
+			unsigned first_index = GetNextIndex(m_index);
+			return (double)(UNITS * (_countof(m_times) - 1)) / (m_times[m_index] - m_times[first_index]);
 		}
 
 		if (m_frames > 1) {
