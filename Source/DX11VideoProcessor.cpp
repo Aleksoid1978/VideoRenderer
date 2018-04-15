@@ -129,6 +129,7 @@ void CDX11VideoProcessor::ClearD3D11()
 	m_pD2DFactory.Release();
 
 	m_pD2DBrush.Release();
+	m_pD2DBrushBlack.Release();
 	m_pD2D1RenderTarget.Release();
 
 	m_pSrcTexture2D_RGB.Release();
@@ -290,6 +291,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 	m_pDWriteFactory.Release();
 	m_pD2DFactory.Release();
 	m_pD2DBrush.Release();
+	m_pD2DBrushBlack.Release();
 	m_pD2D1RenderTarget.Release();
 
 	D2D1_FACTORY_OPTIONS options = {};
@@ -327,6 +329,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 					hr2 = m_pD2DFactory->CreateDxgiSurfaceRenderTarget(pDXGISurface, &props, &m_pD2D1RenderTarget);
 					if (S_OK == hr2) {
 						hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LightYellow), &m_pD2DBrush);
+						hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_pD2DBrushBlack);
 					}
 				}
 			}
@@ -819,21 +822,21 @@ HRESULT CDX11VideoProcessor::DrawStats()
 	if (!m_pD2DBrush || m_windowRect.IsRectEmpty()) {
 		return E_ABORT;
 	}
-	
+
 	CStringW str = L"Direct3D 11";
 	str.AppendFormat(L"\nFrame rate: %7.03f", m_FrameStats.GetAverageFps());
 	if (m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
 		str.Append(L" i");
 	}
 
-	m_pD2D1RenderTarget->BeginDraw();
-	m_pD2D1RenderTarget->DrawTextW(
-		str,
-		str.GetLength(),
-		m_pTextFormat,
-		D2D1::RectF(10.0f, 10.0f, m_windowRect.right, m_windowRect.bottom),
-		m_pD2DBrush);
-	m_pD2D1RenderTarget->EndDraw();
+	CComPtr<IDWriteTextLayout> pTextLayout;
+	if (S_OK == m_pDWriteFactory->CreateTextLayout(str, str.GetLength(), m_pTextFormat, m_windowRect.right - 10, m_windowRect.bottom - 10, &pTextLayout)) {
+		m_pD2D1RenderTarget->BeginDraw();
+		m_pD2D1RenderTarget->DrawTextLayout(D2D1::Point2F( 9.0f, 11.0f), pTextLayout, m_pD2DBrushBlack);
+		m_pD2D1RenderTarget->DrawTextLayout(D2D1::Point2F(11.0f, 11.0f), pTextLayout, m_pD2DBrushBlack);
+		m_pD2D1RenderTarget->DrawTextLayout(D2D1::Point2F(10.0f, 10.0f), pTextLayout, m_pD2DBrush);
+		m_pD2D1RenderTarget->EndDraw();
+	}
 
 	return S_OK;
 }

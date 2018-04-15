@@ -91,6 +91,7 @@ private:
 	CComPtr<IDWriteTextFormat> m_pTextFormat;
 	CComPtr<ID2D1RenderTarget> m_pD2D1RenderTarget;
 	CComPtr<ID2D1SolidColorBrush> m_pD2DBrush;
+	CComPtr<ID2D1SolidColorBrush> m_pD2DBrushBlack;
 
 	CFrameStats m_FrameStats;
 
