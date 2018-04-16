@@ -160,7 +160,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 	}
 
-	*phr = m_DX9_VP.Init(m_hWnd, m_bOptionAllow10Bit);
+	*phr = m_DX9_VP.Init(m_hWnd, m_bOptionAllow10Bit, nullptr);
 	if (FAILED(*phr)) {
 		return;
 	}
@@ -388,7 +388,7 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 	if (m_hWnd != (HWND)Owner) {
 		m_hWnd = (HWND)Owner;
 		bool bChangeDevice = false;
-		HRESULT hr = m_DX9_VP.Init(m_hWnd, &bChangeDevice);
+		HRESULT hr = m_DX9_VP.Init(m_hWnd, m_bOptionAllow10Bit, &bChangeDevice);
 		if (S_OK == hr && m_bUsedD3D11) {
 			hr = m_DX11_VP.InitSwapChain(m_hWnd);
 		}

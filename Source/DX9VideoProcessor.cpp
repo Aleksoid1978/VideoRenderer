@@ -101,7 +101,7 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	Gdiplus::GdiplusShutdown(m_gdiplusToken);
 }
 
-HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const bool bVP10bit, bool* pChangeDevice/* = nullptr*/)
+HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const bool bVP10bit, bool* pChangeDevice)
 {
 	CheckPointer(m_pD3DEx, E_FAIL);
 

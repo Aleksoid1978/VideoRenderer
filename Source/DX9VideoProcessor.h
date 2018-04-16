@@ -134,7 +134,7 @@ public:
 	CDX9VideoProcessor();
 	~CDX9VideoProcessor();
 
-	HRESULT Init(const HWND hwnd, const bool bVP10bit, bool* pChangeDevice = nullptr);
+	HRESULT Init(const HWND hwnd, const bool bVP10bit, bool* pChangeDevice);
 
 private:
 	BOOL CheckInput(const D3DFORMAT d3dformat, const UINT width, const UINT height);
