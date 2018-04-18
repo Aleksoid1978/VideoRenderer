@@ -31,9 +31,9 @@
 
 #define OPT_REGKEY_VIDEORENDERER L"Software\\MPC-BE Filters\\MPC Video Renderer"
 #define OPT_UseD3D11             L"UseD3D11"
-#define OPT_DoubleFrateDeint     L"DoubleFramerateDeinterlace"
-#define OPT_Allow10Bit           L"OPT_Allow10Bit"
 #define OPT_ShowStatistics       L"ShowStatistics"
+#define OPT_DoubleFrateDeint     L"DoubleFramerateDeinterlace"
+#define OPT_SurfaceFormat        L"SurfaceFormat"
 
 class CVideoRendererInputPin : public CRendererInputPin
 	, public IMFGetService
@@ -149,25 +149,25 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_UseD3D11, dw)) {
 			m_bOptionUseD3D11 = !!dw;
 		}
-		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_DoubleFrateDeint, dw)) {
-			SetOptionDeintDouble(!!dw);
-		}
-		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_Allow10Bit, dw)) {
-			m_bOptionAllow10Bit = !!dw;
-		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ShowStatistics, dw)) {
 			SetOptionShowStatistics(!!dw);
 		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_DoubleFrateDeint, dw)) {
+			SetOptionDeintDouble(!!dw);
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_SurfaceFormat, dw)) {
+			m_iOptionSurfaceFmt = dw;
+		}
 	}
 
-	*phr = m_DX9_VP.Init(m_hWnd, m_bOptionAllow10Bit, nullptr);
+	*phr = m_DX9_VP.Init(m_hWnd, m_iOptionSurfaceFmt, nullptr);
 	if (FAILED(*phr)) {
 		return;
 	}
 
 	m_bUsedD3D11 = m_bOptionUseD3D11 && IsWindows8OrGreater();
 	if (m_bUsedD3D11) {
-		if (FAILED(m_DX11_VP.Init(m_bOptionAllow10Bit))) {
+		if (FAILED(m_DX11_VP.Init(m_iOptionSurfaceFmt))) {
 			m_bUsedD3D11 = false;
 		}
 	}
@@ -388,7 +388,7 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 	if (m_hWnd != (HWND)Owner) {
 		m_hWnd = (HWND)Owner;
 		bool bChangeDevice = false;
-		HRESULT hr = m_DX9_VP.Init(m_hWnd, m_bOptionAllow10Bit, &bChangeDevice);
+		HRESULT hr = m_DX9_VP.Init(m_hWnd, m_iOptionSurfaceFmt, &bChangeDevice);
 		if (S_OK == hr && m_bUsedD3D11) {
 			hr = m_DX11_VP.InitSwapChain(m_hWnd);
 		}
@@ -485,6 +485,22 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetOptionUseD3D11(bool value)
 	m_bOptionUseD3D11 = value;
 }
 
+STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionShowStatistics()
+{
+	if (m_bUsedD3D11) {
+		return m_DX11_VP.GetShowStats();
+	}
+	else {
+		return m_DX9_VP.GetShowStats();
+	}
+}
+
+STDMETHODIMP_(void) CMpcVideoRenderer::SetOptionShowStatistics(bool value)
+{
+	m_DX11_VP.SetShowStats(value);
+	m_DX9_VP.SetShowStats(value);
+}
+
 STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionDeintDouble()
 {
 	if (m_bUsedD3D11) {
@@ -500,29 +516,14 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetOptionDeintDouble(bool value)
 	m_DX9_VP.SetDeintDouble(value);
 }
 
-STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionAllow10Bit()
+STDMETHODIMP_(int) CMpcVideoRenderer::GetOptionSurfaceFormat()
 {
-	return m_bOptionAllow10Bit;
+	return m_iOptionSurfaceFmt;
 }
 
-STDMETHODIMP_(void) CMpcVideoRenderer::SetOptionAllow10Bit(bool value)
+STDMETHODIMP_(void) CMpcVideoRenderer::SetOptionSurfaceFormat(int value)
 {
-	m_bOptionAllow10Bit = value;
-}
-
-STDMETHODIMP_(bool) CMpcVideoRenderer::GetOptionShowStatistics()
-{
-	if (m_bUsedD3D11) {
-		return m_DX11_VP.GetShowStats();
-	} else {
-		return m_DX9_VP.GetShowStats();
-	}
-}
-
-STDMETHODIMP_(void) CMpcVideoRenderer::SetOptionShowStatistics(bool value)
-{
-	m_DX11_VP.SetShowStats(value);
-	m_DX9_VP.SetShowStats(value);
+	m_iOptionSurfaceFmt = value;
 }
 
 STDMETHODIMP CMpcVideoRenderer::SaveSettings()
@@ -530,9 +531,9 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 	CRegKey key;
 	if (ERROR_SUCCESS == key.Create(HKEY_CURRENT_USER, OPT_REGKEY_VIDEORENDERER)) {
 		key.SetDWORDValue(OPT_UseD3D11, m_bOptionUseD3D11);
-		key.SetDWORDValue(OPT_DoubleFrateDeint, GetOptionDeintDouble());
-		key.SetDWORDValue(OPT_Allow10Bit, m_bOptionAllow10Bit);
 		key.SetDWORDValue(OPT_ShowStatistics, GetOptionShowStatistics());
+		key.SetDWORDValue(OPT_DoubleFrateDeint, GetOptionDeintDouble());
+		key.SetDWORDValue(OPT_SurfaceFormat, m_iOptionSurfaceFmt);
 	}
 
 	return S_OK;

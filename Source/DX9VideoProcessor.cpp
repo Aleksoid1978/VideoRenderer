@@ -28,7 +28,7 @@
 #include "Time.h"
 #include "DX9VideoProcessor.h"
 
-#define STATS_W 310
+#define STATS_W 330
 #define STATS_H 100
 
 // CDX9VideoProcessor
@@ -101,12 +101,23 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	Gdiplus::GdiplusShutdown(m_gdiplusToken);
 }
 
-HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const bool bVP10bit, bool* pChangeDevice)
+HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* pChangeDevice)
 {
 	CheckPointer(m_pD3DEx, E_FAIL);
 
 	m_hWnd = hwnd;
-	m_VPOutputFmt = bVP10bit ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
+	switch (iSurfaceFmt) {
+	default:
+	case 0:
+		m_VPOutputFmt = D3DFMT_X8R8G8B8;
+		break;
+	case 1:
+		m_VPOutputFmt = D3DFMT_A2R10G10B10;
+		break;
+	case 2:
+		m_VPOutputFmt = D3DFMT_A16B16G16R16F;
+		break;
+	}
 
 	const UINT currentAdapter = GetAdapter(m_hWnd, m_pD3DEx);
 	bool bTryToReset = (currentAdapter == m_CurrentAdapter) && m_pD3DDevEx;
@@ -392,6 +403,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	HRESULT hr = S_OK;
 	// Query the supported render target format.
 	UINT i, count;
+#if 0
 	D3DFORMAT* formats = nullptr;
 	hr = m_pDXVA2_VPService->GetVideoProcessorRenderTargets(devguid, &videodesc, &count, &formats);
 	if (FAILED(hr)) {
@@ -429,6 +441,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : GetVideoProcessorRenderTargets() doesn't support D3DFMT_X8R8G8B8");
 		return FALSE;
 	}
+#endif
 
 	// Query video processor capabilities.
 	hr = m_pDXVA2_VPService->GetVideoProcessorCaps(devguid, &videodesc, m_VPOutputFmt, &m_DXVA2VPcaps);
@@ -903,7 +916,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	HRESULT hr = m_pMemSurface->GetDesc(&desc);
 
 	CStringW str = L"Direct3D 9Ex";
-	str.AppendFormat(L"\nFrame rate: %7.03f", m_FrameStats.GetAverageFps());
+	str.AppendFormat(L"\nFrame rate   : %7.03f", m_FrameStats.GetAverageFps());
 	if (m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
 		str.Append(L" i");
 	}

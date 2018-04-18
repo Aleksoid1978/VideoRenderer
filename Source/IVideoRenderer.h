@@ -37,13 +37,15 @@ IVideoRenderer : public IUnknown {
 	STDMETHOD(get_DXVA2VPCaps) (DXVA2_VideoProcessorCaps* pDXVA2VPCaps) PURE;
 
 	STDMETHOD_(bool, GetActive()) PURE;
+
 	STDMETHOD_(bool, GetOptionUseD3D11()) PURE;
 	STDMETHOD_(void, SetOptionUseD3D11(bool value)) PURE;
-	STDMETHOD_(bool, GetOptionDeintDouble()) PURE;
-	STDMETHOD_(void, SetOptionDeintDouble(bool value)) PURE;
-	STDMETHOD_(bool, GetOptionAllow10Bit()) PURE;
-	STDMETHOD_(void, SetOptionAllow10Bit(bool value)) PURE;
 	STDMETHOD_(bool, GetOptionShowStatistics()) PURE;
 	STDMETHOD_(void, SetOptionShowStatistics(bool value)) PURE;
+	STDMETHOD_(bool, GetOptionDeintDouble()) PURE;
+	STDMETHOD_(void, SetOptionDeintDouble(bool value)) PURE;
+	STDMETHOD_(int,  GetOptionSurfaceFormat()) PURE;
+	STDMETHOD_(void, SetOptionSurfaceFormat(int value)) PURE;
+
 	STDMETHOD(SaveSettings()) PURE;
 };

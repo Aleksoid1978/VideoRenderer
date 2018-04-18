@@ -100,7 +100,7 @@ public:
 	CDX11VideoProcessor();
 	~CDX11VideoProcessor();
 
-	HRESULT Init(const bool bVP10bit);
+	HRESULT Init(const int iSurfaceFmt);
 	void ClearD3D11();
 
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);

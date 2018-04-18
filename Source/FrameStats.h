@@ -48,6 +48,10 @@ public:
 		m_frames++;
 	}
 
+	REFERENCE_TIME GetTime() {
+		return m_times[m_index];
+	}
+
 	unsigned GetFrames() { return m_frames; }
 
 	double GetAverageFps() {

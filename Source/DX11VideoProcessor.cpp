@@ -48,7 +48,7 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 	}
 }
 
-HRESULT CDX11VideoProcessor::Init(const bool bVP10bit)
+HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 {
 	if (!m_hD3D11Lib) {
 		m_hD3D11Lib = LoadLibraryW(L"d3d11.dll");
@@ -75,7 +75,18 @@ HRESULT CDX11VideoProcessor::Init(const bool bVP10bit)
 		return E_FAIL;
 	}
 
-	m_VPOutputFmt = bVP10bit ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
+	switch (iSurfaceFmt) {
+	default:
+	case 0:
+		m_VPOutputFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
+		break;
+	case 1:
+		m_VPOutputFmt = DXGI_FORMAT_R10G10B10A2_UNORM;
+		break;
+	case 2:
+		m_VPOutputFmt = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		break;
+	}
 
 	D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0, D3D_FEATURE_LEVEL_9_3, D3D_FEATURE_LEVEL_9_2, D3D_FEATURE_LEVEL_9_1 };
 	D3D_FEATURE_LEVEL featurelevel;
