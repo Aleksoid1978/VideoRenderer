@@ -403,7 +403,6 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	HRESULT hr = S_OK;
 	// Query the supported render target format.
 	UINT i, count;
-#if 0
 	D3DFORMAT* formats = nullptr;
 	hr = m_pDXVA2_VPService->GetVideoProcessorRenderTargets(devguid, &videodesc, &count, &formats);
 	if (FAILED(hr)) {
@@ -419,21 +418,10 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 		DLog(dbgstr);
 	}
 #endif
-	if (m_VPOutputFmt == D3DFMT_A2R10G10B10) {
-		for (i = 0; i < count; i++) {
-			if (formats[i] == D3DFMT_A2R10G10B10) {
-				break;
-			}
-		}
-		if (i >= count) {
-			m_VPOutputFmt = D3DFMT_X8R8G8B8;
-		}
-	}
-	if (m_VPOutputFmt == D3DFMT_X8R8G8B8) {
-		for (i = 0; i < count; i++) {
-			if (formats[i] == D3DFMT_X8R8G8B8) {
-				break;
-			}
+	for (i = 0; i < count; i++) {
+		if (formats[i] == D3DFMT_X8R8G8B8) {
+			// Check only D3DFMT_X8R8G8B8. Other formats (D3DFMT_A2R10G10B10 and D3DFMT_A16B16G16R16F) are supported in spite of this list.
+			break;
 		}
 	}
 	CoTaskMemFree(formats);
@@ -441,7 +429,6 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : GetVideoProcessorRenderTargets() doesn't support D3DFMT_X8R8G8B8");
 		return FALSE;
 	}
-#endif
 
 	// Query video processor capabilities.
 	hr = m_pDXVA2_VPService->GetVideoProcessorCaps(devguid, &videodesc, m_VPOutputFmt, &m_DXVA2VPcaps);
