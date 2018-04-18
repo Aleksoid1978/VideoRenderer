@@ -445,8 +445,8 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 
 	UINT uiFlags;
 
-	if (m_VPOutputFmt == DXGI_FORMAT_R10G10B10A2_UNORM) {
-		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(DXGI_FORMAT_R10G10B10A2_UNORM, &uiFlags);
+	if (m_VPOutputFmt != DXGI_FORMAT_B8G8R8A8_UNORM) {
+		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(m_VPOutputFmt, &uiFlags);
 		if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
 			m_VPOutputFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
 		}
