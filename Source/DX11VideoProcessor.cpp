@@ -75,7 +75,7 @@ HRESULT CDX11VideoProcessor::Init(const bool bVP10bit)
 		return E_FAIL;
 	}
 
-	m_VPOutputFmt = bVP10bit ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8X8_UNORM;
+	m_VPOutputFmt = bVP10bit ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
 	D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0, D3D_FEATURE_LEVEL_9_3, D3D_FEATURE_LEVEL_9_2, D3D_FEATURE_LEVEL_9_1 };
 	D3D_FEATURE_LEVEL featurelevel;
@@ -265,7 +265,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 		const HMONITOR hCurMonitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 		const HMONITOR hNewMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
 		if (hCurMonitor == hNewMonitor) {
-			hr = m_pDXGISwapChain1->ResizeBuffers(1, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+			hr = m_pDXGISwapChain1->ResizeBuffers(1, width, height, m_VPOutputFmt, 0);
 			if (SUCCEEDED(hr)) {
 				return hr;
 			}
@@ -277,11 +277,13 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 	DXGI_SWAP_CHAIN_DESC1 desc = {};
 	desc.Width = width;
 	desc.Height = height;
-	desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	desc.Format = m_VPOutputFmt;
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	desc.BufferCount = 1;
+	desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+	desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 	hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, hwnd, &desc, nullptr, nullptr, &m_pDXGISwapChain1);
 	if (FAILED(hr)) {
 		return hr;
@@ -296,42 +298,45 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 	m_pD2DBrushBlack.Release();
 	m_pD2D1RenderTarget.Release();
 
-	D2D1_FACTORY_OPTIONS options = {};
+	if (m_VPOutputFmt == DXGI_FORMAT_B8G8R8A8_UNORM || m_VPOutputFmt == DXGI_FORMAT_R8G8B8A8_UNORM) {
+		// https://msdn.microsoft.com/en-us/library/windows/desktop/dd756766(v=vs.85).aspx#supported_formats_for__id2d1hwndrendertarget
+		D2D1_FACTORY_OPTIONS options = {};
 #ifdef _DEBUG
-	options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+		options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
 #endif
 
-	HRESULT hr2 = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, &m_pD2DFactory);
-	if (S_OK == hr2) {
-		hr2 = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(m_pDWriteFactory), reinterpret_cast<IUnknown**>(&m_pDWriteFactory));
+		HRESULT hr2 = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, &m_pD2DFactory);
 		if (S_OK == hr2) {
-			hr2 = m_pDWriteFactory->CreateTextFormat(
-				L"Consolas",
-				nullptr,
-				DWRITE_FONT_WEIGHT_NORMAL,
-				DWRITE_FONT_STYLE_NORMAL,
-				DWRITE_FONT_STRETCH_NORMAL,
-				20,
-				L"", //locale
-				&m_pTextFormat);
+			hr2 = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(m_pDWriteFactory), reinterpret_cast<IUnknown**>(&m_pDWriteFactory));
 			if (S_OK == hr2) {
-				CComPtr<IDXGISurface> pDXGISurface;
-				hr2 = m_pDXGISwapChain1->GetBuffer(0, IID_PPV_ARGS(&pDXGISurface));
+				hr2 = m_pDWriteFactory->CreateTextFormat(
+					L"Consolas",
+					nullptr,
+					DWRITE_FONT_WEIGHT_NORMAL,
+					DWRITE_FONT_STYLE_NORMAL,
+					DWRITE_FONT_STRETCH_NORMAL,
+					20,
+					L"", //locale
+					&m_pTextFormat);
 				if (S_OK == hr2) {
-					FLOAT dpiX;
-					FLOAT dpiY;
-					m_pD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
-
-					D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
-						D2D1_RENDER_TARGET_TYPE_DEFAULT,
-						D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
-						dpiX,
-						dpiY);
-
-					hr2 = m_pD2DFactory->CreateDxgiSurfaceRenderTarget(pDXGISurface, &props, &m_pD2D1RenderTarget);
+					CComPtr<IDXGISurface> pDXGISurface;
+					hr2 = m_pDXGISwapChain1->GetBuffer(0, IID_PPV_ARGS(&pDXGISurface));
 					if (S_OK == hr2) {
-						hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LightYellow), &m_pD2DBrush);
-						hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_pD2DBrushBlack);
+						FLOAT dpiX;
+						FLOAT dpiY;
+						m_pD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
+
+						D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
+							D2D1_RENDER_TARGET_TYPE_DEFAULT,
+							D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
+							dpiX,
+							dpiY);
+
+						hr2 = m_pD2DFactory->CreateDxgiSurfaceRenderTarget(pDXGISurface, &props, &m_pD2D1RenderTarget);
+						if (S_OK == hr2) {
+							hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LightYellow), &m_pD2DBrush);
+							hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_pD2DBrushBlack);
+						}
 					}
 				}
 			}
@@ -432,11 +437,11 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 	if (m_VPOutputFmt == DXGI_FORMAT_R10G10B10A2_UNORM) {
 		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(DXGI_FORMAT_R10G10B10A2_UNORM, &uiFlags);
 		if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
-			m_VPOutputFmt = DXGI_FORMAT_B8G8R8X8_UNORM;
+			m_VPOutputFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
 		}
 	}
-	if (m_VPOutputFmt == DXGI_FORMAT_B8G8R8X8_UNORM) {
-		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(DXGI_FORMAT_B8G8R8X8_UNORM, &uiFlags);
+	if (m_VPOutputFmt == DXGI_FORMAT_B8G8R8A8_UNORM) {
+		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(DXGI_FORMAT_B8G8R8A8_UNORM, &uiFlags);
 		if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
 			return MF_E_UNSUPPORTED_D3D_TYPE;
 		}
