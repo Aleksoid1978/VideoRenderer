@@ -29,7 +29,7 @@
 #include "DX9VideoProcessor.h"
 
 #define STATS_W 330
-#define STATS_H 100
+#define STATS_H 130
 
 // CDX9VideoProcessor
 
@@ -51,8 +51,10 @@ static UINT GetAdapter(HWND hWnd, IDirect3D9Ex* pD3D)
 	return D3DADAPTER_DEFAULT;
 }
 
-CDX9VideoProcessor::CDX9VideoProcessor()
+CDX9VideoProcessor::CDX9VideoProcessor(CBaseRenderer* pFilter)
 {
+	m_pFilter = pFilter;
+
 	if (!m_hD3D9Lib) {
 		m_hD3D9Lib = LoadLibraryW(L"d3d9.dll");
 	}
@@ -908,6 +910,17 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	}
 	str.AppendFormat(L"\nInput format : %s", D3DFormatToString(m_srcD3DFormat));
 	str.AppendFormat(L"\nVP output fmt: %s", D3DFormatToString(m_VPOutputFmt));
+
+	{
+		CRefTime rtClock;
+		m_pFilter->StreamTime(rtClock);
+		REFERENCE_TIME rtFrame = m_FrameStats.GetTime();
+		if (m_FieldDrawn == 2) {
+			rtFrame += (REFERENCE_TIME)(UNITS / m_FrameStats.GetAverageFps());
+		}
+		double delta = (double)(rtFrame - rtClock) / (UNITS / 1000);
+		str.AppendFormat(L"\nUseless offset:%8.03f ms", delta);
+	}
 
 	HDC hdc;
 	if (S_OK == m_pMemSurface->GetDC(&hdc)) {

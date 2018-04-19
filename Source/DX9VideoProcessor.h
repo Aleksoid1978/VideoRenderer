@@ -70,6 +70,8 @@ public:
 class CDX9VideoProcessor
 {
 private:
+	CBaseRenderer* m_pFilter = nullptr;
+
 	bool m_bDeintDouble = false;
 	bool m_bShowStats = false;
 
@@ -131,7 +133,7 @@ private:
 	Gdiplus::GdiplusStartupInput m_gdiplusStartupInput;
 
 public:
-	CDX9VideoProcessor();
+	CDX9VideoProcessor(CBaseRenderer* pFilter);
 	~CDX9VideoProcessor();
 
 	HRESULT Init(const HWND hwnd, const int iSurfaceFmt, bool* pChangeDevice);

@@ -133,6 +133,7 @@ UINT STDMETHODCALLTYPE CVideoRendererInputPin::GetD3D11AdapterIndex()
 
 CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	: CBaseRenderer(__uuidof(this), NAME("MPC Video Renderer"), pUnk, phr)
+	, m_DX9_VP(this)
 {
 #ifdef DEBUG
 	DbgSetModuleLevel(LOG_TRACE, DWORD_MAX);
