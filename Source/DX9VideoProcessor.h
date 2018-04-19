@@ -127,6 +127,7 @@ private:
 	CComPtr<IDirect3DSurface9> m_pMemSurface;
 
 	CFrameStats m_FrameStats;
+	int m_SyncOffsetMS = 0;
 
 	// GDI+ handling
 	ULONG_PTR m_gdiplusToken;

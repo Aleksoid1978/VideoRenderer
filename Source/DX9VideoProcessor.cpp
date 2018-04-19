@@ -24,6 +24,7 @@
 #include <dvdmedia.h>
 #include <mfapi.h> // for MR_BUFFER_SERVICE
 #include <mfidl.h>
+#include <dwmapi.h>
 #include "Helper.h"
 #include "Time.h"
 #include "DX9VideoProcessor.h"
@@ -704,6 +705,15 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState)
 	const CRect rDstPri(m_windowRect);
 
 	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
+	DwmFlush();
+
+	CRefTime rtClock;
+	m_pFilter->StreamTime(rtClock);
+	REFERENCE_TIME rtFrame = m_FrameStats.GetTime();
+	if (m_FieldDrawn == 2) {
+		rtFrame += (REFERENCE_TIME)(UNITS / m_FrameStats.GetAverageFps());
+	}
+	m_SyncOffsetMS = std::round((double)(rtFrame - rtClock) / (UNITS / 1000));
 
 	return hr;
 }
@@ -910,17 +920,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	}
 	str.AppendFormat(L"\nInput format : %s", D3DFormatToString(m_srcD3DFormat));
 	str.AppendFormat(L"\nVP output fmt: %s", D3DFormatToString(m_VPOutputFmt));
-
-	{
-		CRefTime rtClock;
-		m_pFilter->StreamTime(rtClock);
-		REFERENCE_TIME rtFrame = m_FrameStats.GetTime();
-		if (m_FieldDrawn == 2) {
-			rtFrame += (REFERENCE_TIME)(UNITS / m_FrameStats.GetAverageFps());
-		}
-		double delta = (double)(rtFrame - rtClock) / (UNITS / 1000);
-		str.AppendFormat(L"\nUseless offset:%8.03f ms", delta);
-	}
+	str.AppendFormat(L"\nSync offset  :%+4d ms", m_SyncOffsetMS);
 
 	HDC hdc;
 	if (S_OK == m_pMemSurface->GetDC(&hdc)) {
