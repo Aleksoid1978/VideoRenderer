@@ -781,29 +781,28 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 	HRESULT hr = S_OK;
 	ASSERT(m_SrcSamples.Size() == m_DXVA2Samples.size());
 
+	CRect rSrcRect(m_srcRect);
+	CRect rDstRect(m_videoRect);
+	D3DSURFACE_DESC desc = {};
+	if (S_OK == pRenderTarget->GetDesc(&desc)) {
+		ClipToSurface(desc.Width, desc.Height, rSrcRect, rDstRect);
+	}
+
+	// Initialize VPBlt parameters
 	if (second) {
 		m_BltParams.TargetFrame = (m_SrcSamples.Get().Start + m_SrcSamples.Get().End) / 2;
-	}
-	else {
-		CRect rSrcRect(m_srcRect);
-		CRect rDstRect(m_videoRect);
-		D3DSURFACE_DESC desc = {};
-		if (S_OK == pRenderTarget->GetDesc(&desc)) {
-			ClipToSurface(desc.Width, desc.Height, rSrcRect, rDstRect);
-		}
-
-		// Initialize VPBlt parameters
+	} else {
 		m_BltParams.TargetFrame = m_SrcSamples.Get().Start;
-		m_BltParams.TargetRect = rDstRect;
-		m_BltParams.ConstrictionSize.cx = rDstRect.Width();
-		m_BltParams.ConstrictionSize.cy = rDstRect.Height();
+	}
+	m_BltParams.TargetRect = rDstRect;
+	m_BltParams.ConstrictionSize.cx = rDstRect.Width();
+	m_BltParams.ConstrictionSize.cy = rDstRect.Height();
 
-		// Initialize main stream video samples
-		for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
-			auto & SrcSample = m_SrcSamples.GetAt(i);
-			m_DXVA2Samples[i].SrcRect = rSrcRect;
-			m_DXVA2Samples[i].DstRect = rDstRect;
-		}
+	// Initialize main stream video samples
+	for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
+		auto & SrcSample = m_SrcSamples.GetAt(i);
+		m_DXVA2Samples[i].SrcRect = rSrcRect;
+		m_DXVA2Samples[i].DstRect = rDstRect;
 	}
 
 	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &m_BltParams, m_DXVA2Samples.data(), m_DXVA2Samples.size(), nullptr);
