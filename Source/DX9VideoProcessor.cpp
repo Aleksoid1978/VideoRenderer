@@ -233,6 +233,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 
 		UINT DetectedScanlines = endLine + 1;
 		double DetectedScanlineTicks = (double)(endTick - startTick) / (endLine - startLine + 1);
+		DLog(L"* GetRasterStatus metod");
 		DLog(L"DetectedScanlines   : %u", DetectedScanlines);
 		DLog(L"DetectedScanlineTime: %7.03f ms", DetectedScanlineTicks * GetPreciseSecondsPerTick() * 1000);
 
@@ -713,7 +714,7 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState)
 	if (m_FieldDrawn == 2) {
 		rtFrame += (REFERENCE_TIME)(UNITS / m_FrameStats.GetAverageFps());
 	}
-	m_SyncOffsetMS = std::round((double)(rtFrame - rtClock) / (UNITS / 1000));
+	m_SyncOffsetMS = std::round((double)(rtClock - rtFrame) / (UNITS / 1000));
 
 	return hr;
 }
