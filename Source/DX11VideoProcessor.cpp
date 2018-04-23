@@ -35,8 +35,9 @@
 
 // CDX11VideoProcessor
 
-CDX11VideoProcessor::CDX11VideoProcessor()
+CDX11VideoProcessor::CDX11VideoProcessor(CBaseRenderer* pFilter)
 {
+	m_pFilter = pFilter;
 }
 
 CDX11VideoProcessor::~CDX11VideoProcessor()
@@ -658,10 +659,23 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState)
+HRESULT CDX11VideoProcessor::Render(int field)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
+
+	CRefTime rtClock;
+	REFERENCE_TIME rtFrame = m_FrameStats.GetTime();
+	REFERENCE_TIME rtFrameDur = m_FrameStats.GetAverageFrameDuration();
+
+	if (field) {
+		m_pFilter->StreamTime(rtClock);
+
+		if (rtFrame + rtFrameDur < rtClock) {
+			return S_FALSE; // skip this frame
+		}
+		m_FieldDrawn = field;
+	}
 
 	CComPtr<ID3D11Texture2D> pBackBuffer;
 	HRESULT hr = m_pDXGISwapChain1->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
@@ -669,19 +683,45 @@ HRESULT CDX11VideoProcessor::Render(const FILTER_STATE filterState)
 		return hr;
 	}
 
-	if (filterState == State_Running) {
-		if (m_FieldDrawn == 0 || m_FieldDrawn == 1 && SecondFramePossible()) {
-			m_FieldDrawn++;
-		}
-
-		hr = ProcessDX11(pBackBuffer, m_FieldDrawn == 2);
-	}
-
+	hr = ProcessDX11(pBackBuffer, m_FieldDrawn == 2);
 	if (S_OK == hr && m_bShowStats) {
 		hr = DrawStats();
 	}
 
 	hr = m_pDXGISwapChain1->Present(0, 0);
+
+	m_pFilter->StreamTime(rtClock);
+	if (m_FieldDrawn == 2) {
+		rtFrame += rtFrameDur / 2;
+	}
+	m_SyncOffsetMS = std::round((double)(rtClock - rtFrame) / (UNITS / 1000)); // TODO use IDXGISwapChain::GetFrameStatistics
+
+	return hr;
+}
+
+HRESULT CDX11VideoProcessor::FillBlack()
+{
+	ID3D11Texture2D* pBackBuffer;
+	HRESULT hr = m_pDXGISwapChain1->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	ID3D11RenderTargetView* pRenderTargetView;
+	hr = m_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pRenderTargetView);
+	pBackBuffer->Release();
+	if (FAILED(hr)) {
+		return hr;
+	}
+	
+	m_pImmediateContext->OMSetRenderTargets(1, &pRenderTargetView, NULL);
+
+	float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	m_pImmediateContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
+
+	hr = m_pDXGISwapChain1->Present(0, 0);
+
+	pRenderTargetView->Release();
 
 	return hr;
 }
@@ -855,6 +895,7 @@ HRESULT CDX11VideoProcessor::DrawStats()
 	}
 	str.AppendFormat(L"\nInput format : %s", DXGIFormatToString(m_srcDXGIFormat));
 	str.AppendFormat(L"\nVP output fmt: %s", DXGIFormatToString(m_VPOutputFmt));
+	str.AppendFormat(L"\nSync offset  :%+4d ms", m_SyncOffsetMS);
 
 	CComPtr<IDWriteTextLayout> pTextLayout;
 	if (S_OK == m_pDWriteFactory->CreateTextLayout(str, str.GetLength(), m_pTextFormat, m_windowRect.right - 10, m_windowRect.bottom - 10, &pTextLayout)) {

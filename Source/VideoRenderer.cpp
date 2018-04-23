@@ -134,6 +134,7 @@ UINT STDMETHODCALLTYPE CVideoRendererInputPin::GetD3D11AdapterIndex()
 CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	: CBaseRenderer(__uuidof(this), NAME("MPC Video Renderer"), pUnk, phr)
 	, m_DX9_VP(this)
+	, m_DX11_VP(this)
 {
 #ifdef DEBUG
 	DbgSetModuleLevel(LOG_TRACE, DWORD_MAX);
@@ -244,10 +245,10 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 			return hr;
 		}
 
-		hr = m_DX11_VP.Render(m_filterState);
+		hr = m_DX11_VP.Render(1);
 
 		if (m_DX11_VP.SecondFramePossible()) {
-			hr = m_DX11_VP.Render(m_filterState);
+			hr = m_DX11_VP.Render(2);
 		}
 	} else {
 		hr = m_DX9_VP.CopySample(pSample);
@@ -355,13 +356,16 @@ STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long
 	std::unique_lock<std::mutex> lock(m_mutex);
 	if (m_bUsedD3D11) {
 		m_DX11_VP.SetVideoRect(videoRect);
-		m_DX11_VP.Render(m_filterState);
+		if (m_filterState != State_Stopped) {
+			m_DX11_VP.Render(0);
+		} else {
+			m_DX11_VP.FillBlack();
+		}
 	} else {
 		m_DX9_VP.SetVideoRect(videoRect);
 		if (m_filterState != State_Stopped) {
 			m_DX9_VP.Render(0);
-		}
-		else {
+		} else {
 			m_DX9_VP.FillBlack();
 		}
 	}
@@ -422,7 +426,11 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 	if (m_bUsedD3D11) {
 		m_DX11_VP.InitSwapChain(m_hWnd, windowRect.Width(), windowRect.Height());
 		m_DX11_VP.SetWindowRect(windowRect);
-		m_DX11_VP.Render(m_filterState);
+		if (m_filterState != State_Stopped) {
+			m_DX11_VP.Render(0);
+		} else {
+			m_DX11_VP.FillBlack();
+		}
 	} else {
 		m_DX9_VP.SetWindowRect(windowRect);
 		if (m_filterState != State_Stopped) {

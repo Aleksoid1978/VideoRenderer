@@ -35,6 +35,8 @@
 class CDX11VideoProcessor
 {
 private:
+	CBaseRenderer * m_pFilter = nullptr;
+
 	bool m_bDeintDouble = false;
 	bool m_bShowStats = false;
 
@@ -95,9 +97,10 @@ private:
 	CComPtr<ID2D1SolidColorBrush> m_pD2DBrushBlack;
 
 	CFrameStats m_FrameStats;
+	int m_SyncOffsetMS = 0;
 
 public:
-	CDX11VideoProcessor();
+	CDX11VideoProcessor(CBaseRenderer* pFilter);
 	~CDX11VideoProcessor();
 
 	HRESULT Init(const int iSurfaceFmt);
@@ -111,7 +114,9 @@ public:
 	void Start();
 
 	HRESULT CopySample(IMediaSample* pSample);
-	HRESULT Render(const FILTER_STATE filterState);
+	// Render: 1 - render first fied or progressive frame, 2 - render second fied, 0 or other - forced repeat of render.
+	HRESULT Render(int field);
+	HRESULT FillBlack();
 	void StopInputBuffer() {}
 	bool SecondFramePossible() { return m_bDeintDouble && m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE; }
 
