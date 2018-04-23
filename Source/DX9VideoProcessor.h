@@ -149,7 +149,9 @@ public:
 	void Start();
 
 	HRESULT CopySample(IMediaSample* pSample);
-	HRESULT Render(const FILTER_STATE filterState);
+	// Render: 1 - render first fied or progressive frame, 2 - render second fied, 0 or other - forced repeat of render.
+	HRESULT Render(int field);
+	HRESULT FillBlack();
 	void StopInputBuffer();
 	bool SecondFramePossible() { return m_bDeintDouble && m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd; }
 

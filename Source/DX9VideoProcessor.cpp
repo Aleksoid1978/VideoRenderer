@@ -162,7 +162,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 	m_d3dpp.BackBufferCount = 1;
 	m_d3dpp.BackBufferWidth = m_DisplayMode.Width;
 	m_d3dpp.BackBufferHeight = m_DisplayMode.Height;
-	m_d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+	m_d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
 
 	if (bTryToReset) {
 		bTryToReset = SUCCEEDED(hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr));
@@ -677,9 +677,22 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 	return hr;
 }
 
-HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState)
+HRESULT CDX9VideoProcessor::Render(int field)
 {
 	if (m_SrcSamples.Empty()) return E_POINTER;
+
+	CRefTime rtClock;
+	REFERENCE_TIME rtFrame = m_FrameStats.GetTime();
+	REFERENCE_TIME rtFrameDur = m_FrameStats.GetAverageFrameDuration();
+
+	if (field) {
+		m_pFilter->StreamTime(rtClock);
+
+		if (rtFrame + rtFrameDur < rtClock) {
+			return S_FALSE; // skip this frame
+		}
+		m_FieldDrawn = field;
+	}
 
 	HRESULT hr = m_pD3DDevEx->BeginScene();
 
@@ -689,15 +702,9 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState)
 	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
 	m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
 
-	if (filterState == State_Running) {
-		if (m_FieldDrawn == 0 || m_FieldDrawn == 1 && SecondFramePossible()) {
-			m_FieldDrawn++;
-		}
-
-		hr = ProcessDXVA2(pBackBuffer, m_FieldDrawn == 2);
-		if (S_OK == hr && m_bShowStats) {
-			hr = DrawStats();
-		}
+	hr = ProcessDXVA2(pBackBuffer, m_FieldDrawn == 2);
+	if (S_OK == hr && m_bShowStats) {
+		hr = DrawStats();
 	}
 
 	hr = m_pD3DDevEx->EndScene();
@@ -706,15 +713,32 @@ HRESULT CDX9VideoProcessor::Render(const FILTER_STATE filterState)
 	const CRect rDstPri(m_windowRect);
 
 	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
-	DwmFlush();
 
-	CRefTime rtClock;
 	m_pFilter->StreamTime(rtClock);
-	REFERENCE_TIME rtFrame = m_FrameStats.GetTime();
 	if (m_FieldDrawn == 2) {
-		rtFrame += (REFERENCE_TIME)(UNITS / m_FrameStats.GetAverageFps());
+		rtFrame += rtFrameDur / 2;
 	}
 	m_SyncOffsetMS = std::round((double)(rtClock - rtFrame) / (UNITS / 1000));
+
+	return hr;
+}
+
+HRESULT CDX9VideoProcessor::FillBlack()
+{
+	HRESULT hr = m_pD3DDevEx->BeginScene();
+
+	CComPtr<IDirect3DSurface9> pBackBuffer;
+	hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+
+	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
+	m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
+
+	hr = m_pD3DDevEx->EndScene();
+
+	const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
+	const CRect rDstPri(m_windowRect);
+
+	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
 
 	return hr;
 }

@@ -66,4 +66,17 @@ public:
 
 		return 0.0;
 	}
+
+	REFERENCE_TIME GetAverageFrameDuration() {
+		if (m_frames >= _countof(m_times)) {
+			unsigned first_index = GetNextIndex(m_index);
+			return (m_times[m_index] - m_times[first_index]) / (_countof(m_times) - 1);
+		}
+
+		if (m_frames > 1) {
+			return (m_times[m_frames - 1] - m_times[0]) / (m_frames - 1);
+		}
+
+		return 2;
+	}
 };

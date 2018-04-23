@@ -255,10 +255,10 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 			return hr;
 		}
 
-		hr = m_DX9_VP.Render(m_filterState);
+		hr = m_DX9_VP.Render(1);
 
 		if (m_DX9_VP.SecondFramePossible()) {
-			hr = m_DX9_VP.Render(m_filterState);
+			hr = m_DX9_VP.Render(2);
 		}
 	}
 
@@ -358,7 +358,12 @@ STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long
 		m_DX11_VP.Render(m_filterState);
 	} else {
 		m_DX9_VP.SetVideoRect(videoRect);
-		m_DX9_VP.Render(m_filterState);
+		if (m_filterState != State_Stopped) {
+			m_DX9_VP.Render(0);
+		}
+		else {
+			m_DX9_VP.FillBlack();
+		}
 	}
 
 	return S_OK;
@@ -420,7 +425,11 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 		m_DX11_VP.Render(m_filterState);
 	} else {
 		m_DX9_VP.SetWindowRect(windowRect);
-		m_DX9_VP.Render(m_filterState);
+		if (m_filterState != State_Stopped) {
+			m_DX9_VP.Render(0);
+		} else {
+			m_DX9_VP.FillBlack();
+		}
 	}
 
 	return S_OK;
