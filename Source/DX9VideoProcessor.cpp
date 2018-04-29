@@ -453,18 +453,17 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	}
 
 	// Query ProcAmp ranges.
-	DXVA2_ValueRange range;
-	for (i = 0; i < ARRAYSIZE(m_DXVA2ProcAmpValues); i++) {
+	for (i = 0; i < ARRAYSIZE(m_DXVA2ProcValueRange); i++) {
 		if (m_DXVA2VPcaps.ProcAmpControlCaps & (1 << i)) {
-			hr = m_pDXVA2_VPService->GetProcAmpRange(devguid, &videodesc, m_VPOutputFmt, 1 << i, &range);
+			hr = m_pDXVA2_VPService->GetProcAmpRange(devguid, &videodesc, m_VPOutputFmt, 1 << i, &m_DXVA2ProcValueRange[i]);
 			if (FAILED(hr)) {
 				DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : GetProcAmpRange() failed with error 0x%08x", hr);
 				return FALSE;
 			}
-			// Set to default value
-			m_DXVA2ProcAmpValues[i] = range.DefaultValue;
 		}
 	}
+
+	DXVA2_ValueRange range;
 	// Query Noise Filter ranges.
 	DXVA2_Fixed32 NFilterValues[6] = {};
 	if (m_DXVA2VPcaps.VideoProcessorOperations & DXVA2_VideoProcess_NoiseFilter) {
@@ -488,10 +487,10 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	m_BltParams.BackgroundColor              = { 128 * 0x100, 128 * 0x100, 16 * 0x100, 0xFFFF }; // black
 	//m_BltParams.DestFormat.value           = 0; // output to RGB
 	m_BltParams.DestFormat.SampleFormat      = DXVA2_SampleProgressiveFrame; // output to progressive RGB
-	m_BltParams.ProcAmpValues.Brightness     = m_DXVA2ProcAmpValues[0];
-	m_BltParams.ProcAmpValues.Contrast       = m_DXVA2ProcAmpValues[1];
-	m_BltParams.ProcAmpValues.Hue            = m_DXVA2ProcAmpValues[2];
-	m_BltParams.ProcAmpValues.Saturation     = m_DXVA2ProcAmpValues[3];
+	m_BltParams.ProcAmpValues.Brightness     = m_DXVA2ProcValueRange[0].DefaultValue;
+	m_BltParams.ProcAmpValues.Contrast       = m_DXVA2ProcValueRange[1].DefaultValue;
+	m_BltParams.ProcAmpValues.Hue            = m_DXVA2ProcValueRange[2].DefaultValue;
+	m_BltParams.ProcAmpValues.Saturation     = m_DXVA2ProcValueRange[3].DefaultValue;
 	m_BltParams.Alpha                        = DXVA2_Fixed32OpaqueAlpha();
 	m_BltParams.NoiseFilterLuma.Level        = NFilterValues[0];
 	m_BltParams.NoiseFilterLuma.Threshold    = NFilterValues[1];
