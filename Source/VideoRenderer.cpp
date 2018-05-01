@@ -132,7 +132,7 @@ UINT STDMETHODCALLTYPE CVideoRendererInputPin::GetD3D11AdapterIndex()
 //
 
 CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
-	: CBaseRenderer(__uuidof(this), NAME("MPC Video Renderer"), pUnk, phr)
+	: CBaseRenderer(__uuidof(this), L"MPC Video Renderer", pUnk, phr)
 	, m_DX9_VP(this)
 	, m_DX11_VP(this)
 {

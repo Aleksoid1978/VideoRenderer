@@ -708,13 +708,13 @@ HRESULT CDX11VideoProcessor::FillBlack()
 	}
 
 	ID3D11RenderTargetView* pRenderTargetView;
-	hr = m_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pRenderTargetView);
+	hr = m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView);
 	pBackBuffer->Release();
 	if (FAILED(hr)) {
 		return hr;
 	}
 	
-	m_pImmediateContext->OMSetRenderTargets(1, &pRenderTargetView, NULL);
+	m_pImmediateContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 
 	float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	m_pImmediateContext->ClearRenderTargetView(pRenderTargetView, ClearColor);

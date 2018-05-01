@@ -29,7 +29,7 @@
 // https://msdn.microsoft.com/ru-ru/library/windows/desktop/dd375010(v=vs.85).aspx
 
 CVRMainPPage::CVRMainPPage(LPUNKNOWN lpunk, HRESULT* phr) :
-	CBasePropertyPage(NAME("MainProp"), lpunk, IDD_MAINPROPPAGE, IDS_MAINPROPPAGE_TITLE)
+	CBasePropertyPage(L"MainProp", lpunk, IDD_MAINPROPPAGE, IDS_MAINPROPPAGE_TITLE)
 {
 }
 
