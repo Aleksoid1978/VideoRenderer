@@ -22,6 +22,7 @@
 
 #include <atltypes.h>
 #include <gdiplus.h>
+#include <evr9.h> // for IMFVideoProcessor
 #include "IVideoRenderer.h"
 #include "FrameStats.h"
 
@@ -68,8 +69,10 @@ public:
 };
 
 class CDX9VideoProcessor
+	: public IMFVideoProcessor
 {
 private:
+	long m_nRefCount = 1;
 	CBaseRenderer* m_pFilter = nullptr;
 
 	bool m_bDeintDouble = false;
@@ -174,4 +177,24 @@ private:
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const bool second);
 	HRESULT AlphaBlt(RECT* pSrc, RECT* pDst, IDirect3DTexture9* pTexture);
 	HRESULT DrawStats();
+
+public:
+	// IUnknown
+	STDMETHODIMP QueryInterface(REFIID riid, void **ppv);
+	STDMETHODIMP_(ULONG) AddRef();
+	STDMETHODIMP_(ULONG) Release();
+
+	// IMFVideoProcessor
+	STDMETHODIMP GetAvailableVideoProcessorModes(UINT *lpdwNumProcessingModes, GUID **ppVideoProcessingModes) { return E_NOTIMPL; }
+	STDMETHODIMP GetVideoProcessorCaps(LPGUID lpVideoProcessorMode, DXVA2_VideoProcessorCaps *lpVideoProcessorCaps) { return E_NOTIMPL; }
+	STDMETHODIMP GetVideoProcessorMode(LPGUID lpMode) { return E_NOTIMPL; }
+	STDMETHODIMP SetVideoProcessorMode(LPGUID lpMode) { return E_NOTIMPL; }
+	STDMETHODIMP GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange);
+	STDMETHODIMP GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *Values);
+	STDMETHODIMP SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *pValues);
+	STDMETHODIMP GetFilteringRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange) { return E_NOTIMPL; }
+	STDMETHODIMP GetFilteringValue(DWORD dwProperty, DXVA2_Fixed32 *pValue) { return E_NOTIMPL; }
+	STDMETHODIMP SetFilteringValue(DWORD dwProperty, DXVA2_Fixed32 *pValue) { return E_NOTIMPL; }
+	STDMETHODIMP GetBackgroundColor(COLORREF *lpClrBkg);
+	STDMETHODIMP SetBackgroundColor(COLORREF ClrBkg) { return E_NOTIMPL; }
 };

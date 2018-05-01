@@ -344,6 +344,11 @@ STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPV
 		}
 		*/
 	}
+	if (guidService == MR_VIDEO_MIXER_SERVICE) {
+		if (riid == IID_IMFVideoProcessor && !m_bUsedD3D11) {
+			return m_DX9_VP.QueryInterface(riid, ppvObject);
+		}
+	}
 
 	return E_NOINTERFACE;
 }

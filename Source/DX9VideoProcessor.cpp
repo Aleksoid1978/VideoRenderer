@@ -24,6 +24,7 @@
 #include <dvdmedia.h>
 #include <mfapi.h> // for MR_BUFFER_SERVICE
 #include <mfidl.h>
+#include <Mferror.h>
 #include <dwmapi.h>
 #include "Helper.h"
 #include "Time.h"
@@ -976,4 +977,95 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	hr = AlphaBlt(CRect(0, 0, STATS_W, STATS_H), CRect(10, 10, STATS_W + 10, STATS_H + 10), m_pOSDTexture);
 
 	return hr;
+}
+
+// IUnknown
+STDMETHODIMP CDX9VideoProcessor::QueryInterface(REFIID riid, void **ppv)
+{
+	if (!ppv) {
+		return E_POINTER;
+	}
+	if (riid == IID_IUnknown) {
+		*ppv = static_cast<IUnknown*>(static_cast<IMFVideoProcessor*>(this));
+	}
+	else if (riid == IID_IMFVideoProcessor) {
+		*ppv = static_cast<IMFVideoProcessor*>(this);
+	}
+	else {
+		*ppv = NULL;
+		return E_NOINTERFACE;
+	}
+	AddRef();
+	return S_OK;
+}
+
+STDMETHODIMP_(ULONG) CDX9VideoProcessor::AddRef()
+{
+	return InterlockedIncrement(&m_nRefCount);
+}
+
+STDMETHODIMP_(ULONG) CDX9VideoProcessor::Release()
+{
+	ULONG uCount = InterlockedDecrement(&m_nRefCount);
+	if (uCount == 0) {
+		delete this;
+	}
+	// For thread safety, return a temporary variable.
+	return uCount;
+}
+
+// IMFVideoProcessor
+
+STDMETHODIMP CDX9VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange)
+{
+	CheckPointer(m_pDXVA2_VP, MF_E_INVALIDREQUEST);
+	CheckPointer(pPropRange, E_POINTER);
+	switch (dwProperty) {
+	case DXVA2_ProcAmp_Brightness: memcpy(pPropRange, &m_DXVA2ProcValueRange[0], sizeof(DXVA2_ValueRange)); break;
+	case DXVA2_ProcAmp_Contrast:   memcpy(pPropRange, &m_DXVA2ProcValueRange[1], sizeof(DXVA2_ValueRange)); break;
+	case DXVA2_ProcAmp_Hue:        memcpy(pPropRange, &m_DXVA2ProcValueRange[2], sizeof(DXVA2_ValueRange)); break;
+	case DXVA2_ProcAmp_Saturation: memcpy(pPropRange, &m_DXVA2ProcValueRange[3], sizeof(DXVA2_ValueRange)); break;
+	default:
+		return E_INVALIDARG;
+	}
+	return S_OK;
+}
+
+STDMETHODIMP CDX9VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *Values)
+{
+	CheckPointer(m_pDXVA2_VP, MF_E_INVALIDREQUEST);
+	CheckPointer(Values, E_POINTER);
+	if (dwFlags&DXVA2_ProcAmp_Brightness) { Values->Brightness = m_BltParams.ProcAmpValues.Brightness; }
+	if (dwFlags&DXVA2_ProcAmp_Contrast)   { Values->Contrast   = m_BltParams.ProcAmpValues.Contrast; }
+	if (dwFlags&DXVA2_ProcAmp_Hue)        { Values->Hue        = m_BltParams.ProcAmpValues.Hue; }
+	if (dwFlags&DXVA2_ProcAmp_Saturation) { Values->Saturation = m_BltParams.ProcAmpValues.Saturation; }
+	return S_OK;
+}
+
+STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *pValues)
+{
+	CheckPointer(m_pDXVA2_VP, MF_E_INVALIDREQUEST);
+	CheckPointer(pValues, E_POINTER);
+	if (dwFlags&DXVA2_ProcAmp_Brightness && pValues->Brightness.ll >= m_DXVA2ProcValueRange[0].MinValue.ll && pValues->Brightness.ll <= m_DXVA2ProcValueRange[0].MaxValue.ll) {
+		m_BltParams.ProcAmpValues.Brightness = pValues->Brightness;
+	}
+	if (dwFlags&DXVA2_ProcAmp_Contrast && pValues->Contrast.ll >= m_DXVA2ProcValueRange[1].MinValue.ll && pValues->Contrast.ll <= m_DXVA2ProcValueRange[1].MaxValue.ll) {
+		m_BltParams.ProcAmpValues.Contrast = pValues->Contrast;
+	}
+	if (dwFlags&DXVA2_ProcAmp_Hue && pValues->Hue.ll >= m_DXVA2ProcValueRange[3].MinValue.ll && pValues->Hue.ll <= m_DXVA2ProcValueRange[2].MaxValue.ll) {
+		m_BltParams.ProcAmpValues.Hue = pValues->Hue;
+	}
+	if (dwFlags&DXVA2_ProcAmp_Saturation && pValues->Saturation.ll >= m_DXVA2ProcValueRange[3].MinValue.ll && pValues->Saturation.ll <= m_DXVA2ProcValueRange[3].MaxValue.ll) {
+		m_BltParams.ProcAmpValues.Saturation = pValues->Saturation;
+	}
+
+	return S_OK;
+}
+
+STDMETHODIMP CDX9VideoProcessor::GetBackgroundColor(COLORREF *lpClrBkg)
+{
+	CheckPointer(m_pDXVA2_VP, MF_E_INVALIDREQUEST);
+	CheckPointer(lpClrBkg, E_POINTER);
+	*lpClrBkg = RGB(0, 0, 0);
+	return S_OK;
 }
