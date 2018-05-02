@@ -29,12 +29,15 @@
 #include <d3d11_1.h>
 #include <d2d1.h>
 #include <dwrite.h>
+#include <evr9.h> // for IMFVideoProcessor
 #include "IVideoRenderer.h"
 #include "FrameStats.h"
 
 class CDX11VideoProcessor
+	: public IMFVideoProcessor
 {
 private:
+	long m_nRefCount = 1;
 	CBaseRenderer * m_pFilter = nullptr;
 
 	bool m_bDeintDouble = false;
@@ -80,6 +83,9 @@ private:
 	DXGI_FORMAT m_D3D11_Src_Format = DXGI_FORMAT_UNKNOWN;
 	UINT m_D3D11_Src_Width = 0;
 	UINT m_D3D11_Src_Height = 0;
+
+	D3D11_VIDEO_PROCESSOR_CAPS m_VPCaps = {};
+	D3D11_VIDEO_PROCESSOR_FILTER_RANGE m_VPFilterRange[4] = {};
 
 	CRect m_videoRect;
 	CRect m_windowRect;
@@ -136,4 +142,24 @@ public:
 private:
 	HRESULT ProcessDX11(ID3D11Texture2D* pRenderTarget, const bool second);
 	HRESULT DrawStats();
+
+public:
+	// IUnknown
+	STDMETHODIMP QueryInterface(REFIID riid, void **ppv);
+	STDMETHODIMP_(ULONG) AddRef();
+	STDMETHODIMP_(ULONG) Release();
+
+	// IMFVideoProcessor
+	STDMETHODIMP GetAvailableVideoProcessorModes(UINT *lpdwNumProcessingModes, GUID **ppVideoProcessingModes) { return E_NOTIMPL; }
+	STDMETHODIMP GetVideoProcessorCaps(LPGUID lpVideoProcessorMode, DXVA2_VideoProcessorCaps *lpVideoProcessorCaps) { return E_NOTIMPL; }
+	STDMETHODIMP GetVideoProcessorMode(LPGUID lpMode) { return E_NOTIMPL; }
+	STDMETHODIMP SetVideoProcessorMode(LPGUID lpMode) { return E_NOTIMPL; }
+	STDMETHODIMP GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange);
+	STDMETHODIMP GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *Values);
+	STDMETHODIMP SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *pValues);
+	STDMETHODIMP GetFilteringRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange) { return E_NOTIMPL; }
+	STDMETHODIMP GetFilteringValue(DWORD dwProperty, DXVA2_Fixed32 *pValue) { return E_NOTIMPL; }
+	STDMETHODIMP SetFilteringValue(DWORD dwProperty, DXVA2_Fixed32 *pValue) { return E_NOTIMPL; }
+	STDMETHODIMP GetBackgroundColor(COLORREF *lpClrBkg);
+	STDMETHODIMP SetBackgroundColor(COLORREF ClrBkg) { return E_NOTIMPL; }
 };
