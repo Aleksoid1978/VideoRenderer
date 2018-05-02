@@ -471,6 +471,8 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 			if (FAILED(hr)) {
 				return hr;
 			}
+			m_VPFilterSettings[i].Enabled = FALSE;
+			m_VPFilterSettings[i].Level = m_VPFilterRange[i].Default;
 		}
 	}
 
@@ -766,6 +768,12 @@ HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget, const b
 		m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, rDstRect);
 		m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, TRUE, m_windowRect);
 
+		// filters
+		m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_BRIGHTNESS, m_VPFilterSettings[0].Enabled, m_VPFilterSettings[0].Level);
+		m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_CONTRAST,   m_VPFilterSettings[1].Enabled, m_VPFilterSettings[1].Level);
+		m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_HUE,        m_VPFilterSettings[2].Enabled, m_VPFilterSettings[2].Level);
+		m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_SATURATION, m_VPFilterSettings[3].Enabled, m_VPFilterSettings[3].Level);
+
 		// Output background color (black)
 		static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f};
 		m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, FALSE, &backgroundColor);
@@ -955,16 +963,17 @@ STDMETHODIMP_(ULONG) CDX11VideoProcessor::Release()
 
 // IMFVideoProcessor
 
-void FilterRangeD3D11toDXVA2(DXVA2_ValueRange& _dxva2_, const D3D11_VIDEO_PROCESSOR_FILTER_RANGE& _d3d11_, const D3D11_VIDEO_PROCESSOR_FILTER filter)
+void FilterRangeD3D11toDXVA2(DXVA2_ValueRange& _dxva2_, const D3D11_VIDEO_PROCESSOR_FILTER_RANGE& _d3d11_)
 {
-	int den = 1;
-	if (filter == D3D11_VIDEO_PROCESSOR_FILTER_CONTRAST || D3D11_VIDEO_PROCESSOR_FILTER_SATURATION) {
-		den = _d3d11_.Default;
+	float k = _d3d11_.Multiplier;
+	if (_d3d11_.Default == 100) {
+		k /= _d3d11_.Default;
 	}
-	_dxva2_.MinValue     = DXVA2FloatToFixed(_d3d11_.Multiplier * _d3d11_.Minimum / den);
-	_dxva2_.MaxValue     = DXVA2FloatToFixed(_d3d11_.Multiplier * _d3d11_.Maximum / den);
-	_dxva2_.DefaultValue = DXVA2FloatToFixed(_d3d11_.Multiplier * _d3d11_.Default / den);
-	_dxva2_.StepSize     = DXVA2FloatToFixed(_d3d11_.Multiplier / den);
+
+	_dxva2_.MinValue     = DXVA2FloatToFixed(k * _d3d11_.Minimum);
+	_dxva2_.MaxValue     = DXVA2FloatToFixed(k * _d3d11_.Maximum);
+	_dxva2_.DefaultValue = DXVA2FloatToFixed(k * _d3d11_.Default);
+	_dxva2_.StepSize     = DXVA2FloatToFixed(k);
 }
 
 STDMETHODIMP CDX11VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange)
@@ -972,10 +981,10 @@ STDMETHODIMP CDX11VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueR
 	CheckPointer(m_pVideoProcessor, MF_E_INVALIDREQUEST);
 	CheckPointer(pPropRange, E_POINTER);
 	switch (dwProperty) {
-	case DXVA2_ProcAmp_Brightness: FilterRangeD3D11toDXVA2(*pPropRange, m_VPFilterRange[0], D3D11_VIDEO_PROCESSOR_FILTER_BRIGHTNESS); break;
-	case DXVA2_ProcAmp_Contrast:   FilterRangeD3D11toDXVA2(*pPropRange, m_VPFilterRange[1], D3D11_VIDEO_PROCESSOR_FILTER_CONTRAST);   break;
-	case DXVA2_ProcAmp_Hue:        FilterRangeD3D11toDXVA2(*pPropRange, m_VPFilterRange[2], D3D11_VIDEO_PROCESSOR_FILTER_HUE);        break;
-	case DXVA2_ProcAmp_Saturation: FilterRangeD3D11toDXVA2(*pPropRange, m_VPFilterRange[3], D3D11_VIDEO_PROCESSOR_FILTER_SATURATION); break;
+	case DXVA2_ProcAmp_Brightness: FilterRangeD3D11toDXVA2(*pPropRange, m_VPFilterRange[0]); break;
+	case DXVA2_ProcAmp_Contrast:   FilterRangeD3D11toDXVA2(*pPropRange, m_VPFilterRange[1]); break;
+	case DXVA2_ProcAmp_Hue:        FilterRangeD3D11toDXVA2(*pPropRange, m_VPFilterRange[2]); break;
+	case DXVA2_ProcAmp_Saturation: FilterRangeD3D11toDXVA2(*pPropRange, m_VPFilterRange[3]); break;
 	default:
 		return E_INVALIDARG;
 	}
@@ -987,26 +996,24 @@ STDMETHODIMP CDX11VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpV
 	CheckPointer(m_pVideoProcessor, MF_E_INVALIDREQUEST);
 	CheckPointer(Values, E_POINTER);
 
-	BOOL Enabled;
-	int Level;
 	if (dwFlags&DXVA2_ProcAmp_Brightness) {
-		m_pVideoContext->VideoProcessorGetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_BRIGHTNESS, &Enabled, &Level);
-		Values->Brightness = DXVA2FloatToFixed(m_VPFilterRange[0].Multiplier *(Enabled ? Level : m_VPFilterRange[0].Default));
+		auto& set = m_VPFilterSettings[0];
+		Values->Brightness = DXVA2FloatToFixed(m_VPFilterRange[0].Multiplier * set.Level);
 	}
 
 	if (dwFlags&DXVA2_ProcAmp_Contrast) {
-		m_pVideoContext->VideoProcessorGetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_CONTRAST, &Enabled, &Level);
-		Values->Contrast = DXVA2FloatToFixed(m_VPFilterRange[1].Multiplier * (Enabled ? (float)Level / m_VPFilterRange[1].Default : 1));
+		auto& set = m_VPFilterSettings[1];
+		Values->Contrast = DXVA2FloatToFixed(m_VPFilterRange[1].Multiplier/ m_VPFilterRange[1].Default * set.Level );
 	}
 
 	if (dwFlags&DXVA2_ProcAmp_Hue) {
-		m_pVideoContext->VideoProcessorGetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_HUE, &Enabled, &Level);
-		Values->Hue = DXVA2FloatToFixed(m_VPFilterRange[2].Multiplier * (Enabled ? Level : m_VPFilterRange[2].Default));
+		auto& set = m_VPFilterSettings[2];
+		Values->Hue = DXVA2FloatToFixed(m_VPFilterRange[2].Multiplier * set.Level);
 	}
 
 	if (dwFlags&DXVA2_ProcAmp_Saturation) {
-		m_pVideoContext->VideoProcessorGetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_SATURATION, &Enabled, &Level);
-		Values->Saturation = DXVA2FloatToFixed(m_VPFilterRange[3].Multiplier * (Enabled ? (float)Level / m_VPFilterRange[3].Default : 1));
+		auto& set = m_VPFilterSettings[3];
+		Values->Saturation = DXVA2FloatToFixed(m_VPFilterRange[3].Multiplier / m_VPFilterRange[3].Default);
 	}
 
 	return S_OK;
@@ -1014,36 +1021,34 @@ STDMETHODIMP CDX11VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpV
 
 STDMETHODIMP CDX11VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *pValues)
 {
-	return E_NOTIMPL;
-	// crash here. need a lock?
-	/*
 	CheckPointer(m_pVideoProcessor, MF_E_INVALIDREQUEST);
 	CheckPointer(pValues, E_POINTER);
 
-	int Level;
-
 	if (dwFlags&DXVA2_ProcAmp_Brightness) {
-		Level = DXVA2FixedToFloat(pValues->Brightness) / m_VPFilterRange[0].Multiplier;
-		m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_BRIGHTNESS, TRUE, Level);
+		m_VPFilterSettings[0].Level = (int)std::round(DXVA2FixedToFloat(pValues->Brightness) / m_VPFilterRange[0].Multiplier);
+		m_VPFilterSettings[0].Level = std::clamp(m_VPFilterSettings[0].Level, m_VPFilterRange[0].Minimum, m_VPFilterRange[0].Maximum);
+		m_VPFilterSettings[0].Enabled = (m_VPFilterSettings[0].Level != m_VPFilterRange[0].Default);
 	}
 
 	if (dwFlags&DXVA2_ProcAmp_Contrast) {
-		Level = DXVA2FixedToFloat(pValues->Contrast) * m_VPFilterRange[1].Default / m_VPFilterRange[1].Multiplier;
-		m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_CONTRAST, TRUE, Level);
+		m_VPFilterSettings[1].Level = (int)std::round(DXVA2FixedToFloat(pValues->Contrast) * m_VPFilterRange[1].Default / m_VPFilterRange[1].Multiplier);
+		m_VPFilterSettings[1].Level = std::clamp(m_VPFilterSettings[1].Level, m_VPFilterRange[1].Minimum, m_VPFilterRange[1].Maximum);
+		m_VPFilterSettings[1].Enabled = (m_VPFilterSettings[1].Level != m_VPFilterRange[1].Default);
 	}
 
 	if (dwFlags&DXVA2_ProcAmp_Hue) {
-		Level = DXVA2FixedToFloat(pValues->Hue) / m_VPFilterRange[2].Multiplier;
-		m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_HUE, TRUE, Level);
+		m_VPFilterSettings[2].Level = (int)std::round(DXVA2FixedToFloat(pValues->Hue) / m_VPFilterRange[2].Multiplier);
+		m_VPFilterSettings[2].Level = std::clamp(m_VPFilterSettings[2].Level, m_VPFilterRange[2].Minimum, m_VPFilterRange[2].Maximum);
+		m_VPFilterSettings[2].Enabled = (m_VPFilterSettings[2].Level != m_VPFilterRange[2].Default);
 	}
 
 	if (dwFlags&DXVA2_ProcAmp_Saturation) {
-		Level = DXVA2FixedToFloat(pValues->Saturation) * m_VPFilterRange[3].Default / m_VPFilterRange[3].Multiplier;
-		m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_SATURATION, TRUE, Level);
+		m_VPFilterSettings[3].Level = (int)std::round(DXVA2FixedToFloat(pValues->Saturation) * m_VPFilterRange[1].Default / m_VPFilterRange[3].Multiplier);
+		m_VPFilterSettings[3].Level = std::clamp(m_VPFilterSettings[3].Level, m_VPFilterRange[3].Minimum, m_VPFilterRange[3].Maximum);
+		m_VPFilterSettings[3].Enabled = (m_VPFilterSettings[3].Level != m_VPFilterRange[3].Default);
 	}
 
 	return S_OK;
-	*/
 }
 
 STDMETHODIMP CDX11VideoProcessor::GetBackgroundColor(COLORREF *lpClrBkg)

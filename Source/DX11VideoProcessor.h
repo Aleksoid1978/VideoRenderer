@@ -86,6 +86,10 @@ private:
 
 	D3D11_VIDEO_PROCESSOR_CAPS m_VPCaps = {};
 	D3D11_VIDEO_PROCESSOR_FILTER_RANGE m_VPFilterRange[4] = {};
+	struct {
+		BOOL Enabled;
+		int Level;
+	} m_VPFilterSettings[4] = {};
 
 	CRect m_videoRect;
 	CRect m_windowRect;
