@@ -19,7 +19,6 @@
  */
 
 #include "stdafx.h"
-#include "VideoRenderer.h"
 #include <vector>
 #include <VersionHelpers.h>
 #include <evr.h> // for MR_VIDEO_ACCELERATION_SERVICE, because the <mfapi.h> does not contain it
@@ -27,105 +26,14 @@
 #include <Dvdmedia.h>
 #include "Helper.h"
 #include "PropPage.h"
-#include "./Include/ID3DVideoMemoryConfiguration.h"
+#include "VideoRendererInputPin.h"
+#include "VideoRenderer.h"
 
 #define OPT_REGKEY_VIDEORENDERER L"Software\\MPC-BE Filters\\MPC Video Renderer"
 #define OPT_UseD3D11             L"UseD3D11"
 #define OPT_ShowStatistics       L"ShowStatistics"
 #define OPT_DoubleFrateDeint     L"DoubleFramerateDeinterlace"
 #define OPT_SurfaceFormat        L"SurfaceFormat"
-
-class CVideoRendererInputPin : public CRendererInputPin
-	, public IMFGetService
-	, public IDirectXVideoMemoryConfiguration
-	, public ID3D11DecoderConfiguration
-{
-public :
-	CVideoRendererInputPin(CBaseRenderer *pRenderer, HRESULT *phr, LPCWSTR Name, CMpcVideoRenderer* pBaseRenderer);
-
-	DECLARE_IUNKNOWN
-	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv);
-
-	STDMETHODIMP GetAllocator(IMemAllocator **ppAllocator) {
-		// Renderer shouldn't manage allocator for DXVA
-		return E_NOTIMPL;
-	}
-
-	STDMETHODIMP GetAllocatorRequirements(ALLOCATOR_PROPERTIES* pProps) {
-		// 1 buffer required
-		ZeroMemory(pProps, sizeof(ALLOCATOR_PROPERTIES));
-		pProps->cbBuffer = 1;
-		return S_OK;
-	}
-
-	// IMFGetService
-	STDMETHODIMP GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject);
-
-	// IDirectXVideoMemoryConfiguration
-	STDMETHODIMP GetAvailableSurfaceTypeByIndex(DWORD dwTypeIndex, DXVA2_SurfaceType *pdwType);
-	STDMETHODIMP SetSurfaceType(DXVA2_SurfaceType dwType);
-
-	// ID3D11DecoderConfiguration
-	STDMETHODIMP ActivateD3D11Decoding(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, HANDLE hMutex, UINT nFlags);
-	UINT STDMETHODCALLTYPE GetD3D11AdapterIndex();
-
-private:
-	CMpcVideoRenderer* m_pBaseRenderer;
-};
-
-CVideoRendererInputPin::CVideoRendererInputPin(CBaseRenderer *pRenderer, HRESULT *phr, LPCWSTR Name, CMpcVideoRenderer* pBaseRenderer)
-	: CRendererInputPin(pRenderer, phr, Name)
-	, m_pBaseRenderer(pBaseRenderer)
-{
-}
-
-STDMETHODIMP CVideoRendererInputPin::NonDelegatingQueryInterface(REFIID riid, void** ppv)
-{
-	CheckPointer(ppv, E_POINTER);
-
-	return
-		(riid == __uuidof(IMFGetService)) ? GetInterface((IMFGetService*)this, ppv) :
-		(riid == __uuidof(ID3D11DecoderConfiguration)) ? GetInterface((ID3D11DecoderConfiguration*)this, ppv) :
-		__super::NonDelegatingQueryInterface(riid, ppv);
-}
-
-// IMFGetService
-STDMETHODIMP CVideoRendererInputPin::GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject)
-{
-	if (riid == __uuidof(IDirectXVideoMemoryConfiguration)) {
-		GetInterface((IDirectXVideoMemoryConfiguration*)this, ppvObject);
-		return S_OK;
-	}
-
-	return m_pBaseRenderer->GetService(guidService, riid, ppvObject);
-}
-
-// IDirectXVideoMemoryConfiguration
-STDMETHODIMP CVideoRendererInputPin::GetAvailableSurfaceTypeByIndex(DWORD dwTypeIndex, DXVA2_SurfaceType *pdwType)
-{
-	if (dwTypeIndex == 0) {
-		*pdwType = DXVA2_SurfaceType_DecoderRenderTarget;
-		return S_OK;
-	} else {
-		return MF_E_NO_MORE_TYPES;
-	}
-}
-
-STDMETHODIMP CVideoRendererInputPin::SetSurfaceType(DXVA2_SurfaceType dwType)
-{
-	return S_OK;
-}
-
-// ID3D11DecoderConfiguration
-STDMETHODIMP CVideoRendererInputPin::ActivateD3D11Decoding(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, HANDLE hMutex, UINT nFlags)
-{
-	return m_pBaseRenderer->m_bUsedD3D11 ? m_pBaseRenderer->m_DX11_VP.SetDevice(pDevice, pContext) : E_FAIL;
-}
-
-UINT STDMETHODCALLTYPE CVideoRendererInputPin::GetD3D11AdapterIndex()
-{
-	return 0;
-}
 
 //
 // CMpcVideoRenderer

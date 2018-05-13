@@ -65,6 +65,7 @@
     </ClCompile>
     <ClCompile Include="Time.cpp" />
     <ClCompile Include="VideoRenderer.cpp" />
+    <ClCompile Include="VideoRendererInputPin.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DX11VideoProcessor.h" />
@@ -77,6 +78,7 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Time.h" />
     <ClInclude Include="VideoRenderer.h" />
+    <ClInclude Include="VideoRendererInputPin.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include=".\BaseClasses\BaseClasses.vcxproj">
