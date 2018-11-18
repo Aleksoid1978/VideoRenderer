@@ -78,15 +78,15 @@ FOR /F "tokens=2*" %%A IN (
 EXIT /B
 
 :SubMPCVR
-TITLE Compiling MPC Video Renderer - %BUILDCFG% Filter^|%1...
+TITLE Compiling MPC Video Renderer - %BUILDCFG%^|%1...
 MSBuild.exe MpcVideoRenderer.sln %MSBUILD_SWITCHES%^
- /target:%BUILDTYPE% /p:Configuration="%BUILDCFG% Filter" /p:Platform=%1^
+ /target:%BUILDTYPE% /p:Configuration="%BUILDCFG%" /p:Platform=%1^
  /flp1:LogFile=%LOG_DIR%\errors_%BUILDCFG%_%1.log;errorsonly;Verbosity=diagnostic^
  /flp2:LogFile=%LOG_DIR%\warnings_%BUILDCFG%_%1.log;warningsonly;Verbosity=diagnostic
 IF %ERRORLEVEL% NEQ 0 (
-  CALL :SubMsg "ERROR" "MpcVideoRenderer.sln %BUILDCFG% Filter %1 - Compilation failed!"
+  CALL :SubMsg "ERROR" "MpcVideoRenderer.sln %BUILDCFG% %1 - Compilation failed!"
 ) ELSE (
-  CALL :SubMsg "INFO" "MpcVideoRenderer.sln %BUILDCFG% Filter %1 compiled successfully"
+  CALL :SubMsg "INFO" "MpcVideoRenderer.sln %BUILDCFG% %1 compiled successfully"
 )
 EXIT /B
 
