@@ -136,6 +136,12 @@ private:
 	ULONG_PTR m_gdiplusToken;
 	Gdiplus::GdiplusStartupInput m_gdiplusStartupInput;
 
+	double m_DetectedRefreshRate = 0.0;
+	CCritSec m_RefreshRateLock;
+
+	HANDLE m_hEvtQuit; // Stop threads event
+	HANDLE m_hSyncThread = nullptr;
+
 public:
 	CDX9VideoProcessor(CBaseRenderer* pFilter);
 	~CDX9VideoProcessor();
@@ -146,6 +152,12 @@ private:
 	BOOL CheckInput(const D3DFORMAT d3dformat, const UINT width, const UINT height);
 	BOOL InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height);
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
+
+	void StartWorkerThreads();
+	void StopWorkerThreads();
+
+	static DWORD WINAPI SyncThreadStatic(LPVOID lpParam);
+	void SyncThread();
 
 public:
 	BOOL InitMediaType(const CMediaType* pmt);

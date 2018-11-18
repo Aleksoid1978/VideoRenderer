@@ -49,6 +49,8 @@
 #define DLogError(...) __noop
 #endif
 
+#define SAFE_CLOSE_HANDLE(p) { if (p) { if ((p) != INVALID_HANDLE_VALUE) ASSERT(CloseHandle(p)); (p) = nullptr; } }
+
 inline CString CStringFromGUID(const GUID& guid)
 {
 	WCHAR null[128] = {}, buff[128] = {};

@@ -31,7 +31,7 @@
 #include "DX9VideoProcessor.h"
 
 #define STATS_W 330
-#define STATS_H 130
+#define STATS_H 160
 
 // CDX9VideoProcessor
 
@@ -86,6 +86,8 @@ CDX9VideoProcessor::CDX9VideoProcessor(CBaseRenderer* pFilter)
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
 {
+	StopWorkerThreads();
+
 	m_pMemSurface.Release();
 	m_pOSDTexture.Release();
 
@@ -212,60 +214,8 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 		m_pD3DDevEx->CreateOffscreenPlainSurface(STATS_W, STATS_H, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &m_pMemSurface, nullptr);
 	}
 
-#if 0
-	D3DRASTER_STATUS rasterStatus;
-	if (S_OK == m_pD3DDevEx->GetRasterStatus(0, &rasterStatus)) {
-		while (rasterStatus.ScanLine != 0) {
-			m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
-		}
-		while (rasterStatus.ScanLine == 0) {
-			m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
-		}
-		uint64_t startTick = GetPreciseTick();
-		UINT startLine = rasterStatus.ScanLine; // most likely there will be 1
-
-		uint64_t endTick = 0;
-		UINT endLine = 0;
-		while (rasterStatus.ScanLine != 0) {
-			endTick = GetPreciseTick();
-			endLine = rasterStatus.ScanLine;
-			m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
-		}
-
-		UINT DetectedScanlines = endLine + 1;
-		double DetectedScanlineTicks = (double)(endTick - startTick) / (endLine - startLine + 1);
-		DLog(L"* GetRasterStatus metod");
-		DLog(L"DetectedScanlines   : %u", DetectedScanlines);
-		DLog(L"DetectedScanlineTime: %7.03f ms", DetectedScanlineTicks * GetPreciseSecondsPerTick() * 1000);
-
-		// Estimate the display refresh rate from the vsyncs
-		rasterStatus = { FALSE, 1 };
-		while (rasterStatus.ScanLine != 0) {
-			m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
-		}
-		// Now we're at the start of a vsync
-		startTick = GetPreciseTick();
-		uint64_t enoughTick = startTick + GetPreciseTicksPerSecondI();
-		UINT i = 0;
-		while (endTick < enoughTick) {
-			while (rasterStatus.ScanLine == 0) {
-				m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
-			}
-			while (rasterStatus.ScanLine != 0) {
-				m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
-			}
-			i++;
-			// Now we're at the next vsync
-			endTick = GetPreciseTick();
-		}
-
-		double DetectedRefreshRate = (double)i / (GetPreciseSecondsPerTick() * (endTick - startTick));
-		double EstRefreshCycle = GetPreciseSecondsPerTick() * (endTick - startTick) / i;
-		DLog(L"RefreshRate         : %3u Hz", m_DisplayMode.RefreshRate);
-		DLog(L"DetectedRefreshRate : %7.03f Hz", DetectedRefreshRate);
-		DLog(L"EstRefreshCycle     : %7.03f ms", EstRefreshCycle * 1000);
-	}
-#endif
+	StopWorkerThreads();
+	StartWorkerThreads();
 
 	return hr;
 }
@@ -516,6 +466,124 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : create %s processor ", CStringFromGUID(devguid));
 
 	return TRUE;
+}
+
+void CDX9VideoProcessor::StartWorkerThreads()
+{
+	DWORD dwThreadId;
+
+	m_hEvtQuit = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+
+	m_hSyncThread = ::CreateThread(nullptr, 0, SyncThreadStatic, (LPVOID)this, 0, &dwThreadId);
+}
+
+void CDX9VideoProcessor::StopWorkerThreads()
+{
+	SetEvent(m_hEvtQuit);
+
+	if (m_hSyncThread && WaitForSingleObject(m_hSyncThread, 1000) == WAIT_TIMEOUT) {
+		ASSERT(FALSE);
+		TerminateThread(m_hSyncThread, 0xDEAD);
+	}
+
+	SAFE_CLOSE_HANDLE(m_hSyncThread);
+}
+
+DWORD WINAPI CDX9VideoProcessor::SyncThreadStatic(LPVOID lpParam)
+{
+	CDX9VideoProcessor* pThis = (CDX9VideoProcessor*)lpParam;
+	pThis->SyncThread();
+	return 0;
+}
+
+void CDX9VideoProcessor::SyncThread()
+{
+	struct {
+		uint64_t tick;
+		UINT scanline;
+	} ScanLines[61] = {};
+	unsigned ScanLinePos = 0;
+	bool filled = false;
+	UINT prevSL = UINT_MAX;
+	UINT ScanlinesPerFrame = 0;
+
+	bool bQuit = false;
+
+	while (!bQuit) {
+		DWORD dwObject = WaitForSingleObject(m_hEvtQuit, 2);
+		switch (dwObject) {
+		case WAIT_OBJECT_0:
+			bQuit = true;
+			break;
+		case WAIT_TIMEOUT:
+			// Do our stuff
+		{
+			if (!ScanlinesPerFrame) {
+				D3DRASTER_STATUS rasterStatus;
+				if (S_OK == m_pD3DDevEx->GetRasterStatus(0, &rasterStatus)) {
+					while (rasterStatus.ScanLine == 0) { // skip zero scanline with unknown start time
+						Sleep(1);
+						m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
+					}
+					while (rasterStatus.ScanLine != 0) { // find new zero scanline
+						m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
+					}
+					uint64_t tick0 = GetPreciseTick();
+					while (rasterStatus.ScanLine == 0) {
+						m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
+					}
+					uint64_t tick1 = GetPreciseTick();
+
+					Sleep(1);
+					prevSL = 0;
+					while (rasterStatus.ScanLine != 0) {
+						prevSL = rasterStatus.ScanLine;
+						m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
+					}
+					uint64_t tickLast = GetPreciseTick();
+
+					auto t = tickLast - tick1;
+					ScanlinesPerFrame = (prevSL * (tickLast - tick0) + t/2) / t;
+
+					DLog(L"Detected ScanlinesPerFrame = %u", ScanlinesPerFrame);
+				}
+			}
+			else {
+				D3DRASTER_STATUS rasterStatus;
+				if (S_OK == m_pD3DDevEx->GetRasterStatus(0, &rasterStatus)) {
+					uint64_t tick = GetPreciseTick();
+					if (rasterStatus.ScanLine) { // ignore the zero scan line, it coincides with VBlanc and therefore is very long in time
+						if (rasterStatus.ScanLine < prevSL) {
+							ScanLines[ScanLinePos].tick = tick;
+							ScanLines[ScanLinePos].scanline = rasterStatus.ScanLine;
+							UINT lastpos = ScanLinePos++;
+							if (ScanLinePos >= std::size(ScanLines)) {
+								ScanLinePos = 0;
+								filled = true;
+							}
+
+							double refreshRate = GetPreciseTicksPerSecond();
+							if (filled) {
+								refreshRate *= ScanlinesPerFrame * ((UINT)std::size(ScanLines) - 1) + ScanLines[lastpos].scanline - ScanLines[ScanLinePos].scanline;
+								refreshRate /= ScanlinesPerFrame * (ScanLines[lastpos].tick - ScanLines[ScanLinePos].tick);
+							} else {
+								refreshRate *= ScanlinesPerFrame * ScanLinePos + ScanLines[lastpos].scanline - ScanLines[0].scanline;
+								refreshRate /= ScanlinesPerFrame * (ScanLines[lastpos].tick - ScanLines[0].tick);
+							}
+
+							{
+								CAutoLock Lock(&m_RefreshRateLock);
+								m_DetectedRefreshRate = refreshRate;
+							}
+						}
+						prevSL = rasterStatus.ScanLine;
+					}
+				}
+			}
+		}
+			break;
+		}
+	}
 }
 
 BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
@@ -946,6 +1014,11 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	str.AppendFormat(L"\nInput format : %s", D3DFormatToString(m_srcD3DFormat));
 	str.AppendFormat(L"\nVP output fmt: %s", D3DFormatToString(m_VPOutputFmt));
 	str.AppendFormat(L"\nSync offset  :%+4d ms", m_SyncOffsetMS);
+
+	{
+		CAutoLock Lock(&m_RefreshRateLock);
+		str.AppendFormat(L"\nRefresh Rate : %7.03f Hz", m_DetectedRefreshRate);
+	}
 
 	HDC hdc;
 	if (S_OK == m_pMemSurface->GetDC(&hdc)) {
