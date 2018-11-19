@@ -699,7 +699,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	if (field) {
 		m_pFilter->StreamTime(rtClock);
 
-		if (rtFrame + rtFrameDur < rtClock) {
+		if (rtFrameDur > 2 && rtFrame + rtFrameDur < rtClock) {
 			return S_FALSE; // skip this frame
 		}
 		m_FieldDrawn = field;
