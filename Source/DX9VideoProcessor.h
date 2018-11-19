@@ -108,8 +108,8 @@ private:
 	DWORD m_srcAspectRatioY = 0;
 	DXVA2_ExtendedFormat m_srcExFmt = {};
 	bool m_bInterlaced = false;
-	RECT m_srcRect = {};
-	RECT m_trgRect = {};
+	CRect m_srcRect;
+	CRect m_trgRect;
 	D3DFORMAT m_VPOutputFmt = D3DFMT_X8R8G8B8;
 
 	// Processing parameters
@@ -186,7 +186,9 @@ public:
 	void SetShowStats(bool value) { m_bShowStats = value; };
 
 private:
-	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const bool second);
+	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
+	HRESULT ProcessTex(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
+
 	HRESULT AlphaBlt(RECT* pSrc, RECT* pDst, IDirect3DTexture9* pTexture);
 	HRESULT DrawStats();
 

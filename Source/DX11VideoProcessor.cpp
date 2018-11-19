@@ -370,45 +370,62 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcHeight = labs(vih2->bmiHeader.biHeight);
 		m_srcAspectRatioX = vih2->dwPictAspectRatioX;
 		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
-		m_srcExFmt.value = 0;
-
+		if (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT)) {
+			m_srcExFmt.value = vih2->dwControlFlags;
+			m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
+		}
 		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
-		m_srcD3DFormat = MediaSubtype2D3DFormat(pmt->subtype);
-		m_srcDXGIFormat = MediaSubtype2DXGIFormat(pmt->subtype);
-
-		if (m_srcD3DFormat == D3DFMT_X8R8G8B8 || m_srcD3DFormat == D3DFMT_A8R8G8B8) {
-			m_srcPitch = m_srcWidth * 4;
-		}
-		else {
-			if (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT)) {
-				m_srcExFmt.value = vih2->dwControlFlags;
-				m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
-			}
-
-			switch (m_srcD3DFormat) {
-			case D3DFMT_NV12:
-			case D3DFMT_YV12:
-			default:
-				m_srcPitch = m_srcWidth;
-				break;
-			case D3DFMT_YUY2:
-			case D3DFMT_P010:
-				m_srcPitch = m_srcWidth * 2;
-				break;
-			case D3DFMT_AYUV:
-				m_srcPitch = m_srcWidth * 4;
-				break;
-			}
-		}
-
-		if (FAILED(Initialize(m_srcWidth, m_srcHeight, m_srcDXGIFormat))) {
-			return FALSE;
-		}
-
-		return TRUE;
+	}
+	else if (m_mt.formattype == FORMAT_VideoInfo) {
+		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)m_mt.pbFormat;
+		m_srcRect = vih->rcSource;
+		m_trgRect = vih->rcTarget;
+		m_srcWidth = vih->bmiHeader.biWidth;
+		m_srcHeight = labs(vih->bmiHeader.biHeight);
+		m_srcAspectRatioX = 0;
+		m_srcAspectRatioY = 0;
+		m_srcExFmt.value = 0;
+		m_bInterlaced = 0;
+	}
+	else {
+		return FALSE;
 	}
 
-	return FALSE;
+	if (m_srcRect.IsRectNull() && m_trgRect.IsRectNull()) {
+		// Hmm
+		m_srcRect.SetRect(0, 0, m_srcWidth, m_srcHeight);
+		m_trgRect.SetRect(0, 0, m_srcWidth, m_srcHeight);
+	}
+
+
+	m_srcD3DFormat = MediaSubtype2D3DFormat(pmt->subtype);
+	m_srcDXGIFormat = MediaSubtype2DXGIFormat(pmt->subtype);
+
+	switch (m_srcD3DFormat) {
+	case D3DFMT_NV12:
+	case D3DFMT_YV12:
+	default:
+		m_srcPitch = m_srcWidth;
+		break;
+	case D3DFMT_YUY2:
+	case D3DFMT_P010:
+		m_srcPitch = m_srcWidth * 2;
+		break;
+	case D3DFMT_AYUV:
+		m_srcPitch = m_srcWidth * 4;
+		break;
+	case D3DFMT_X8R8G8B8:
+	case D3DFMT_A8R8G8B8:
+		m_srcPitch = m_srcWidth * 4;
+		m_srcExFmt.value = 0; // ignore color info for RGB
+		break;
+	}
+
+	if (FAILED(Initialize(m_srcWidth, m_srcHeight, m_srcDXGIFormat))) {
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, const DXGI_FORMAT dxgiFormat)

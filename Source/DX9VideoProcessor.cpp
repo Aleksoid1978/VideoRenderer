@@ -86,7 +86,7 @@ CDX9VideoProcessor::CDX9VideoProcessor(CBaseRenderer* pFilter)
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
 {
-	StopWorkerThreads();
+	//StopWorkerThreads();
 
 	m_pMemSurface.Release();
 	m_pOSDTexture.Release();
@@ -214,8 +214,9 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 		m_pD3DDevEx->CreateOffscreenPlainSurface(STATS_W, STATS_H, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &m_pMemSurface, nullptr);
 	}
 
-	StopWorkerThreads();
-	StartWorkerThreads();
+	// TODO
+	//StopWorkerThreads();
+	//StartWorkerThreads();
 
 	return hr;
 }
@@ -259,8 +260,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 	videodesc.SampleFormat.SampleFormat = m_bInterlaced ? DXVA2_SampleFieldInterleavedOddFirst : DXVA2_SampleProgressiveFrame;
 	if (d3dformat == D3DFMT_X8R8G8B8) {
 		videodesc.Format = D3DFMT_YUY2; // hack
-	}
-	else {
+	} else {
 		videodesc.Format = d3dformat;
 	}
 	videodesc.InputSampleFreq.Numerator = 60;
@@ -596,44 +596,60 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcHeight = labs(vih2->bmiHeader.biHeight);
 		m_srcAspectRatioX = vih2->dwPictAspectRatioX;
 		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
-		m_srcExFmt.value = 0;
-
+		if (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT)) {
+			m_srcExFmt.value = vih2->dwControlFlags;
+			m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
+		}
 		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
-		m_srcD3DFormat = MediaSubtype2D3DFormat(pmt->subtype);
-
-		if (m_srcD3DFormat == D3DFMT_X8R8G8B8 || m_srcD3DFormat == D3DFMT_A8R8G8B8) {
-			m_srcPitch = m_srcWidth * 4;
-		}
-		else {
-			if (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT)) {
-				m_srcExFmt.value = vih2->dwControlFlags;
-				m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
-			}
-
-			switch (m_srcD3DFormat) {
-			case D3DFMT_NV12:
-			case D3DFMT_YV12:
-			default:
-				m_srcPitch = m_srcWidth;
-				break;
-			case D3DFMT_YUY2:
-			case D3DFMT_P010:
-				m_srcPitch = m_srcWidth * 2;
-				break;
-			case D3DFMT_AYUV:
-				m_srcPitch = m_srcWidth * 4;
-				break;
-			}
-		}
-
-		if (!CheckInput(m_srcD3DFormat, m_srcWidth, m_srcHeight)) {
-			return FALSE;
-		}
-
-		return TRUE;
+	}
+	else if (pmt->formattype == FORMAT_VideoInfo) {
+		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)pmt->pbFormat;
+		m_srcRect = vih->rcSource;
+		m_trgRect = vih->rcTarget;
+		m_srcWidth = vih->bmiHeader.biWidth;
+		m_srcHeight = labs(vih->bmiHeader.biHeight);
+		m_srcAspectRatioX = 0;
+		m_srcAspectRatioY = 0;
+		m_srcExFmt.value = 0;
+		m_bInterlaced = 0;
+	}
+	else {
+		return FALSE;
 	}
 
-	return FALSE;
+	if (m_srcRect.IsRectNull() && m_trgRect.IsRectNull()) {
+		// Hmm
+		m_srcRect.SetRect(0, 0, m_srcWidth, m_srcHeight);
+		m_trgRect.SetRect(0, 0, m_srcWidth, m_srcHeight);
+	}
+
+	m_srcD3DFormat = MediaSubtype2D3DFormat(pmt->subtype);
+
+	switch (m_srcD3DFormat) {
+	case D3DFMT_NV12:
+	case D3DFMT_YV12:
+	default:
+		m_srcPitch = m_srcWidth;
+		break;
+	case D3DFMT_YUY2:
+	case D3DFMT_P010:
+		m_srcPitch = m_srcWidth * 2;
+		break;
+	case D3DFMT_AYUV:
+		m_srcPitch = m_srcWidth * 4;
+		break;
+	case D3DFMT_X8R8G8B8:
+	case D3DFMT_A8R8G8B8:
+		m_srcPitch = m_srcWidth * 4;
+		m_srcExFmt.value = 0; // ignore color info for RGB
+		break;
+	}
+
+	if (!CheckInput(m_srcD3DFormat, m_srcWidth, m_srcHeight)) {
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 void CDX9VideoProcessor::Start()
@@ -770,9 +786,23 @@ HRESULT CDX9VideoProcessor::Render(int field)
 	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
 	m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
 
-	hr = ProcessDXVA2(pBackBuffer, m_FieldDrawn == 2);
-	if (S_OK == hr && m_bShowStats) {
-		hr = DrawStats();
+	if (!m_videoRect.IsRectEmpty()) {
+		CRect rSrcRect(m_srcRect);
+		CRect rDstRect(m_videoRect);
+		D3DSURFACE_DESC desc = {};
+		if (S_OK == pBackBuffer->GetDesc(&desc)) {
+			ClipToSurface(desc.Width, desc.Height, rSrcRect, rDstRect);
+		}
+
+		if (m_srcD3DFormat == D3DFMT_X8R8G8B8 && m_VendorId != PCIV_INTEL) {
+			hr = ProcessTex(pBackBuffer, rSrcRect, rDstRect);
+		} else {
+			hr = ProcessDXVA2(pBackBuffer, rSrcRect, rDstRect, m_FieldDrawn == 2);
+		}
+
+		if (S_OK == hr && m_bShowStats) {
+			hr = DrawStats();
+		}
 	}
 
 	hr = m_pD3DDevEx->EndScene();
@@ -876,22 +906,11 @@ HRESULT CDX9VideoProcessor::GetDXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCap
 	return S_OK;
 }
 
-HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const bool second)
+HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
 	// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx
-	if (m_videoRect.IsRectEmpty()) {
-		return S_OK;
-	}
-
 	HRESULT hr = S_OK;
 	ASSERT(m_SrcSamples.Size() == m_DXVA2Samples.size());
-
-	CRect rSrcRect(m_srcRect);
-	CRect rDstRect(m_videoRect);
-	D3DSURFACE_DESC desc = {};
-	if (S_OK == pRenderTarget->GetDesc(&desc)) {
-		ClipToSurface(desc.Width, desc.Height, rSrcRect, rDstRect);
-	}
 
 	// Initialize VPBlt parameters
 	if (second) {
@@ -913,6 +932,17 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 	hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &m_BltParams, m_DXVA2Samples.data(), m_DXVA2Samples.size(), nullptr);
 	if (FAILED(hr)) {
 		DLog(L"CDX9VideoProcessor::ProcessDXVA2 : VideoProcessBlt() failed with error 0x%08x", hr);
+	}
+
+	return hr;
+}
+
+HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
+{
+	HRESULT hr = m_pD3DDevEx->StretchRect(m_SrcSamples.Get().pSrcSurface, rSrcRect, pRenderTarget, rDstRect, D3DTEXF_LINEAR);
+
+	if (FAILED(hr)) {
+		DLog(L"CDX9VideoProcessor::ProcessTex : StretchRect() failed with error 0x%08x", hr);
 	}
 
 	return hr;
