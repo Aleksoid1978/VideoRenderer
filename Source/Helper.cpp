@@ -92,7 +92,7 @@ s_DXGIFormatMapping[] = {
 	{ MEDIASUBTYPE_YUY2,   D3DFMT_YUY2,     DXGI_FORMAT_YUY2 },
 	{ MEDIASUBTYPE_AYUV,   D3DFMT_AYUV,     DXGI_FORMAT_AYUV },
 	{ MEDIASUBTYPE_RGB32,  D3DFMT_X8R8G8B8, DXGI_FORMAT_B8G8R8X8_UNORM },
-	{ MEDIASUBTYPE_ARGB32, D3DFMT_X8R8G8B8, DXGI_FORMAT_R8G8B8A8_UNORM },
+	{ MEDIASUBTYPE_ARGB32, D3DFMT_A8R8G8B8, DXGI_FORMAT_B8G8R8A8_UNORM },
 };
 
 D3DFORMAT MediaSubtype2D3DFormat(GUID subtype)
@@ -120,7 +120,7 @@ void CopyFrameData(const D3DFORMAT format, const UINT width, const UINT height, 
 {
 	//UINT linesize = std::min(src_pitch, dst_pitch); // TODO
 
-	if (format == D3DFMT_X8R8G8B8) {
+	if (format == D3DFMT_X8R8G8B8 || format == D3DFMT_A8R8G8B8) {
 		const UINT linesize = width * 4;
 		src += src_pitch * (height - 1);
 

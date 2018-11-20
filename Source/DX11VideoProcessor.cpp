@@ -663,7 +663,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 		}
 	}
-	else if (m_mt.formattype == FORMAT_VideoInfo2) {
+	else if (m_mt.formattype == FORMAT_VideoInfo2 || m_mt.formattype == FORMAT_VideoInfo) {
 		m_bCanUseSharedHandle = false;
 
 		BYTE* data = nullptr;

@@ -88,6 +88,7 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 {
 	//StopWorkerThreads();
 
+	m_SrcSamples.Clear();
 	m_pMemSurface.Release();
 	m_pOSDTexture.Release();
 
@@ -267,7 +268,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 	videodesc.SampleHeight = height;
 	//videodesc.SampleFormat.value = 0; // do not need to fill it here
 	videodesc.SampleFormat.SampleFormat = m_bInterlaced ? DXVA2_SampleFieldInterleavedOddFirst : DXVA2_SampleProgressiveFrame;
-	if (d3dformat == D3DFMT_X8R8G8B8) {
+	if (d3dformat == D3DFMT_X8R8G8B8 || d3dformat == D3DFMT_A8R8G8B8) {
 		videodesc.Format = D3DFMT_YUY2; // hack
 	} else {
 		videodesc.Format = d3dformat;
@@ -804,7 +805,7 @@ HRESULT CDX9VideoProcessor::Render(int field)
 			ClipToSurface(desc.Width, desc.Height, rSrcRect, rDstRect);
 		}
 
-		if (m_srcD3DFormat == D3DFMT_X8R8G8B8 && m_VendorId != PCIV_INTEL) {
+		if (m_VendorId != PCIV_INTEL && (m_srcD3DFormat == D3DFMT_X8R8G8B8 || m_srcD3DFormat == D3DFMT_A8R8G8B8)) {
 			hr = ProcessTex(pBackBuffer, rSrcRect, rDstRect);
 		} else {
 			hr = ProcessDXVA2(pBackBuffer, rSrcRect, rDstRect, m_FieldDrawn == 2);
