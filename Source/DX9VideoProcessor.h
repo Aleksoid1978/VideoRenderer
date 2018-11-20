@@ -100,6 +100,7 @@ private:
 	DXVA2_ValueRange m_DXVA2ProcValueRange[4] = {};
 
 	// Input parameters
+	GUID m_srcSubType = GUID_NULL;
 	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;
 	UINT m_srcWidth = 0;
 	UINT m_srcHeight = 0;
@@ -150,6 +151,7 @@ public:
 
 private:
 	BOOL CheckInput(const D3DFORMAT d3dformat, const UINT width, const UINT height);
+	void ReleaseVP();
 	BOOL InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height);
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
 

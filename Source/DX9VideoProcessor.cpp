@@ -231,14 +231,23 @@ BOOL CDX9VideoProcessor::CheckInput(const D3DFORMAT d3dformat, const UINT width,
 	return TRUE;
 }
 
-BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height)
+void CDX9VideoProcessor::ReleaseVP()
 {
-	DLog("CDX9VideoProcessor::InitializeDXVA2VP: begin");
-
 	m_FrameStats.Reset();
 	m_SrcSamples.Clear();
 	m_DXVA2Samples.clear();
 	m_pDXVA2_VP.Release();
+
+	m_D3D9_Src_Format = D3DFMT_UNKNOWN;
+	m_D3D9_Src_Width = 0;
+	m_D3D9_Src_Height = 0;
+}
+
+BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height)
+{
+	DLog("CDX9VideoProcessor::InitializeDXVA2VP: begin");
+
+	ReleaseVP();
 
 	HRESULT hr = S_OK;
 	if (!m_pDXVA2_VPService) {
@@ -623,7 +632,8 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_trgRect.SetRect(0, 0, m_srcWidth, m_srcHeight);
 	}
 
-	m_srcD3DFormat = MediaSubtype2D3DFormat(pmt->subtype);
+	m_srcSubType = pmt->subtype;
+	m_srcD3DFormat = MediaSubtype2D3DFormat(m_srcSubType);
 
 	switch (m_srcD3DFormat) {
 	case D3DFMT_NV12:

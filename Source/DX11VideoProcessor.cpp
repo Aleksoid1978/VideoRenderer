@@ -397,9 +397,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_trgRect.SetRect(0, 0, m_srcWidth, m_srcHeight);
 	}
 
-
-	m_srcD3DFormat = MediaSubtype2D3DFormat(pmt->subtype);
-	m_srcDXGIFormat = MediaSubtype2DXGIFormat(pmt->subtype);
+	m_srcD3DFormat = MediaSubtype2D3DFormat(m_mt.subtype);
+	m_srcDXGIFormat = MediaSubtype2DXGIFormat(m_mt.subtype);
 
 	switch (m_srcD3DFormat) {
 	case D3DFMT_NV12:
