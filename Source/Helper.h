@@ -51,6 +51,8 @@
 
 #define SAFE_CLOSE_HANDLE(p) { if (p) { if ((p) != INVALID_HANDLE_VALUE) ASSERT(CloseHandle(p)); (p) = nullptr; } }
 
+#define ALIGN(x, a) (((x)+(a)-1)&~((a)-1)) 
+
 inline CString CStringFromGUID(const GUID& guid)
 {
 	WCHAR null[128] = {}, buff[128] = {};
@@ -69,6 +71,7 @@ struct FmtConvParams_t {
 	D3DFORMAT       D3DFormat;
 	DXGI_FORMAT     DXGIFormat;
 	int             Packsize;
+	int             PitchCoeff;
 	bool            bRGB;
 	CopyFrameDataFn Func;
 };
