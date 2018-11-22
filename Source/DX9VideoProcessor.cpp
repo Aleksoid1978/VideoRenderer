@@ -646,7 +646,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	m_srcD3DFormat = FmtConvParams->D3DFormat;
 	m_srcPitch     = biSizeImage * 2 / (m_srcHeight * FmtConvParams->PitchCoeff);
-	if (m_srcSubType == MEDIASUBTYPE_NV12) {
+	if (m_srcSubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
 		m_srcPitch = ALIGN(m_srcPitch, 4);
 	}
 	m_pConvertFn   = FmtConvParams->Func;
