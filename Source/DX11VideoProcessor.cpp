@@ -402,22 +402,34 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	switch (m_srcD3DFormat) {
 	case D3DFMT_NV12:
-	case D3DFMT_YV12:
-	default:
 		m_srcPitch = m_srcWidth;
+		m_pConvertFn = &CopyFramePackedUV;
+		break;
+	case D3DFMT_YV12:
+		m_srcPitch = m_srcWidth;
+		m_pConvertFn = &CopyFrameYV12;
 		break;
 	case D3DFMT_YUY2:
+		m_srcPitch = m_srcWidth * 2;
+		m_pConvertFn = &CopyFrameAsIs;
+		break;
 	case D3DFMT_P010:
 		m_srcPitch = m_srcWidth * 2;
+		m_pConvertFn = &CopyFramePackedUV;
 		break;
 	case D3DFMT_AYUV:
 		m_srcPitch = m_srcWidth * 4;
+		m_pConvertFn = &CopyFrameAsIs;
 		break;
 	case D3DFMT_X8R8G8B8:
 	case D3DFMT_A8R8G8B8:
 		m_srcPitch = m_srcWidth * 4;
+		m_pConvertFn = &CopyFrameUpsideDown;
 		m_srcExFmt.value = 0; // ignore color info for RGB
 		break;
+	default:
+		m_pConvertFn = nullptr;
+		return FALSE;
 	}
 
 	if (FAILED(Initialize(m_srcWidth, m_srcHeight, m_srcDXGIFormat))) {
@@ -653,7 +665,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 					hr = m_pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 					if (SUCCEEDED(hr)) {
-						CopyFrameData(m_srcD3DFormat, desc.Width, desc.Height, (BYTE*)mappedResource.pData, mappedResource.RowPitch, (BYTE*)lr_src.pBits, lr_src.Pitch, mappedResource.DepthPitch);
+						ASSERT(m_pConvertFn);
+						m_pConvertFn(desc.Height, (BYTE*)mappedResource.pData, mappedResource.RowPitch, (BYTE*)lr_src.pBits, lr_src.Pitch);
 						m_pImmediateContext->Unmap(m_pSrcTexture2D, 0);
 						m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
 					}
@@ -672,7 +685,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 			hr = m_pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 			if (SUCCEEDED(hr)) {
-				CopyFrameData(m_srcD3DFormat, m_srcWidth, m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, m_srcPitch, size);
+				ASSERT(m_pConvertFn);
+				m_pConvertFn(m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, m_srcPitch);
 				m_pImmediateContext->Unmap(m_pSrcTexture2D, 0);
 				m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
 			}

@@ -106,7 +106,7 @@ private:
 	UINT m_srcHeight = 0;
 	UINT m_srcPitch = 0;
 	typedef void(*CopyFrameDataFn)(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
-	CopyFrameDataFn m_pConvertFn;
+	CopyFrameDataFn m_pConvertFn = nullptr;
 	DWORD m_srcAspectRatioX = 0;
 	DWORD m_srcAspectRatioY = 0;
 	DXVA2_ExtendedFormat m_srcExFmt = {};

@@ -664,6 +664,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcExFmt.value = 0; // ignore color info for RGB
 		break;
 	default:
+		m_pConvertFn = nullptr;
 		return FALSE;
 	}
 
