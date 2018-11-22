@@ -31,6 +31,7 @@
 #include <dwrite.h>
 #include <evr9.h> // for IMFVideoProcessor
 #include "IVideoRenderer.h"
+#include "Helper.h"
 #include "FrameStats.h"
 
 class CDX11VideoProcessor

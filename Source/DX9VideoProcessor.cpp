@@ -26,7 +26,6 @@
 #include <mfidl.h>
 #include <Mferror.h>
 #include <dwmapi.h>
-#include "Helper.h"
 #include "Time.h"
 #include "DX9VideoProcessor.h"
 
@@ -598,17 +597,28 @@ void CDX9VideoProcessor::SyncThread()
 
 BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 {
+	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
+	if (!FmtConvParams) {
+		return FALSE;
+	}
+
+	m_srcSubType = pmt->subtype;
+	UINT biSizeImage = 0;
+
 	if (pmt->formattype == FORMAT_VideoInfo2) {
 		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
 		m_srcRect = vih2->rcSource;
 		m_trgRect = vih2->rcTarget;
 		m_srcWidth = vih2->bmiHeader.biWidth;
 		m_srcHeight = labs(vih2->bmiHeader.biHeight);
+		biSizeImage = vih2->bmiHeader.biSizeImage;
 		m_srcAspectRatioX = vih2->dwPictAspectRatioX;
 		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
-		if (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT)) {
+		if (!FmtConvParams->bRGB && (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT))) {
 			m_srcExFmt.value = vih2->dwControlFlags;
 			m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
+		} else {
+			m_srcExFmt.value = 0; // ignore color info for RGB
 		}
 		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
 	}
@@ -618,6 +628,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_trgRect = vih->rcTarget;
 		m_srcWidth = vih->bmiHeader.biWidth;
 		m_srcHeight = labs(vih->bmiHeader.biHeight);
+		biSizeImage = vih->bmiHeader.biSizeImage;
 		m_srcAspectRatioX = 0;
 		m_srcAspectRatioY = 0;
 		m_srcExFmt.value = 0;
@@ -633,40 +644,13 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_trgRect.SetRect(0, 0, m_srcWidth, m_srcHeight);
 	}
 
-	m_srcSubType = pmt->subtype;
-	m_srcD3DFormat = MediaSubtype2D3DFormat(m_srcSubType);
-
-	switch (m_srcD3DFormat) {
-	case D3DFMT_NV12:
-		m_srcPitch = m_srcWidth;
-		m_pConvertFn = &CopyFramePackedUV;
-		break;
-	case D3DFMT_YV12:
-		m_srcPitch = m_srcWidth;
-		m_pConvertFn = &CopyFrameYV12;
-		break;
-	case D3DFMT_YUY2:
-		m_srcPitch = m_srcWidth * 2;
-		m_pConvertFn = &CopyFrameAsIs;
-		break;
-	case D3DFMT_P010:
-		m_srcPitch = m_srcWidth * 2;
-		m_pConvertFn = &CopyFramePackedUV;
-		break;
-	case D3DFMT_AYUV:
-		m_srcPitch = m_srcWidth * 4;
-		m_pConvertFn = &CopyFrameAsIs;
-		break;
-	case D3DFMT_X8R8G8B8:
-	case D3DFMT_A8R8G8B8:
-		m_srcPitch = m_srcWidth * 4;
-		m_pConvertFn = &CopyFrameUpsideDown;
-		m_srcExFmt.value = 0; // ignore color info for RGB
-		break;
-	default:
-		m_pConvertFn = nullptr;
-		return FALSE;
+	m_srcD3DFormat = FmtConvParams->D3DFormat;
+	if (m_srcSubType == MEDIASUBTYPE_RGB24) {
+		m_srcPitch = biSizeImage / m_srcHeight;
+	} else {
+		m_srcPitch = m_srcWidth * FmtConvParams->Packsize;
 	}
+	m_pConvertFn   = FmtConvParams->Func;
 
 	if (!CheckInput(m_srcD3DFormat, m_srcWidth, m_srcHeight)) {
 		return FALSE;

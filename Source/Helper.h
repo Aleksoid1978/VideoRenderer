@@ -62,14 +62,26 @@ const wchar_t* D3DFormatToString(D3DFORMAT format);
 const wchar_t* DXGIFormatToString(DXGI_FORMAT format);
 const wchar_t* DXVA2VPDeviceToString(const GUID& guid);
 
-D3DFORMAT MediaSubtype2D3DFormat(GUID subtype);
-DXGI_FORMAT MediaSubtype2DXGIFormat(GUID subtype);
+typedef void(*CopyFrameDataFn)(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
+
+struct FmtConvParams_t {
+	GUID            Subtype;
+	D3DFORMAT       D3DFormat;
+	DXGI_FORMAT     DXGIFormat;
+	int             Packsize;
+	bool            bRGB;
+	CopyFrameDataFn Func;
+};
+
+const FmtConvParams_t* GetFmtConvParams(GUID subtype);
 
 // YUY2, AYUV
 void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
 // RGB32 to X8R8G8B8, ARGB32 to A8R8G8B8
-void CopyFrameUpsideDown(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch); 
-void CopyFrameRGB24toX8R8G8B8(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
+void CopyFrameUpsideDown(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
+// RGB24 to X8R8G8B8
+void CopyFrameRGB24UpsideDown(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
+// YV12
 void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
 // NV12, P010
 void CopyFramePackedUV(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
