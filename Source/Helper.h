@@ -65,6 +65,15 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid);
 D3DFORMAT MediaSubtype2D3DFormat(GUID subtype);
 DXGI_FORMAT MediaSubtype2DXGIFormat(GUID subtype);
 
+// YUY2, AYUV
+void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
+// RGB32 to X8R8G8B8, ARGB32 to A8R8G8B8
+void CopyFrameUpsideDown(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch); 
+void CopyFrameRGB24toX8R8G8B8(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
+void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
+// NV12, P010
+void CopyFramePackedUV(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
+
 void CopyFrameData(const D3DFORMAT format, const UINT width, const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch, const UINT src_size);
 
 void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d);

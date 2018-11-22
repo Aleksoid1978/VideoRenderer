@@ -115,6 +115,62 @@ DXGI_FORMAT MediaSubtype2DXGIFormat(GUID subtype)
 	return DXGI_FORMAT_UNKNOWN;
 }
 
+void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch)
+{
+	for (UINT y = 0; y < height; ++y) {
+		memcpy(dst, src, src_pitch);
+		src += src_pitch;
+		dst += dst_pitch;
+	}
+}
+
+void CopyFrameUpsideDown(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch)
+{
+	src += src_pitch * (height - 1);
+
+	for (UINT y = 0; y < height; ++y) {
+		memcpy(dst, src, src_pitch);
+		src -= src_pitch;
+		dst += dst_pitch;
+	}
+}
+
+void CopyFrameRGB24toX8R8G8B8(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch)
+{
+
+}
+
+void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch)
+{
+	for (UINT y = 0; y < height; ++y) {
+		memcpy(dst, src, src_pitch);
+		src += src_pitch;
+		dst += dst_pitch;
+	}
+
+	const UINT chromaheight = height / 2;
+	src_pitch /= 2;
+	dst_pitch /= 2;
+	for (UINT y = 0; y < chromaheight; ++y) {
+		memcpy(dst, src, src_pitch);
+		src += src_pitch;
+		dst += dst_pitch;
+		memcpy(dst, src, src_pitch);
+		src += src_pitch;
+		dst += dst_pitch;
+	}
+}
+
+void CopyFramePackedUV(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch)
+{
+	UINT lines = height * 3 / 2;
+
+	for (UINT y = 0; y < lines; ++y) {
+		memcpy(dst, src, src_pitch);
+		src += src_pitch;
+		dst += dst_pitch;
+	}
+}
 
 void CopyFrameData(const D3DFORMAT format, const UINT width, const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch, const UINT src_size)
 {
@@ -131,6 +187,7 @@ void CopyFrameData(const D3DFORMAT format, const UINT width, const UINT height, 
 		}
 	}
 	else if (src_pitch == dst_pitch) {
+		ASSERT(src_size == src_pitch * height);
 		memcpy(dst, src, src_size);
 	}
 	else if (format == D3DFMT_YV12) {

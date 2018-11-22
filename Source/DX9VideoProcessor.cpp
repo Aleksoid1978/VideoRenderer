@@ -638,22 +638,33 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	switch (m_srcD3DFormat) {
 	case D3DFMT_NV12:
-	case D3DFMT_YV12:
-	default:
 		m_srcPitch = m_srcWidth;
+		m_pConvertFn = &CopyFramePackedUV;
+		break;
+	case D3DFMT_YV12:
+		m_srcPitch = m_srcWidth;
+		m_pConvertFn = &CopyFrameYV12;
 		break;
 	case D3DFMT_YUY2:
+		m_srcPitch = m_srcWidth * 2;
+		m_pConvertFn = &CopyFrameAsIs;
+		break;
 	case D3DFMT_P010:
 		m_srcPitch = m_srcWidth * 2;
+		m_pConvertFn = &CopyFramePackedUV;
 		break;
 	case D3DFMT_AYUV:
 		m_srcPitch = m_srcWidth * 4;
+		m_pConvertFn = &CopyFrameAsIs;
 		break;
 	case D3DFMT_X8R8G8B8:
 	case D3DFMT_A8R8G8B8:
 		m_srcPitch = m_srcWidth * 4;
+		m_pConvertFn = &CopyFrameUpsideDown;
 		m_srcExFmt.value = 0; // ignore color info for RGB
 		break;
+	default:
+		return FALSE;
 	}
 
 	if (!CheckInput(m_srcD3DFormat, m_srcWidth, m_srcHeight)) {
@@ -745,7 +756,8 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				return hr;
 			}
 
-			CopyFrameData(m_srcD3DFormat, m_srcWidth, m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, data, m_srcPitch, size);
+			ASSERT(m_pConvertFn);
+			m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, data, m_srcPitch);
 
 			hr = m_SrcSamples.Get().pSrcSurface->UnlockRect();
 		}
