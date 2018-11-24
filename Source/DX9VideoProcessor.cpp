@@ -695,11 +695,14 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	m_srcD3DFormat = FmtConvParams->D3DFormat;
+	m_pConvertFn   = FmtConvParams->Func;
 	m_srcPitch     = biSizeImage * 2 / (m_srcHeight * FmtConvParams->PitchCoeff);
 	if (m_srcSubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
 		m_srcPitch = ALIGN(m_srcPitch, 4);
 	}
-	m_pConvertFn   = FmtConvParams->Func;
+	else if (m_srcSubType == MEDIASUBTYPE_P010) {
+		m_srcPitch &= ~1u;
+	}
 
 	if (!CheckInput(m_srcD3DFormat, m_srcWidth, m_srcHeight)) {
 		return FALSE;
