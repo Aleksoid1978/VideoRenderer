@@ -21,7 +21,37 @@
 #include "stdafx.h"
 #include "Helper.h"
 
-const wchar_t* D3DFormatToString(D3DFORMAT format)
+CStringW HR2Str(const HRESULT hr)
+{
+	CStringW str;
+#define UNPACK_VALUE(VALUE) case VALUE: str = L#VALUE; break;
+	switch (hr) {
+		// common HRESULT values https://docs.microsoft.com/en-us/windows/desktop/seccrypto/common-hresult-values
+		UNPACK_VALUE(S_OK);
+		UNPACK_VALUE(E_NOTIMPL);
+		UNPACK_VALUE(E_NOINTERFACE);
+		UNPACK_VALUE(E_POINTER);
+		UNPACK_VALUE(E_ABORT);
+		UNPACK_VALUE(E_FAIL);
+		UNPACK_VALUE(E_UNEXPECTED);
+		UNPACK_VALUE(E_ACCESSDENIED);
+		UNPACK_VALUE(E_HANDLE);
+		UNPACK_VALUE(E_OUTOFMEMORY);
+		UNPACK_VALUE(E_INVALIDARG);
+		// some D3DERR values https://docs.microsoft.com/en-us/windows/desktop/direct3d9/d3derr
+		UNPACK_VALUE(D3DERR_DEVICEHUNG);
+		UNPACK_VALUE(D3DERR_DEVICELOST);
+		UNPACK_VALUE(D3DERR_DRIVERINTERNALERROR);
+		UNPACK_VALUE(D3DERR_INVALIDCALL);
+		UNPACK_VALUE(D3DERR_OUTOFVIDEOMEMORY);
+	default:
+		str.Format(L"0x%08x", hr);
+	};
+#undef UNPACK_VALUE
+	return str;
+}
+
+const wchar_t* D3DFormatToString(const D3DFORMAT format)
 {
 	switch (format) {
 	case D3DFMT_A8R8G8B8:      return L"A8R8G8B8";      // DXVA-HD
@@ -44,7 +74,7 @@ const wchar_t* D3DFormatToString(D3DFORMAT format)
 	return L"UNKNOWN";
 }
 
-const wchar_t* DXGIFormatToString(DXGI_FORMAT format)
+const wchar_t* DXGIFormatToString(const DXGI_FORMAT format)
 {
 	switch (format) {
 	case DXGI_FORMAT_R8G8B8A8_UNORM:    return L"R8G8B8A8_UNORM";

@@ -60,8 +60,10 @@ inline CString CStringFromGUID(const GUID& guid)
 	return CString(StringFromGUID2(guid, buff, 127) > 0 ? buff : null);
 }
 
-const wchar_t* D3DFormatToString(D3DFORMAT format);
-const wchar_t* DXGIFormatToString(DXGI_FORMAT format);
+CStringW HR2Str(const HRESULT hr);
+
+const wchar_t* D3DFormatToString(const D3DFORMAT format);
+const wchar_t* DXGIFormatToString(const DXGI_FORMAT format);
 const wchar_t* DXVA2VPDeviceToString(const GUID& guid);
 
 typedef void(*CopyFrameDataFn)(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
