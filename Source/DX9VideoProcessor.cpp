@@ -173,7 +173,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 	}
 
 	if (!bTryToReset) {
-		m_pDXVA2_VP.Release();
+		ReleaseVP();
 		m_pDXVA2_VPService.Release();
 
 		m_pD3DDevEx.Release();
@@ -214,6 +214,15 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 		m_pD3DDevEx->CreateOffscreenPlainSurface(STATS_W, STATS_H, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &m_pMemSurface, nullptr);
 	}
 
+	if (!m_pDXVA2_VPService) {
+		// Create DXVA2 Video Processor Service.
+		hr = DXVA2CreateVideoService(m_pD3DDevEx, IID_IDirectXVideoProcessorService, (VOID**)&m_pDXVA2_VPService);
+		if (FAILED(hr)) {
+			DLog(L"CDX9VideoProcessor::Init : DXVA2CreateVideoService() failed with error 0x%08x", hr);
+			return FALSE;
+		}
+	}
+
 	// TODO
 	//StopWorkerThreads();
 	//StartWorkerThreads();
@@ -223,12 +232,24 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 
 BOOL CDX9VideoProcessor::CheckInput(const D3DFORMAT d3dformat, const UINT width, const UINT height)
 {
-	if (!m_pDXVA2_VP
-			|| d3dformat != m_D3D9_Src_Format || width != m_D3D9_Src_Width || height != m_D3D9_Src_Height) {
-		return InitializeDXVA2VP(d3dformat, width, height);
+	BOOL ret = TRUE;
+
+	if (d3dformat != m_D3D9_Src_Format || width != m_D3D9_Src_Width || height != m_D3D9_Src_Height) {
+
+		if (m_VendorId != PCIV_INTEL && (d3dformat == D3DFMT_X8R8G8B8 || d3dformat == D3DFMT_A8R8G8B8)) {
+			ret = InitializeTexVP(d3dformat, width, height);
+		} else {
+			ret = InitializeDXVA2VP(d3dformat, width, height);
+		}
+
+		if (ret) {
+			m_D3D9_Src_Format = d3dformat;
+			m_D3D9_Src_Width = width;
+			m_D3D9_Src_Height = height;
+		}
 	}
 
-	return TRUE;
+	return ret;
 }
 
 void CDX9VideoProcessor::ReleaseVP()
@@ -251,12 +272,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 
 	HRESULT hr = S_OK;
 	if (!m_pDXVA2_VPService) {
-		// Create DXVA2 Video Processor Service.
-		hr = DXVA2CreateVideoService(m_pD3DDevEx, IID_IDirectXVideoProcessorService, (VOID**)&m_pDXVA2_VPService);
-		if (FAILED(hr)) {
-			DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : DXVA2CreateVideoService() failed with error 0x%08x", hr);
-			return FALSE;
-		}
+		return FALSE;
 	}
 
 	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : Input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
@@ -473,6 +489,40 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	}
 
 	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : create %s processor ", CStringFromGUID(devguid));
+
+	return TRUE;
+}
+
+BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT width, const UINT height)
+{
+	// TODO: Add support for shaders
+	ReleaseVP();
+
+	if (!m_pDXVA2_VPService) {
+		return FALSE;
+	}
+
+	m_SrcSamples.Resize(1);
+	HRESULT hr = m_pDXVA2_VPService->CreateSurface(
+		width,
+		height,
+		0,
+		d3dformat,
+		m_DXVA2VPcaps.InputPool,
+		0,
+		DXVA2_VideoProcessorRenderTarget,
+		&m_SrcSamples.GetAt(0).pSrcSurface,
+		nullptr
+	);
+	if (FAILED(hr)) {
+		m_SrcSamples.Clear();
+		return FALSE;
+	}
+
+	if (m_VendorId == PCIV_AMDATI) {
+		// fix AMD driver bug, fill the surface in black
+		m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(0).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+	}
 
 	return TRUE;
 }
@@ -801,10 +851,10 @@ HRESULT CDX9VideoProcessor::Render(int field)
 			ClipToSurface(desc.Width, desc.Height, rSrcRect, rDstRect);
 		}
 
-		if (m_VendorId != PCIV_INTEL && (m_srcD3DFormat == D3DFMT_X8R8G8B8 || m_srcD3DFormat == D3DFMT_A8R8G8B8)) {
-			hr = ProcessTex(pBackBuffer, rSrcRect, rDstRect);
-		} else {
+		if (m_pDXVA2_VP) {
 			hr = ProcessDXVA2(pBackBuffer, rSrcRect, rDstRect, m_FieldDrawn == 2);
+		} else {
+			hr = ProcessTex(pBackBuffer, rSrcRect, rDstRect);
 		}
 
 		if (S_OK == hr && m_bShowStats) {

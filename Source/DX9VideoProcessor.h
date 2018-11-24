@@ -156,6 +156,7 @@ private:
 	void ReleaseVP();
 	BOOL InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height);
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
+	BOOL InitializeTexVP(const D3DFORMAT d3dformat, const UINT width, const UINT height);
 
 	void StartWorkerThreads();
 	void StopWorkerThreads();
