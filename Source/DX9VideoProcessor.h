@@ -27,6 +27,8 @@
 #include "Helper.h"
 #include "FrameStats.h"
 
+#define USETEX 0
+
 struct VideoSurface {
 	REFERENCE_TIME Start = 0;
 	REFERENCE_TIME End = 0;
@@ -131,6 +133,10 @@ private:
 
 	CComPtr<IDirect3DTexture9> m_pOSDTexture;
 	CComPtr<IDirect3DSurface9> m_pMemSurface;
+
+#if USETEX
+	CComPtr<IDirect3DTexture9> m_pSrcVideoTexture;
+#endif
 
 	CFrameStats m_FrameStats;
 	int m_SyncOffsetMS = 0;

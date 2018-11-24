@@ -258,6 +258,9 @@ void CDX9VideoProcessor::ReleaseVP()
 	m_SrcSamples.Clear();
 	m_DXVA2Samples.clear();
 	m_pDXVA2_VP.Release();
+#if USETEX
+	m_pSrcVideoTexture.Release();
+#endif
 
 	m_D3D9_Src_Format = D3DFMT_UNKNOWN;
 	m_D3D9_Src_Width = 0;
@@ -501,9 +504,21 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT w
 	if (!m_pDXVA2_VPService) {
 		return FALSE;
 	}
+	HRESULT hr;
+
+#if USETEX
+	m_pSrcVideoTexture.Release();
+	hr = m_pD3DDevEx->CreateTexture(width, height, 1, D3DUSAGE_DYNAMIC, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &m_pSrcVideoTexture, nullptr);
+	if (FAILED(hr)) {
+		return FALSE;
+	}
+#endif
 
 	m_SrcSamples.Resize(1);
-	HRESULT hr = m_pDXVA2_VPService->CreateSurface(
+#if USETEX
+	hr = m_pSrcVideoTexture->GetSurfaceLevel(0, &m_SrcSamples.GetAt(0).pSrcSurface);
+#else
+	hr = m_pDXVA2_VPService->CreateSurface(
 		width,
 		height,
 		0,
@@ -514,6 +529,7 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT w
 		&m_SrcSamples.GetAt(0).pSrcSurface,
 		nullptr
 	);
+#endif
 	if (FAILED(hr)) {
 		m_SrcSamples.Clear();
 		return FALSE;
