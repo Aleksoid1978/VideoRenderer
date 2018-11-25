@@ -607,8 +607,40 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT w
 		m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(0).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
 	}
 
+#if USETEX
+	for (auto& PixelShader: m_PixelShaders) {
+		if (!PixelShader.pShader) {
+			HRESULT hr = CreateShaderFromResource(&PixelShader.pShader, PixelShader.resid);
+			ASSERT(S_OK == hr);
+		}
+	}
+#endif
+
 	return TRUE;
 }
+
+HRESULT CDX9VideoProcessor::CreateShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid)
+{
+	if (!m_pD3DDevEx || !ppPixelShader) {
+		return E_POINTER;
+	}
+
+	HRSRC hrsrc = FindResourceW(nullptr, MAKEINTRESOURCEW(resid), L"SHADER");
+	if (!hrsrc) {
+		return E_INVALIDARG;
+	}
+	HGLOBAL hGlobal = LoadResource(nullptr, hrsrc);
+	if (!hGlobal) {
+		return E_FAIL;
+	}
+	DWORD size = SizeofResource(nullptr, hrsrc);
+	if (size < 4) {
+		return E_FAIL;
+	}
+
+	return m_pD3DDevEx->CreatePixelShader((const DWORD*)LockResource(hGlobal), ppPixelShader);
+}
+
 
 void CDX9VideoProcessor::StartWorkerThreads()
 {
@@ -1083,7 +1115,69 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
 #if USETEX
-	HRESULT hr = TextureResize(m_pSrcVideoTexture, rSrcRect, rDstRect, D3DTEXF_LINEAR);
+	HRESULT hr = S_OK;
+	const int w1 = rSrcRect.Width();
+	const int h1 = rSrcRect.Height();
+	const int w2 = rDstRect.Width();
+	const int h2 = rDstRect.Height();
+
+	const int resizerX = (w1 == w2) ? -1 : (w1 > 2 * w2) ? shader_downscaler_hamming_x : shader_catmull_x;
+	const int resizerY = (h1 == h2) ? -1 : (h1 > 2 * h2) ? shader_downscaler_hamming_y : shader_catmull_y;
+
+	if (resizerX < 0 && resizerY < 0) {
+		// no resize
+		return TextureResize(m_pSrcVideoTexture, rSrcRect, rDstRect, D3DTEXF_POINT);
+	}
+
+	if (resizerX >= 0 && resizerY >= 0) {
+		// two pass resize
+
+		// check intermediate texture
+		UINT texWidth = w2;
+		UINT texHeight = h1;
+
+		if (m_TexResize.pTexture) {
+			if (texWidth != m_TexResize.Width || texHeight != m_TexResize.Height) {
+				m_TexResize.Release(); // need new texture
+			}
+		}
+
+		if (!m_TexResize.pTexture) {
+			// use only float textures here
+			hr = m_pD3DDevEx->CreateTexture(texWidth, texHeight, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A16B16G16R16F, D3DPOOL_DEFAULT, &m_TexResize.pTexture, nullptr);
+			if (FAILED(hr) || FAILED(m_TexResize.Update())) {
+				m_TexResize.Release();
+				return TextureResize(m_pSrcVideoTexture, rSrcRect, rDstRect, D3DTEXF_LINEAR);
+			}
+		}
+
+		CRect resizeRect(0, 0, m_TexResize.Width, m_TexResize.Height);
+
+		// remember current RenderTarget
+		CComPtr<IDirect3DSurface9> pRenderTarget;
+		hr = m_pD3DDevEx->GetRenderTarget(0, &pRenderTarget);
+		// set temp RenderTarget
+		hr = m_pD3DDevEx->SetRenderTarget(0, m_TexResize.pSurface);
+
+		// resize width
+		hr = TextureResizeShader(m_pSrcVideoTexture, rSrcRect, resizeRect, m_PixelShaders[resizerX].pShader);
+
+		// restore current RenderTarget
+		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
+
+		// resize height
+		hr = TextureResizeShader(m_TexResize.pTexture, resizeRect, rDstRect, m_PixelShaders[resizerY].pShader);
+	}
+	else if (resizerX >= 0) {
+		// one pass resize for width
+		hr = TextureResizeShader(m_pSrcVideoTexture, rSrcRect, rDstRect, m_PixelShaders[resizerX].pShader);
+	}
+	else { // resizerY >= 0
+		// one pass resize for height
+		hr = TextureResizeShader(m_pSrcVideoTexture, rSrcRect, rDstRect, m_PixelShaders[resizerY].pShader);
+	}
+
+	//HRESULT hr = TextureResize(m_pSrcVideoTexture, rSrcRect, rDstRect, D3DTEXF_LINEAR);
 #else
 	HRESULT hr = m_pD3DDevEx->StretchRect(m_SrcSamples.Get().pSrcSurface, rSrcRect, pRenderTarget, rDstRect, D3DTEXF_LINEAR);
 #endif
@@ -1115,8 +1209,51 @@ HRESULT CDX9VideoProcessor::TextureResize(IDirect3DTexture9* pTexture, const CRe
 	};
 
 	hr = m_pD3DDevEx->SetTexture(0, pTexture);
-	hr = m_pD3DDevEx->SetPixelShader(nullptr);
 	hr = TextureBlt(m_pD3DDevEx, v, filter);
+
+	return hr;
+}
+
+HRESULT CDX9VideoProcessor::TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, IDirect3DPixelShader9* pShader)
+{
+	HRESULT hr = S_OK;
+
+	D3DSURFACE_DESC desc;
+	if (!pTexture || FAILED(pTexture->GetLevelDesc(0, &desc))) {
+		return E_FAIL;
+	}
+
+	const float dx = 1.0f / desc.Width;
+	const float dy = 1.0f / desc.Height;
+
+	const float scale_x = (float)srcRect.Width() / destRect.Width();
+	const float scale_y = (float)srcRect.Height() / destRect.Height();
+	const float steps_x = floor(scale_x + 0.5f);
+	const float steps_y = floor(scale_y + 0.5f);
+
+	const float tx0 = (float)srcRect.left - 0.5f;
+	const float ty0 = (float)srcRect.top - 0.5f;
+	const float tx1 = (float)srcRect.right - 0.5f;
+	const float ty1 = (float)srcRect.bottom - 0.5f;
+
+	MYD3DVERTEX<1> v[] = {
+		{(float)destRect.left - 0.5f,  (float)destRect.top - 0.5f,    0.5f, 2.0f, { tx0, ty0 } },
+		{(float)destRect.right - 0.5f, (float)destRect.top - 0.5f,    0.5f, 2.0f, { tx1, ty0 } },
+		{(float)destRect.left - 0.5f,  (float)destRect.bottom - 0.5f, 0.5f, 2.0f, { tx0, ty1 } },
+		{(float)destRect.right - 0.5f, (float)destRect.bottom - 0.5f, 0.5f, 2.0f, { tx1, ty1 } },
+	};
+
+	float fConstData[][4] = {
+		{ dx, dy, 0, 0 },
+		{ steps_x, steps_y, 0, 0 },
+		{ scale_x, scale_y, 0, 0 },
+	};
+	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, _countof(fConstData));
+	hr = m_pD3DDevEx->SetPixelShader(pShader);
+
+	hr = m_pD3DDevEx->SetTexture(0, pTexture);
+	hr = TextureBlt(m_pD3DDevEx, v, D3DTEXF_POINT);
+	m_pD3DDevEx->SetPixelShader(nullptr);
 
 	return hr;
 }
@@ -1184,9 +1321,6 @@ HRESULT CDX9VideoProcessor::AlphaBlt(RECT* pSrc, RECT* pDst, IDirect3DTexture9* 
 
 	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
 	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
-
-
-	hr = m_pD3DDevEx->SetPixelShader(nullptr);
 
 	hr = m_pD3DDevEx->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX1);
 	hr = m_pD3DDevEx->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, pVertices, sizeof(pVertices[0]));

@@ -26,6 +26,7 @@
 #include "IVideoRenderer.h"
 #include "Helper.h"
 #include "FrameStats.h"
+#include "resource.h"
 
 #define USETEX 0
 
@@ -136,6 +137,59 @@ private:
 
 #if USETEX
 	CComPtr<IDirect3DTexture9> m_pSrcVideoTexture;
+	struct {
+		CComPtr<IDirect3DTexture9> pTexture;
+		CComPtr<IDirect3DSurface9> pSurface;
+		UINT Width  = 0;
+		UINT Height = 0;
+		HRESULT Update() {
+			if (pTexture) {
+				HRESULT hr = pTexture->GetSurfaceLevel(0, &pSurface);
+				if (S_OK == hr) {
+					D3DSURFACE_DESC desc;
+					hr = pTexture->GetLevelDesc(0, &desc);
+					if (S_OK == hr) {
+						Width  = desc.Width;
+						Height = desc.Height;
+						return S_OK;
+					}
+				}
+				return hr;
+			}
+			return E_ABORT;
+		}
+		void Release() {
+			pSurface.Release();
+			pTexture.Release();
+			Width  = 0;
+			Height = 0;
+		}
+	} m_TexResize;
+
+	enum {
+		shader_catmull_x,
+		shader_catmull_y,
+		shader_lanczos2_x,
+		shader_lanczos2_y,
+		shader_downscaler_hamming_x,
+		shader_downscaler_hamming_y,
+		shader_downscaler_bicubic_x,
+		shader_downscaler_bicubic_y,
+		shader_count
+	};
+	struct {
+		UINT resid;
+		CComPtr<IDirect3DPixelShader9> pShader;
+	} m_PixelShaders[shader_count] = {
+		{IDF_SHADER_RESIZER_CATMULL4_X},
+		{IDF_SHADER_RESIZER_CATMULL4_Y},
+		{IDF_SHADER_RESIZER_LANCZOS2_X},
+		{IDF_SHADER_RESIZER_LANCZOS2_Y},
+		{IDF_SHADER_DOWNSCALER_HAMMING_X},
+		{IDF_SHADER_DOWNSCALER_HAMMING_Y},
+		{IDF_SHADER_DOWNSCALER_BICUBIC_X},
+		{IDF_SHADER_DOWNSCALER_BICUBIC_Y},
+	};
 #endif
 
 	CFrameStats m_FrameStats;
@@ -160,9 +214,12 @@ public:
 private:
 	BOOL CheckInput(const D3DFORMAT d3dformat, const UINT width, const UINT height);
 	void ReleaseVP();
+
 	BOOL InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height);
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
+
 	BOOL InitializeTexVP(const D3DFORMAT d3dformat, const UINT width, const UINT height);
+	HRESULT CreateShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);
 
 	void StartWorkerThreads();
 	void StopWorkerThreads();
@@ -201,6 +258,7 @@ private:
 
 	HRESULT ProcessTex(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
 	HRESULT TextureResize(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, D3DTEXTUREFILTERTYPE filter);
+	HRESULT TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, IDirect3DPixelShader9* pShader);
 
 	HRESULT AlphaBlt(RECT* pSrc, RECT* pDst, IDirect3DTexture9* pTexture);
 	HRESULT DrawStats();

@@ -28,6 +28,7 @@ CStringW HR2Str(const HRESULT hr)
 	switch (hr) {
 		// common HRESULT values https://docs.microsoft.com/en-us/windows/desktop/seccrypto/common-hresult-values
 		UNPACK_VALUE(S_OK);
+		UNPACK_VALUE(S_FALSE);
 		UNPACK_VALUE(E_NOTIMPL);
 		UNPACK_VALUE(E_NOINTERFACE);
 		UNPACK_VALUE(E_POINTER);
