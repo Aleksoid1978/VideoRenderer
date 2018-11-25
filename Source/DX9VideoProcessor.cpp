@@ -30,7 +30,71 @@
 #include "DX9VideoProcessor.h"
 
 #define STATS_W 330
-#define STATS_H 160
+#define STATS_H 150
+
+#pragma pack(push, 1)
+template<unsigned texcoords>
+struct MYD3DVERTEX {
+	float x, y, z, rhw;
+	struct {
+		float u, v;
+	} t[texcoords];
+};
+#pragma pack(pop)
+
+template<unsigned texcoords>
+static HRESULT TextureBlt(IDirect3DDevice9* pD3DDev, MYD3DVERTEX<texcoords> v[4], D3DTEXTUREFILTERTYPE filter)
+{
+	if (!pD3DDev) {
+		return E_POINTER;
+	}
+
+	DWORD FVF = 0;
+
+	switch (texcoords) {
+	case 1: FVF = D3DFVF_TEX1; break;
+	case 2: FVF = D3DFVF_TEX2; break;
+	case 3: FVF = D3DFVF_TEX3; break;
+	case 4: FVF = D3DFVF_TEX4; break;
+	case 5: FVF = D3DFVF_TEX5; break;
+	case 6: FVF = D3DFVF_TEX6; break;
+	case 7: FVF = D3DFVF_TEX7; break;
+	case 8: FVF = D3DFVF_TEX8; break;
+	default:
+		return E_FAIL;
+	}
+
+	HRESULT hr;
+
+	hr = pD3DDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+	hr = pD3DDev->SetRenderState(D3DRS_LIGHTING, FALSE);
+	hr = pD3DDev->SetRenderState(D3DRS_ZENABLE, FALSE);
+	hr = pD3DDev->SetRenderState(D3DRS_STENCILENABLE, FALSE);
+	hr = pD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+	hr = pD3DDev->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+	hr = pD3DDev->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+	hr = pD3DDev->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_ALPHA | D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_RED);
+
+	for (unsigned i = 0; i < texcoords; i++) {
+		hr = pD3DDev->SetSamplerState(i, D3DSAMP_MAGFILTER, filter);
+		hr = pD3DDev->SetSamplerState(i, D3DSAMP_MINFILTER, filter);
+		hr = pD3DDev->SetSamplerState(i, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+
+		hr = pD3DDev->SetSamplerState(i, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+		hr = pD3DDev->SetSamplerState(i, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+	}
+
+	hr = pD3DDev->SetFVF(D3DFVF_XYZRHW | FVF);
+	//hr = pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(v[0]));
+	std::swap(v[2], v[3]);
+	hr = pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, v, sizeof(v[0]));
+
+	for (unsigned i = 0; i < texcoords; i++) {
+		pD3DDev->SetTexture(i, nullptr);
+	}
+
+	return S_OK;
+}
 
 // CDX9VideoProcessor
 
@@ -90,6 +154,9 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	m_SrcSamples.Clear();
 	m_pMemSurface.Release();
 	m_pOSDTexture.Release();
+#if USETEX
+	m_pSrcVideoTexture.Release();
+#endif
 
 	m_pD3DDeviceManager.Release();
 	m_nResetTocken = 0;
@@ -1015,11 +1082,41 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 
 HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
+#if USETEX
+	HRESULT hr = TextureResize(m_pSrcVideoTexture, rSrcRect, rDstRect, D3DTEXF_LINEAR);
+#else
 	HRESULT hr = m_pD3DDevEx->StretchRect(m_SrcSamples.Get().pSrcSurface, rSrcRect, pRenderTarget, rDstRect, D3DTEXF_LINEAR);
+#endif
 
 	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::ProcessTex : StretchRect() failed with error %s", HR2Str(hr));
+		DLog(L"CDX9VideoProcessor::ProcessTex : failed with error %s", HR2Str(hr));
 	}
+
+	return hr;
+}
+
+HRESULT CDX9VideoProcessor::TextureResize(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, D3DTEXTUREFILTERTYPE filter)
+{
+	HRESULT hr;
+
+	D3DSURFACE_DESC desc;
+	if (!pTexture || FAILED(pTexture->GetLevelDesc(0, &desc))) {
+		return E_FAIL;
+	}
+
+	float dx = 1.0f / desc.Width;
+	float dy = 1.0f / desc.Height;
+
+	MYD3DVERTEX<1> v[] = {
+		{(float)destRect.left - 0.5f,  (float)destRect.top - 0.5f,    0.5f, 2.0f, {srcRect.left  * dx, srcRect.top    * dy} },
+		{(float)destRect.right - 0.5f, (float)destRect.top - 0.5f,    0.5f, 2.0f, {srcRect.right * dx, srcRect.top    * dy} },
+		{(float)destRect.left - 0.5f,  (float)destRect.bottom - 0.5f, 0.5f, 2.0f, {srcRect.left  * dx, srcRect.bottom * dy} },
+		{(float)destRect.right - 0.5f, (float)destRect.bottom - 0.5f, 0.5f, 2.0f, {srcRect.right * dx, srcRect.bottom * dy} },
+	};
+
+	hr = m_pD3DDevEx->SetTexture(0, pTexture);
+	hr = m_pD3DDevEx->SetPixelShader(nullptr);
+	hr = TextureBlt(m_pD3DDevEx, v, filter);
 
 	return hr;
 }
