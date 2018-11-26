@@ -53,11 +53,13 @@
 
 #define ALIGN(x, a) (((x)+(a)-1)&~((a)-1)) 
 
-inline CString CStringFromGUID(const GUID& guid)
+inline CStringW CStringFromGUID(const GUID& guid)
 {
-	WCHAR null[128] = {}, buff[128] = {};
-	StringFromGUID2(GUID_NULL, null, 127);
-	return CString(StringFromGUID2(guid, buff, 127) > 0 ? buff : null);
+	WCHAR buff[40] = {};
+	if (StringFromGUID2(guid, buff, 39) <= 0) {
+		StringFromGUID2(GUID_NULL, buff, 39);
+	}
+	return CStringW(buff);
 }
 
 CStringW HR2Str(const HRESULT hr);

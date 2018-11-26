@@ -151,19 +151,11 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 {
 	//StopWorkerThreads();
 
-	m_SrcSamples.Clear();
-	m_pMemSurface.Release();
-	m_pOSDTexture.Release();
-#if USETEX
-	m_pSrcVideoTexture.Release();
-#endif
+	ReleaseDevice();
 
 	m_pD3DDeviceManager.Release();
 	m_nResetTocken = 0;
 
-	m_pDXVA2_VP.Release();
-	m_pDXVA2_VPService.Release();
-	m_pD3DDevEx.Release();
 	m_pD3DEx.Release();
 
 	if (m_hD3D9Lib) {
@@ -195,7 +187,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 	const UINT currentAdapter = GetAdapter(m_hWnd, m_pD3DEx);
 	bool bTryToReset = (currentAdapter == m_CurrentAdapter) && m_pD3DDevEx;
 	if (!bTryToReset) {
-		m_pD3DDevEx.Release();
+		ReleaseDevice();
 		m_CurrentAdapter = currentAdapter;
 	}
 
@@ -240,10 +232,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 	}
 
 	if (!bTryToReset) {
-		ReleaseVP();
-		m_pDXVA2_VPService.Release();
-
-		m_pD3DDevEx.Release();
+		ReleaseDevice();
 		hr = m_pD3DEx->CreateDeviceEx(
 			m_CurrentAdapter, D3DDEVTYPE_HAL, m_hWnd,
 			D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS,
@@ -297,6 +286,36 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 	return hr;
 }
 
+void CDX9VideoProcessor::ReleaseVP()
+{
+	m_FrameStats.Reset();
+
+	m_SrcSamples.Clear();
+	m_DXVA2Samples.clear();
+	m_pSrcVideoTexture.Release();
+
+	m_D3D9_Src_Format = D3DFMT_UNKNOWN;
+	m_D3D9_Src_Width = 0;
+	m_D3D9_Src_Height = 0;
+
+	m_pDXVA2_VP.Release();
+}
+
+void CDX9VideoProcessor::ReleaseDevice()
+{
+	ReleaseVP();
+
+	m_pMemSurface.Release();
+	m_pOSDTexture.Release();
+
+	m_pDXVA2_VPService.Release();
+	for (auto& shader : m_PixelShaders) {
+		shader.pShader.Release();
+	}
+
+	m_pD3DDevEx.Release();
+}
+
 BOOL CDX9VideoProcessor::CheckInput(const D3DFORMAT d3dformat, const UINT width, const UINT height)
 {
 	BOOL ret = TRUE;
@@ -317,21 +336,6 @@ BOOL CDX9VideoProcessor::CheckInput(const D3DFORMAT d3dformat, const UINT width,
 	}
 
 	return ret;
-}
-
-void CDX9VideoProcessor::ReleaseVP()
-{
-	m_FrameStats.Reset();
-	m_SrcSamples.Clear();
-	m_DXVA2Samples.clear();
-	m_pDXVA2_VP.Release();
-#if USETEX
-	m_pSrcVideoTexture.Release();
-#endif
-
-	m_D3D9_Src_Format = D3DFMT_UNKNOWN;
-	m_D3D9_Src_Width = 0;
-	m_D3D9_Src_Height = 0;
 }
 
 BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height)
@@ -573,30 +577,14 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT w
 	}
 	HRESULT hr;
 
-#if USETEX
 	m_pSrcVideoTexture.Release();
 	hr = m_pD3DDevEx->CreateTexture(width, height, 1, D3DUSAGE_DYNAMIC, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &m_pSrcVideoTexture, nullptr);
 	if (FAILED(hr)) {
 		return FALSE;
 	}
-#endif
 
 	m_SrcSamples.Resize(1);
-#if USETEX
 	hr = m_pSrcVideoTexture->GetSurfaceLevel(0, &m_SrcSamples.GetAt(0).pSrcSurface);
-#else
-	hr = m_pDXVA2_VPService->CreateSurface(
-		width,
-		height,
-		0,
-		d3dformat,
-		m_DXVA2VPcaps.InputPool,
-		0,
-		DXVA2_VideoProcessorRenderTarget,
-		&m_SrcSamples.GetAt(0).pSrcSurface,
-		nullptr
-	);
-#endif
 	if (FAILED(hr)) {
 		m_SrcSamples.Clear();
 		return FALSE;
@@ -607,14 +595,12 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT w
 		m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(0).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
 	}
 
-#if USETEX
-	for (auto& PixelShader: m_PixelShaders) {
-		if (!PixelShader.pShader) {
-			HRESULT hr = CreateShaderFromResource(&PixelShader.pShader, PixelShader.resid);
+	for (auto& shader: m_PixelShaders) {
+		if (!shader.pShader) {
+			HRESULT hr = CreateShaderFromResource(&shader.pShader, shader.resid);
 			ASSERT(S_OK == hr);
 		}
 	}
-#endif
 
 	return TRUE;
 }
@@ -1114,7 +1100,6 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 
 HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
-#if USETEX
 	HRESULT hr = S_OK;
 	const int w1 = rSrcRect.Width();
 	const int h1 = rSrcRect.Height();
@@ -1126,7 +1111,11 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 
 	if (resizerX < 0 && resizerY < 0) {
 		// no resize
-		return TextureResize(m_pSrcVideoTexture, rSrcRect, rDstRect, D3DTEXF_POINT);
+		return m_pD3DDevEx->StretchRect(m_SrcSamples.GetAt(0).pSrcSurface, rSrcRect, pRenderTarget, rDstRect, D3DTEXF_POINT);
+		// alt
+		// return TextureResize(m_pSrcVideoTexture, rSrcRect, rDstRect, D3DTEXF_POINT);
+		// alt for sysmem surface?
+		// return m_pD3DDevEx->UpdateSurface(m_SrcSamples.GetAt(0).pSrcSurface, rSrcRect, pRenderTarget, &rDstRect.TopLeft())
 	}
 
 	if (resizerX >= 0 && resizerY >= 0) {
@@ -1147,6 +1136,7 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 			hr = m_pD3DDevEx->CreateTexture(texWidth, texHeight, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A16B16G16R16F, D3DPOOL_DEFAULT, &m_TexResize.pTexture, nullptr);
 			if (FAILED(hr) || FAILED(m_TexResize.Update())) {
 				m_TexResize.Release();
+				DLog(L"CDX9VideoProcessor::ProcessTex : filed create m_TexResize");
 				return TextureResize(m_pSrcVideoTexture, rSrcRect, rDstRect, D3DTEXF_LINEAR);
 			}
 		}
@@ -1178,9 +1168,6 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 	}
 
 	//HRESULT hr = TextureResize(m_pSrcVideoTexture, rSrcRect, rDstRect, D3DTEXF_LINEAR);
-#else
-	HRESULT hr = m_pD3DDevEx->StretchRect(m_SrcSamples.Get().pSrcSurface, rSrcRect, pRenderTarget, rDstRect, D3DTEXF_LINEAR);
-#endif
 
 	if (FAILED(hr)) {
 		DLog(L"CDX9VideoProcessor::ProcessTex : failed with error %s", HR2Str(hr));

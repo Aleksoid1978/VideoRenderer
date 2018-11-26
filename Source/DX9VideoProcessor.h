@@ -28,8 +28,6 @@
 #include "FrameStats.h"
 #include "resource.h"
 
-#define USETEX 0
-
 struct VideoSurface {
 	REFERENCE_TIME Start = 0;
 	REFERENCE_TIME End = 0;
@@ -135,7 +133,6 @@ private:
 	CComPtr<IDirect3DTexture9> m_pOSDTexture;
 	CComPtr<IDirect3DSurface9> m_pMemSurface;
 
-#if USETEX
 	CComPtr<IDirect3DTexture9> m_pSrcVideoTexture;
 	struct {
 		CComPtr<IDirect3DTexture9> pTexture;
@@ -190,7 +187,6 @@ private:
 		{IDF_SHADER_DOWNSCALER_BICUBIC_X},
 		{IDF_SHADER_DOWNSCALER_BICUBIC_Y},
 	};
-#endif
 
 	CFrameStats m_FrameStats;
 	int m_SyncOffsetMS = 0;
@@ -212,8 +208,10 @@ public:
 	HRESULT Init(const HWND hwnd, const int iSurfaceFmt, bool* pChangeDevice);
 
 private:
-	BOOL CheckInput(const D3DFORMAT d3dformat, const UINT width, const UINT height);
 	void ReleaseVP();
+	void ReleaseDevice();
+
+	BOOL CheckInput(const D3DFORMAT d3dformat, const UINT width, const UINT height);
 
 	BOOL InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height);
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
