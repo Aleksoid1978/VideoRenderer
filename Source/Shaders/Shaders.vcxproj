@@ -181,9 +181,9 @@
     <FxCompile Include="Resizers\downscaler.hlsl" />
     <None Include="Resizers\downscaler_filters.hlsl">
       <FileType>Document</FileType>
-    </None>	
+    </None>
     <FxCompile Include="Resizers\resizer_catmull4_x.hlsl" />
-    <FxCompile Include="Resizers\resizer_catmull4_y.hlsl" />	
+    <FxCompile Include="Resizers\resizer_catmull4_y.hlsl" />
     <FxCompile Include="Resizers\resizer_lanczos2_x.hlsl" />
     <FxCompile Include="Resizers\resizer_lanczos2_y.hlsl" />
   </ItemGroup>
