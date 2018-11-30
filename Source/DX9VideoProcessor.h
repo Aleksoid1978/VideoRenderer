@@ -134,7 +134,7 @@ private:
 	CComPtr<IDirect3DSurface9> m_pMemSurface;
 
 	CComPtr<IDirect3DTexture9> m_pSrcVideoTexture;
-	struct {
+	struct Tex_t {
 		CComPtr<IDirect3DTexture9> pTexture;
 		CComPtr<IDirect3DSurface9> pSurface;
 		UINT Width  = 0;
@@ -161,7 +161,10 @@ private:
 			Width  = 0;
 			Height = 0;
 		}
-	} m_TexResize;
+	};
+
+	Tex_t m_TexConvert;
+	Tex_t m_TexResize;
 
 	enum {
 		shader_catmull_x,
@@ -172,6 +175,7 @@ private:
 		shader_downscaler_hamming_y,
 		shader_downscaler_bicubic_x,
 		shader_downscaler_bicubic_y,
+		shader_ycgco_to_rgb,
 		shader_test,
 		shader_count
 	};
@@ -187,8 +191,11 @@ private:
 		{IDF_SHADER_DOWNSCALER_HAMMING_Y},
 		{IDF_SHADER_DOWNSCALER_BICUBIC_X},
 		{IDF_SHADER_DOWNSCALER_BICUBIC_Y},
+		{IDF_SHADER_YCGCO_TO_RGB},
 		{IDF_SHADER_TEST},
 	};
+
+	int m_iConvertShader = -1;
 
 	CFrameStats m_FrameStats;
 	int m_SyncOffsetMS = 0;
@@ -257,6 +264,7 @@ private:
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
 
 	HRESULT ProcessTex(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
+	HRESULT TextureCopy(IDirect3DTexture9* pTexture);
 	HRESULT TextureResize(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, D3DTEXTUREFILTERTYPE filter);
 	HRESULT TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, IDirect3DPixelShader9* pShader);
 

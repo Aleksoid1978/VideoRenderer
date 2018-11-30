@@ -178,6 +178,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <FxCompile Include="Convert\ycgco_to_rgb.hlsl" />
     <FxCompile Include="Resizers\downscaler.hlsl" />
     <FxCompile Include="test_shader.hlsl" />
     <None Include="Resizers\downscaler_filters.hlsl">

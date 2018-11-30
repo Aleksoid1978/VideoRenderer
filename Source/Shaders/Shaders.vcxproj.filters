@@ -17,10 +17,16 @@
     <FxCompile Include="Resizers\resizer_lanczos2_y.hlsl">
       <Filter>Resizers</Filter>
     </FxCompile>
+    <FxCompile Include="Convert\ycgco_to_rgb.hlsl">
+      <Filter>Convert</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Resizers">
       <UniqueIdentifier>{f4fc5765-0e53-4bcc-a775-81959f4ded58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Convert">
+      <UniqueIdentifier>{1862d48b-2a05-4a5a-992f-9b4b6e583ce9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
