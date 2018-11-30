@@ -799,6 +799,14 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		return FALSE;
 	}
 
+	if (m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
+		if (m_srcWidth <= 1024 && m_srcHeight <= 576) { // SD
+			m_srcExFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT601;
+		} else { // HD
+			m_srcExFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT709;
+		}
+	}
+
 	if (m_srcRect.IsRectNull() && m_trgRect.IsRectNull()) {
 		// Hmm
 		m_srcRect.SetRect(0, 0, m_srcWidth, m_srcHeight);
@@ -814,8 +822,14 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	else if (m_srcSubType == MEDIASUBTYPE_P010) {
 		m_srcPitch &= ~1u;
 	}
-	else if (m_srcSubType == MEDIASUBTYPE_AYUV && m_srcExFmt.VideoTransferMatrix == 7) {
-		m_iConvertShader = shader_ycgco_to_rgb;
+	else if (m_srcSubType == MEDIASUBTYPE_AYUV) {
+		switch (m_srcExFmt.VideoTransferMatrix) {
+		default:
+		case DXVA2_VideoTransferMatrix_BT709:     m_iConvertShader = shader_bt709_to_rgb;     break;
+		case DXVA2_VideoTransferMatrix_BT601:     m_iConvertShader = shader_bt601_to_rgb;     break;
+		case DXVA2_VideoTransferMatrix_SMPTE240M: m_iConvertShader = shader_smpte240m_to_rgb; break;
+		case 7:                                   m_iConvertShader = shader_ycgco_to_rgb;     break;
+		}
 	}
 
 	if (!CheckInput(m_srcD3DFormat, m_srcWidth, m_srcHeight)) {
@@ -1132,7 +1146,7 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 		// set temp RenderTarget
 		hr = m_pD3DDevEx->SetRenderTarget(0, m_TexConvert.pSurface);
 
-		hr = m_pD3DDevEx->SetPixelShader(m_PixelShaders[shader_ycgco_to_rgb].pShader);
+		hr = m_pD3DDevEx->SetPixelShader(m_PixelShaders[m_iConvertShader].pShader);
 		TextureCopy(pTexture);
 		m_pD3DDevEx->SetPixelShader(nullptr);
 

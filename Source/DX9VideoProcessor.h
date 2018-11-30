@@ -175,6 +175,9 @@ private:
 		shader_downscaler_hamming_y,
 		shader_downscaler_bicubic_x,
 		shader_downscaler_bicubic_y,
+		shader_bt601_to_rgb,
+		shader_bt709_to_rgb,
+		shader_smpte240m_to_rgb,
 		shader_ycgco_to_rgb,
 		shader_test,
 		shader_count
@@ -191,6 +194,9 @@ private:
 		{IDF_SHADER_DOWNSCALER_HAMMING_Y},
 		{IDF_SHADER_DOWNSCALER_BICUBIC_X},
 		{IDF_SHADER_DOWNSCALER_BICUBIC_Y},
+		{IDF_SHADER_BT601_TO_RGB},
+		{IDF_SHADER_BT709_TO_RGB},
+		{IDF_SHADER_SMPTE240M_TO_RGB},
 		{IDF_SHADER_YCGCO_TO_RGB},
 		{IDF_SHADER_TEST},
 	};
