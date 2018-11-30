@@ -611,15 +611,17 @@ HRESULT CDX9VideoProcessor::CreateShaderFromResource(IDirect3DPixelShader9** ppP
 		return E_POINTER;
 	}
 
-	HRSRC hrsrc = FindResourceW(nullptr, MAKEINTRESOURCEW(resid), L"SHADER");
+	static const HMODULE hModule = (HMODULE)&__ImageBase;
+
+	HRSRC hrsrc = FindResourceW(hModule, MAKEINTRESOURCEW(resid), L"SHADER");
 	if (!hrsrc) {
 		return E_INVALIDARG;
 	}
-	HGLOBAL hGlobal = LoadResource(nullptr, hrsrc);
+	HGLOBAL hGlobal = LoadResource(hModule, hrsrc);
 	if (!hGlobal) {
 		return E_FAIL;
 	}
-	DWORD size = SizeofResource(nullptr, hrsrc);
+	DWORD size = SizeofResource(hModule, hrsrc);
 	if (size < 4) {
 		return E_FAIL;
 	}
