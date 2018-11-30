@@ -172,6 +172,7 @@ private:
 		shader_downscaler_hamming_y,
 		shader_downscaler_bicubic_x,
 		shader_downscaler_bicubic_y,
+		shader_test,
 		shader_count
 	};
 	struct {
@@ -186,6 +187,7 @@ private:
 		{IDF_SHADER_DOWNSCALER_HAMMING_Y},
 		{IDF_SHADER_DOWNSCALER_BICUBIC_X},
 		{IDF_SHADER_DOWNSCALER_BICUBIC_Y},
+		{IDF_SHADER_TEST},
 	};
 
 	CFrameStats m_FrameStats;

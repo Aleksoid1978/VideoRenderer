@@ -1,13 +1,31 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <FxCompile Include="Resizers\downscaler.hlsl" />
-    <FxCompile Include="Resizers\resizer_catmull4_x.hlsl" />
-    <FxCompile Include="Resizers\resizer_catmull4_y.hlsl" />
-    <FxCompile Include="Resizers\resizer_lanczos2_x.hlsl" />
-    <FxCompile Include="Resizers\resizer_lanczos2_y.hlsl" />
+    <FxCompile Include="test_shader.hlsl" />
+    <FxCompile Include="Resizers\downscaler.hlsl">
+      <Filter>Resizers</Filter>
+    </FxCompile>
+    <FxCompile Include="Resizers\resizer_catmull4_x.hlsl">
+      <Filter>Resizers</Filter>
+    </FxCompile>
+    <FxCompile Include="Resizers\resizer_catmull4_y.hlsl">
+      <Filter>Resizers</Filter>
+    </FxCompile>
+    <FxCompile Include="Resizers\resizer_lanczos2_x.hlsl">
+      <Filter>Resizers</Filter>
+    </FxCompile>
+    <FxCompile Include="Resizers\resizer_lanczos2_y.hlsl">
+      <Filter>Resizers</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resizers\downscaler_filters.hlsl" />
+    <Filter Include="Resizers">
+      <UniqueIdentifier>{f4fc5765-0e53-4bcc-a775-81959f4ded58}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resizers\downscaler_filters.hlsl">
+      <Filter>Resizers</Filter>
+    </None>
   </ItemGroup>
 </Project>
