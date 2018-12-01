@@ -48,10 +48,10 @@ fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic_y.cso" "Resizers
 fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_x.cso" "Resizers\downscaler.hlsl" /DFILTER=4 /DAXIS=0
 fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_y.cso" "Resizers\downscaler.hlsl" /DFILTER=4 /DAXIS=1
 
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\bt601_to_rgb.cso" "Convert\ycbcr_to_rgb.hlsl" /DKr=0.299 /DKg=0.587 /DKb=0.114
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\bt709_to_rgb.cso" "Convert\ycbcr_to_rgb.hlsl" /DKr=0.2126 /DKg=0.7152 /DKb=0.0722
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\smpte240m_to_rgb.cso" "Convert\ycbcr_to_rgb.hlsl" /DKr=0.212 /DKg=0.701 /DKb=0.212
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\fcc_to_rgb.cso" "Convert\ycbcr_to_rgb.hlsl" /DKr=0.3 /DKg=0.59 /DKb=0.11
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\bt601_to_rgb.cso" "Convert\ycbcr_to_rgb.hlsl" /DSTD=601
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\bt709_to_rgb.cso" "Convert\ycbcr_to_rgb.hlsl" /DSTD=709
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\smpte240m_to_rgb.cso" "Convert\ycbcr_to_rgb.hlsl" /DSTD=240
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\fcc_to_rgb.cso" "Convert\ycbcr_to_rgb.hlsl" /DSTD=FCC
 
 EXIT /B
 

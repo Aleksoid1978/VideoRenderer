@@ -23,6 +23,9 @@
     <FxCompile Include="Convert\ycbcr_to_rgb.hlsl">
       <Filter>Convert</Filter>
     </FxCompile>
+    <FxCompile Include="Convert\ycbcr_coefficients.hlsl">
+      <Filter>Convert</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Resizers">

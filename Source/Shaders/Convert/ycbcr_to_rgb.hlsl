@@ -2,15 +2,7 @@ sampler s0 : register(s0);
 
 // http://avisynth.nl/index.php/Colorimetry
 
-#ifndef Kr
-    #define Kr  0.2126
-#endif
-#ifndef Kg
-    #define Kg  0.7152
-#endif
-#ifndef Kb
-    #define Kb  0.0722
-#endif
+#include "ycbcr_coefficients.hlsl"
 
 #define Y  pixel[0]
 #define Cb pixel[1]

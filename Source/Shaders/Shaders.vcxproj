@@ -178,6 +178,9 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="Convert\ycbcr_coefficients.hlsl">
+      <FileType>Document</FileType>
+    </None>
     <FxCompile Include="Convert\ycbcr_to_rgb.hlsl" />
     <FxCompile Include="Convert\ycgco_to_rgb.hlsl" />
     <FxCompile Include="Resizers\downscaler.hlsl" />
