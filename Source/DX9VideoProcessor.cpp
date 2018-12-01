@@ -799,7 +799,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		return FALSE;
 	}
 
-	if (m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
+	if (!FmtConvParams->bRGB && m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
 		if (m_srcWidth <= 1024 && m_srcHeight <= 576) { // SD
 			m_srcExFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT601;
 		} else { // HD
