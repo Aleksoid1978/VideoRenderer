@@ -15,7 +15,8 @@
 #define IDF_SHADER_BT601_TO_RGB         750
 #define IDF_SHADER_BT709_TO_RGB         751
 #define IDF_SHADER_SMPTE240M_TO_RGB     752
-#define IDF_SHADER_YCGCO_TO_RGB         753
+#define IDF_SHADER_BT2020NC_TO_RGB      753
+#define IDF_SHADER_YCGCO_TO_RGB         755
 #define IDF_SHADER_TEST                 790
 #define IDC_CHECK1                      1001
 #define IDC_CHECK2                      1002

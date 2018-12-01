@@ -178,6 +178,7 @@ private:
 		shader_bt601_to_rgb,
 		shader_bt709_to_rgb,
 		shader_smpte240m_to_rgb,
+		shader_bt2020nc_to_rgb,
 		shader_ycgco_to_rgb,
 		shader_test,
 		shader_count
@@ -197,6 +198,7 @@ private:
 		{IDF_SHADER_BT601_TO_RGB},
 		{IDF_SHADER_BT709_TO_RGB},
 		{IDF_SHADER_SMPTE240M_TO_RGB},
+		{IDF_SHADER_BT2020NC_TO_RGB},
 		{IDF_SHADER_YCGCO_TO_RGB},
 		{IDF_SHADER_TEST},
 	};

@@ -828,6 +828,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		case DXVA2_VideoTransferMatrix_BT709:     m_iConvertShader = shader_bt709_to_rgb;     break;
 		case DXVA2_VideoTransferMatrix_BT601:     m_iConvertShader = shader_bt601_to_rgb;     break;
 		case DXVA2_VideoTransferMatrix_SMPTE240M: m_iConvertShader = shader_smpte240m_to_rgb; break;
+		case 4:                                   m_iConvertShader = shader_bt2020nc_to_rgb;  break;
 		case 7:                                   m_iConvertShader = shader_ycgco_to_rgb;     break;
 		}
 	}

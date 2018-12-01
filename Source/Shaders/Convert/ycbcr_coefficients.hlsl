@@ -16,14 +16,20 @@
 
 #elif (STD == 240)
 // SMPTE 240M
-#define Kr 0.212
-#define Kg 0.701
-#define Kb 0.212
+#define Kr 0.2122
+#define Kg 0.7013
+#define Kb 0.0865
 
 #elif (STD == FCC)
 // FCC
-#define Kr 0.3
+#define Kr 0.30
 #define Kg 0.59
 #define Kb 0.11
+
+#elif (STD == 2020)
+// BT.2020 NC
+#define Kr 0.2627
+#define Kg 0.6780
+#define Kb 0.0593
 
 #endif
