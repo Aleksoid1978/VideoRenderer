@@ -112,8 +112,8 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
 }
 
 static FmtConvParams_t s_FmtConvMapping[] = {
-	{ MEDIASUBTYPE_NV12,   D3DFMT_NV12,     DXGI_FORMAT_NV12,           1, 3, false, &CopyFramePackedUV },
 	{ MEDIASUBTYPE_YV12,   D3DFMT_YV12,     DXGI_FORMAT_UNKNOWN,        1, 3, false, &CopyFrameYV12},
+	{ MEDIASUBTYPE_NV12,   D3DFMT_NV12,     DXGI_FORMAT_NV12,           1, 3, false, &CopyFramePackedUV },
 	{ MEDIASUBTYPE_P010,   D3DFMT_P010,     DXGI_FORMAT_P010,           2, 3, false, &CopyFramePackedUV },
 	{ MEDIASUBTYPE_YUY2,   D3DFMT_YUY2,     DXGI_FORMAT_YUY2,           2, 2, false, &CopyFrameAsIs },
 	{ MEDIASUBTYPE_AYUV,   D3DFMT_X8R8G8B8, DXGI_FORMAT_AYUV,           4, 2, false, &CopyFrameAsIs },

@@ -95,8 +95,8 @@ HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 	CheckPointer(pmt->pbFormat, E_POINTER);
 
 	if (pmt->majortype == MEDIATYPE_Video && (pmt->formattype == FORMAT_VideoInfo2 || pmt->formattype == FORMAT_VideoInfo)) {
-		for (unsigned i = 0; i < _countof(sudPinTypesIn); i++) {
-			if (pmt->subtype == *sudPinTypesIn[i].clsMinorType) {
+		for (const auto& sudPinType : sudPinTypesIn) {
+			if (pmt->subtype == *sudPinType.clsMinorType) {
 				std::unique_lock<std::mutex> lock(m_mutex);
 
 				if (m_bUsedD3D11) {
