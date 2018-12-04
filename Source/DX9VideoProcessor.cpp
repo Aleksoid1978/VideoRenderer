@@ -503,7 +503,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	}
 
 	// Query ProcAmp ranges.
-	for (i = 0; i < ARRAYSIZE(m_DXVA2ProcValueRange); i++) {
+	for (i = 0; i < std::size(m_DXVA2ProcValueRange); i++) {
 		if (m_DXVA2VPcaps.ProcAmpControlCaps & (1 << i)) {
 			hr = m_pDXVA2_VPService->GetProcAmpRange(devguid, &videodesc, m_VPOutputFmt, 1 << i, &m_DXVA2ProcValueRange[i]);
 			if (FAILED(hr)) {
@@ -1305,7 +1305,7 @@ HRESULT CDX9VideoProcessor::TextureResizeShader(IDirect3DTexture9* pTexture, con
 		{ dx, dy, 0, 0 },
 		{ scale_x, scale_y, 0, 0 },
 	};
-	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, _countof(fConstData));
+	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, std::size(fConstData));
 	hr = m_pD3DDevEx->SetPixelShader(pShader);
 
 	hr = m_pD3DDevEx->SetTexture(0, pTexture);

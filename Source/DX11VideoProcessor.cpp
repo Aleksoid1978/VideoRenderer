@@ -105,7 +105,7 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 		D3D11_CREATE_DEVICE_BGRA_SUPPORT,
 #endif
 		featureLevels,
-		ARRAYSIZE(featureLevels),
+		std::size(featureLevels),
 		D3D11_SDK_VERSION,
 		&pDevice,
 		&featurelevel,
@@ -479,7 +479,7 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 		return hr;
 	}
 
-	for (int i = 0; i < ARRAYSIZE(m_VPFilterRange); i++) {
+	for (int i = 0; i < std::size(m_VPFilterRange); i++) {
 		if (m_VPCaps.FilterCaps & (1 << i)) {
 			hr = m_pVideoProcessorEnum->GetVideoProcessorFilterRange((D3D11_VIDEO_PROCESSOR_FILTER)i, &m_VPFilterRange[i]);
 			if (FAILED(hr)) {

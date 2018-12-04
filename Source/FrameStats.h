@@ -26,10 +26,10 @@ class CFrameStats
 private:
 	unsigned m_frames = 0;
 	REFERENCE_TIME m_times[30] = {};
-	unsigned m_index = _countof(m_times) - 1;
+	unsigned m_index = std::size(m_times) - 1;
 
 	inline unsigned GetNextIndex(unsigned idx) {
-		if (idx >= _countof(m_times) - 1) {
+		if (idx >= std::size(m_times) - 1) {
 			return 0;
 		}
 		return idx + 1;
@@ -39,7 +39,7 @@ public:
 	void Reset() {
 		m_frames = 0;
 		ZeroMemory(m_times, sizeof(m_times));
-		m_index = _countof(m_times) - 1;
+		m_index = std::size(m_times) - 1;
 	};
 
 	void Add(REFERENCE_TIME time) {
@@ -55,9 +55,9 @@ public:
 	unsigned GetFrames() { return m_frames; }
 
 	double GetAverageFps() {
-		if (m_frames >= _countof(m_times)) {
+		if (m_frames >= std::size(m_times)) {
 			unsigned first_index = GetNextIndex(m_index);
-			return (double)(UNITS * (_countof(m_times) - 1)) / (m_times[m_index] - m_times[first_index]);
+			return (double)(UNITS * (std::size(m_times) - 1)) / (m_times[m_index] - m_times[first_index]);
 		}
 
 		if (m_frames > 1) {
@@ -68,9 +68,9 @@ public:
 	}
 
 	REFERENCE_TIME GetAverageFrameDuration() {
-		if (m_frames >= _countof(m_times)) {
+		if (m_frames >= std::size(m_times)) {
 			unsigned first_index = GetNextIndex(m_index);
-			return (m_times[m_index] - m_times[first_index]) / (_countof(m_times) - 1);
+			return (m_times[m_index] - m_times[first_index]) / (std::size(m_times) - 1);
 		}
 
 		if (m_frames > 1) {
