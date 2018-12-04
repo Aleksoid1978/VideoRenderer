@@ -278,16 +278,35 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 		const HMONITOR hNewMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
 		if (hCurMonitor == hNewMonitor) {
 			if (m_VPOutputFmt == DXGI_FORMAT_B8G8R8A8_UNORM || m_VPOutputFmt == DXGI_FORMAT_R8G8B8A8_UNORM) {
-				m_pTextFormat.Release();
-				m_pDWriteFactory.Release();
-				m_pD2DFactory.Release();
 				m_pD2DBrush.Release();
 				m_pD2DBrushBlack.Release();
 				m_pD2D1RenderTarget.Release();
 			}
 			hr = m_pDXGISwapChain1->ResizeBuffers(1, width, height, m_VPOutputFmt, 0);
 			if (SUCCEEDED(hr)) {
-				goto create_D2D;
+				if ((m_VPOutputFmt == DXGI_FORMAT_B8G8R8A8_UNORM || m_VPOutputFmt == DXGI_FORMAT_R8G8B8A8_UNORM) && m_pTextFormat) {
+					CComPtr<IDXGISurface> pDXGISurface;
+					HRESULT hr2 = m_pDXGISwapChain1->GetBuffer(0, IID_PPV_ARGS(&pDXGISurface));
+					if (S_OK == hr2) {
+						FLOAT dpiX;
+						FLOAT dpiY;
+						m_pD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
+
+						D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
+							D2D1_RENDER_TARGET_TYPE_DEFAULT,
+							D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
+							dpiX,
+							dpiY);
+
+						hr2 = m_pD2DFactory->CreateDxgiSurfaceRenderTarget(pDXGISurface, &props, &m_pD2D1RenderTarget);
+						if (S_OK == hr2) {
+							hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LightYellow), &m_pD2DBrush);
+							hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_pD2DBrushBlack);
+						}
+					}
+				}
+
+				return hr;
 			}
 		}
 	}
@@ -314,11 +333,10 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 	m_pTextFormat.Release();
 	m_pDWriteFactory.Release();
 	m_pD2DFactory.Release();
+
 	m_pD2DBrush.Release();
 	m_pD2DBrushBlack.Release();
 	m_pD2D1RenderTarget.Release();
-
-create_D2D:
 
 	if (m_VPOutputFmt == DXGI_FORMAT_B8G8R8A8_UNORM || m_VPOutputFmt == DXGI_FORMAT_R8G8B8A8_UNORM) {
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/dd756766(v=vs.85).aspx#supported_formats_for__id2d1hwndrendertarget
