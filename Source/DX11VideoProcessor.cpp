@@ -42,6 +42,10 @@ CDX11VideoProcessor::CDX11VideoProcessor(CBaseRenderer* pFilter)
 
 CDX11VideoProcessor::~CDX11VideoProcessor()
 {
+	m_pTextFormat.Release();
+	m_pDWriteFactory.Release();
+	m_pD2DFactory.Release();
+
 	ClearD3D11();
 
 	if (m_hD3D11Lib) {
@@ -116,6 +120,27 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 
 	hr = SetDevice(pDevice, pImmediateContext);
 
+	D2D1_FACTORY_OPTIONS options = {};
+#ifdef _DEBUG
+	options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+#endif
+
+	HRESULT hr2 = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, &m_pD2DFactory);
+	if (S_OK == hr2) {
+		hr2 = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(m_pDWriteFactory), reinterpret_cast<IUnknown**>(&m_pDWriteFactory));
+		if (S_OK == hr2) {
+			hr2 = m_pDWriteFactory->CreateTextFormat(
+				L"Consolas",
+				nullptr,
+				DWRITE_FONT_WEIGHT_NORMAL,
+				DWRITE_FONT_STYLE_NORMAL,
+				DWRITE_FONT_STRETCH_NORMAL,
+				20,
+				L"", //locale
+				&m_pTextFormat);
+		}
+	}
+
 #if 0
 	DWM_TIMING_INFO timinginfo = { sizeof(DWM_TIMING_INFO) };
 	if (S_OK == DwmGetCompositionTimingInfo(nullptr, &timinginfo)) {
@@ -138,10 +163,6 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 
 void CDX11VideoProcessor::ClearD3D11()
 {
-	m_pTextFormat.Release();
-	m_pDWriteFactory.Release();
-	m_pD2DFactory.Release();
-
 	m_pD2DBrush.Release();
 	m_pD2DBrushBlack.Release();
 	m_pD2D1RenderTarget.Release();
@@ -330,55 +351,29 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 
 	m_hWnd = hwnd;
 
-	m_pTextFormat.Release();
-	m_pDWriteFactory.Release();
-	m_pD2DFactory.Release();
-
 	m_pD2DBrush.Release();
 	m_pD2DBrushBlack.Release();
 	m_pD2D1RenderTarget.Release();
 
-	if (m_VPOutputFmt == DXGI_FORMAT_B8G8R8A8_UNORM || m_VPOutputFmt == DXGI_FORMAT_R8G8B8A8_UNORM) {
+	if ((m_VPOutputFmt == DXGI_FORMAT_B8G8R8A8_UNORM || m_VPOutputFmt == DXGI_FORMAT_R8G8B8A8_UNORM) && m_pTextFormat) {
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/dd756766(v=vs.85).aspx#supported_formats_for__id2d1hwndrendertarget
-		D2D1_FACTORY_OPTIONS options = {};
-#ifdef _DEBUG
-		options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
-#endif
-
-		HRESULT hr2 = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, &m_pD2DFactory);
+		CComPtr<IDXGISurface> pDXGISurface;
+		HRESULT hr2 = m_pDXGISwapChain1->GetBuffer(0, IID_PPV_ARGS(&pDXGISurface));
 		if (S_OK == hr2) {
-			hr2 = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(m_pDWriteFactory), reinterpret_cast<IUnknown**>(&m_pDWriteFactory));
+			FLOAT dpiX;
+			FLOAT dpiY;
+			m_pD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
+
+			D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
+				D2D1_RENDER_TARGET_TYPE_DEFAULT,
+				D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
+				dpiX,
+				dpiY);
+
+			hr2 = m_pD2DFactory->CreateDxgiSurfaceRenderTarget(pDXGISurface, &props, &m_pD2D1RenderTarget);
 			if (S_OK == hr2) {
-				hr2 = m_pDWriteFactory->CreateTextFormat(
-					L"Consolas",
-					nullptr,
-					DWRITE_FONT_WEIGHT_NORMAL,
-					DWRITE_FONT_STYLE_NORMAL,
-					DWRITE_FONT_STRETCH_NORMAL,
-					20,
-					L"", //locale
-					&m_pTextFormat);
-				if (S_OK == hr2) {
-					CComPtr<IDXGISurface> pDXGISurface;
-					hr2 = m_pDXGISwapChain1->GetBuffer(0, IID_PPV_ARGS(&pDXGISurface));
-					if (S_OK == hr2) {
-						FLOAT dpiX;
-						FLOAT dpiY;
-						m_pD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
-
-						D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
-							D2D1_RENDER_TARGET_TYPE_DEFAULT,
-							D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
-							dpiX,
-							dpiY);
-
-						hr2 = m_pD2DFactory->CreateDxgiSurfaceRenderTarget(pDXGISurface, &props, &m_pD2D1RenderTarget);
-						if (S_OK == hr2) {
-							hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LightYellow), &m_pD2DBrush);
-							hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_pD2DBrushBlack);
-						}
-					}
-				}
+				hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LightYellow), &m_pD2DBrush);
+				hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_pD2DBrushBlack);
 			}
 		}
 	}
