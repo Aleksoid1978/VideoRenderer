@@ -100,11 +100,11 @@ HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 				std::unique_lock<std::mutex> lock(m_mutex);
 
 				if (m_bUsedD3D11) {
-					if (!m_DX11_VP.InitMediaType(pmt)) {
+					if (!m_DX11_VP.VerifyMediaType(pmt)) {
 						return VFW_E_UNSUPPORTED_VIDEO;
 					}
 				} else {
-					if (!m_DX9_VP.InitMediaType(pmt)) {
+					if (!m_DX9_VP.VerifyMediaType(pmt)) {
 						return VFW_E_UNSUPPORTED_VIDEO;
 					}
 				}

@@ -102,18 +102,19 @@ private:
 	DXVA2_ValueRange m_DXVA2ProcValueRange[4] = {};
 
 	// Input parameters
-	GUID m_srcSubType = GUID_NULL;
-	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;
-	UINT m_srcWidth = 0;
-	UINT m_srcHeight = 0;
-	UINT m_srcPitch = 0;
-	CopyFrameDataFn m_pConvertFn = nullptr;
-	DWORD m_srcAspectRatioX = 0;
-	DWORD m_srcAspectRatioY = 0;
-	DXVA2_ExtendedFormat m_srcExFmt = {};
-	bool m_bInterlaced = false;
+	GUID      m_srcSubType      = GUID_NULL;
+	D3DFORMAT m_srcD3DFormat    = D3DFMT_UNKNOWN;
+	UINT      m_srcWidth        = 0;
+	UINT      m_srcHeight       = 0;
+	UINT      m_srcPitch        = 0;
+	DWORD     m_srcAspectRatioX = 0;
+	DWORD     m_srcAspectRatioY = 0;
 	CRect m_srcRect;
 	CRect m_trgRect;
+	DXVA2_ExtendedFormat m_srcExFmt = {};
+	bool m_bInterlaced = false;
+
+	CopyFrameDataFn m_pConvertFn = nullptr;
 	D3DFORMAT m_VPOutputFmt = D3DFMT_X8R8G8B8;
 
 	// Processing parameters
@@ -125,10 +126,6 @@ private:
 
 	CRect m_videoRect;
 	CRect m_windowRect;
-
-	D3DFORMAT m_D3D9_Src_Format = D3DFMT_UNKNOWN;
-	UINT m_D3D9_Src_Width = 0;
-	UINT m_D3D9_Src_Height = 0;
 
 	CComPtr<IDirect3DTexture9> m_pOSDTexture;
 	CComPtr<IDirect3DSurface9> m_pMemSurface;
@@ -228,8 +225,6 @@ private:
 	void ReleaseVP();
 	void ReleaseDevice();
 
-	BOOL CheckInput(const D3DFORMAT d3dformat, const UINT width, const UINT height);
-
 	BOOL InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height);
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
 
@@ -243,6 +238,7 @@ private:
 	void SyncThread();
 
 public:
+	BOOL VerifyMediaType(const CMediaType* pmt);
 	BOOL InitMediaType(const CMediaType* pmt);
 	void Start();
 

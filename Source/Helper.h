@@ -72,6 +72,7 @@ typedef void(*CopyFrameDataFn)(const UINT height, BYTE* dst, UINT dst_pitch, BYT
 
 struct FmtConvParams_t {
 	GUID            Subtype;
+	D3DFORMAT       DXVA2Format;
 	D3DFORMAT       D3DFormat;
 	DXGI_FORMAT     DXGIFormat;
 	int             Packsize;

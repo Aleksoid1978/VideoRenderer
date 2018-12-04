@@ -358,18 +358,51 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 	return hr;
 }
 
-BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
+BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 {
 	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
-	if (!FmtConvParams) {
+	if (!FmtConvParams || FmtConvParams->DXGIFormat == DXGI_FORMAT_UNKNOWN) {
 		return FALSE;
 	}
 
-	m_mt = *pmt;
+	UINT biWidth = 0;
+	UINT biHeight = 0;
 	UINT biSizeImage = 0;
 
-	if (m_mt.formattype == FORMAT_VideoInfo2) {
-		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)m_mt.pbFormat;
+	if (pmt->formattype == FORMAT_VideoInfo2) {
+		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
+		biWidth = vih2->bmiHeader.biWidth;
+		biHeight = labs(vih2->bmiHeader.biHeight);
+		biSizeImage = vih2->bmiHeader.biSizeImage;
+	}
+	else if (pmt->formattype == FORMAT_VideoInfo) {
+		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)pmt->pbFormat;
+		biWidth = vih->bmiHeader.biWidth;
+		biHeight = labs(vih->bmiHeader.biHeight);
+		biSizeImage = vih->bmiHeader.biSizeImage;
+	}
+	else {
+		return FALSE;
+	}
+
+	if (!biWidth || !biHeight || !biSizeImage) {
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
+{
+	if (!VerifyMediaType(pmt)) {
+		return FALSE;
+	}
+
+	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
+	UINT biSizeImage = 0;
+
+	if (pmt->formattype == FORMAT_VideoInfo2) {
+		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
 		m_srcRect = vih2->rcSource;
 		m_trgRect = vih2->rcTarget;
 		m_srcWidth = vih2->bmiHeader.biWidth;
@@ -385,8 +418,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		}
 		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
 	}
-	else if (m_mt.formattype == FORMAT_VideoInfo) {
-		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)m_mt.pbFormat;
+	else if (pmt->formattype == FORMAT_VideoInfo) {
+		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)pmt->pbFormat;
 		m_srcRect = vih->rcSource;
 		m_trgRect = vih->rcTarget;
 		m_srcWidth = vih->bmiHeader.biWidth;
@@ -411,18 +444,19 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_srcDXGIFormat = FmtConvParams->DXGIFormat;
 	m_pConvertFn    = FmtConvParams->Func;
 	m_srcPitch      = biSizeImage * 2 / (m_srcHeight * FmtConvParams->PitchCoeff);
-	if (m_mt.subtype == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
+	if (pmt->subtype == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
 		m_srcPitch = ALIGN(m_srcPitch, 4);
 	}
-	else if (m_mt.subtype == MEDIASUBTYPE_P010) {
+	else if (pmt->subtype == MEDIASUBTYPE_P010) {
 		m_srcPitch &= ~1u;
 	}
 
-	if (FAILED(Initialize(m_srcWidth, m_srcHeight, m_srcDXGIFormat))) {
-		return FALSE;
+	if (S_OK == Initialize(m_srcWidth, m_srcHeight, m_srcDXGIFormat)) {
+		m_mt = *pmt;
+		return TRUE;
 	}
 
-	return TRUE;
+	return FALSE;
 }
 
 HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, const DXGI_FORMAT dxgiFormat)
