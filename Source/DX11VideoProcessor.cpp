@@ -277,9 +277,17 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 		const HMONITOR hCurMonitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 		const HMONITOR hNewMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
 		if (hCurMonitor == hNewMonitor) {
+			if (m_VPOutputFmt == DXGI_FORMAT_B8G8R8A8_UNORM || m_VPOutputFmt == DXGI_FORMAT_R8G8B8A8_UNORM) {
+				m_pTextFormat.Release();
+				m_pDWriteFactory.Release();
+				m_pD2DFactory.Release();
+				m_pD2DBrush.Release();
+				m_pD2DBrushBlack.Release();
+				m_pD2D1RenderTarget.Release();
+			}
 			hr = m_pDXGISwapChain1->ResizeBuffers(1, width, height, m_VPOutputFmt, 0);
 			if (SUCCEEDED(hr)) {
-				return hr;
+				goto create_D2D;
 			}
 		}
 	}
@@ -309,6 +317,8 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 	m_pD2DBrush.Release();
 	m_pD2DBrushBlack.Release();
 	m_pD2D1RenderTarget.Release();
+
+create_D2D:
 
 	if (m_VPOutputFmt == DXGI_FORMAT_B8G8R8A8_UNORM || m_VPOutputFmt == DXGI_FORMAT_R8G8B8A8_UNORM) {
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/dd756766(v=vs.85).aspx#supported_formats_for__id2d1hwndrendertarget
@@ -479,7 +489,7 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 		return hr;
 	}
 
-	for (int i = 0; i < std::size(m_VPFilterRange); i++) {
+	for (UINT i = 0; i < std::size(m_VPFilterRange); i++) {
 		if (m_VPCaps.FilterCaps & (1 << i)) {
 			hr = m_pVideoProcessorEnum->GetVideoProcessorFilterRange((D3D11_VIDEO_PROCESSOR_FILTER)i, &m_VPFilterRange[i]);
 			if (FAILED(hr)) {
