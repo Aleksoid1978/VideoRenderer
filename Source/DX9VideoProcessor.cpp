@@ -337,7 +337,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 	videodesc.SampleHeight = height;
 	//videodesc.SampleFormat.value = 0; // do not need to fill it here
 	videodesc.SampleFormat.SampleFormat = m_bInterlaced ? DXVA2_SampleFieldInterleavedOddFirst : DXVA2_SampleProgressiveFrame;
-	if (d3dformat == D3DFMT_X8R8G8B8 || d3dformat == D3DFMT_A8R8G8B8) {
+	if (m_VendorId == PCIV_INTEL && (d3dformat == D3DFMT_X8R8G8B8 || d3dformat == D3DFMT_A8R8G8B8)) {
 		videodesc.Format = D3DFMT_YUY2; // hack
 	} else {
 		videodesc.Format = d3dformat;
