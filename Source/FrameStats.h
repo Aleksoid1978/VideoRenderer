@@ -25,21 +25,30 @@ class CFrameStats
 {
 private:
 	unsigned m_frames = 0;
-	REFERENCE_TIME m_times[30] = {};
-	unsigned m_index = std::size(m_times) - 1;
+	REFERENCE_TIME m_times[301] = {};
+	const unsigned intervals = std::size(m_times) - 1;
+	unsigned m_index = intervals;
 
 	inline unsigned GetNextIndex(unsigned idx) {
-		if (idx >= std::size(m_times) - 1) {
+		if (idx >= intervals) {
 			return 0;
 		}
 		return idx + 1;
+	}
+
+	inline unsigned GetPrev10Index(unsigned idx) {
+		if (idx < 10) {
+			idx += std::size(m_times);
+		}
+		idx -= 10;
+		return idx;
 	}
 
 public:
 	void Reset() {
 		m_frames = 0;
 		ZeroMemory(m_times, sizeof(m_times));
-		m_index = std::size(m_times) - 1;
+		m_index = intervals;
 	};
 
 	void Add(REFERENCE_TIME time) {
@@ -54,29 +63,30 @@ public:
 
 	unsigned GetFrames() { return m_frames; }
 
-	double GetAverageFps() {
+	REFERENCE_TIME GetAverageFrameDuration() {
+		REFERENCE_TIME frame_duration;
 		if (m_frames >= std::size(m_times)) {
 			unsigned first_index = GetNextIndex(m_index);
-			return (double)(UNITS * (std::size(m_times) - 1)) / (m_times[m_index] - m_times[first_index]);
+			frame_duration =(m_times[m_index] - m_times[first_index]) / intervals;
+		}
+		else if (m_frames > 1) {
+			frame_duration = (m_times[m_frames - 1] - m_times[0]) / (m_frames - 1);
+		}
+		else {
+			return UNITS;
 		}
 
-		if (m_frames > 1) {
-			return (double)(UNITS * (m_frames - 1)) / (m_times[m_frames - 1] - m_times[0]);
+		if (m_frames > 10) {
+			REFERENCE_TIME frame_duration10 = (m_times[m_index] - m_times[GetPrev10Index(m_index)]) / 10;
+			if (abs(frame_duration - frame_duration10) > 10000) {
+				frame_duration = frame_duration10;
+			}
 		}
 
-		return 0.0;
+		return frame_duration;
 	}
 
-	REFERENCE_TIME GetAverageFrameDuration() {
-		if (m_frames >= std::size(m_times)) {
-			unsigned first_index = GetNextIndex(m_index);
-			return (m_times[m_index] - m_times[first_index]) / (std::size(m_times) - 1);
-		}
-
-		if (m_frames > 1) {
-			return (m_times[m_frames - 1] - m_times[0]) / (m_frames - 1);
-		}
-
-		return 2;
+	double GetAverageFps() {
+		return (double)UNITS / GetAverageFrameDuration();
 	}
 };
