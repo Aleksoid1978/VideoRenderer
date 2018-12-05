@@ -29,7 +29,7 @@
 #include "Time.h"
 #include "DX9VideoProcessor.h"
 
-#define STATS_W 330
+#define STATS_W 360
 #define STATS_H 150
 
 #pragma pack(push, 1)
@@ -851,11 +851,13 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	if (FmtConvParams->DXVA2Format != D3DFMT_UNKNOWN && InitializeDXVA2VP(FmtConvParams->DXVA2Format, biWidth, biHeight)) {
 		m_srcSubType = SubType;
+		UpdateStatsStatic();
 		return TRUE;
 	}
 
 	if (FmtConvParams->D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams->D3DFormat, biWidth, biHeight)) {
 		m_srcSubType = SubType;
+		UpdateStatsStatic();
 		return TRUE;
 	}
 
@@ -1415,6 +1417,17 @@ HRESULT CDX9VideoProcessor::AlphaBlt(RECT* pSrc, RECT* pDst, IDirect3DTexture9* 
 	return S_OK;
 }
 
+void CDX9VideoProcessor::UpdateStatsStatic()
+{
+	auto FmtConvParams = GetFmtConvParams(m_srcSubType);
+	if (FmtConvParams) {
+		m_strStatsStatic.Format(L"\nInput format : %S %ux%u", FmtConvParams->str, m_srcWidth, m_srcHeight);
+		m_strStatsStatic.AppendFormat(L"\nVP output fmt: %s", D3DFormatToString(m_VPOutputFmt));
+	} else {
+		m_strStatsStatic.Empty();
+	}
+}
+
 HRESULT CDX9VideoProcessor::DrawStats()
 {
 	if (!m_pMemSurface) {
@@ -1429,8 +1442,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	if (m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
 		str.Append(L" i");
 	}
-	str.AppendFormat(L"\nInput format : %s", D3DFormatToString(m_srcD3DFormat));
-	str.AppendFormat(L"\nVP output fmt: %s", D3DFormatToString(m_VPOutputFmt));
+	str.Append(m_strStatsStatic);
 	str.AppendFormat(L"\nSync offset  :%+4d ms", m_SyncOffsetMS);
 
 	{

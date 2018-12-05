@@ -209,6 +209,7 @@ private:
 	ULONG_PTR m_gdiplusToken;
 	Gdiplus::GdiplusStartupInput m_gdiplusStartupInput;
 
+	CStringW m_strStatsStatic;
 	double m_DetectedRefreshRate = 0.0;
 	CCritSec m_RefreshRateLock;
 
@@ -273,6 +274,7 @@ private:
 	HRESULT TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, IDirect3DPixelShader9* pShader);
 
 	HRESULT AlphaBlt(RECT* pSrc, RECT* pDst, IDirect3DTexture9* pTexture);
+	void UpdateStatsStatic();
 	HRESULT DrawStats();
 
 public:
