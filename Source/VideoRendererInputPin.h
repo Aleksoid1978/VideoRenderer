@@ -33,6 +33,8 @@ class CVideoRendererInputPin
 {
 private:
 	CMpcVideoRenderer* m_pBaseRenderer;
+	bool m_bDXVA = false;
+	bool m_bD3D11 = false;
 
 public:
 	CVideoRendererInputPin(CBaseRenderer *pRenderer, HRESULT *phr, LPCWSTR Name, CMpcVideoRenderer* pBaseRenderer);

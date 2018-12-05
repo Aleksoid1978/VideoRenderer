@@ -55,6 +55,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CustomAllocator.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="DX11VideoProcessor.cpp" />
     <ClCompile Include="DX9VideoProcessor.cpp" />
@@ -68,6 +69,7 @@
     <ClCompile Include="VideoRendererInputPin.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CustomAllocator.h" />
     <ClInclude Include="DX11VideoProcessor.h" />
     <ClInclude Include="DX9VideoProcessor.h" />
     <ClInclude Include="FrameStats.h" />

@@ -22,6 +22,7 @@
 #include <Mferror.h>
 #include "VideoRenderer.h"
 #include "VideoRendererInputPin.h"
+#include "CustomAllocator.h"
 
 //
 // CVideoRendererInputPin
@@ -44,9 +45,34 @@ STDMETHODIMP CVideoRendererInputPin::NonDelegatingQueryInterface(REFIID riid, vo
 }
 
 STDMETHODIMP CVideoRendererInputPin::GetAllocator(IMemAllocator **ppAllocator) {
-	// Renderer shouldn't manage allocator for DXVA
-	return E_NOTIMPL;
-}
+	if (m_bDXVA || m_bD3D11) {
+		// Renderer shouldn't manage allocator for DXVA/D3D11
+		return E_NOTIMPL;
+	}
+
+	CheckPointer(ppAllocator, E_POINTER);
+
+	if (m_pAllocator) {
+		// We already have an allocator, so return that one.
+		*ppAllocator = m_pAllocator;
+		(*ppAllocator)->AddRef();
+		return S_OK;
+	}
+
+	// No allocator yet, so propose our custom allocator. The exact code
+	// here will depend on your custom allocator class definition.
+	HRESULT hr = S_OK;
+	CCustomAllocator *pAlloc = new CCustomAllocator(L"Custom allocator", nullptr, &hr);
+	if (!pAlloc) {
+		return E_OUTOFMEMORY;
+	}
+	if (FAILED(hr)) {
+		delete pAlloc;
+		return hr;
+	}
+
+	// Return the IMemAllocator interface to the caller.
+	return pAlloc->QueryInterface(IID_IMemAllocator, (void**)ppAllocator);}
 
 STDMETHODIMP CVideoRendererInputPin::GetAllocatorRequirements(ALLOCATOR_PROPERTIES* pProps) {
 	// 1 buffer required
@@ -79,13 +105,16 @@ STDMETHODIMP CVideoRendererInputPin::GetAvailableSurfaceTypeByIndex(DWORD dwType
 
 STDMETHODIMP CVideoRendererInputPin::SetSurfaceType(DXVA2_SurfaceType dwType)
 {
+	m_bDXVA = (dwType == DXVA2_SurfaceType_DecoderRenderTarget);
 	return S_OK;
 }
 
 // ID3D11DecoderConfiguration
 STDMETHODIMP CVideoRendererInputPin::ActivateD3D11Decoding(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, HANDLE hMutex, UINT nFlags)
 {
-	return m_pBaseRenderer->m_bUsedD3D11 ? m_pBaseRenderer->m_DX11_VP.SetDevice(pDevice, pContext) : E_FAIL;
+	const auto hr = m_pBaseRenderer->m_bUsedD3D11 ? m_pBaseRenderer->m_DX11_VP.SetDevice(pDevice, pContext) : E_FAIL;
+	m_bD3D11 = (hr == S_OK);
+	return hr;
 }
 
 UINT STDMETHODCALLTYPE CVideoRendererInputPin::GetD3D11AdapterIndex()
