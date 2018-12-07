@@ -168,6 +168,7 @@ void CDX11VideoProcessor::ClearD3D11()
 	m_pD2D1RenderTarget.Release();
 
 	m_pSrcTexture2D_RGB.Release();
+	m_pSrcTexture9.Release();
 	m_pSrcSurface9.Release();
 
 	m_pSrcTexture2D.Release();
@@ -275,7 +276,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		m_strAdapterDescription.Format(L"%s (%04X:%04X)", dxgiAdapterDesc.Description, dxgiAdapterDesc.VendorId, dxgiAdapterDesc.DeviceId);
 	}
 
-	m_bCanUseSharedHandle = (m_VendorId != PCIV_NVIDIA);
+	m_bCanUseSharedHandle = true;
 
 	return hr;
 }
@@ -463,7 +464,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_trgRect.SetRect(0, 0, m_srcWidth, m_srcHeight);
 	}
 
-	m_srcD3DFormat  = FmtConvParams->D3DFormat;
+	m_srcD3DFormat  = FmtConvParams->DXVA2Format;
 	m_srcDXGIFormat = FmtConvParams->DXGIFormat;
 	m_pConvertFn    = FmtConvParams->Func;
 	m_srcPitch      = biSizeImage * 2 / (m_srcHeight * FmtConvParams->PitchCoeff);
@@ -494,6 +495,7 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 
 	m_FrameStats.Reset();
 	m_pSrcTexture2D_RGB.Release();
+	m_pSrcTexture9.Release();
 	m_pSrcSurface9.Release();
 
 	m_pSrcTexture2D.Release();
@@ -605,6 +607,8 @@ void CDX11VideoProcessor::Start()
 	m_FrameStats.Reset();
 }
 
+#define BREAK_ON_ERROR(hr) { if (FAILED(hr)) { m_bCanUseSharedHandle = false; break; }}
+
 HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
@@ -665,37 +669,30 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				for (;;) {
 					CComPtr<IDirect3DDevice9> pD3DDev;
 					pSurface->GetDevice(&pD3DDev);
-					if (FAILED(hr)) {
-						m_bCanUseSharedHandle = false;
-						break;
-					}
+					BREAK_ON_ERROR(hr);
 
-					if (!m_pSrcSurface9) {
-						hr = pD3DDev->CreateOffscreenPlainSurface(
+					if (!m_pSrcTexture9) {
+						hr = pD3DDev->CreateTexture(
 							desc.Width,
 							desc.Height,
+							1,
+							D3DUSAGE_RENDERTARGET,
 							D3DFMT_A8R8G8B8,
 							D3DPOOL_DEFAULT,
-							&m_pSrcSurface9,
+							&m_pSrcTexture9,
 							&m_sharedHandle);
-						if (FAILED(hr)) {
-							m_bCanUseSharedHandle = false;
-							break;
-						}
+						BREAK_ON_ERROR(hr);
+						hr = m_pSrcTexture9->GetSurfaceLevel(0, &m_pSrcSurface9);
+						BREAK_ON_ERROR(hr);
 					}
 
 					if (!m_pSrcTexture2D_RGB) {
 						hr = m_pDevice->OpenSharedResource(m_sharedHandle, __uuidof(ID3D11Texture2D), (void**)(&m_pSrcTexture2D_RGB));
-						if (FAILED(hr)) {
-							m_bCanUseSharedHandle = false;
-							break;
-						}
+						BREAK_ON_ERROR(hr);
 					}
 
 					hr = pD3DDev->StretchRect(pSurface, nullptr, m_pSrcSurface9, nullptr, D3DTEXF_NONE);
-					if (FAILED(hr)) {
-						m_bCanUseSharedHandle = false;
-					}
+					BREAK_ON_ERROR(hr);
 
 					break;
 				}
@@ -983,7 +980,7 @@ HRESULT CDX11VideoProcessor::DrawStats()
 	if (m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
 		str.Append(L" i");
 	}
-	str.AppendFormat(L"\nInput format : %s", DXGIFormatToString(m_srcDXGIFormat));
+	str.AppendFormat(L"\nInput format : %s %ux%u", DXGIFormatToString(m_srcDXGIFormat), m_srcWidth, m_srcHeight);
 	str.AppendFormat(L"\nVP output fmt: %s", DXGIFormatToString(m_VPOutputFmt));
 	str.AppendFormat(L"\nSync offset  :%+4d ms", m_SyncOffsetMS);
 

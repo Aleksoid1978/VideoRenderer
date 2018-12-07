@@ -59,8 +59,7 @@ STDMETHODIMP CVideoRendererInputPin::GetAllocator(IMemAllocator **ppAllocator) {
 		return S_OK;
 	}
 
-	// No allocator yet, so propose our custom allocator. The exact code
-	// here will depend on your custom allocator class definition.
+	// No allocator yet, so propose our custom allocator.
 	HRESULT hr = S_OK;
 	CCustomAllocator *pAlloc = new CCustomAllocator(L"Custom allocator", nullptr, &hr);
 	if (!pAlloc) {
@@ -72,7 +71,8 @@ STDMETHODIMP CVideoRendererInputPin::GetAllocator(IMemAllocator **ppAllocator) {
 	}
 
 	// Return the IMemAllocator interface to the caller.
-	return pAlloc->QueryInterface(IID_IMemAllocator, (void**)ppAllocator);}
+	return pAlloc->QueryInterface(IID_IMemAllocator, (void**)ppAllocator);
+}
 
 STDMETHODIMP CVideoRendererInputPin::GetAllocatorRequirements(ALLOCATOR_PROPERTIES* pProps) {
 	// 1 buffer required
