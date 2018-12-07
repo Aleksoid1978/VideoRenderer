@@ -60,6 +60,7 @@ private:
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
 
+	CComPtr<IDirect3DTexture9> m_pSrcTexture9;
 	CComPtr<IDirect3DSurface9> m_pSrcSurface9;
 	HANDLE m_sharedHandle = nullptr;
 	bool m_bCanUseSharedHandle = true;
