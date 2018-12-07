@@ -121,6 +121,8 @@ static FmtConvParams_t s_FmtConvMapping[] = {
 	{ MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8, DXGI_FORMAT_B8G8R8X8_UNORM, 4, 2,        true,  &CopyFrameUpsideDown },
 	{ MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8, DXGI_FORMAT_B8G8R8A8_UNORM, 4, 2,        true,  &CopyFrameUpsideDown },
 	{ MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8, DXGI_FORMAT_B8G8R8X8_UNORM, 3, 2,        true,  &CopyFrameRGB24UpsideDown },
+	{ MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,       DXGI_FORMAT_UNKNOWN,        1, 2,        true,  &CopyFrameAsIs },
+	{ MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,       DXGI_FORMAT_UNKNOWN,        1, 2,        true,  &CopyFrameAsIs },
 };
 
 const FmtConvParams_t* GetFmtConvParams(GUID subtype)

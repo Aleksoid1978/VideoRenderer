@@ -51,7 +51,10 @@
 
 #define SAFE_CLOSE_HANDLE(p) { if (p) { if ((p) != INVALID_HANDLE_VALUE) ASSERT(CloseHandle(p)); (p) = nullptr; } }
 
-#define ALIGN(x, a) (((x)+(a)-1)&~((a)-1)) 
+#define ALIGN(x, a) (((x)+(a)-1)&~((a)-1))
+
+DEFINE_GUID(MEDIASUBTYPE_Y8,  0x20203859, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
+DEFINE_GUID(MEDIASUBTYPE_Y800,0x30303859, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 
 inline CStringW CStringFromGUID(const GUID& guid)
 {
