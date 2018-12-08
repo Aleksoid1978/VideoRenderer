@@ -203,6 +203,7 @@ private:
 	int m_iConvertShader = -1;
 
 	CFrameStats m_FrameStats;
+	CFrameStats m_DrawnFrameStats;
 	int m_SyncOffsetMS = 0;
 
 	// GDI+ handling

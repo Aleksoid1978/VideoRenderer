@@ -289,6 +289,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 void CDX9VideoProcessor::ReleaseVP()
 {
 	m_FrameStats.Reset();
+	m_DrawnFrameStats.Reset();
 
 	m_SrcSamples.Clear();
 	m_DXVA2Samples.clear();
@@ -867,6 +868,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 void CDX9VideoProcessor::Start()
 {
 	m_FrameStats.Reset();
+	m_DrawnFrameStats.Reset();
 }
 
 HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
@@ -896,6 +898,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 	hr = Render(1);
 	m_pFilter->StreamTime(rtClock);
+	m_DrawnFrameStats.Add(rtClock);
 
 	m_SyncOffsetMS = std::round((double)(rtClock - rtStart) / (UNITS / 1000));
 
@@ -907,6 +910,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 		hr = Render(2);
 		m_pFilter->StreamTime(rtClock);
+		m_DrawnFrameStats.Add(rtClock);
 
 		rtStart += rtFrameDur / 2;
 		m_SyncOffsetMS = std::round((double)(rtClock - rtStart) / (UNITS / 1000));
@@ -1465,7 +1469,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	HRESULT hr = m_pMemSurface->GetDesc(&desc);
 
 	CStringW str = L"Direct3D 9Ex";
-	str.AppendFormat(L"\nFrame rate   : %7.03f", m_FrameStats.GetAverageFps());
+	str.AppendFormat(L"\nFrame rate   : %7.03f, %7.03f", m_FrameStats.GetAverageFps(), m_DrawnFrameStats.GetAverageFps());
 	if (m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
 		str.Append(L" i");
 	}

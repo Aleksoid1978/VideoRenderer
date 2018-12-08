@@ -111,6 +111,7 @@ private:
 	CComPtr<ID2D1SolidColorBrush> m_pD2DBrushBlack;
 
 	CFrameStats m_FrameStats;
+	CFrameStats m_DrawnFrameStats;
 	int m_SyncOffsetMS = 0;
 
 public:

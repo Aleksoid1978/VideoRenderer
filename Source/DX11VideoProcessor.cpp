@@ -494,6 +494,8 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 	HRESULT hr = S_OK;
 
 	m_FrameStats.Reset();
+	m_DrawnFrameStats.Reset();
+
 	m_pSrcTexture2D_RGB.Release();
 	m_pSrcTexture9.Release();
 	m_pSrcSurface9.Release();
@@ -605,6 +607,7 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 void CDX11VideoProcessor::Start()
 {
 	m_FrameStats.Reset();
+	m_DrawnFrameStats.Reset();
 }
 
 HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
@@ -634,6 +637,7 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 	hr = Render(1);
 	m_pFilter->StreamTime(rtClock);
+	m_DrawnFrameStats.Add(rtClock);
 
 	m_SyncOffsetMS = std::round((double)(rtClock - rtStart) / (UNITS / 1000));
 
@@ -645,6 +649,7 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 		hr = Render(2);
 		m_pFilter->StreamTime(rtClock);
+		m_DrawnFrameStats.Add(rtClock);
 
 		rtStart += rtFrameDur / 2;
 		m_SyncOffsetMS = std::round((double)(rtClock - rtStart) / (UNITS / 1000));
@@ -1003,7 +1008,7 @@ HRESULT CDX11VideoProcessor::DrawStats()
 	}
 
 	CStringW str = L"Direct3D 11";
-	str.AppendFormat(L"\nFrame  rate  : %7.03f", m_FrameStats.GetAverageFps());
+	str.AppendFormat(L"\nFrame  rate  : %7.03f, %7.03f", m_FrameStats.GetAverageFps(), m_DrawnFrameStats.GetAverageFps());
 	if (m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
 		str.Append(L" i");
 	}
