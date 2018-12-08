@@ -871,36 +871,40 @@ void CDX9VideoProcessor::Start()
 
 HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 {
+	REFERENCE_TIME rtStart, rtEnd;
+	pSample->GetTime(&rtStart, &rtEnd);
+	m_FrameStats.Add(rtStart);
+
 	HRESULT hr = CopySample(pSample);
 	if (FAILED(hr)) {
 		return hr;
 	}
 
-	REFERENCE_TIME rtFrame = m_FrameStats.GetTime();
 	const REFERENCE_TIME rtFrameDur = m_FrameStats.GetAverageFrameDuration();
+	rtEnd = rtStart + rtFrameDur;
 	CRefTime rtClock;
 
 	m_pFilter->StreamTime(rtClock);
-	if (rtFrame + rtFrameDur < rtClock) {
+	if (rtEnd < rtClock) {
 		return S_FALSE; // skip this frame
 	}
 
 	hr = Render(1);
 	m_pFilter->StreamTime(rtClock);
 
-	m_SyncOffsetMS = std::round((double)(rtClock - rtFrame) / (UNITS / 1000));
+	m_SyncOffsetMS = std::round((double)(rtClock - rtStart) / (UNITS / 1000));
 
 	if (SecondFramePossible()) {
 		m_pFilter->StreamTime(rtClock);
-		if (rtFrame + rtFrameDur < rtClock) {
+		if (rtEnd < rtClock) {
 			return S_FALSE; // skip this frame
 		}
 
 		hr = Render(2);
 		m_pFilter->StreamTime(rtClock);
 
-		rtFrame += rtFrameDur / 2;
-		m_SyncOffsetMS = std::round((double)(rtClock - rtFrame) / (UNITS / 1000));
+		rtStart += rtFrameDur / 2;
+		m_SyncOffsetMS = std::round((double)(rtClock - rtStart) / (UNITS / 1000));
 	}
 
 	return hr;
@@ -1005,10 +1009,6 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		m_DXVA2Samples[i].SampleFormat.SampleFormat = SrcSample.SampleFormat;
 		m_DXVA2Samples[i].SrcSurface = SrcSample.pSrcSurface;
 	}
-
-	REFERENCE_TIME rtStart, rtEnd;
-	pSample->GetTime(&rtStart, &rtEnd);
-	m_FrameStats.Add(rtStart);
 
 	return hr;
 }
