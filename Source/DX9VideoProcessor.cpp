@@ -879,11 +879,9 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 	rtEnd = rtStart + rtFrameDur;
 	CRefTime rtClock;
 
-	if (!SecondFramePossible()) {
-		m_pFilter->StreamTime(rtClock);
-		if (rtEnd < rtClock) {
-			return S_FALSE; // skip this frame
-		}
+	m_pFilter->StreamTime(rtClock);
+	if (rtEnd < rtClock) {
+		return S_FALSE; // skip frame
 	}
 
 	HRESULT hr = CopySample(pSample);
@@ -893,7 +891,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 	m_pFilter->StreamTime(rtClock);
 	if (rtEnd < rtClock) {
-		return S_FALSE; // skip this frame
+		return S_FALSE; // skip frame
 	}
 
 	hr = Render(1);
@@ -904,7 +902,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 	if (SecondFramePossible()) {
 		m_pFilter->StreamTime(rtClock);
 		if (rtEnd < rtClock) {
-			return S_FALSE; // skip this frame
+			return S_FALSE; // skip frame
 		}
 
 		hr = Render(2);
