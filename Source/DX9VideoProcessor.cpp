@@ -917,7 +917,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				return hr;
 			}
 			if (desc.Format != m_srcD3DFormat || desc.Width != m_srcWidth || desc.Height != m_srcHeight) {
-				if (!InitializeTexVP(desc.Format, desc.Width, desc.Height)) {
+				if (!InitializeDXVA2VP(desc.Format, desc.Width, desc.Height)) {
 					return E_FAIL;
 				}
 			}
