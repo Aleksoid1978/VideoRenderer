@@ -614,10 +614,31 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 		return hr;
 	}
 
+	REFERENCE_TIME rtFrame = m_FrameStats.GetTime();
+	const REFERENCE_TIME rtFrameDur = m_FrameStats.GetAverageFrameDuration();
+	CRefTime rtClock;
+
+	m_pFilter->StreamTime(rtClock);
+	if (rtFrame + rtFrameDur < rtClock) {
+		return S_FALSE; // skip this frame
+	}
+
 	hr = Render(1);
+	m_pFilter->StreamTime(rtClock);
+
+	m_SyncOffsetMS = std::round((double)(rtClock - rtFrame) / (UNITS / 1000));
 
 	if (SecondFramePossible()) {
+		m_pFilter->StreamTime(rtClock);
+		if (rtFrame + rtFrameDur < rtClock) {
+			return S_FALSE; // skip this frame
+		}
+
 		hr = Render(2);
+		m_pFilter->StreamTime(rtClock);
+
+		rtFrame += rtFrameDur / 2;
+		m_SyncOffsetMS = std::round((double)(rtClock - rtFrame) / (UNITS / 1000));
 	}
 
 	return hr;
@@ -761,16 +782,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
 
-	CRefTime rtClock;
-	REFERENCE_TIME rtFrame = m_FrameStats.GetTime();
-	REFERENCE_TIME rtFrameDur = m_FrameStats.GetAverageFrameDuration();
-
 	if (field) {
-		m_pFilter->StreamTime(rtClock);
-
-		if (rtFrame + rtFrameDur < rtClock) {
-			return S_FALSE; // skip this frame
-		}
 		m_FieldDrawn = field;
 	}
 
@@ -786,12 +798,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	}
 
 	hr = m_pDXGISwapChain1->Present(0, 0);
-
-	m_pFilter->StreamTime(rtClock);
-	if (m_FieldDrawn == 2) {
-		rtFrame += rtFrameDur / 2;
-	}
-	m_SyncOffsetMS = std::round((double)(rtClock - rtFrame) / (UNITS / 1000)); // TODO use IDXGISwapChain::GetFrameStatistics
 
 	return hr;
 }

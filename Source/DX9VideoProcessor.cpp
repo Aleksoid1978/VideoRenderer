@@ -876,10 +876,31 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 		return hr;
 	}
 
+	REFERENCE_TIME rtFrame = m_FrameStats.GetTime();
+	const REFERENCE_TIME rtFrameDur = m_FrameStats.GetAverageFrameDuration();
+	CRefTime rtClock;
+
+	m_pFilter->StreamTime(rtClock);
+	if (rtFrame + rtFrameDur < rtClock) {
+		return S_FALSE; // skip this frame
+	}
+
 	hr = Render(1);
+	m_pFilter->StreamTime(rtClock);
+
+	m_SyncOffsetMS = std::round((double)(rtClock - rtFrame) / (UNITS / 1000));
 
 	if (SecondFramePossible()) {
+		m_pFilter->StreamTime(rtClock);
+		if (rtFrame + rtFrameDur < rtClock) {
+			return S_FALSE; // skip this frame
+		}
+
 		hr = Render(2);
+		m_pFilter->StreamTime(rtClock);
+
+		rtFrame += rtFrameDur / 2;
+		m_SyncOffsetMS = std::round((double)(rtClock - rtFrame) / (UNITS / 1000));
 	}
 
 	return hr;
@@ -996,16 +1017,7 @@ HRESULT CDX9VideoProcessor::Render(int field)
 {
 	if (m_SrcSamples.Empty()) return E_POINTER;
 
-	CRefTime rtClock;
-	REFERENCE_TIME rtFrame = m_FrameStats.GetTime();
-	REFERENCE_TIME rtFrameDur = m_FrameStats.GetAverageFrameDuration();
-
 	if (field) {
-		m_pFilter->StreamTime(rtClock);
-
-		if (rtFrame + rtFrameDur < rtClock) {
-			return S_FALSE; // skip this frame
-		}
 		m_FieldDrawn = field;
 	}
 
@@ -1042,12 +1054,6 @@ HRESULT CDX9VideoProcessor::Render(int field)
 	const CRect rDstPri(m_windowRect);
 
 	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
-
-	m_pFilter->StreamTime(rtClock);
-	if (m_FieldDrawn == 2) {
-		rtFrame += rtFrameDur / 2;
-	}
-	m_SyncOffsetMS = std::round((double)(rtClock - rtFrame) / (UNITS / 1000));
 
 	return hr;
 }
