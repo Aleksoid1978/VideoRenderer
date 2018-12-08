@@ -243,6 +243,7 @@ public:
 	BOOL InitMediaType(const CMediaType* pmt);
 	void Start();
 
+	HRESULT ProcessSample(IMediaSample* pSample);
 	HRESULT CopySample(IMediaSample* pSample);
 	// Render: 1 - render first fied or progressive frame, 2 - render second fied, 0 or other - forced repeat of render.
 	HRESULT Render(int field);

@@ -148,27 +148,9 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	HRESULT hr = S_OK;
 
 	if (m_bUsedD3D11) {
-		hr = m_DX11_VP.CopySample(pSample);
-		if (FAILED(hr)) {
-			return hr;
-		}
-
-		hr = m_DX11_VP.Render(1);
-
-		if (m_DX11_VP.SecondFramePossible()) {
-			hr = m_DX11_VP.Render(2);
-		}
+		hr = m_DX11_VP.ProcessSample(pSample);
 	} else {
-		hr = m_DX9_VP.CopySample(pSample);
-		if (FAILED(hr)) {
-			return hr;
-		}
-
-		hr = m_DX9_VP.Render(1);
-
-		if (m_DX9_VP.SecondFramePossible()) {
-			hr = m_DX9_VP.Render(2);
-		}
+		hr = m_DX9_VP.ProcessSample(pSample);
 	}
 
 	return hr;

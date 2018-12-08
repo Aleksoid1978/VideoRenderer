@@ -869,6 +869,22 @@ void CDX9VideoProcessor::Start()
 	m_FrameStats.Reset();
 }
 
+HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
+{
+	HRESULT hr = CopySample(pSample);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	hr = Render(1);
+
+	if (SecondFramePossible()) {
+		hr = Render(2);
+	}
+
+	return hr;
+}
+
 HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 {
 	HRESULT hr = S_OK;

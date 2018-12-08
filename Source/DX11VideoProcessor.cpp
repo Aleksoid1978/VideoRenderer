@@ -607,6 +607,22 @@ void CDX11VideoProcessor::Start()
 	m_FrameStats.Reset();
 }
 
+HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
+{
+	HRESULT hr = CopySample(pSample);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	hr = Render(1);
+
+	if (SecondFramePossible()) {
+		hr = Render(2);
+	}
+
+	return hr;
+}
+
 #define BREAK_ON_ERROR(hr) { if (FAILED(hr)) { m_bCanUseSharedHandle = false; break; }}
 
 HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
