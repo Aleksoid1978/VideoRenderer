@@ -30,10 +30,11 @@ private:
 	unsigned m_index = intervals;
 
 	inline unsigned GetNextIndex(unsigned idx) {
-		if (idx >= intervals) {
-			return 0;
-		}
-		return idx + 1;
+		return (idx >= intervals) ? 0 : idx + 1;
+	}
+
+	inline unsigned GetPrevIndex(unsigned idx) {
+		return (idx == 0) ? intervals : idx - 1;
 	}
 
 	inline unsigned GetPrev10Index(unsigned idx) {

@@ -613,14 +613,21 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 	pSample->GetTime(&rtStart, &rtEnd);
 	m_FrameStats.Add(rtStart);
 
+	const REFERENCE_TIME rtFrameDur = m_FrameStats.GetAverageFrameDuration();
+	rtEnd = rtStart + rtFrameDur;
+	CRefTime rtClock;
+
+	if (!SecondFramePossible()) {
+		m_pFilter->StreamTime(rtClock);
+		if (rtEnd < rtClock) {
+			return S_FALSE; // skip this frame
+		}
+	}
+
 	HRESULT hr = CopySample(pSample);
 	if (FAILED(hr)) {
 		return hr;
 	}
-
-	const REFERENCE_TIME rtFrameDur = m_FrameStats.GetAverageFrameDuration();
-	rtEnd = rtStart + rtFrameDur;
-	CRefTime rtClock;
 
 	m_pFilter->StreamTime(rtClock);
 	if (rtEnd < rtClock) {
