@@ -1469,10 +1469,11 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	HRESULT hr = m_pMemSurface->GetDesc(&desc);
 
 	CStringW str = L"Direct3D 9Ex";
-	str.AppendFormat(L"\nFrame rate   : %7.03f, %7.03f", m_FrameStats.GetAverageFps(), m_DrawnFrameStats.GetAverageFps());
+	str.AppendFormat(L"\nFrame rate   : %7.03f", m_FrameStats.GetAverageFps());
 	if (m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
-		str.Append(L" i");
+		str.AppendChar(L'i');
 	}
+	str.AppendFormat(L",%7.03f",  m_DrawnFrameStats.GetAverageFps());
 	str.Append(m_strStatsStatic);
 	str.AppendFormat(L"\nSync offset  :%+4d ms", m_SyncOffsetMS);
 

@@ -1008,10 +1008,11 @@ HRESULT CDX11VideoProcessor::DrawStats()
 	}
 
 	CStringW str = L"Direct3D 11";
-	str.AppendFormat(L"\nFrame  rate  : %7.03f, %7.03f", m_FrameStats.GetAverageFps(), m_DrawnFrameStats.GetAverageFps());
+	str.AppendFormat(L"\nFrame  rate  : %7.03f", m_FrameStats.GetAverageFps());
 	if (m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
-		str.Append(L" i");
+		str.AppendChar(L'i');
 	}
+	str.AppendFormat(L",%7.03f", m_DrawnFrameStats.GetAverageFps());
 	str.AppendFormat(L"\nInput format : %s %ux%u", DXGIFormatToString(m_srcDXGIFormat), m_srcWidth, m_srcHeight);
 	str.AppendFormat(L"\nVP output fmt: %s", DXGIFormatToString(m_VPOutputFmt));
 	str.AppendFormat(L"\nSync offset  :%+4d ms", m_SyncOffsetMS);
