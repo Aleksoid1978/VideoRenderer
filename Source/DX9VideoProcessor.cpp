@@ -27,6 +27,7 @@
 #include <Mferror.h>
 #include <dwmapi.h>
 #include "Time.h"
+#include "csputils.h"
 #include "DX9VideoProcessor.h"
 
 #define STATS_W 360
@@ -94,6 +95,56 @@ static HRESULT TextureBlt(IDirect3DDevice9* pD3DDev, MYD3DVERTEX<texcoords> v[4]
 	}
 
 	return S_OK;
+}
+
+void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspace)
+{
+	colorspace = {};
+
+	if (extfmt.value == 0) {
+		colorspace.space     = MP_CSP_RGB;
+		colorspace.levels    = MP_CSP_LEVELS_PC;
+		return;
+	}
+
+	switch (extfmt.NominalRange) {
+	case DXVA2_NominalRange_0_255:   colorspace.levels = MP_CSP_LEVELS_PC;   break;
+	case DXVA2_NominalRange_16_235:  colorspace.levels = MP_CSP_LEVELS_TV;   break;
+	default:
+		colorspace.levels = MP_CSP_LEVELS_AUTO;
+	}
+
+	switch (extfmt.VideoTransferMatrix) {
+	case DXVA2_VideoTransferMatrix_BT709:     colorspace.space = MP_CSP_BT_709;     break;
+	case DXVA2_VideoTransferMatrix_BT601:     colorspace.space = MP_CSP_BT_601;     break;
+	case DXVA2_VideoTransferMatrix_SMPTE240M: colorspace.space = MP_CSP_SMPTE_240M; break;
+	case 4:                                   colorspace.space = MP_CSP_BT_2020_NC; break;
+	case 7:                                   colorspace.space = MP_CSP_YCGCO;      break;
+	default:
+		colorspace.space = MP_CSP_AUTO;
+	}
+
+	switch (extfmt.VideoPrimaries) {
+	case DXVA2_VideoPrimaries_BT709:         colorspace.primaries = MP_CSP_PRIM_BT_709;     break;
+	case DXVA2_VideoPrimaries_BT470_2_SysM:  colorspace.primaries = MP_CSP_PRIM_BT_470M;    break;
+	case DXVA2_VideoPrimaries_BT470_2_SysBG: colorspace.primaries = MP_CSP_PRIM_BT_601_625; break;
+	case DXVA2_VideoPrimaries_SMPTE170M:
+	case DXVA2_VideoPrimaries_SMPTE240M:     colorspace.primaries = MP_CSP_PRIM_BT_601_525; break;
+	default:
+		colorspace.primaries = MP_CSP_PRIM_AUTO;
+	}
+
+	switch (extfmt.VideoTransferFunction) {
+	case DXVA2_VideoTransFunc_10:      colorspace.gamma = MP_CSP_TRC_LINEAR;  break;
+	case DXVA2_VideoTransFunc_18:      colorspace.gamma = MP_CSP_TRC_GAMMA18; break;
+	case DXVA2_VideoTransFunc_22:      colorspace.gamma = MP_CSP_TRC_GAMMA22; break;
+	case DXVA2_VideoTransFunc_709:
+	case DXVA2_VideoTransFunc_240M:    colorspace.gamma = MP_CSP_TRC_BT_1886; break;
+	case DXVA2_VideoTransFunc_sRGB:    colorspace.gamma = MP_CSP_TRC_SRGB;    break;
+	case DXVA2_VideoTransFunc_28:      colorspace.gamma = MP_CSP_TRC_GAMMA28; break;
+	default:
+		colorspace.gamma = MP_CSP_TRC_AUTO;
+	}
 }
 
 // CDX9VideoProcessor
@@ -840,6 +891,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcPitch &= ~1u;
 	}
 	else if (SubType == MEDIASUBTYPE_AYUV) {
+#if (0)
 		switch (m_srcExFmt.VideoTransferMatrix) {
 		default:
 		case DXVA2_VideoTransferMatrix_BT709:     m_iConvertShader = shader_bt709_to_rgb;     break;
@@ -848,6 +900,23 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		case 4:                                   m_iConvertShader = shader_bt2020nc_to_rgb;  break;
 		case 7:                                   m_iConvertShader = shader_ycgco_to_rgb;     break;
 		}
+#else
+		mp_csp_params csp_params;
+		set_colorspace(m_srcExFmt, csp_params.color);
+		mp_cmat cmatrix;
+		mp_get_csp_matrix(csp_params, cmatrix);
+
+		m_iConvertShader = shader_convert_color;
+
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				m_fConstData[i][j] = cmatrix.m[i][j];
+			}
+		}
+		for (int j = 0; j < 3; j++) {
+			m_fConstData[3][j] = cmatrix.c[j];
+		}
+#endif
 	}
 
 	if (FmtConvParams->DXVA2Format != D3DFMT_UNKNOWN && InitializeDXVA2VP(FmtConvParams->DXVA2Format, biWidth, biHeight)) {
@@ -1203,7 +1272,9 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 		hr = m_pD3DDevEx->GetRenderTarget(0, &pRenderTarget);
 		// set temp RenderTarget
 		hr = m_pD3DDevEx->SetRenderTarget(0, m_TexConvert.pSurface);
-
+		if (m_iConvertShader == shader_convert_color) {
+			hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_fConstData, std::size(m_fConstData));
+		}
 		hr = m_pD3DDevEx->SetPixelShader(m_PixelShaders[m_iConvertShader].pShader);
 		TextureCopy(pTexture);
 		m_pD3DDevEx->SetPixelShader(nullptr);

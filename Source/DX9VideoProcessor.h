@@ -177,6 +177,7 @@ private:
 		shader_smpte240m_to_rgb,
 		shader_bt2020nc_to_rgb,
 		shader_ycgco_to_rgb,
+		shader_convert_color,
 		shader_test,
 		shader_count
 	};
@@ -197,10 +198,12 @@ private:
 		{IDF_SHADER_SMPTE240M_TO_RGB},
 		{IDF_SHADER_BT2020NC_TO_RGB},
 		{IDF_SHADER_YCGCO_TO_RGB},
+		{IDF_SHADER_CONVERT_COLOR},
 		{IDF_SHADER_TEST},
 	};
 
 	int m_iConvertShader = -1;
+	float m_fConstData[4][4] = {};
 
 	CFrameStats m_FrameStats;
 	CFrameStats m_DrawnFrameStats;
