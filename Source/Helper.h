@@ -55,6 +55,7 @@
 
 DEFINE_GUID(MEDIASUBTYPE_Y8,   0x20203859, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 DEFINE_GUID(MEDIASUBTYPE_Y800, 0x30303859, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
+DEFINE_GUID(MEDIASUBTYPE_Y410, 0x30313459, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 
 inline CStringW CStringFromGUID(const GUID& guid)
 {
@@ -97,7 +98,7 @@ void CopyFrameRGB24UpsideDown(const UINT height, BYTE* dst, UINT dst_pitch, BYTE
 void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
 // NV12, P010
 void CopyFramePackedUV(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
-
-void CopyFrameData(const D3DFORMAT format, const UINT width, const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch, const UINT src_size);
+// Y410
+void CopyFrameY410(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
 
 void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d);

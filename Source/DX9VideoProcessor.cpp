@@ -890,7 +890,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	else if (SubType == MEDIASUBTYPE_P010) {
 		m_srcPitch &= ~1u;
 	}
-	else if (SubType == MEDIASUBTYPE_AYUV) {
+	else if (SubType == MEDIASUBTYPE_AYUV || SubType == MEDIASUBTYPE_Y410) {
 #if (0)
 		switch (m_srcExFmt.VideoTransferMatrix) {
 		default:
@@ -903,6 +903,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 #else
 		mp_csp_params csp_params;
 		set_colorspace(m_srcExFmt, csp_params.color);
+
 		mp_cmat cmatrix;
 		mp_get_csp_matrix(csp_params, cmatrix);
 
