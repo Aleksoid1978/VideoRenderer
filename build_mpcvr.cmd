@@ -47,8 +47,10 @@ IF DEFINED SEVENZIP (
     IF NOT EXIST "bin\%PCKG_NAME%" MD "bin\%PCKG_NAME%"
     COPY /Y /V "bin\Filters_x86\MpcVideoRenderer.ax"   "bin\%PCKG_NAME%\MpcVideoRenderer.ax" >NUL
     COPY /Y /V "bin\Filters_x64\MpcVideoRenderer64.ax" "bin\%PCKG_NAME%\MpcVideoRenderer64.ax" >NUL
-    COPY /Y /V "distrib\Install_MPCVR.cmd"             "bin\%PCKG_NAME%\Install_MPCVR.cmd" >NUL
-    COPY /Y /V "distrib\Uninstall_MPCVR.cmd"           "bin\%PCKG_NAME%\Uninstall_MPCVR.cmd" >NUL
+    COPY /Y /V "distrib\Install_MPCVR_32.cmd"          "bin\%PCKG_NAME%\Install_MPCVR_32.cmd" >NUL
+    COPY /Y /V "distrib\Install_MPCVR_64.cmd"          "bin\%PCKG_NAME%\Install_MPCVR_64.cmd" >NUL	
+    COPY /Y /V "distrib\Uninstall_MPCVR_32.cmd"        "bin\%PCKG_NAME%\Uninstall_MPCVR_32.cmd" >NUL
+    COPY /Y /V "distrib\Uninstall_MPCVR_64.cmd"        "bin\%PCKG_NAME%\Uninstall_MPCVR_64.cmd" >NUL
 
     TITLE Creating archive %PCKG_NAME%.zip...
     START "7z" /B /WAIT "%SEVENZIP%" a -tzip -mx9 "bin\%PCKG_NAME%.zip" ".\bin\%PCKG_NAME%\*"
