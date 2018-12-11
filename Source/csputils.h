@@ -83,11 +83,11 @@ struct mp_colorspace {
 struct mp_csp_params {
 	struct mp_colorspace color = {MP_CSP_BT_709, MP_CSP_LEVELS_TV}; // input colorspace
 	enum mp_csp_levels levels_out = MP_CSP_LEVELS_PC; // output device
-	float brightness = 0;
-	float contrast   = 1;
-	float hue        = 0;
-	float saturation = 1;
-	float gamma      = 1;
+	float brightness = 0; //    -1..0..1
+	float contrast   = 1; //     0..1..2
+	float hue        = 0; //   -pi..0..pi
+	float saturation = 1; //     0..1..2
+	float gamma      = 1; // 0.125..1..8
 	// discard U/V components
 	bool gray        = false;
 	// texture_bits/input_bits is for rescaling fixed point input to range [0,1]

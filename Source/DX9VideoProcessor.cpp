@@ -641,6 +641,16 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT w
 	m_srcWidth     = width;
 	m_srcHeight    = height;
 
+	// set ProcAmp ranges and values
+	m_DXVA2ProcValueRange[0] = {DXVA2FloatToFixed(-100), DXVA2FloatToFixed(100), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)};
+	m_DXVA2ProcValueRange[1] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01)};
+	m_DXVA2ProcValueRange[2] = {DXVA2FloatToFixed(-180), DXVA2FloatToFixed(180), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)};
+	m_DXVA2ProcValueRange[3] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01)};
+	m_BltParams.ProcAmpValues.Brightness = DXVA2FloatToFixed(0);
+	m_BltParams.ProcAmpValues.Contrast   = DXVA2FloatToFixed(1);
+	m_BltParams.ProcAmpValues.Hue        = DXVA2FloatToFixed(0);
+	m_BltParams.ProcAmpValues.Saturation = DXVA2FloatToFixed(1);
+
 	return TRUE;
 }
 
@@ -1625,7 +1635,6 @@ STDMETHODIMP_(ULONG) CDX9VideoProcessor::Release()
 
 STDMETHODIMP CDX9VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange)
 {
-	CheckPointer(m_pDXVA2_VP, MF_E_INVALIDREQUEST);
 	CheckPointer(pPropRange, E_POINTER);
 	switch (dwProperty) {
 	case DXVA2_ProcAmp_Brightness: memcpy(pPropRange, &m_DXVA2ProcValueRange[0], sizeof(DXVA2_ValueRange)); break;
@@ -1640,7 +1649,6 @@ STDMETHODIMP CDX9VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRa
 
 STDMETHODIMP CDX9VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *Values)
 {
-	CheckPointer(m_pDXVA2_VP, MF_E_INVALIDREQUEST);
 	CheckPointer(Values, E_POINTER);
 	if (dwFlags&DXVA2_ProcAmp_Brightness) { Values->Brightness = m_BltParams.ProcAmpValues.Brightness; }
 	if (dwFlags&DXVA2_ProcAmp_Contrast)   { Values->Contrast   = m_BltParams.ProcAmpValues.Contrast; }
@@ -1651,7 +1659,6 @@ STDMETHODIMP CDX9VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 
 STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *pValues)
 {
-	CheckPointer(m_pDXVA2_VP, MF_E_INVALIDREQUEST);
 	CheckPointer(pValues, E_POINTER);
 	if (dwFlags&DXVA2_ProcAmp_Brightness) {
 		m_BltParams.ProcAmpValues.Brightness.ll = std::clamp(pValues->Brightness.ll, m_DXVA2ProcValueRange[0].MinValue.ll, m_DXVA2ProcValueRange[0].MaxValue.ll);
@@ -1666,12 +1673,33 @@ STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 		m_BltParams.ProcAmpValues.Saturation.ll = std::clamp(pValues->Saturation.ll, m_DXVA2ProcValueRange[3].MinValue.ll, m_DXVA2ProcValueRange[3].MaxValue.ll);
 	}
 
+	if (!m_pDXVA2_VP && m_iConvertShader == shader_convert_color) {
+		mp_csp_params csp_params;
+		set_colorspace(m_srcExFmt, csp_params.color);
+		csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
+		csp_params.contrast   = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
+		csp_params.hue        = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
+		csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
+
+		mp_cmat cmatrix;
+		mp_get_csp_matrix(csp_params, cmatrix);
+
+		//TODO: lock "render" here
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				m_fConstData[i][j] = cmatrix.m[i][j];
+			}
+		}
+		for (int j = 0; j < 3; j++) {
+			m_fConstData[3][j] = cmatrix.c[j];
+		}
+	}
+
 	return S_OK;
 }
 
 STDMETHODIMP CDX9VideoProcessor::GetBackgroundColor(COLORREF *lpClrBkg)
 {
-	CheckPointer(m_pDXVA2_VP, MF_E_INVALIDREQUEST);
 	CheckPointer(lpClrBkg, E_POINTER);
 	*lpClrBkg = RGB(0, 0, 0);
 	return S_OK;
