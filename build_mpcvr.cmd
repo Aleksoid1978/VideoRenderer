@@ -51,6 +51,7 @@ IF DEFINED SEVENZIP (
     COPY /Y /V "distrib\Install_MPCVR_64.cmd"          "bin\%PCKG_NAME%\Install_MPCVR_64.cmd" >NUL	
     COPY /Y /V "distrib\Uninstall_MPCVR_32.cmd"        "bin\%PCKG_NAME%\Uninstall_MPCVR_32.cmd" >NUL
     COPY /Y /V "distrib\Uninstall_MPCVR_64.cmd"        "bin\%PCKG_NAME%\Uninstall_MPCVR_64.cmd" >NUL
+	COPY /Y /V "LICENSE"                               "bin\%PCKG_NAME%\LICENSE" >NUL
 
     TITLE Creating archive %PCKG_NAME%.zip...
     START "7z" /B /WAIT "%SEVENZIP%" a -tzip -mx9 "bin\%PCKG_NAME%.zip" ".\bin\%PCKG_NAME%\*"
