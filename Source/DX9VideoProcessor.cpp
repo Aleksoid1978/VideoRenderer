@@ -643,9 +643,9 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT w
 
 	// set ProcAmp ranges and values
 	m_DXVA2ProcValueRange[0] = {DXVA2FloatToFixed(-100), DXVA2FloatToFixed(100), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)};
-	m_DXVA2ProcValueRange[1] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01)};
+	m_DXVA2ProcValueRange[1] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f)};
 	m_DXVA2ProcValueRange[2] = {DXVA2FloatToFixed(-180), DXVA2FloatToFixed(180), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)};
-	m_DXVA2ProcValueRange[3] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01)};
+	m_DXVA2ProcValueRange[3] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f)};
 	m_BltParams.ProcAmpValues.Brightness = DXVA2FloatToFixed(0);
 	m_BltParams.ProcAmpValues.Contrast   = DXVA2FloatToFixed(1);
 	m_BltParams.ProcAmpValues.Hue        = DXVA2FloatToFixed(0);
