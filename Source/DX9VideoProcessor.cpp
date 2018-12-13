@@ -372,7 +372,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 
 BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height)
 {
-	DLog("CDX9VideoProcessor::InitializeDXVA2VP: begin");
+	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP started with input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
 
 	ReleaseVP();
 
@@ -380,8 +380,6 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 	if (!m_pDXVA2_VPService) {
 		return FALSE;
 	}
-
-	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : Input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
 
 	// Initialize the video descriptor.
 	DXVA2_VideoDesc videodesc = {};
@@ -477,6 +475,8 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 	m_srcWidth     = width;
 	m_srcHeight    = height;
 
+	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP completed successfully");
+
 	return TRUE;
 }
 
@@ -530,7 +530,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	// Check to see if the device supports all the VP operations we want.
 	const UINT VIDEO_REQUIED_OP = DXVA2_VideoProcess_YUV2RGB | DXVA2_VideoProcess_StretchX | DXVA2_VideoProcess_StretchY;
 	if ((m_DXVA2VPcaps.VideoProcessorOperations & VIDEO_REQUIED_OP) != VIDEO_REQUIED_OP) {
-		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : The DXVA2 device doesn't support the YUV2RGB & VP operations");
+		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : The DXVA2 device doesn't support the YUV2RGB & Stretch operations");
 		return FALSE;
 	}
 
@@ -601,12 +601,15 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 
 BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT width, const UINT height)
 {
+	DLog("CDX9VideoProcessor::InitializeTexVP started with input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
+
 	HRESULT hr = S_OK;
 	ReleaseVP();
 
 	m_pSrcVideoTexture.Release();
 	hr = m_pD3DDevEx->CreateTexture(width, height, 1, D3DUSAGE_DYNAMIC, d3dformat, D3DPOOL_DEFAULT, &m_pSrcVideoTexture, nullptr);
 	if (FAILED(hr)) {
+		DLog(L"CDX9VideoProcessor::InitializeTexVP : failed create SrcVideoTexture");
 		return FALSE;
 	}
 
@@ -633,6 +636,7 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT w
 		hr = m_pD3DDevEx->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, m_VPOutputFmt, D3DPOOL_DEFAULT, &m_TexConvert.pTexture, nullptr);
 		if (FAILED(hr) || FAILED(m_TexConvert.Update())) {
 			m_TexConvert.Release();
+			DLog(L"CDX9VideoProcessor::InitializeTexVP : failed create TexConvert");
 			return FALSE;
 		}
 	}
@@ -650,6 +654,8 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT w
 	m_BltParams.ProcAmpValues.Contrast   = DXVA2FloatToFixed(1);
 	m_BltParams.ProcAmpValues.Hue        = DXVA2FloatToFixed(0);
 	m_BltParams.ProcAmpValues.Saturation = DXVA2FloatToFixed(1);
+
+	DLog(L"CDX9VideoProcessor::InitializeTexVP completed successfully");
 
 	return TRUE;
 }
