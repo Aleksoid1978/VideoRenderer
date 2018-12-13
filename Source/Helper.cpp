@@ -55,13 +55,16 @@ CStringW HR2Str(const HRESULT hr)
 const wchar_t* D3DFormatToString(const D3DFORMAT format)
 {
 	switch (format) {
+	case D3DFMT_A2B10G10R10:   return L"A2B10G10R10";
 	case D3DFMT_A8R8G8B8:      return L"A8R8G8B8";      // DXVA-HD
 	case D3DFMT_X8R8G8B8:      return L"X8R8G8B8";
 	case D3DFMT_A2R10G10B10:   return L"A2R10G10B10";
 	case D3DFMT_A8P8:          return L"A8P8";          // DXVA-HD
 	case D3DFMT_P8:            return L"P8";            // DXVA-HD
-	case D3DFMT_A16B16G16R16F: return L"A16B16G16R16F"; // for shaders
-	case D3DFMT_A32B32G32R32F: return L"A32B32G32R32F"; // for shaders
+	case D3DFMT_L8:            return L"L8";
+	case D3DFMT_L16:           return L"L16";
+	case D3DFMT_A16B16G16R16F: return L"A16B16G16R16F";
+	case D3DFMT_A32B32G32R32F: return L"A32B32G32R32F";
 	case D3DFMT_YUY2:          return L"YUY2";
 	case D3DFMT_UYVY:          return L"UYVY";
 	case D3DFMT_NV12:          return L"NV12";

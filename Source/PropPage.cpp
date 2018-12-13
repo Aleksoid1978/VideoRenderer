@@ -137,10 +137,14 @@ HRESULT CVRMainPPage::OnActivate()
 
 	VRFrameInfo frameinfo;
 	m_pVideoRenderer->get_FrameInfo(&frameinfo);
-	str.Append(L"\r\n\r\n  Input");
-	str.AppendFormat(L"\r\nFormat: %s", D3DFormatToString(frameinfo.D3dFormat));
-	str.AppendFormat(L"\r\nWidth : %u", frameinfo.Width);
-	str.AppendFormat(L"\r\nHeight: %u", frameinfo.Height);
+	auto FmtConvParams = GetFmtConvParams(frameinfo.Subtype);
+	if (FmtConvParams) {
+		str.Append(L"\r\n\r\n  Input");
+		str.AppendFormat(L"\r\nFormat : %S", FmtConvParams->str);
+		str.AppendFormat(L"\r\nWidth  : %u", frameinfo.Width);
+		str.AppendFormat(L"\r\nHeight : %u", frameinfo.Height);
+		str.AppendFormat(L"\r\nSurface: %s", D3DFormatToString(frameinfo.D3dFormat));
+	}
 	SetDlgItemText(IDC_EDIT1, str);
 
 	return S_OK;

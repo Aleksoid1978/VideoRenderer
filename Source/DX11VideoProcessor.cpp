@@ -987,6 +987,7 @@ HRESULT CDX11VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
 {
 	CheckPointer(pFrameInfo, E_POINTER);
 
+	pFrameInfo->Subtype = m_mt.subtype;
 	pFrameInfo->Width = m_srcWidth;
 	pFrameInfo->Height = m_srcHeight;
 	pFrameInfo->D3dFormat = m_srcD3DFormat;

@@ -23,6 +23,7 @@
 #include <dxva2api.h>
 
 struct VRFrameInfo {
+	GUID Subtype;
 	unsigned Width;
 	unsigned Height;
 	D3DFORMAT D3dFormat;

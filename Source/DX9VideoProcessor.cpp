@@ -196,6 +196,16 @@ CDX9VideoProcessor::CDX9VideoProcessor(CBaseRenderer* pFilter)
 
 	// GDI+ handling
 	Gdiplus::GdiplusStartup(&m_gdiplusToken, &m_gdiplusStartupInput, nullptr);
+
+	// set default ProcAmp ranges and values
+	m_DXVA2ProcValueRange[0] = {DXVA2FloatToFixed(-100), DXVA2FloatToFixed(100), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)};
+	m_DXVA2ProcValueRange[1] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f)};
+	m_DXVA2ProcValueRange[2] = {DXVA2FloatToFixed(-180), DXVA2FloatToFixed(180), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)};
+	m_DXVA2ProcValueRange[3] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f)};
+	m_BltParams.ProcAmpValues.Brightness = DXVA2FloatToFixed(0);
+	m_BltParams.ProcAmpValues.Contrast   = DXVA2FloatToFixed(1);
+	m_BltParams.ProcAmpValues.Hue        = DXVA2FloatToFixed(0);
+	m_BltParams.ProcAmpValues.Saturation = DXVA2FloatToFixed(1);
 }
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
@@ -366,6 +376,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 	for (auto& shader : m_PixelShaders) {
 		shader.pShader.Release();
 	}
+	m_iConvertShader = -1;
 
 	m_pD3DDevEx.Release();
 }
@@ -376,7 +387,11 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 
 	ReleaseVP();
 
-	HRESULT hr = S_OK;
+	if (m_VendorId != PCIV_INTEL && (d3dformat == D3DFMT_X8R8G8B8 || d3dformat == D3DFMT_A8R8G8B8)) {
+		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : RGB input is not supported");
+		return FALSE;
+	}
+
 	if (!m_pDXVA2_VPService) {
 		return FALSE;
 	}
@@ -387,7 +402,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 	videodesc.SampleHeight = height;
 	//videodesc.SampleFormat.value = 0; // do not need to fill it here
 	videodesc.SampleFormat.SampleFormat = m_bInterlaced ? DXVA2_SampleFieldInterleavedOddFirst : DXVA2_SampleProgressiveFrame;
-	if (m_VendorId == PCIV_INTEL && (d3dformat == D3DFMT_X8R8G8B8 || d3dformat == D3DFMT_A8R8G8B8)) {
+	if (d3dformat == D3DFMT_X8R8G8B8 || d3dformat == D3DFMT_A8R8G8B8) {
 		videodesc.Format = D3DFMT_YUY2; // hack
 	} else {
 		videodesc.Format = d3dformat;
@@ -397,6 +412,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 	videodesc.OutputFrameFreq.Numerator = 60;
 	videodesc.OutputFrameFreq.Denominator = 1;
 
+	HRESULT hr = S_OK;
 	// Query the video processor GUID.
 	UINT count;
 	GUID* guids = nullptr;
@@ -569,7 +585,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	m_BltParams.BackgroundColor              = { 128 * 0x100, 128 * 0x100, 16 * 0x100, 0xFFFF }; // black
 	//m_BltParams.DestFormat.value           = 0; // output to RGB
 	m_BltParams.DestFormat.SampleFormat      = DXVA2_SampleProgressiveFrame; // output to progressive RGB
-	m_BltParams.ProcAmpValues.Brightness     = m_DXVA2ProcValueRange[0].DefaultValue;
+	m_BltParams.ProcAmpValues.Brightness     = m_DXVA2ProcValueRange[0].DefaultValue; // Hmm
 	m_BltParams.ProcAmpValues.Contrast       = m_DXVA2ProcValueRange[1].DefaultValue;
 	m_BltParams.ProcAmpValues.Hue            = m_DXVA2ProcValueRange[2].DefaultValue;
 	m_BltParams.ProcAmpValues.Saturation     = m_DXVA2ProcValueRange[3].DefaultValue;
@@ -645,15 +661,11 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT w
 	m_srcWidth     = width;
 	m_srcHeight    = height;
 
-	// set ProcAmp ranges and values
+	// set ProcAmp ranges
 	m_DXVA2ProcValueRange[0] = {DXVA2FloatToFixed(-100), DXVA2FloatToFixed(100), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)};
 	m_DXVA2ProcValueRange[1] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f)};
 	m_DXVA2ProcValueRange[2] = {DXVA2FloatToFixed(-180), DXVA2FloatToFixed(180), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)};
 	m_DXVA2ProcValueRange[3] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f)};
-	m_BltParams.ProcAmpValues.Brightness = DXVA2FloatToFixed(0);
-	m_BltParams.ProcAmpValues.Contrast   = DXVA2FloatToFixed(1);
-	m_BltParams.ProcAmpValues.Hue        = DXVA2FloatToFixed(0);
-	m_BltParams.ProcAmpValues.Saturation = DXVA2FloatToFixed(1);
 
 	DLog(L"CDX9VideoProcessor::InitializeTexVP completed successfully");
 
@@ -839,6 +851,8 @@ BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 
 BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 {
+	DLog(L"CDX9VideoProcessor::InitMediaType started");
+
 	if (!VerifyMediaType(pmt)) {
 		return FALSE;
 	}
@@ -906,19 +920,20 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	else if (SubType == MEDIASUBTYPE_P010) {
 		m_srcPitch &= ~1u;
 	}
-	else if (SubType == MEDIASUBTYPE_AYUV || SubType == MEDIASUBTYPE_Y410) {
-#if (0)
-		switch (m_srcExFmt.VideoTransferMatrix) {
-		default:
-		case DXVA2_VideoTransferMatrix_BT709:     m_iConvertShader = shader_bt709_to_rgb;     break;
-		case DXVA2_VideoTransferMatrix_BT601:     m_iConvertShader = shader_bt601_to_rgb;     break;
-		case DXVA2_VideoTransferMatrix_SMPTE240M: m_iConvertShader = shader_smpte240m_to_rgb; break;
-		case 4:                                   m_iConvertShader = shader_bt2020nc_to_rgb;  break;
-		case 7:                                   m_iConvertShader = shader_ycgco_to_rgb;     break;
-		}
-#else
+
+	if (FmtConvParams->DXVA2Format != D3DFMT_UNKNOWN && InitializeDXVA2VP(FmtConvParams->DXVA2Format, biWidth, biHeight)) {
+		m_srcSubType = SubType;
+		UpdateStatsStatic();
+		return TRUE;
+	}
+
+	if (SubType == MEDIASUBTYPE_AYUV || SubType == MEDIASUBTYPE_Y410) {
 		mp_csp_params csp_params;
 		set_colorspace(m_srcExFmt, csp_params.color);
+		csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
+		csp_params.contrast   = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
+		csp_params.hue        = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
+		csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
 
 		mp_cmat cmatrix;
 		mp_get_csp_matrix(csp_params, cmatrix);
@@ -933,13 +948,9 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		for (int j = 0; j < 3; j++) {
 			m_fConstData[3][j] = cmatrix.c[j];
 		}
-#endif
 	}
-
-	if (FmtConvParams->DXVA2Format != D3DFMT_UNKNOWN && InitializeDXVA2VP(FmtConvParams->DXVA2Format, biWidth, biHeight)) {
-		m_srcSubType = SubType;
-		UpdateStatsStatic();
-		return TRUE;
+	else {
+		m_iConvertShader = -1;
 	}
 
 	if (FmtConvParams->D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams->D3DFormat, biWidth, biHeight)) {
@@ -1217,6 +1228,7 @@ HRESULT CDX9VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
 {
 	CheckPointer(pFrameInfo, E_POINTER);
 
+	pFrameInfo->Subtype = m_srcSubType;
 	pFrameInfo->Width = m_srcWidth;
 	pFrameInfo->Height = m_srcHeight;
 	pFrameInfo->D3dFormat = m_srcD3DFormat;
