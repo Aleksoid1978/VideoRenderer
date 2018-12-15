@@ -74,6 +74,35 @@ class CDX9VideoProcessor
 	: public IMFVideoProcessor
 {
 private:
+	struct Tex_t {
+		CComPtr<IDirect3DTexture9> pTexture;
+		CComPtr<IDirect3DSurface9> pSurface;
+		UINT Width  = 0;
+		UINT Height = 0;
+		HRESULT Update() {
+			if (pTexture) {
+				HRESULT hr = pTexture->GetSurfaceLevel(0, &pSurface);
+				if (S_OK == hr) {
+					D3DSURFACE_DESC desc;
+					hr = pTexture->GetLevelDesc(0, &desc);
+					if (S_OK == hr) {
+						Width  = desc.Width;
+						Height = desc.Height;
+						return S_OK;
+					}
+				}
+				return hr;
+			}
+			return E_ABORT;
+		}
+		void Release() {
+			pSurface.Release();
+			pTexture.Release();
+			Width  = 0;
+			Height = 0;
+		}
+	};
+
 	long m_nRefCount = 1;
 	CBaseRenderer* m_pFilter = nullptr;
 
@@ -114,7 +143,7 @@ private:
 	DXVA2_ExtendedFormat m_srcExFmt = {};
 	bool m_bInterlaced = false;
 
-	CopyFrameDataFn m_pConvertFn = nullptr;
+	// Output parameters
 	D3DFORMAT m_VPOutputFmt = D3DFMT_X8R8G8B8;
 
 	// Processing parameters
@@ -130,36 +159,9 @@ private:
 	CComPtr<IDirect3DTexture9> m_pOSDTexture;
 	CComPtr<IDirect3DSurface9> m_pMemSurface;
 
+	// D3D9 Video Processor
 	CComPtr<IDirect3DTexture9> m_pSrcVideoTexture;
-	struct Tex_t {
-		CComPtr<IDirect3DTexture9> pTexture;
-		CComPtr<IDirect3DSurface9> pSurface;
-		UINT Width  = 0;
-		UINT Height = 0;
-		HRESULT Update() {
-			if (pTexture) {
-				HRESULT hr = pTexture->GetSurfaceLevel(0, &pSurface);
-				if (S_OK == hr) {
-					D3DSURFACE_DESC desc;
-					hr = pTexture->GetLevelDesc(0, &desc);
-					if (S_OK == hr) {
-						Width  = desc.Width;
-						Height = desc.Height;
-						return S_OK;
-					}
-				}
-				return hr;
-			}
-			return E_ABORT;
-		}
-		void Release() {
-			pSurface.Release();
-			pTexture.Release();
-			Width  = 0;
-			Height = 0;
-		}
-	};
-
+	CopyFrameDataFn m_pConvertFn = nullptr;
 	Tex_t m_TexConvert;
 	Tex_t m_TexResize;
 
@@ -172,11 +174,6 @@ private:
 		shader_downscaler_hamming_y,
 		shader_downscaler_bicubic_x,
 		shader_downscaler_bicubic_y,
-		shader_bt601_to_rgb,
-		shader_bt709_to_rgb,
-		shader_smpte240m_to_rgb,
-		shader_bt2020nc_to_rgb,
-		shader_ycgco_to_rgb,
 		shader_convert_color,
 		shader_test,
 		shader_count
@@ -193,11 +190,6 @@ private:
 		{IDF_SHADER_DOWNSCALER_HAMMING_Y},
 		{IDF_SHADER_DOWNSCALER_BICUBIC_X},
 		{IDF_SHADER_DOWNSCALER_BICUBIC_Y},
-		{IDF_SHADER_BT601_TO_RGB},
-		{IDF_SHADER_BT709_TO_RGB},
-		{IDF_SHADER_SMPTE240M_TO_RGB},
-		{IDF_SHADER_BT2020NC_TO_RGB},
-		{IDF_SHADER_YCGCO_TO_RGB},
 		{IDF_SHADER_CONVERT_COLOR},
 		{IDF_SHADER_TEST},
 	};

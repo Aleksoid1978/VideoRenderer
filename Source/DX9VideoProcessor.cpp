@@ -376,7 +376,6 @@ void CDX9VideoProcessor::ReleaseDevice()
 	for (auto& shader : m_PixelShaders) {
 		shader.pShader.Release();
 	}
-	m_iConvertShader = -1;
 
 	m_pD3DDevEx.Release();
 }
@@ -897,6 +896,8 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		return FALSE;
 	}
 
+	m_iConvertShader = -1;
+
 	if (!FmtConvParams->bRGB && m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
 		if (biWidth <= 1024 && biHeight <= 576) { // SD
 			m_srcExFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT601;
@@ -948,9 +949,6 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		for (int j = 0; j < 3; j++) {
 			m_fConstData[3][j] = cmatrix.c[j];
 		}
-	}
-	else {
-		m_iConvertShader = -1;
 	}
 
 	if (FmtConvParams->D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams->D3DFormat, biWidth, biHeight)) {
@@ -1653,6 +1651,10 @@ STDMETHODIMP_(ULONG) CDX9VideoProcessor::Release()
 
 STDMETHODIMP CDX9VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange)
 {
+	if (!m_pDXVA2_VP && m_iConvertShader < 0) {
+		return MF_E_INVALIDREQUEST;
+	}
+
 	CheckPointer(pPropRange, E_POINTER);
 	switch (dwProperty) {
 	case DXVA2_ProcAmp_Brightness: memcpy(pPropRange, &m_DXVA2ProcValueRange[0], sizeof(DXVA2_ValueRange)); break;
@@ -1667,6 +1669,10 @@ STDMETHODIMP CDX9VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRa
 
 STDMETHODIMP CDX9VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *Values)
 {
+	if (!m_pDXVA2_VP && m_iConvertShader < 0) {
+		return MF_E_INVALIDREQUEST;
+	}
+
 	CheckPointer(Values, E_POINTER);
 	if (dwFlags&DXVA2_ProcAmp_Brightness) { Values->Brightness = m_BltParams.ProcAmpValues.Brightness; }
 	if (dwFlags&DXVA2_ProcAmp_Contrast)   { Values->Contrast   = m_BltParams.ProcAmpValues.Contrast; }
@@ -1677,6 +1683,10 @@ STDMETHODIMP CDX9VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 
 STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *pValues)
 {
+	if (!m_pDXVA2_VP && m_iConvertShader < 0) {
+		return MF_E_INVALIDREQUEST;
+	}
+
 	CheckPointer(pValues, E_POINTER);
 	if (dwFlags&DXVA2_ProcAmp_Brightness) {
 		m_BltParams.ProcAmpValues.Brightness.ll = std::clamp(pValues->Brightness.ll, m_DXVA2ProcValueRange[0].MinValue.ll, m_DXVA2ProcValueRange[0].MaxValue.ll);

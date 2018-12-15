@@ -48,11 +48,6 @@ fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic_y.cso" "Resizers
 fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_x.cso" "Resizers\downscaler.hlsl" /DFILTER=4 /DAXIS=0
 fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_y.cso" "Resizers\downscaler.hlsl" /DFILTER=4 /DAXIS=1
 
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\bt601_to_rgb.cso" "Convert\ycbcr_to_rgb.hlsl" /DSTD=601
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\bt709_to_rgb.cso" "Convert\ycbcr_to_rgb.hlsl" /DSTD=709
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\smpte240m_to_rgb.cso" "Convert\ycbcr_to_rgb.hlsl" /DSTD=240
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\bt2020nc_to_rgb.cso" "Convert\ycbcr_to_rgb.hlsl" /DSTD=2020
-
 EXIT /B
 
 :SubColorText
