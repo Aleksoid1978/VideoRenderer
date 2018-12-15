@@ -647,15 +647,6 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT w
 		}
 	}
 
-	if (m_iConvertShader >= 0) {
-		hr = m_pD3DDevEx->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, m_VPOutputFmt, D3DPOOL_DEFAULT, &m_TexConvert.pTexture, nullptr);
-		if (FAILED(hr) || FAILED(m_TexConvert.Update())) {
-			m_TexConvert.Release();
-			DLog(L"CDX9VideoProcessor::InitializeTexVP : failed create TexConvert");
-			return FALSE;
-		}
-	}
-
 	m_srcD3DFormat = d3dformat;
 	m_srcWidth     = width;
 	m_srcHeight    = height;
@@ -922,23 +913,26 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcPitch &= ~1u;
 	}
 
+	// DXVA2 Video Processor
 	if (FmtConvParams->DXVA2Format != D3DFMT_UNKNOWN && InitializeDXVA2VP(FmtConvParams->DXVA2Format, biWidth, biHeight)) {
 		m_srcSubType = SubType;
 		UpdateStatsStatic();
 		return TRUE;
 	}
 
-	if (SubType == MEDIASUBTYPE_AYUV || SubType == MEDIASUBTYPE_Y410) {
-		mp_csp_params csp_params;
-		set_colorspace(m_srcExFmt, csp_params.color);
-		csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
-		csp_params.contrast   = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
-		csp_params.hue        = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
-		csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
+	// Tex Video Processor
+	mp_csp_params csp_params;
+	set_colorspace(m_srcExFmt, csp_params.color);
+	csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
+	csp_params.contrast   = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
+	csp_params.hue        = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
+	csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
 
+	bool bPprocRGB = FmtConvParams->bRGB && (fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f);
+
+	if (SubType == MEDIASUBTYPE_AYUV || SubType == MEDIASUBTYPE_Y410 || bPprocRGB) {
 		mp_cmat cmatrix;
 		mp_get_csp_matrix(csp_params, cmatrix);
-
 		m_iConvertShader = shader_convert_color;
 
 		for (int i = 0; i < 3; i++) {
@@ -1294,23 +1288,32 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 	IDirect3DSurface9* pSurface = m_SrcSamples.GetAt(0).pSrcSurface;
 
 	if (m_iConvertShader >= 0) {
-		// remember current RenderTarget
-		CComPtr<IDirect3DSurface9> pRenderTarget;
-		hr = m_pD3DDevEx->GetRenderTarget(0, &pRenderTarget);
-		// set temp RenderTarget
-		hr = m_pD3DDevEx->SetRenderTarget(0, m_TexConvert.pSurface);
-		if (m_iConvertShader == shader_convert_color) {
-			hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_fConstData, std::size(m_fConstData));
+		if (!m_TexConvert.pTexture) {
+			hr = m_pD3DDevEx->CreateTexture(m_srcWidth, m_srcHeight, 1, D3DUSAGE_RENDERTARGET, m_VPOutputFmt, D3DPOOL_DEFAULT, &m_TexConvert.pTexture, nullptr);
+			if (FAILED(hr) || FAILED(m_TexConvert.Update())) {
+				m_TexConvert.Release();
+			}
 		}
-		hr = m_pD3DDevEx->SetPixelShader(m_PixelShaders[m_iConvertShader].pShader);
-		TextureCopy(pTexture);
-		m_pD3DDevEx->SetPixelShader(nullptr);
 
-		// restore current RenderTarget
-		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-		
-		pTexture = m_TexConvert.pTexture;
-		pSurface = m_TexConvert.pSurface;
+		if (m_TexConvert.pTexture) {
+			// remember current RenderTarget
+			CComPtr<IDirect3DSurface9> pRenderTarget;
+			hr = m_pD3DDevEx->GetRenderTarget(0, &pRenderTarget);
+			// set temp RenderTarget
+			hr = m_pD3DDevEx->SetRenderTarget(0, m_TexConvert.pSurface);
+			if (m_iConvertShader == shader_convert_color) {
+				hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_fConstData, std::size(m_fConstData));
+			}
+			hr = m_pD3DDevEx->SetPixelShader(m_PixelShaders[m_iConvertShader].pShader);
+			TextureCopy(pTexture);
+			m_pD3DDevEx->SetPixelShader(nullptr);
+
+			// restore current RenderTarget
+			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
+
+			pTexture = m_TexConvert.pTexture;
+			pSurface = m_TexConvert.pSurface;
+		}
 	}
 
 	if (resizerX < 0 && resizerY < 0) {
@@ -1651,7 +1654,7 @@ STDMETHODIMP_(ULONG) CDX9VideoProcessor::Release()
 
 STDMETHODIMP CDX9VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange)
 {
-	if (!m_pDXVA2_VP && m_iConvertShader < 0) {
+	if (m_srcSubType == GUID_NULL) {
 		return MF_E_INVALIDREQUEST;
 	}
 
@@ -1669,7 +1672,7 @@ STDMETHODIMP CDX9VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRa
 
 STDMETHODIMP CDX9VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *Values)
 {
-	if (!m_pDXVA2_VP && m_iConvertShader < 0) {
+	if (m_srcSubType == GUID_NULL) {
 		return MF_E_INVALIDREQUEST;
 	}
 
@@ -1683,7 +1686,7 @@ STDMETHODIMP CDX9VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 
 STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *pValues)
 {
-	if (!m_pDXVA2_VP && m_iConvertShader < 0) {
+	if (m_srcSubType == GUID_NULL) {
 		return MF_E_INVALIDREQUEST;
 	}
 
@@ -1701,25 +1704,36 @@ STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 		m_BltParams.ProcAmpValues.Saturation.ll = std::clamp(pValues->Saturation.ll, m_DXVA2ProcValueRange[3].MinValue.ll, m_DXVA2ProcValueRange[3].MaxValue.ll);
 	}
 
-	if (!m_pDXVA2_VP && m_iConvertShader == shader_convert_color) {
-		mp_csp_params csp_params;
-		set_colorspace(m_srcExFmt, csp_params.color);
-		csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
-		csp_params.contrast   = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
-		csp_params.hue        = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
-		csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
+	if (!m_pDXVA2_VP) {
+		auto FmtConvParams = GetFmtConvParams(m_srcSubType);
+		if (FmtConvParams) {
+			mp_csp_params csp_params;
+			set_colorspace(m_srcExFmt, csp_params.color);
+			csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
+			csp_params.contrast = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
+			csp_params.hue = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
+			csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
 
-		mp_cmat cmatrix;
-		mp_get_csp_matrix(csp_params, cmatrix);
+			bool bPprocRGB = FmtConvParams->bRGB && (fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f);
 
-		//TODO: lock "render" here
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
-				m_fConstData[i][j] = cmatrix.m[i][j];
+			//TODO: lock "render" here
+			if (m_srcSubType == MEDIASUBTYPE_AYUV || m_srcSubType == MEDIASUBTYPE_Y410 || bPprocRGB) {
+				mp_cmat cmatrix;
+				mp_get_csp_matrix(csp_params, cmatrix);
+				m_iConvertShader = shader_convert_color;
+
+				//TODO: lock "render" here
+				for (int i = 0; i < 3; i++) {
+					for (int j = 0; j < 3; j++) {
+						m_fConstData[i][j] = cmatrix.m[i][j];
+					}
+				}
+				for (int j = 0; j < 3; j++) {
+					m_fConstData[3][j] = cmatrix.c[j];
+				}
+			} else {
+				m_iConvertShader = -1;
 			}
-		}
-		for (int j = 0; j < 3; j++) {
-			m_fConstData[3][j] = cmatrix.c[j];
 		}
 	}
 
