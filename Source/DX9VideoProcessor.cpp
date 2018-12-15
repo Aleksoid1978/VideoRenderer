@@ -1296,11 +1296,9 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 		}
 
 		if (m_TexConvert.pTexture) {
-			// remember current RenderTarget
-			CComPtr<IDirect3DSurface9> pRenderTarget;
-			hr = m_pD3DDevEx->GetRenderTarget(0, &pRenderTarget);
 			// set temp RenderTarget
 			hr = m_pD3DDevEx->SetRenderTarget(0, m_TexConvert.pSurface);
+
 			if (m_iConvertShader == shader_convert_color) {
 				hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_fConstData, std::size(m_fConstData));
 			}
@@ -1329,8 +1327,8 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 		// two pass resize
 
 		// check intermediate texture
-		UINT texWidth = w2;
-		UINT texHeight = h1;
+		const UINT texWidth = w2;
+		const UINT texHeight = h1;
 
 		if (m_TexResize.pTexture) {
 			if (texWidth != m_TexResize.Width || texHeight != m_TexResize.Height) {
@@ -1350,9 +1348,6 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 
 		CRect resizeRect(0, 0, m_TexResize.Width, m_TexResize.Height);
 
-		// remember current RenderTarget
-		CComPtr<IDirect3DSurface9> pRenderTarget;
-		hr = m_pD3DDevEx->GetRenderTarget(0, &pRenderTarget);
 		// set temp RenderTarget
 		hr = m_pD3DDevEx->SetRenderTarget(0, m_TexResize.pSurface);
 

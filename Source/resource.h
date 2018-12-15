@@ -13,6 +13,8 @@
 #define IDF_SHADER_DOWNSCALER_BICUBIC_X 738
 #define IDF_SHADER_DOWNSCALER_BICUBIC_Y 739
 #define IDF_SHADER_CONVERT_COLOR        750
+#define IDF_SHADER_CORRECTION_ST2084    751
+#define IDF_SHADER_CORRECTION_HLG       752
 #define IDF_SHADER_TEST                 790
 #define IDC_CHECK1                      1001
 #define IDC_CHECK2                      1002

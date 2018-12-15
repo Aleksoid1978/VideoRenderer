@@ -181,7 +181,15 @@
     <None Include="Convert\ycbcr_coefficients.hlsl">
       <FileType>Document</FileType>
     </None>
+    <None Include="Convert\colorspace_gamut_conversion.hlsl">
+      <FileType>Document</FileType>
+    </None>
     <FxCompile Include="Convert\convert_color.hlsl" />
+    <FxCompile Include="Convert\correction_hlg.hlsl" />
+    <FxCompile Include="Convert\correction_st2084.hlsl" />
+    <None Include="Convert\hdr_tone_mapping.hlsl">
+      <FileType>Document</FileType>
+    </None>
     <FxCompile Include="Convert\ycbcr_to_rgb.hlsl" />
     <FxCompile Include="Convert\ycgco_to_rgb.hlsl" />
     <FxCompile Include="Resizers\downscaler.hlsl" />

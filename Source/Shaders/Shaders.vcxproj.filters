@@ -26,6 +26,18 @@
     <FxCompile Include="Convert\convert_color.hlsl">
       <Filter>Convert</Filter>
     </FxCompile>
+    <FxCompile Include="Convert\colorspace_gamut_conversion.hlsl">
+      <Filter>Convert</Filter>
+    </FxCompile>
+    <FxCompile Include="Convert\correction_hlg.hlsl">
+      <Filter>Convert</Filter>
+    </FxCompile>
+    <FxCompile Include="Convert\correction_st2084.hlsl">
+      <Filter>Convert</Filter>
+    </FxCompile>
+    <FxCompile Include="Convert\hdr_tone_mapping.hlsl">
+      <Filter>Convert</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Resizers">
