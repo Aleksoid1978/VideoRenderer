@@ -1258,18 +1258,24 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 	IDirect3DTexture9* pTexture = nullptr;
 	IDirect3DSurface9* pSurface = pRenderTarget;
 
+	CRect VPRect = rDstRect;
 	if (m_iConvertShader >= 0) {
-		if (!m_TexConvert.pTexture) {
-			D3DSURFACE_DESC desc;
-			hr = pRenderTarget->GetDesc(&desc);
+		// check intermediate texture
+		const UINT texWidth = rDstRect.Width();
+		const UINT texHeight = rDstRect.Height();
+		if (texWidth != m_TexConvert.Width || texHeight != m_TexConvert.Height) {
+			m_TexConvert.Release(); // need new texture
+		}
 
-			hr = m_pD3DDevEx->CreateTexture(desc.Width, desc.Height, 1, D3DUSAGE_RENDERTARGET, m_VPOutputFmt, D3DPOOL_DEFAULT, &m_TexConvert.pTexture, nullptr);
+		if (!m_TexConvert.pTexture) {
+			hr = m_pD3DDevEx->CreateTexture(texWidth, texHeight, 1, D3DUSAGE_RENDERTARGET, m_VPOutputFmt, D3DPOOL_DEFAULT, &m_TexConvert.pTexture, nullptr);
 			if (FAILED(hr) || FAILED(m_TexConvert.Update())) {
 				m_TexConvert.Release();
 			}
 		}
 
 		if (m_TexConvert.pTexture) {
+			VPRect.SetRect(0, 0, texWidth, texHeight);
 			pTexture = m_TexConvert.pTexture;
 			pSurface = m_TexConvert.pSurface;
 		}
@@ -1281,15 +1287,15 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 	} else {
 		m_BltParams.TargetFrame = m_SrcSamples.Get().Start;
 	}
-	m_BltParams.TargetRect = rDstRect;
-	m_BltParams.ConstrictionSize.cx = rDstRect.Width();
-	m_BltParams.ConstrictionSize.cy = rDstRect.Height();
+	m_BltParams.TargetRect = VPRect;
+	m_BltParams.ConstrictionSize.cx = VPRect.Width();
+	m_BltParams.ConstrictionSize.cy = VPRect.Height();
 
 	// Initialize main stream video samples
 	for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
 		auto & SrcSample = m_SrcSamples.GetAt(i);
 		m_DXVA2Samples[i].SrcRect = rSrcRect;
-		m_DXVA2Samples[i].DstRect = rDstRect;
+		m_DXVA2Samples[i].DstRect = VPRect;
 	}
 
 	hr = m_pDXVA2_VP->VideoProcessBlt(pSurface, &m_BltParams, m_DXVA2Samples.data(), m_DXVA2Samples.size(), nullptr);
@@ -1299,9 +1305,8 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 
 	if (pTexture) {
 		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-		hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_fConstData, std::size(m_fConstData));
 		hr = m_pD3DDevEx->SetPixelShader(m_PixelShaders[m_iConvertShader].pShader);
-		TextureCopy(pTexture);
+		TextureResize(pTexture, VPRect, rDstRect, D3DTEXF_POINT);
 		m_pD3DDevEx->SetPixelShader(nullptr);
 	}
 
