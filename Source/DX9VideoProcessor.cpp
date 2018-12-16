@@ -934,14 +934,15 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	csp_params.contrast   = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
 	csp_params.hue        = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
 	csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
+	csp_params.gray = SubType == MEDIASUBTYPE_Y8 || SubType == MEDIASUBTYPE_Y800;
 
 	bool bPprocRGB = FmtConvParams->bRGB && (fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f);
 
 	if (SubType == MEDIASUBTYPE_AYUV || SubType == MEDIASUBTYPE_Y410 || bPprocRGB) {
 		mp_cmat cmatrix;
 		mp_get_csp_matrix(csp_params, cmatrix);
-		m_iConvertShader = shader_convert_color;
 
+		m_iConvertShader = shader_convert_color;
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++) {
 				m_fConstData[i][j] = cmatrix.m[i][j];
@@ -1744,16 +1745,16 @@ STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 			csp_params.contrast = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
 			csp_params.hue = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
 			csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
+			csp_params.gray = m_srcSubType == MEDIASUBTYPE_Y8 || m_srcSubType == MEDIASUBTYPE_Y800;
 
 			bool bPprocRGB = FmtConvParams->bRGB && (fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f);
 
-			//TODO: lock "render" here
 			if (m_srcSubType == MEDIASUBTYPE_AYUV || m_srcSubType == MEDIASUBTYPE_Y410 || bPprocRGB) {
 				mp_cmat cmatrix;
 				mp_get_csp_matrix(csp_params, cmatrix);
-				m_iConvertShader = shader_convert_color;
 
 				//TODO: lock "render" here
+				m_iConvertShader = shader_convert_color;
 				for (int i = 0; i < 3; i++) {
 					for (int j = 0; j < 3; j++) {
 						m_fConstData[i][j] = cmatrix.m[i][j];
