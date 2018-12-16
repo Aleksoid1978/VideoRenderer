@@ -987,11 +987,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 		return hr;
 	}
 
-	m_pFilter->StreamTime(rtClock);
-	if (rtEnd < rtClock) {
-		return S_FALSE; // skip frame
-	}
-
+	// always Render(1) a frame after CopySample()
 	hr = Render(1);
 	m_pFilter->StreamTime(rtClock);
 	m_DrawnFrameStats.Add(rtClock);
