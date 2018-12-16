@@ -142,6 +142,8 @@ void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspac
 	case DXVA2_VideoTransFunc_240M:    colorspace.gamma = MP_CSP_TRC_BT_1886; break;
 	case DXVA2_VideoTransFunc_sRGB:    colorspace.gamma = MP_CSP_TRC_SRGB;    break;
 	case DXVA2_VideoTransFunc_28:      colorspace.gamma = MP_CSP_TRC_GAMMA28; break;
+	case 15:                           colorspace.gamma = MP_CSP_TRC_PQ;      break;
+	case 18:                           colorspace.gamma = MP_CSP_TRC_HLG;     break;
 	default:
 		colorspace.gamma = MP_CSP_TRC_AUTO;
 	}
@@ -911,49 +913,49 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		}
 	}
 
-	// DXVA2 Video Processor
 	m_iConvertShader = -1;
-	if (m_srcExFmt.VideoTransferFunction == 15) {
-		m_iConvertShader = shader_correction_st2084;
-	}
-	else if (m_srcExFmt.VideoTransferFunction == 18) {
-		m_iConvertShader = shader_correction_hlg;
-	}
 
+	// DXVA2 Video Processor
 	if (FmtConvParams->DXVA2Format != D3DFMT_UNKNOWN && InitializeDXVA2VP(FmtConvParams->DXVA2Format, biWidth, biHeight)) {
+		if (m_srcExFmt.VideoTransferFunction == 15) {
+			m_iConvertShader = shader_correction_st2084;
+		}
+		else if (m_srcExFmt.VideoTransferFunction == 18) {
+			m_iConvertShader = shader_correction_hlg;
+		}
+
 		m_srcSubType = SubType;
 		UpdateStatsStatic();
 		return TRUE;
 	}
 
 	// Tex Video Processor
-	m_iConvertShader = -1;
-	mp_csp_params csp_params;
-	set_colorspace(m_srcExFmt, csp_params.color);
-	csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
-	csp_params.contrast   = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
-	csp_params.hue        = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
-	csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
-	csp_params.gray = SubType == MEDIASUBTYPE_Y8 || SubType == MEDIASUBTYPE_Y800;
+	if (FmtConvParams->D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams->D3DFormat, biWidth, biHeight)) {
+		mp_csp_params csp_params;
+		set_colorspace(m_srcExFmt, csp_params.color);
+		csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
+		csp_params.contrast   = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
+		csp_params.hue        = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
+		csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
+		csp_params.gray = SubType == MEDIASUBTYPE_Y8 || SubType == MEDIASUBTYPE_Y800;
 
-	bool bPprocRGB = FmtConvParams->bRGB && (fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f);
+		bool bPprocRGB = FmtConvParams->bRGB && (fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f);
 
-	if (SubType == MEDIASUBTYPE_AYUV || SubType == MEDIASUBTYPE_Y410 || bPprocRGB) {
-		mp_cmat cmatrix;
-		mp_get_csp_matrix(csp_params, cmatrix);
+		if (SubType == MEDIASUBTYPE_AYUV || SubType == MEDIASUBTYPE_Y410 || bPprocRGB) {
+			mp_cmat cmatrix;
+			mp_get_csp_matrix(csp_params, cmatrix);
 
-		m_iConvertShader = shader_convert_color;
-		for (int i = 0; i < 3; i++) {
+			m_iConvertShader = shader_convert_color;
+			for (int i = 0; i < 3; i++) {
+				for (int j = 0; j < 3; j++) {
+					m_fConstData[i][j] = cmatrix.m[i][j];
+				}
+			}
 			for (int j = 0; j < 3; j++) {
-				m_fConstData[i][j] = cmatrix.m[i][j];
+				m_fConstData[3][j] = cmatrix.c[j];
 			}
 		}
-		for (int j = 0; j < 3; j++) {
-			m_fConstData[3][j] = cmatrix.c[j];
-		}
-	}
 
-	if (FmtConvParams->D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams->D3DFormat, biWidth, biHeight)) {
 		m_srcSubType = SubType;
 		UpdateStatsStatic();
 		return TRUE;
