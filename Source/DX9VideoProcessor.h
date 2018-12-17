@@ -177,6 +177,7 @@ private:
 		shader_convert_color,
 		shader_correction_st2084,
 		shader_correction_hlg,
+		shader_correction_ycgco,
 		shader_test,
 		shader_count
 	};
@@ -195,6 +196,7 @@ private:
 		{IDF_SHADER_CONVERT_COLOR},
 		{IDF_SHADER_CORRECTION_ST2084},
 		{IDF_SHADER_CORRECTION_HLG},
+		{IDF_SHADER_CORRECTION_YCGCO},
 		{IDF_SHADER_TEST},
 	};
 

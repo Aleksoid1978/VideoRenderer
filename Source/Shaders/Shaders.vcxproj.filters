@@ -26,16 +26,13 @@
     <FxCompile Include="Convert\convert_color.hlsl">
       <Filter>Convert</Filter>
     </FxCompile>
-    <FxCompile Include="Convert\colorspace_gamut_conversion.hlsl">
-      <Filter>Convert</Filter>
-    </FxCompile>
     <FxCompile Include="Convert\correction_hlg.hlsl">
       <Filter>Convert</Filter>
     </FxCompile>
     <FxCompile Include="Convert\correction_st2084.hlsl">
       <Filter>Convert</Filter>
     </FxCompile>
-    <FxCompile Include="Convert\hdr_tone_mapping.hlsl">
+    <FxCompile Include="Convert\correction_ycgco.hlsl">
       <Filter>Convert</Filter>
     </FxCompile>
   </ItemGroup>
@@ -52,6 +49,12 @@
       <Filter>Resizers</Filter>
     </None>
     <None Include="Convert\ycbcr_coefficients.hlsl">
+      <Filter>Convert</Filter>
+    </None>
+    <None Include="Convert\colorspace_gamut_conversion.hlsl">
+      <Filter>Convert</Filter>
+    </None>
+    <None Include="Convert\hdr_tone_mapping.hlsl">
       <Filter>Convert</Filter>
     </None>
   </ItemGroup>

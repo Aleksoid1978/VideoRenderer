@@ -1,4 +1,4 @@
-// Fix incorrect display ARIB STD-B67 (HLG) after incorrect YUV to RGB conversion in EVR Mixer.
+// Convert HDR to SDR for ARIB STD-B67 (HLG) after conversion in DXVA2 Video Processor
 
 sampler image : register(s0);
 

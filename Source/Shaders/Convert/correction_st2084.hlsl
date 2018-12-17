@@ -1,4 +1,4 @@
-// Fix incorrect display SMPTE ST 2084 after incorrect YUV to RGB conversion in EVR Mixer.
+// Convert HDR to SDR for SMPTE ST 2084 after conversion in DXVA2 Video Processor
 
 sampler image : register(s0);
 

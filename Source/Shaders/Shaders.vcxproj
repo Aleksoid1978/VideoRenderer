@@ -190,6 +190,7 @@
     <None Include="Convert\hdr_tone_mapping.hlsl">
       <FileType>Document</FileType>
     </None>
+    <FxCompile Include="Convert\correction_ycgco.hlsl" />
     <FxCompile Include="Convert\ycbcr_to_rgb.hlsl" />
     <FxCompile Include="Convert\ycgco_to_rgb.hlsl" />
     <FxCompile Include="Resizers\downscaler.hlsl" />

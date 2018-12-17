@@ -923,6 +923,9 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		else if (m_srcExFmt.VideoTransferFunction == 18) {
 			m_iConvertShader = shader_correction_hlg;
 		}
+		else if (m_srcExFmt.VideoTransferMatrix == 7) {
+			m_iConvertShader = shader_correction_ycgco;
+		}
 
 		m_srcSubType = SubType;
 		UpdateStatsStatic();
