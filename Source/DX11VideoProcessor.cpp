@@ -884,7 +884,7 @@ HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget, const b
 		if (m_pVideoContext1) {
 			DXGI_COLOR_SPACE_TYPE ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
 			if (m_srcExFmt.value) {
-				if (m_srcExFmt.VideoTransferFunction == 15 || m_srcExFmt.VideoTransferFunction == 16) { // SMPTE ST 2084
+				if (m_srcExFmt.VideoTransferFunction == 15) { // SMPTE ST 2084
 					ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020;
 				} else if (m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601) { // BT.601
 					if (m_srcExFmt.NominalRange == DXVA2_NominalRange_16_235) {

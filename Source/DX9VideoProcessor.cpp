@@ -920,7 +920,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		if (m_srcExFmt.VideoTransferFunction == 15) {
 			m_iConvertShader = shader_correction_st2084;
 		}
-		else if (m_srcExFmt.VideoTransferFunction == 18) {
+		else if (m_srcExFmt.VideoTransferFunction == 16 || m_srcExFmt.VideoTransferFunction == 18) {
 			m_iConvertShader = shader_correction_hlg;
 		}
 		else if (m_srcExFmt.VideoTransferMatrix == 7) {
