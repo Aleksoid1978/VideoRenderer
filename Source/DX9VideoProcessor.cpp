@@ -30,8 +30,8 @@
 #include "csputils.h"
 #include "DX9VideoProcessor.h"
 
-#define STATS_W 360
-#define STATS_H 150
+#define STATS_W 450
+#define STATS_H 170
 
 #pragma pack(push, 1)
 template<unsigned texcoords>
@@ -356,6 +356,7 @@ void CDX9VideoProcessor::ReleaseVP()
 {
 	m_FrameStats.Reset();
 	m_DrawnFrameStats.Reset();
+	ZeroMemory(&m_RenderStats, sizeof(m_RenderStats));
 
 	m_SrcSamples.Clear();
 	m_DXVA2Samples.clear();
@@ -972,7 +973,6 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 void CDX9VideoProcessor::Start()
 {
-	m_FrameStats.Reset();
 	m_DrawnFrameStats.Reset();
 }
 
@@ -988,24 +988,26 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 	m_pFilter->StreamTime(rtClock);
 	if (rtEnd < rtClock) {
+		m_RenderStats.skipped1++;
 		return S_FALSE; // skip frame
 	}
 
 	HRESULT hr = CopySample(pSample);
 	if (FAILED(hr)) {
+		m_RenderStats.failed++;
 		return hr;
 	}
 
 	// always Render(1) a frame after CopySample()
 	hr = Render(1);
 	m_pFilter->StreamTime(rtClock);
+	m_RenderStats.syncoffset = rtClock - rtStart;
 	m_DrawnFrameStats.Add(rtClock);
-
-	m_SyncOffsetMS = std::round((double)(rtClock - rtStart) / (UNITS / 1000));
 
 	if (SecondFramePossible()) {
 		m_pFilter->StreamTime(rtClock);
 		if (rtEnd < rtClock) {
+			m_RenderStats.skipped2++;
 			return S_FALSE; // skip frame
 		}
 
@@ -1014,7 +1016,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 		m_DrawnFrameStats.Add(rtClock);
 
 		rtStart += rtFrameDur / 2;
-		m_SyncOffsetMS = std::round((double)(rtClock - rtStart) / (UNITS / 1000));
+		m_RenderStats.syncoffset = rtClock - rtStart;
 	}
 
 	return hr;
@@ -1022,7 +1024,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 {
-	HRESULT hr = S_OK;
+	int64_t ticks = GetPreciseTick();
 
 	// Get frame type
 	m_CurrentSampleFmt = DXVA2_SampleProgressiveFrame; // Progressive
@@ -1041,6 +1043,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 
+	HRESULT hr = S_OK;
 	m_FieldDrawn = 0;
 
 	if (CComQIPtr<IMFGetService> pService = pSample) {
@@ -1120,6 +1123,8 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		m_DXVA2Samples[i].SrcSurface = SrcSample.pSrcSurface;
 	}
 
+	m_RenderStats.copyticks = GetPreciseTick() - ticks;
+
 	return hr;
 }
 
@@ -1127,6 +1132,7 @@ HRESULT CDX9VideoProcessor::Render(int field)
 {
 	if (m_SrcSamples.Empty()) return E_POINTER;
 
+	int64_t ticks = GetPreciseTick();
 	if (field) {
 		m_FieldDrawn = field;
 	}
@@ -1159,6 +1165,7 @@ HRESULT CDX9VideoProcessor::Render(int field)
 	}
 
 	hr = m_pD3DDevEx->EndScene();
+	m_RenderStats.renderticks = GetPreciseTick() - ticks;
 
 	const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 	const CRect rDstPri(m_windowRect);
@@ -1616,12 +1623,16 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	}
 	str.AppendFormat(L",%7.03f",  m_DrawnFrameStats.GetAverageFps());
 	str.Append(m_strStatsStatic);
-	str.AppendFormat(L"\nSync offset  :%+4d ms", m_SyncOffsetMS);
-
-	{
-		CAutoLock Lock(&m_RefreshRateLock);
-		str.AppendFormat(L"\nRefresh Rate : %7.03f Hz", m_DetectedRefreshRate);
-	}
+	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
+		m_FrameStats.GetFrames(), m_RenderStats.skipped1, m_RenderStats.skipped2, m_RenderStats.failed);
+	str.AppendFormat(L"\nCopyTime:%3llu ms, RenderTime:%3llu ms",
+		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.renderticks * 1000 / GetPreciseTicksPerSecondI());
+	str.AppendFormat(L"\nSync offset  : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
+	//{
+	//	CAutoLock Lock(&m_RefreshRateLock);
+	//	str.AppendFormat(L"\nRefresh Rate : %7.03f Hz", m_DetectedRefreshRate);
+	//}
 
 	HDC hdc;
 	if (S_OK == m_pMemSurface->GetDC(&hdc)) {
@@ -1635,7 +1646,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 
 		Status status = Gdiplus::Ok;
 
-		status = graphics.Clear(Color(224, 0, 0, 0));
+		status = graphics.Clear(Color(192, 0, 0, 0));
 		status = graphics.DrawString(str, -1, &font, pointF, &solidBrush);
 		graphics.Flush();
 
