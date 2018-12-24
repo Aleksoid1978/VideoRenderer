@@ -139,7 +139,9 @@ void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspac
 	case DXVA2_VideoTransFunc_18:      colorspace.gamma = MP_CSP_TRC_GAMMA18; break;
 	case DXVA2_VideoTransFunc_22:      colorspace.gamma = MP_CSP_TRC_GAMMA22; break;
 	case DXVA2_VideoTransFunc_709:
-	case DXVA2_VideoTransFunc_240M:    colorspace.gamma = MP_CSP_TRC_BT_1886; break;
+	case DXVA2_VideoTransFunc_240M:
+	case VIDEOTRANSFUNC_2020_const:
+	case VIDEOTRANSFUNC_2020:          colorspace.gamma = MP_CSP_TRC_BT_1886; break;
 	case DXVA2_VideoTransFunc_sRGB:    colorspace.gamma = MP_CSP_TRC_SRGB;    break;
 	case DXVA2_VideoTransFunc_28:      colorspace.gamma = MP_CSP_TRC_GAMMA28; break;
 	case VIDEOTRANSFUNC_2084:          colorspace.gamma = MP_CSP_TRC_PQ;      break;
