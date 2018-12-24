@@ -1001,8 +1001,9 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 	// always Render(1) a frame after CopySample()
 	hr = Render(1);
 	m_pFilter->StreamTime(rtClock);
-	m_RenderStats.syncoffset = rtClock - rtStart;
 	m_DrawnFrameStats.Add(rtClock);
+
+	m_RenderStats.syncoffset = rtClock - rtStart;
 
 	if (SecondFramePossible()) {
 		m_pFilter->StreamTime(rtClock);

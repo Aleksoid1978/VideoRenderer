@@ -495,6 +495,7 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 
 	m_FrameStats.Reset();
 	m_DrawnFrameStats.Reset();
+	ZeroMemory(&m_RenderStats, sizeof(m_RenderStats));
 
 	m_pSrcTexture2D_RGB.Release();
 	m_pSrcTexture9.Release();
@@ -606,7 +607,6 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 
 void CDX11VideoProcessor::Start()
 {
-	m_FrameStats.Reset();
 	m_DrawnFrameStats.Reset();
 }
 
@@ -622,28 +622,27 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 	m_pFilter->StreamTime(rtClock);
 	if (rtEnd < rtClock) {
+		m_RenderStats.skipped1++;
 		return S_FALSE; // skip frame
 	}
 
 	HRESULT hr = CopySample(pSample);
 	if (FAILED(hr)) {
+		m_RenderStats.failed++;
 		return hr;
 	}
 
-	m_pFilter->StreamTime(rtClock);
-	if (rtEnd < rtClock) {
-		return S_FALSE; // skip frame
-	}
-
+	// always Render(1) a frame after CopySample()
 	hr = Render(1);
 	m_pFilter->StreamTime(rtClock);
 	m_DrawnFrameStats.Add(rtClock);
 
-	m_SyncOffsetMS = std::round((double)(rtClock - rtStart) / (UNITS / 1000));
+	m_RenderStats.syncoffset = rtClock - rtStart;
 
 	if (SecondFramePossible()) {
 		m_pFilter->StreamTime(rtClock);
 		if (rtEnd < rtClock) {
+			m_RenderStats.skipped2++;
 			return S_FALSE; // skip frame
 		}
 
@@ -652,7 +651,7 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 		m_DrawnFrameStats.Add(rtClock);
 
 		rtStart += rtFrameDur / 2;
-		m_SyncOffsetMS = std::round((double)(rtClock - rtStart) / (UNITS / 1000));
+		m_RenderStats.syncoffset = rtClock - rtStart;
 	}
 
 	return hr;
@@ -664,6 +663,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 {
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
+
+	int64_t ticks = GetPreciseTick();
 
 	// Get frame type
 	m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE; // Progressive
@@ -681,9 +682,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 
-	m_FieldDrawn = 0;
-
 	HRESULT hr = S_OK;
+	m_FieldDrawn = 0;
 
 	if (CComQIPtr<IMediaSampleD3D11> pMSD3D11 = pSample) {
 		m_bCanUseSharedHandle = false;
@@ -784,6 +784,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 
+	m_RenderStats.copyticks = GetPreciseTick() - ticks;
+
 	return hr;
 }
 
@@ -792,6 +794,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	CheckPointer(m_pSrcTexture2D, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
 
+	int64_t ticks = GetPreciseTick();
 	if (field) {
 		m_FieldDrawn = field;
 	}
@@ -806,6 +809,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	if (S_OK == hr && m_bShowStats) {
 		hr = DrawStats();
 	}
+	m_RenderStats.renderticks = GetPreciseTick() - ticks;
 
 	hr = m_pDXGISwapChain1->Present(0, 0);
 
@@ -1016,7 +1020,12 @@ HRESULT CDX11VideoProcessor::DrawStats()
 	str.AppendFormat(L",%7.03f", m_DrawnFrameStats.GetAverageFps());
 	str.AppendFormat(L"\nInput format : %s %ux%u", DXGIFormatToString(m_srcDXGIFormat), m_srcWidth, m_srcHeight);
 	str.AppendFormat(L"\nVP output fmt: %s", DXGIFormatToString(m_VPOutputFmt));
-	str.AppendFormat(L"\nSync offset  :%+4d ms", m_SyncOffsetMS);
+	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
+		m_FrameStats.GetFrames(), m_RenderStats.skipped1, m_RenderStats.skipped2, m_RenderStats.failed);
+	str.AppendFormat(L"\nCopyTime:%3llu ms, RenderTime:%3llu ms",
+		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.renderticks * 1000 / GetPreciseTicksPerSecondI());
+	str.AppendFormat(L"\nSync offset  : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
 
 	CComPtr<IDWriteTextLayout> pTextLayout;
 	if (S_OK == m_pDWriteFactory->CreateTextLayout(str, str.GetLength(), m_pTextFormat, m_windowRect.right - 10, m_windowRect.bottom - 10, &pTextLayout)) {
