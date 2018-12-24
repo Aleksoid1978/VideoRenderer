@@ -118,8 +118,8 @@ void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspac
 	case DXVA2_VideoTransferMatrix_BT709:     colorspace.space = MP_CSP_BT_709;     break;
 	case DXVA2_VideoTransferMatrix_BT601:     colorspace.space = MP_CSP_BT_601;     break;
 	case DXVA2_VideoTransferMatrix_SMPTE240M: colorspace.space = MP_CSP_SMPTE_240M; break;
-	case 4:                                   colorspace.space = MP_CSP_BT_2020_NC; break;
-	case 7:                                   colorspace.space = MP_CSP_YCGCO;      break;
+	case VIDEOTRANSFERMATRIX_BT2020_10:       colorspace.space = MP_CSP_BT_2020_NC; break;
+	case VIDEOTRANSFERMATRIX_YCgCo:           colorspace.space = MP_CSP_YCGCO;      break;
 	default:
 		colorspace.space = MP_CSP_AUTO;
 	}
@@ -142,8 +142,9 @@ void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspac
 	case DXVA2_VideoTransFunc_240M:    colorspace.gamma = MP_CSP_TRC_BT_1886; break;
 	case DXVA2_VideoTransFunc_sRGB:    colorspace.gamma = MP_CSP_TRC_SRGB;    break;
 	case DXVA2_VideoTransFunc_28:      colorspace.gamma = MP_CSP_TRC_GAMMA28; break;
-	case 15:                           colorspace.gamma = MP_CSP_TRC_PQ;      break;
-	case 18:                           colorspace.gamma = MP_CSP_TRC_HLG;     break;
+	case VIDEOTRANSFUNC_2084:          colorspace.gamma = MP_CSP_TRC_PQ;      break;
+	case VIDEOTRANSFUNC_HLG:
+	case VIDEOTRANSFUNC_HLG_temp:      colorspace.gamma = MP_CSP_TRC_HLG;     break;
 	default:
 		colorspace.gamma = MP_CSP_TRC_AUTO;
 	}
@@ -917,13 +918,13 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// DXVA2 Video Processor
 	if (FmtConvParams->DXVA2Format != D3DFMT_UNKNOWN && InitializeDXVA2VP(FmtConvParams->DXVA2Format, biWidth, biHeight)) {
-		if (m_srcExFmt.VideoTransferFunction == 15) {
+		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 			m_iConvertShader = shader_correction_st2084;
 		}
-		else if (m_srcExFmt.VideoTransferFunction == 16 || m_srcExFmt.VideoTransferFunction == 18) {
+		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
 			m_iConvertShader = shader_correction_hlg;
 		}
-		else if (m_srcExFmt.VideoTransferMatrix == 7) {
+		else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
 			m_iConvertShader = shader_correction_ycgco;
 		}
 
