@@ -213,6 +213,10 @@ private:
 		uint64_t copyticks = 0;
 		uint64_t renderticks = 0;
 		REFERENCE_TIME syncoffset = 0;
+
+		uint64_t copy1 = 0;
+		uint64_t copy2 = 0;
+		uint64_t copy3 = 0;
 	} m_RenderStats;
 
 	// GDI+ handling

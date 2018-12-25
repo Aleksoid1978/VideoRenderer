@@ -116,6 +116,7 @@ void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT
 void CopyFrameUpsideDown(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
 // RGB24 to X8R8G8B8
 void CopyFrameRGB24UpsideDown(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
+void CopyFrameRGB24UpsideDownSSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
 // YV12
 void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
 // NV12, P010

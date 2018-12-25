@@ -961,6 +961,12 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 			for (int j = 0; j < 3; j++) {
 				m_fConstData[3][j] = cmatrix.c[j];
 			}
+
+			if (SubType == MEDIASUBTYPE_Y410) {
+				for (int i = 0; i < 3; i++) {
+					std::swap(m_fConstData[i][0], m_fConstData[i][1]);
+				}
+			}
 		}
 
 		m_srcSubType = SubType;
@@ -1098,15 +1104,22 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 
 			m_SrcSamples.Next();
 			D3DLOCKED_RECT lr;
+			int64_t tick_1 = GetPreciseTick();
 			hr = m_SrcSamples.Get().pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
 			if (FAILED(hr)) {
 				return hr;
 			}
-
+			int64_t tick_2 = GetPreciseTick();
 			ASSERT(m_pConvertFn);
 			m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, data, m_srcPitch);
+			int64_t tick_3 = GetPreciseTick();
 
 			hr = m_SrcSamples.Get().pSrcSurface->UnlockRect();
+			int64_t tick_4 = GetPreciseTick();
+
+			m_RenderStats.copy1 = tick_2 - tick_1;
+			m_RenderStats.copy2 = tick_3 - tick_2;
+			m_RenderStats.copy3 = tick_4 - tick_3;
 		}
 	}
 
@@ -1629,7 +1642,14 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	str.AppendFormat(L"\nCopyTime:%3llu ms, RenderTime:%3llu ms",
 		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.renderticks * 1000 / GetPreciseTicksPerSecondI());
+#if 0
+	str.AppendFormat(L"\nLR:%6.03f ms, Cnv:%6.03f ms UR:%6.03f ms",
+		m_RenderStats.copy1 * 1000.0 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.copy2 * 1000.0 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.copy3 * 1000.0 / GetPreciseTicksPerSecondI());
+#else
 	str.AppendFormat(L"\nSync offset  : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
+#endif
 	//{
 	//	CAutoLock Lock(&m_RefreshRateLock);
 	//	str.AppendFormat(L"\nRefresh Rate : %7.03f Hz", m_DetectedRefreshRate);
@@ -1782,6 +1802,12 @@ STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 				}
 				for (int j = 0; j < 3; j++) {
 					m_fConstData[3][j] = cmatrix.c[j];
+				}
+
+				if (m_srcSubType == MEDIASUBTYPE_Y410) {
+					for (int i = 0; i < 3; i++) {
+						std::swap(m_fConstData[i][0], m_fConstData[i][1]);
+					}
 				}
 			} else {
 				m_iConvertShader = -1;

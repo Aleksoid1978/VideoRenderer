@@ -123,11 +123,11 @@ static FmtConvParams_t s_FmtConvMapping[] = {
 	{ MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,    DXGI_FORMAT_AYUV,           4, 2,        false, &CopyFrameAsIs },
 	{ MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, 4, 2,        true,  &CopyFrameUpsideDown },
 	{ MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,    DXGI_FORMAT_B8G8R8A8_UNORM, 4, 2,        true,  &CopyFrameUpsideDown },
-	{ MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, 3, 2,        true,  &CopyFrameRGB24UpsideDown },
+	{ MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, 3, 2,        true,  &CopyFrameRGB24UpsideDownSSSE3 },
 	{ MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,          DXGI_FORMAT_UNKNOWN,        1, 2,        true,  &CopyFrameAsIs },
 	{ MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,          DXGI_FORMAT_UNKNOWN,        1, 2,        true,  &CopyFrameAsIs },
 	{ MEDIASUBTYPE_Y116,   "Y116",   D3DFMT_UNKNOWN,  D3DFMT_L16,         DXGI_FORMAT_UNKNOWN,        2, 2,        true,  &CopyFrameAsIs },
-	{ MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_UNKNOWN,  D3DFMT_A2B10G10R10, DXGI_FORMAT_UNKNOWN,        4, 2,        false, &CopyFrameY410 },
+	{ MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_UNKNOWN,  D3DFMT_A2B10G10R10, DXGI_FORMAT_UNKNOWN,        4, 2,        false, &CopyFrameAsIs },
 };
 
 const FmtConvParams_t* GetFmtConvParams(GUID subtype)
@@ -179,6 +179,38 @@ void CopyFrameRGB24UpsideDown(const UINT height, BYTE* dst, UINT dst_pitch, BYTE
 			dst32[i + 3] = sc >> 8;
 
 			src32 += 3;
+		}
+
+		src -= src_pitch;
+		dst += dst_pitch;
+	}
+}
+
+void CopyFrameRGB24UpsideDownSSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch)
+{
+	src += src_pitch * (height - 1);
+	UINT line_pixels = src_pitch / 3;
+	__m128i mask = _mm_setr_epi8(0, 1, 2, -1, 3, 4, 5, -1, 6, 7, 8, -1, 9, 10, 11, -1);
+
+	for (UINT y = 0; y < height; ++y) {
+		__m128i *src128 = (__m128i*)src;
+		__m128i *dst128 = (__m128i*)dst;
+		for (UINT i = 0; i < line_pixels; i += 16) {
+			__m128i sa = _mm_load_si128(src128);
+			__m128i sb = _mm_load_si128(src128 + 1);
+			__m128i sc = _mm_load_si128(src128 + 2);
+
+			__m128i val = _mm_shuffle_epi8(sa, mask);
+			_mm_store_si128(dst128, val);
+			val = _mm_shuffle_epi8(_mm_alignr_epi8(sb, sa, 12), mask);
+			_mm_store_si128(dst128 + 1, val);
+			val = _mm_shuffle_epi8(_mm_alignr_epi8(sc, sb, 8), mask);
+			_mm_store_si128(dst128 + 2, val);
+			val = _mm_shuffle_epi8(_mm_alignr_epi8(sc, sc, 4), mask);
+			_mm_store_si128(dst128 + 3, val);
+
+			src128 += 3;
+			dst128 += 4;
 		}
 
 		src -= src_pitch;
