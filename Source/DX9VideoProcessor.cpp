@@ -27,7 +27,6 @@
 #include <Mferror.h>
 #include <dwmapi.h>
 #include "Time.h"
-#include "csputils.h"
 #include "DX9VideoProcessor.h"
 
 #define STATS_W 450
@@ -685,6 +684,27 @@ HRESULT CDX9VideoProcessor::CreateShaderFromResource(IDirect3DPixelShader9** ppP
 	return m_pD3DDevEx->CreatePixelShader((const DWORD*)LockResource(hGlobal), ppPixelShader);
 }
 
+void CDX9VideoProcessor::SetShaderConvertColorParams(mp_csp_params& params)
+{
+	mp_cmat cmatrix;
+	mp_get_csp_matrix(params, cmatrix);
+
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			m_fConstData[i][j] = cmatrix.m[i][j];
+		}
+	}
+	for (int j = 0; j < 3; j++) {
+		m_fConstData[3][j] = cmatrix.c[j];
+	}
+
+	if (m_srcSubType == MEDIASUBTYPE_Y410) {
+		for (int i = 0; i < 3; i++) {
+			std::swap(m_fConstData[i][0], m_fConstData[i][1]);
+		}
+	}
+}
+
 
 void CDX9VideoProcessor::StartWorkerThreads()
 {
@@ -948,28 +968,11 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 		bool bPprocRGB = FmtConvParams->bRGB && (fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f);
 
-		if (SubType == MEDIASUBTYPE_AYUV || SubType == MEDIASUBTYPE_Y410 || bPprocRGB) {
-			mp_cmat cmatrix;
-			mp_get_csp_matrix(csp_params, cmatrix);
-
-			m_iConvertShader = shader_convert_color;
-			for (int i = 0; i < 3; i++) {
-				for (int j = 0; j < 3; j++) {
-					m_fConstData[i][j] = cmatrix.m[i][j];
-				}
-			}
-			for (int j = 0; j < 3; j++) {
-				m_fConstData[3][j] = cmatrix.c[j];
-			}
-
-			if (SubType == MEDIASUBTYPE_Y410) {
-				for (int i = 0; i < 3; i++) {
-					std::swap(m_fConstData[i][0], m_fConstData[i][1]);
-				}
-			}
-		}
-
 		m_srcSubType = SubType;
+		if (SubType == MEDIASUBTYPE_AYUV || SubType == MEDIASUBTYPE_Y410 || bPprocRGB) {
+			m_iConvertShader = shader_convert_color;
+			SetShaderConvertColorParams(csp_params);
+		}
 		UpdateStatsStatic();
 		return TRUE;
 	}
@@ -1790,25 +1793,9 @@ STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 			bool bPprocRGB = FmtConvParams->bRGB && (fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f);
 
 			if (m_srcSubType == MEDIASUBTYPE_AYUV || m_srcSubType == MEDIASUBTYPE_Y410 || bPprocRGB) {
-				mp_cmat cmatrix;
-				mp_get_csp_matrix(csp_params, cmatrix);
-
 				//TODO: lock "render" here
 				m_iConvertShader = shader_convert_color;
-				for (int i = 0; i < 3; i++) {
-					for (int j = 0; j < 3; j++) {
-						m_fConstData[i][j] = cmatrix.m[i][j];
-					}
-				}
-				for (int j = 0; j < 3; j++) {
-					m_fConstData[3][j] = cmatrix.c[j];
-				}
-
-				if (m_srcSubType == MEDIASUBTYPE_Y410) {
-					for (int i = 0; i < 3; i++) {
-						std::swap(m_fConstData[i][0], m_fConstData[i][1]);
-					}
-				}
+				SetShaderConvertColorParams(csp_params);
 			} else {
 				m_iConvertShader = -1;
 			}

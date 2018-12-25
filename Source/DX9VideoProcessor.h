@@ -27,6 +27,7 @@
 #include "Helper.h"
 #include "FrameStats.h"
 #include "resource.h"
+#include "csputils.h"
 
 struct VideoSurface {
 	REFERENCE_TIME Start = 0;
@@ -245,6 +246,7 @@ private:
 
 	BOOL InitializeTexVP(const D3DFORMAT d3dformat, const UINT width, const UINT height);
 	HRESULT CreateShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);
+	void SetShaderConvertColorParams(mp_csp_params& params);
 
 	void StartWorkerThreads();
 	void StopWorkerThreads();
