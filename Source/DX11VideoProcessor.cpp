@@ -495,7 +495,7 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 
 	m_FrameStats.Reset();
 	m_DrawnFrameStats.Reset();
-	ZeroMemory(&m_RenderStats, sizeof(m_RenderStats));
+	m_RenderStats.Reset();
 
 	m_pSrcTexture2D_RGB.Release();
 	m_pSrcTexture9.Release();
@@ -608,6 +608,7 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 void CDX11VideoProcessor::Start()
 {
 	m_DrawnFrameStats.Reset();
+	m_RenderStats.NewInterval();
 }
 
 HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
@@ -621,10 +622,12 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 	CRefTime rtClock;
 
 	m_pFilter->StreamTime(rtClock);
-	if (rtEnd < rtClock) {
+	if (m_RenderStats.skipped_interval < 60 && rtEnd < rtClock) {
 		m_RenderStats.skipped1++;
+		m_RenderStats.skipped_interval++;
 		return S_FALSE; // skip frame
 	}
+	m_RenderStats.skipped_interval = 0;
 
 	HRESULT hr = CopySample(pSample);
 	if (FAILED(hr)) {

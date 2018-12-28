@@ -206,19 +206,7 @@ private:
 
 	CFrameStats m_FrameStats;
 	CFrameStats m_DrawnFrameStats;
-	struct {
-		unsigned skipped1 = 0;
-		unsigned skipped2 = 0;
-		unsigned failed = 0;
-
-		uint64_t copyticks = 0;
-		uint64_t renderticks = 0;
-		REFERENCE_TIME syncoffset = 0;
-
-		uint64_t copy1 = 0;
-		uint64_t copy2 = 0;
-		uint64_t copy3 = 0;
-	} m_RenderStats;
+	CRenderStats m_RenderStats;
 
 	// GDI+ handling
 	ULONG_PTR m_gdiplusToken;

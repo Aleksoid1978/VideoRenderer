@@ -355,7 +355,7 @@ void CDX9VideoProcessor::ReleaseVP()
 {
 	m_FrameStats.Reset();
 	m_DrawnFrameStats.Reset();
-	ZeroMemory(&m_RenderStats, sizeof(m_RenderStats));
+	m_RenderStats.Reset();
 
 	m_SrcSamples.Clear();
 	m_DXVA2Samples.clear();
@@ -983,6 +983,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 void CDX9VideoProcessor::Start()
 {
 	m_DrawnFrameStats.Reset();
+	m_RenderStats.NewInterval();
 }
 
 HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
@@ -996,10 +997,12 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 	CRefTime rtClock;
 
 	m_pFilter->StreamTime(rtClock);
-	if (rtEnd < rtClock) {
+	if (m_RenderStats.skipped_interval < 60 && rtEnd < rtClock) {
 		m_RenderStats.skipped1++;
+		m_RenderStats.skipped_interval++;
 		return S_FALSE; // skip frame
 	}
+	m_RenderStats.skipped_interval = 0;
 
 	HRESULT hr = CopySample(pSample);
 	if (FAILED(hr)) {

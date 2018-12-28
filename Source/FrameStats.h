@@ -91,3 +91,27 @@ public:
 		return (double)UNITS / GetAverageFrameDuration();
 	}
 };
+
+
+struct CRenderStats {
+	unsigned skipped1 = 0;
+	unsigned skipped2 = 0;
+	unsigned failed = 0;
+	unsigned skipped_interval = 0;
+
+	uint64_t copyticks = 0;
+	uint64_t renderticks = 0;
+	REFERENCE_TIME syncoffset = 0;
+
+	uint64_t copy1 = 0;
+	uint64_t copy2 = 0;
+	uint64_t copy3 = 0;
+
+	void NewInterval() {
+		skipped_interval = INT_MAX;
+	}
+	void Reset() {
+		ZeroMemory(this, sizeof(this));
+		NewInterval();
+	}
+};
