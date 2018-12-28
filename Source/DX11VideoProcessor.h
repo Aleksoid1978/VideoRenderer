@@ -111,7 +111,7 @@ private:
 	CComPtr<ID2D1SolidColorBrush> m_pD2DBrushBlack;
 
 	CFrameStats m_FrameStats;
-	CFrameStats m_DrawnFrameStats;
+	CFrameStats m_DrawnFrameStats; //TODO: use CRenderStats
 	CRenderStats m_RenderStats;
 
 public:

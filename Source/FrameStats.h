@@ -108,7 +108,7 @@ struct CRenderStats {
 	uint64_t copy3 = 0;
 
 	void NewInterval() {
-		skipped_interval = INT_MAX;
+		skipped_interval = INT_MAX; // needed for forced rendering of the first frame after start or seeking
 	}
 	void Reset() {
 		ZeroMemory(this, sizeof(this));
