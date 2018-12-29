@@ -831,27 +831,21 @@ BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 		return FALSE;
 	}
 
-	LONG biWidth = 0;
-	LONG biHeight = 0;
-	UINT biSizeImage = 0;
+	const BITMAPINFOHEADER* pBIH = nullptr;
 
 	if (pmt->formattype == FORMAT_VideoInfo2) {
 		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
-		biWidth     = vih2->bmiHeader.biWidth;
-		biHeight    = vih2->bmiHeader.biHeight;
-		biSizeImage = vih2->bmiHeader.biSizeImage;
+		pBIH = &vih2->bmiHeader;
 	}
 	else if (pmt->formattype == FORMAT_VideoInfo) {
 		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)pmt->pbFormat;
-		biWidth     = vih->bmiHeader.biWidth;
-		biHeight    = vih->bmiHeader.biHeight;
-		biSizeImage = vih->bmiHeader.biSizeImage;
+		pBIH = &vih->bmiHeader;
 	}
 	else {
 		return FALSE;
 	}
 
-	if (biWidth <= 0 || !biHeight || !biSizeImage) {
+	if (pBIH->biWidth <= 0 || !pBIH->biHeight || (!pBIH->biSizeImage && pBIH->biCompression != BI_RGB)) {
 		return FALSE;
 	}
 
@@ -898,6 +892,9 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		biWidth     = vih->bmiHeader.biWidth;
 		biHeight    = labs(vih->bmiHeader.biHeight);
 		biSizeImage = vih->bmiHeader.biSizeImage;
+		if (biSizeImage == 0 && vih->bmiHeader.biCompression == BI_RGB) { // biSizeImage may be zero for BI_RGB bitmaps
+			biSizeImage = biWidth * biHeight * 4;
+		}
 		m_srcAspectRatioX = 0;
 		m_srcAspectRatioY = 0;
 		m_srcExFmt.value = 0;
