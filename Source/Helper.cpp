@@ -115,19 +115,19 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
 }
 
 static FmtConvParams_t s_FmtConvMapping[] = {
-	//   subtype          | str     |DXVA2Format     | D3DFormat(DX9)    | DXGIFormat(DX11)   |Packsize|PitchCoeff| bRGB|  Func
-	{ MEDIASUBTYPE_YV12,   "YV12",   D3DFMT_YV12,     D3DFMT_UNKNOWN,     DXGI_FORMAT_UNKNOWN,        1, 3,        false, &CopyFrameYV12},
-	{ MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_UNKNOWN,     DXGI_FORMAT_NV12,           1, 3,        false, &CopyFramePackedUV },
-	{ MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_UNKNOWN,     DXGI_FORMAT_P010,           2, 3,        false, &CopyFramePackedUV },
-	{ MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_UNKNOWN,     DXGI_FORMAT_YUY2,           2, 2,        false, &CopyFrameAsIs },
-	{ MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,    DXGI_FORMAT_AYUV,           4, 2,        false, &CopyFrameAsIs },
-	{ MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, 4, 2,        true,  &CopyFrameUpsideDown },
-	{ MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,    DXGI_FORMAT_B8G8R8A8_UNORM, 4, 2,        true,  &CopyFrameUpsideDown },
-	{ MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, 3, 2,        true,  &CopyFrameRGB24UpsideDownSSSE3 },
-	{ MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,          DXGI_FORMAT_UNKNOWN,        1, 2,        true,  &CopyFrameAsIs },
-	{ MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,          DXGI_FORMAT_UNKNOWN,        1, 2,        true,  &CopyFrameAsIs },
-	{ MEDIASUBTYPE_Y116,   "Y116",   D3DFMT_UNKNOWN,  D3DFMT_L16,         DXGI_FORMAT_UNKNOWN,        2, 2,        true,  &CopyFrameAsIs },
-	{ MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_UNKNOWN,  D3DFMT_A2B10G10R10, DXGI_FORMAT_UNKNOWN,        4, 2,        false, &CopyFrameAsIs },
+	//   subtype          | str     |DXVA2Format     | D3DFormat(DX9)    | DXGIFormat(DX11)   |Packsize|PitchCoeff| bRGB|  Func               | FuncUD
+	{ MEDIASUBTYPE_YV12,   "YV12",   D3DFMT_YV12,     D3DFMT_UNKNOWN,     DXGI_FORMAT_UNKNOWN,        1, 3,        false, &CopyFrameYV12,       nullptr},
+	{ MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_UNKNOWN,     DXGI_FORMAT_NV12,           1, 3,        false, &CopyFramePackedUV,   nullptr},
+	{ MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_UNKNOWN,     DXGI_FORMAT_P010,           2, 3,        false, &CopyFramePackedUV,   nullptr},
+	{ MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_UNKNOWN,     DXGI_FORMAT_YUY2,           2, 2,        false, &CopyFrameAsIs,       nullptr},
+	{ MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,    DXGI_FORMAT_AYUV,           4, 2,        false, &CopyFrameAsIs,       nullptr},
+	{ MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, 4, 2,        true,  &CopyFrameAsIs,       &CopyFrameUpsideDown },
+	{ MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,    DXGI_FORMAT_B8G8R8A8_UNORM, 4, 2,        true,  &CopyFrameUpsideDown, nullptr },
+	{ MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, 3, 2,        true,  &CopyFrameRGB24UpsideDownSSSE3, nullptr },
+	{ MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,          DXGI_FORMAT_UNKNOWN,        1, 2,        true,  &CopyFrameAsIs,       nullptr },
+	{ MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,          DXGI_FORMAT_UNKNOWN,        1, 2,        true,  &CopyFrameAsIs,       nullptr },
+	{ MEDIASUBTYPE_Y116,   "Y116",   D3DFMT_UNKNOWN,  D3DFMT_L16,         DXGI_FORMAT_UNKNOWN,        2, 2,        true,  &CopyFrameAsIs,       nullptr },
+	{ MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_UNKNOWN,  D3DFMT_A2B10G10R10, DXGI_FORMAT_UNKNOWN,        4, 2,        false, &CopyFrameAsIs,       nullptr },
 };
 
 const FmtConvParams_t* GetFmtConvParams(GUID subtype)

@@ -77,6 +77,7 @@ private:
 	DWORD m_srcAspectRatioY = 0;
 	DXVA2_ExtendedFormat m_srcExFmt = {};
 	bool m_bInterlaced = false;
+	bool m_bUpsideDown = false;
 	CRect m_srcRect;
 	CRect m_trgRect;
 	DXGI_FORMAT m_VPOutputFmt = DXGI_FORMAT_B8G8R8X8_UNORM;

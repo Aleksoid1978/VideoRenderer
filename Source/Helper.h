@@ -106,6 +106,7 @@ struct FmtConvParams_t {
 	int             PitchCoeff;
 	bool            bRGB;
 	CopyFrameDataFn Func;
+	CopyFrameDataFn FuncUD;
 };
 
 const FmtConvParams_t* GetFmtConvParams(GUID subtype);

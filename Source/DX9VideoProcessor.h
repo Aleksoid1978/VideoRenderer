@@ -143,6 +143,7 @@ private:
 	CRect m_trgRect;
 	DXVA2_ExtendedFormat m_srcExFmt = {};
 	bool m_bInterlaced = false;
+	bool m_bUpsideDown = false;
 
 	// Output parameters
 	D3DFORMAT m_VPOutputFmt = D3DFMT_X8R8G8B8;

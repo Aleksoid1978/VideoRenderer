@@ -831,27 +831,27 @@ BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 		return FALSE;
 	}
 
-	UINT biWidth = 0;
-	UINT biHeight = 0;
+	LONG biWidth = 0;
+	LONG biHeight = 0;
 	UINT biSizeImage = 0;
 
 	if (pmt->formattype == FORMAT_VideoInfo2) {
 		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
-		biWidth = vih2->bmiHeader.biWidth;
-		biHeight = labs(vih2->bmiHeader.biHeight);
+		biWidth     = vih2->bmiHeader.biWidth;
+		biHeight    = vih2->bmiHeader.biHeight;
 		biSizeImage = vih2->bmiHeader.biSizeImage;
 	}
 	else if (pmt->formattype == FORMAT_VideoInfo) {
 		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)pmt->pbFormat;
-		biWidth = vih->bmiHeader.biWidth;
-		biHeight = labs(vih->bmiHeader.biHeight);
+		biWidth     = vih->bmiHeader.biWidth;
+		biHeight    = vih->bmiHeader.biHeight;
 		biSizeImage = vih->bmiHeader.biSizeImage;
 	}
 	else {
 		return FALSE;
 	}
 
-	if (!biWidth || !biHeight || !biSizeImage) {
+	if (biWidth <= 0 || !biHeight || !biSizeImage) {
 		return FALSE;
 	}
 
@@ -889,6 +889,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 			m_srcExFmt.value = 0; // ignore color info for RGB
 		}
 		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
+		m_bUpsideDown = (SubType == MEDIASUBTYPE_RGB32 && vih2->bmiHeader.biHeight > 0);
 	}
 	else if (pmt->formattype == FORMAT_VideoInfo) {
 		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)pmt->pbFormat;
@@ -901,6 +902,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcAspectRatioY = 0;
 		m_srcExFmt.value = 0;
 		m_bInterlaced = 0;
+		m_bUpsideDown = (SubType == MEDIASUBTYPE_RGB32 && vih->bmiHeader.biHeight > 0);
 	}
 	else {
 		return FALSE;
@@ -921,7 +923,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	m_srcD3DFormat = FmtConvParams->D3DFormat;
-	m_pConvertFn   = FmtConvParams->Func;
+	m_pConvertFn   = (m_bUpsideDown && FmtConvParams->FuncUD) ? FmtConvParams->FuncUD : FmtConvParams->Func;
 	m_srcPitch     = biSizeImage * 2 / (biHeight * FmtConvParams->PitchCoeff);
 	if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
 		m_srcPitch = ALIGN(m_srcPitch, 4);
