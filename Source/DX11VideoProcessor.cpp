@@ -417,15 +417,13 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
-	UINT biSizeImage = 0;
+	const BITMAPINFOHEADER* pBIH = nullptr;
 
 	if (pmt->formattype == FORMAT_VideoInfo2) {
 		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
-		m_srcRect = vih2->rcSource;
-		m_trgRect = vih2->rcTarget;
-		m_srcWidth = vih2->bmiHeader.biWidth;
-		m_srcHeight = labs(vih2->bmiHeader.biHeight);
-		biSizeImage = vih2->bmiHeader.biSizeImage;
+		pBIH = &vih2->bmiHeader;
+		m_srcRect     = vih2->rcSource;
+		m_trgRect     = vih2->rcTarget;
 		m_srcAspectRatioX = vih2->dwPictAspectRatioX;
 		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
 		if (!FmtConvParams->bRGB && (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT))) {
@@ -435,27 +433,28 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			m_srcExFmt.value = 0; // ignore color info for RGB
 		}
 		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
-		m_bUpsideDown = (pmt->subtype == MEDIASUBTYPE_RGB32 && vih2->bmiHeader.biHeight > 0);
 	}
 	else if (pmt->formattype == FORMAT_VideoInfo) {
 		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)pmt->pbFormat;
+		pBIH = &vih->bmiHeader;
 		m_srcRect = vih->rcSource;
 		m_trgRect = vih->rcTarget;
-		m_srcWidth = vih->bmiHeader.biWidth;
-		m_srcHeight = labs(vih->bmiHeader.biHeight);
-		biSizeImage = vih->bmiHeader.biSizeImage;
-		if (biSizeImage == 0 && vih->bmiHeader.biCompression == BI_RGB) { // biSizeImage may be zero for BI_RGB bitmaps
-			biSizeImage = m_srcWidth * m_srcHeight * 4;
-		}
 		m_srcAspectRatioX = 0;
 		m_srcAspectRatioY = 0;
 		m_srcExFmt.value = 0;
 		m_bInterlaced = 0;
-		m_bUpsideDown = (pmt->subtype == MEDIASUBTYPE_RGB32 && vih->bmiHeader.biHeight > 0);
 	}
 	else {
 		return FALSE;
 	}
+
+	m_srcWidth       = pBIH->biWidth;
+	m_srcHeight      = labs(pBIH->biHeight);
+	UINT biSizeImage = pBIH->biSizeImage;
+	if (pBIH->biSizeImage == 0 && pBIH->biCompression == BI_RGB) { // biSizeImage may be zero for BI_RGB bitmaps
+		biSizeImage = m_srcWidth * m_srcHeight * pBIH->biBitCount / 8;
+	}
+	m_bUpsideDown = (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0);
 
 	if (m_srcRect.IsRectNull() && m_trgRect.IsRectNull()) {
 		// Hmm

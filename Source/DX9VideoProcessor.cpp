@@ -862,18 +862,13 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
 	const GUID SubType = pmt->subtype;
-
-	UINT biWidth     = 0;
-	UINT biHeight    = 0;
-	UINT biSizeImage = 0;
+	const BITMAPINFOHEADER* pBIH = nullptr;
 
 	if (pmt->formattype == FORMAT_VideoInfo2) {
 		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
+		pBIH = &vih2->bmiHeader;
 		m_srcRect   = vih2->rcSource;
 		m_trgRect   = vih2->rcTarget;
-		biWidth     = vih2->bmiHeader.biWidth;
-		biHeight    = labs(vih2->bmiHeader.biHeight);
-		biSizeImage = vih2->bmiHeader.biSizeImage;
 		m_srcAspectRatioX = vih2->dwPictAspectRatioX;
 		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
 		if (!FmtConvParams->bRGB && (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT))) {
@@ -883,27 +878,28 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 			m_srcExFmt.value = 0; // ignore color info for RGB
 		}
 		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
-		m_bUpsideDown = (SubType == MEDIASUBTYPE_RGB32 && vih2->bmiHeader.biHeight > 0);
 	}
 	else if (pmt->formattype == FORMAT_VideoInfo) {
 		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)pmt->pbFormat;
+		pBIH = &vih->bmiHeader;
 		m_srcRect   = vih->rcSource;
 		m_trgRect   = vih->rcTarget;
-		biWidth     = vih->bmiHeader.biWidth;
-		biHeight    = labs(vih->bmiHeader.biHeight);
-		biSizeImage = vih->bmiHeader.biSizeImage;
-		if (biSizeImage == 0 && vih->bmiHeader.biCompression == BI_RGB) { // biSizeImage may be zero for BI_RGB bitmaps
-			biSizeImage = biWidth * biHeight * 4;
-		}
 		m_srcAspectRatioX = 0;
 		m_srcAspectRatioY = 0;
 		m_srcExFmt.value = 0;
 		m_bInterlaced = 0;
-		m_bUpsideDown = (SubType == MEDIASUBTYPE_RGB32 && vih->bmiHeader.biHeight > 0);
 	}
 	else {
 		return FALSE;
 	}
+
+	UINT biWidth     = pBIH->biWidth;
+	UINT biHeight    = labs(pBIH->biHeight);
+	UINT biSizeImage = pBIH->biSizeImage;
+	if (pBIH->biSizeImage == 0 && pBIH->biCompression == BI_RGB) { // biSizeImage may be zero for BI_RGB bitmaps
+		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
+	}
+	m_bUpsideDown = (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0);
 
 	if (!FmtConvParams->bRGB && m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
 		if (biWidth <= 1024 && biHeight <= 576) { // SD
