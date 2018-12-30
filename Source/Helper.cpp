@@ -115,19 +115,19 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
 }
 
 static FmtConvParams_t s_FmtConvMapping[] = {
-	//   subtype          | str     |DXVA2Format     | D3DFormat(DX9)    | DXGIFormat(DX11)   |Packsize|PitchCoeff| bRGB|  Func               | FuncUD
-	{ MEDIASUBTYPE_YV12,   "YV12",   D3DFMT_YV12,     D3DFMT_UNKNOWN,     DXGI_FORMAT_UNKNOWN,        1, 3,        false, &CopyFrameYV12,       nullptr},
-	{ MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_UNKNOWN,     DXGI_FORMAT_NV12,           1, 3,        false, &CopyFramePackedUV,   nullptr},
-	{ MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_UNKNOWN,     DXGI_FORMAT_P010,           2, 3,        false, &CopyFramePackedUV,   nullptr},
-	{ MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_UNKNOWN,     DXGI_FORMAT_YUY2,           2, 2,        false, &CopyFrameAsIs,       nullptr},
-	{ MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,    DXGI_FORMAT_AYUV,           4, 2,        false, &CopyFrameAsIs,       nullptr},
-	{ MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, 4, 2,        true,  &CopyFrameAsIs,       &CopyFrameUpsideDown },
-	{ MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,    DXGI_FORMAT_B8G8R8A8_UNORM, 4, 2,        true,  &CopyFrameUpsideDown, nullptr },
-	{ MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, 3, 2,        true,  &CopyFrameRGB24UpsideDownSSSE3, nullptr },
-	{ MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,          DXGI_FORMAT_UNKNOWN,        1, 2,        true,  &CopyFrameAsIs,       nullptr },
-	{ MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,          DXGI_FORMAT_UNKNOWN,        1, 2,        true,  &CopyFrameAsIs,       nullptr },
-	{ MEDIASUBTYPE_Y116,   "Y116",   D3DFMT_UNKNOWN,  D3DFMT_L16,         DXGI_FORMAT_UNKNOWN,        2, 2,        true,  &CopyFrameAsIs,       nullptr },
-	{ MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_UNKNOWN,  D3DFMT_A2B10G10R10, DXGI_FORMAT_UNKNOWN,        4, 2,        false, &CopyFrameAsIs,       nullptr },
+	//   subtype          | str     |DXVA2Format     | D3DFormat(DX9)    | DXGIFormat(DX11)   |Packsize|PitchCoeff| bRGB|  Func
+	{ MEDIASUBTYPE_YV12,   "YV12",   D3DFMT_YV12,     D3DFMT_UNKNOWN,     DXGI_FORMAT_UNKNOWN,        1, 3,        false, &CopyFrameYV12,       },
+	{ MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_UNKNOWN,     DXGI_FORMAT_NV12,           1, 3,        false, &CopyFramePackedUV,   },
+	{ MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_UNKNOWN,     DXGI_FORMAT_P010,           2, 3,        false, &CopyFramePackedUV,   },
+	{ MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_UNKNOWN,     DXGI_FORMAT_YUY2,           2, 2,        false, &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,    DXGI_FORMAT_AYUV,           4, 2,        false, &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, 4, 2,        true,  &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,    DXGI_FORMAT_B8G8R8A8_UNORM, 4, 2,        true,  &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, 3, 2,        true,  &CopyFrameRGB24SSSE3, },
+	{ MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,          DXGI_FORMAT_UNKNOWN,        1, 2,        true,  &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,          DXGI_FORMAT_UNKNOWN,        1, 2,        true,  &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_Y116,   "Y116",   D3DFMT_UNKNOWN,  D3DFMT_L16,         DXGI_FORMAT_UNKNOWN,        2, 2,        true,  &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_UNKNOWN,  D3DFMT_A2B10G10R10, DXGI_FORMAT_UNKNOWN,        4, 2,        false, &CopyFrameAsIs,       },
 };
 
 const FmtConvParams_t* GetFmtConvParams(GUID subtype)
@@ -140,30 +140,20 @@ const FmtConvParams_t* GetFmtConvParams(GUID subtype)
 	return nullptr;
 }
 
-void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch)
+void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
 {
+	unsigned linesize = abs(src_pitch);
+
 	for (UINT y = 0; y < height; ++y) {
-		memcpy(dst, src, src_pitch);
+		memcpy(dst, src, linesize);
 		src += src_pitch;
 		dst += dst_pitch;
 	}
 }
 
-void CopyFrameUpsideDown(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch)
+void CopyFrameRGB24(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
 {
-	src += src_pitch * (height - 1);
-
-	for (UINT y = 0; y < height; ++y) {
-		memcpy(dst, src, src_pitch);
-		src -= src_pitch;
-		dst += dst_pitch;
-	}
-}
-
-void CopyFrameRGB24UpsideDown(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch)
-{
-	src += src_pitch * (height - 1);
-	UINT line_pixels = src_pitch / 3;
+	UINT line_pixels = abs(src_pitch) / 3;
 
 	for (UINT y = 0; y < height; ++y) {
 		uint32_t* src32 = (uint32_t*)src;
@@ -181,15 +171,14 @@ void CopyFrameRGB24UpsideDown(const UINT height, BYTE* dst, UINT dst_pitch, BYTE
 			src32 += 3;
 		}
 
-		src -= src_pitch;
+		src += src_pitch;
 		dst += dst_pitch;
 	}
 }
 
-void CopyFrameRGB24UpsideDownSSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch)
+void CopyFrameRGB24SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
 {
-	src += src_pitch * (height - 1);
-	UINT line_pixels = src_pitch / 3;
+	UINT line_pixels = abs(src_pitch) / 3;
 	__m128i mask = _mm_setr_epi8(0, 1, 2, -1, 3, 4, 5, -1, 6, 7, 8, -1, 9, 10, 11, -1);
 
 	for (UINT y = 0; y < height; ++y) {
@@ -213,13 +202,15 @@ void CopyFrameRGB24UpsideDownSSSE3(const UINT height, BYTE* dst, UINT dst_pitch,
 			dst128 += 4;
 		}
 
-		src -= src_pitch;
+		src += src_pitch;
 		dst += dst_pitch;
 	}
 }
 
-void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch)
+void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
 {
+	ASSERT(src_pitch > 0);
+
 	for (UINT y = 0; y < height; ++y) {
 		memcpy(dst, src, src_pitch);
 		src += src_pitch;
@@ -239,8 +230,9 @@ void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT
 	}
 }
 
-void CopyFramePackedUV(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch)
+void CopyFramePackedUV(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
 {
+	ASSERT(src_pitch > 0);
 	UINT lines = height * 3 / 2;
 
 	for (UINT y = 0; y < lines; ++y) {
@@ -250,8 +242,9 @@ void CopyFramePackedUV(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, 
 	}
 }
 
-void CopyFrameY410(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch)
+void CopyFrameY410(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
 {
+	ASSERT(src_pitch > 0);
 	UINT line_pixels = src_pitch / 4;
 
 	for (UINT y = 0; y < height; ++y) {
@@ -259,10 +252,7 @@ void CopyFrameY410(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT
 		uint32_t* dst32 = (uint32_t*)dst;
 		for (UINT i = 0; i < line_pixels; i++) {
 			uint32_t t = src32[i];
-			//uint32_t U = (t & 0x000003ff);
-			//uint32_t Y = (t & 0x000ffc00) >> 10;
-			//uint32_t V = (t & 0x3ff00000) >> 20;
-			//uint32_t A = (t & 0xC0000000) >> 30;
+			// U = (t & 0x000003ff); Y = (t & 0x000ffc00) >> 10; V = (t & 0x3ff00000) >> 20; A = (t & 0xC0000000) >> 30;
 			//dst32[i] = (t & 0xC0000000) | ((t & 0x000fffff) << 10) | ((t & 0x3ff00000) >> 20); // to D3DFMT_A2R10G10B10
 			dst32[i] = (t & 0xfff00000) | ((t & 0x000003ff) << 10) | ((t & 0x000ffc00) >> 10); // to D3DFMT_A2B10G10R10
 		}

@@ -136,14 +136,13 @@ private:
 	D3DFORMAT m_srcD3DFormat    = D3DFMT_UNKNOWN;
 	UINT      m_srcWidth        = 0;
 	UINT      m_srcHeight       = 0;
-	UINT      m_srcPitch        = 0;
+	int       m_srcPitch        = 0;
 	DWORD     m_srcAspectRatioX = 0;
 	DWORD     m_srcAspectRatioY = 0;
 	CRect m_srcRect;
 	CRect m_trgRect;
 	DXVA2_ExtendedFormat m_srcExFmt = {};
 	bool m_bInterlaced = false;
-	bool m_bUpsideDown = false;
 
 	// Output parameters
 	D3DFORMAT m_VPOutputFmt = D3DFMT_X8R8G8B8;

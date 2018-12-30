@@ -899,7 +899,6 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	if (pBIH->biSizeImage == 0 && pBIH->biCompression == BI_RGB) { // biSizeImage may be zero for BI_RGB bitmaps
 		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
 	}
-	m_bUpsideDown = (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0);
 
 	if (!FmtConvParams->bRGB && m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
 		if (biWidth <= 1024 && biHeight <= 576) { // SD
@@ -916,13 +915,16 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	m_srcD3DFormat = FmtConvParams->D3DFormat;
-	m_pConvertFn   = (m_bUpsideDown && FmtConvParams->FuncUD) ? FmtConvParams->FuncUD : FmtConvParams->Func;
+	m_pConvertFn   = FmtConvParams->Func;
 	m_srcPitch     = biSizeImage * 2 / (biHeight * FmtConvParams->PitchCoeff);
 	if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
 		m_srcPitch = ALIGN(m_srcPitch, 4);
 	}
 	else if (SubType == MEDIASUBTYPE_P010) {
 		m_srcPitch &= ~1u;
+	}
+	if (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0) {
+		m_srcPitch = -m_srcPitch;
 	}
 
 	for (auto& shader: m_PixelShaders) {
@@ -1112,7 +1114,8 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 			int64_t tick_2 = GetPreciseTick();
 			ASSERT(m_pConvertFn);
-			m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, data, m_srcPitch);
+			BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
+			m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
 			int64_t tick_3 = GetPreciseTick();
 
 			hr = m_SrcSamples.Get().pSrcSurface->UnlockRect();

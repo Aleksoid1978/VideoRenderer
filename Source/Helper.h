@@ -94,7 +94,7 @@ const wchar_t* D3DFormatToString(const D3DFORMAT format);
 const wchar_t* DXGIFormatToString(const DXGI_FORMAT format);
 const wchar_t* DXVA2VPDeviceToString(const GUID& guid);
 
-typedef void(*CopyFrameDataFn)(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
+typedef void(*CopyFrameDataFn)(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 
 struct FmtConvParams_t {
 	GUID            Subtype;
@@ -106,23 +106,20 @@ struct FmtConvParams_t {
 	int             PitchCoeff;
 	bool            bRGB;
 	CopyFrameDataFn Func;
-	CopyFrameDataFn FuncUD;
 };
 
 const FmtConvParams_t* GetFmtConvParams(GUID subtype);
 
-// YUY2, AYUV
-void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
-// RGB32 to X8R8G8B8, ARGB32 to A8R8G8B8
-void CopyFrameUpsideDown(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
+// YUY2, AYUV, RGB32 to X8R8G8B8, ARGB32 to A8R8G8B8
+void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 // RGB24 to X8R8G8B8
-void CopyFrameRGB24UpsideDown(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
-void CopyFrameRGB24UpsideDownSSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
+void CopyFrameRGB24(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
+void CopyFrameRGB24SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 // YV12
-void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
+void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 // NV12, P010
-void CopyFramePackedUV(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
+void CopyFramePackedUV(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 // Y410
-void CopyFrameY410(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, UINT src_pitch);
+void CopyFrameY410(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 
 void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d);

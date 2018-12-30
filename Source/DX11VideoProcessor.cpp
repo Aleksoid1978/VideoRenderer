@@ -454,7 +454,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	if (pBIH->biSizeImage == 0 && pBIH->biCompression == BI_RGB) { // biSizeImage may be zero for BI_RGB bitmaps
 		biSizeImage = m_srcWidth * m_srcHeight * pBIH->biBitCount / 8;
 	}
-	m_bUpsideDown = (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0);
 
 	if (m_srcRect.IsRectNull() && m_trgRect.IsRectNull()) {
 		// Hmm
@@ -464,13 +463,16 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	m_srcD3DFormat  = FmtConvParams->DXVA2Format;
 	m_srcDXGIFormat = FmtConvParams->DXGIFormat;
-	m_pConvertFn    = (m_bUpsideDown && FmtConvParams->FuncUD) ? FmtConvParams->FuncUD : FmtConvParams->Func;;
+	m_pConvertFn    = FmtConvParams->Func;
 	m_srcPitch      = biSizeImage * 2 / (m_srcHeight * FmtConvParams->PitchCoeff);
 	if (pmt->subtype == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
 		m_srcPitch = ALIGN(m_srcPitch, 4);
 	}
 	else if (pmt->subtype == MEDIASUBTYPE_P010) {
 		m_srcPitch &= ~1u;
+	}
+	if (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0) {
+		m_srcPitch = -m_srcPitch;
 	}
 
 	if (S_OK == Initialize(m_srcWidth, m_srcHeight, m_srcDXGIFormat)) {
@@ -778,7 +780,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			hr = m_pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 			if (SUCCEEDED(hr)) {
 				ASSERT(m_pConvertFn);
-				m_pConvertFn(m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, m_srcPitch);
+				BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
+				m_pConvertFn(m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, src, m_srcPitch);
 				m_pImmediateContext->Unmap(m_pSrcTexture2D, 0);
 				m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
 			}
