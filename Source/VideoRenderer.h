@@ -50,6 +50,7 @@ class CVideoRendererInputPin;
 class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	CMpcVideoRenderer
 	: public CBaseRenderer
+	, public IKsPropertySet
 	, public IMFGetService
 	, public IBasicVideo2
 	, public IVideoWindow
@@ -93,6 +94,11 @@ public:
 	// IMediaFilter
 	STDMETHODIMP Run(REFERENCE_TIME rtStart) override;
 	STDMETHODIMP Stop() override;
+
+	// IKsPropertySet
+	STDMETHODIMP Set(REFGUID PropSet, ULONG Id, LPVOID pInstanceData, ULONG InstanceLength, LPVOID pPropertyData, ULONG DataLength);
+	STDMETHODIMP Get(REFGUID PropSet, ULONG Id, LPVOID pInstanceData, ULONG InstanceLength, LPVOID pPropertyData, ULONG DataLength, ULONG* pBytesReturned);
+	STDMETHODIMP QuerySupported(REFGUID PropSet, ULONG Id, ULONG* pTypeSupport);
 
 	// IMFGetService
 	STDMETHODIMP GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject);

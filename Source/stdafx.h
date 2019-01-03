@@ -32,6 +32,7 @@
 #include <atlwin.h>
 
 #include <dmodshow.h>
+#include <dvdmedia.h>
 #include "./BaseClasses/streams.h"
 
 #include <algorithm>

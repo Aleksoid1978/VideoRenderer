@@ -21,7 +21,6 @@
 #include "stdafx.h"
 #include <vector>
 #include <d3d9.h>
-#include <dvdmedia.h>
 #include <mfapi.h> // for MR_BUFFER_SERVICE
 #include <mfidl.h>
 #include <Mferror.h>

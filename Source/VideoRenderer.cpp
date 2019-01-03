@@ -23,7 +23,6 @@
 #include <VersionHelpers.h>
 #include <evr.h> // for MR_VIDEO_ACCELERATION_SERVICE, because the <mfapi.h> does not contain it
 #include <Mferror.h>
-#include <Dvdmedia.h>
 #include "Helper.h"
 #include "PropPage.h"
 #include "VideoRendererInputPin.h"
@@ -161,7 +160,10 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 	CheckPointer(ppv, E_POINTER);
 
 	HRESULT hr;
-	if (riid == __uuidof(IMFGetService)) {
+	if (riid == __uuidof(IKsPropertySet)) {
+		hr = GetInterface((IKsPropertySet*)this, ppv);
+	}
+	else if (riid == __uuidof(IMFGetService)) {
 		hr = GetInterface((IMFGetService*)this, ppv);
 	}
 	else if (riid == __uuidof(IBasicVideo)) {
@@ -216,6 +218,36 @@ STDMETHODIMP CMpcVideoRenderer::Stop()
 	m_filterState = State_Stopped;
 
 	return CBaseRenderer::Stop();
+}
+
+// IKsPropertySet
+STDMETHODIMP CMpcVideoRenderer::Set(REFGUID PropSet, ULONG Id, LPVOID pInstanceData, ULONG InstanceLength, LPVOID pPropertyData, ULONG DataLength)
+{
+	if (PropSet != AM_KSPROPSETID_CopyProt) {
+		return E_PROP_SET_UNSUPPORTED;
+	}
+	if (Id != AM_PROPERTY_COPY_MACROVISION) {
+		return E_PROP_ID_UNSUPPORTED;
+	}
+	DLog(L"Oops, no-no-no, no macrovision please");
+	return S_OK;
+}
+
+STDMETHODIMP CMpcVideoRenderer::Get(REFGUID PropSet, ULONG Id, LPVOID pInstanceData, ULONG InstanceLength, LPVOID pPropertyData, ULONG DataLength, ULONG* pBytesReturned)
+{
+	return E_PROP_SET_UNSUPPORTED;
+}
+
+STDMETHODIMP CMpcVideoRenderer::QuerySupported(REFGUID PropSet, ULONG Id, ULONG* pTypeSupport)
+{
+	if (PropSet != AM_KSPROPSETID_CopyProt) {
+		return E_PROP_SET_UNSUPPORTED;
+	}
+	if (Id != AM_PROPERTY_COPY_MACROVISION) {
+		return E_PROP_ID_UNSUPPORTED;
+	}
+	*pTypeSupport = KSPROPERTY_SUPPORT_SET;
+	return S_OK;
 }
 
 // IMFGetService
