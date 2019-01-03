@@ -223,14 +223,17 @@ STDMETHODIMP CMpcVideoRenderer::Stop()
 // IKsPropertySet
 STDMETHODIMP CMpcVideoRenderer::Set(REFGUID PropSet, ULONG Id, LPVOID pInstanceData, ULONG InstanceLength, LPVOID pPropertyData, ULONG DataLength)
 {
-	if (PropSet != AM_KSPROPSETID_CopyProt) {
+	if (PropSet == AM_KSPROPSETID_CopyProt) {
+		if (Id == AM_PROPERTY_COPY_MACROVISION) {
+			DLog(L"Oops, no-no-no, no macrovision please");
+			return S_OK;
+		}
+	}
+	else {
 		return E_PROP_SET_UNSUPPORTED;
 	}
-	if (Id != AM_PROPERTY_COPY_MACROVISION) {
-		return E_PROP_ID_UNSUPPORTED;
-	}
-	DLog(L"Oops, no-no-no, no macrovision please");
-	return S_OK;
+
+	return E_PROP_ID_UNSUPPORTED;
 }
 
 STDMETHODIMP CMpcVideoRenderer::Get(REFGUID PropSet, ULONG Id, LPVOID pInstanceData, ULONG InstanceLength, LPVOID pPropertyData, ULONG DataLength, ULONG* pBytesReturned)
@@ -240,14 +243,21 @@ STDMETHODIMP CMpcVideoRenderer::Get(REFGUID PropSet, ULONG Id, LPVOID pInstanceD
 
 STDMETHODIMP CMpcVideoRenderer::QuerySupported(REFGUID PropSet, ULONG Id, ULONG* pTypeSupport)
 {
-	if (PropSet != AM_KSPROPSETID_CopyProt) {
+	if (PropSet == AM_KSPROPSETID_CopyProt) {
+		if (Id == AM_PROPERTY_COPY_MACROVISION) {
+			*pTypeSupport = KSPROPERTY_SUPPORT_SET;
+			return S_OK;
+		}
+		if (Id == AM_PROPERTY_COPY_ANALOG_COMPONENT) {
+			*pTypeSupport = KSPROPERTY_SUPPORT_GET;
+			return S_OK;
+		}
+	}
+	else {
 		return E_PROP_SET_UNSUPPORTED;
 	}
-	if (Id != AM_PROPERTY_COPY_MACROVISION) {
-		return E_PROP_ID_UNSUPPORTED;
-	}
-	*pTypeSupport = KSPROPERTY_SUPPORT_SET;
-	return S_OK;
+
+	return E_PROP_ID_UNSUPPORTED;
 }
 
 // IMFGetService
