@@ -1,5 +1,5 @@
 /*
-* (C) 2018 see Authors.txt
+* (C) 2018-2019 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -19,7 +19,6 @@
 */
 
 #include "stdafx.h"
-#include <vector>
 #include <d3d9.h>
 #include <mfapi.h> // for MR_BUFFER_SERVICE
 #include <mfidl.h>

@@ -1,5 +1,5 @@
 /*
- * (C) 2018 see Authors.txt
+ * (C) 2018-2019 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -36,12 +36,12 @@
 #include "./BaseClasses/streams.h"
 
 #include <algorithm>
-
 // Workaround compilation errors when including GDI+ with NOMINMAX defined
 namespace Gdiplus
 {
 	using std::min;
 	using std::max;
 };
+#include <vector>
 
 #define CHECK_HR(hr) { if (FAILED(hr)) return hr; }
