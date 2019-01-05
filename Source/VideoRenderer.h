@@ -1,5 +1,5 @@
 /*
- * (C) 2018 see Authors.txt
+ * (C) 2018-2019 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -24,7 +24,6 @@
 #include <d3d9.h>
 #include <mfidl.h>
 #include <dxva2api.h>
-#include <mutex>
 #include "IVideoRenderer.h"
 #include "DX9VideoProcessor.h"
 #include "DX11VideoProcessor.h"
@@ -67,7 +66,6 @@ private:
 
 	HWND m_hWnd = nullptr;
 
-	std::mutex m_mutex;
 	FILTER_STATE m_filterState = State_Stopped;
 
 	// DXVA2 VideoProcessor

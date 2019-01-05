@@ -95,7 +95,7 @@ HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 	if (pmt->majortype == MEDIATYPE_Video && (pmt->formattype == FORMAT_VideoInfo2 || pmt->formattype == FORMAT_VideoInfo)) {
 		for (const auto& sudPinType : sudPinTypesIn) {
 			if (pmt->subtype == *sudPinType.clsMinorType) {
-				std::unique_lock<std::mutex> lock(m_mutex);
+				CAutoLock cRendererLock(&m_RendererLock);
 
 				if (m_bUsedD3D11) {
 					if (!m_DX11_VP.VerifyMediaType(pmt)) {
@@ -122,7 +122,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 	HRESULT hr = __super::SetMediaType(pmt);
 	if (S_OK == hr) {
-		std::unique_lock<std::mutex> lock(m_mutex);
+		CAutoLock cRendererLock(&m_RendererLock);
 
 		if (m_bUsedD3D11) {
 			if (!m_DX11_VP.InitMediaType(pmt)) {
@@ -141,7 +141,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 {
 	CheckPointer(pSample, E_POINTER);
-	std::unique_lock<std::mutex> lock(m_mutex);
+	CAutoLock cRendererLock(&m_RendererLock);
 
 	HRESULT hr = S_OK;
 
@@ -293,7 +293,7 @@ STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long
 {
 	CRect videoRect(Left, Top, Left + Width, Top + Height);
 
-	std::unique_lock<std::mutex> lock(m_mutex);
+	CAutoLock cRendererLock(&m_RendererLock);
 	if (m_bUsedD3D11) {
 		m_DX11_VP.SetVideoRect(videoRect);
 		if (m_filterState != State_Stopped) {
@@ -362,7 +362,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 {
 	CRect windowRect(Left, Top, Left + Width, Top + Height);
 
-	std::unique_lock<std::mutex> lock(m_mutex);
+	CAutoLock cRendererLock(&m_RendererLock);
 	if (m_bUsedD3D11) {
 		m_DX11_VP.InitSwapChain(m_hWnd, windowRect.Width(), windowRect.Height());
 		m_DX11_VP.SetWindowRect(windowRect);
