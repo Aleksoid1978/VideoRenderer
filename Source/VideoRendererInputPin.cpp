@@ -81,6 +81,57 @@ STDMETHODIMP CVideoRendererInputPin::GetAllocatorRequirements(ALLOCATOR_PROPERTI
 	return S_OK;
 }
 
+STDMETHODIMP CVideoRendererInputPin::ReceiveConnection(IPin* pConnector, const AM_MEDIA_TYPE* pmt)
+{
+	CAutoLock cObjectLock(m_pLock);
+
+	if (m_Connected) {
+		CMediaType mt(*pmt);
+
+		if (FAILED(CheckMediaType(&mt))) {
+			return VFW_E_TYPE_NOT_ACCEPTED;
+		}
+
+		ALLOCATOR_PROPERTIES props, actual;
+
+		CComPtr<IMemAllocator> pMemAllocator;
+		if (FAILED(GetAllocator(&pMemAllocator))
+				|| FAILED(pMemAllocator->Decommit())
+				|| FAILED(pMemAllocator->GetProperties(&props))) {
+			return E_FAIL;
+		}
+
+		DWORD biSizeImage = 0;
+		if (pmt->formattype == FORMAT_VideoInfo2) {
+			const auto vih = (VIDEOINFOHEADER2*)pmt->pbFormat;
+			const auto& bih = vih->bmiHeader;
+			biSizeImage = bih.biSizeImage ? bih.biSizeImage : DIBSIZE(bih);
+		} else if (pmt->formattype == FORMAT_VideoInfo) {
+			const auto vih = (VIDEOINFOHEADER*)pmt->pbFormat;
+			const auto& bih = vih->bmiHeader;
+			biSizeImage = bih.biSizeImage ? bih.biSizeImage : DIBSIZE(bih);
+		} else {
+			return VFW_E_TYPE_NOT_ACCEPTED;
+		}
+
+		if (biSizeImage) {
+			props.cbBuffer = biSizeImage;
+		}
+
+		if (FAILED(pMemAllocator->SetProperties(&props, &actual))
+				|| FAILED(pMemAllocator->Commit())
+				|| props.cbBuffer != actual.cbBuffer) {
+			return E_FAIL;
+		}
+
+		return SetMediaType(&mt) == S_OK
+			? S_OK
+			: VFW_E_TYPE_NOT_ACCEPTED;
+	}
+
+	return __super::ReceiveConnection(pConnector, pmt);
+}
+
 // IMFGetService
 STDMETHODIMP CVideoRendererInputPin::GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject)
 {

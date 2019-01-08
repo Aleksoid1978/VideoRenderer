@@ -46,6 +46,7 @@ public:
 	// CBaseInputPin
 	STDMETHODIMP GetAllocator(IMemAllocator **ppAllocator);
 	STDMETHODIMP GetAllocatorRequirements(ALLOCATOR_PROPERTIES* pProps);
+	STDMETHODIMP ReceiveConnection(IPin* pConnector, const AM_MEDIA_TYPE* pmt);
 
 	// IMFGetService
 	STDMETHODIMP GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject);
