@@ -1,5 +1,5 @@
 /*
- * (C) 2018 see Authors.txt
+ * (C) 2018-2019 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -44,7 +44,10 @@ STDMETHODIMP CVideoRendererInputPin::NonDelegatingQueryInterface(REFIID riid, vo
 		__super::NonDelegatingQueryInterface(riid, ppv);
 }
 
-STDMETHODIMP CVideoRendererInputPin::GetAllocator(IMemAllocator **ppAllocator) {
+STDMETHODIMP CVideoRendererInputPin::GetAllocator(IMemAllocator **ppAllocator)
+{
+	DLog(L"CVideoRendererInputPin::GetAllocator()");
+
 	if (m_bDXVA || m_bD3D11) {
 		// Renderer shouldn't manage allocator for DXVA/D3D11
 		return E_NOTIMPL;
@@ -74,7 +77,8 @@ STDMETHODIMP CVideoRendererInputPin::GetAllocator(IMemAllocator **ppAllocator) {
 	return pAlloc->QueryInterface(IID_IMemAllocator, (void**)ppAllocator);
 }
 
-STDMETHODIMP CVideoRendererInputPin::GetAllocatorRequirements(ALLOCATOR_PROPERTIES* pProps) {
+STDMETHODIMP CVideoRendererInputPin::GetAllocatorRequirements(ALLOCATOR_PROPERTIES* pProps)
+{
 	// 1 buffer required
 	ZeroMemory(pProps, sizeof(ALLOCATOR_PROPERTIES));
 	pProps->cbBuffer = 1;
@@ -83,6 +87,8 @@ STDMETHODIMP CVideoRendererInputPin::GetAllocatorRequirements(ALLOCATOR_PROPERTI
 
 STDMETHODIMP CVideoRendererInputPin::ReceiveConnection(IPin* pConnector, const AM_MEDIA_TYPE* pmt)
 {
+	DLog(L"CVideoRendererInputPin::ReceiveConnection()");
+
 	CAutoLock cObjectLock(m_pLock);
 
 	if (m_Connected) {

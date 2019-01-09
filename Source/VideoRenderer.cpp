@@ -117,6 +117,8 @@ HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 
 HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 {
+	DLog(L"CMpcVideoRenderer::SetMediaType()");
+
 	CheckPointer(pmt, E_POINTER);
 	CheckPointer(pmt->pbFormat, E_POINTER);
 
