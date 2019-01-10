@@ -268,13 +268,13 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 	D3DCAPS9 DevCaps = {};
 	if (S_OK == m_pD3DEx->GetDeviceCaps(m_CurrentAdapter, D3DDEVTYPE_HAL, &DevCaps)) {
 		CStringW dbgstr = L"DeviceCaps:";
-		dbgstr.AppendFormat(L"\nMaxTextureWidth                 : %u", DevCaps.MaxTextureWidth);
-		dbgstr.AppendFormat(L"\nMaxTextureHeight                : %u", DevCaps.MaxTextureHeight);
-		dbgstr.AppendFormat(L"\nPresentationInterval IMMEDIATE  : %s", DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_IMMEDIATE ? L"supported" : L"NOT supported");
-		dbgstr.AppendFormat(L"\nPresentationInterval ONE        : %s", DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_ONE ? L"supported" : L"NOT supported");
-		dbgstr.AppendFormat(L"\nCaps READ_SCANLINE              : %s", DevCaps.Caps & D3DCAPS_READ_SCANLINE ? L"supported" : L"NOT supported");
-		dbgstr.AppendFormat(L"\nPixelShaderVersion              : %u.%u", D3DSHADER_VERSION_MAJOR(DevCaps.PixelShaderVersion), D3DSHADER_VERSION_MINOR(DevCaps.PixelShaderVersion));
-		dbgstr.AppendFormat(L"\nMaxPixelShader30InstructionSlots: %u", DevCaps.MaxPixelShader30InstructionSlots);
+		dbgstr.AppendFormat(L"\n  MaxTextureWidth                 : %u", DevCaps.MaxTextureWidth);
+		dbgstr.AppendFormat(L"\n  MaxTextureHeight                : %u", DevCaps.MaxTextureHeight);
+		dbgstr.AppendFormat(L"\n  PresentationInterval IMMEDIATE  : %s", DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_IMMEDIATE ? L"supported" : L"NOT supported");
+		dbgstr.AppendFormat(L"\n  PresentationInterval ONE        : %s", DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_ONE ? L"supported" : L"NOT supported");
+		dbgstr.AppendFormat(L"\n  Caps READ_SCANLINE              : %s", DevCaps.Caps & D3DCAPS_READ_SCANLINE ? L"supported" : L"NOT supported");
+		dbgstr.AppendFormat(L"\n  PixelShaderVersion              : %u.%u", D3DSHADER_VERSION_MAJOR(DevCaps.PixelShaderVersion), D3DSHADER_VERSION_MINOR(DevCaps.PixelShaderVersion));
+		dbgstr.AppendFormat(L"\n  MaxPixelShader30InstructionSlots: %u", DevCaps.MaxPixelShader30InstructionSlots);
 		DLog(dbgstr);
 	}
 #endif
@@ -517,7 +517,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	{
 		CStringW dbgstr = L"DXVA2-VP output formats:";
 		for (UINT j = 0; j < count; j++) {
-			dbgstr.AppendFormat(L"\n%s", D3DFormatToString(formats[j]));
+			dbgstr.AppendFormat(L"\n  %s", D3DFormatToString(formats[j]));
 		}
 		DLog(dbgstr);
 	}
