@@ -231,6 +231,7 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 
 HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* pChangeDevice)
 {
+	DLog(L"CDX9VideoProcessor::Init()");
 	CheckPointer(m_pD3DEx, E_FAIL);
 
 	m_hWnd = hwnd;
@@ -258,11 +259,13 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 	if (S_OK == m_pD3DEx->GetAdapterIdentifier(m_CurrentAdapter, 0, &AdapID9)) {
 		m_VendorId = AdapID9.VendorId;
 		m_strAdapterDescription.Format(L"%S (%04X:%04X)", AdapID9.Description, AdapID9.VendorId, AdapID9.DeviceId);
+		DLog(L"Graphics adapter: %s", m_strAdapterDescription);
 	}
 
 	ZeroMemory(&m_DisplayMode, sizeof(D3DDISPLAYMODEEX));
 	m_DisplayMode.Size = sizeof(D3DDISPLAYMODEEX);
 	HRESULT hr = m_pD3DEx->GetAdapterDisplayModeEx(m_CurrentAdapter, &m_DisplayMode, nullptr);
+	DLog(L"Display Mode: %ux%u, %u%c", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate, (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) ? 'i' : 'p');
 
 #ifdef _DEBUG
 	D3DCAPS9 DevCaps = {};

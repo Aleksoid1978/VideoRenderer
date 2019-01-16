@@ -187,6 +187,7 @@ void CDX11VideoProcessor::ClearD3D11()
 
 HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
 {
+	DLog(L"CDX11VideoProcessor::SetDevice()");
 	ClearD3D11();
 
 	CheckPointer(pDevice, E_POINTER);
@@ -273,6 +274,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	if (SUCCEEDED(hr)) {
 		m_VendorId = dxgiAdapterDesc.VendorId;
 		m_strAdapterDescription.Format(L"%s (%04X:%04X)", dxgiAdapterDesc.Description, dxgiAdapterDesc.VendorId, dxgiAdapterDesc.DeviceId);
+		DLog(L"Graphics adapter: %s", m_strAdapterDescription);
 	}
 
 #ifdef DEBUG
