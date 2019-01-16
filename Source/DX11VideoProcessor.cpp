@@ -275,6 +275,43 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		m_strAdapterDescription.Format(L"%s (%04X:%04X)", dxgiAdapterDesc.Description, dxgiAdapterDesc.VendorId, dxgiAdapterDesc.DeviceId);
 	}
 
+#ifdef DEBUG
+	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc = { D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE, {}, 1920, 1080, {}, 1920, 1080, D3D11_VIDEO_USAGE_PLAYBACK_NORMAL };
+	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcEnum;
+	if (S_OK == m_pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pVideoProcEnum)) {
+		const DXGI_FORMAT fmts[] = {
+			DXGI_FORMAT_R10G10B10A2_UNORM,
+			DXGI_FORMAT_R8G8B8A8_UNORM,
+			DXGI_FORMAT_B8G8R8A8_UNORM,
+			DXGI_FORMAT_B8G8R8X8_UNORM,
+			DXGI_FORMAT_AYUV,
+			DXGI_FORMAT_NV12,
+			DXGI_FORMAT_P010,
+			DXGI_FORMAT_420_OPAQUE,
+			DXGI_FORMAT_YUY2,
+			DXGI_FORMAT_AI44,
+			DXGI_FORMAT_IA44,
+			DXGI_FORMAT_P8,
+			DXGI_FORMAT_A8P8,
+		};
+		CString input = L"Supported input DXGI formats (for 1080p):";
+		CString output = L"Supported output DXGI formats (for 1080p):";
+		for (const auto& fmt : fmts) {
+			UINT uiFlags;
+			if (S_OK == pVideoProcEnum->CheckVideoProcessorFormat(fmt, &uiFlags)) {
+				if (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT) {
+					input.AppendFormat(L"\n  %s", DXGIFormatToString(fmt));
+				}
+				if (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT) {
+					output.AppendFormat(L"\n  %s", DXGIFormatToString(fmt));
+				}
+			}
+		}
+		DLog(input);
+		DLog(output);
+	}
+#endif
+
 	m_bCanUseSharedHandle = true;
 
 	return hr;
@@ -521,6 +558,11 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 
 	UINT uiFlags;
 
+	hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(dxgiFormat, &uiFlags);
+	if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT)) {
+		return MF_E_UNSUPPORTED_D3D_TYPE;
+	}
+
 	if (m_VPOutputFmt != DXGI_FORMAT_B8G8R8A8_UNORM) {
 		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(m_VPOutputFmt, &uiFlags);
 		if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
@@ -706,10 +748,10 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 		m_pImmediateContext->CopySubresourceRegion(m_pSrcTexture2D_Decode, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
 	} else if (CComQIPtr<IMFGetService> pService = pSample) {
-		CComPtr<IDirect3DSurface9> pSurface;
-		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
+		CComPtr<IDirect3DSurface9> pSurface9;
+		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface9)))) {
 			D3DSURFACE_DESC desc = {};
-			hr = pSurface->GetDesc(&desc);
+			hr = pSurface9->GetDesc(&desc);
 			if (FAILED(hr)) {
 				return hr;
 			}
@@ -720,12 +762,12 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 			if (m_bCanUseSharedHandle) {
 				for (;;) {
-					CComPtr<IDirect3DDevice9> pD3DDev;
-					pSurface->GetDevice(&pD3DDev);
+					CComPtr<IDirect3DDevice9> pD3DDev9;
+					pSurface9->GetDevice(&pD3DDev9);
 					BREAK_ON_ERROR(hr);
 
 					if (!m_pSrcTexture9) {
-						hr = pD3DDev->CreateTexture(
+						hr = pD3DDev9->CreateTexture(
 							desc.Width,
 							desc.Height,
 							1,
@@ -744,7 +786,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 						BREAK_ON_ERROR(hr);
 					}
 
-					hr = pD3DDev->StretchRect(pSurface, nullptr, m_pSrcSurface9, nullptr, D3DTEXF_NONE);
+					hr = pD3DDev9->StretchRect(pSurface9, nullptr, m_pSrcSurface9, nullptr, D3DTEXF_NONE);
 					BREAK_ON_ERROR(hr);
 
 					break;
@@ -753,7 +795,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 			if (!m_bCanUseSharedHandle) {
 				D3DLOCKED_RECT lr_src;
-				hr = pSurface->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
+				hr = pSurface9->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
 				if (S_OK == hr) {
 					D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 					hr = m_pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
@@ -764,7 +806,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 						m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
 					}
 
-					hr = pSurface->UnlockRect();
+					hr = pSurface9->UnlockRect();
 				}
 			}
 		}
