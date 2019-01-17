@@ -81,19 +81,27 @@ const wchar_t* D3DFormatToString(const D3DFORMAT format)
 const wchar_t* DXGIFormatToString(const DXGI_FORMAT format)
 {
 	switch (format) {
-	case DXGI_FORMAT_R8G8B8A8_UNORM:    return L"R8G8B8A8_UNORM";
-	case DXGI_FORMAT_B8G8R8A8_UNORM:    return L"B8G8R8A8_UNORM";
-	case DXGI_FORMAT_B8G8R8X8_UNORM:    return L"B8G8R8X8_UNORM";
-	case DXGI_FORMAT_R10G10B10A2_UNORM: return L"R10G10B10A2_UNORM";
-	case DXGI_FORMAT_AYUV:              return L"AYUV";
-	case DXGI_FORMAT_NV12:              return L"NV12";
-	case DXGI_FORMAT_P010:              return L"P010";
-	case DXGI_FORMAT_420_OPAQUE:        return L"420_OPAQUE";
-	case DXGI_FORMAT_YUY2:              return L"YUY2";
-	case DXGI_FORMAT_AI44:              return L"AI44";
-	case DXGI_FORMAT_IA44:              return L"IA44";
-	case DXGI_FORMAT_P8:                return L"P8";
-	case DXGI_FORMAT_A8P8:              return L"A8P8";
+	case DXGI_FORMAT_R16G16B16A16_FLOAT:         return L"R16G16B16A16_FLOAT";
+	case DXGI_FORMAT_R16G16B16A16_UNORM:         return L"R16G16B16A16_UNORM";
+	case DXGI_FORMAT_R10G10B10A2_UNORM:          return L"R10G10B10A2_UNORM";
+	case DXGI_FORMAT_R8G8B8A8_UNORM:             return L"R8G8B8A8_UNORM";
+	case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:        return L"R8G8B8A8_UNORM_SRGB";
+	case DXGI_FORMAT_R16_TYPELESS:               return L"R16_TYPELESS";
+	case DXGI_FORMAT_R8_TYPELESS:                return L"R8_TYPELES";
+	case DXGI_FORMAT_B8G8R8A8_UNORM:             return L"B8G8R8A8_UNORM";
+	case DXGI_FORMAT_B8G8R8X8_UNORM:             return L"B8G8R8X8_UNORM";
+	case DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM: return L"R10G10B10_XR_BIAS_A2_UNORM";
+	case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:        return L"B8G8R8A8_UNORM_SRGB";
+	case DXGI_FORMAT_AYUV:                       return L"AYUV";
+	case DXGI_FORMAT_NV12:                       return L"NV12";
+	case DXGI_FORMAT_P010:                       return L"P010";
+	case DXGI_FORMAT_P016:                       return L"P016";
+	case DXGI_FORMAT_420_OPAQUE:                 return L"420_OPAQUE";
+	case DXGI_FORMAT_YUY2:                       return L"YUY2";
+	case DXGI_FORMAT_AI44:                       return L"AI44";
+	case DXGI_FORMAT_IA44:                       return L"IA44";
+	case DXGI_FORMAT_P8:                         return L"P8";
+	case DXGI_FORMAT_A8P8:                       return L"A8P8";
 	};
 
 	return L"UNKNOWN";
