@@ -281,39 +281,16 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc = { D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE, {}, 1920, 1080, {}, 1920, 1080, D3D11_VIDEO_USAGE_PLAYBACK_NORMAL };
 	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcEnum;
 	if (S_OK == m_pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pVideoProcEnum)) {
-		const DXGI_FORMAT fmts[] = {
-			DXGI_FORMAT_R16G16B16A16_FLOAT,
-			DXGI_FORMAT_R16G16B16A16_UNORM,
-			DXGI_FORMAT_R10G10B10A2_UNORM,
-			DXGI_FORMAT_R8G8B8A8_UNORM,
-			DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-			DXGI_FORMAT_R16_TYPELESS,
-			DXGI_FORMAT_R8_TYPELESS,
-			DXGI_FORMAT_B8G8R8A8_UNORM,
-			DXGI_FORMAT_B8G8R8X8_UNORM,
-			DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM,
-			DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,
-			DXGI_FORMAT_AYUV,
-			DXGI_FORMAT_NV12,
-			DXGI_FORMAT_P010,
-			DXGI_FORMAT_P016,
-			DXGI_FORMAT_420_OPAQUE,
-			DXGI_FORMAT_YUY2,
-			DXGI_FORMAT_AI44,
-			DXGI_FORMAT_IA44,
-			DXGI_FORMAT_P8,
-			DXGI_FORMAT_A8P8,
-		};
 		CString input = L"Supported input DXGI formats (for 1080p):";
 		CString output = L"Supported output DXGI formats (for 1080p):";
-		for (const auto& fmt : fmts) {
+		for (int fmt = DXGI_FORMAT_R32G32B32A32_TYPELESS; fmt <= DXGI_FORMAT_B4G4R4A4_UNORM; fmt++) {
 			UINT uiFlags;
-			if (S_OK == pVideoProcEnum->CheckVideoProcessorFormat(fmt, &uiFlags)) {
+			if (S_OK == pVideoProcEnum->CheckVideoProcessorFormat((DXGI_FORMAT)fmt, &uiFlags)) {
 				if (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT) {
-					input.AppendFormat(L"\n  %s", DXGIFormatToString(fmt));
+					input.AppendFormat(L"\n  %s", DXGIFormatToString((DXGI_FORMAT)fmt));
 				}
 				if (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT) {
-					output.AppendFormat(L"\n  %s", DXGIFormatToString(fmt));
+					output.AppendFormat(L"\n  %s", DXGIFormatToString((DXGI_FORMAT)fmt));
 				}
 			}
 		}
