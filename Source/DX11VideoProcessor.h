@@ -1,5 +1,5 @@
 /*
-* (C) 2018 see Authors.txt
+* (C) 2018-2019 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -54,16 +54,18 @@ private:
 	CComPtr<ID3D11VideoDevice> m_pVideoDevice;
 	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
 	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
+	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_CPU;
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;
-	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_Decode;
-	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_RGB;
+	CComPtr<ID3D11VideoProcessorInputView> m_pInputView;
+
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
 
-	CComPtr<IDirect3DTexture9> m_pSrcTexture9;
-	CComPtr<IDirect3DSurface9> m_pSrcSurface9;
-	HANDLE m_sharedHandle = nullptr;
-	bool m_bCanUseSharedHandle = true;
+	//CComPtr<ID3D11Texture2D> m_pSrcTexture2D_RGB;
+	//CComPtr<IDirect3DTexture9> m_pSrcTexture9;
+	//CComPtr<IDirect3DSurface9> m_pSrcSurface9;
+	//HANDLE m_sharedHandle = nullptr;
+	//bool m_bCanUseSharedHandle = true;
 
 	CMediaType m_mt;
 	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;

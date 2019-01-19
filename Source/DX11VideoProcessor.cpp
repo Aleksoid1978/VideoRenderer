@@ -166,12 +166,8 @@ void CDX11VideoProcessor::ClearD3D11()
 	m_pD2DBrushBlack.Release();
 	m_pD2D1RenderTarget.Release();
 
-	m_pSrcTexture2D_RGB.Release();
-	m_pSrcTexture9.Release();
-	m_pSrcSurface9.Release();
-
+	m_pSrcTexture2D_CPU.Release();
 	m_pSrcTexture2D.Release();
-	m_pSrcTexture2D_Decode.Release();
 	m_pVideoProcessor.Release();
 	m_pVideoProcessorEnum.Release();
 	m_pVideoDevice.Release();
@@ -298,8 +294,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		DLog(output);
 	}
 #endif
-
-	m_bCanUseSharedHandle = true;
 
 	return hr;
 }
@@ -520,13 +514,10 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 	m_DrawnFrameStats.Reset();
 	m_RenderStats.Reset();
 
-	m_pSrcTexture2D_RGB.Release();
-	m_pSrcTexture9.Release();
-	m_pSrcSurface9.Release();
-
+	m_pSrcTexture2D_CPU.Release();
 	m_pSrcTexture2D.Release();
-	m_pSrcTexture2D_Decode.Release();
 	m_pVideoProcessor.Release();
+	m_pInputView.Release();
 	m_pVideoProcessorEnum.Release();
 
 	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
@@ -613,7 +604,7 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 	desc.BindFlags = D3D10_BIND_SHADER_RESOURCE;
 	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	desc.MiscFlags = 0;
-	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pSrcTexture2D);
+	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pSrcTexture2D_CPU);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -621,7 +612,14 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 	desc.Usage = D3D11_USAGE_DEFAULT;
 	desc.BindFlags = 0;
 	desc.CPUAccessFlags = 0;
-	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pSrcTexture2D_Decode);
+	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pSrcTexture2D);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputViewDesc = {};
+	inputViewDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
+	hr = m_pVideoDevice->CreateVideoProcessorInputView(m_pSrcTexture2D, m_pVideoProcessorEnum, &inputViewDesc, &m_pInputView);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -688,11 +686,11 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 	return hr;
 }
 
-#define BREAK_ON_ERROR(hr) { if (FAILED(hr)) { m_bCanUseSharedHandle = false; break; }}
+#define BREAK_ON_ERROR(hr) { if (FAILED(hr)) { break; }}
 
 HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 {
-	CheckPointer(m_pSrcTexture2D, E_FAIL);
+	CheckPointer(m_pSrcTexture2D_CPU, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
 
 	int64_t ticks = GetPreciseTick();
@@ -717,8 +715,6 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	m_FieldDrawn = 0;
 
 	if (CComQIPtr<IMediaSampleD3D11> pMSD3D11 = pSample) {
-		m_bCanUseSharedHandle = false;
-
 		CComQIPtr<ID3D11Texture2D> pD3D11Texture2D;
 		UINT ArraySlice = 0;
 		hr = pMSD3D11->GetD3D11Texture(0, &pD3D11Texture2D, &ArraySlice);
@@ -733,85 +729,84 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			return hr;
 		}
 
-		m_pImmediateContext->CopySubresourceRegion(m_pSrcTexture2D_Decode, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
-	} else if (CComQIPtr<IMFGetService> pService = pSample) {
-		CComPtr<IDirect3DSurface9> pSurface9;
-		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface9)))) {
-			D3DSURFACE_DESC desc = {};
-			hr = pSurface9->GetDesc(&desc);
-			if (FAILED(hr)) {
-				return hr;
-			}
-			hr = Initialize(desc.Width, desc.Height, m_srcDXGIFormat);
-			if (FAILED(hr)) {
-				return hr;
-			}
-
-			if (m_bCanUseSharedHandle) {
-				for (;;) {
-					CComPtr<IDirect3DDevice9> pD3DDev9;
-					pSurface9->GetDevice(&pD3DDev9);
-					BREAK_ON_ERROR(hr);
-
-					if (!m_pSrcTexture9) {
-						hr = pD3DDev9->CreateTexture(
-							desc.Width,
-							desc.Height,
-							1,
-							D3DUSAGE_RENDERTARGET,
-							D3DFMT_A8R8G8B8,
-							D3DPOOL_DEFAULT,
-							&m_pSrcTexture9,
-							&m_sharedHandle);
-						BREAK_ON_ERROR(hr);
-						hr = m_pSrcTexture9->GetSurfaceLevel(0, &m_pSrcSurface9);
-						BREAK_ON_ERROR(hr);
-					}
-
-					if (!m_pSrcTexture2D_RGB) {
-						hr = m_pDevice->OpenSharedResource(m_sharedHandle, __uuidof(ID3D11Texture2D), (void**)(&m_pSrcTexture2D_RGB));
-						BREAK_ON_ERROR(hr);
-					}
-
-					hr = pD3DDev9->StretchRect(pSurface9, nullptr, m_pSrcSurface9, nullptr, D3DTEXF_NONE);
-					BREAK_ON_ERROR(hr);
-
-					break;
-				}
-			}
-
-			if (!m_bCanUseSharedHandle) {
-				D3DLOCKED_RECT lr_src;
-				hr = pSurface9->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
-				if (S_OK == hr) {
-					D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-					hr = m_pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-					if (SUCCEEDED(hr)) {
-						ASSERT(m_pConvertFn);
-						m_pConvertFn(desc.Height, (BYTE*)mappedResource.pData, mappedResource.RowPitch, (BYTE*)lr_src.pBits, lr_src.Pitch);
-						m_pImmediateContext->Unmap(m_pSrcTexture2D, 0);
-						m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
-					}
-
-					hr = pSurface9->UnlockRect();
-				}
-			}
-		}
+		m_pImmediateContext->CopySubresourceRegion(m_pSrcTexture2D, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
 	}
+	//else if (CComQIPtr<IMFGetService> pService = pSample) {
+	//	CComPtr<IDirect3DSurface9> pSurface9;
+	//	if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface9)))) {
+	//		D3DSURFACE_DESC desc = {};
+	//		hr = pSurface9->GetDesc(&desc);
+	//		if (FAILED(hr)) {
+	//			return hr;
+	//		}
+	//		hr = Initialize(desc.Width, desc.Height, m_srcDXGIFormat);
+	//		if (FAILED(hr)) {
+	//			return hr;
+	//		}
+	//
+	//		if (m_bCanUseSharedHandle) {
+	//			for (;;) {
+	//				CComPtr<IDirect3DDevice9> pD3DDev9;
+	//				pSurface9->GetDevice(&pD3DDev9);
+	//				BREAK_ON_ERROR(hr);
+	//
+	//				if (!m_pSrcTexture9) {
+	//					hr = pD3DDev9->CreateTexture(
+	//						desc.Width,
+	//						desc.Height,
+	//						1,
+	//						D3DUSAGE_RENDERTARGET,
+	//						D3DFMT_A8R8G8B8,
+	//						D3DPOOL_DEFAULT,
+	//						&m_pSrcTexture9,
+	//						&m_sharedHandle);
+	//					BREAK_ON_ERROR(hr);
+	//					hr = m_pSrcTexture9->GetSurfaceLevel(0, &m_pSrcSurface9);
+	//					BREAK_ON_ERROR(hr);
+	//				}
+	//
+	//				if (!m_pSrcTexture2D_RGB) {
+	//					hr = m_pDevice->OpenSharedResource(m_sharedHandle, __uuidof(ID3D11Texture2D), (void**)(&m_pSrcTexture2D_RGB));
+	//					BREAK_ON_ERROR(hr);
+	//				}
+	//
+	//				hr = pD3DDev9->StretchRect(pSurface9, nullptr, m_pSrcSurface9, nullptr, D3DTEXF_NONE);
+	//				BREAK_ON_ERROR(hr);
+	//
+	//				break;
+	//			}
+	//		}
+	//
+	//		if (!m_bCanUseSharedHandle) {
+	//			D3DLOCKED_RECT lr_src;
+	//			hr = pSurface9->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
+	//			if (S_OK == hr) {
+	//				D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+	//				hr = m_pImmediateContext->Map(m_pSrcTexture2D_CPU, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	//				if (SUCCEEDED(hr)) {
+	//					ASSERT(m_pConvertFn);
+	//					m_pConvertFn(desc.Height, (BYTE*)mappedResource.pData, mappedResource.RowPitch, (BYTE*)lr_src.pBits, lr_src.Pitch);
+	//					m_pImmediateContext->Unmap(m_pSrcTexture2D_CPU, 0);
+	//					m_pImmediateContext->CopyResource(m_pSrcTexture2D, m_pSrcTexture2D_CPU); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
+	//				}
+	//
+	//				hr = pSurface9->UnlockRect();
+	//			}
+	//		}
+	//	}
+	//}
 	else if (m_mt.formattype == FORMAT_VideoInfo2 || m_mt.formattype == FORMAT_VideoInfo) {
-		m_bCanUseSharedHandle = false;
-
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
 			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-			hr = m_pImmediateContext->Map(m_pSrcTexture2D, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+			hr = m_pImmediateContext->Map(m_pSrcTexture2D_CPU, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 			if (SUCCEEDED(hr)) {
 				ASSERT(m_pConvertFn);
 				BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
 				m_pConvertFn(m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, src, m_srcPitch);
-				m_pImmediateContext->Unmap(m_pSrcTexture2D, 0);
-				m_pImmediateContext->CopyResource(m_pSrcTexture2D_Decode, m_pSrcTexture2D); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
+				m_pImmediateContext->Unmap(m_pSrcTexture2D_CPU, 0);
+				m_pImmediateContext->CopyResource(m_pSrcTexture2D, m_pSrcTexture2D_CPU); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
 			}
 		}
 	}
@@ -823,7 +818,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 HRESULT CDX11VideoProcessor::Render(int field)
 {
-	CheckPointer(m_pSrcTexture2D, E_FAIL);
+	CheckPointer(m_pSrcTexture2D_CPU, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
 
 	int64_t ticks = GetPreciseTick();
@@ -972,18 +967,10 @@ HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget, const b
 		}
 	}
 
-	D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputViewDesc = {};
-	inputViewDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
-	CComPtr<ID3D11VideoProcessorInputView> pInputView;
-	HRESULT hr = m_pVideoDevice->CreateVideoProcessorInputView(m_bCanUseSharedHandle ? m_pSrcTexture2D_RGB : m_pSrcTexture2D_Decode, m_pVideoProcessorEnum, &inputViewDesc, &pInputView);
-	if (FAILED(hr)) {
-		return hr;
-	}
-
 	D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc = {};
 	OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
 	CComPtr<ID3D11VideoProcessorOutputView> pOutputView;
-	hr = m_pVideoDevice->CreateVideoProcessorOutputView(pRenderTarget, m_pVideoProcessorEnum, &OutputViewDesc, &pOutputView);
+	HRESULT hr = m_pVideoDevice->CreateVideoProcessorOutputView(pRenderTarget, m_pVideoProcessorEnum, &OutputViewDesc, &pOutputView);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -991,7 +978,7 @@ HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget, const b
 	D3D11_VIDEO_PROCESSOR_STREAM StreamData = {};
 	StreamData.Enable = TRUE;
 	StreamData.InputFrameOrField = second ? 1 : 0;
-	StreamData.pInputSurface = pInputView;
+	StreamData.pInputSurface = m_pInputView;
 	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, 0, 1, &StreamData);
 
 	return hr;

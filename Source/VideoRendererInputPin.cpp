@@ -141,7 +141,7 @@ STDMETHODIMP CVideoRendererInputPin::ReceiveConnection(IPin* pConnector, const A
 // IMFGetService
 STDMETHODIMP CVideoRendererInputPin::GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject)
 {
-	if (riid == __uuidof(IDirectXVideoMemoryConfiguration)) {
+	if (riid == __uuidof(IDirectXVideoMemoryConfiguration) && !m_pBaseRenderer->m_bUsedD3D11) {
 		GetInterface((IDirectXVideoMemoryConfiguration*)this, ppvObject);
 		return S_OK;
 	}
