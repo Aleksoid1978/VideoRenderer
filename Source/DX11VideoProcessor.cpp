@@ -1,5 +1,5 @@
 /*
-* (C) 2018 see Authors.txt
+* (C) 2018-2019 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -622,6 +622,30 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 	hr = m_pVideoDevice->CreateVideoProcessorInputView(m_pSrcTexture2D, m_pVideoProcessorEnum, &inputViewDesc, &m_pInputView);
 	if (FAILED(hr)) {
 		return hr;
+	}
+
+	{
+		D3D11_TEXTURE2D_DESC desc = {};
+		desc.Width = width;
+		desc.Height = height;
+		desc.MipLevels = desc.ArraySize = 1;
+		desc.Format = dxgiFormat;
+		desc.SampleDesc.Count = 1;
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D10_BIND_RENDER_TARGET;
+		CComPtr<ID3D11Texture2D> pTestTexture2D;
+		hr = m_pDevice->CreateTexture2D(&desc, nullptr, &pTestTexture2D);
+		if (FAILED(hr)) {
+			return hr;
+		}
+
+		D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc = {};
+		OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
+		CComPtr<ID3D11VideoProcessorOutputView> pTestOutputView;
+		HRESULT hr = m_pVideoDevice->CreateVideoProcessorOutputView(pTestTexture2D, m_pVideoProcessorEnum, &OutputViewDesc, &pTestOutputView);
+		if (FAILED(hr)) {
+			return hr;
+		}
 	}
 
 	m_D3D11_Src_Format = dxgiFormat;
