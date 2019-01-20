@@ -21,7 +21,14 @@ CD /D %~dp0
 SET "MSBUILD_SWITCHES=/nologo /consoleloggerparameters:Verbosity=minimal /maxcpucount /nodeReuse:true"
 SET "BUILDTYPE=Build"
 SET "BUILDCFG=Release"
-SET "PCKG_NAME=MPCVideoRenderer"
+SET "SUFFIX="
+
+IF /I "%1" == "Debug" (
+  SET "BUILDCFG=Debug"
+  SET "SUFFIX=_Debug"
+)
+
+SET "PCKG_NAME=MPCVideoRenderer%SUFFIX%"
 
 CALL :SubVSPath
 SET "TOOLSET=%VS_PATH%\Common7\Tools\vsdevcmd"
@@ -45,8 +52,8 @@ IF DEFINED SEVENZIP (
     IF EXIST "bin\%PCKG_NAME%"     RD /Q /S "bin\%PCKG_NAME%"
     TITLE Copying %PCKG_NAME%...
     IF NOT EXIST "bin\%PCKG_NAME%" MD "bin\%PCKG_NAME%"
-    COPY /Y /V "bin\Filters_x86\MpcVideoRenderer.ax"   "bin\%PCKG_NAME%\MpcVideoRenderer.ax" >NUL
-    COPY /Y /V "bin\Filters_x64\MpcVideoRenderer64.ax" "bin\%PCKG_NAME%\MpcVideoRenderer64.ax" >NUL
+    COPY /Y /V "bin\Filters_x86%SUFFIX%\MpcVideoRenderer.ax"   "bin\%PCKG_NAME%\MpcVideoRenderer.ax" >NUL
+    COPY /Y /V "bin\Filters_x64%SUFFIX%\MpcVideoRenderer64.ax" "bin\%PCKG_NAME%\MpcVideoRenderer64.ax" >NUL
     COPY /Y /V "distrib\Install_MPCVR_32.cmd"          "bin\%PCKG_NAME%\Install_MPCVR_32.cmd" >NUL
     COPY /Y /V "distrib\Install_MPCVR_64.cmd"          "bin\%PCKG_NAME%\Install_MPCVR_64.cmd" >NUL	
     COPY /Y /V "distrib\Uninstall_MPCVR_32.cmd"        "bin\%PCKG_NAME%\Uninstall_MPCVR_32.cmd" >NUL
