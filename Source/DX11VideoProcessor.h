@@ -105,12 +105,16 @@ private:
 	DWORD m_VendorId = 0;
 	CString m_strAdapterDescription;
 
-	CComPtr<ID2D1Factory> m_pD2DFactory;
 	CComPtr<IDWriteFactory> m_pDWriteFactory;
 	CComPtr<IDWriteTextFormat> m_pTextFormat;
-	CComPtr<ID2D1RenderTarget> m_pD2D1RenderTarget;
-	CComPtr<ID2D1SolidColorBrush> m_pD2DBrush;
-	CComPtr<ID2D1SolidColorBrush> m_pD2DBrushBlack;
+
+	CComPtr<ID2D1Factory>         m_pD2D1Factory;
+	CComPtr<ID2D1RenderTarget>    m_pD2D1RenderTarget;
+	CComPtr<ID2D1SolidColorBrush> m_pD2D1Brush;
+	CComPtr<ID2D1SolidColorBrush> m_pD2D1BrushBlack;
+
+	CComPtr<ID3D11VertexShader> m_pVertexShader;
+	CComPtr<ID3D11PixelShader>  m_pPixelShader;
 
 	CFrameStats m_FrameStats;
 	CFrameStats m_DrawnFrameStats; //TODO: use CRenderStats
@@ -121,8 +125,14 @@ public:
 	~CDX11VideoProcessor();
 
 	HRESULT Init(const int iSurfaceFmt);
-	void ClearD3D11();
 
+private:
+	void ReleaseDevice();
+	void ReleaseD2D1RenderTarget();
+
+	HRESULT GetDataFromResource(LPVOID& data, DWORD& size, UINT resid);
+
+public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
 	HRESULT InitSwapChain(const HWND hwnd, UINT width = 0, UINT height = 0);
 

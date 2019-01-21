@@ -28,6 +28,7 @@
 #include <dwmapi.h>
 #include "Helper.h"
 #include "Time.h"
+#include "resource.h"
 #include "DX11VideoProcessor.h"
 #include "./Include/ID3DVideoMemoryConfiguration.h"
 
@@ -43,9 +44,14 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 {
 	m_pTextFormat.Release();
 	m_pDWriteFactory.Release();
-	m_pD2DFactory.Release();
 
-	ClearD3D11();
+	ReleaseD2D1RenderTarget();
+	m_pD2D1Factory.Release();
+
+	m_pDXGISwapChain1.Release();
+	m_pDXGIFactory2.Release();
+
+	ReleaseDevice();
 
 	if (m_hD3D11Lib) {
 		FreeLibrary(m_hD3D11Lib);
@@ -124,7 +130,7 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 	options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
 #endif
 
-	HRESULT hr2 = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, &m_pD2DFactory);
+	HRESULT hr2 = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, &m_pD2D1Factory);
 	if (S_OK == hr2) {
 		hr2 = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(m_pDWriteFactory), reinterpret_cast<IUnknown**>(&m_pDWriteFactory));
 		if (S_OK == hr2) {
@@ -160,31 +166,64 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 	return hr;
 }
 
-void CDX11VideoProcessor::ClearD3D11()
+void CDX11VideoProcessor::ReleaseDevice()
 {
-	m_pD2DBrush.Release();
-	m_pD2DBrushBlack.Release();
-	m_pD2D1RenderTarget.Release();
-
-	m_pSrcTexture2D_CPU.Release();
-	m_pSrcTexture2D.Release();
+	m_pInputView.Release();
 	m_pVideoProcessor.Release();
 	m_pVideoProcessorEnum.Release();
 	m_pVideoDevice.Release();
+
 #if VER_PRODUCTBUILD >= 10000
 	m_pVideoContext1.Release();
 #endif
 	m_pVideoContext.Release();
 	m_pImmediateContext.Release();
-	m_pDXGISwapChain1.Release();
-	m_pDXGIFactory2.Release();
+
+	m_pSrcTexture2D_CPU.Release();
+	m_pSrcTexture2D.Release();
+	m_pVertexShader.Release();
+	m_pPixelShader.Release();
 	m_pDevice.Release();
+}
+
+void CDX11VideoProcessor::ReleaseD2D1RenderTarget()
+{
+	m_pD2D1Brush.Release();
+	m_pD2D1BrushBlack.Release();
+	m_pD2D1RenderTarget.Release();
+}
+
+HRESULT CDX11VideoProcessor::GetDataFromResource(LPVOID& data, DWORD& size, UINT resid)
+{
+	static const HMODULE hModule = (HMODULE)&__ImageBase;
+
+	HRSRC hrsrc = FindResourceW(hModule, MAKEINTRESOURCEW(resid), L"SHADER");
+	if (!hrsrc) {
+		return E_INVALIDARG;
+	}
+	HGLOBAL hGlobal = LoadResource(hModule, hrsrc);
+	if (!hGlobal) {
+		return E_FAIL;
+	}
+	size = SizeofResource(hModule, hrsrc);
+	if (!size) {
+		return E_FAIL;
+	}
+	data = LockResource(hGlobal);
+	if (!data) {
+		return E_FAIL;
+	}
+
+	return S_OK;
 }
 
 HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
 {
 	DLog(L"CDX11VideoProcessor::SetDevice()");
-	ClearD3D11();
+	ReleaseD2D1RenderTarget();
+	m_pDXGISwapChain1.Release();
+	m_pDXGIFactory2.Release();
+	ReleaseDevice();
 
 	CheckPointer(pDevice, E_POINTER);
 	CheckPointer(pContext, E_POINTER);
@@ -194,15 +233,13 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	HRESULT hr = m_pDevice->QueryInterface(__uuidof(ID3D11VideoDevice), (void**)&m_pVideoDevice);
 	if (FAILED(hr)) {
-		m_pDevice.Release();
+		ReleaseDevice();
 		return hr;
 	}
 
 	hr = m_pImmediateContext->QueryInterface(__uuidof(ID3D11VideoContext), (void**)&m_pVideoContext);
 	if (FAILED(hr)) {
-		m_pDevice.Release();
-		m_pImmediateContext.Release();
-		m_pVideoDevice.Release();
+		ReleaseDevice();
 		return hr;
 	}
 
@@ -213,33 +250,26 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	CComPtr<IDXGIDevice> pDXGIDevice;
 	hr = m_pDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDXGIDevice);
 	if (FAILED(hr)) {
-		m_pDevice.Release();
-		m_pImmediateContext.Release();
-		m_pVideoDevice.Release();
+		ReleaseDevice();
 		return hr;
 	}
 
 	CComPtr<IDXGIAdapter> pDXGIAdapter;
 	hr = pDXGIDevice->GetAdapter(&pDXGIAdapter);
 	if (FAILED(hr)) {
-		m_pImmediateContext.Release();
-		m_pVideoDevice.Release();
+		ReleaseDevice();
 		return hr;
 	}
 
 	CComPtr<IDXGIFactory1> pDXGIFactory1;
 	hr = pDXGIAdapter->GetParent(__uuidof(IDXGIFactory1), (void**)&pDXGIFactory1);
 	if (FAILED(hr)) {
-		m_pDevice.Release();
-		m_pImmediateContext.Release();
-		m_pVideoDevice.Release();
+		ReleaseDevice();
 	}
 
 	hr = pDXGIFactory1->QueryInterface(__uuidof(IDXGIFactory2), (void**)&m_pDXGIFactory2);
 	if (FAILED(hr)) {
-		m_pDevice.Release();
-		m_pImmediateContext.Release();
-		m_pVideoDevice.Release();
+		ReleaseDevice();
 	}
 
 	if (m_mt.IsValid()) {
@@ -248,9 +278,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		m_D3D11_Src_Height = 0;
 
 		if (!InitMediaType(&m_mt)) {
-			m_pDevice.Release();
-			m_pImmediateContext.Release();
-			m_pVideoDevice.Release();
+			ReleaseDevice();
 			return E_FAIL;
 		}
 	}
@@ -258,9 +286,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	if (m_hWnd) {
 		hr = InitSwapChain(m_hWnd);
 		if (FAILED(hr)) {
-			m_pDevice.Release();
-			m_pImmediateContext.Release();
-			m_pVideoDevice.Release();
+			ReleaseDevice();
 			return hr;
 		}
 	}
@@ -295,6 +321,16 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	}
 #endif
 
+	LPVOID data;
+	DWORD size;
+	HRESULT hr2;
+	if (S_OK == GetDataFromResource(data, size, IDF_VSHADER11_TEST)) {
+		hr2 = m_pDevice->CreateVertexShader(data, size, nullptr, &m_pVertexShader);
+	}
+	if (S_OK == GetDataFromResource(data, size, IDF_PSHADER11_TEST)) {
+		hr2 = m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPixelShader);
+	}
+
 	return hr;
 }
 
@@ -317,9 +353,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 		const HMONITOR hNewMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
 		if (hCurMonitor == hNewMonitor) {
 			if (m_VPOutputFmt == DXGI_FORMAT_B8G8R8A8_UNORM || m_VPOutputFmt == DXGI_FORMAT_R8G8B8A8_UNORM) {
-				m_pD2DBrush.Release();
-				m_pD2DBrushBlack.Release();
-				m_pD2D1RenderTarget.Release();
+				ReleaseD2D1RenderTarget();
 			}
 			hr = m_pDXGISwapChain1->ResizeBuffers(1, width, height, m_VPOutputFmt, 0);
 			if (SUCCEEDED(hr)) {
@@ -329,7 +363,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 					if (S_OK == hr2) {
 						FLOAT dpiX;
 						FLOAT dpiY;
-						m_pD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
+						m_pD2D1Factory->GetDesktopDpi(&dpiX, &dpiY);
 
 						D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
 							D2D1_RENDER_TARGET_TYPE_DEFAULT,
@@ -337,10 +371,10 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 							dpiX,
 							dpiY);
 
-						hr2 = m_pD2DFactory->CreateDxgiSurfaceRenderTarget(pDXGISurface, &props, &m_pD2D1RenderTarget);
+						hr2 = m_pD2D1Factory->CreateDxgiSurfaceRenderTarget(pDXGISurface, &props, &m_pD2D1RenderTarget);
 						if (S_OK == hr2) {
-							hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LightYellow), &m_pD2DBrush);
-							hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_pD2DBrushBlack);
+							hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LightYellow), &m_pD2D1Brush);
+							hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_pD2D1BrushBlack);
 						}
 					}
 				}
@@ -369,9 +403,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 
 	m_hWnd = hwnd;
 
-	m_pD2DBrush.Release();
-	m_pD2DBrushBlack.Release();
-	m_pD2D1RenderTarget.Release();
+	ReleaseD2D1RenderTarget();
 
 	if ((m_VPOutputFmt == DXGI_FORMAT_B8G8R8A8_UNORM || m_VPOutputFmt == DXGI_FORMAT_R8G8B8A8_UNORM) && m_pTextFormat) {
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/dd756766(v=vs.85).aspx#supported_formats_for__id2d1hwndrendertarget
@@ -380,7 +412,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 		if (S_OK == hr2) {
 			FLOAT dpiX;
 			FLOAT dpiY;
-			m_pD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
+			m_pD2D1Factory->GetDesktopDpi(&dpiX, &dpiY);
 
 			D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
 				D2D1_RENDER_TARGET_TYPE_DEFAULT,
@@ -388,10 +420,10 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 				dpiX,
 				dpiY);
 
-			hr2 = m_pD2DFactory->CreateDxgiSurfaceRenderTarget(pDXGISurface, &props, &m_pD2D1RenderTarget);
+			hr2 = m_pD2D1Factory->CreateDxgiSurfaceRenderTarget(pDXGISurface, &props, &m_pD2D1RenderTarget);
 			if (S_OK == hr2) {
-				hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LightYellow), &m_pD2DBrush);
-				hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_pD2DBrushBlack);
+				hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LightYellow), &m_pD2D1Brush);
+				hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_pD2D1BrushBlack);
 			}
 		}
 	}
@@ -1051,7 +1083,7 @@ HRESULT CDX11VideoProcessor::GetAdapterDecription(CStringW& str)
 
 HRESULT CDX11VideoProcessor::DrawStats()
 {
-	if (!m_pD2DBrush || m_windowRect.IsRectEmpty()) {
+	if (!m_pD2D1Brush || m_windowRect.IsRectEmpty()) {
 		return E_ABORT;
 	}
 
@@ -1073,9 +1105,9 @@ HRESULT CDX11VideoProcessor::DrawStats()
 	CComPtr<IDWriteTextLayout> pTextLayout;
 	if (S_OK == m_pDWriteFactory->CreateTextLayout(str, str.GetLength(), m_pTextFormat, m_windowRect.right - 10, m_windowRect.bottom - 10, &pTextLayout)) {
 		m_pD2D1RenderTarget->BeginDraw();
-		m_pD2D1RenderTarget->DrawTextLayout(D2D1::Point2F( 9.0f, 11.0f), pTextLayout, m_pD2DBrushBlack);
-		m_pD2D1RenderTarget->DrawTextLayout(D2D1::Point2F(11.0f, 11.0f), pTextLayout, m_pD2DBrushBlack);
-		m_pD2D1RenderTarget->DrawTextLayout(D2D1::Point2F(10.0f, 10.0f), pTextLayout, m_pD2DBrush);
+		m_pD2D1RenderTarget->DrawTextLayout(D2D1::Point2F( 9.0f, 11.0f), pTextLayout, m_pD2D1BrushBlack);
+		m_pD2D1RenderTarget->DrawTextLayout(D2D1::Point2F(11.0f, 11.0f), pTextLayout, m_pD2D1BrushBlack);
+		m_pD2D1RenderTarget->DrawTextLayout(D2D1::Point2F(10.0f, 10.0f), pTextLayout, m_pD2D1Brush);
 		m_pD2D1RenderTarget->EndDraw();
 	}
 
