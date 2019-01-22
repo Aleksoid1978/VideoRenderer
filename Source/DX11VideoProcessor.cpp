@@ -510,7 +510,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_trgRect.SetRect(0, 0, m_srcWidth, m_srcHeight);
 	}
 
-	m_srcD3DFormat  = FmtConvParams->DXVA2Format;
 	m_srcDXGIFormat = FmtConvParams->VP11Format;
 	m_pConvertFn    = FmtConvParams->Func;
 	m_srcPitch      = biSizeImage * 2 / (m_srcHeight * FmtConvParams->PitchCoeff);
@@ -1069,7 +1068,6 @@ HRESULT CDX11VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
 	pFrameInfo->Subtype = m_mt.subtype;
 	pFrameInfo->Width = m_srcWidth;
 	pFrameInfo->Height = m_srcHeight;
-	pFrameInfo->D3dFormat = m_srcD3DFormat;
 	pFrameInfo->ExtFormat.value = m_srcExFmt.value;
 
 	return S_OK;

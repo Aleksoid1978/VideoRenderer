@@ -1,5 +1,5 @@
 /*
- * (C) 2018 see Authors.txt
+ * (C) 2018-2019 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -26,7 +26,6 @@ struct VRFrameInfo {
 	GUID Subtype;
 	unsigned Width;
 	unsigned Height;
-	D3DFORMAT D3dFormat;
 	DXVA2_ExtendedFormat ExtFormat;
 };
 

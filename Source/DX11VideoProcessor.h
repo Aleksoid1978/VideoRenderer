@@ -68,7 +68,6 @@ private:
 	//bool m_bCanUseSharedHandle = true;
 
 	CMediaType m_mt;
-	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;
 	DXGI_FORMAT m_srcDXGIFormat = DXGI_FORMAT_UNKNOWN;
 	UINT  m_srcWidth        = 0;
 	UINT  m_srcHeight       = 0;

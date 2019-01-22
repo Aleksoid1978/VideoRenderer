@@ -1261,7 +1261,6 @@ HRESULT CDX9VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
 	pFrameInfo->Subtype = m_srcSubType;
 	pFrameInfo->Width = m_srcWidth;
 	pFrameInfo->Height = m_srcHeight;
-	pFrameInfo->D3dFormat = m_srcD3DFormat;
 	pFrameInfo->ExtFormat.value = m_srcExFmt.value;
 
 	return S_OK;

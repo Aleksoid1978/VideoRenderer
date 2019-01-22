@@ -143,7 +143,6 @@ HRESULT CVRMainPPage::OnActivate()
 		str.AppendFormat(L"\r\nFormat : %S", FmtConvParams->str);
 		str.AppendFormat(L"\r\nWidth  : %u", frameinfo.Width);
 		str.AppendFormat(L"\r\nHeight : %u", frameinfo.Height);
-		str.AppendFormat(L"\r\nSurface: %s", D3DFormatToString(frameinfo.D3dFormat));
 	}
 	SetDlgItemText(IDC_EDIT1, str);
 
