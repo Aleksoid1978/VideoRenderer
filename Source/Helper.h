@@ -1,5 +1,5 @@
 /*
-* (C) 2018 see Authors.txt
+* (C) 2018-2019 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -101,7 +101,8 @@ struct FmtConvParams_t {
 	char*           str;
 	D3DFORMAT       DXVA2Format;
 	D3DFORMAT       D3DFormat;
-	DXGI_FORMAT     DXGIFormat;
+	DXGI_FORMAT     VP11Format;
+	DXGI_FORMAT     DX11Format;
 	int             Packsize;
 	int             PitchCoeff;
 	bool            bRGB;

@@ -434,7 +434,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 {
 	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
-	if (!FmtConvParams || FmtConvParams->DXGIFormat == DXGI_FORMAT_UNKNOWN) {
+	if (!FmtConvParams || FmtConvParams->VP11Format == DXGI_FORMAT_UNKNOWN) {
 		return FALSE;
 	}
 
@@ -511,7 +511,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	m_srcD3DFormat  = FmtConvParams->DXVA2Format;
-	m_srcDXGIFormat = FmtConvParams->DXGIFormat;
+	m_srcDXGIFormat = FmtConvParams->VP11Format;
 	m_pConvertFn    = FmtConvParams->Func;
 	m_srcPitch      = biSizeImage * 2 / (m_srcHeight * FmtConvParams->PitchCoeff);
 	if (pmt->subtype == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
