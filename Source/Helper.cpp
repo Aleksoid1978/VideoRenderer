@@ -123,19 +123,19 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
 }
 
 static FmtConvParams_t s_FmtConvMapping[] = {
-	//   subtype          | str     |DXVA2Format     | D3DFormat(DX9)    | VP11Format               | DX11Format   |Packsize|PitchCoeff| bRGB |  Func
-	{ MEDIASUBTYPE_YV12,   "YV12",   D3DFMT_YV12,     D3DFMT_UNKNOWN,     DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN, 1, 3,        false, &CopyFrameYV12,       },
-	{ MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_UNKNOWN,     DXGI_FORMAT_NV12,           DXGI_FORMAT_UNKNOWN, 1, 3,        false, &CopyFramePackedUV,   },
-	{ MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_UNKNOWN,     DXGI_FORMAT_P010,           DXGI_FORMAT_UNKNOWN, 2, 3,        false, &CopyFramePackedUV,   },
-	{ MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_UNKNOWN,     DXGI_FORMAT_YUY2,           DXGI_FORMAT_UNKNOWN, 2, 2,        false, &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,    DXGI_FORMAT_AYUV,           DXGI_FORMAT_UNKNOWN, 4, 2,        false, &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_UNKNOWN, 4, 2,        true,  &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,    DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_UNKNOWN, 4, 2,        true,  &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_UNKNOWN, 3, 2,        true,  &CopyFrameRGB24SSSE3, },
-	{ MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,          DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN, 1, 2,        true,  &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,          DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN, 1, 2,        true,  &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_Y116,   "Y116",   D3DFMT_UNKNOWN,  D3DFMT_L16,         DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN, 2, 2,        true,  &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_UNKNOWN,  D3DFMT_A2B10G10R10, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN, 4, 2,        false, &CopyFrameAsIs,       },
+	//   subtype          | str     |DXVA2Format     | D3DFormat(DX9)    | VP11Format               | DX11Format          |Packsize|PitchCoeff| bRGB |  Func
+	{ MEDIASUBTYPE_YV12,   "YV12",   D3DFMT_YV12,     D3DFMT_UNKNOWN,     DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,        1, 3,        false, &CopyFrameYV12,       },
+	{ MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_UNKNOWN,     DXGI_FORMAT_NV12,           DXGI_FORMAT_UNKNOWN,        1, 3,        false, &CopyFramePackedUV,   },
+	{ MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_UNKNOWN,     DXGI_FORMAT_P010,           DXGI_FORMAT_UNKNOWN,        2, 3,        false, &CopyFramePackedUV,   },
+	{ MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_UNKNOWN,     DXGI_FORMAT_YUY2,           DXGI_FORMAT_UNKNOWN,        2, 2,        false, &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,    DXGI_FORMAT_AYUV,           DXGI_FORMAT_UNKNOWN,        4, 2,        false, &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM, 4, 2,        true,  &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,    DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM, 4, 2,        true,  &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM, 3, 2,        true,  &CopyFrameRGB24SSSE3, },
+	{ MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,          DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,        1, 2,        true,  &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,          DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,        1, 2,        true,  &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_Y116,   "Y116",   D3DFMT_UNKNOWN,  D3DFMT_L16,         DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,        2, 2,        true,  &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_UNKNOWN,  D3DFMT_A2B10G10R10, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,        4, 2,        false, &CopyFrameAsIs,       },
 };
 
 const FmtConvParams_t* GetFmtConvParams(GUID subtype)
@@ -301,4 +301,59 @@ void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d)
 	}
 
 	return;
+}
+
+void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspace)
+{
+	colorspace = {};
+
+	if (extfmt.value == 0) {
+		colorspace.space = MP_CSP_RGB;
+		colorspace.levels = MP_CSP_LEVELS_PC;
+		return;
+	}
+
+	switch (extfmt.NominalRange) {
+	case DXVA2_NominalRange_0_255:   colorspace.levels = MP_CSP_LEVELS_PC;   break;
+	case DXVA2_NominalRange_16_235:  colorspace.levels = MP_CSP_LEVELS_TV;   break;
+	default:
+		colorspace.levels = MP_CSP_LEVELS_AUTO;
+	}
+
+	switch (extfmt.VideoTransferMatrix) {
+	case DXVA2_VideoTransferMatrix_BT709:     colorspace.space = MP_CSP_BT_709;     break;
+	case DXVA2_VideoTransferMatrix_BT601:     colorspace.space = MP_CSP_BT_601;     break;
+	case DXVA2_VideoTransferMatrix_SMPTE240M: colorspace.space = MP_CSP_SMPTE_240M; break;
+	case VIDEOTRANSFERMATRIX_BT2020_10:       colorspace.space = MP_CSP_BT_2020_NC; break;
+	case VIDEOTRANSFERMATRIX_YCgCo:           colorspace.space = MP_CSP_YCGCO;      break;
+	default:
+		colorspace.space = MP_CSP_AUTO;
+	}
+
+	switch (extfmt.VideoPrimaries) {
+	case DXVA2_VideoPrimaries_BT709:         colorspace.primaries = MP_CSP_PRIM_BT_709;     break;
+	case DXVA2_VideoPrimaries_BT470_2_SysM:  colorspace.primaries = MP_CSP_PRIM_BT_470M;    break;
+	case DXVA2_VideoPrimaries_BT470_2_SysBG: colorspace.primaries = MP_CSP_PRIM_BT_601_625; break;
+	case DXVA2_VideoPrimaries_SMPTE170M:
+	case DXVA2_VideoPrimaries_SMPTE240M:     colorspace.primaries = MP_CSP_PRIM_BT_601_525; break;
+	default:
+		colorspace.primaries = MP_CSP_PRIM_AUTO;
+	}
+
+	switch (extfmt.VideoTransferFunction) {
+	case DXVA2_VideoTransFunc_10:      colorspace.gamma = MP_CSP_TRC_LINEAR;  break;
+	case DXVA2_VideoTransFunc_18:      colorspace.gamma = MP_CSP_TRC_GAMMA18; break;
+	case DXVA2_VideoTransFunc_22:      colorspace.gamma = MP_CSP_TRC_GAMMA22; break;
+	case DXVA2_VideoTransFunc_709:
+	case DXVA2_VideoTransFunc_240M:
+	case VIDEOTRANSFUNC_2020_const:
+	case VIDEOTRANSFUNC_2020:          colorspace.gamma = MP_CSP_TRC_BT_1886; break;
+	case DXVA2_VideoTransFunc_sRGB:    colorspace.gamma = MP_CSP_TRC_SRGB;    break;
+	case DXVA2_VideoTransFunc_28:      colorspace.gamma = MP_CSP_TRC_GAMMA28; break;
+	case VIDEOTRANSFUNC_2084:          colorspace.gamma = MP_CSP_TRC_PQ;      break;
+	case VIDEOTRANSFUNC_HLG:
+	case VIDEOTRANSFUNC_HLG_temp:      colorspace.gamma = MP_CSP_TRC_HLG;     break;
+	default:
+		colorspace.gamma = MP_CSP_TRC_AUTO;
+	}
 }

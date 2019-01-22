@@ -94,61 +94,6 @@ static HRESULT TextureBlt(IDirect3DDevice9* pD3DDev, MYD3DVERTEX<texcoords> v[4]
 	return S_OK;
 }
 
-void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspace)
-{
-	colorspace = {};
-
-	if (extfmt.value == 0) {
-		colorspace.space     = MP_CSP_RGB;
-		colorspace.levels    = MP_CSP_LEVELS_PC;
-		return;
-	}
-
-	switch (extfmt.NominalRange) {
-	case DXVA2_NominalRange_0_255:   colorspace.levels = MP_CSP_LEVELS_PC;   break;
-	case DXVA2_NominalRange_16_235:  colorspace.levels = MP_CSP_LEVELS_TV;   break;
-	default:
-		colorspace.levels = MP_CSP_LEVELS_AUTO;
-	}
-
-	switch (extfmt.VideoTransferMatrix) {
-	case DXVA2_VideoTransferMatrix_BT709:     colorspace.space = MP_CSP_BT_709;     break;
-	case DXVA2_VideoTransferMatrix_BT601:     colorspace.space = MP_CSP_BT_601;     break;
-	case DXVA2_VideoTransferMatrix_SMPTE240M: colorspace.space = MP_CSP_SMPTE_240M; break;
-	case VIDEOTRANSFERMATRIX_BT2020_10:       colorspace.space = MP_CSP_BT_2020_NC; break;
-	case VIDEOTRANSFERMATRIX_YCgCo:           colorspace.space = MP_CSP_YCGCO;      break;
-	default:
-		colorspace.space = MP_CSP_AUTO;
-	}
-
-	switch (extfmt.VideoPrimaries) {
-	case DXVA2_VideoPrimaries_BT709:         colorspace.primaries = MP_CSP_PRIM_BT_709;     break;
-	case DXVA2_VideoPrimaries_BT470_2_SysM:  colorspace.primaries = MP_CSP_PRIM_BT_470M;    break;
-	case DXVA2_VideoPrimaries_BT470_2_SysBG: colorspace.primaries = MP_CSP_PRIM_BT_601_625; break;
-	case DXVA2_VideoPrimaries_SMPTE170M:
-	case DXVA2_VideoPrimaries_SMPTE240M:     colorspace.primaries = MP_CSP_PRIM_BT_601_525; break;
-	default:
-		colorspace.primaries = MP_CSP_PRIM_AUTO;
-	}
-
-	switch (extfmt.VideoTransferFunction) {
-	case DXVA2_VideoTransFunc_10:      colorspace.gamma = MP_CSP_TRC_LINEAR;  break;
-	case DXVA2_VideoTransFunc_18:      colorspace.gamma = MP_CSP_TRC_GAMMA18; break;
-	case DXVA2_VideoTransFunc_22:      colorspace.gamma = MP_CSP_TRC_GAMMA22; break;
-	case DXVA2_VideoTransFunc_709:
-	case DXVA2_VideoTransFunc_240M:
-	case VIDEOTRANSFUNC_2020_const:
-	case VIDEOTRANSFUNC_2020:          colorspace.gamma = MP_CSP_TRC_BT_1886; break;
-	case DXVA2_VideoTransFunc_sRGB:    colorspace.gamma = MP_CSP_TRC_SRGB;    break;
-	case DXVA2_VideoTransFunc_28:      colorspace.gamma = MP_CSP_TRC_GAMMA28; break;
-	case VIDEOTRANSFUNC_2084:          colorspace.gamma = MP_CSP_TRC_PQ;      break;
-	case VIDEOTRANSFUNC_HLG:
-	case VIDEOTRANSFUNC_HLG_temp:      colorspace.gamma = MP_CSP_TRC_HLG;     break;
-	default:
-		colorspace.gamma = MP_CSP_TRC_AUTO;
-	}
-}
-
 // CDX9VideoProcessor
 
 static UINT GetAdapter(HWND hWnd, IDirect3D9Ex* pD3D)

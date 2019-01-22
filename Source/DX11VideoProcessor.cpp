@@ -166,11 +166,22 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 	return hr;
 }
 
-void CDX11VideoProcessor::ReleaseDevice()
+void CDX11VideoProcessor::ReleaseVP()
 {
+	m_FrameStats.Reset();
+	m_DrawnFrameStats.Reset();
+	m_RenderStats.Reset();
+
+	m_pSrcTexture2D_CPU.Release();
+	m_pSrcTexture2D.Release();
 	m_pInputView.Release();
 	m_pVideoProcessor.Release();
 	m_pVideoProcessorEnum.Release();
+}
+
+void CDX11VideoProcessor::ReleaseDevice()
+{
+	ReleaseVP();
 	m_pVideoDevice.Release();
 
 #if VER_PRODUCTBUILD >= 10000
@@ -179,8 +190,6 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pVideoContext.Release();
 	m_pImmediateContext.Release();
 
-	m_pSrcTexture2D_CPU.Release();
-	m_pSrcTexture2D.Release();
 	m_pVertexShader.Release();
 	m_pPixelShader.Release();
 	m_pDevice.Release();
@@ -434,7 +443,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 {
 	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
-	if (!FmtConvParams || FmtConvParams->VP11Format == DXGI_FORMAT_UNKNOWN) {
+	if (!FmtConvParams || FmtConvParams->VP11Format == DXGI_FORMAT_UNKNOWN && FmtConvParams->DX11Format == DXGI_FORMAT_UNKNOWN) {
 		return FALSE;
 	}
 
@@ -466,6 +475,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
+	const GUID SubType = pmt->subtype;
 	const BITMAPINFOHEADER* pBIH = nullptr;
 
 	if (pmt->formattype == FORMAT_VideoInfo2) {
@@ -510,28 +520,52 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_trgRect.SetRect(0, 0, m_srcWidth, m_srcHeight);
 	}
 
-	m_srcDXGIFormat = FmtConvParams->VP11Format;
 	m_pConvertFn    = FmtConvParams->Func;
 	m_srcPitch      = biSizeImage * 2 / (m_srcHeight * FmtConvParams->PitchCoeff);
-	if (pmt->subtype == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
+	if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
 		m_srcPitch = ALIGN(m_srcPitch, 4);
 	}
-	else if (pmt->subtype == MEDIASUBTYPE_P010) {
+	else if (SubType == MEDIASUBTYPE_P010) {
 		m_srcPitch &= ~1u;
 	}
 	if (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0) {
 		m_srcPitch = -m_srcPitch;
 	}
 
-	if (S_OK == Initialize(m_srcWidth, m_srcHeight, m_srcDXGIFormat)) {
+	// D3D11 Video Processor
+	if (FmtConvParams->VP11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeD3D11VP(FmtConvParams->VP11Format, m_srcWidth, m_srcHeight)) {
+		m_srcDXGIFormat = FmtConvParams->VP11Format;
 		m_mt = *pmt;
+		// UpdateStatsStatic();
+		return TRUE;
+	}
+
+	// Tex Video Processor
+	if (FmtConvParams->DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams->DX11Format, m_srcWidth, m_srcHeight)) {
+		mp_csp_params csp_params;
+		set_colorspace(m_srcExFmt, csp_params.color);
+		//csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
+		//csp_params.contrast = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
+		//csp_params.hue = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
+		//csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
+		//csp_params.gray = SubType == MEDIASUBTYPE_Y8 || SubType == MEDIASUBTYPE_Y800 || SubType == MEDIASUBTYPE_Y116;
+
+		bool bPprocRGB = FmtConvParams->bRGB && (fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f);
+
+		if (SubType == MEDIASUBTYPE_AYUV || SubType == MEDIASUBTYPE_Y410 || bPprocRGB) {
+			//m_iConvertShader = shader_convert_color;
+			//SetShaderConvertColorParams(csp_params);
+		}
+		m_srcDXGIFormat = FmtConvParams->VP11Format;
+		m_mt = *pmt;
+		//UpdateStatsStatic();
 		return TRUE;
 	}
 
 	return FALSE;
 }
 
-HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, const DXGI_FORMAT dxgiFormat)
+HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height)
 {
 	CheckPointer(m_pVideoDevice, E_FAIL);
 
@@ -541,15 +575,7 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 
 	HRESULT hr = S_OK;
 
-	m_FrameStats.Reset();
-	m_DrawnFrameStats.Reset();
-	m_RenderStats.Reset();
-
-	m_pSrcTexture2D_CPU.Release();
-	m_pSrcTexture2D.Release();
-	m_pVideoProcessor.Release();
-	m_pInputView.Release();
-	m_pVideoProcessorEnum.Release();
+	ReleaseVP();
 
 	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
 	ZeroMemory(&ContentDesc, sizeof(ContentDesc));
@@ -686,6 +712,12 @@ HRESULT CDX11VideoProcessor::Initialize(const UINT width, const UINT height, con
 	return S_OK;
 }
 
+HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height)
+{
+	// TODO
+	return E_NOTIMPL;
+}
+
 void CDX11VideoProcessor::Start()
 {
 	m_DrawnFrameStats.Reset();
@@ -779,7 +811,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 		D3D11_TEXTURE2D_DESC desc = {};
 		pD3D11Texture2D->GetDesc(&desc);
-		hr = Initialize(desc.Width, desc.Height, desc.Format);
+		hr = InitializeD3D11VP(desc.Format, desc.Width, desc.Height);
 		if (FAILED(hr)) {
 			return hr;
 		}

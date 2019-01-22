@@ -126,6 +126,7 @@ public:
 	HRESULT Init(const int iSurfaceFmt);
 
 private:
+	void ReleaseVP();
 	void ReleaseDevice();
 	void ReleaseD2D1RenderTarget();
 
@@ -137,7 +138,8 @@ public:
 
 	BOOL VerifyMediaType(const CMediaType* pmt);
 	BOOL InitMediaType(const CMediaType* pmt);
-	HRESULT Initialize(const UINT width, const UINT height, const DXGI_FORMAT dxgiFormat);
+	HRESULT InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height);
+	HRESULT InitializeTexVP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height);
 	void Start();
 
 	HRESULT ProcessSample(IMediaSample* pSample);

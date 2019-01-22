@@ -1,5 +1,5 @@
 /*
-* (C) 2018 see Authors.txt
+* (C) 2018-2019 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -27,7 +27,6 @@
 #include "Helper.h"
 #include "FrameStats.h"
 #include "resource.h"
-#include "csputils.h"
 
 struct VideoSurface {
 	REFERENCE_TIME Start = 0;

@@ -22,6 +22,7 @@
 
 #include <d3d9.h>
 #include <dxva2api.h>
+#include "csputils.h"
 
 #ifndef FCC
 #define FCC(ch4) ((((DWORD)(ch4) & 0xFF) << 24) |     \
@@ -124,3 +125,5 @@ void CopyFramePackedUV(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, 
 void CopyFrameY410(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 
 void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d);
+
+void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspace);
