@@ -58,6 +58,9 @@ private:
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;
 	CComPtr<ID3D11VideoProcessorInputView> m_pInputView;
 
+	ID3D11InputLayout* m_pInputLayout = nullptr;;
+	ID3D11SamplerState* m_pSamplerLinear = nullptr;
+
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
 
@@ -164,7 +167,8 @@ public:
 	void SetShowStats(bool value) { m_bShowStats = value; };
 
 private:
-	HRESULT ProcessDX11(ID3D11Texture2D* pRenderTarget, const bool second);
+	HRESULT ProcessD3D11(ID3D11Texture2D* pRenderTarget, const bool second);
+	HRESULT ProcessTex(ID3D11Texture2D* pRenderTarget);
 	HRESULT DrawStats();
 
 public:

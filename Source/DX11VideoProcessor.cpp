@@ -174,6 +174,16 @@ void CDX11VideoProcessor::ReleaseVP()
 
 	m_pSrcTexture2D_CPU.Release();
 	m_pSrcTexture2D.Release();
+
+	if (m_pInputLayout) {
+		m_pInputLayout->Release();
+		m_pInputLayout = nullptr;
+	}
+	if (m_pSamplerLinear) {
+		m_pSamplerLinear->Release();
+		m_pSamplerLinear = nullptr;
+	}
+
 	m_pInputView.Release();
 	m_pVideoProcessor.Release();
 	m_pVideoProcessorEnum.Release();
@@ -336,6 +346,16 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	if (S_OK == GetDataFromResource(data, size, IDF_VSHADER11_TEST)) {
 		hr2 = m_pDevice->CreateVertexShader(data, size, nullptr, &m_pVertexShader);
 	}
+	/* TODO
+	D3D11_INPUT_ELEMENT_DESC Layout[] = {
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+	};
+	hr2 = m_pDevice->CreateInputLayout(Layout, std::size(Layout), m_pVertexShader, size, &m_pInputLayout);
+	if (S_OK == hr2) {
+		m_pImmediateContext->IASetInputLayout(m_pInputLayout);
+	}
+	*/
 	if (S_OK == GetDataFromResource(data, size, IDF_PSHADER11_TEST)) {
 		hr2 = m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPixelShader);
 	}
@@ -567,16 +587,12 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height)
 {
+	DLog(L"CDX11VideoProcessor::InitializeD3D11VP started with input surface: %s, %u x %u", DXGIFormatToString(dxgiFormat), width, height);
+
 	CheckPointer(m_pVideoDevice, E_FAIL);
-
-	if (dxgiFormat == m_D3D11_Src_Format && width == m_D3D11_Src_Width && height == m_D3D11_Src_Height) {
-		return S_OK;
-	}
-
-	HRESULT hr = S_OK;
-
 	ReleaseVP();
 
+	HRESULT hr = S_OK;
 	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
 	ZeroMemory(&ContentDesc, sizeof(ContentDesc));
 	ContentDesc.InputFrameFormat = m_bInterlaced ? D3D11_VIDEO_FRAME_FORMAT_INTERLACED_TOP_FIELD_FIRST : D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
@@ -705,6 +721,9 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 		}
 	}
 
+	m_srcDXGIFormat = dxgiFormat;
+
+	// TODO: remove it
 	m_D3D11_Src_Format = dxgiFormat;
 	m_D3D11_Src_Width = width;
 	m_D3D11_Src_Height = height;
@@ -714,8 +733,58 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 
 HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height)
 {
-	// TODO
-	return E_NOTIMPL;
+	DLog(L"CDX11VideoProcessor::InitializeTexVP started with input surface: %s, %u x %u", DXGIFormatToString(dxgiFormat), width, height);
+
+	ReleaseVP();
+
+	HRESULT hr = S_OK;
+
+	D3D11_TEXTURE2D_DESC desc = {};
+	desc.Width = width;
+	desc.Height = height;
+	desc.MipLevels = desc.ArraySize = 1;
+	desc.Format = dxgiFormat;
+	desc.SampleDesc.Count = 1;
+	desc.Usage = D3D11_USAGE_DYNAMIC;
+	desc.BindFlags = D3D10_BIND_SHADER_RESOURCE;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	desc.MiscFlags = 0;
+	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pSrcTexture2D_CPU);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.BindFlags = 0;
+	desc.CPUAccessFlags = 0;
+	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pSrcTexture2D);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	// Create the sample state
+	D3D11_SAMPLER_DESC SampDesc;
+	ZeroMemory(&SampDesc, sizeof(SampDesc));
+	SampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	SampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	SampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	SampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	SampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	SampDesc.MinLOD = 0;
+	SampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	hr = m_pDevice->CreateSamplerState(&SampDesc, &m_pSamplerLinear);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	m_srcDXGIFormat = dxgiFormat;
+
+	// TODO: remove it
+	m_D3D11_Src_Format = dxgiFormat;
+	m_D3D11_Src_Width = width;
+	m_D3D11_Src_Height = height;
+
+	return S_OK;
 }
 
 void CDX11VideoProcessor::Start()
@@ -811,9 +880,12 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 		D3D11_TEXTURE2D_DESC desc = {};
 		pD3D11Texture2D->GetDesc(&desc);
-		hr = InitializeD3D11VP(desc.Format, desc.Width, desc.Height);
-		if (FAILED(hr)) {
-			return hr;
+
+		if (desc.Format != m_D3D11_Src_Format || desc.Width != m_D3D11_Src_Width || desc.Height != m_D3D11_Src_Height) {
+			hr = InitializeD3D11VP(desc.Format, desc.Width, desc.Height);
+			if (FAILED(hr)) {
+				return hr;
+			}
 		}
 
 		m_pImmediateContext->CopySubresourceRegion(m_pSrcTexture2D, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
@@ -919,7 +991,11 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		return hr;
 	}
 
-	hr = ProcessDX11(pBackBuffer, m_FieldDrawn == 2);
+	if (1) {
+		hr = ProcessD3D11(pBackBuffer, m_FieldDrawn == 2);
+	} else {
+		hr = ProcessTex(pBackBuffer);
+	}
 	if (S_OK == hr && m_bShowStats) {
 		hr = DrawStats();
 	}
@@ -957,7 +1033,7 @@ HRESULT CDX11VideoProcessor::FillBlack()
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget, const bool second)
+HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const bool second)
 {
 	if (m_videoRect.IsRectEmpty() || m_windowRect.IsRectEmpty()) {
 		return S_OK;
@@ -1069,6 +1145,106 @@ HRESULT CDX11VideoProcessor::ProcessDX11(ID3D11Texture2D* pRenderTarget, const b
 	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, 0, 1, &StreamData);
 
 	return hr;
+}
+
+//
+// A vertex with a position and texture coordinate
+//
+typedef struct _VERTEX
+{
+	DirectX::XMFLOAT3 Pos;
+	DirectX::XMFLOAT2 TexCoord;
+} VERTEX;
+
+#define NUMVERTICES 6
+
+HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget)
+{
+	ID3D11RenderTargetView* pRenderTargetView;
+	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	D3D11_TEXTURE2D_DESC FrameDesc;
+	m_pSrcTexture2D_CPU->GetDesc(&FrameDesc);
+
+	D3D11_VIEWPORT VP;
+	VP.Width = static_cast<FLOAT>(FrameDesc.Width);
+	VP.Height = static_cast<FLOAT>(FrameDesc.Height);
+	VP.MinDepth = 0.0f;
+	VP.MaxDepth = 1.0f;
+	VP.TopLeftX = 0;
+	VP.TopLeftY = 0;
+	m_pImmediateContext->RSSetViewports(1, &VP);
+
+	// Vertices for drawing whole texture
+	VERTEX Vertices[NUMVERTICES] =
+	{
+		{DirectX::XMFLOAT3(-1.0f, -1.0f, 0), DirectX::XMFLOAT2(0.0f, 1.0f)},
+		{DirectX::XMFLOAT3(-1.0f, 1.0f, 0),  DirectX::XMFLOAT2(0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(1.0f, -1.0f, 0),  DirectX::XMFLOAT2(1.0f, 1.0f)},
+		{DirectX::XMFLOAT3(1.0f, -1.0f, 0),  DirectX::XMFLOAT2(1.0f, 1.0f)},
+		{DirectX::XMFLOAT3(-1.0f, 1.0f, 0),  DirectX::XMFLOAT2(0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(1.0f, 1.0f, 0),   DirectX::XMFLOAT2(1.0f, 0.0f)},
+	};
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC ShaderDesc;
+	ShaderDesc.Format = FrameDesc.Format;
+	ShaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	ShaderDesc.Texture2D.MostDetailedMip = FrameDesc.MipLevels - 1;
+	ShaderDesc.Texture2D.MipLevels = FrameDesc.MipLevels;
+
+	// Create new shader resource view
+	ID3D11ShaderResourceView* ShaderResource = nullptr;
+	hr = m_pDevice->CreateShaderResourceView(m_pSrcTexture2D_CPU, &ShaderDesc, &ShaderResource);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	// Set resources
+	UINT Stride = sizeof(VERTEX);
+	UINT Offset = 0;
+	FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
+	m_pImmediateContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
+	m_pImmediateContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+	m_pImmediateContext->VSSetShader(m_pVertexShader, nullptr, 0);
+	m_pImmediateContext->PSSetShader(m_pPixelShader, nullptr, 0);
+	m_pImmediateContext->PSSetShaderResources(0, 1, &ShaderResource);
+	m_pImmediateContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
+	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	D3D11_BUFFER_DESC BufferDesc;
+	ZeroMemory(&BufferDesc, sizeof(BufferDesc));
+	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	BufferDesc.ByteWidth = sizeof(VERTEX) * NUMVERTICES;
+	BufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	BufferDesc.CPUAccessFlags = 0;
+	D3D11_SUBRESOURCE_DATA InitData;
+	ZeroMemory(&InitData, sizeof(InitData));
+	InitData.pSysMem = Vertices;
+
+	ID3D11Buffer* VertexBuffer = nullptr;
+	// Create vertex buffer
+	hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &VertexBuffer);
+	if (FAILED(hr)) {
+		ShaderResource->Release();
+		ShaderResource = nullptr;
+		return hr;
+	}
+	m_pImmediateContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+
+	// Draw textured quad onto render target
+	m_pImmediateContext->Draw(NUMVERTICES, 0);
+
+	VertexBuffer->Release();
+	VertexBuffer = nullptr;
+
+	// Release shader resource
+	ShaderResource->Release();
+	ShaderResource = nullptr;
+
+	return S_OK;
 }
 
 HRESULT CDX11VideoProcessor::GetVideoSize(long *pWidth, long *pHeight)
