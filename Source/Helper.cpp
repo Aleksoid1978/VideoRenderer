@@ -127,6 +127,7 @@ static FmtConvParams_t s_FmtConvMapping[] = {
 	{ MEDIASUBTYPE_YV12,   "YV12",   D3DFMT_YV12,     D3DFMT_UNKNOWN,     DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,        1, 3,        false, &CopyFrameYV12,       },
 	{ MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_UNKNOWN,     DXGI_FORMAT_NV12,           DXGI_FORMAT_UNKNOWN,        1, 3,        false, &CopyFramePackedUV,   },
 	{ MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_UNKNOWN,     DXGI_FORMAT_P010,           DXGI_FORMAT_UNKNOWN,        2, 3,        false, &CopyFramePackedUV,   },
+	{ MEDIASUBTYPE_P016,   "P016",   D3DFMT_P016,     D3DFMT_UNKNOWN,     DXGI_FORMAT_P016,           DXGI_FORMAT_UNKNOWN,        2, 3,        false, &CopyFramePackedUV,   },
 	{ MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_UNKNOWN,     DXGI_FORMAT_YUY2,           DXGI_FORMAT_UNKNOWN,        2, 2,        false, &CopyFrameAsIs,       },
 	{ MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,    DXGI_FORMAT_AYUV,           DXGI_FORMAT_UNKNOWN,        4, 2,        false, &CopyFrameAsIs,       },
 	{ MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,    DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM, 4, 2,        true,  &CopyFrameAsIs,       },

@@ -866,7 +866,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
 		m_srcPitch = ALIGN(m_srcPitch, 4);
 	}
-	else if (SubType == MEDIASUBTYPE_P010) {
+	else if (SubType == MEDIASUBTYPE_P010 || SubType == MEDIASUBTYPE_P016) {
 		m_srcPitch &= ~1u;
 	}
 	if (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0) {
