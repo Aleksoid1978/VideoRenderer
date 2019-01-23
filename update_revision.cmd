@@ -10,7 +10,7 @@ IF NOT EXIST %gitexe% set gitexe="c:\Program Files\Git\cmd\git.exe"
 
 IF NOT EXIST %gitexe% GOTO END
 
-%gitexe% log -1 --date=format:%%Y-%%m-%%d --pretty=format:"#define MPCVR_REV_DATE %%ad%%n" >> revision.h
+%gitexe% log -1 --date=format:%%Y.%%m.%%d --pretty=format:"#define MPCVR_REV_DATE %%ad%%n" >> revision.h
 %gitexe% log -1 --pretty=format:"#define MPCVR_REV_HASH %%h%%n" >> revision.h
 
 REM ECHO #define MPCVR_REV_NUM >> revision.h
