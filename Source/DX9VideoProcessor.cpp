@@ -28,7 +28,7 @@
 #include "DX9VideoProcessor.h"
 
 #define STATS_W 450
-#define STATS_H 170
+#define STATS_H 195
 
 #pragma pack(push, 1)
 template<unsigned texcoords>
@@ -1563,8 +1563,9 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 {
 	auto FmtConvParams = GetFmtConvParams(m_srcSubType);
 	if (FmtConvParams) {
-		m_strStatsStatic.Format(L"\nInput format : %S %ux%u", FmtConvParams->str, m_srcWidth, m_srcHeight);
-		m_strStatsStatic.AppendFormat(L"\nVP output fmt: %s", D3DFormatToString(m_VPOutputFmt));
+		m_strStatsStatic.Format(L"\nInput format  : %S %ux%u", FmtConvParams->str, m_srcWidth, m_srcHeight);
+		m_strStatsStatic.AppendFormat(L"\nVP output fmt : %s", D3DFormatToString(m_VPOutputFmt));
+		m_strStatsStatic.AppendFormat(L"\nVideoProcessor: %s", m_pDXVA2_VP ? L"DXVA2" : L"PS 3.0");
 	} else {
 		m_strStatsStatic.Empty();
 	}
@@ -1580,7 +1581,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	HRESULT hr = m_pMemSurface->GetDesc(&desc);
 
 	CStringW str = L"Direct3D 9Ex";
-	str.AppendFormat(L"\nFrame rate   : %7.03f", m_FrameStats.GetAverageFps());
+	str.AppendFormat(L"\nFrame rate    : %7.03f", m_FrameStats.GetAverageFps());
 	if (m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
 		str.AppendChar(L'i');
 	}
@@ -1597,7 +1598,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 		m_RenderStats.copy2 * 1000.0 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.copy3 * 1000.0 / GetPreciseTicksPerSecondI());
 #else
-	str.AppendFormat(L"\nSync offset  : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
+	str.AppendFormat(L"\nSync offset   : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
 #endif
 	//{
 	//	CAutoLock Lock(&m_RefreshRateLock);
