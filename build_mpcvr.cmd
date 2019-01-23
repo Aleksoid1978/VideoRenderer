@@ -36,6 +36,8 @@ SET "TOOLSET=%VS_PATH%\Common7\Tools\vsdevcmd"
 SET "LOG_DIR=bin\logs"
 IF NOT EXIST "%LOG_DIR%" MD "%LOG_DIR%"
 
+IF NOT EXIST "revision.h" CALL "update_revision.cmd"
+
 CALL "%TOOLSET%" -no_logo -arch=x86
 REM again set the source directory (fix possible bug in VS2017)
 CD /D %~dp0

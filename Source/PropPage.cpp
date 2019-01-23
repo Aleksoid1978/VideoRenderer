@@ -24,6 +24,10 @@
 
 #include "PropPage.h"
 
+#if __has_include("../revision.h")
+	#include "../revision.h"
+#endif
+
 // CVRMainPPage
 
 // https://msdn.microsoft.com/ru-ru/library/windows/desktop/dd375010(v=vs.85).aspx
@@ -146,6 +150,14 @@ HRESULT CVRMainPPage::OnActivate()
 	}
 	SetDlgItemText(IDC_EDIT1, str);
 
+#ifdef MPCVR_REV_DATE
+#ifdef MPCVR_REV_HASH
+	str.Format(L"Experimental MPC Video Renderer %s (%s)",
+		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_HASH)),
+		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_DATE)));
+	SetDlgItemText(IDC_STATIC1, str);
+#endif // MPCVR_REV_HASH
+#endif // MPCVR_REV_DATE
 	return S_OK;
 }
 
