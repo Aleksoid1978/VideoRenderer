@@ -143,6 +143,10 @@ private:
 	DXVA2_ExtendedFormat m_srcExFmt = {};
 	bool m_bInterlaced = false;
 
+	// DXVA2 decoder surface parameters
+	UINT      m_SurfaceWidth  = 0;
+	UINT      m_SurfaceHeight = 0;
+
 	// Output parameters
 	D3DFORMAT m_VPOutputFmt = D3DFMT_X8R8G8B8;
 
@@ -228,7 +232,7 @@ private:
 	void ReleaseVP();
 	void ReleaseDevice();
 
-	BOOL InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height);
+	BOOL InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height, bool only_update_surface);
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
 
 	BOOL InitializeTexVP(const D3DFORMAT d3dformat, const UINT width, const UINT height);
