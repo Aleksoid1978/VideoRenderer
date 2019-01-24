@@ -70,27 +70,34 @@ private:
 	//HANDLE m_sharedHandle = nullptr;
 	//bool m_bCanUseSharedHandle = true;
 
-	CMediaType m_mt;
+	// Input parameters
+	GUID        m_srcSubType = GUID_NULL;
 	DXGI_FORMAT m_srcDXGIFormat = DXGI_FORMAT_UNKNOWN;
-	UINT  m_srcWidth        = 0;
-	UINT  m_srcHeight       = 0;
-	int   m_srcPitch        = 0;
-	DWORD m_srcAspectRatioX = 0;
-	DWORD m_srcAspectRatioY = 0;
-	typedef void(*CopyFrameDataFn)(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
-	CopyFrameDataFn m_pConvertFn = nullptr;
-	DXVA2_ExtendedFormat m_srcExFmt = {};
-	bool m_bInterlaced = false;
+	UINT        m_srcWidth        = 0;
+	UINT        m_srcHeight       = 0;
+	int         m_srcPitch        = 0;
+	DWORD       m_srcAspectRatioX = 0;
+	DWORD       m_srcAspectRatioY = 0;
 	CRect m_srcRect;
 	CRect m_trgRect;
+	DXVA2_ExtendedFormat m_srcExFmt = {};
+	bool m_bInterlaced = false;
+
+	// Input MediaType. Used in SetDevice() that is called from CVideoRendererInputPin::ActivateD3D11Decoding()
+	CMediaType m_inputMT; 
+
+	// D3D11 decoder texture parameters
+	UINT m_TextureWidth  = 0;
+	UINT m_TextureHeight = 0;
+
+	// Output parameters
 	DXGI_FORMAT m_VPOutputFmt = DXGI_FORMAT_B8G8R8X8_UNORM;
+
+	typedef void(*CopyFrameDataFn)(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
+	CopyFrameDataFn m_pConvertFn = nullptr;
 
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 	int m_FieldDrawn = 0;
-
-	DXGI_FORMAT m_D3D11_Src_Format = DXGI_FORMAT_UNKNOWN;
-	UINT m_D3D11_Src_Width = 0;
-	UINT m_D3D11_Src_Height = 0;
 
 	D3D11_VIDEO_PROCESSOR_CAPS m_VPCaps = {};
 	D3D11_VIDEO_PROCESSOR_FILTER_RANGE m_VPFilterRange[4] = {};
@@ -143,7 +150,7 @@ public:
 
 	BOOL VerifyMediaType(const CMediaType* pmt);
 	BOOL InitMediaType(const CMediaType* pmt);
-	HRESULT InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height);
+	HRESULT InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height, bool only_update_surface);
 	HRESULT InitializeTexVP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height);
 	void Start();
 
