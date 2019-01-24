@@ -337,9 +337,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 {
 	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP started with input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
 
-	if (!m_pDXVA2_VPService) {
-		return FALSE;
-	}
+	CheckPointer(m_pDXVA2_VPService, FALSE);
 
 	if (only_update_surface) {
 		if (d3dformat != m_srcD3DFormat) {
@@ -470,9 +468,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 
 BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc)
 {
-	if (!m_pDXVA2_VPService) {
-		return FALSE;
-	}
+	CheckPointer(m_pDXVA2_VPService, FALSE);
 
 	HRESULT hr = S_OK;
 	// Query the supported render target format.
