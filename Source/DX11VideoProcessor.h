@@ -122,6 +122,8 @@ private:
 	CFrameStats m_DrawnFrameStats; //TODO: use CRenderStats
 	CRenderStats m_RenderStats;
 
+	CStringW m_strStatsStatic;
+
 public:
 	CDX11VideoProcessor(CBaseRenderer* pFilter);
 	~CDX11VideoProcessor();
@@ -169,6 +171,7 @@ public:
 private:
 	HRESULT ProcessD3D11(ID3D11Texture2D* pRenderTarget, const bool second);
 	HRESULT ProcessTex(ID3D11Texture2D* pRenderTarget);
+	void UpdateStatsStatic();
 	HRESULT DrawStats();
 
 public:

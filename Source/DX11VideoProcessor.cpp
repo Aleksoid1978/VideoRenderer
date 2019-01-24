@@ -556,7 +556,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	if (FmtConvParams->VP11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeD3D11VP(FmtConvParams->VP11Format, m_srcWidth, m_srcHeight)) {
 		m_srcDXGIFormat = FmtConvParams->VP11Format;
 		m_mt = *pmt;
-		// UpdateStatsStatic();
+		UpdateStatsStatic();
 		return TRUE;
 	}
 
@@ -578,7 +578,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		}
 		m_srcDXGIFormat = FmtConvParams->VP11Format;
 		m_mt = *pmt;
-		//UpdateStatsStatic();
+		UpdateStatsStatic();
 		return TRUE;
 	}
 
@@ -1287,6 +1287,18 @@ HRESULT CDX11VideoProcessor::GetAdapterDecription(CStringW& str)
 	return S_OK;
 }
 
+void CDX11VideoProcessor::UpdateStatsStatic()
+{
+	auto FmtConvParams = GetFmtConvParams(m_mt.subtype);
+	if (FmtConvParams) {
+		m_strStatsStatic.Format(L"\nInput format  : %S %ux%u", FmtConvParams->str, m_srcWidth, m_srcHeight);
+		m_strStatsStatic.AppendFormat(L"\nVP output fmt : %s", DXGIFormatToString(m_VPOutputFmt));
+		m_strStatsStatic.AppendFormat(L"\nVideoProcessor: %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");
+	} else {
+		m_strStatsStatic.Empty();
+	}
+}
+
 HRESULT CDX11VideoProcessor::DrawStats()
 {
 	if (!m_pD2D1Brush || m_windowRect.IsRectEmpty()) {
@@ -1299,9 +1311,7 @@ HRESULT CDX11VideoProcessor::DrawStats()
 		str.AppendChar(L'i');
 	}
 	str.AppendFormat(L",%7.03f", m_DrawnFrameStats.GetAverageFps());
-	str.AppendFormat(L"\nInput format  : %s %ux%u", DXGIFormatToString(m_srcDXGIFormat), m_srcWidth, m_srcHeight);
-	str.AppendFormat(L"\nVP output fmt : %s", DXGIFormatToString(m_VPOutputFmt));
-	str.AppendFormat(L"\nVideoProcessor: %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");
+	str.Append(m_strStatsStatic);
 	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
 		m_FrameStats.GetFrames(), m_RenderStats.skipped1, m_RenderStats.skipped2, m_RenderStats.failed);
 	str.AppendFormat(L"\nCopyTime:%3llu ms, RenderTime:%3llu ms",
