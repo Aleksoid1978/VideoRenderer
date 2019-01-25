@@ -205,7 +205,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 #endif
 	m_pVideoContext.Release();
 
-	m_pImmediateContext.Release();
+	m_pDeviceContext.Release();
 	m_pDevice.Release();
 }
 
@@ -252,7 +252,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	CheckPointer(pContext, E_POINTER);
 
 	m_pDevice = pDevice;
-	m_pImmediateContext = pContext;
+	m_pDeviceContext = pContext;
 
 	HRESULT hr = m_pDevice->QueryInterface(__uuidof(ID3D11VideoDevice), (void**)&m_pVideoDevice);
 	if (FAILED(hr)) {
@@ -260,7 +260,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		return hr;
 	}
 
-	hr = m_pImmediateContext->QueryInterface(__uuidof(ID3D11VideoContext), (void**)&m_pVideoContext);
+	hr = m_pDeviceContext->QueryInterface(__uuidof(ID3D11VideoContext), (void**)&m_pVideoContext);
 	if (FAILED(hr)) {
 		ReleaseDevice();
 		return hr;
@@ -353,7 +353,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	};
 	hr2 = m_pDevice->CreateInputLayout(Layout, std::size(Layout), data, size, &m_pInputLayout);
 	if (S_OK == hr2) {
-		m_pImmediateContext->IASetInputLayout(m_pInputLayout);
+		m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 	}
 	if (S_OK == GetDataFromResource(data, size, IDF_PSHADER11_TEST)) {
 		hr2 = m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPixelShader);
@@ -908,7 +908,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 		}
 
-		m_pImmediateContext->CopySubresourceRegion(m_pSrcTexture2D, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
+		m_pDeviceContext->CopySubresourceRegion(m_pSrcTexture2D, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
 	}
 	//else if (CComQIPtr<IMFGetService> pService = pSample) {
 	//	CComPtr<IDirect3DSurface9> pSurface9;
@@ -961,12 +961,12 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	//			hr = pSurface9->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
 	//			if (S_OK == hr) {
 	//				D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-	//				hr = m_pImmediateContext->Map(m_pSrcTexture2D_CPU, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	//				hr = m_pDeviceContext->Map(m_pSrcTexture2D_CPU, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	//				if (SUCCEEDED(hr)) {
 	//					ASSERT(m_pConvertFn);
 	//					m_pConvertFn(desc.Height, (BYTE*)mappedResource.pData, mappedResource.RowPitch, (BYTE*)lr_src.pBits, lr_src.Pitch);
-	//					m_pImmediateContext->Unmap(m_pSrcTexture2D_CPU, 0);
-	//					m_pImmediateContext->CopyResource(m_pSrcTexture2D, m_pSrcTexture2D_CPU); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
+	//					m_pDeviceContext->Unmap(m_pSrcTexture2D_CPU, 0);
+	//					m_pDeviceContext->CopyResource(m_pSrcTexture2D, m_pSrcTexture2D_CPU); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
 	//				}
 	//
 	//				hr = pSurface9->UnlockRect();
@@ -979,13 +979,13 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
 			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-			hr = m_pImmediateContext->Map(m_pSrcTexture2D_CPU, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+			hr = m_pDeviceContext->Map(m_pSrcTexture2D_CPU, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 			if (SUCCEEDED(hr)) {
 				ASSERT(m_pConvertFn);
 				BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
 				m_pConvertFn(m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, src, m_srcPitch);
-				m_pImmediateContext->Unmap(m_pSrcTexture2D_CPU, 0);
-				m_pImmediateContext->CopyResource(m_pSrcTexture2D, m_pSrcTexture2D_CPU); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
+				m_pDeviceContext->Unmap(m_pSrcTexture2D_CPU, 0);
+				m_pDeviceContext->CopyResource(m_pSrcTexture2D, m_pSrcTexture2D_CPU); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
 			}
 		}
 	}
@@ -1041,10 +1041,10 @@ HRESULT CDX11VideoProcessor::FillBlack()
 		return hr;
 	}
 	
-	m_pImmediateContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 
 	float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	m_pImmediateContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
+	m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
 
 	hr = m_pDXGISwapChain1->Present(0, 0);
 
@@ -1196,7 +1196,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget)
 	VP.MaxDepth = 1.0f;
 	VP.TopLeftX = 0;
 	VP.TopLeftY = 0;
-	m_pImmediateContext->RSSetViewports(1, &VP);
+	m_pDeviceContext->RSSetViewports(1, &VP);
 
 	// Vertices for drawing whole texture
 	VERTEX Vertices[NUMVERTICES] =
@@ -1226,13 +1226,13 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget)
 	UINT Stride = sizeof(VERTEX);
 	UINT Offset = 0;
 	FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
-	m_pImmediateContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
-	m_pImmediateContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
-	m_pImmediateContext->VSSetShader(m_pVertexShader, nullptr, 0);
-	m_pImmediateContext->PSSetShader(m_pPixelShader, nullptr, 0);
-	m_pImmediateContext->PSSetShaderResources(0, 1, &ShaderResource);
-	m_pImmediateContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
-	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
+	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
+	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
+	m_pDeviceContext->PSSetShaderResources(0, 1, &ShaderResource);
+	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
+	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	D3D11_BUFFER_DESC BufferDesc;
 	ZeroMemory(&BufferDesc, sizeof(BufferDesc));
@@ -1252,10 +1252,10 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget)
 		ShaderResource = nullptr;
 		return hr;
 	}
-	m_pImmediateContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+	m_pDeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
 
 	// Draw textured quad onto render target
-	m_pImmediateContext->Draw(NUMVERTICES, 0);
+	m_pDeviceContext->Draw(NUMVERTICES, 0);
 
 	VertexBuffer->Release();
 	VertexBuffer = nullptr;

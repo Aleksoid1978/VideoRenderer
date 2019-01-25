@@ -46,7 +46,7 @@ private:
 
 	HMODULE m_hD3D11Lib = nullptr;
 	CComPtr<ID3D11Device> m_pDevice;
-	CComPtr<ID3D11DeviceContext> m_pImmediateContext;
+	CComPtr<ID3D11DeviceContext> m_pDeviceContext;
 	CComPtr<ID3D11VideoContext> m_pVideoContext;
 #if VER_PRODUCTBUILD >= 10000
 	CComPtr<ID3D11VideoContext1> m_pVideoContext1;
