@@ -132,9 +132,10 @@ static FmtConvParams_t s_FmtConvMapping[] = {
 	{ MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,     DXGI_FORMAT_AYUV,           DXGI_FORMAT_UNKNOWN,        4, 2,        CS_YUV,  &CopyFrameAsIs,       },
 	{ MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_Y410,     D3DFMT_A2B10G10R10,  DXGI_FORMAT_Y410,           DXGI_FORMAT_UNKNOWN,        4, 2,        CS_YUV,  &CopyFrameAsIs,       },
 	{ MEDIASUBTYPE_Y416,   "Y416",   D3DFMT_Y416,     D3DFMT_A16B16G16R16, DXGI_FORMAT_Y416,           DXGI_FORMAT_UNKNOWN,        8, 2,        CS_YUV,  &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,     DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM, 3, 2,        CS_RGB,  &CopyFrameRGB24SSSE3, },
 	{ MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,     DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM, 4, 2,        CS_RGB,  &CopyFrameAsIs,       },
 	{ MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,     DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM, 4, 2,        CS_RGB,  &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,     DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM, 3, 2,        CS_RGB,  &CopyFrameRGB24SSSE3, },
+	{ MEDIASUBTYPE_RGB48,  "RGB48",  D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,        6, 2,        CS_RGB,  &CopyFrameRGB48,      },
 	{ MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,           DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,        1, 2,        CS_GRAY, &CopyFrameAsIs,       },
 	{ MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,           DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,        1, 2,        CS_GRAY, &CopyFrameAsIs,       },
 	{ MEDIASUBTYPE_Y116,   "Y116",   D3DFMT_UNKNOWN,  D3DFMT_L16,          DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,        2, 2,        CS_GRAY, &CopyFrameAsIs,       },
@@ -213,6 +214,31 @@ void CopyFrameRGB24SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src
 
 			src128 += 3;
 			dst128 += 4;
+		}
+
+		src += src_pitch;
+		dst += dst_pitch;
+	}
+}
+
+void CopyFrameRGB48(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+{
+	UINT line_pixels = abs(src_pitch) / 6;
+
+	for (UINT y = 0; y < height; ++y) {
+		uint64_t* src64 = (uint64_t*)src;
+		uint64_t* dst64 = (uint64_t*)dst;
+		for (UINT i = 0; i < line_pixels; i += 4) {
+			uint64_t sa = src64[0];
+			uint64_t sb = src64[1];
+			uint64_t sc = src64[2];
+
+			dst64[i + 0] = sa & 0x0000FFFFFFFFFFFF;
+			dst64[i + 1] = ((sa >> 48) | (sb << 16)) & 0x0000FFFFFFFFFFFF;
+			dst64[i + 2] = ((sb >> 32) | (sc << 32)) & 0x0000FFFFFFFFFFFF;
+			dst64[i + 3] = (sc >> 16) & 0x0000FFFFFFFFFFFF;
+
+			src64 += 3;
 		}
 
 		src += src_pitch;
