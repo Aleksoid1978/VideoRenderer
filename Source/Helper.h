@@ -37,6 +37,7 @@
 #define D3DFMT_P016 (D3DFORMAT)FCC('P016')
 #define D3DFMT_AYUV (D3DFORMAT)FCC('AYUV')
 #define D3DFMT_Y410 (D3DFORMAT)FCC('Y410')
+#define D3DFMT_Y416 (D3DFORMAT)FCC('Y416')
 
 #define PCIV_AMDATI      0x1002
 #define PCIV_NVIDIA      0x10DE
@@ -60,6 +61,7 @@ DEFINE_GUID(MEDIASUBTYPE_Y8,   0x20203859, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xa
 DEFINE_GUID(MEDIASUBTYPE_Y800, 0x30303859, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 DEFINE_GUID(MEDIASUBTYPE_Y116, 0x10003159, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71); // Y1[0][16]
 DEFINE_GUID(MEDIASUBTYPE_Y410, 0x30313459, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
+DEFINE_GUID(MEDIASUBTYPE_Y416, 0x36313459, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 
 #define VIDEOTRANSFERMATRIX_BT2020_10 4
 #define VIDEOTRANSFERMATRIX_BT2020_12 5
@@ -99,6 +101,12 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid);
 
 typedef void(*CopyFrameDataFn)(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 
+enum ColorSystem_t {
+	CS_YUV,
+	CS_RGB,
+	CS_GRAY
+};
+
 struct FmtConvParams_t {
 	GUID            Subtype;
 	char*           str;
@@ -108,7 +116,7 @@ struct FmtConvParams_t {
 	DXGI_FORMAT     DX11Format;
 	int             Packsize;
 	int             PitchCoeff;
-	bool            bRGB;
+	ColorSystem_t   CSType;
 	CopyFrameDataFn Func;
 };
 
