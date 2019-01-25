@@ -1011,7 +1011,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		return hr;
 	}
 
-	if (1) {
+	if (m_pVideoContext) {
 		hr = ProcessD3D11(pBackBuffer, m_FieldDrawn == 2);
 	} else {
 		hr = ProcessTex(pBackBuffer);
