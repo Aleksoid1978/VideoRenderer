@@ -58,9 +58,6 @@ private:
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;
 	CComPtr<ID3D11VideoProcessorInputView> m_pInputView;
 
-	ID3D11InputLayout* m_pInputLayout = nullptr;;
-	ID3D11SamplerState* m_pSamplerLinear = nullptr;
-
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
 
@@ -124,6 +121,8 @@ private:
 
 	CComPtr<ID3D11VertexShader> m_pVertexShader;
 	CComPtr<ID3D11PixelShader>  m_pPixelShader;
+	CComPtr<ID3D11InputLayout> m_pInputLayout;
+	ID3D11SamplerState* m_pSamplerLinear = nullptr;
 
 	CFrameStats m_FrameStats;
 	CFrameStats m_DrawnFrameStats; //TODO: use CRenderStats

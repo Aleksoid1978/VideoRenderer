@@ -175,10 +175,6 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_pSrcTexture2D_CPU.Release();
 	m_pSrcTexture2D.Release();
 
-	if (m_pInputLayout) {
-		m_pInputLayout->Release();
-		m_pInputLayout = nullptr;
-	}
 	if (m_pSamplerLinear) {
 		m_pSamplerLinear->Release();
 		m_pSamplerLinear = nullptr;
@@ -200,14 +196,16 @@ void CDX11VideoProcessor::ReleaseDevice()
 	ReleaseVP();
 	m_pVideoDevice.Release();
 
+	m_pInputLayout.Release();
+	m_pVertexShader.Release();
+	m_pPixelShader.Release();
+
 #if VER_PRODUCTBUILD >= 10000
 	m_pVideoContext1.Release();
 #endif
 	m_pVideoContext.Release();
-	m_pImmediateContext.Release();
 
-	m_pVertexShader.Release();
-	m_pPixelShader.Release();
+	m_pImmediateContext.Release();
 	m_pDevice.Release();
 }
 
@@ -348,16 +346,15 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	if (S_OK == GetDataFromResource(data, size, IDF_VSHADER11_TEST)) {
 		hr2 = m_pDevice->CreateVertexShader(data, size, nullptr, &m_pVertexShader);
 	}
-	/* TODO
+
 	D3D11_INPUT_ELEMENT_DESC Layout[] = {
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
 	};
-	hr2 = m_pDevice->CreateInputLayout(Layout, std::size(Layout), m_pVertexShader, size, &m_pInputLayout);
+	hr2 = m_pDevice->CreateInputLayout(Layout, std::size(Layout), data, size, &m_pInputLayout);
 	if (S_OK == hr2) {
 		m_pImmediateContext->IASetInputLayout(m_pInputLayout);
 	}
-	*/
 	if (S_OK == GetDataFromResource(data, size, IDF_PSHADER11_TEST)) {
 		hr2 = m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPixelShader);
 	}
