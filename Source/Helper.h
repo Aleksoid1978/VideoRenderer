@@ -127,9 +127,10 @@ const FmtConvParams_t* GetFmtConvParams(GUID subtype);
 void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 // RGB24 to D3DFMT_X8R8G8B8
 void CopyFrameRGB24(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
-void CopyFrameRGB24SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
+void CopyFrameRGB24SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch); // 30% faster than CopyFrameRGB24().
 // RGB48 to D3DFMT_A16B16G16R16
 void CopyFrameRGB48(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
+void CopyFrameRGB48SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch); // Not faster than CopyFrameRGB48().
 // YV12
 void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 // NV12, P010

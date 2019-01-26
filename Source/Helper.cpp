@@ -233,12 +233,43 @@ void CopyFrameRGB48(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int
 			uint64_t sb = src64[1];
 			uint64_t sc = src64[2];
 
-			dst64[i + 0] = sa & 0x0000FFFFFFFFFFFF;
-			dst64[i + 1] = ((sa >> 48) | (sb << 16)) & 0x0000FFFFFFFFFFFF;
-			dst64[i + 2] = ((sb >> 32) | (sc << 32)) & 0x0000FFFFFFFFFFFF;
-			dst64[i + 3] = (sc >> 16) & 0x0000FFFFFFFFFFFF;
+			dst64[i + 0] = sa;
+			dst64[i + 1] = (sa >> 48) | (sb << 16);
+			dst64[i + 2] = (sb >> 32) | (sc << 32);
+			dst64[i + 3] = sc >> 16;
 
 			src64 += 3;
+		}
+
+		src += src_pitch;
+		dst += dst_pitch;
+	}
+}
+
+void CopyFrameRGB48SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+{
+	UINT line_pixels = abs(src_pitch) / 6;
+	__m128i mask = _mm_setr_epi8(0, 1, 2, 3, 4, 5, -1, -1, 6, 7, 8, 9, 10, 11, -1, -1);
+
+	for (UINT y = 0; y < height; ++y) {
+		__m128i *src128 = (__m128i*)src;
+		__m128i *dst128 = (__m128i*)dst;
+		for (UINT i = 0; i < line_pixels; i += 8) {
+			__m128i sa = _mm_load_si128(src128);
+			__m128i sb = _mm_load_si128(src128 + 1);
+			__m128i sc = _mm_load_si128(src128 + 2);
+
+			__m128i val = _mm_shuffle_epi8(sa, mask);
+			_mm_store_si128(dst128, val);
+			val = _mm_shuffle_epi8(_mm_alignr_epi8(sb, sa, 12), mask);
+			_mm_store_si128(dst128 + 1, val);
+			val = _mm_shuffle_epi8(_mm_alignr_epi8(sc, sb, 8), mask);
+			_mm_store_si128(dst128 + 2, val);
+			val = _mm_shuffle_epi8(_mm_alignr_epi8(sc, sc, 4), mask);
+			_mm_store_si128(dst128 + 3, val);
+
+			src128 += 3;
+			dst128 += 4;
 		}
 
 		src += src_pitch;
