@@ -3,5 +3,7 @@
   <ItemGroup>
     <FxCompile Include="ps_test.hlsl" />
     <FxCompile Include="vs_test.hlsl" />
+    <FxCompile Include="ps_vlc.hlsl" />
+    <FxCompile Include="vs_vlc.hlsl" />
   </ItemGroup>
 </Project>
