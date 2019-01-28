@@ -161,6 +161,8 @@ public:
 	void StopInputBuffer() {}
 	bool SecondFramePossible() { return m_bDeintDouble && m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE; }
 
+	void GetSourceRect(CRect& sourceRect) { sourceRect = m_srcRect; }
+	void GetVideoRect(CRect& videoRect) { videoRect = m_videoRect; }
 	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
 	void SetWindowRect(const CRect& windowRect) { m_windowRect = windowRect; }
 

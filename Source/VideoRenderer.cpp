@@ -291,6 +291,33 @@ STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPV
 }
 
 // IBasicVideo
+STDMETHODIMP CMpcVideoRenderer::GetSourcePosition(long *pLeft, long *pTop, long *pWidth, long *pHeight)
+{
+	CheckPointer(pLeft,E_POINTER);
+	CheckPointer(pTop,E_POINTER);
+	CheckPointer(pWidth,E_POINTER);
+	CheckPointer(pHeight,E_POINTER);
+
+	CRect rect;
+	{
+		CAutoLock cRendererLock(&m_InterfaceLock);
+		if (m_bUsedD3D11) {
+			m_DX11_VP.GetSourceRect(rect);
+		} else {
+			m_DX9_VP.GetSourceRect(rect);
+		}
+	}
+
+	*pLeft = rect.left;
+	*pTop = rect.top;
+	*pWidth = rect.Width();
+	*pHeight = rect.Height();
+
+	return S_OK;
+
+	return E_NOTIMPL;
+}
+
 STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long Width, long Height)
 {
 	CRect videoRect(Left, Top, Left + Width, Top + Height);
@@ -311,6 +338,31 @@ STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long
 			m_DX9_VP.FillBlack();
 		}
 	}
+
+	return S_OK;
+}
+
+STDMETHODIMP CMpcVideoRenderer::GetDestinationPosition(long *pLeft, long *pTop, long *pWidth, long *pHeight)
+{
+	CheckPointer(pLeft,E_POINTER);
+	CheckPointer(pTop,E_POINTER);
+	CheckPointer(pWidth,E_POINTER);
+	CheckPointer(pHeight,E_POINTER);
+
+	CRect rect;
+	{
+		CAutoLock cRendererLock(&m_InterfaceLock);
+		if (m_bUsedD3D11) {
+			m_DX11_VP.GetVideoRect(rect);
+		} else {
+			m_DX9_VP.GetVideoRect(rect);
+		}
+	}
+
+	*pLeft = rect.left;
+	*pTop = rect.top;
+	*pWidth = rect.Width();
+	*pHeight = rect.Height();
 
 	return S_OK;
 }

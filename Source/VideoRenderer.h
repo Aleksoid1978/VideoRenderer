@@ -133,10 +133,10 @@ public:
 	STDMETHODIMP put_DestinationHeight(long DestinationHeight) { return E_NOTIMPL; }
 	STDMETHODIMP get_DestinationHeight(long *pDestinationHeight) { return E_NOTIMPL; }
 	STDMETHODIMP SetSourcePosition(long Left, long Top, long Width, long Height) { return E_NOTIMPL; }
-	STDMETHODIMP GetSourcePosition(long *pLeft, long *pTop, long *pWidth, long *pHeight) { return E_NOTIMPL; }
+	STDMETHODIMP GetSourcePosition(long *pLeft, long *pTop, long *pWidth, long *pHeight);
 	STDMETHODIMP SetDefaultSourcePosition(void) { return E_NOTIMPL; }
 	STDMETHODIMP SetDestinationPosition(long Left, long Top, long Width, long Height);
-	STDMETHODIMP GetDestinationPosition(long *pLeft, long *pTop, long *pWidth, long *pHeight) { return E_NOTIMPL; }
+	STDMETHODIMP GetDestinationPosition(long *pLeft, long *pTop, long *pWidth, long *pHeight);
 	STDMETHODIMP SetDefaultDestinationPosition(void) { return E_NOTIMPL; }
 	STDMETHODIMP GetVideoSize(long *pWidth, long *pHeight);
 	STDMETHODIMP GetVideoPaletteEntries(long StartIndex, long Entries, long *pRetrieved, long *pPalette) { return E_NOTIMPL; }
