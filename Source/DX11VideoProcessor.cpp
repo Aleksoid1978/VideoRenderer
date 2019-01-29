@@ -29,13 +29,14 @@
 #include "Helper.h"
 #include "Time.h"
 #include "resource.h"
+#include "VideoRenderer.h"
 #include "DX11VideoProcessor.h"
 #include "./Include/ID3DVideoMemoryConfiguration.h"
 
 
 // CDX11VideoProcessor
 
-CDX11VideoProcessor::CDX11VideoProcessor(CBaseVideoRenderer* pFilter)
+CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter)
 {
 	m_pFilter = pFilter;
 }

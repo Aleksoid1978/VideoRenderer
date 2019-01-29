@@ -61,6 +61,8 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 {
 private:
 	friend class CVideoRendererInputPin;
+	friend class CDX9VideoProcessor;
+	friend class CDX11VideoProcessor;
 
 	bool m_bOptionUseD3D11 = false; // option
 	int m_iOptionSurfaceFmt = 0; // option

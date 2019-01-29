@@ -70,6 +70,8 @@ public:
 	}
 };
 
+class CMpcVideoRenderer;
+
 class CDX9VideoProcessor
 	: public IMFVideoProcessor
 {
@@ -104,7 +106,7 @@ private:
 	};
 
 	long m_nRefCount = 1;
-	CBaseVideoRenderer* m_pFilter = nullptr;
+	CMpcVideoRenderer* m_pFilter = nullptr;
 
 	bool m_bDeintDouble = false;
 	bool m_bShowStats = false;
@@ -223,7 +225,7 @@ private:
 	HANDLE m_hSyncThread = nullptr;
 
 public:
-	CDX9VideoProcessor(CBaseVideoRenderer* pFilter);
+	CDX9VideoProcessor(CMpcVideoRenderer* pFilter);
 	~CDX9VideoProcessor();
 
 	HRESULT Init(const HWND hwnd, const int iSurfaceFmt, bool* pChangeDevice);

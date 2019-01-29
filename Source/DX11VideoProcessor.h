@@ -34,12 +34,14 @@
 #include "Helper.h"
 #include "FrameStats.h"
 
+class CMpcVideoRenderer;
+
 class CDX11VideoProcessor
 	: public IMFVideoProcessor
 {
 private:
 	long m_nRefCount = 1;
-	CBaseVideoRenderer* m_pFilter = nullptr;
+	CMpcVideoRenderer* m_pFilter = nullptr;
 
 	bool m_bDeintDouble = false;
 	bool m_bShowStats = false;
@@ -131,7 +133,7 @@ private:
 	CStringW m_strStatsStatic;
 
 public:
-	CDX11VideoProcessor(CBaseVideoRenderer* pFilter);
+	CDX11VideoProcessor(CMpcVideoRenderer* pFilter);
 	~CDX11VideoProcessor();
 
 	HRESULT Init(const int iSurfaceFmt);

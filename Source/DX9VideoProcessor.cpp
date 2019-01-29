@@ -25,6 +25,7 @@
 #include <Mferror.h>
 #include <dwmapi.h>
 #include "Time.h"
+#include "VideoRenderer.h"
 #include "DX9VideoProcessor.h"
 
 #define STATS_W 450
@@ -114,7 +115,7 @@ static UINT GetAdapter(HWND hWnd, IDirect3D9Ex* pD3D)
 	return D3DADAPTER_DEFAULT;
 }
 
-CDX9VideoProcessor::CDX9VideoProcessor(CBaseVideoRenderer* pFilter)
+CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
 {
 	m_pFilter = pFilter;
 
