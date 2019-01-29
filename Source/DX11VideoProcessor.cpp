@@ -811,7 +811,6 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 void CDX11VideoProcessor::Start()
 {
 	m_DrawnFrameStats.Reset();
-	m_RenderStats.NewInterval();
 }
 
 HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
@@ -822,14 +821,6 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 	const REFERENCE_TIME rtFrameDur = m_pFilter->m_FrameStats.GetAverageFrameDuration();
 	rtEnd = rtStart + rtFrameDur;
 	CRefTime rtClock;
-
-	m_pFilter->StreamTime(rtClock);
-	if (m_RenderStats.skipped_interval < 60 && rtEnd < rtClock) {
-		m_RenderStats.skipped1++;
-		m_RenderStats.skipped_interval++;
-		return S_FALSE; // skip frame
-	}
-	m_RenderStats.skipped_interval = 0;
 
 	HRESULT hr = CopySample(pSample);
 	if (FAILED(hr)) {
@@ -1333,7 +1324,7 @@ HRESULT CDX11VideoProcessor::DrawStats()
 	str.AppendFormat(L",%7.03f", m_DrawnFrameStats.GetAverageFps());
 	str.Append(m_strStatsStatic);
 	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
-		m_pFilter->m_FrameStats.GetFrames(), m_RenderStats.skipped1, m_RenderStats.skipped2, m_RenderStats.failed);
+		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_cFramesDropped, m_RenderStats.skipped2, m_RenderStats.failed);
 	str.AppendFormat(L"\nCopyTime:%3llu ms, RenderTime:%3llu ms",
 		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.renderticks * 1000 / GetPreciseTicksPerSecondI());

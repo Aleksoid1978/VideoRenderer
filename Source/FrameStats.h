@@ -94,10 +94,10 @@ public:
 
 
 struct CRenderStats {
-	unsigned skipped1 = 0;
+	//unsigned skipped1 = 0;
 	unsigned skipped2 = 0;
 	unsigned failed = 0;
-	unsigned skipped_interval = 0;
+	//unsigned skipped_interval = 0;
 
 	uint64_t copyticks = 0;
 	uint64_t renderticks = 0;
@@ -107,11 +107,11 @@ struct CRenderStats {
 	uint64_t copy2 = 0;
 	uint64_t copy3 = 0;
 
-	void NewInterval() {
-		skipped_interval = INT_MAX; // needed for forced rendering of the first frame after start or seeking
-	}
+	//void NewInterval() {
+	//	skipped_interval = INT_MAX; // needed for forced rendering of the first frame after start or seeking
+	//}
 	void Reset() {
 		ZeroMemory(this, sizeof(this));
-		NewInterval();
+		//NewInterval();
 	}
 };
