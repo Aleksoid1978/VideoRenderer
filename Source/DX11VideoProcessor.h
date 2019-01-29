@@ -126,7 +126,6 @@ private:
 	CComPtr<ID3D11InputLayout> m_pInputLayout;
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;
 
-	CFrameStats m_FrameStats;
 	CFrameStats m_DrawnFrameStats; //TODO: use CRenderStats
 	CRenderStats m_RenderStats;
 

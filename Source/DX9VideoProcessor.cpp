@@ -300,7 +300,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 
 void CDX9VideoProcessor::ReleaseVP()
 {
-	m_FrameStats.Reset();
+	m_pFilter->m_FrameStats.Reset();
 	m_DrawnFrameStats.Reset();
 	m_RenderStats.Reset();
 
@@ -950,9 +950,8 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 {
 	REFERENCE_TIME rtStart, rtEnd;
 	pSample->GetTime(&rtStart, &rtEnd);
-	m_FrameStats.Add(rtStart);
 
-	const REFERENCE_TIME rtFrameDur = m_FrameStats.GetAverageFrameDuration();
+	const REFERENCE_TIME rtFrameDur = m_pFilter->m_FrameStats.GetAverageFrameDuration();
 	rtEnd = rtStart + rtFrameDur;
 	CRefTime rtClock;
 
@@ -1034,7 +1033,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 
 #ifdef _DEBUG
-			if (m_FrameStats.GetFrames() < 2) {
+			if (m_pFilter->m_FrameStats.GetFrames() < 2) {
 				CComPtr<IDirect3DDevice9> pD3DDev;
 				pSurface->GetDevice(&pD3DDev);
 				if (pD3DDev != m_pD3DDevEx) {
@@ -1090,7 +1089,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 
-	const REFERENCE_TIME start_100ns = m_FrameStats.GetFrames() * 170000i64;
+	const REFERENCE_TIME start_100ns = m_pFilter->m_FrameStats.GetFrames() * 170000i64;
 	const REFERENCE_TIME end_100ns = start_100ns + 170000i64;
 	m_SrcSamples.Get().Start = start_100ns;
 	m_SrcSamples.Get().End = end_100ns;
@@ -1598,14 +1597,14 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	HRESULT hr = m_pMemSurface->GetDesc(&desc);
 
 	CStringW str = L"Direct3D 9Ex";
-	str.AppendFormat(L"\nFrame rate    : %7.03f", m_FrameStats.GetAverageFps());
+	str.AppendFormat(L"\nFrame rate    : %7.03f", m_pFilter->m_FrameStats.GetAverageFps());
 	if (m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
 		str.AppendChar(L'i');
 	}
 	str.AppendFormat(L",%7.03f",  m_DrawnFrameStats.GetAverageFps());
 	str.Append(m_strStatsStatic);
 	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
-		m_FrameStats.GetFrames(), m_RenderStats.skipped1, m_RenderStats.skipped2, m_RenderStats.failed);
+		m_pFilter->m_FrameStats.GetFrames(), m_RenderStats.skipped1, m_RenderStats.skipped2, m_RenderStats.failed);
 	str.AppendFormat(L"\nCopyTime:%3llu ms, RenderTime:%3llu ms",
 		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.renderticks * 1000 / GetPreciseTicksPerSecondI());

@@ -169,7 +169,7 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 
 void CDX11VideoProcessor::ReleaseVP()
 {
-	m_FrameStats.Reset();
+	m_pFilter->m_FrameStats.Reset();
 	m_DrawnFrameStats.Reset();
 	m_RenderStats.Reset();
 
@@ -818,9 +818,8 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 {
 	REFERENCE_TIME rtStart, rtEnd;
 	pSample->GetTime(&rtStart, &rtEnd);
-	m_FrameStats.Add(rtStart);
 
-	const REFERENCE_TIME rtFrameDur = m_FrameStats.GetAverageFrameDuration();
+	const REFERENCE_TIME rtFrameDur = m_pFilter->m_FrameStats.GetAverageFrameDuration();
 	rtEnd = rtStart + rtFrameDur;
 	CRefTime rtClock;
 
@@ -1327,14 +1326,14 @@ HRESULT CDX11VideoProcessor::DrawStats()
 	}
 
 	CStringW str = L"Direct3D 11";
-	str.AppendFormat(L"\nFrame  rate   : %7.03f", m_FrameStats.GetAverageFps());
+	str.AppendFormat(L"\nFrame  rate   : %7.03f", m_pFilter->m_FrameStats.GetAverageFps());
 	if (m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
 		str.AppendChar(L'i');
 	}
 	str.AppendFormat(L",%7.03f", m_DrawnFrameStats.GetAverageFps());
 	str.Append(m_strStatsStatic);
 	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
-		m_FrameStats.GetFrames(), m_RenderStats.skipped1, m_RenderStats.skipped2, m_RenderStats.failed);
+		m_pFilter->m_FrameStats.GetFrames(), m_RenderStats.skipped1, m_RenderStats.skipped2, m_RenderStats.failed);
 	str.AppendFormat(L"\nCopyTime:%3llu ms, RenderTime:%3llu ms",
 		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.renderticks * 1000 / GetPreciseTicksPerSecondI());

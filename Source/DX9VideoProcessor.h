@@ -209,7 +209,6 @@ private:
 	int m_iConvertShader = -1;
 	float m_fConstData[4][4] = {};
 
-	CFrameStats m_FrameStats;
 	CFrameStats m_DrawnFrameStats; //TODO: use CRenderStats
 	CRenderStats m_RenderStats;
 
