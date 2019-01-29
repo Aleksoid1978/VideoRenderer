@@ -38,7 +38,7 @@
 //
 
 CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
-	: CBaseRenderer(__uuidof(this), L"MPC Video Renderer", pUnk, phr)
+	: CBaseVideoRenderer(__uuidof(this), L"MPC Video Renderer", pUnk, phr)
 	, m_DX9_VP(this)
 	, m_DX11_VP(this)
 {
@@ -205,7 +205,7 @@ STDMETHODIMP CMpcVideoRenderer::Run(REFERENCE_TIME rtStart)
 		m_DX9_VP.Start();
 	}
 
-	return CBaseRenderer::Run(rtStart);
+	return CBaseVideoRenderer::Run(rtStart);
 }
 
 STDMETHODIMP CMpcVideoRenderer::Stop()
@@ -218,7 +218,7 @@ STDMETHODIMP CMpcVideoRenderer::Stop()
 
 	m_filterState = State_Stopped;
 
-	return CBaseRenderer::Stop();
+	return CBaseVideoRenderer::Stop();
 }
 
 // IKsPropertySet

@@ -39,7 +39,7 @@ class CDX11VideoProcessor
 {
 private:
 	long m_nRefCount = 1;
-	CBaseRenderer * m_pFilter = nullptr;
+	CBaseVideoRenderer* m_pFilter = nullptr;
 
 	bool m_bDeintDouble = false;
 	bool m_bShowStats = false;
@@ -131,7 +131,7 @@ private:
 	CStringW m_strStatsStatic;
 
 public:
-	CDX11VideoProcessor(CBaseRenderer* pFilter);
+	CDX11VideoProcessor(CBaseVideoRenderer* pFilter);
 	~CDX11VideoProcessor();
 
 	HRESULT Init(const int iSurfaceFmt);

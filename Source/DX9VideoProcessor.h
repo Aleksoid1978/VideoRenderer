@@ -104,7 +104,7 @@ private:
 	};
 
 	long m_nRefCount = 1;
-	CBaseRenderer* m_pFilter = nullptr;
+	CBaseVideoRenderer* m_pFilter = nullptr;
 
 	bool m_bDeintDouble = false;
 	bool m_bShowStats = false;
@@ -223,7 +223,7 @@ private:
 	HANDLE m_hSyncThread = nullptr;
 
 public:
-	CDX9VideoProcessor(CBaseRenderer* pFilter);
+	CDX9VideoProcessor(CBaseVideoRenderer* pFilter);
 	~CDX9VideoProcessor();
 
 	HRESULT Init(const HWND hwnd, const int iSurfaceFmt, bool* pChangeDevice);

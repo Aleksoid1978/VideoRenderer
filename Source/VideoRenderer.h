@@ -51,7 +51,7 @@ class CVideoRendererInputPin;
 
 class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	CMpcVideoRenderer
-	: public CBaseRenderer
+	: public CBaseVideoRenderer
 	, public IKsPropertySet
 	, public IMFGetService
 	, public IBasicVideo2

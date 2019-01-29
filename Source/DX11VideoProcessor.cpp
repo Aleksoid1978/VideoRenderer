@@ -35,7 +35,7 @@
 
 // CDX11VideoProcessor
 
-CDX11VideoProcessor::CDX11VideoProcessor(CBaseRenderer* pFilter)
+CDX11VideoProcessor::CDX11VideoProcessor(CBaseVideoRenderer* pFilter)
 {
 	m_pFilter = pFilter;
 }

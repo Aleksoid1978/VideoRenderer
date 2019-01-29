@@ -114,7 +114,7 @@ static UINT GetAdapter(HWND hWnd, IDirect3D9Ex* pD3D)
 	return D3DADAPTER_DEFAULT;
 }
 
-CDX9VideoProcessor::CDX9VideoProcessor(CBaseRenderer* pFilter)
+CDX9VideoProcessor::CDX9VideoProcessor(CBaseVideoRenderer* pFilter)
 {
 	m_pFilter = pFilter;
 
