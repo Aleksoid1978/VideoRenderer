@@ -24,6 +24,7 @@
 #include <d3d9.h>
 #include <mfidl.h>
 #include <dxva2api.h>
+#include "renbase2.h"
 #include "IVideoRenderer.h"
 #include "FrameStats.h"
 #include "DX9VideoProcessor.h"
@@ -52,7 +53,7 @@ class CVideoRendererInputPin;
 
 class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	CMpcVideoRenderer
-	: public CBaseVideoRenderer
+	: public CBaseVideoRenderer2
 	, public IKsPropertySet
 	, public IMFGetService
 	, public IBasicVideo2
@@ -94,7 +95,7 @@ public:
 	HRESULT SetMediaType(const CMediaType *pmt) override;
 	HRESULT DoRenderSample(IMediaSample* pSample) override;
 
-	// CBaseVideoRenderer
+	// CBaseVideoRenderer2
 	BOOL ScheduleSample(IMediaSample *pMediaSample) override;
 
 	DECLARE_IUNKNOWN

@@ -48,6 +48,9 @@
     <ClCompile Include="csputils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="renbase2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -87,6 +90,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="csputils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="renbase2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

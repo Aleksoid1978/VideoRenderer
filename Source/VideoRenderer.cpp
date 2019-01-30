@@ -38,7 +38,7 @@
 //
 
 CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
-	: CBaseVideoRenderer(__uuidof(this), L"MPC Video Renderer", pUnk, phr)
+	: CBaseVideoRenderer2(__uuidof(this), L"MPC Video Renderer", pUnk, phr)
 	, m_DX9_VP(this)
 	, m_DX11_VP(this)
 {
@@ -156,7 +156,7 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	return hr;
 }
 
-// CBaseVideoRenderer
+// CBaseVideoRenderer2
 
 BOOL CMpcVideoRenderer::ScheduleSample(IMediaSample *pMediaSample)
 {
@@ -165,7 +165,7 @@ BOOL CMpcVideoRenderer::ScheduleSample(IMediaSample *pMediaSample)
 		m_FrameStats.Add(StartTime);
 	}
 
-	return CBaseVideoRenderer::ScheduleSample(pMediaSample);
+	return CBaseVideoRenderer2::ScheduleSample(pMediaSample);
 }
 
 STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** ppv)
@@ -217,7 +217,7 @@ STDMETHODIMP CMpcVideoRenderer::Run(REFERENCE_TIME rtStart)
 		m_DX9_VP.Start();
 	}
 
-	return CBaseVideoRenderer::Run(rtStart);
+	return CBaseVideoRenderer2::Run(rtStart);
 }
 
 STDMETHODIMP CMpcVideoRenderer::Stop()
@@ -230,7 +230,7 @@ STDMETHODIMP CMpcVideoRenderer::Stop()
 
 	m_filterState = State_Stopped;
 
-	return CBaseVideoRenderer::Stop();
+	return CBaseVideoRenderer2::Stop();
 }
 
 // IKsPropertySet

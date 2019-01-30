@@ -74,6 +74,7 @@
     <ClCompile Include="DX9VideoProcessor.cpp" />
     <ClCompile Include="Helper.cpp" />
     <ClCompile Include="PropPage.cpp" />
+    <ClCompile Include="renbase2.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -90,6 +91,7 @@
     <ClInclude Include="Helper.h" />
     <ClInclude Include="IVideoRenderer.h" />
     <ClInclude Include="PropPage.h" />
+    <ClInclude Include="renbase2.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Time.h" />
