@@ -50,11 +50,6 @@ protected:
                                     // drawn at their normal time (not early)
                                     // -1 means we just dropped a frame.
 
-#ifdef PERF
-    BOOL m_bDrawLateFrames;         // Don't drop any frames (debug and I'm
-                                    // not keen on people using it!)
-#endif
-
     BOOL m_bSupplierHandlingQuality;// The response to Quality messages says
                                     // our supplier is handling things.
                                     // We will allow things to go extra late
@@ -120,33 +115,8 @@ protected:
     int m_trFrameAvg;               // Average inter-frame time
     int m_trDuration;               // duration of last frame.
 
-#ifdef PERF
-    // Performance logging identifiers
-    int m_idTimeStamp;              // MSR_id for frame time stamp
-    int m_idEarliness;              // MSR_id for earliness fudge
-    int m_idTarget;                 // MSR_id for Target fudge
-    int m_idWaitReal;               // MSR_id for true wait time
-    int m_idWait;                   // MSR_id for wait time recorded
-    int m_idFrameAccuracy;          // MSR_id for time frame is late (int)
-    int m_idRenderAvg;              // MSR_id for Render time recorded (int)
-    int m_idSchLateTime;            // MSR_id for lateness at scheduler
-    int m_idQualityRate;            // MSR_id for Quality rate requested
-    int m_idQualityTime;            // MSR_id for Quality time requested
-    int m_idDecision;               // MSR_id for decision code
-    int m_idDuration;               // MSR_id for duration of a frame
-    int m_idThrottle;               // MSR_id for audio-video throttling
-    //int m_idDebug;                  // MSR_id for trace style debugging
-    //int m_idSendQuality;          // MSR_id for timing the notifications per se
-#endif // PERF
     REFERENCE_TIME m_trRememberStampForPerf;  // original time stamp of frame
                                               // with no earliness fudges etc.
-#ifdef PERF
-    REFERENCE_TIME m_trRememberFrameForPerf;  // time when previous frame rendered
-
-    // debug...
-    int m_idFrameAvg;
-    int m_idWaitAvg;
-#endif
 
     // PROPERTY PAGE
     // This has edit fields that show the user what's happening
@@ -176,9 +146,6 @@ protected:
     int m_tStreamingStart;          // if streaming then time streaming started
                                     // else time of last streaming session
                                     // used for property page statistics
-#ifdef PERF
-    LONGLONG m_llTimeOffset;        // timeGetTime()*10000+m_llTimeOffset==ref time
-#endif
 
 public:
 

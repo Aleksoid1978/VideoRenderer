@@ -14,16 +14,6 @@ int inline TimeDiff(REFERENCE_TIME rt)
     } else return (int)rt;
 }
 
-// We do not keep an event object to use when setting up a timer link with
-// the clock but are given a pointer to one by the owning object through the
-// SetNotificationObject method - this must be initialised before starting
-// We can override the default quality management process to have it always
-// draw late frames, this is currently done by having the following registry
-// key (actually an INI key) called DrawLateFrames set to 1 (default is 0)
-
-const TCHAR AMQUALITY[] = TEXT("ActiveMovie");
-const TCHAR DRAWLATEFRAMES[] = TEXT("DrawLateFrames");
-
 CBaseVideoRenderer2::CBaseVideoRenderer2(
       REFCLSID RenderClass, // CLSID for this renderer
       __in_opt LPCTSTR pName,         // Debug ONLY description
@@ -36,28 +26,6 @@ CBaseVideoRenderer2::CBaseVideoRenderer2(
     m_bSupplierHandlingQuality(FALSE)
 {
     ResetStreamingTimes();
-
-#ifdef PERF
-    m_idTimeStamp       = MSR_REGISTER(TEXT("Frame time stamp"));
-    m_idEarliness       = MSR_REGISTER(TEXT("Earliness fudge"));
-    m_idTarget          = MSR_REGISTER(TEXT("Target (mSec)"));
-    m_idSchLateTime     = MSR_REGISTER(TEXT("mSec late when scheduled"));
-    m_idDecision        = MSR_REGISTER(TEXT("Scheduler decision code"));
-    m_idQualityRate     = MSR_REGISTER(TEXT("Quality rate sent"));
-    m_idQualityTime     = MSR_REGISTER(TEXT("Quality time sent"));
-    m_idWaitReal        = MSR_REGISTER(TEXT("Render wait"));
-    // m_idWait            = MSR_REGISTER(TEXT("wait time recorded (msec)"));
-    m_idFrameAccuracy   = MSR_REGISTER(TEXT("Frame accuracy (msecs)"));
-    m_bDrawLateFrames = GetProfileInt(AMQUALITY, DRAWLATEFRAMES, FALSE);
-    //m_idSendQuality      = MSR_REGISTER(TEXT("Processing Quality message"));
-
-    m_idRenderAvg       = MSR_REGISTER(TEXT("Render draw time Avg"));
-    m_idFrameAvg        = MSR_REGISTER(TEXT("FrameAvg"));
-    m_idWaitAvg         = MSR_REGISTER(TEXT("WaitAvg"));
-    m_idDuration        = MSR_REGISTER(TEXT("Duration"));
-    m_idThrottle        = MSR_REGISTER(TEXT("Audio-video throttle wait"));
-    // m_idDebug           = MSR_REGISTER(TEXT("Debug stuff"));
-#endif // PERF
 } // Constructor
 
 
@@ -116,10 +84,6 @@ HRESULT CBaseVideoRenderer2::ResetStreamingTimes()
     m_trThrottle = 0;
     m_trRememberStampForPerf = 0;
 
-#ifdef PERF
-    m_trRememberFrameForPerf = 0;
-#endif
-
     return NOERROR;
 } // ResetStreamingTimes
 
@@ -151,7 +115,6 @@ HRESULT CBaseVideoRenderer2::OnStopStreaming()
 
 void CBaseVideoRenderer2::OnWaitStart()
 {
-    MSR_START(m_idWaitReal);
 } // OnWaitStart
 
 
@@ -164,36 +127,6 @@ void CBaseVideoRenderer2::OnWaitStart()
 
 void CBaseVideoRenderer2::OnWaitEnd()
 {
-#ifdef PERF
-    MSR_STOP(m_idWaitReal);
-    // for a perf build we want to know just exactly how late we REALLY are.
-    // even if this means that we have to look at the clock again.
-
-    REFERENCE_TIME trRealStream;     // the real time now expressed as stream time.
-#if 0
-    m_pClock->GetTime(&trRealStream); // Calling clock here causes W95 deadlock!
-#else
-    // We will be discarding overflows like mad here!
-    // This is wrong really because timeGetTime() can wrap but it's
-    // only for PERF
-    REFERENCE_TIME tr = timeGetTime()*10000;
-    trRealStream = tr + m_llTimeOffset;
-#endif
-    trRealStream -= m_tStart;     // convert to stream time (this is a reftime)
-
-    if (m_trRememberStampForPerf==0) {
-        // This is probably the poster frame at the start, and it is not scheduled
-        // in the usual way at all.  Just count it.  The rememberstamp gets set
-        // in ShouldDrawSampleNow, so this does invalid frame recording until we
-        // actually start playing.
-        PreparePerformanceData(0, 0);
-    } else {
-        int trLate = (int)(trRealStream - m_trRememberStampForPerf);
-        int trFrame = (int)(tr - m_trRememberFrameForPerf);
-        PreparePerformanceData(trLate, trFrame);
-    }
-    m_trRememberFrameForPerf = tr;
-#endif //PERF
 } // OnWaitEnd
 
 
@@ -228,7 +161,6 @@ void CBaseVideoRenderer2::RecordFrameLateness(int trLate, int trFrame)
     // start and end draw times.  Here we have only the end time.  This may
     // tend to show us as spuriously late by up to 1/2 frame rate achieved.
     // Decoder probably monitors draw time.  We don't bother.
-    MSR_INTEGER( m_idFrameAccuracy, tLate );
 
     // This is a kludge - we can get frames that are very late
     // especially (at start-up) and they invalidate the statistics.
@@ -271,7 +203,6 @@ void CBaseVideoRenderer2::ThrottleWait()
 {
     if (m_trThrottle>0) {
         int iThrottle = m_trThrottle/10000;    // convert to mSec
-        MSR_INTEGER( m_idThrottle, iThrottle);
         DbgLog((LOG_TRACE, 0, TEXT("Throttle %d ms"), iThrottle));
         Sleep(iThrottle);
     } else {
@@ -293,7 +224,6 @@ void CBaseVideoRenderer2::OnDirectRender(IMediaSample *pMediaSample)
     m_trRenderLast = 5000000;  // If we mode switch, we do NOT want this
                                // to inhibit the new average getting going!
                                // so we set it to half a second
-    // MSR_INTEGER(m_idRenderAvg, m_trRenderAvg/10000);
     RecordFrameLateness(m_trLate, m_trFrame);
     ThrottleWait();
 } // OnDirectRender
@@ -513,10 +443,6 @@ HRESULT CBaseVideoRenderer2::SendQuality(REFERENCE_TIME trLate,
 
     q.Late = trLate + m_trRenderAvg/2;
 
-    // log what we're doing
-    MSR_INTEGER(m_idQualityRate, q.Proportion);
-    MSR_INTEGER( m_idQualityTime, (int)q.Late / 10000 );
-
     // A specific sink interface may be set through IPin
 
     if (m_pQSink==NULL) {
@@ -562,9 +488,6 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
     // Don't call us unless there's a clock interface to synchronise with
     ASSERT(m_pClock);
 
-    MSR_INTEGER(m_idTimeStamp, (int)((*ptrStart)>>32));   // high order 32 bits
-    MSR_INTEGER(m_idTimeStamp, (int)(*ptrStart));         // low order 32 bits
-
     // We lose a bit of time depending on the monitor type waiting for the next
     // screen refresh.  On average this might be about 8mSec - so it will be
     // later than we think when the picture appears.  To compensate a bit
@@ -582,13 +505,7 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
     // Get reference times (current and late)
     REFERENCE_TIME trRealStream;     // the real time now expressed as stream time.
     m_pClock->GetTime(&trRealStream);
-#ifdef PERF
-    // While the reference clock is expensive:
-    // Remember the offset from timeGetTime and use that.
-    // This overflows all over the place, but when we subtract to get
-    // differences the overflows all cancel out.
-    m_llTimeOffset = trRealStream-timeGetTime()*10000;
-#endif
+
     trRealStream -= m_tStart;     // convert to stream time (this is a reftime)
 
     // We have to wory about two versions of "lateness".  The truth, which we
@@ -600,8 +517,6 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
     // gap) by a very long time.
     const int trTrueLate = TimeDiff(trRealStream - *ptrStart);
     const int trLate = trTrueLate;
-
-    MSR_INTEGER(m_idSchLateTime, trTrueLate/10000);
 
     // Send quality control messages upstream, measured against target
     HRESULT hr = SendQuality(trLate, trRealStream);
@@ -628,18 +543,6 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
             m_trDuration = trDuration;
         }
     }
-
-    MSR_INTEGER(m_idEarliness, m_trEarliness/10000);
-    MSR_INTEGER(m_idRenderAvg, m_trRenderAvg/10000);
-    MSR_INTEGER(m_idFrameAvg, m_trFrameAvg/10000);
-    MSR_INTEGER(m_idWaitAvg, m_trWaitAvg/10000);
-    MSR_INTEGER(m_idDuration, trDuration/10000);
-
-#ifdef PERF
-    if (S_OK==pMediaSample->IsDiscontinuity()) {
-        MSR_INTEGER(m_idDecision, 9000);
-    }
-#endif
 
     // Control the graceful slide back from slow to fast machine mode.
     // After a frame drop accept an early frame and set the earliness to here
@@ -723,7 +626,6 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
             // ...we are playing catch-up
         if ( bJustDroppedFrame) {
             bPlayASAP = TRUE;
-            MSR_INTEGER(m_idDecision, 9001);
         }
 
             // ...or if we are running below the true frame rate
@@ -737,7 +639,6 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
                 && (trLate > - trDuration*10)
                 ){
             bPlayASAP = TRUE;
-            MSR_INTEGER(m_idDecision, 9002);
         }
 #if 0
             // ...or if we have been late and are less than one frame early
@@ -745,7 +646,6 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
                 && (m_trWaitAvg<=20000)
                 ) {
             bPlayASAP = TRUE;
-            MSR_INTEGER(m_idDecision, 9003);
         }
 #endif
         // We will NOT play it at once if we are grossly early.  On very slow frame
@@ -759,7 +659,6 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
         if (bPlayASAP) {
 
             m_nNormal = 0;
-            MSR_INTEGER(m_idDecision, 0);
             // When we are here, we are in slow-machine mode.  trLate may well
             // oscillate between negative and positive when the supplier is
             // dropping frames to keep sync.  We should not let that mislead
@@ -769,7 +668,7 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
 
             // Assume that we draw it immediately.  Update inter-frame stats
             m_trFrameAvg = (trFrame + m_trFrameAvg*(AVGPERIOD-1))/AVGPERIOD;
-#ifndef PERF
+
             // If this is NOT a perf build, then report what we know so far
             // without looking at the clock any more.  This assumes that we
             // actually wait for exactly the time we hope to.  It also reports
@@ -777,7 +676,7 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
             // rather than the ones we originally started with.  It will
             // therefore be a little optimistic.  However it's fast.
             PreparePerformanceData(trTrueLate, trFrame);
-#endif
+
             m_trLastDraw = trRealStream;
             if (m_trEarliness > trLate) {
                 m_trEarliness = trLate;  // if we are actually early, this is neg
@@ -793,7 +692,6 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
             // real gap then we'll think that we're running slow and go back
             // into slow-machine mode and vever get it straight.
             m_trFrameAvg = trDuration;
-            MSR_INTEGER(m_idDecision, 1);
 
             // Play it early by m_trEarliness and by m_trTarget
 
@@ -819,7 +717,7 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
                 // trFrame is already = trRealStream-m_trLastDraw;
                 m_trLastDraw = trRealStream;
             }
-#ifndef PERF
+
             int iAccuracy;
             if (Delay>0) {
                 // Report lateness based on when we intend to play it
@@ -829,7 +727,6 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
                 iAccuracy = trTrueLate;     // trRealStream-RememberStampForPerf;
             }
             PreparePerformanceData(iAccuracy, trFrame);
-#endif
         }
         return Result;
     }
@@ -840,18 +737,10 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
     // This will probably give a large negative wack to the wait avg.
     m_trWaitAvg = trWaitAvg;
 
-#ifdef PERF
-    // Respect registry setting - debug only!
-    if (m_bDrawLateFrames) {
-       return S_OK;                        // draw it when it's ready
-    }                                      // even though it's late.
-#endif
-
     // We are going to drop this frame so draw the next one early
     // n.b. if the supplier is doing direct draw then he may draw it anyway
     // but he's doing something funny to arrive here in that case.
 
-    MSR_INTEGER(m_idDecision, 2);
     m_nNormal = -1;
     return E_FAIL;                         // drop it
 
