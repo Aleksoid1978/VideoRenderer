@@ -84,6 +84,8 @@ HRESULT CBaseVideoRenderer2::ResetStreamingTimes()
     m_trThrottle = 0;
     m_trRememberStampForPerf = 0;
 
+	m_DrawStats.Reset();
+
     return NOERROR;
 } // ResetStreamingTimes
 

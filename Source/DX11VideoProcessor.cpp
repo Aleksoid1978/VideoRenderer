@@ -170,7 +170,7 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 void CDX11VideoProcessor::ReleaseVP()
 {
 	m_pFilter->m_FrameStats.Reset();
-	m_DrawnFrameStats.Reset();
+	m_pFilter->ResetStreamingTimes();
 	m_RenderStats.Reset();
 
 	m_pSrcTexture2D_CPU.Release();
@@ -810,7 +810,6 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 
 void CDX11VideoProcessor::Start()
 {
-	m_DrawnFrameStats.Reset();
 }
 
 HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
@@ -831,7 +830,7 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 	// always Render(1) a frame after CopySample()
 	hr = Render(1);
 	m_pFilter->StreamTime(rtClock);
-	m_DrawnFrameStats.Add(rtClock);
+	m_pFilter->m_DrawStats.Add(rtClock);
 
 	m_RenderStats.syncoffset = rtClock - rtStart;
 
@@ -844,7 +843,7 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 		hr = Render(2);
 		m_pFilter->StreamTime(rtClock);
-		m_DrawnFrameStats.Add(rtClock);
+		m_pFilter->m_DrawStats.Add(rtClock);
 
 		rtStart += rtFrameDur / 2;
 		m_RenderStats.syncoffset = rtClock - rtStart;
@@ -1321,7 +1320,7 @@ HRESULT CDX11VideoProcessor::DrawStats()
 	if (m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
 		str.AppendChar(L'i');
 	}
-	str.AppendFormat(L",%7.03f", m_DrawnFrameStats.GetAverageFps());
+	str.AppendFormat(L",%7.03f", m_pFilter->m_DrawStats.GetAverageFps());
 	str.Append(m_strStatsStatic);
 	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_cFramesDropped, m_RenderStats.skipped2, m_RenderStats.failed);

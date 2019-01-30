@@ -142,7 +142,8 @@ protected:
                                     // else time of last streaming session
                                     // used for property page statistics
 
-	CFrameStats m_FrameStats; // Used to measure the frame rate of the input video
+	CFrameStats m_FrameStats;    // Used to measure the frame rate of the input video
+	CFrameTimes<31> m_DrawStats; // Used to measure the frame rate of the input video
 
 public:
     CBaseVideoRenderer2(REFCLSID RenderClass, // CLSID for this renderer

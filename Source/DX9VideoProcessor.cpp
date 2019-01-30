@@ -301,7 +301,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 void CDX9VideoProcessor::ReleaseVP()
 {
 	m_pFilter->m_FrameStats.Reset();
-	m_DrawnFrameStats.Reset();
+	m_pFilter->ResetStreamingTimes();
 	m_RenderStats.Reset();
 
 	m_SrcSamples.Clear();
@@ -942,7 +942,6 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 void CDX9VideoProcessor::Start()
 {
-	m_DrawnFrameStats.Reset();
 }
 
 HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
@@ -963,7 +962,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 	// always Render(1) a frame after CopySample()
 	hr = Render(1);
 	m_pFilter->StreamTime(rtClock);
-	m_DrawnFrameStats.Add(rtClock);
+	m_pFilter->m_DrawStats.Add(rtClock);
 
 	m_RenderStats.syncoffset = rtClock - rtStart;
 
@@ -976,7 +975,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 		hr = Render(2);
 		m_pFilter->StreamTime(rtClock);
-		m_DrawnFrameStats.Add(rtClock);
+		m_pFilter->m_DrawStats.Add(rtClock);
 
 		rtStart += rtFrameDur / 2;
 		m_RenderStats.syncoffset = rtClock - rtStart;
@@ -1592,7 +1591,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	if (m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
 		str.AppendChar(L'i');
 	}
-	str.AppendFormat(L",%7.03f",  m_DrawnFrameStats.GetAverageFps());
+	str.AppendFormat(L",%7.03f", m_pFilter->m_DrawStats.GetAverageFps());
 	str.Append(m_strStatsStatic);
 	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_cFramesDropped, m_RenderStats.skipped2, m_RenderStats.failed);

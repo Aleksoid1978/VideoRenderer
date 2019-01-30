@@ -20,13 +20,11 @@
 
 #pragma once
 
-
-class CFrameStats
-{
-private:
+template <unsigned count> class CFrameTimes {
+protected:
 	unsigned m_frames = 0;
-	REFERENCE_TIME m_times[301] = {};
-	const unsigned intervals = std::size(m_times) - 1;
+	REFERENCE_TIME m_times[count] = {};
+	const unsigned intervals = count - 1;
 	unsigned m_index = intervals;
 
 	inline unsigned GetNextIndex(unsigned idx) {
@@ -35,14 +33,6 @@ private:
 
 	inline unsigned GetPrevIndex(unsigned idx) {
 		return (idx == 0) ? intervals : idx - 1;
-	}
-
-	inline unsigned GetPrev10Index(unsigned idx) {
-		if (idx < 10) {
-			idx += std::size(m_times);
-		}
-		idx -= 10;
-		return idx;
 	}
 
 public:
@@ -62,8 +52,41 @@ public:
 		return m_times[m_index];
 	}
 
-	unsigned GetFrames() { return m_frames; }
+	unsigned GetFrames() {
+		return m_frames;
+	}
 
+	virtual REFERENCE_TIME GetAverageFrameDuration() {
+		if (m_frames >= std::size(m_times)) {
+			unsigned first_index = GetNextIndex(m_index);
+			return (m_times[m_index] - m_times[first_index]) / intervals;
+		}
+
+		if (m_frames > 1) {
+			return (m_times[m_frames - 1] - m_times[0]) / (m_frames - 1);
+		}
+
+		return UNITS;
+	}
+
+	double GetAverageFps() {
+		return (double)UNITS / GetAverageFrameDuration();
+	}
+};
+
+
+class CFrameStats : public CFrameTimes<301>
+{
+private:
+	inline unsigned GetPrev10Index(unsigned idx) {
+		if (idx < 10) {
+			idx += std::size(m_times);
+		}
+		idx -= 10;
+		return idx;
+	}
+
+public:
 	REFERENCE_TIME GetAverageFrameDuration() {
 		REFERENCE_TIME frame_duration;
 		if (m_frames >= std::size(m_times)) {
@@ -85,10 +108,6 @@ public:
 		}
 
 		return frame_duration;
-	}
-
-	double GetAverageFps() {
-		return (double)UNITS / GetAverageFrameDuration();
 	}
 };
 
