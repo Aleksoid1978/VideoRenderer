@@ -156,18 +156,6 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	return hr;
 }
 
-// CBaseVideoRenderer2
-
-BOOL CMpcVideoRenderer::ScheduleSample(IMediaSample *pMediaSample)
-{
-	REFERENCE_TIME StartTime, EndTime;
-	if (pMediaSample && S_OK == pMediaSample->GetTime(&StartTime, &EndTime)) {
-		m_FrameStats.Add(StartTime);
-	}
-
-	return CBaseVideoRenderer2::ScheduleSample(pMediaSample);
-}
-
 STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** ppv)
 {
 	CheckPointer(ppv, E_POINTER);

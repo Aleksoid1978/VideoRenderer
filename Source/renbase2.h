@@ -1,5 +1,7 @@
 // based on CBaseVideoRenderer from DirectShow base classes
 
+#include "FrameStats.h"
+
 // CBaseVideoRenderer2 is a renderer class (see its ancestor class) and
 // it handles scheduling of media samples so that they are drawn at the
 // correct time by the reference clock.  It implements a degradation
@@ -17,18 +19,11 @@
 // which the rest of the renderer calls at significant moments.  These do
 // the timing.
 
-// the number of frames that the sliding averages are averaged over.
-// the rule is (1024*NewObservation + (AVGPERIOD-1) * PreviousAverage)/AVGPERIOD
-#define AVGPERIOD 4
-#define DO_MOVING_AVG(avg,obs) (avg = (1024*obs + (AVGPERIOD-1)*avg)/AVGPERIOD)
-// Spot the bug in this macro - I can't. but it doesn't work!
-
 class CBaseVideoRenderer2 : public CBaseRenderer,    // Base renderer class
                            public IQualProp,        // Property page guff
                            public IQualityControl   // Allow throttling
 {
 protected:
-
     // Hungarian:
     //     tFoo is the time Foo in mSec (beware m_tStart from filter.h)
     //     trBar is the time Bar by the reference clock
@@ -147,9 +142,9 @@ protected:
                                     // else time of last streaming session
                                     // used for property page statistics
 
+	CFrameStats m_FrameStats; // Used to measure the frame rate of the input video
+
 public:
-
-
     CBaseVideoRenderer2(REFCLSID RenderClass, // CLSID for this renderer
                        __in_opt LPCTSTR pName,         // Debug ONLY description
                        __inout_opt LPUNKNOWN pUnk,       // Aggregated owner object

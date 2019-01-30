@@ -26,7 +26,6 @@
 #include <dxva2api.h>
 #include "renbase2.h"
 #include "IVideoRenderer.h"
-#include "FrameStats.h"
 #include "DX9VideoProcessor.h"
 #include "DX11VideoProcessor.h"
 
@@ -81,8 +80,6 @@ private:
 	// D3D11 VideoProcessor
 	CDX11VideoProcessor m_DX11_VP;
 
-	CFrameStats m_FrameStats;
-
 public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
 	~CMpcVideoRenderer();
@@ -94,9 +91,6 @@ public:
 	HRESULT CheckMediaType(const CMediaType *pmt) override;
 	HRESULT SetMediaType(const CMediaType *pmt) override;
 	HRESULT DoRenderSample(IMediaSample* pSample) override;
-
-	// CBaseVideoRenderer2
-	BOOL ScheduleSample(IMediaSample *pMediaSample) override;
 
 	DECLARE_IUNKNOWN
 	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv);

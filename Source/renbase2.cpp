@@ -757,6 +757,11 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
 
 BOOL CBaseVideoRenderer2::ScheduleSample(IMediaSample *pMediaSample)
 {
+	REFERENCE_TIME StartTime, EndTime;
+	if (pMediaSample && S_OK == pMediaSample->GetTime(&StartTime, &EndTime)) {
+		m_FrameStats.Add(StartTime);
+	}
+
     // We override ShouldDrawSampleNow to add quality management
 
     BOOL bDrawImage = CBaseRenderer::ScheduleSample(pMediaSample);
