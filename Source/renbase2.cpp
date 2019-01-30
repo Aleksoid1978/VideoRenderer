@@ -3,8 +3,6 @@
 #include "stdafx.h"
 #include "renbase2.h"
 
-#pragma warning(disable:4355)
-
 //  Helper function for clamping time differences
 int inline TimeDiff(REFERENCE_TIME rt)
 {
@@ -1109,9 +1107,3 @@ CBaseVideoRenderer2::JoinFilterGraph(__inout_opt IFilterGraph *pGraph, __in_opt 
     }
     return CBaseFilter::JoinFilterGraph(pGraph, pName);
 }
-
-
-// This removes a large number of level 4 warnings from the
-// Microsoft compiler which in this case are not very useful
-#pragma warning(disable: 4514)
-

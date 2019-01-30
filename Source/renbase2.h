@@ -1,7 +1,5 @@
 // based on CBaseVideoRenderer from DirectShow base classes
 
-#define PERF 1
-
 // CBaseVideoRenderer2 is a renderer class (see its ancestor class) and
 // it handles scheduling of media samples so that they are drawn at the
 // correct time by the reference clock.  It implements a degradation
