@@ -21,7 +21,7 @@ CBaseVideoRenderer2::CBaseVideoRenderer2(
       __inout HRESULT *phr) :       // General OLE return code
 
     CBaseRenderer(RenderClass,pName,pUnk,phr),
-    m_cFramesDropped(0),
+    //m_cFramesDropped(0),
     m_cFramesDrawn(0),
     m_bSupplierHandlingQuality(FALSE)
 {
@@ -71,7 +71,7 @@ HRESULT CBaseVideoRenderer2::ResetStreamingTimes()
     m_trWaitAvg = 0;
     m_tRenderStart = 0;
     m_cFramesDrawn = 0;
-    m_cFramesDropped = 0;
+    //m_cFramesDropped = 0;
     m_iTotAcc = 0;
     m_iSumSqAcc = 0;
     m_iSumSqFrameTime = 0;
@@ -84,11 +84,17 @@ HRESULT CBaseVideoRenderer2::ResetStreamingTimes()
     m_trThrottle = 0;
     m_trRememberStampForPerf = 0;
 
-	m_DrawStats.Reset();
-
     return NOERROR;
 } // ResetStreamingTimes
 
+HRESULT CBaseVideoRenderer2::ResetStreamingTimes2()
+{
+	m_FrameStats.Reset();
+	m_DrawStats.Reset();
+	ResetStreamingTimes();
+
+	return NOERROR;
+}
 
 // Reset all times controlling streaming. Note that we're now streaming. We
 // don't need to set the rendering event to have the source filter released
@@ -768,8 +774,9 @@ BOOL CBaseVideoRenderer2::ScheduleSample(IMediaSample *pMediaSample)
 
     BOOL bDrawImage = CBaseRenderer::ScheduleSample(pMediaSample);
     if (bDrawImage == FALSE) {
-	++m_cFramesDropped;
-	return FALSE;
+		//++m_cFramesDropped;
+		m_DrawStats.m_dropped++;
+		return FALSE;
     }
 
     // m_cFramesDrawn must NOT be updated here.  It has to be updated
@@ -791,7 +798,7 @@ STDMETHODIMP CBaseVideoRenderer2::get_FramesDroppedInRenderer(__out int *pcFrame
 {
     CheckPointer(pcFramesDropped,E_POINTER);
     CAutoLock cVideoLock(&m_InterfaceLock);
-    *pcFramesDropped = m_cFramesDropped;
+    *pcFramesDropped = m_DrawStats.m_dropped;
     return NOERROR;
 } // get_FramesDroppedInRenderer
 
@@ -803,7 +810,7 @@ STDMETHODIMP CBaseVideoRenderer2::get_FramesDrawn( int *pcFramesDrawn)
 {
     CheckPointer(pcFramesDrawn,E_POINTER);
     CAutoLock cVideoLock(&m_InterfaceLock);
-    *pcFramesDrawn = m_cFramesDrawn;
+    *pcFramesDrawn = m_DrawStats.GetFrames();
     return NOERROR;
 } // get_FramesDrawn
 
@@ -815,21 +822,7 @@ STDMETHODIMP CBaseVideoRenderer2::get_AvgFrameRate( int *piAvgFrameRate)
 {
     CheckPointer(piAvgFrameRate,E_POINTER);
     CAutoLock cVideoLock(&m_InterfaceLock);
-
-    int t;
-    if (m_bStreaming) {
-        t = timeGetTime()-m_tStreamingStart;
-    } else {
-        t = m_tStreamingStart;
-    }
-
-    if (t<=0) {
-        *piAvgFrameRate = 0;
-        ASSERT(m_cFramesDrawn == 0);
-    } else {
-        // i is frames per hundred seconds
-        *piAvgFrameRate = MulDiv(100000, m_cFramesDrawn, t);
-    }
+	*piAvgFrameRate = (int)(m_DrawStats.GetAverageFps() * 100);
     return NOERROR;
 } // get_AvgFrameRate
 

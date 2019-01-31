@@ -111,10 +111,20 @@ public:
 	}
 };
 
+class CDrawStats : public CFrameTimes<31>
+{
+public:
+	unsigned m_dropped = 0;
+
+	void Reset() {
+		CFrameTimes::Reset();
+		m_dropped = 0;;
+	};
+};
 
 struct CRenderStats {
-	//unsigned skipped1 = 0;
-	unsigned skipped2 = 0;
+	//unsigned dropped1 = 0;
+	unsigned dropped2 = 0;
 	unsigned failed = 0;
 	//unsigned skipped_interval = 0;
 

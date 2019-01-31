@@ -300,8 +300,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 
 void CDX9VideoProcessor::ReleaseVP()
 {
-	m_pFilter->m_FrameStats.Reset();
-	m_pFilter->ResetStreamingTimes();
+	m_pFilter->ResetStreamingTimes2();
 	m_RenderStats.Reset();
 
 	m_SrcSamples.Clear();
@@ -1594,7 +1593,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	str.AppendFormat(L",%7.03f", m_pFilter->m_DrawStats.GetAverageFps());
 	str.Append(m_strStatsStatic);
 	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
-		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_cFramesDropped, m_RenderStats.skipped2, m_RenderStats.failed);
+		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.skipped2, m_RenderStats.failed);
 	str.AppendFormat(L"\nCopyTime:%3llu ms, RenderTime:%3llu ms",
 		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.renderticks * 1000 / GetPreciseTicksPerSecondI());

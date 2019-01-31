@@ -117,7 +117,7 @@ protected:
     // This has edit fields that show the user what's happening
     // These member variables hold these counts.
 
-    int m_cFramesDropped;           // cumulative frames dropped IN THE RENDERER
+    //int m_cFramesDropped;         // cumulative frames dropped IN THE RENDERER
     int m_cFramesDrawn;             // Frames since streaming started seen BY THE
                                     // RENDERER (some may be dropped upstream)
 
@@ -142,8 +142,8 @@ protected:
                                     // else time of last streaming session
                                     // used for property page statistics
 
-	CFrameStats m_FrameStats;    // Used to measure the frame rate of the input video
-	CFrameTimes<31> m_DrawStats; // Used to measure the frame rate of the input video
+	CFrameStats m_FrameStats; // Used to measure the frame rate of the input video
+	CDrawStats  m_DrawStats;  // Used to measure the frame rate of the input video
 
 public:
     CBaseVideoRenderer2(REFCLSID RenderClass, // CLSID for this renderer
@@ -174,6 +174,7 @@ public:
     virtual void RecordFrameLateness(int trLate, int trFrame);
     virtual void OnDirectRender(IMediaSample *pMediaSample);
     virtual HRESULT ResetStreamingTimes();
+	HRESULT ResetStreamingTimes2();
     BOOL ScheduleSample(IMediaSample *pMediaSample);
     HRESULT ShouldDrawSampleNow(IMediaSample *pMediaSample,
                                 __inout REFERENCE_TIME *ptrStart,
