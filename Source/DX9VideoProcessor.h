@@ -163,7 +163,7 @@ private:
 	CRect m_windowRect;
 
 	CComPtr<IDirect3DTexture9> m_pOSDTexture;
-	CComPtr<IDirect3DSurface9> m_pMemSurface;
+	CComPtr<IDirect3DSurface9> m_pMemOSDSurface;
 
 	// D3D9 Video Processor
 	CComPtr<IDirect3DTexture9> m_pSrcVideoTexture;

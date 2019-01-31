@@ -276,10 +276,10 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 		*pChangeDevice = !bTryToReset;
 	}
 
-	m_pMemSurface.Release();
+	m_pMemOSDSurface.Release();
 	m_pOSDTexture.Release();
 	if (S_OK == m_pD3DDevEx->CreateTexture(STATS_W, STATS_H, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_pOSDTexture, nullptr)) {
-		m_pD3DDevEx->CreateOffscreenPlainSurface(STATS_W, STATS_H, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &m_pMemSurface, nullptr);
+		m_pD3DDevEx->CreateOffscreenPlainSurface(STATS_W, STATS_H, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &m_pMemOSDSurface, nullptr);
 	}
 
 	if (!m_pDXVA2_VPService) {
@@ -322,7 +322,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 {
 	ReleaseVP();
 
-	m_pMemSurface.Release();
+	m_pMemOSDSurface.Release();
 	m_pOSDTexture.Release();
 
 	m_pDXVA2_VPService.Release();
@@ -1578,12 +1578,9 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 
 HRESULT CDX9VideoProcessor::DrawStats()
 {
-	if (!m_pMemSurface) {
+	if (!m_pMemOSDSurface) {
 		return E_ABORT;
 	}
-
-	D3DSURFACE_DESC desc = {};
-	HRESULT hr = m_pMemSurface->GetDesc(&desc);
 
 	CStringW str = L"Direct3D 9Ex";
 	str.AppendFormat(L"\nFrame rate    : %7.03f", m_pFilter->m_FrameStats.GetAverageFps());
@@ -1611,7 +1608,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	//}
 
 	HDC hdc;
-	if (S_OK == m_pMemSurface->GetDC(&hdc)) {
+	if (S_OK == m_pMemOSDSurface->GetDC(&hdc)) {
 		using namespace Gdiplus;
 
 		Graphics   graphics(hdc);
@@ -1626,15 +1623,14 @@ HRESULT CDX9VideoProcessor::DrawStats()
 		status = graphics.DrawString(str, -1, &font, pointF, &solidBrush);
 		graphics.Flush();
 
-		m_pMemSurface->ReleaseDC(hdc);
+		m_pMemOSDSurface->ReleaseDC(hdc);
 	}
 	
 
 	CComPtr<IDirect3DSurface9> pOSDSurface;
-	hr = m_pOSDTexture->GetSurfaceLevel(0, &pOSDSurface);
+	HRESULT hr = m_pOSDTexture->GetSurfaceLevel(0, &pOSDSurface);
 	if (S_OK == hr) {
-		//hr = m_pD3DDevEx->StretchRect(m_pDCSurface, nullptr, pOSDSurface, nullptr, D3DTEXF_POINT);
-		hr = m_pD3DDevEx->UpdateSurface(m_pMemSurface, nullptr, pOSDSurface, nullptr);
+		hr = m_pD3DDevEx->UpdateSurface(m_pMemOSDSurface, nullptr, pOSDSurface, nullptr);
 	}
 
 	hr = AlphaBlt(CRect(0, 0, STATS_W, STATS_H), CRect(10, 10, STATS_W + 10, STATS_H + 10), m_pOSDTexture);
