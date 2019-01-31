@@ -28,8 +28,6 @@ IF /I "%1" == "Debug" (
   SET "SUFFIX=_Debug"
 )
 
-SET "PCKG_DIR=MPCVideoRenderer%SUFFIX%"
-
 CALL :SubVSPath
 SET "TOOLSET=%VS_PATH%\Common7\Tools\vsdevcmd"
 
@@ -58,19 +56,16 @@ CALL :SubMPCVR x64
 CALL :SubDetectSevenzipPath
 IF DEFINED SEVENZIP (
     IF EXIST "bin\%PCKG_NAME%.zip" DEL "bin\%PCKG_NAME%.zip"
-    IF EXIST "bin\%PCKG_DIR%"     RD /Q /S "bin\%PCKG_DIR%"
-    TITLE Copying %PCKG_NAME%...
-    IF NOT EXIST "bin\%PCKG_DIR%" MD "bin\%PCKG_DIR%"
-    COPY /Y /V "bin\Filters_x86%SUFFIX%\MpcVideoRenderer.ax"   "bin\%PCKG_DIR%\MpcVideoRenderer.ax" >NUL
-    COPY /Y /V "bin\Filters_x64%SUFFIX%\MpcVideoRenderer64.ax" "bin\%PCKG_DIR%\MpcVideoRenderer64.ax" >NUL
-    COPY /Y /V "distrib\Install_MPCVR_32.cmd"          "bin\%PCKG_DIR%\Install_MPCVR_32.cmd" >NUL
-    COPY /Y /V "distrib\Install_MPCVR_64.cmd"          "bin\%PCKG_DIR%\Install_MPCVR_64.cmd" >NUL	
-    COPY /Y /V "distrib\Uninstall_MPCVR_32.cmd"        "bin\%PCKG_DIR%\Uninstall_MPCVR_32.cmd" >NUL
-    COPY /Y /V "distrib\Uninstall_MPCVR_64.cmd"        "bin\%PCKG_DIR%\Uninstall_MPCVR_64.cmd" >NUL
-    COPY /Y /V "LICENSE"                               "bin\%PCKG_DIR%\LICENSE" >NUL
 
     TITLE Creating archive %PCKG_NAME%.zip...
-    START "7z" /B /WAIT "%SEVENZIP%" a -tzip -mx9 "bin\%PCKG_NAME%.zip" ".\bin\%PCKG_DIR%\*"
+    START "7z" /B /WAIT "%SEVENZIP%" a -tzip -mx9 "bin\%PCKG_NAME%.zip" ^
+.\bin\Filters_x86%SUFFIX%\MpcVideoRenderer.ax ^
+.\bin\Filters_x64%SUFFIX%\MpcVideoRenderer64.ax ^
+.\distrib\Install_MPCVR_32.cmd ^
+.\distrib\Install_MPCVR_64.cmd ^
+.\distrib\Uninstall_MPCVR_32.cmd ^
+.\distrib\Uninstall_MPCVR_64.cmd ^
+.\LICENSE
     IF %ERRORLEVEL% NEQ 0 CALL :SubMsg "ERROR" "Unable to create %PCKG_NAME%.zip!"
     CALL :SubMsg "INFO" "%PCKG_NAME%.zip successfully created"
 )
