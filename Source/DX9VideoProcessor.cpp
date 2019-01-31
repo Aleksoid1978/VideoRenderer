@@ -968,7 +968,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 	if (SecondFramePossible()) {
 		m_pFilter->StreamTime(rtClock);
 		if (rtEnd < rtClock) {
-			m_RenderStats.skipped2++;
+			m_RenderStats.dropped2++;
 			return S_FALSE; // skip frame
 		}
 
@@ -1593,7 +1593,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	str.AppendFormat(L",%7.03f", m_pFilter->m_DrawStats.GetAverageFps());
 	str.Append(m_strStatsStatic);
 	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
-		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.skipped2, m_RenderStats.failed);
+		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
 	str.AppendFormat(L"\nCopyTime:%3llu ms, RenderTime:%3llu ms",
 		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.renderticks * 1000 / GetPreciseTicksPerSecondI());
