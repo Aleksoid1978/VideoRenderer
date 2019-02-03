@@ -828,21 +828,20 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 	// always Render(1) a frame after CopySample()
 	hr = Render(1);
+	m_pFilter->m_DrawStats.Add(GetPreciseTick());
 	m_pFilter->StreamTime(rtClock);
-	m_pFilter->m_DrawStats.Add(rtClock);
 
 	m_RenderStats.syncoffset = rtClock - rtStart;
 
 	if (SecondFramePossible()) {
-		m_pFilter->StreamTime(rtClock);
 		if (rtEnd < rtClock) {
 			m_RenderStats.dropped2++;
 			return S_FALSE; // skip frame
 		}
 
 		hr = Render(2);
+		m_pFilter->m_DrawStats.Add(GetPreciseTick());
 		m_pFilter->StreamTime(rtClock);
-		m_pFilter->m_DrawStats.Add(rtClock);
 
 		rtStart += rtFrameDur / 2;
 		m_RenderStats.syncoffset = rtClock - rtStart;

@@ -4,14 +4,9 @@
 #include "renbase2.h"
 
 //  Helper function for clamping time differences
-int inline TimeDiff(REFERENCE_TIME rt)
+int inline TimeDiff(const REFERENCE_TIME rt)
 {
-    if (rt < - (50 * UNITS)) {
-        return -(50 * UNITS);
-    } else
-    if (rt > 50 * UNITS) {
-        return 50 * UNITS;
-    } else return (int)rt;
+	return std::clamp(rt, -(50 * UNITS), 50 * UNITS);
 }
 
 CBaseVideoRenderer2::CBaseVideoRenderer2(

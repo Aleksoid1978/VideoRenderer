@@ -20,10 +20,12 @@
 
 #pragma once
 
-template <unsigned count> class CFrameTimes {
+#include "Time.h"
+
+template<typename T, unsigned count> class CFrameTimestamps {
 protected:
 	unsigned m_frames = 0;
-	REFERENCE_TIME m_times[count] = {};
+	T m_timestamps[count] = {};
 	const unsigned intervals = count - 1;
 	unsigned m_index = intervals;
 
@@ -38,70 +40,66 @@ protected:
 public:
 	void Reset() {
 		m_frames = 0;
-		ZeroMemory(m_times, sizeof(m_times));
+		ZeroMemory(m_timestamps, sizeof(m_timestamps));
 		m_index = intervals;
 	};
 
-	void Add(REFERENCE_TIME time) {
+	void Add(T timestamp) {
 		m_index = GetNextIndex(m_index);
-		m_times[m_index] = time;
+		m_timestamps[m_index] = timestamp;
 		m_frames++;
 	}
 
-	REFERENCE_TIME GetTime() {
-		return m_times[m_index];
+	REFERENCE_TIME GeTimestamp() {
+		return m_timestamps[m_index];
 	}
 
 	unsigned GetFrames() {
 		return m_frames;
 	}
 
-	virtual REFERENCE_TIME GetAverageFrameDuration() {
-		if (m_frames >= std::size(m_times)) {
+	virtual T GetAverageFrameDuration() {
+		if (m_frames > intervals) {
 			unsigned first_index = GetNextIndex(m_index);
-			return (m_times[m_index] - m_times[first_index]) / intervals;
+			return (m_timestamps[m_index] - m_timestamps[first_index]) / intervals;
 		}
 
 		if (m_frames > 1) {
-			return (m_times[m_frames - 1] - m_times[0]) / (m_frames - 1);
+			return (m_timestamps[m_frames - 1] - m_timestamps[0]) / (m_frames - 1);
 		}
 
 		return UNITS;
 	}
-
-	double GetAverageFps() {
-		return (double)UNITS / GetAverageFrameDuration();
-	}
 };
 
 
-class CFrameStats : public CFrameTimes<301>
+class CFrameStats : public CFrameTimestamps<REFERENCE_TIME, 301>
 {
 private:
 	inline unsigned GetPrev10Index(unsigned idx) {
 		if (idx < 10) {
-			idx += std::size(m_times);
+			idx += std::size(m_timestamps);
 		}
 		idx -= 10;
 		return idx;
 	}
 
 public:
-	REFERENCE_TIME GetAverageFrameDuration() {
+	REFERENCE_TIME GetAverageFrameDuration() override {
 		REFERENCE_TIME frame_duration;
-		if (m_frames >= std::size(m_times)) {
+		if (m_frames > intervals) {
 			unsigned first_index = GetNextIndex(m_index);
-			frame_duration =(m_times[m_index] - m_times[first_index]) / intervals;
+			frame_duration =(m_timestamps[m_index] - m_timestamps[first_index]) / intervals;
 		}
 		else if (m_frames > 1) {
-			frame_duration = (m_times[m_frames - 1] - m_times[0]) / (m_frames - 1);
+			frame_duration = (m_timestamps[m_frames - 1] - m_timestamps[0]) / (m_frames - 1);
 		}
 		else {
 			return UNITS;
 		}
 
 		if (m_frames > 10) {
-			REFERENCE_TIME frame_duration10 = (m_times[m_index] - m_times[GetPrev10Index(m_index)]) / 10;
+			REFERENCE_TIME frame_duration10 = (m_timestamps[m_index] - m_timestamps[GetPrev10Index(m_index)]) / 10;
 			if (abs(frame_duration - frame_duration10) > 10000) {
 				frame_duration = frame_duration10;
 			}
@@ -109,17 +107,25 @@ public:
 
 		return frame_duration;
 	}
+
+	double GetAverageFps() {
+		return (double)UNITS / GetAverageFrameDuration();
+	}
 };
 
-class CDrawStats : public CFrameTimes<31>
+class CDrawStats : public CFrameTimestamps<uint64_t, 31>
 {
 public:
 	unsigned m_dropped = 0;
 
 	void Reset() {
-		CFrameTimes::Reset();
+		CFrameTimestamps::Reset();
 		m_dropped = 0;;
 	};
+
+	double GetAverageFps() {
+		return GetPreciseTicksPerSecond() / GetAverageFrameDuration();
+	}
 };
 
 struct CRenderStats {
