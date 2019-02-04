@@ -29,7 +29,7 @@
 #include "DX9VideoProcessor.h"
 
 #define STATS_W 450
-#define STATS_H 195
+#define STATS_H 200
 
 #pragma pack(push, 1)
 template<unsigned texcoords>
@@ -1614,12 +1614,20 @@ HRESULT CDX9VideoProcessor::DrawStats()
 		FontFamily fontFamily(L"Consolas");
 		Font       font(&fontFamily, 20, FontStyleRegular, UnitPixel);
 		PointF     pointF(5.0f, 5.0f);
-		SolidBrush solidBrush(Color(255, 255, 255, 224));
+		SolidBrush solidBrush(Color(255, 255, 255));
 
 		Status status = Gdiplus::Ok;
 
 		status = graphics.Clear(Color(192, 0, 0, 0));
 		status = graphics.DrawString(str, -1, &font, pointF, &solidBrush);
+
+		Pen pen(Color(128,255,128), 5);
+		static int col = STATS_W;
+		if (--col < 0) {
+			col = STATS_W;
+		}
+		graphics.DrawLine(&pen, col, STATS_H-11, col, STATS_H-1);
+
 		graphics.Flush();
 
 		m_pMemOSDSurface->ReleaseDC(hdc);
