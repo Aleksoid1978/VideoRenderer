@@ -1016,6 +1016,10 @@ HRESULT CDX11VideoProcessor::Render(int field)
 
 HRESULT CDX11VideoProcessor::FillBlack()
 {
+	if (!m_pDXGISwapChain1) {
+		return E_ABORT;
+	}
+
 	ID3D11Texture2D* pBackBuffer;
 	HRESULT hr = m_pDXGISwapChain1->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
 	if (FAILED(hr)) {
