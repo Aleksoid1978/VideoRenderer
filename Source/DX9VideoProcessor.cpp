@@ -1272,6 +1272,55 @@ HRESULT CDX9VideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
 	return S_OK;
 }
 
+HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
+{
+	if (m_SrcSamples.Empty()) {
+		return E_FAIL;
+	}
+
+	CRect rSrcRect(m_srcRect);
+	int w = rSrcRect.Width();
+	int h = rSrcRect.Height();
+	CRect rDstRect(0, 0, w, h);
+
+	BITMAPINFOHEADER* pBIH = (BITMAPINFOHEADER*)pDIBImage;
+	memset(pBIH, 0, sizeof(BITMAPINFOHEADER));
+	pBIH->biSize      = sizeof(BITMAPINFOHEADER);
+	pBIH->biWidth     = w;
+	pBIH->biHeight    = h;
+	pBIH->biPlanes    = 1;
+	pBIH->biBitCount  = 32;
+	pBIH->biSizeImage = DIBSIZE(*pBIH);
+
+	UINT dst_pitch = pBIH->biSizeImage / h;
+
+	HRESULT hr = S_OK;
+	CComPtr<IDirect3DSurface9> pRGB32Surface;
+	hr = m_pD3DDevEx->CreateRenderTarget(w, h, D3DFMT_X8R8G8B8, D3DMULTISAMPLE_NONE, 0, TRUE, &pRGB32Surface, nullptr);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	if (m_pDXVA2_VP) {
+		hr = ProcessDXVA2(pRGB32Surface, rSrcRect, rDstRect, 0);
+	} else {
+		hr = ProcessTex(pRGB32Surface, rSrcRect, rDstRect);
+	}
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	D3DLOCKED_RECT lr;
+	if (S_OK == (hr = pRGB32Surface->LockRect(&lr, nullptr, D3DLOCK_READONLY))) {
+		CopyFrameAsIs(h, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)lr.pBits + lr.Pitch * (h - 1), -lr.Pitch);
+		hr = pRGB32Surface->UnlockRect();
+	} else {
+		return E_FAIL;
+	}
+
+	return S_OK;
+}
+
 HRESULT CDX9VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
 {
 	CheckPointer(pFrameInfo, E_POINTER);

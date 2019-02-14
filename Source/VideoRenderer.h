@@ -143,7 +143,7 @@ public:
 	STDMETHODIMP SetDefaultDestinationPosition(void) { return E_NOTIMPL; }
 	STDMETHODIMP GetVideoSize(long *pWidth, long *pHeight);
 	STDMETHODIMP GetVideoPaletteEntries(long StartIndex, long Entries, long *pRetrieved, long *pPalette) { return E_NOTIMPL; }
-	STDMETHODIMP GetCurrentImage(long *pBufferSize, long *pDIBImage) { return E_NOTIMPL; }
+	STDMETHODIMP GetCurrentImage(long *pBufferSize, long *pDIBImage);
 	STDMETHODIMP IsUsingDefaultSource(void) { return E_NOTIMPL; }
 	STDMETHODIMP IsUsingDefaultDestination(void) { return E_NOTIMPL; }
 

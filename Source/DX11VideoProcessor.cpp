@@ -696,7 +696,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 	desc.Format = dxgiFormat;
 	desc.SampleDesc.Count = 1;
 	desc.Usage = D3D11_USAGE_DYNAMIC;
-	desc.BindFlags = D3D10_BIND_SHADER_RESOURCE;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	desc.MiscFlags = 0;
 	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pSrcTexture2D_CPU);
@@ -727,7 +727,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 		desc.Format = dxgiFormat;
 		desc.SampleDesc.Count = 1;
 		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = D3D10_BIND_RENDER_TARGET;
+		desc.BindFlags = D3D11_BIND_RENDER_TARGET;
 		CComPtr<ID3D11Texture2D> pTestTexture2D;
 		hr = m_pDevice->CreateTexture2D(&desc, nullptr, &pTestTexture2D);
 		if (FAILED(hr)) {
@@ -769,7 +769,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 	desc.Format = dxgiFormat;
 	desc.SampleDesc.Count = 1;
 	desc.Usage = D3D11_USAGE_DYNAMIC;
-	desc.BindFlags = D3D10_BIND_SHADER_RESOURCE;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	desc.MiscFlags = 0;
 	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pSrcTexture2D_CPU);
@@ -999,10 +999,18 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		return hr;
 	}
 
+	CRect rSrcRect(m_srcRect);
+	CRect rDstRect(m_videoRect);
+	D3D11_TEXTURE2D_DESC desc = {};
+	pBackBuffer->GetDesc(&desc);
+	if (desc.Width && desc.Height) {
+		ClipToSurface(desc.Width, desc.Height, rSrcRect, rDstRect);
+	}
+
 	if (m_pVideoContext) {
-		hr = ProcessD3D11(pBackBuffer, m_FieldDrawn == 2);
+		hr = ProcessD3D11(pBackBuffer, rSrcRect, rDstRect, m_FieldDrawn == 2);
 	} else {
-		hr = ProcessTex(pBackBuffer);
+		hr = ProcessTex(pBackBuffer, rSrcRect, rDstRect);
 	}
 	if (S_OK == hr && m_bShowStats) {
 		hr = DrawStats();
@@ -1045,20 +1053,14 @@ HRESULT CDX11VideoProcessor::FillBlack()
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const bool second)
+HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
 	if (m_videoRect.IsRectEmpty() || m_windowRect.IsRectEmpty()) {
 		return S_OK;
 	}
 
 	if (!second) {
-		CRect rSrcRect(m_srcRect);
-		CRect rDstRect(m_videoRect);
-		D3D11_TEXTURE2D_DESC desc = {};
-		pRenderTarget->GetDesc(&desc);
-		if (desc.Width && desc.Height) {
-			ClipToSurface(desc.Width, desc.Height, rSrcRect, rDstRect);
-		}
+		
 
 		// input format
 		m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, m_SampleFormat);
@@ -1170,7 +1172,7 @@ typedef struct _VERTEX
 
 #define NUMVERTICES 6
 
-HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget)
+HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
 	ID3D11RenderTargetView* pRenderTargetView;
 	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
@@ -1277,6 +1279,77 @@ HRESULT CDX11VideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
 
 	*plAspectX = m_srcAspectRatioX;
 	*plAspectY = m_srcAspectRatioY;
+
+	return S_OK;
+}
+
+HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
+{
+	//if (m_SrcSamples.Empty()) {
+	//	return E_FAIL;
+	//}
+
+	CRect rSrcRect(m_srcRect);
+	int w = rSrcRect.Width();
+	int h = rSrcRect.Height();
+	CRect rDstRect(0, 0, w, h);
+
+	BITMAPINFOHEADER* pBIH = (BITMAPINFOHEADER*)pDIBImage;
+	memset(pBIH, 0, sizeof(BITMAPINFOHEADER));
+	pBIH->biSize = sizeof(BITMAPINFOHEADER);
+	pBIH->biWidth = w;
+	pBIH->biHeight = h;
+	pBIH->biPlanes = 1;
+	pBIH->biBitCount = 32;
+	pBIH->biSizeImage = DIBSIZE(*pBIH);
+
+	UINT dst_pitch = pBIH->biSizeImage / h;
+
+	HRESULT hr = S_OK;
+
+	D3D11_TEXTURE2D_DESC desc = {};
+	desc.Width = w;
+	desc.Height = h;
+	desc.MipLevels = desc.ArraySize = 1;
+	desc.Format = DXGI_FORMAT_B8G8R8X8_UNORM;
+	desc.SampleDesc.Count = 1;
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+
+	CComPtr<ID3D11Texture2D> pRGB32Texture2D;
+	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &pRGB32Texture2D);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	if (m_pVideoContext) {
+		hr = ProcessD3D11(pRGB32Texture2D, rSrcRect, rDstRect, false);
+	} else {
+		hr = ProcessTex(pRGB32Texture2D, rSrcRect, rDstRect);
+	}
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	desc.Usage = D3D11_USAGE_STAGING;
+	desc.BindFlags = 0;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+	CComPtr<ID3D11Texture2D> pRGB32Texture2D_Shared;
+	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &pRGB32Texture2D_Shared);
+	if (FAILED(hr)) {
+		return hr;
+	}
+	m_pDeviceContext->CopyResource(pRGB32Texture2D_Shared, pRGB32Texture2D);
+
+	D3D11_MAPPED_SUBRESOURCE mr = {};
+	if (S_OK == (hr = m_pDeviceContext->Map(pRGB32Texture2D_Shared, 0, D3D11_MAP_READ, 0, &mr))) {
+		CopyFrameAsIs(h, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)mr.pData + mr.RowPitch * (h - 1), -(int)mr.RowPitch);
+		m_pDeviceContext->Unmap(pRGB32Texture2D_Shared, 0);
+	}
+	else {
+		return E_FAIL;
+	}
 
 	return S_OK;
 }

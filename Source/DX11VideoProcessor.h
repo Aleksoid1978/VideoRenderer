@@ -168,6 +168,7 @@ public:
 
 	HRESULT GetVideoSize(long *pWidth, long *pHeight);
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
+	HRESULT GetCurentImage(long *pDIBImage);
 	HRESULT GetFrameInfo(VRFrameInfo* pFrameInfo);
 	HRESULT GetAdapterDecription(CStringW& str);
 
@@ -177,8 +178,8 @@ public:
 	void SetShowStats(bool value) { m_bShowStats = value; };
 
 private:
-	HRESULT ProcessD3D11(ID3D11Texture2D* pRenderTarget, const bool second);
-	HRESULT ProcessTex(ID3D11Texture2D* pRenderTarget);
+	HRESULT ProcessD3D11(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
+	HRESULT ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
 	void UpdateStatsStatic();
 	HRESULT DrawStats();
 

@@ -266,6 +266,7 @@ public:
 	IDirect3DDeviceManager9* GetDeviceManager9() { return m_pD3DDeviceManager; }
 	HRESULT GetVideoSize(long *pWidth, long *pHeight);
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
+	HRESULT GetCurentImage(long *pDIBImage);
 	HRESULT GetFrameInfo(VRFrameInfo* pFrameInfo);
 	HRESULT GetAdapterDecription(CStringW& str);
 	HRESULT GetDXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCaps);

@@ -369,11 +369,55 @@ STDMETHODIMP CMpcVideoRenderer::GetDestinationPosition(long *pLeft, long *pTop, 
 
 STDMETHODIMP CMpcVideoRenderer::GetVideoSize(long *pWidth, long *pHeight)
 {
+	// retrieves the native video's width and height.
 	if (m_bUsedD3D11) {
 		return m_DX11_VP.GetVideoSize(pWidth, pHeight);
 	} else {
 		return m_DX9_VP.GetVideoSize(pWidth, pHeight);
 	}
+}
+
+STDMETHODIMP CMpcVideoRenderer::GetCurrentImage(long *pBufferSize, long *pDIBImage)
+{
+	CheckPointer(pBufferSize, E_POINTER);
+
+	CAutoLock cRendererLock(&m_InterfaceLock);
+	CAutoLock cSampleLock(&m_RendererLock);
+	HRESULT hr;
+
+	CRect rect;
+	if (m_bUsedD3D11) {
+		m_DX11_VP.GetSourceRect(rect);
+	} else {
+		m_DX9_VP.GetSourceRect(rect);
+	}
+
+	const int w = rect.Width();
+	const int h = rect.Height();
+
+	// VFW_E_NOT_PAUSED ?
+
+	if (w <= 0 || h <= 0) {
+		return E_FAIL;
+	}
+	long size = w * h * 4 + sizeof(BITMAPINFOHEADER);
+
+	if (pDIBImage == nullptr) {
+		*pBufferSize = size;
+		return S_OK;
+	}
+
+	if (size > *pBufferSize) {
+		return E_OUTOFMEMORY;
+	}
+
+	if (m_bUsedD3D11) {
+		hr = m_DX11_VP.GetCurentImage(pDIBImage);
+	} else {
+		hr = m_DX9_VP.GetCurentImage(pDIBImage);
+	}
+
+	return hr;
 }
 
 // IBasicVideo2
