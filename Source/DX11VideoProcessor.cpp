@@ -999,22 +999,25 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		return hr;
 	}
 
-	CRect rSrcRect(m_srcRect);
-	CRect rDstRect(m_videoRect);
-	D3D11_TEXTURE2D_DESC desc = {};
-	pBackBuffer->GetDesc(&desc);
-	if (desc.Width && desc.Height) {
-		ClipToSurface(desc.Width, desc.Height, rSrcRect, rDstRect);
+	if (!m_videoRect.IsRectEmpty()) {
+		CRect rSrcRect(m_srcRect);
+		CRect rDstRect(m_videoRect);
+		D3D11_TEXTURE2D_DESC desc = {};
+		pBackBuffer->GetDesc(&desc);
+		if (desc.Width && desc.Height) {
+			ClipToSurface(desc.Width, desc.Height, rSrcRect, rDstRect);
+		}
+
+		if (m_pVideoContext) {
+			hr = ProcessD3D11(pBackBuffer, rSrcRect, rDstRect, m_FieldDrawn == 2);
+		} else {
+			hr = ProcessTex(pBackBuffer, rSrcRect, rDstRect);
+		}
+		if (S_OK == hr && m_bShowStats) {
+			hr = DrawStats();
+		}
 	}
 
-	if (m_pVideoContext) {
-		hr = ProcessD3D11(pBackBuffer, rSrcRect, rDstRect, m_FieldDrawn == 2);
-	} else {
-		hr = ProcessTex(pBackBuffer, rSrcRect, rDstRect);
-	}
-	if (S_OK == hr && m_bShowStats) {
-		hr = DrawStats();
-	}
 	m_RenderStats.renderticks = GetPreciseTick() - ticks;
 
 	hr = m_pDXGISwapChain1->Present(0, 0);
@@ -1055,13 +1058,11 @@ HRESULT CDX11VideoProcessor::FillBlack()
 
 HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
-	if (m_videoRect.IsRectEmpty() || m_windowRect.IsRectEmpty()) {
+	if (m_windowRect.IsRectEmpty()) {
 		return S_OK;
 	}
 
 	if (!second) {
-		
-
 		// input format
 		m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, m_SampleFormat);
 
