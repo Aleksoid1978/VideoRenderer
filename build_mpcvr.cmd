@@ -1,5 +1,5 @@
 @ECHO OFF
-REM (C) 2018 see Authors.txt
+REM (C) 2018-2019 see Authors.txt
 REM
 REM This file is part of MPC-BE.
 REM
@@ -34,7 +34,7 @@ SET "TOOLSET=%VS_PATH%\Common7\Tools\vsdevcmd"
 SET "LOG_DIR=bin\logs"
 IF NOT EXIST "%LOG_DIR%" MD "%LOG_DIR%"
 
-IF NOT EXIST "revision.h" CALL "update_revision.cmd"
+CALL "update_revision.cmd"
 
 FOR /F "tokens=3,4 delims= " %%A IN (
   'FINDSTR /I /L /C:"define MPCVR_REV_DATE" "revision.h"') DO (SET "REVDATE=%%A")
