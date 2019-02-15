@@ -34,15 +34,6 @@ SET "TOOLSET=%VS_PATH%\Common7\Tools\vsdevcmd"
 SET "LOG_DIR=bin\logs"
 IF NOT EXIST "%LOG_DIR%" MD "%LOG_DIR%"
 
-CALL "update_revision.cmd"
-
-FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_REV_DATE" "revision.h"') DO (SET "REVDATE=%%A")
-FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_REV_HASH" "revision.h"') DO (SET "REVHASH=%%A")
-
-SET "PCKG_NAME=MPCVideoRenderer-%REVDATE%-%REVHASH%%SUFFIX%"
-
 CALL "%TOOLSET%" -no_logo -arch=x86
 REM again set the source directory (fix possible bug in VS2017)
 CD /D %~dp0
@@ -52,6 +43,12 @@ CALL "%TOOLSET%" -no_logo -arch=amd64
 REM again set the source directory (fix possible bug in VS2017)
 CD /D %~dp0
 CALL :SubMPCVR x64
+
+FOR /F "tokens=3,4 delims= " %%A IN (
+  'FINDSTR /I /L /C:"define MPCVR_REV_DATE" "revision.h"') DO (SET "REVDATE=%%A")
+FOR /F "tokens=3,4 delims= " %%A IN (
+  'FINDSTR /I /L /C:"define MPCVR_REV_HASH" "revision.h"') DO (SET "REVHASH=%%A")
+SET "PCKG_NAME=MPCVideoRenderer-%REVDATE%-%REVHASH%%SUFFIX%"
 
 CALL :SubDetectSevenzipPath
 IF DEFINED SEVENZIP (
