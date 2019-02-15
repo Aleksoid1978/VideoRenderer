@@ -73,6 +73,7 @@ private:
 	HWND m_hWnd = nullptr;
 
 	FILTER_STATE m_filterState = State_Stopped;
+	int m_Stepping = 0;
 
 	// DXVA2 VideoProcessor
 	CDX9VideoProcessor m_DX9_VP;

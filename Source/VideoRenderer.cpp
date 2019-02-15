@@ -153,6 +153,10 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 		hr = m_DX9_VP.ProcessSample(pSample);
 	}
 
+	if (m_Stepping && !(--m_Stepping)) {
+		this->NotifyEvent(EC_STEP_COMPLETE, 0, 0);
+	}
+
 	return hr;
 }
 
@@ -227,6 +231,15 @@ STDMETHODIMP CMpcVideoRenderer::Set(REFGUID PropSet, ULONG Id, LPVOID pInstanceD
 	if (PropSet == AM_KSPROPSETID_CopyProt) {
 		if (Id == AM_PROPERTY_COPY_MACROVISION) {
 			DLog(L"Oops, no-no-no, no macrovision please");
+			return S_OK;
+		}
+	}
+	else if (PropSet == AM_KSPROPSETID_FrameStep) {
+		if (Id == AM_PROPERTY_FRAMESTEP_STEP) {
+			m_Stepping = 1;
+			return S_OK;
+		}
+		if (Id == AM_PROPERTY_FRAMESTEP_CANSTEP || Id == AM_PROPERTY_FRAMESTEP_CANSTEPMULTIPLE) {
 			return S_OK;
 		}
 	}
