@@ -999,7 +999,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		return hr;
 	}
 
-	if (!m_videoRect.IsRectEmpty()) {
+	if (!m_videoRect.IsRectEmpty() && !m_windowRect.IsRectEmpty()) {
 		CRect rSrcRect(m_srcRect);
 		CRect rDstRect(m_videoRect);
 		D3D11_TEXTURE2D_DESC desc = {};
@@ -1009,7 +1009,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		}
 
 		if (m_pVideoContext) {
-			hr = ProcessD3D11(pBackBuffer, rSrcRect, rDstRect, m_FieldDrawn == 2);
+			hr = ProcessD3D11(pBackBuffer, rSrcRect, rDstRect, m_windowRect, m_FieldDrawn == 2);
 		} else {
 			hr = ProcessTex(pBackBuffer, rSrcRect, rDstRect);
 		}
@@ -1056,12 +1056,8 @@ HRESULT CDX11VideoProcessor::FillBlack()
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
+HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const RECT* pWndRect, const bool second)
 {
-	if (m_windowRect.IsRectEmpty()) {
-		return S_OK;
-	}
-
 	if (!second) {
 		// input format
 		m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, m_SampleFormat);
@@ -1073,11 +1069,11 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 		m_pVideoContext->VideoProcessorSetStreamAutoProcessingMode(m_pVideoProcessor, 0, FALSE);
 
 		// Source rect
-		m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, TRUE, rSrcRect);
+		m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, TRUE, pSrcRect);
 
 		// Dest rect
-		m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, rDstRect);
-		m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, TRUE, m_windowRect);
+		m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, pDstRect ? TRUE : FALSE, pDstRect);
+		m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, pWndRect ? TRUE : FALSE, pWndRect);
 
 		// filters
 		m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_BRIGHTNESS, m_VPFilterSettings[0].Enabled, m_VPFilterSettings[0].Level);
@@ -1324,7 +1320,7 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	}
 
 	if (m_pVideoContext) {
-		hr = ProcessD3D11(pRGB32Texture2D, rSrcRect, rDstRect, false);
+		hr = ProcessD3D11(pRGB32Texture2D, rSrcRect, nullptr, nullptr, false);
 	} else {
 		hr = ProcessTex(pRGB32Texture2D, rSrcRect, rDstRect);
 	}
