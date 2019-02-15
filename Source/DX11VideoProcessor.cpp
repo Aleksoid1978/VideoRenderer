@@ -1340,11 +1340,10 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	m_pDeviceContext->CopyResource(pRGB32Texture2D_Shared, pRGB32Texture2D);
 
 	D3D11_MAPPED_SUBRESOURCE mr = {};
-	if (S_OK == (hr = m_pDeviceContext->Map(pRGB32Texture2D_Shared, 0, D3D11_MAP_READ, 0, &mr))) {
+	if (S_OK == m_pDeviceContext->Map(pRGB32Texture2D_Shared, 0, D3D11_MAP_READ, 0, &mr)) {
 		CopyFrameAsIs(h, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)mr.pData + mr.RowPitch * (h - 1), -(int)mr.RowPitch);
 		m_pDeviceContext->Unmap(pRGB32Texture2D_Shared, 0);
-	}
-	else {
+	} else {
 		return E_FAIL;
 	}
 

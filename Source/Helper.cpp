@@ -156,7 +156,7 @@ const FmtConvParams_t* GetFmtConvParams(GUID subtype)
 
 void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
 {
-	unsigned linesize = abs(src_pitch);
+	unsigned linesize = std::min((UINT)abs(src_pitch), dst_pitch);
 
 	for (UINT y = 0; y < height; ++y) {
 		memcpy(dst, src, linesize);
