@@ -122,22 +122,20 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 	CheckPointer(pmt, E_POINTER);
 	CheckPointer(pmt->pbFormat, E_POINTER);
 
-	HRESULT hr = __super::SetMediaType(pmt);
-	if (S_OK == hr) {
-		CAutoLock cRendererLock(&m_RendererLock);
+	CAutoLock cVideoLock(&m_InterfaceLock);
+	CAutoLock cRendererLock(&m_RendererLock);
 
-		if (m_bUsedD3D11) {
-			if (!m_DX11_VP.InitMediaType(pmt)) {
-				return VFW_E_UNSUPPORTED_VIDEO;
-			}
-		} else {
-			if (!m_DX9_VP.InitMediaType(pmt)) {
-				return VFW_E_UNSUPPORTED_VIDEO;
-			}
+	if (m_bUsedD3D11) {
+		if (!m_DX11_VP.InitMediaType(pmt)) {
+			return VFW_E_UNSUPPORTED_VIDEO;
+		}
+	} else {
+		if (!m_DX9_VP.InitMediaType(pmt)) {
+			return VFW_E_UNSUPPORTED_VIDEO;
 		}
 	}
 
-	return hr;
+	return S_OK;
 }
 
 HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
@@ -313,7 +311,7 @@ STDMETHODIMP CMpcVideoRenderer::GetSourcePosition(long *pLeft, long *pTop, long 
 
 	CRect rect;
 	{
-		CAutoLock cRendererLock(&m_InterfaceLock);
+		CAutoLock cVideoLock(&m_InterfaceLock);
 		if (m_bUsedD3D11) {
 			m_DX11_VP.GetSourceRect(rect);
 		} else {
@@ -364,7 +362,7 @@ STDMETHODIMP CMpcVideoRenderer::GetDestinationPosition(long *pLeft, long *pTop, 
 
 	CRect rect;
 	{
-		CAutoLock cRendererLock(&m_InterfaceLock);
+		CAutoLock cVideoLock(&m_InterfaceLock);
 		if (m_bUsedD3D11) {
 			m_DX11_VP.GetVideoRect(rect);
 		} else {
@@ -394,8 +392,8 @@ STDMETHODIMP CMpcVideoRenderer::GetCurrentImage(long *pBufferSize, long *pDIBIma
 {
 	CheckPointer(pBufferSize, E_POINTER);
 
-	CAutoLock cRendererLock(&m_InterfaceLock);
-	CAutoLock cSampleLock(&m_RendererLock);
+	CAutoLock cVideoLock(&m_InterfaceLock);
+	CAutoLock cRendererLock(&m_RendererLock);
 	HRESULT hr;
 
 	CRect rect;
