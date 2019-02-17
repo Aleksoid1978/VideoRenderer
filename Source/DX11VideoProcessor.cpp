@@ -809,6 +809,9 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 
 void CDX11VideoProcessor::Start()
 {
+	if (m_VendorId == PCIV_INTEL) {
+		resetmt = true;
+	}
 }
 
 void CDX11VideoProcessor::Stop()
@@ -989,6 +992,15 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 HRESULT CDX11VideoProcessor::Render(int field)
 {
+	if (resetmt && m_inputMT.IsValid()) {
+		// stupid hack for Intel
+		resetmt = false;
+		if (!InitMediaType(&m_inputMT)) {
+			ReleaseDevice();
+			return E_FAIL;
+		}
+	}
+
 	CheckPointer(m_pSrcTexture2D_CPU, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
 

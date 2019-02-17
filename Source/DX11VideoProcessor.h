@@ -130,6 +130,8 @@ private:
 
 	CStringW m_strStatsStatic;
 
+	bool resetmt = false;
+
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter);
 	~CDX11VideoProcessor();
