@@ -970,6 +970,15 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	//	}
 	//}
 	else {
+		if (resetmt && m_inputMT.IsValid()) {
+			// stupid hack for Intel
+			resetmt = false;
+			if (!InitMediaType(&m_inputMT)) {
+				ReleaseDevice();
+				return E_FAIL;
+			}
+		}
+
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
@@ -992,15 +1001,6 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 HRESULT CDX11VideoProcessor::Render(int field)
 {
-	if (resetmt && m_inputMT.IsValid()) {
-		// stupid hack for Intel
-		resetmt = false;
-		if (!InitMediaType(&m_inputMT)) {
-			ReleaseDevice();
-			return E_FAIL;
-		}
-	}
-
 	CheckPointer(m_pSrcTexture2D_CPU, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
 
