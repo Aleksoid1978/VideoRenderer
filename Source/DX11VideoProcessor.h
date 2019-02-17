@@ -151,14 +151,15 @@ public:
 	BOOL InitMediaType(const CMediaType* pmt);
 	HRESULT InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height, bool only_update_surface);
 	HRESULT InitializeTexVP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height);
+
 	void Start();
+	void Stop();
 
 	HRESULT ProcessSample(IMediaSample* pSample);
 	HRESULT CopySample(IMediaSample* pSample);
 	// Render: 1 - render first fied or progressive frame, 2 - render second fied, 0 or other - forced repeat of render.
 	HRESULT Render(int field);
 	HRESULT FillBlack();
-	void StopInputBuffer() {}
 	bool SecondFramePossible() { return m_bDeintDouble && m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE; }
 
 	void GetSourceRect(CRect& sourceRect) { sourceRect = m_srcRect; }

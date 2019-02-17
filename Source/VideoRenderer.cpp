@@ -214,8 +214,10 @@ STDMETHODIMP CMpcVideoRenderer::Stop()
 {
 	DLog(L"CMpcVideoRenderer::Stop()");
 
-	if (!m_bUsedD3D11) {
-		m_DX9_VP.StopInputBuffer();
+	if (m_bUsedD3D11) {
+		m_DX11_VP.Stop();
+	} else {
+		m_DX9_VP.Stop();
 	}
 
 	m_filterState = State_Stopped;

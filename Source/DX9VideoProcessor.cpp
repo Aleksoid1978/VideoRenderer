@@ -1012,6 +1012,25 @@ void CDX9VideoProcessor::Start()
 {
 }
 
+void CDX9VideoProcessor::Stop()
+{
+	// reset input buffers
+	for (unsigned i = 0; i < m_SrcSamples.Size(); i++) {
+		auto & SrcSample = m_SrcSamples.GetAt(i);
+		SrcSample.Start = 0;
+		SrcSample.End = 0;
+		SrcSample.SampleFormat = DXVA2_SampleUnknown;
+		if (m_VendorId == PCIV_AMDATI) {
+			m_pD3DDevEx->ColorFill(SrcSample.pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+		}
+	}
+	for (auto& DXVA2Sample : m_DXVA2Samples) {
+		DXVA2Sample.Start = 0;
+		DXVA2Sample.End = 0;
+		DXVA2Sample.SampleFormat.SampleFormat = DXVA2_SampleUnknown;
+	}
+}
+
 HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 {
 	REFERENCE_TIME rtStart, rtEnd;
@@ -1230,24 +1249,6 @@ HRESULT CDX9VideoProcessor::FillBlack()
 	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
 
 	return hr;
-}
-
-void CDX9VideoProcessor::StopInputBuffer()
-{
-	for (unsigned i = 0; i < m_SrcSamples.Size(); i++) {
-		auto & SrcSample = m_SrcSamples.GetAt(i);
-		SrcSample.Start = 0;
-		SrcSample.End   = 0;
-		SrcSample.SampleFormat = DXVA2_SampleUnknown;
-		if (m_VendorId == PCIV_AMDATI) {
-			m_pD3DDevEx->ColorFill(SrcSample.pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
-		}
-	}
-	for (auto& DXVA2Sample : m_DXVA2Samples) {
-		DXVA2Sample.Start = 0;
-		DXVA2Sample.End   = 0;
-		DXVA2Sample.SampleFormat.SampleFormat = DXVA2_SampleUnknown;
-	}
 }
 
 HRESULT CDX9VideoProcessor::GetVideoSize(long *pWidth, long *pHeight)
