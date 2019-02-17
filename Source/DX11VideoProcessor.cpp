@@ -970,12 +970,12 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	//	}
 	//}
 	else {
-		if (resetmt && m_inputMT.IsValid()) {
+		if (resetmt) {
 			// stupid hack for Intel
 			resetmt = false;
-			if (!InitMediaType(&m_inputMT)) {
-				ReleaseDevice();
-				return E_FAIL;
+			hr = InitializeD3D11VP(m_srcDXGIFormat, m_srcWidth, m_srcHeight, true);
+			if (FAILED(hr)) {
+				return hr;
 			}
 		}
 
