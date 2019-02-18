@@ -26,6 +26,7 @@
 #include <Mfidl.h>
 #include <directxcolors.h>
 #include <dwmapi.h>
+#include <cmath>
 #include "Helper.h"
 #include "Time.h"
 #include "resource.h"
@@ -315,7 +316,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	if (SUCCEEDED(hr)) {
 		m_VendorId = dxgiAdapterDesc.VendorId;
 		m_strAdapterDescription.Format(L"%s (%04X:%04X)", dxgiAdapterDesc.Description, dxgiAdapterDesc.VendorId, dxgiAdapterDesc.DeviceId);
-		DLog(L"Graphics adapter: %s", m_strAdapterDescription);
+		DLog(L"Graphics adapter: %s", m_strAdapterDescription.GetString());
 	}
 
 #ifdef DEBUG
