@@ -557,7 +557,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	// D3D11 Video Processor
-	if (FmtConvParams->VP11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeD3D11VP(FmtConvParams->VP11Format, m_srcWidth, m_srcHeight, false)) {
+	if (1 && FmtConvParams->VP11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeD3D11VP(FmtConvParams->VP11Format, m_srcWidth, m_srcHeight, false)) {
 		m_srcSubType = SubType;
 		UpdateStatsStatic();
 		m_inputMT = *pmt;
@@ -971,7 +971,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	//	}
 	//}
 	else {
-		if (resetmt) {
+		if (resetmt && m_pVideoProcessor) {
 			// stupid hack for Intel
 			resetmt = false;
 			hr = InitializeD3D11VP(m_srcDXGIFormat, m_srcWidth, m_srcHeight, true);
@@ -1025,10 +1025,10 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			ClipToSurface(desc.Width, desc.Height, rSrcRect, rDstRect);
 		}
 
-		if (m_pVideoContext) {
+		if (m_pVideoProcessor) {
 			hr = ProcessD3D11(pBackBuffer, rSrcRect, rDstRect, m_windowRect, m_FieldDrawn == 2);
 		} else {
-			hr = ProcessTex(pBackBuffer, rSrcRect, rDstRect);
+			hr = ProcessTex(pBackBuffer, rSrcRect, rDstRect, m_windowRect);
 		}
 		if (S_OK == hr && m_bShowStats) {
 			hr = DrawStats();
@@ -1186,7 +1186,7 @@ typedef struct _VERTEX
 
 #define NUMVERTICES 6
 
-HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
+HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const RECT* pWndRect)
 {
 	ID3D11RenderTargetView* pRenderTargetView;
 	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
@@ -1196,6 +1196,9 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 
 	D3D11_TEXTURE2D_DESC FrameDesc;
 	m_pSrcTexture2D_CPU->GetDesc(&FrameDesc);
+
+	//D3D11_TEXTURE2D_DESC RTDesc;
+	//pRenderTarget->GetDesc(&RTDesc);
 
 	D3D11_VIEWPORT VP;
 	VP.Width = static_cast<FLOAT>(FrameDesc.Width);
@@ -1212,6 +1215,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 		{DirectX::XMFLOAT3(-1.0f, -1.0f, 0), DirectX::XMFLOAT2(0.0f, 1.0f)},
 		{DirectX::XMFLOAT3(-1.0f, 1.0f, 0),  DirectX::XMFLOAT2(0.0f, 0.0f)},
 		{DirectX::XMFLOAT3(1.0f, -1.0f, 0),  DirectX::XMFLOAT2(1.0f, 1.0f)},
+
 		{DirectX::XMFLOAT3(1.0f, -1.0f, 0),  DirectX::XMFLOAT2(1.0f, 1.0f)},
 		{DirectX::XMFLOAT3(-1.0f, 1.0f, 0),  DirectX::XMFLOAT2(0.0f, 0.0f)},
 		{DirectX::XMFLOAT3(1.0f, 1.0f, 0),   DirectX::XMFLOAT2(1.0f, 0.0f)},
@@ -1339,7 +1343,7 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	if (m_pVideoContext) {
 		hr = ProcessD3D11(pRGB32Texture2D, rSrcRect, nullptr, nullptr, false);
 	} else {
-		hr = ProcessTex(pRGB32Texture2D, rSrcRect, rDstRect);
+		hr = ProcessTex(pRGB32Texture2D, rSrcRect, rDstRect, m_windowRect);
 	}
 	if (FAILED(hr)) {
 		return hr;
