@@ -10,6 +10,6 @@ struct PS_INPUT
 float4 main(PS_INPUT input) : SV_Target
 {
     float4 pix = tx.Sample(samLinear, input.Tex);
-    pix.rgb = 1.0 - pix.rgb; // invert
+    //pix.rgb = 1.0 - pix.rgb; // invert
     return pix;
 }

@@ -1184,8 +1184,6 @@ typedef struct _VERTEX
 	DirectX::XMFLOAT2 TexCoord;
 } VERTEX;
 
-#define NUMVERTICES 6
-
 HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const RECT* pWndRect)
 {
 	ID3D11RenderTargetView* pRenderTargetView;
@@ -1196,13 +1194,25 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 
 	D3D11_TEXTURE2D_DESC FrameDesc;
 	m_pSrcTexture2D_CPU->GetDesc(&FrameDesc);
+	const float src_dx = 1.0f / FrameDesc.Width;
+	const float src_dy = 1.0f / FrameDesc.Height;
+	const float src_l = src_dx * pSrcRect->left;
+	const float src_r = src_dx * pSrcRect->right;
+	const float src_t = src_dy * pSrcRect->top;
+	const float src_b = src_dy * pSrcRect->bottom;
 
-	//D3D11_TEXTURE2D_DESC RTDesc;
-	//pRenderTarget->GetDesc(&RTDesc);
+	D3D11_TEXTURE2D_DESC RTDesc;
+	pRenderTarget->GetDesc(&RTDesc);
+	const float dst_dx = 2.0f / RTDesc.Width;
+	const float dst_dy = 2.0f / RTDesc.Height;
+	const float dst_l = dst_dx * pDstRect->left   - 1.0f;
+	const float dst_r = dst_dx * pDstRect->right  - 1.0f;
+	const float dst_t = dst_dy * pDstRect->top    - 1.0f;
+	const float dst_b = dst_dy * pDstRect->bottom - 1.0f;
 
 	D3D11_VIEWPORT VP;
-	VP.Width = static_cast<FLOAT>(FrameDesc.Width);
-	VP.Height = static_cast<FLOAT>(FrameDesc.Height);
+	VP.Width = static_cast<FLOAT>(RTDesc.Width);
+	VP.Height = static_cast<FLOAT>(RTDesc.Height);
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
 	VP.TopLeftX = 0;
@@ -1210,15 +1220,18 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 	m_pDeviceContext->RSSetViewports(1, &VP);
 
 	// Vertices for drawing whole texture
-	VERTEX Vertices[NUMVERTICES] =
-	{
-		{DirectX::XMFLOAT3(-1.0f, -1.0f, 0), DirectX::XMFLOAT2(0.0f, 1.0f)},
-		{DirectX::XMFLOAT3(-1.0f, 1.0f, 0),  DirectX::XMFLOAT2(0.0f, 0.0f)},
-		{DirectX::XMFLOAT3(1.0f, -1.0f, 0),  DirectX::XMFLOAT2(1.0f, 1.0f)},
-
-		{DirectX::XMFLOAT3(1.0f, -1.0f, 0),  DirectX::XMFLOAT2(1.0f, 1.0f)},
-		{DirectX::XMFLOAT3(-1.0f, 1.0f, 0),  DirectX::XMFLOAT2(0.0f, 0.0f)},
-		{DirectX::XMFLOAT3(1.0f, 1.0f, 0),   DirectX::XMFLOAT2(1.0f, 0.0f)},
+	VERTEX Vertices[] = {
+		// |\
+		// |_\ lower left triangle
+		{DirectX::XMFLOAT3(dst_l, dst_t, 0), DirectX::XMFLOAT2(src_l, src_b)},
+		{DirectX::XMFLOAT3(dst_l, dst_b, 0), DirectX::XMFLOAT2(src_l, src_t)},
+		{DirectX::XMFLOAT3(dst_r, dst_t, 0), DirectX::XMFLOAT2(src_r, src_b)},
+		// ___
+		// \ |
+		//  \| upper right triangle
+		{DirectX::XMFLOAT3(dst_r, dst_t, 0.0f), DirectX::XMFLOAT2(src_r, src_b)},
+		{DirectX::XMFLOAT3(dst_l, dst_b, 0.0f), DirectX::XMFLOAT2(src_l, src_t)},
+		{DirectX::XMFLOAT3(dst_r, dst_b, 0.0f), DirectX::XMFLOAT2(src_r, src_t)},
 	};
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC ShaderDesc;
@@ -1249,7 +1262,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 	D3D11_BUFFER_DESC BufferDesc;
 	ZeroMemory(&BufferDesc, sizeof(BufferDesc));
 	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	BufferDesc.ByteWidth = sizeof(VERTEX) * NUMVERTICES;
+	BufferDesc.ByteWidth = sizeof(Vertices);
 	BufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	BufferDesc.CPUAccessFlags = 0;
 	D3D11_SUBRESOURCE_DATA InitData;
@@ -1267,7 +1280,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 	m_pDeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
 
 	// Draw textured quad onto render target
-	m_pDeviceContext->Draw(NUMVERTICES, 0);
+	m_pDeviceContext->Draw(std::size(Vertices), 0);
 
 	VertexBuffer->Release();
 	VertexBuffer = nullptr;
