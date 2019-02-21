@@ -30,6 +30,7 @@
 #include <d2d1.h>
 #include <dwrite.h>
 #include <evr9.h> // for IMFVideoProcessor
+#include <DirectXMath.h>
 #include "IVideoRenderer.h"
 #include "Helper.h"
 #include "FrameStats.h"
@@ -124,7 +125,15 @@ private:
 	CComPtr<ID3D11VertexShader> m_pVertexShader;
 	CComPtr<ID3D11PixelShader>  m_pPixelShader;
 	CComPtr<ID3D11InputLayout> m_pInputLayout;
+	ID3D11ShaderResourceView* m_pShaderResource = nullptr;
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;
+
+	struct VERTEX {
+		DirectX::XMFLOAT3 Pos;
+		DirectX::XMFLOAT2 TexCoord;
+	};
+	VERTEX m_Vertices[6] = {};
+	ID3D11Buffer* m_pVertexBuffer = nullptr;
 
 	CRenderStats m_RenderStats;
 
@@ -153,6 +162,7 @@ public:
 	BOOL InitMediaType(const CMediaType* pmt);
 	HRESULT InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height, bool only_update_surface);
 	HRESULT InitializeTexVP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height);
+	HRESULT SetVertices(UINT dstW, UINT dstH);
 
 	void Start();
 	void Stop();
