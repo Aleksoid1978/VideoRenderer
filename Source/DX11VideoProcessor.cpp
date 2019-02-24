@@ -353,7 +353,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	LPVOID data;
 	DWORD size;
 	HRESULT hr2;
-	if (S_OK == GetDataFromResource(data, size, IDF_VSHADER11_TEST)) {
+	if (S_OK == GetDataFromResource(data, size, IDF_VSHADER11_SIMPLE)) {
 		hr2 = m_pDevice->CreateVertexShader(data, size, nullptr, &m_pVertexShader);
 	}
 
@@ -365,7 +365,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	if (S_OK == hr2) {
 		m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 	}
-	if (S_OK == GetDataFromResource(data, size, IDF_PSHADER11_TEST)) {
+	if (S_OK == GetDataFromResource(data, size, IDF_PSHADER11_SIMPLE)) {
 		hr2 = m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPixelShader);
 	}
 
