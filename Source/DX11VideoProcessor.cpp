@@ -33,6 +33,48 @@
 #include "DX11VideoProcessor.h"
 #include "./Include/ID3DVideoMemoryConfiguration.h"
 
+enum Tex2DType {
+	Tex2D_Default,
+	Tex2D_DynamicShaderWrite,
+	Tex2D_DefaultRTarget,
+	Tex2D_StagingRead,
+};
+
+HRESULT CreateTex2D(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type, ID3D11Texture2D** ppTexture2D)
+{
+	D3D11_TEXTURE2D_DESC desc;
+	desc.Width      = width;
+	desc.Height     = height;
+	desc.MipLevels  = 1;
+	desc.ArraySize  = 1;
+	desc.Format     = format;
+	desc.SampleDesc = { 1, 0 };
+	desc.MiscFlags  = 0;
+	switch (type) {
+	default:
+	case Tex2D_Default:
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = 0;
+		desc.CPUAccessFlags = 0;
+		break;
+	case Tex2D_DynamicShaderWrite:
+		desc.Usage = D3D11_USAGE_DYNAMIC;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		break;
+	case Tex2D_DefaultRTarget:
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+		desc.CPUAccessFlags = 0;
+		break;
+	case Tex2D_StagingRead:
+		desc.Usage = D3D11_USAGE_STAGING;
+		desc.BindFlags = 0;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	}
+
+	return pDevice->CreateTexture2D(&desc, nullptr, ppTexture2D);
+}
 
 // CDX11VideoProcessor
 
@@ -701,25 +743,12 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 		return hr;
 	}
 
-	D3D11_TEXTURE2D_DESC desc = {};
-	desc.Width = width;
-	desc.Height = height;
-	desc.MipLevels = desc.ArraySize = 1;
-	desc.Format = dxgiFormat;
-	desc.SampleDesc.Count = 1;
-	desc.Usage = D3D11_USAGE_DYNAMIC;
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	desc.MiscFlags = 0;
-	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pSrcTexture2D_CPU);
+	hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWrite, &m_pSrcTexture2D_CPU);
 	if (FAILED(hr)) {
 		return hr;
 	}
 
-	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.BindFlags = 0;
-	desc.CPUAccessFlags = 0;
-	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pSrcTexture2D);
+	hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_Default, &m_pSrcTexture2D);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -732,16 +761,8 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 	}
 
 	{
-		D3D11_TEXTURE2D_DESC desc = {};
-		desc.Width = width;
-		desc.Height = height;
-		desc.MipLevels = desc.ArraySize = 1;
-		desc.Format = dxgiFormat;
-		desc.SampleDesc.Count = 1;
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = D3D11_BIND_RENDER_TARGET;
 		CComPtr<ID3D11Texture2D> pTestTexture2D;
-		hr = m_pDevice->CreateTexture2D(&desc, nullptr, &pTestTexture2D);
+		hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_DefaultRTarget, &pTestTexture2D);
 		if (FAILED(hr)) {
 			return hr;
 		}
@@ -774,34 +795,21 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 
 	HRESULT hr = S_OK;
 
-	D3D11_TEXTURE2D_DESC desc = {};
-	desc.Width = width;
-	desc.Height = height;
-	desc.MipLevels = desc.ArraySize = 1;
-	desc.Format = dxgiFormat;
-	desc.SampleDesc.Count = 1;
-	desc.Usage = D3D11_USAGE_DYNAMIC;
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	desc.MiscFlags = 0;
-	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pSrcTexture2D_CPU);
+	hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWrite, &m_pSrcTexture2D_CPU);
 	if (FAILED(hr)) {
 		return hr;
 	}
 
-	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.BindFlags = 0;
-	desc.CPUAccessFlags = 0;
-	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pSrcTexture2D);
+	hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_Default, &m_pSrcTexture2D);
 	if (FAILED(hr)) {
 		return hr;
 	}
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC ShaderDesc;
-	ShaderDesc.Format = desc.Format;
+	ShaderDesc.Format = dxgiFormat;
 	ShaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	ShaderDesc.Texture2D.MostDetailedMip = desc.MipLevels - 1;
-	ShaderDesc.Texture2D.MipLevels = desc.MipLevels;
+	ShaderDesc.Texture2D.MostDetailedMip = 0; // = Texture2D desc.MipLevels - 1
+	ShaderDesc.Texture2D.MipLevels = 1;       // = Texture2D desc.MipLevels
 	hr = m_pDevice->CreateShaderResourceView(m_pSrcTexture2D_CPU, &ShaderDesc, &m_pShaderResource);
 	if (FAILED(hr)) {
 		return hr;
@@ -1272,18 +1280,8 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	UINT dst_pitch = pBIH->biSizeImage / h;
 
 	HRESULT hr = S_OK;
-
-	D3D11_TEXTURE2D_DESC desc = {};
-	desc.Width = w;
-	desc.Height = h;
-	desc.MipLevels = desc.ArraySize = 1;
-	desc.Format = DXGI_FORMAT_B8G8R8X8_UNORM;
-	desc.SampleDesc.Count = 1;
-	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.BindFlags = D3D11_BIND_RENDER_TARGET;
-
 	CComPtr<ID3D11Texture2D> pRGB32Texture2D;
-	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &pRGB32Texture2D);
+	hr = CreateTex2D(m_pDevice, DXGI_FORMAT_B8G8R8X8_UNORM, w, h, Tex2D_DefaultRTarget, &pRGB32Texture2D);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -1297,12 +1295,8 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 		return hr;
 	}
 
-	desc.Usage = D3D11_USAGE_STAGING;
-	desc.BindFlags = 0;
-	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-
 	CComPtr<ID3D11Texture2D> pRGB32Texture2D_Shared;
-	hr = m_pDevice->CreateTexture2D(&desc, nullptr, &pRGB32Texture2D_Shared);
+	hr = CreateTex2D(m_pDevice, DXGI_FORMAT_B8G8R8X8_UNORM, w, h, Tex2D_StagingRead, &pRGB32Texture2D_Shared);
 	if (FAILED(hr)) {
 		return hr;
 	}

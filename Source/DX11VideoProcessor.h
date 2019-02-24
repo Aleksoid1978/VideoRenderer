@@ -50,6 +50,11 @@ private:
 	HMODULE m_hD3D11Lib = nullptr;
 	CComPtr<ID3D11Device> m_pDevice;
 	CComPtr<ID3D11DeviceContext> m_pDeviceContext;
+
+	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_CPU;
+	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;
+
+	// D3D11 Video Processor
 	CComPtr<ID3D11VideoContext> m_pVideoContext;
 #if VER_PRODUCTBUILD >= 10000
 	CComPtr<ID3D11VideoContext1> m_pVideoContext1;
@@ -57,18 +62,23 @@ private:
 	CComPtr<ID3D11VideoDevice> m_pVideoDevice;
 	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
 	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
-	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_CPU;
-	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;
 	CComPtr<ID3D11VideoProcessorInputView> m_pInputView;
+
+	// D3D11 Shader Video Processor
+	CComPtr<ID3D11VertexShader> m_pVertexShader;
+	CComPtr<ID3D11PixelShader>  m_pPixelShader;
+	CComPtr<ID3D11InputLayout> m_pInputLayout;
+	ID3D11ShaderResourceView* m_pShaderResource = nullptr;
+	ID3D11SamplerState* m_pSamplerLinear = nullptr;
+	struct VERTEX {
+		DirectX::XMFLOAT3 Pos;
+		DirectX::XMFLOAT2 TexCoord;
+	};
+	VERTEX m_Vertices[6] = {};
+	ID3D11Buffer* m_pVertexBuffer = nullptr;
 
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
-
-	//CComPtr<ID3D11Texture2D> m_pSrcTexture2D_RGB;
-	//CComPtr<IDirect3DTexture9> m_pSrcTexture9;
-	//CComPtr<IDirect3DSurface9> m_pSrcSurface9;
-	//HANDLE m_sharedHandle = nullptr;
-	//bool m_bCanUseSharedHandle = true;
 
 	// Input parameters
 	GUID        m_srcSubType = GUID_NULL;
@@ -121,19 +131,6 @@ private:
 	CComPtr<ID2D1RenderTarget>    m_pD2D1RenderTarget;
 	CComPtr<ID2D1SolidColorBrush> m_pD2D1Brush;
 	CComPtr<ID2D1SolidColorBrush> m_pD2D1BrushBlack;
-
-	CComPtr<ID3D11VertexShader> m_pVertexShader;
-	CComPtr<ID3D11PixelShader>  m_pPixelShader;
-	CComPtr<ID3D11InputLayout> m_pInputLayout;
-	ID3D11ShaderResourceView* m_pShaderResource = nullptr;
-	ID3D11SamplerState* m_pSamplerLinear = nullptr;
-
-	struct VERTEX {
-		DirectX::XMFLOAT3 Pos;
-		DirectX::XMFLOAT2 TexCoord;
-	};
-	VERTEX m_Vertices[6] = {};
-	ID3D11Buffer* m_pVertexBuffer = nullptr;
 
 	CRenderStats m_RenderStats;
 
