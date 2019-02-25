@@ -70,12 +70,8 @@ private:
 	CComPtr<ID3D11InputLayout> m_pInputLayout;
 	ID3D11ShaderResourceView* m_pShaderResource = nullptr;
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;
-	struct VERTEX {
-		DirectX::XMFLOAT3 Pos;
-		DirectX::XMFLOAT2 TexCoord;
-	};
-	VERTEX m_Vertices[6] = {};
 	ID3D11Buffer* m_pVertexBuffer = nullptr;
+	ID3D11Buffer* m_pPixelShaderConstants = nullptr;
 
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;

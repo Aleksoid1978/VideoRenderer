@@ -33,6 +33,18 @@
 #include "DX11VideoProcessor.h"
 #include "./Include/ID3DVideoMemoryConfiguration.h"
 
+struct VERTEX {
+	DirectX::XMFLOAT3 Pos;
+	DirectX::XMFLOAT2 TexCoord;
+};
+
+struct PS_COLOR_TRANSFORM {
+	DirectX::XMFLOAT3 cm_r;
+	DirectX::XMFLOAT3 cm_g;
+	DirectX::XMFLOAT3 cm_b;
+	DirectX::XMFLOAT3 cm_c;
+};
+
 enum Tex2DType {
 	Tex2D_Default,
 	Tex2D_DynamicShaderWrite,
@@ -222,6 +234,11 @@ void CDX11VideoProcessor::ReleaseVP()
 		m_pShaderResource = nullptr;
 	}
 
+	if (m_pPixelShaderConstants) {
+		m_pPixelShaderConstants->Release();
+		m_pPixelShaderConstants = nullptr;
+	}
+
 	if (m_pSamplerLinear) {
 		m_pSamplerLinear->Release();
 		m_pSamplerLinear = nullptr;
@@ -407,7 +424,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	if (S_OK == hr2) {
 		m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 	}
-	if (S_OK == GetDataFromResource(data, size, IDF_PSHADER11_SIMPLE)) {
+	if (S_OK == GetDataFromResource(data, size, IDF_PSHADER11_CONVERTCOLOR)) {
 		hr2 = m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPixelShader);
 	}
 
@@ -584,21 +601,21 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		return FALSE;
 	}
 
-	m_srcWidth       = pBIH->biWidth;
-	m_srcHeight      = labs(pBIH->biHeight);
+	UINT biWidth     = pBIH->biWidth;
+	UINT biHeight    = labs(pBIH->biHeight);
 	UINT biSizeImage = pBIH->biSizeImage;
 	if (pBIH->biSizeImage == 0 && pBIH->biCompression == BI_RGB) { // biSizeImage may be zero for BI_RGB bitmaps
-		biSizeImage = m_srcWidth * m_srcHeight * pBIH->biBitCount / 8;
+		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
 	}
 
 	if (m_srcRect.IsRectNull() && m_trgRect.IsRectNull()) {
 		// Hmm
-		m_srcRect.SetRect(0, 0, m_srcWidth, m_srcHeight);
-		m_trgRect.SetRect(0, 0, m_srcWidth, m_srcHeight);
+		m_srcRect.SetRect(0, 0, biWidth, biHeight);
+		m_trgRect.SetRect(0, 0, biWidth, biHeight);
 	}
 
 	m_pConvertFn    = FmtConvParams->Func;
-	m_srcPitch      = biSizeImage * 2 / (m_srcHeight * FmtConvParams->PitchCoeff);
+	m_srcPitch      = biSizeImage * 2 / (biHeight * FmtConvParams->PitchCoeff);
 	if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
 		m_srcPitch = ALIGN(m_srcPitch, 4);
 	}
@@ -610,29 +627,52 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	// D3D11 Video Processor
-	if (1 && FmtConvParams->VP11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeD3D11VP(FmtConvParams->VP11Format, m_srcWidth, m_srcHeight, false)) {
+	if (1 && FmtConvParams->VP11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeD3D11VP(FmtConvParams->VP11Format, biWidth, biHeight, false)) {
 		m_srcSubType = SubType;
 		UpdateStatsStatic();
 		m_inputMT = *pmt;
 		return TRUE;
 	}
 
+	ReleaseVP();
+
 	// Tex Video Processor
-	if (FmtConvParams->DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams->DX11Format, m_srcWidth, m_srcHeight)) {
+	if (FmtConvParams->DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams->DX11Format, biWidth, biHeight)) {
 		mp_csp_params csp_params;
 		set_colorspace(m_srcExFmt, csp_params.color);
-		//csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
-		//csp_params.contrast = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
-		//csp_params.hue = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
-		//csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
-		//csp_params.gray = SubType == MEDIASUBTYPE_Y8 || SubType == MEDIASUBTYPE_Y800 || SubType == MEDIASUBTYPE_Y116;
+		csp_params.gray = FmtConvParams->CSType == CS_GRAY;
 
-		bool bPprocessing = FmtConvParams->CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
+		mp_cmat cmatrix;
+		mp_get_csp_matrix(csp_params, cmatrix);
+		PS_COLOR_TRANSFORM ñbuffer = {
+			{cmatrix.m[0][0], cmatrix.m[0][1], cmatrix.m[0][2]},
+			{cmatrix.m[0][0], cmatrix.m[0][1], cmatrix.m[0][2]},
+			{cmatrix.m[0][0], cmatrix.m[0][1], cmatrix.m[0][2]},
+			{cmatrix.c[0], cmatrix.c[1], cmatrix.c[2]},
+		};
 
-		if (bPprocessing) {
-			//m_iConvertShader = shader_convert_color;
-			//SetShaderConvertColorParams(csp_params);
+		if (SubType == MEDIASUBTYPE_Y410 || SubType == MEDIASUBTYPE_Y416) {
+			std::swap(ñbuffer.cm_r.x, ñbuffer.cm_r.y);
+			std::swap(ñbuffer.cm_g.x, ñbuffer.cm_g.y);
+			std::swap(ñbuffer.cm_b.x, ñbuffer.cm_b.y);
 		}
+
+		if (m_pPixelShaderConstants) {
+			m_pPixelShaderConstants->Release();
+			m_pPixelShaderConstants = nullptr;
+		}
+		D3D11_BUFFER_DESC BufferDesc;
+		ZeroMemory(&BufferDesc, sizeof(BufferDesc));
+		BufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		BufferDesc.ByteWidth = sizeof(ñbuffer);
+		BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		BufferDesc.CPUAccessFlags = 0;
+		D3D11_SUBRESOURCE_DATA InitData = { &ñbuffer, 0, 0 };
+		HRESULT hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pPixelShaderConstants);
+		if (FAILED(hr)) {
+			return FALSE;
+		}
+
 		m_srcSubType = SubType;
 		UpdateStatsStatic();
 		m_inputMT = *pmt;
@@ -857,26 +897,28 @@ HRESULT CDX11VideoProcessor::SetVertices(UINT dstW, UINT dstH)
 	const float dst_t = dst_dy * m_videoRect.top    - 1.0f;
 	const float dst_b = dst_dy * m_videoRect.bottom - 1.0f;
 
-	// Vertices for drawing whole texture
-	// |\
-	// |_\ lower left triangle
-	m_Vertices[0] = { DirectX::XMFLOAT3(dst_l, dst_t, 0), DirectX::XMFLOAT2(src_l, src_b) };
-	m_Vertices[1] = { DirectX::XMFLOAT3(dst_l, dst_b, 0), DirectX::XMFLOAT2(src_l, src_t) };
-	m_Vertices[2] = { DirectX::XMFLOAT3(dst_r, dst_t, 0), DirectX::XMFLOAT2(src_r, src_b) };
-	// ___
-	// \ |
-	//  \| upper right triangle
-	m_Vertices[3] = { DirectX::XMFLOAT3(dst_r, dst_t, 0), DirectX::XMFLOAT2(src_r, src_b) };
-	m_Vertices[4] = { DirectX::XMFLOAT3(dst_l, dst_b, 0), DirectX::XMFLOAT2(src_l, src_t) };
-	m_Vertices[5] = { DirectX::XMFLOAT3(dst_r, dst_b, 0), DirectX::XMFLOAT2(src_r, src_t) };
+	VERTEX Vertices[6] = {
+		// Vertices for drawing whole texture
+		// |\
+		// |_\ lower left triangle
+		{ DirectX::XMFLOAT3(dst_l, dst_t, 0), DirectX::XMFLOAT2(src_l, src_b) },
+		{ DirectX::XMFLOAT3(dst_l, dst_b, 0), DirectX::XMFLOAT2(src_l, src_t) },
+		{ DirectX::XMFLOAT3(dst_r, dst_t, 0), DirectX::XMFLOAT2(src_r, src_b) },
+		// ___
+		// \ |
+		//  \| upper right triangle
+		{ DirectX::XMFLOAT3(dst_r, dst_t, 0), DirectX::XMFLOAT2(src_r, src_b) },
+		{ DirectX::XMFLOAT3(dst_l, dst_b, 0), DirectX::XMFLOAT2(src_l, src_t) },
+		{ DirectX::XMFLOAT3(dst_r, dst_b, 0), DirectX::XMFLOAT2(src_r, src_t) },
+	};
 
 	D3D11_BUFFER_DESC BufferDesc;
 	ZeroMemory(&BufferDesc, sizeof(BufferDesc));
 	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	BufferDesc.ByteWidth = sizeof(m_Vertices);
+	BufferDesc.ByteWidth = sizeof(Vertices);
 	BufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	BufferDesc.CPUAccessFlags = 0;
-	D3D11_SUBRESOURCE_DATA InitData = { m_Vertices, 0, 0 };
+	D3D11_SUBRESOURCE_DATA InitData = { Vertices, 0, 0 };
 
 	if (m_pVertexBuffer) {
 		m_pVertexBuffer->Release();
@@ -1226,11 +1268,12 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
 	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pShaderResource);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
+	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pPixelShaderConstants);
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &Stride, &Offset);
 
 	// Draw textured quad onto render target
-	m_pDeviceContext->Draw(std::size(m_Vertices), 0);
+	m_pDeviceContext->Draw(6, 0);
 
 	return S_OK;
 }

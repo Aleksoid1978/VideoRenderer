@@ -19,6 +19,7 @@
 #define IDF_SHADER_TEST                 790
 #define IDF_VSHADER11_SIMPLE            800
 #define IDF_PSHADER11_SIMPLE            801
+#define IDF_PSHADER11_CONVERTCOLOR      802
 #define IDC_STATIC1                     1001
 #define IDC_CHECK1                      1002
 #define IDC_CHECK2                      1003
