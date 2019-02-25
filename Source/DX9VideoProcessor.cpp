@@ -984,6 +984,8 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		return TRUE;
 	}
 
+	ReleaseVP();
+
 	// Tex Video Processor
 	if (FmtConvParams->D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams->D3DFormat, biWidth, biHeight)) {
 		mp_csp_params csp_params;
