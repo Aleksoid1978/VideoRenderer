@@ -646,8 +646,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		mp_get_csp_matrix(csp_params, cmatrix);
 		PS_COLOR_TRANSFORM ñbuffer = {
 			{cmatrix.m[0][0], cmatrix.m[0][1], cmatrix.m[0][2]},
-			{cmatrix.m[0][0], cmatrix.m[0][1], cmatrix.m[0][2]},
-			{cmatrix.m[0][0], cmatrix.m[0][1], cmatrix.m[0][2]},
+			{cmatrix.m[1][0], cmatrix.m[1][1], cmatrix.m[1][2]},
+			{cmatrix.m[2][0], cmatrix.m[2][1], cmatrix.m[2][2]},
 			{cmatrix.c[0], cmatrix.c[1], cmatrix.c[2]},
 		};
 
