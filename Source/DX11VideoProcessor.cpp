@@ -39,10 +39,10 @@ struct VERTEX {
 };
 
 struct PS_COLOR_TRANSFORM {
-	DirectX::XMFLOAT3 cm_r;
-	DirectX::XMFLOAT3 cm_g;
-	DirectX::XMFLOAT3 cm_b;
-	DirectX::XMFLOAT3 cm_c;
+	DirectX::XMFLOAT4 cm_r;
+	DirectX::XMFLOAT4 cm_g;
+	DirectX::XMFLOAT4 cm_b;
+	DirectX::XMFLOAT4 cm_c;
 };
 
 enum Tex2DType {
@@ -645,10 +645,10 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		mp_cmat cmatrix;
 		mp_get_csp_matrix(csp_params, cmatrix);
 		PS_COLOR_TRANSFORM ñbuffer = {
-			{cmatrix.m[0][0], cmatrix.m[0][1], cmatrix.m[0][2]},
-			{cmatrix.m[1][0], cmatrix.m[1][1], cmatrix.m[1][2]},
-			{cmatrix.m[2][0], cmatrix.m[2][1], cmatrix.m[2][2]},
-			{cmatrix.c[0], cmatrix.c[1], cmatrix.c[2]},
+			{cmatrix.m[0][0], cmatrix.m[0][1], cmatrix.m[0][2], 0},
+			{cmatrix.m[1][0], cmatrix.m[1][1], cmatrix.m[1][2], 0},
+			{cmatrix.m[2][0], cmatrix.m[2][1], cmatrix.m[2][2], 0},
+			{cmatrix.c[0], cmatrix.c[1], cmatrix.c[2], 0},
 		};
 
 		if (SubType == MEDIASUBTYPE_Y410 || SubType == MEDIASUBTYPE_Y416) {

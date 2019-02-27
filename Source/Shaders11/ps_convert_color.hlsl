@@ -7,6 +7,7 @@ cbuffer PS_COLOR_TRANSFORM : register(b0)
     float3 cm_g;
     float3 cm_b;
     float3 cm_c;
+	// NB: sizeof(float3) == sizeof(float4)
 };
 
 struct PS_INPUT
