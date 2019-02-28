@@ -95,6 +95,9 @@
     <ClInclude Include="renbase2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="StatsDrawing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MpcVideoRenderer.rc">

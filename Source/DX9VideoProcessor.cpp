@@ -28,9 +28,6 @@
 #include "VideoRenderer.h"
 #include "DX9VideoProcessor.h"
 
-#define STATS_W 450
-#define STATS_H 200
-
 #pragma pack(push, 1)
 template<unsigned texcoords>
 struct MYD3DVERTEX {
@@ -211,9 +208,6 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
 		m_pD3DEx.Release();
 	}
 
-	// GDI+ handling
-	Gdiplus::GdiplusStartup(&m_gdiplusToken, &m_gdiplusStartupInput, nullptr);
-
 	// set default ProcAmp ranges and values
 	m_DXVA2ProcValueRange[0] = {DXVA2FloatToFixed(-100), DXVA2FloatToFixed(100), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)};
 	m_DXVA2ProcValueRange[1] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f)};
@@ -239,9 +233,6 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	if (m_hD3D9Lib) {
 		FreeLibrary(m_hD3D9Lib);
 	}
-
-	// GDI+ handling
-	Gdiplus::GdiplusShutdown(m_gdiplusToken);
 }
 
 HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* pChangeDevice)
@@ -1653,31 +1644,9 @@ HRESULT CDX9VideoProcessor::DrawStats()
 
 	HDC hdc;
 	if (S_OK == m_pMemOSDSurface->GetDC(&hdc)) {
-		using namespace Gdiplus;
-
-		Graphics   graphics(hdc);
-		FontFamily fontFamily(L"Consolas");
-		Font       font(&fontFamily, 20, FontStyleRegular, UnitPixel);
-		PointF     pointF(5.0f, 5.0f);
-		SolidBrush solidBrush(Color(255, 255, 255));
-
-		Status status = Gdiplus::Ok;
-
-		status = graphics.Clear(Color(192, 0, 0, 0));
-		status = graphics.DrawString(str, -1, &font, pointF, &solidBrush);
-
-		Pen pen(Color(128,255,128), 5);
-		static int col = STATS_W;
-		if (--col < 0) {
-			col = STATS_W;
-		}
-		graphics.DrawLine(&pen, col, STATS_H-11, col, STATS_H-1);
-
-		graphics.Flush();
-
+		m_StatsDrawing.DrawTextW(hdc, str);
 		m_pMemOSDSurface->ReleaseDC(hdc);
 	}
-	
 
 	CComPtr<IDirect3DSurface9> pOSDSurface;
 	HRESULT hr = m_pOSDTexture->GetSurfaceLevel(0, &pOSDSurface);

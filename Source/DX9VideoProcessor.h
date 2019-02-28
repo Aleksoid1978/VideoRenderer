@@ -21,11 +21,11 @@
 #pragma once
 
 #include <atltypes.h>
-#include <gdiplus.h>
 #include <evr9.h> // for IMFVideoProcessor
 #include "IVideoRenderer.h"
 #include "Helper.h"
 #include "FrameStats.h"
+#include "StatsDrawing.h"
 #include "resource.h"
 
 struct VideoSurface {
@@ -211,10 +211,7 @@ private:
 
 	CRenderStats m_RenderStats;
 
-	// GDI+ handling
-	ULONG_PTR m_gdiplusToken;
-	Gdiplus::GdiplusStartupInput m_gdiplusStartupInput;
-
+	CStatsDrawing m_StatsDrawing;
 	CStringW m_strStatsStatic;
 	double m_DetectedRefreshRate = 0.0;
 	CCritSec m_RefreshRateLock;

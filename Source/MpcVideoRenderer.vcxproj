@@ -93,6 +93,7 @@
     <ClInclude Include="PropPage.h" />
     <ClInclude Include="renbase2.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="StatsDrawing.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Time.h" />
     <ClInclude Include="VideoRenderer.h" />
