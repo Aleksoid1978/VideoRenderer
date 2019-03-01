@@ -53,6 +53,7 @@
 #define DLogError(...) __noop
 #endif
 
+#define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p) = nullptr; } }
 #define SAFE_CLOSE_HANDLE(p) { if (p) { if ((p) != INVALID_HANDLE_VALUE) ASSERT(CloseHandle(p)); (p) = nullptr; } }
 
 #define ALIGN(x, a) (((x)+(a)-1)&~((a)-1))

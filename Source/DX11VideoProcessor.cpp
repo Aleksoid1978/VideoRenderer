@@ -229,25 +229,10 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_pSrcTexture2D_CPU.Release();
 	m_pSrcTexture2D.Release();
 
-	if (m_pShaderResource) {
-		m_pShaderResource->Release();
-		m_pShaderResource = nullptr;
-	}
-
-	if (m_pPixelShaderConstants) {
-		m_pPixelShaderConstants->Release();
-		m_pPixelShaderConstants = nullptr;
-	}
-
-	if (m_pSamplerLinear) {
-		m_pSamplerLinear->Release();
-		m_pSamplerLinear = nullptr;
-	}
-
-	if (m_pVertexBuffer) {
-		m_pVertexBuffer->Release();
-		m_pVertexBuffer = nullptr;
-	}
+	SAFE_RELEASE(m_pShaderResource);
+	SAFE_RELEASE(m_pPixelShaderConstants);
+	SAFE_RELEASE(m_pSamplerLinear);
+	SAFE_RELEASE(m_pVertexBuffer);
 
 	m_pInputView.Release();
 	m_pVideoProcessor.Release();
@@ -657,10 +642,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			std::swap(ñbuffer.cm_b.x, ñbuffer.cm_b.y);
 		}
 
-		if (m_pPixelShaderConstants) {
-			m_pPixelShaderConstants->Release();
-			m_pPixelShaderConstants = nullptr;
-		}
+		SAFE_RELEASE(m_pPixelShaderConstants);
 		D3D11_BUFFER_DESC BufferDesc;
 		ZeroMemory(&BufferDesc, sizeof(BufferDesc));
 		BufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -920,11 +902,7 @@ HRESULT CDX11VideoProcessor::SetVertices(UINT dstW, UINT dstH)
 	BufferDesc.CPUAccessFlags = 0;
 	D3D11_SUBRESOURCE_DATA InitData = { Vertices, 0, 0 };
 
-	if (m_pVertexBuffer) {
-		m_pVertexBuffer->Release();
-		m_pVertexBuffer = nullptr;
-	}
-	// Create vertex buffer
+	SAFE_RELEASE(m_pVertexBuffer);
 	HRESULT hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pVertexBuffer);
 	if (FAILED(hr)) {
 		m_pShaderResource->Release();
