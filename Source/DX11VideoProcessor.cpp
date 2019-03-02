@@ -222,7 +222,6 @@ void CDX11VideoProcessor::ReleaseVP()
 	SAFE_RELEASE(m_pPixelShaderConstants);
 	SAFE_RELEASE(m_pSamplerLinear);
 	SAFE_RELEASE(m_pVertexBuffer);
-	SAFE_RELEASE(m_pOSDVertexBuffer);
 
 	m_pInputView.Release();
 	m_pVideoProcessor.Release();
@@ -249,7 +248,9 @@ void CDX11VideoProcessor::ReleaseDevice()
 
 	m_pInputLayout.Release();
 	m_pVS_Simple.Release();
+	m_pPS_Simple.Release();
 	SAFE_RELEASE(m_pSamplerPoint);
+	SAFE_RELEASE(m_pOSDVertexBuffer);
 
 	m_pDeviceContext.Release();
 	m_pDevice.Release();
@@ -750,6 +751,10 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 		m_srcHeight     = height;
 	}
 
+	if (!m_windowRect.IsRectEmpty()) {
+		SetVertices(m_windowRect.Width(), m_windowRect.Height());
+	}
+
 	DLog(L"CDX11VideoProcessor::InitializeD3D11VP completed successfully");
 
 	return S_OK;
@@ -801,6 +806,12 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 	m_srcDXGIFormat = dxgiFormat;
 	m_srcWidth      = width;
 	m_srcHeight     = height;
+
+	if (!m_windowRect.IsRectEmpty()) {
+		SetVertices(m_windowRect.Width(), m_windowRect.Height());
+	}
+
+	DLog(L"CDX11VideoProcessor::InitializeTexVP completed successfully");
 
 	return S_OK;
 }
