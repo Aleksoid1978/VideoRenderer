@@ -1,5 +1,7 @@
 // based on globPixelShaderDefault from code of VLC
 
+#define LEGACY_SHADER_MODE 1
+
 cbuffer PS_CONSTANT_BUFFER : register(b0)
 {
   float Opacity;
@@ -13,8 +15,11 @@ cbuffer PS_COLOR_TRANSFORM : register(b1)
   float4x4 Colorspace;
   float4x4 Primaries;
 };
-Texture2D shaderTexture[4]; // legacy shader mode
-//Texture2DArray shaderTexture[4];
+#if LEGACY_SHADER_MODE
+  Texture2D shaderTexture[4];
+#else
+  Texture2DArray shaderTexture[4];
+#endif
 SamplerState SamplerStates[2];
 
 struct PS_INPUT
@@ -64,7 +69,11 @@ inline float4 adjustRange(float4 rgb) {
 
 inline float4 sampleTexture(SamplerState samplerState, float3 coords) {
     float4 sample;
+#if LEGACY_SHADER_MODE
+    sample = shaderTexture[0].Sample(samplerState, coords.xy); /* sampling routine in sample */
+#else
     sample = shaderTexture[0].Sample(samplerState, coords); /* sampling routine in sample */
+#endif
     return sample;
 }
 
