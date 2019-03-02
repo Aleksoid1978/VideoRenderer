@@ -110,9 +110,6 @@
   <ItemGroup>
     <ResourceCompile Include="MpcVideoRenderer.rc" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="res\MpcVideoRenderer.rc2" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

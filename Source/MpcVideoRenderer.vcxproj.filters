@@ -104,9 +104,4 @@
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="res\MpcVideoRenderer.rc2">
-      <Filter>Resource Files</Filter>
-    </None>
-  </ItemGroup>
 </Project>
