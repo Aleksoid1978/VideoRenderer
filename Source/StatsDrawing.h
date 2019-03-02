@@ -22,6 +22,8 @@
 
 #include <gdiplus.h>
 
+#define STATS_X  10
+#define STATS_Y  10
 #define STATS_W 450
 #define STATS_H 200
 

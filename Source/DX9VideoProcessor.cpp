@@ -1654,7 +1654,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 			hr = m_pD3DDevEx->UpdateSurface(m_pMemOSDSurface, nullptr, pOSDSurface, nullptr);
 		}
 
-		hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(10, 10, STATS_W + 10, STATS_H + 10), m_pOSDTexture);
+		hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H), m_pOSDTexture);
 	}
 
 	return hr;

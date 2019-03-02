@@ -1351,8 +1351,8 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			VP.Height   = STATS_H;
 			VP.MinDepth = 0.0f;
 			VP.MaxDepth = 1.0f;
-			VP.TopLeftX = 0;
-			VP.TopLeftY = 0;
+			VP.TopLeftX = STATS_X;
+			VP.TopLeftY = STATS_Y;
 			m_pDeviceContext->RSSetViewports(1, &VP);
 
 			D3D11_SHADER_RESOURCE_VIEW_DESC ShaderDesc;
