@@ -222,6 +222,7 @@ void CDX11VideoProcessor::ReleaseVP()
 	SAFE_RELEASE(m_pPixelShaderConstants);
 	SAFE_RELEASE(m_pSamplerLinear);
 	SAFE_RELEASE(m_pVertexBuffer);
+	SAFE_RELEASE(m_pOSDVertexBuffer);
 
 	m_pInputView.Release();
 	m_pVideoProcessor.Release();
@@ -853,6 +854,18 @@ HRESULT CDX11VideoProcessor::SetVertices(UINT dstW, UINT dstH)
 		return hr;
 	}
 
+	// lower left triangle
+	Vertices[0] = { DirectX::XMFLOAT3(-1, -1, 0), DirectX::XMFLOAT2(0, 1) };
+	Vertices[1] = { DirectX::XMFLOAT3(-1, +1, 0), DirectX::XMFLOAT2(0, 0) };
+	Vertices[2] = { DirectX::XMFLOAT3(+1, -1, 0), DirectX::XMFLOAT2(1, 1) };
+	// upper right triangle
+	Vertices[3] = { DirectX::XMFLOAT3(+1, -1, 0), DirectX::XMFLOAT2(1, 1) };
+	Vertices[4] = { DirectX::XMFLOAT3(-1, +1, 0), DirectX::XMFLOAT2(0, 0) };
+	Vertices[5] = { DirectX::XMFLOAT3(+1, +1, 0), DirectX::XMFLOAT2(1, 0) };
+
+	SAFE_RELEASE(m_pOSDVertexBuffer);
+	hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pOSDVertexBuffer);
+
 	return S_OK;
 }
 
@@ -1388,7 +1401,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
 			m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
 			m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &Stride, &Offset);
+			m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pOSDVertexBuffer, &Stride, &Offset);
 
 			// Draw textured quad onto render target
 			m_pDeviceContext->Draw(6, 0);

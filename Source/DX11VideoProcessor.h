@@ -124,6 +124,7 @@ private:
 	CString m_strAdapterDescription;
 
 	CComPtr<ID3D11Texture2D> m_pOSDTex2D;
+	ID3D11Buffer* m_pOSDVertexBuffer = nullptr;
 
 	CRenderStats m_RenderStats;
 
