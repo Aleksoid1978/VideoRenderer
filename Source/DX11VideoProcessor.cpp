@@ -1366,11 +1366,22 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 				return hr;
 			}
 
+			CComPtr<ID3D11BlendState> pBlendState;
+			D3D11_BLEND_DESC bdesc = {};
+			bdesc.RenderTarget[0].BlendEnable = TRUE;
+			bdesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+			bdesc.RenderTarget[0].DestBlend = D3D11_BLEND_SRC_ALPHA;
+			bdesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+			bdesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+			bdesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+			bdesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+			bdesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+			hr = m_pDevice->CreateBlendState(&bdesc, &pBlendState);
+
 			// Set resources
 			UINT Stride = sizeof(VERTEX);
 			UINT Offset = 0;
-			FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
-			m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
+			m_pDeviceContext->OMSetBlendState(pBlendState, nullptr, 0xffffffff);
 			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
