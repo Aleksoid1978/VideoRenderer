@@ -1643,18 +1643,19 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	//}
 
 	HDC hdc;
-	if (S_OK == m_pMemOSDSurface->GetDC(&hdc)) {
+	HRESULT hr = m_pMemOSDSurface->GetDC(&hdc);
+	if (S_OK == hr) {
 		m_StatsDrawing.DrawTextW(hdc, str);
 		m_pMemOSDSurface->ReleaseDC(hdc);
-	}
 
-	CComPtr<IDirect3DSurface9> pOSDSurface;
-	HRESULT hr = m_pOSDTexture->GetSurfaceLevel(0, &pOSDSurface);
-	if (S_OK == hr) {
-		hr = m_pD3DDevEx->UpdateSurface(m_pMemOSDSurface, nullptr, pOSDSurface, nullptr);
-	}
+		CComPtr<IDirect3DSurface9> pOSDSurface;
+		hr = m_pOSDTexture->GetSurfaceLevel(0, &pOSDSurface);
+		if (S_OK == hr) {
+			hr = m_pD3DDevEx->UpdateSurface(m_pMemOSDSurface, nullptr, pOSDSurface, nullptr);
+		}
 
-	hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(10, 10, STATS_W + 10, STATS_H + 10), m_pOSDTexture);
+		hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(10, 10, STATS_W + 10, STATS_H + 10), m_pOSDTexture);
+	}
 
 	return hr;
 }

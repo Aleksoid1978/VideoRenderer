@@ -65,5 +65,4 @@ public:
 
 		graphics.Flush();
 	}
-
 };

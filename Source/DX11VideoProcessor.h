@@ -34,6 +34,7 @@
 #include "IVideoRenderer.h"
 #include "Helper.h"
 #include "FrameStats.h"
+#include "StatsDrawing.h"
 
 class CMpcVideoRenderer;
 
@@ -50,6 +51,10 @@ private:
 	HMODULE m_hD3D11Lib = nullptr;
 	CComPtr<ID3D11Device> m_pDevice;
 	CComPtr<ID3D11DeviceContext> m_pDeviceContext;
+	ID3D11SamplerState* m_pSamplerPoint = nullptr;
+	CComPtr<ID3D11VertexShader> m_pVS_Simple;
+	CComPtr<ID3D11PixelShader>  m_pPS_Simple;
+	CComPtr<ID3D11InputLayout>  m_pInputLayout;
 
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_CPU;
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;
@@ -65,9 +70,7 @@ private:
 	CComPtr<ID3D11VideoProcessorInputView> m_pInputView;
 
 	// D3D11 Shader Video Processor
-	CComPtr<ID3D11VertexShader> m_pVertexShader;
-	CComPtr<ID3D11PixelShader>  m_pPixelShader;
-	CComPtr<ID3D11InputLayout> m_pInputLayout;
+	CComPtr<ID3D11PixelShader> m_pPS_ConvertColor;
 	ID3D11ShaderResourceView* m_pShaderResource = nullptr;
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;
 	ID3D11Buffer* m_pVertexBuffer = nullptr;
@@ -120,16 +123,11 @@ private:
 	DWORD m_VendorId = 0;
 	CString m_strAdapterDescription;
 
-	CComPtr<IDWriteFactory> m_pDWriteFactory;
-	CComPtr<IDWriteTextFormat> m_pTextFormat;
-
-	CComPtr<ID2D1Factory>         m_pD2D1Factory;
-	CComPtr<ID2D1RenderTarget>    m_pD2D1RenderTarget;
-	CComPtr<ID2D1SolidColorBrush> m_pD2D1Brush;
-	CComPtr<ID2D1SolidColorBrush> m_pD2D1BrushBlack;
+	CComPtr<ID3D11Texture2D> m_pOSDTex2D;
 
 	CRenderStats m_RenderStats;
 
+	CStatsDrawing m_StatsDrawing;
 	CStringW m_strStatsStatic;
 
 	bool resetmt = false;
@@ -143,7 +141,6 @@ public:
 private:
 	void ReleaseVP();
 	void ReleaseDevice();
-	void ReleaseD2D1RenderTarget();
 
 	HRESULT GetDataFromResource(LPVOID& data, DWORD& size, UINT resid);
 
@@ -187,7 +184,7 @@ private:
 	HRESULT ProcessD3D11(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const RECT* pWndRect, const bool second);
 	HRESULT ProcessTex(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const RECT* pWndRect);
 	void UpdateStatsStatic();
-	HRESULT DrawStats();
+	HRESULT DrawStats(ID3D11Texture2D* pRenderTarget);
 
 public:
 	// IUnknown
