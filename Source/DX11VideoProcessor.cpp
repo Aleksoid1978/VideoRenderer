@@ -191,22 +191,6 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 	}
 #endif
 
-	{
-		D3D11_TEXTURE2D_DESC desc = {};
-		desc.Width = STATS_W;
-		desc.Height = STATS_H;
-		desc.ArraySize = 1;
-		desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-		desc.MipLevels = 1;
-		desc.SampleDesc.Count = 1;
-		desc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
-
-		HRESULT hr2 = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pOSDTex2D);
-		ASSERT(S_OK == hr2);
-	}
-
 	return hr;
 }
 
@@ -407,6 +391,23 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		DLog(output);
 	}
 #endif
+
+	{
+		D3D11_TEXTURE2D_DESC desc = {};
+		desc.Width = STATS_W;
+		desc.Height = STATS_H;
+		desc.ArraySize = 1;
+		desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+		desc.MipLevels = 1;
+		desc.SampleDesc.Count = 1;
+		desc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
+
+		m_pOSDTex2D.Release();
+		HRESULT hr2 = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pOSDTex2D);
+		ASSERT(S_OK == hr2);
+	}
 
 	return hr;
 }
@@ -1371,7 +1372,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			pDxgiSurface1->ReleaseDC(0);
 
 
-			ID3D11RenderTargetView* pRenderTargetView;
+			ID3D11RenderTargetView* pRenderTargetView = nullptr;
 			hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
 			if (FAILED(hr)) {
 				return hr;
@@ -1389,7 +1390,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			VP.TopLeftY = STATS_Y;
 			m_pDeviceContext->RSSetViewports(1, &VP);
 
-			D3D11_SHADER_RESOURCE_VIEW_DESC ShaderDesc;
+			D3D11_SHADER_RESOURCE_VIEW_DESC ShaderDesc = {};
 			ShaderDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 			ShaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 			ShaderDesc.Texture2D.MostDetailedMip = 0; // = Texture2D desc.MipLevels - 1
@@ -1397,10 +1398,10 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			ID3D11ShaderResourceView* pShaderResource = nullptr;
 			hr = m_pDevice->CreateShaderResourceView(m_pOSDTex2D, &ShaderDesc, &pShaderResource);
 			if (FAILED(hr)) {
+				pRenderTargetView->Release();
 				return hr;
 			}
 
-			CComPtr<ID3D11BlendState> pBlendState;
 			D3D11_BLEND_DESC bdesc = {};
 			bdesc.RenderTarget[0].BlendEnable = TRUE;
 			bdesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
@@ -1410,6 +1411,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			bdesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
 			bdesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 			bdesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+			CComPtr<ID3D11BlendState> pBlendState;
 			hr = m_pDevice->CreateBlendState(&bdesc, &pBlendState);
 
 			// Set resources
@@ -1426,6 +1428,9 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 
 			// Draw textured quad onto render target
 			m_pDeviceContext->Draw(6, 0);
+
+			pShaderResource->Release();
+			pRenderTargetView->Release();
 		}
 	}
 
