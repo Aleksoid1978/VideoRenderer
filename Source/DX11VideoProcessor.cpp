@@ -727,21 +727,31 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 		return hr;
 	}
 
+#ifdef _DEBUG
 	{
-		CComPtr<ID3D11Texture2D> pTestTexture2D;
-		hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_DefaultRTarget, &pTestTexture2D);
-		if (FAILED(hr)) {
-			return hr;
-		}
+		const DXGI_FORMAT output_formats[] = {
+			DXGI_FORMAT_B8G8R8X8_UNORM,
+			DXGI_FORMAT_B8G8R8A8_UNORM,
+			DXGI_FORMAT_R8G8B8A8_UNORM,
+			DXGI_FORMAT_R10G10B10A2_UNORM,
+			DXGI_FORMAT_R16G16B16A16_FLOAT,
+		};
+		HRESULT hr2 = S_OK;
 
-		D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc = {};
-		OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
-		CComPtr<ID3D11VideoProcessorOutputView> pTestOutputView;
-		HRESULT hr = m_pVideoDevice->CreateVideoProcessorOutputView(pTestTexture2D, m_pVideoProcessorEnum, &OutputViewDesc, &pTestOutputView);
-		if (FAILED(hr)) {
-			return hr;
+		for (const auto& fmt : output_formats) {
+			CComPtr<ID3D11Texture2D> pTestTexture2D;
+			hr2 = CreateTex2D(m_pDevice, fmt, width, height, Tex2D_DefaultRTarget, &pTestTexture2D);
+			if (S_OK == hr2) {
+				D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc = {};
+				OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
+				CComPtr<ID3D11VideoProcessorOutputView> pTestOutputView;
+				hr2 = m_pVideoDevice->CreateVideoProcessorOutputView(pTestTexture2D, m_pVideoProcessorEnum, &OutputViewDesc, &pTestOutputView);
+			}
+
+			DLog(L"VideoProcessorOutputView with %s format is %", DXGIFormatToString(fmt), S_OK == hr2 ? L"OK" : L"FAILED");
 		}
 	}
+#endif
 
 	m_TextureWidth  = width;
 	m_TextureHeight = height;
