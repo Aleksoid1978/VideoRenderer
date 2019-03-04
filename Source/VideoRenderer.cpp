@@ -191,7 +191,9 @@ HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 		Ready();
 	}
 
-	DoRenderSample(m_pMediaSample);
+	if (m_State == State_Paused) {
+		DoRenderSample(m_pMediaSample);
+	}
 
 	// Having set an advise link with the clock we sit and wait. We may be
 	// awoken by the clock firing or by a state change. The rendering call
@@ -221,6 +223,9 @@ HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 
 	// Deal with this sample
 
+	if (m_State == State_Running) {
+		Render(m_pMediaSample);
+	}
 	ClearPendingSample();
 	SendEndOfStream();
 	CancelNotification();
