@@ -92,6 +92,7 @@ public:
 	HRESULT CheckMediaType(const CMediaType *pmt) override;
 	HRESULT SetMediaType(const CMediaType *pmt) override;
 	HRESULT DoRenderSample(IMediaSample* pSample) override;
+	HRESULT Receive(IMediaSample* pMediaSample) override;
 
 	DECLARE_IUNKNOWN
 	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv);

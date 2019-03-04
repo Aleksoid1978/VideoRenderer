@@ -158,6 +158,75 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	return hr;
 }
 
+HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
+{
+	ASSERT(pSample);
+
+	// It may return VFW_E_SAMPLE_REJECTED code to say don't bother
+
+	HRESULT hr = PrepareReceive(pSample);
+	ASSERT(m_bInReceive == SUCCEEDED(hr));
+	if (FAILED(hr)) {
+		if (hr == VFW_E_SAMPLE_REJECTED) {
+			return NOERROR;
+		}
+		return hr;
+	}
+
+	// We realize the palette in "PrepareRender()" so we have to give away the
+	// filter lock here.
+	if (m_State == State_Paused) {
+		// no need to use InterlockedExchange
+		m_bInReceive = FALSE;
+		{
+			// We must hold both these locks
+			CAutoLock cRendererLock(&m_InterfaceLock);
+			if (m_State == State_Stopped)
+				return NOERROR;
+
+			m_bInReceive = TRUE;
+			CAutoLock cSampleLock(&m_RendererLock);
+			OnReceiveFirstSample(pSample);
+		}
+		Ready();
+	}
+
+	DoRenderSample(m_pMediaSample);
+
+	// Having set an advise link with the clock we sit and wait. We may be
+	// awoken by the clock firing or by a state change. The rendering call
+	// will lock the critical section and check we can still render the data
+
+	hr = WaitForRenderTime();
+	if (FAILED(hr)) {
+		m_bInReceive = FALSE;
+		return NOERROR;
+	}
+
+	//  Set this here and poll it until we work out the locking correctly
+	//  It can't be right that the streaming stuff grabs the interface
+	//  lock - after all we want to be able to wait for this stuff
+	//  to complete
+	m_bInReceive = FALSE;
+
+	// We must hold both these locks
+	CAutoLock cRendererLock(&m_InterfaceLock);
+
+	// since we gave away the filter wide lock, the sate of the filter could
+	// have chnaged to Stopped
+	if (m_State == State_Stopped)
+		return NOERROR;
+
+	CAutoLock cSampleLock(&m_RendererLock);
+
+	// Deal with this sample
+
+	ClearPendingSample();
+	SendEndOfStream();
+	CancelNotification();
+	return NOERROR;
+}
+
 STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** ppv)
 {
 	CheckPointer(ppv, E_POINTER);
