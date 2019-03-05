@@ -68,17 +68,19 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 	}
 
-	*phr = m_DX9_VP.Init(m_hWnd, m_iOptionSurfaceFmt, nullptr);
-	if (FAILED(*phr)) {
-		return;
-	}
-
 	m_bUsedD3D11 = m_bOptionUseD3D11 && IsWindows8OrGreater();
 	if (m_bUsedD3D11) {
-		if (FAILED(m_DX11_VP.Init(m_iOptionSurfaceFmt))) {
-			m_bUsedD3D11 = false;
+		*phr = m_DX11_VP.Init(m_iOptionSurfaceFmt);
+		if (S_OK == *phr) {
+			DLog(L"Direct3D11 initialization failed!");
+			return;
 		}
+		m_bUsedD3D11 = false;
 	}
+
+	*phr = m_DX9_VP.Init(m_hWnd, m_iOptionSurfaceFmt, nullptr);
+
+	return;
 }
 
 CMpcVideoRenderer::~CMpcVideoRenderer()

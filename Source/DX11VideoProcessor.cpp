@@ -109,6 +109,7 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 
 HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 {
+	DLog(L"CDX11VideoProcessor::Init()");
 	if (!m_hD3D11Lib) {
 		m_hD3D11Lib = LoadLibraryW(L"d3d11.dll");
 	}
@@ -151,7 +152,7 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 	D3D_FEATURE_LEVEL featurelevel;
 
 	ID3D11Device *pDevice = nullptr;
-	ID3D11DeviceContext *pImmediateContext = nullptr;
+	ID3D11DeviceContext *pDeviceContext = nullptr;
 
 	HRESULT hr = pfnD3D11CreateDevice(
 		nullptr,
@@ -167,12 +168,12 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 		D3D11_SDK_VERSION,
 		&pDevice,
 		&featurelevel,
-		&pImmediateContext);
+		&pDeviceContext);
 	if (FAILED(hr)) {
 		return hr;
 	}
 
-	hr = SetDevice(pDevice, pImmediateContext);
+	hr = SetDevice(pDevice, pDeviceContext);
 
 #if 0
 	DWM_TIMING_INFO timinginfo = { sizeof(DWM_TIMING_INFO) };
