@@ -72,7 +72,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	if (m_bUsedD3D11) {
 		*phr = m_DX11_VP.Init(m_iOptionSurfaceFmt);
 		if (S_OK == *phr) {
-			DLog(L"Direct3D11 initialization failed!");
+			DLog(L"Direct3D11 initialization successfully!");
 			return;
 		}
 		m_bUsedD3D11 = false;
@@ -524,15 +524,19 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 {
 	if (m_hWnd != (HWND)Owner) {
 		m_hWnd = (HWND)Owner;
-		bool bChangeDevice = false;
-		HRESULT hr = m_DX9_VP.Init(m_hWnd, m_iOptionSurfaceFmt, &bChangeDevice);
-		if (S_OK == hr && m_bUsedD3D11) {
+		HRESULT hr;
+
+		if (m_bUsedD3D11) {
 			hr = m_DX11_VP.InitSwapChain(m_hWnd);
+		} else {
+			bool bChangeDevice = false;
+			hr = m_DX9_VP.Init(m_hWnd, m_iOptionSurfaceFmt, &bChangeDevice);
+
+			if (bChangeDevice) {
+				OnDisplayChange();
+			}
 		}
 
-		if (bChangeDevice) {
-			OnDisplayChange();
-		}
 		return hr;
 	}
 	return S_OK;

@@ -238,6 +238,7 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* pChangeDevice)
 {
 	DLog(L"CDX9VideoProcessor::Init()");
+
 	CheckPointer(m_pD3DEx, E_FAIL);
 
 	m_hWnd = hwnd;
@@ -346,7 +347,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 		// Create DXVA2 Video Processor Service.
 		hr = DXVA2CreateVideoService(m_pD3DDevEx, IID_IDirectXVideoProcessorService, (VOID**)&m_pDXVA2_VPService);
 		if (FAILED(hr)) {
-			DLog(L"CDX9VideoProcessor::Init : DXVA2CreateVideoService() failed with error %s", HR2Str(hr));
+			DLog(L"CDX9VideoProcessor::Init() : DXVA2CreateVideoService() failed with error %s", HR2Str(hr));
 			return FALSE;
 		}
 	}
@@ -395,18 +396,18 @@ void CDX9VideoProcessor::ReleaseDevice()
 
 BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height, bool only_update_surface)
 {
-	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP started with input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
+	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() started with input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
 
 	CheckPointer(m_pDXVA2_VPService, FALSE);
 
 	if (only_update_surface) {
 		if (d3dformat != m_srcD3DFormat) {
-			DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : incorrect surface format!");
+			DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : incorrect surface format!");
 			ASSERT(0);
 			return FALSE;
 		}
 		if (width < m_srcWidth || height < m_srcHeight) {
-			DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : surface size less than frame size!");
+			DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : surface size less than frame size!");
 			return FALSE;
 		}
 		m_SrcSamples.Clear();
@@ -418,7 +419,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 	}
 
 	if (m_VendorId != PCIV_INTEL && (d3dformat == D3DFMT_X8R8G8B8 || d3dformat == D3DFMT_A8R8G8B8)) {
-		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : RGB input is not supported");
+		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : RGB input is not supported");
 		return FALSE;
 	}
 
@@ -444,7 +445,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 	GUID* guids = nullptr;
 	hr = m_pDXVA2_VPService->GetVideoProcessorDeviceGuids(&videodesc, &count, &guids);
 	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : GetVideoProcessorDeviceGuids() failed with error %s", HR2Str(hr));
+		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : GetVideoProcessorDeviceGuids() failed with error %s", HR2Str(hr));
 		return FALSE;
 	}
 	UINT NumRefSamples = 1;
@@ -521,7 +522,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 		m_srcHeight    = height;
 	}
 
-	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP completed successfully");
+	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() completed successfully");
 
 	return TRUE;
 }
@@ -536,7 +537,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	D3DFORMAT* formats = nullptr;
 	hr = m_pDXVA2_VPService->GetVideoProcessorRenderTargets(devguid, &videodesc, &count, &formats);
 	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : GetVideoProcessorRenderTargets() failed with error %s", HR2Str(hr));
+		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : GetVideoProcessorRenderTargets() failed with error %s", HR2Str(hr));
 		return FALSE;
 	}
 #ifdef _DEBUG
@@ -556,19 +557,19 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	}
 	CoTaskMemFree(formats);
 	if (i >= count) {
-		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : GetVideoProcessorRenderTargets() doesn't support D3DFMT_X8R8G8B8");
+		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : GetVideoProcessorRenderTargets() doesn't support D3DFMT_X8R8G8B8");
 		return FALSE;
 	}
 
 	// Query video processor capabilities.
 	hr = m_pDXVA2_VPService->GetVideoProcessorCaps(devguid, &videodesc, m_VPOutputFmt, &m_DXVA2VPcaps);
 	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : GetVideoProcessorCaps() failed with error %s", HR2Str(hr));
+		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : GetVideoProcessorCaps() failed with error %s", HR2Str(hr));
 		return FALSE;
 	}
 	// Check to see if the device is hardware device.
 	if (!(m_DXVA2VPcaps.DeviceCaps & DXVA2_VPDev_HardwareDevice)) {
-		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : The DXVA2 device isn't a hardware device");
+		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : The DXVA2 device isn't a hardware device");
 		return FALSE;
 	}
 	// Check to see if the device supports all the VP operations we want.
@@ -583,7 +584,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 		if (m_DXVA2VPcaps.ProcAmpControlCaps & (1 << i)) {
 			hr = m_pDXVA2_VPService->GetProcAmpRange(devguid, &videodesc, m_VPOutputFmt, 1 << i, &m_DXVA2ProcValueRange[i]);
 			if (FAILED(hr)) {
-				DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : GetProcAmpRange() failed with error %s", HR2Str(hr));
+				DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : GetProcAmpRange() failed with error %s", HR2Str(hr));
 				return FALSE;
 			}
 		}
@@ -634,22 +635,22 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	// Finally create a video processor device.
 	hr = m_pDXVA2_VPService->CreateVideoProcessor(devguid, &videodesc, m_VPOutputFmt, 0, &m_pDXVA2_VP);
 	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : CreateVideoProcessor failed with error %s", HR2Str(hr));
+		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : CreateVideoProcessor failed with error %s", HR2Str(hr));
 		return FALSE;
 	}
 
-	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP : create %s processor ", CStringFromGUID(devguid));
+	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : create %s processor ", CStringFromGUID(devguid));
 
 	return TRUE;
 }
 
 BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT width, const UINT height)
 {
-	DLog("CDX9VideoProcessor::InitializeTexVP started with input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
+	DLog("CDX9VideoProcessor::InitializeTexVP() started with input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
 
 	HRESULT hr = m_pD3DDevEx->CreateTexture(width, height, 1, D3DUSAGE_DYNAMIC, d3dformat, D3DPOOL_DEFAULT, &m_pSrcVideoTexture, nullptr);
 	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::InitializeTexVP : failed create SrcVideoTexture");
+		DLog(L"CDX9VideoProcessor::InitializeTexVP() : failed create SrcVideoTexture");
 		return FALSE;
 	}
 
@@ -675,7 +676,7 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT w
 	m_DXVA2ProcValueRange[2] = {DXVA2FloatToFixed(-180), DXVA2FloatToFixed(180), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)};
 	m_DXVA2ProcValueRange[3] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f)};
 
-	DLog(L"CDX9VideoProcessor::InitializeTexVP completed successfully");
+	DLog(L"CDX9VideoProcessor::InitializeTexVP() completed successfully");
 
 	return TRUE;
 }
@@ -874,7 +875,7 @@ BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 
 BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 {
-	DLog(L"CDX9VideoProcessor::InitMediaType started");
+	DLog(L"CDX9VideoProcessor::InitMediaType()");
 
 	if (!VerifyMediaType(pmt)) {
 		return FALSE;
@@ -1177,7 +1178,9 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 
 HRESULT CDX9VideoProcessor::Render(int field)
 {
-	if (m_SrcSamples.Empty()) return E_POINTER;
+	if (m_SrcSamples.Empty()) {
+		return E_POINTER;
+	}
 
 	int64_t ticks = GetPreciseTick();
 	if (field) {
@@ -1389,7 +1392,7 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 
 	hr = m_pDXVA2_VP->VideoProcessBlt(pSurface, &m_BltParams, m_DXVA2Samples.data(), m_DXVA2Samples.size(), nullptr);
 	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::ProcessDXVA2 : VideoProcessBlt() failed with error %s", HR2Str(hr));
+		DLog(L"CDX9VideoProcessor::ProcessDXVA2() : VideoProcessBlt() failed with error %s", HR2Str(hr));
 	}
 
 	if (pTexture) {
@@ -1470,7 +1473,7 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 			hr = m_pD3DDevEx->CreateTexture(texWidth, texHeight, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A16B16G16R16F, D3DPOOL_DEFAULT, &m_TexResize.pTexture, nullptr);
 			if (FAILED(hr) || FAILED(m_TexResize.Update())) {
 				m_TexResize.Release();
-				DLog(L"CDX9VideoProcessor::ProcessTex : filed create m_TexResize");
+				DLog(L"CDX9VideoProcessor::ProcessTex() : filed create m_TexResize");
 				return TextureResize(pTexture, rSrcRect, rDstRect, D3DTEXF_LINEAR);
 			}
 		}
@@ -1499,7 +1502,7 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 	}
 
 	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::ProcessTex : failed with error %s", HR2Str(hr));
+		DLog(L"CDX9VideoProcessor::ProcessTex() : failed with error %s", HR2Str(hr));
 	}
 
 	return hr;
