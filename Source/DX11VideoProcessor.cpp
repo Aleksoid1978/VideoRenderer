@@ -141,11 +141,13 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 		m_VPOutputFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
 		break;
 	case 1:
+	case 2:
 		m_VPOutputFmt = DXGI_FORMAT_R10G10B10A2_UNORM;
 		break;
-	case 2:
-		m_VPOutputFmt = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		break;
+	// TODO
+	//case 2:
+	//	m_VPOutputFmt = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	//	break;
 	}
 
 	D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0, D3D_FEATURE_LEVEL_9_3, D3D_FEATURE_LEVEL_9_2, D3D_FEATURE_LEVEL_9_1 };
