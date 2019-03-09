@@ -69,7 +69,8 @@ IVideoRenderer : public IUnknown {
 		bool &bDeintDouble,
 		int  &iSurfaceFmt,
 		int  &iUpscaling,
-		int  &iDownscaling
+		int  &iDownscaling,
+		bool &bInterpolateAt50pct
 	)) PURE;
 	STDMETHOD_(void, SetSettings(
 		bool bUseD3D11,
@@ -77,7 +78,8 @@ IVideoRenderer : public IUnknown {
 		bool bDeintDouble,
 		int  iSurfaceFmt,
 		int  iUpscaling,
-		int  iDownscaling
+		int  iDownscaling,
+		bool bInterpolateAt50pct
 	)) PURE;
 
 	STDMETHOD(SaveSettings()) PURE;

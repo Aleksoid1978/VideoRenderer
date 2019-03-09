@@ -69,9 +69,10 @@ private:
 	bool m_bOptionUseD3D11    = false;
 	bool m_bOptionShowStats   = false;
 	bool m_bOptionDeintDouble = false;
-	int  m_iOptionSurfaceFmt  = 0;
-	int  m_iOptionUpscaling   = 0;
-	int  m_iOptionDownscaling = 2;
+	int  m_iOptionSurfaceFmt  = SURFMT_8INT;
+	int  m_iOptionUpscaling   = UPSCALE_CatmullRom;
+	int  m_iOptionDownscaling = DOWNSCALE_Hamming;
+	bool m_bOptionInterpolateAt50pct = true;
 
 	bool m_bUsedD3D11 = false; // current state
 
@@ -215,7 +216,8 @@ public:
 		bool &bDeintDouble,
 		int  &iSurfaceFmt,
 		int  &iUpscaling,
-		int  &iDownscaling
+		int  &iDownscaling,
+		bool &bInterpolateAt50pct
 	);
 	STDMETHODIMP_(void) SetSettings(
 		bool bUseD3D11,
@@ -223,7 +225,8 @@ public:
 		bool bDeintDouble,
 		int  iSurfaceFmt,
 		int  iUpscaling,
-		int  iDownscaling
+		int  iDownscaling,
+		bool bInterpolateAt50pct
 	);
 
 	STDMETHODIMP SaveSettings();

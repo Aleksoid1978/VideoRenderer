@@ -79,11 +79,13 @@ HRESULT CVRMainPPage::OnActivate()
 		m_bDeintDouble,
 		m_iSurfaceFmt,
 		m_iUpscaling,
-		m_iDownscaling);
+		m_iDownscaling,
+		m_bInterpolateAt50pct);
 
 	CheckDlgButton(IDC_CHECK1, m_bUseD3D11    ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK2, m_bShowStats   ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK3, m_bDeintDouble ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK4, m_bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
 
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"8-bit Integer");
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"10-bit Integer");
@@ -199,6 +201,11 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				SetDirty();
 				return (LRESULT)1;
 			}
+			if (nID == IDC_CHECK4) {
+				m_bInterpolateAt50pct = IsDlgButtonChecked(IDC_CHECK4) == BST_CHECKED;
+				SetDirty();
+				return (LRESULT)1;
+			}
 		}
 
 		if (HIWORD(wParam) == CBN_SELCHANGE) {
@@ -241,7 +248,8 @@ HRESULT CVRMainPPage::OnApplyChanges()
 		m_bDeintDouble,
 		m_iSurfaceFmt,
 		m_iUpscaling,
-		m_iDownscaling);
+		m_iDownscaling,
+		m_bInterpolateAt50pct);
 	m_pVideoRenderer->SaveSettings();
 
 	return S_OK;

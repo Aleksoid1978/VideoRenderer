@@ -1469,9 +1469,10 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 	const int h1 = rSrcRect.Height();
 	const int w2 = rDstRect.Width();
 	const int h2 = rDstRect.Height();
+	const int k = m_bInterpolateAt50pct ? 2 : 1;
 
-	IDirect3DPixelShader9* resizerX = (w1 == w2) ? nullptr : (w1 > 2 * w2) ? m_pShaderDownscaleX : m_pShaderUpscaleX;
-	IDirect3DPixelShader9* resizerY = (h1 == h2) ? nullptr : (h1 > 2 * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
+	IDirect3DPixelShader9* resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleX : m_pShaderUpscaleX;
+	IDirect3DPixelShader9* resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
 
 	IDirect3DTexture9* pTexture = m_pSrcVideoTexture;
 	IDirect3DSurface9* pSurface = m_SrcSamples.GetAt(0).pSrcSurface;

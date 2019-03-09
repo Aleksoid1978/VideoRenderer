@@ -35,6 +35,7 @@ class __declspec(uuid("DA46D181-07D6-441D-B314-019AEB10148A"))
 	int  m_iSurfaceFmt  = SURFMT_8INT;
 	int  m_iUpscaling   = UPSCALE_CatmullRom;
 	int  m_iDownscaling = DOWNSCALE_Hamming;
+	bool m_bInterpolateAt50pct = true;
 
 public:
 	CVRMainPPage(LPUNKNOWN lpunk, HRESULT* phr);

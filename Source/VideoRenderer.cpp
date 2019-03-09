@@ -34,6 +34,7 @@
 #define OPT_SurfaceFormat        L"SurfaceFormat"
 #define OPT_Upscaling            L"Upscaling"
 #define OPT_Downscaling          L"Downscaling"
+#define OPT_InterpolateAt50pct   L"InterpolateAt50pct"
 
 //
 // CMpcVideoRenderer
@@ -74,6 +75,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_Downscaling, dw)) {
 			m_iOptionDownscaling = discard((int)dw, (int)DOWNSCALE_Hamming, (int)DOWNSCALE_Box, (int)DOWNSCALE_Lanczos);
 		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_InterpolateAt50pct, dw)) {
+			m_bOptionInterpolateAt50pct = !!dw;
+		}
 	}
 
 	m_bUsedD3D11 = m_bOptionUseD3D11 && IsWindows8OrGreater();
@@ -94,6 +98,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		m_DX9_VP.SetDeintDouble(m_bOptionDeintDouble);
 		m_DX9_VP.SetUpscaling(m_iOptionUpscaling);
 		m_DX9_VP.SetDownscaling(m_iOptionDownscaling);
+		m_DX9_VP.SetInterpolateAt50pct(m_bOptionInterpolateAt50pct);
 	}
 
 	return;
@@ -650,14 +655,16 @@ STDMETHODIMP_(void) CMpcVideoRenderer::GetSettings(
 	bool &bDeintDouble,
 	int  &iSurfaceFmt,
 	int  &iUpscaling,
-	int  &iDownscaling)
+	int  &iDownscaling,
+	bool &bInterpolateAt50pct)
 {
-	bUseD3D11    = m_bOptionUseD3D11;
-	bShowStats   = m_bOptionShowStats;
-	bDeintDouble = m_bOptionDeintDouble;
-	iSurfaceFmt  = m_iOptionSurfaceFmt;
-	iUpscaling   = m_iOptionUpscaling;
-	iDownscaling = m_iOptionDownscaling;
+	bUseD3D11           = m_bOptionUseD3D11;
+	bShowStats          = m_bOptionShowStats;
+	bDeintDouble        = m_bOptionDeintDouble;
+	iSurfaceFmt         = m_iOptionSurfaceFmt;
+	iUpscaling          = m_iOptionUpscaling;
+	iDownscaling        = m_iOptionDownscaling;
+	bInterpolateAt50pct = m_bOptionInterpolateAt50pct;
 }
 
 STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(
@@ -666,7 +673,8 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(
 	bool bDeintDouble,
 	int  iSurfaceFmt,
 	int  iUpscaling,
-	int  iDownscaling)
+	int  iDownscaling,
+	bool bInterpolateAt50pct)
 {
 	m_bOptionUseD3D11 = bUseD3D11;
 	m_iOptionSurfaceFmt = iSurfaceFmt;
@@ -704,18 +712,26 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(
 		}
 		m_iOptionDownscaling = iDownscaling;
 	}
+
+	if (bInterpolateAt50pct != m_bOptionInterpolateAt50pct) {
+		if (!m_bUsedD3D11) {
+			m_DX9_VP.SetInterpolateAt50pct(bInterpolateAt50pct);
+		}
+		m_bOptionInterpolateAt50pct = bInterpolateAt50pct;
+	}
 }
 
 STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 {
 	CRegKey key;
 	if (ERROR_SUCCESS == key.Create(HKEY_CURRENT_USER, OPT_REGKEY_VIDEORENDERER)) {
-		key.SetDWORDValue(OPT_UseD3D11,         m_bOptionUseD3D11);
-		key.SetDWORDValue(OPT_ShowStatistics,   m_bOptionShowStats);
-		key.SetDWORDValue(OPT_DoubleFrateDeint, m_bOptionDeintDouble);
-		key.SetDWORDValue(OPT_SurfaceFormat,    m_iOptionSurfaceFmt);
-		key.SetDWORDValue(OPT_Upscaling,        m_iOptionUpscaling);
-		key.SetDWORDValue(OPT_Downscaling,      m_iOptionDownscaling);
+		key.SetDWORDValue(OPT_UseD3D11,           m_bOptionUseD3D11);
+		key.SetDWORDValue(OPT_ShowStatistics,     m_bOptionShowStats);
+		key.SetDWORDValue(OPT_DoubleFrateDeint,   m_bOptionDeintDouble);
+		key.SetDWORDValue(OPT_SurfaceFormat,      m_iOptionSurfaceFmt);
+		key.SetDWORDValue(OPT_Upscaling,          m_iOptionUpscaling);
+		key.SetDWORDValue(OPT_Downscaling,        m_iOptionDownscaling);
+		key.SetDWORDValue(OPT_InterpolateAt50pct, m_bOptionInterpolateAt50pct);
 	}
 
 	return S_OK;

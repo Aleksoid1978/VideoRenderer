@@ -110,6 +110,7 @@ private:
 
 	bool m_bDeintDouble = false;
 	bool m_bShowStats   = false;
+	bool m_bInterpolateAt50pct = true;
 
 	// Direct3D 9
 	HMODULE m_hD3D9Lib = nullptr;
@@ -258,10 +259,11 @@ public:
 	HRESULT GetAdapterDecription(CStringW& str);
 	HRESULT GetDXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCaps);
 
-	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
-	void SetShowStats(bool value) { m_bShowStats = value; };
+	void SetDeintDouble(bool value) { m_bDeintDouble = value; }
+	void SetShowStats(bool value) { m_bShowStats = value; }
 	void SetUpscaling(int value);
 	void SetDownscaling(int value);
+	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
 
 private:
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
