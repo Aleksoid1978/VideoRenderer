@@ -65,10 +65,15 @@ private:
 	friend class CDX9VideoProcessor;
 	friend class CDX11VideoProcessor;
 
-	bool m_bOptionUseD3D11 = false; // option
-	int m_iOptionSurfaceFmt = 0; // option
+	// Options
+	bool m_bOptionUseD3D11    = false;
+	bool m_bOptionShowStats   = false;
+	bool m_bOptionDeintDouble = false;
+	int  m_iOptionSurfaceFmt  = 0;
+	int  m_iOptionUpscaling   = 0;
+	int  m_iOptionDownscaling = 2;
 
-	bool m_bUsedD3D11 = false;      // current state
+	bool m_bUsedD3D11 = false; // current state
 
 	HWND m_hWnd = nullptr;
 
@@ -203,17 +208,23 @@ public:
 	STDMETHODIMP get_DXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCaps);
 
 	STDMETHODIMP_(bool) GetActive();
-	STDMETHODIMP_(bool) GetOptionUseD3D11();
-	STDMETHODIMP_(void) SetOptionUseD3D11(bool value);
-	STDMETHODIMP_(bool) GetOptionShowStatistics();
-	STDMETHODIMP_(void) SetOptionShowStatistics(bool value);
-	STDMETHODIMP_(bool) GetOptionDeintDouble();
-	STDMETHODIMP_(void) SetOptionDeintDouble(bool value);
-	STDMETHODIMP_(int)  GetOptionSurfaceFormat();
-	STDMETHODIMP_(void) SetOptionSurfaceFormat(int value);
-	STDMETHODIMP_(int)  GetOptionUpscaling();
-	STDMETHODIMP_(void) SetOptionUpscaling(int value);
-	STDMETHODIMP_(int)  GetOptionDownscaling();
-	STDMETHODIMP_(void) SetOptionDownscaling(int value);
+
+	STDMETHODIMP_(void) GetSettings(
+		bool &bUseD3D11,
+		bool &bShowStats,
+		bool &bDeintDouble,
+		int  &iSurfaceFmt,
+		int  &iUpscaling,
+		int  &iDownscaling
+	);
+	STDMETHODIMP_(void) SetSettings(
+		bool bUseD3D11,
+		bool bShowStats,
+		bool bDeintDouble,
+		int  iSurfaceFmt,
+		int  iUpscaling,
+		int  iDownscaling
+	);
+
 	STDMETHODIMP SaveSettings();
 };

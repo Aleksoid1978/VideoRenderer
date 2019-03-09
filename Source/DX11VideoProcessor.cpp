@@ -139,15 +139,15 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 
 	switch (iSurfaceFmt) {
 	default:
-	case 0:
+	case SURFMT_8INT:
 		m_VPOutputFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
 		break;
-	case 1:
-	case 2:
+	case SURFMT_10INT:
+	case SURFMT_16FLOAT:
 		m_VPOutputFmt = DXGI_FORMAT_R10G10B10A2_UNORM;
 		break;
 	// TODO
-	//case 2:
+	//case SURFMT_16FLOAT:
 	//	m_VPOutputFmt = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	//	break;
 	}

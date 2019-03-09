@@ -176,9 +176,7 @@ public:
 	HRESULT GetFrameInfo(VRFrameInfo* pFrameInfo);
 	HRESULT GetAdapterDecription(CStringW& str);
 
-	bool GetDeintDouble() { return m_bDeintDouble; }
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
-	bool GetShowStats() { return m_bShowStats; }
 	void SetShowStats(bool value) { m_bShowStats = value; };
 
 private:

@@ -22,6 +22,25 @@
 
 #include <dxva2api.h>
 
+enum :int {
+	SURFMT_8INT = 0,
+	SURFMT_10INT,
+	SURFMT_16FLOAT
+};
+
+enum :int {
+	UPSCALE_CatmullRom = 0,
+	UPSCALE_Lanczos2
+};
+
+enum :int {
+	DOWNSCALE_Box = 0,
+	DOWNSCALE_Bilinear,
+	DOWNSCALE_Hamming,
+	DOWNSCALE_Bicubic,
+	DOWNSCALE_Lanczos
+};
+
 struct VRFrameInfo {
 	GUID Subtype;
 	unsigned Width;
@@ -38,18 +57,22 @@ IVideoRenderer : public IUnknown {
 
 	STDMETHOD_(bool, GetActive()) PURE;
 
-	STDMETHOD_(bool, GetOptionUseD3D11()) PURE;
-	STDMETHOD_(void, SetOptionUseD3D11(bool value)) PURE;
-	STDMETHOD_(bool, GetOptionShowStatistics()) PURE;
-	STDMETHOD_(void, SetOptionShowStatistics(bool value)) PURE;
-	STDMETHOD_(bool, GetOptionDeintDouble()) PURE;
-	STDMETHOD_(void, SetOptionDeintDouble(bool value)) PURE;
-	STDMETHOD_(int,  GetOptionSurfaceFormat()) PURE;
-	STDMETHOD_(void, SetOptionSurfaceFormat(int value)) PURE;
-	STDMETHOD_(int,  GetOptionUpscaling()) PURE;
-	STDMETHOD_(void, SetOptionUpscaling(int value)) PURE;
-	STDMETHOD_(int,  GetOptionDownscaling()) PURE;
-	STDMETHOD_(void, SetOptionDownscaling(int value)) PURE;
+	STDMETHOD_(void, GetSettings(
+		bool &bUseD3D11,
+		bool &bShowStats,
+		bool &bDeintDouble,
+		int  &iSurfaceFmt,
+		int  &iUpscaling,
+		int  &iDownscaling
+	)) PURE;
+	STDMETHOD_(void, SetSettings(
+		bool bUseD3D11,
+		bool bShowStats,
+		bool bDeintDouble,
+		int  iSurfaceFmt,
+		int  iUpscaling,
+		int  iDownscaling
+	)) PURE;
 
 	STDMETHOD(SaveSettings()) PURE;
 };

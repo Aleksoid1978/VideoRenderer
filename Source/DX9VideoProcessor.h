@@ -271,13 +271,9 @@ public:
 	HRESULT GetAdapterDecription(CStringW& str);
 	HRESULT GetDXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCaps);
 
-	bool GetDeintDouble() { return m_bDeintDouble; }
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
-	bool GetShowStats() { return m_bShowStats; }
 	void SetShowStats(bool value) { m_bShowStats = value; };
-	int  GetUpscaling() { return m_iUpscaling; }
 	void SetUpscaling(int value) { m_iUpscaling = value; };
-	int  GetDownscaling() { return m_iDownscaling; }
 	void SetDownscaling(int value) { m_iDownscaling = value; };
 
 private:

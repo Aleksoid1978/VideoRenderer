@@ -73,12 +73,13 @@ HRESULT CVRMainPPage::OnActivate()
 	// set m_hWnd for CWindow
 	m_hWnd = m_hwnd;
 
-	m_bUseD3D11    = m_pVideoRenderer->GetOptionUseD3D11();
-	m_bShowStats   = m_pVideoRenderer->GetOptionShowStatistics();
-	m_bDeintDouble = m_pVideoRenderer->GetOptionDeintDouble();
-	m_iSurfaceFmt  = m_pVideoRenderer->GetOptionSurfaceFormat();
-	m_iUpscaling   = m_pVideoRenderer->GetOptionUpscaling();
-	m_iDownscaling = m_pVideoRenderer->GetOptionDownscaling();
+	m_pVideoRenderer->GetSettings(
+		m_bUseD3D11,
+		m_bShowStats,
+		m_bDeintDouble,
+		m_iSurfaceFmt,
+		m_iUpscaling,
+		m_iDownscaling);
 
 	CheckDlgButton(IDC_CHECK1, m_bUseD3D11    ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK2, m_bShowStats   ? BST_CHECKED : BST_UNCHECKED);
@@ -234,12 +235,13 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 
 HRESULT CVRMainPPage::OnApplyChanges()
 {
-	m_pVideoRenderer->SetOptionUseD3D11(m_bUseD3D11);
-	m_pVideoRenderer->SetOptionShowStatistics(m_bShowStats);
-	m_pVideoRenderer->SetOptionDeintDouble(m_bDeintDouble);
-	m_pVideoRenderer->SetOptionSurfaceFormat(m_iSurfaceFmt);
-	m_pVideoRenderer->SetOptionUpscaling(m_iUpscaling);
-	m_pVideoRenderer->SetOptionDownscaling(m_iDownscaling);
+	m_pVideoRenderer->SetSettings(
+		m_bUseD3D11,
+		m_bShowStats,
+		m_bDeintDouble,
+		m_iSurfaceFmt,
+		m_iUpscaling,
+		m_iDownscaling);
 	m_pVideoRenderer->SaveSettings();
 
 	return S_OK;

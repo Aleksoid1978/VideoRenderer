@@ -244,13 +244,13 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 	m_hWnd = hwnd;
 	switch (iSurfaceFmt) {
 	default:
-	case 0:
+	case SURFMT_8INT:
 		m_VPOutputFmt = D3DFMT_X8R8G8B8;
 		break;
-	case 1:
+	case SURFMT_10INT:
 		m_VPOutputFmt = D3DFMT_A2R10G10B10;
 		break;
-	case 2:
+	case SURFMT_16FLOAT:
 		m_VPOutputFmt = D3DFMT_A16B16G16R16F;
 		break;
 	}
