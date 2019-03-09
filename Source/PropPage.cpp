@@ -87,8 +87,21 @@ HRESULT CVRMainPPage::OnActivate()
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"16-bit Floating Point (DX9 only)");
 	SendDlgItemMessageW(IDC_COMBO1, CB_SETCURSEL, m_iSurfaceFmt, 0);
 
+	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Catmull-Rom");
+	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Lanczos2");
+	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, 0, 0);
+	GetDlgItem(IDC_COMBO2).EnableWindow(FALSE);
+
+	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Box");
+	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Bilinear");
+	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Hamming");
+	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Bicubic");
+	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Lanczos");
+	SendDlgItemMessageW(IDC_COMBO3, CB_SETCURSEL, 2, 0);
+	GetDlgItem(IDC_COMBO3).EnableWindow(FALSE);
+
 	if (!m_pVideoRenderer->GetActive()) {
-		GetDlgItem(IDC_EDIT1).ShowWindow(SW_HIDE);
+		SetDlgItemTextW(IDC_EDIT1, L"filter is not active");
 		return S_OK;
 	}
 	// init monospace font
@@ -148,14 +161,14 @@ HRESULT CVRMainPPage::OnActivate()
 		str.AppendFormat(L"\r\nWidth  : %u", frameinfo.Width);
 		str.AppendFormat(L"\r\nHeight : %u", frameinfo.Height);
 	}
-	SetDlgItemText(IDC_EDIT1, str);
+	SetDlgItemTextW(IDC_EDIT1, str);
 
 #ifdef MPCVR_REV_DATE
 #ifdef MPCVR_REV_HASH
 	str.Format(L"Experimental MPC Video Renderer %s (%s)",
 		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_DATE)),
 		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_HASH)));
-	SetDlgItemText(IDC_STATIC1, str);
+	SetDlgItemTextW(IDC_STATIC1, str);
 #endif // MPCVR_REV_HASH
 #endif // MPCVR_REV_DATE
 	return S_OK;
