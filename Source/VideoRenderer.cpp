@@ -80,7 +80,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 	}
 
-	m_bUsedD3D11 = m_bOptionUseD3D11 && IsWindows8OrGreater();
+	m_bUsedD3D11 = m_bOptionUseD3D11 && IsWindows8Point1OrGreater();
 	if (m_bUsedD3D11) {
 		*phr = m_DX11_VP.Init(m_iOptionSurfaceFmt);
 		if (S_OK == *phr) {
