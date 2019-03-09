@@ -211,5 +211,9 @@ public:
 	STDMETHODIMP_(void) SetOptionDeintDouble(bool value);
 	STDMETHODIMP_(int)  GetOptionSurfaceFormat();
 	STDMETHODIMP_(void) SetOptionSurfaceFormat(int value);
+	STDMETHODIMP_(int)  GetOptionUpscaling();
+	STDMETHODIMP_(void) SetOptionUpscaling(int value);
+	STDMETHODIMP_(int)  GetOptionDownscaling();
+	STDMETHODIMP_(void) SetOptionDownscaling(int value);
 	STDMETHODIMP SaveSettings();
 };

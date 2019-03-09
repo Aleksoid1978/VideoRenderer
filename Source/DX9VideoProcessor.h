@@ -109,7 +109,9 @@ private:
 	CMpcVideoRenderer* m_pFilter = nullptr;
 
 	bool m_bDeintDouble = false;
-	bool m_bShowStats = false;
+	bool m_bShowStats   = false;
+	int  m_iUpscaling   = 0;
+	int  m_iDownscaling = 2;
 
 	// Direct3D 9
 	HMODULE m_hD3D9Lib = nullptr;
@@ -273,6 +275,10 @@ public:
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
 	bool GetShowStats() { return m_bShowStats; }
 	void SetShowStats(bool value) { m_bShowStats = value; };
+	int  GetUpscaling() { return m_iUpscaling; }
+	void SetUpscaling(int value) { m_iUpscaling = value; };
+	int  GetDownscaling() { return m_iDownscaling; }
+	void SetDownscaling(int value) { m_iDownscaling = value; };
 
 private:
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);

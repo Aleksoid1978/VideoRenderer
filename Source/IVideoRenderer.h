@@ -46,6 +46,10 @@ IVideoRenderer : public IUnknown {
 	STDMETHOD_(void, SetOptionDeintDouble(bool value)) PURE;
 	STDMETHOD_(int,  GetOptionSurfaceFormat()) PURE;
 	STDMETHOD_(void, SetOptionSurfaceFormat(int value)) PURE;
+	STDMETHOD_(int,  GetOptionUpscaling()) PURE;
+	STDMETHOD_(void, SetOptionUpscaling(int value)) PURE;
+	STDMETHOD_(int,  GetOptionDownscaling()) PURE;
+	STDMETHOD_(void, SetOptionDownscaling(int value)) PURE;
 
 	STDMETHOD(SaveSettings()) PURE;
 };

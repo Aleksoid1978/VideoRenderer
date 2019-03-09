@@ -32,6 +32,8 @@
 #define OPT_ShowStatistics       L"ShowStatistics"
 #define OPT_DoubleFrateDeint     L"DoubleFramerateDeinterlace"
 #define OPT_SurfaceFormat        L"SurfaceFormat"
+#define OPT_Upscaling            L"Upscaling"
+#define OPT_Downscaling          L"Downscaling"
 
 //
 // CMpcVideoRenderer
@@ -65,6 +67,12 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_SurfaceFormat, dw)) {
 			m_iOptionSurfaceFmt = dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_Upscaling, dw)) {
+			SetOptionUpscaling(dw);
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_Downscaling, dw)) {
+			SetOptionDownscaling(dw);
 		}
 	}
 
@@ -675,6 +683,26 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetOptionSurfaceFormat(int value)
 	m_iOptionSurfaceFmt = value;
 }
 
+STDMETHODIMP_(int) CMpcVideoRenderer::GetOptionUpscaling()
+{
+	return m_DX9_VP.GetUpscaling();
+}
+
+STDMETHODIMP_(void) CMpcVideoRenderer::SetOptionUpscaling(int value)
+{
+	m_DX9_VP.SetUpscaling(value);
+}
+
+STDMETHODIMP_(int) CMpcVideoRenderer::GetOptionDownscaling()
+{
+	return m_DX9_VP.GetDownscaling();
+}
+
+STDMETHODIMP_(void) CMpcVideoRenderer::SetOptionDownscaling(int value)
+{
+	m_DX9_VP.SetDownscaling(value);
+}
+
 STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 {
 	CRegKey key;
@@ -683,6 +711,8 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_ShowStatistics, GetOptionShowStatistics());
 		key.SetDWORDValue(OPT_DoubleFrateDeint, GetOptionDeintDouble());
 		key.SetDWORDValue(OPT_SurfaceFormat, m_iOptionSurfaceFmt);
+		key.SetDWORDValue(OPT_Upscaling, GetOptionUpscaling());
+		key.SetDWORDValue(OPT_Downscaling, GetOptionDownscaling());
 	}
 
 	return S_OK;

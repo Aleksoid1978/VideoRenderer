@@ -77,6 +77,8 @@ HRESULT CVRMainPPage::OnActivate()
 	m_bShowStats   = m_pVideoRenderer->GetOptionShowStatistics();
 	m_bDeintDouble = m_pVideoRenderer->GetOptionDeintDouble();
 	m_iSurfaceFmt  = m_pVideoRenderer->GetOptionSurfaceFormat();
+	m_iUpscaling   = m_pVideoRenderer->GetOptionUpscaling();
+	m_iDownscaling = m_pVideoRenderer->GetOptionDownscaling();
 
 	CheckDlgButton(IDC_CHECK1, m_bUseD3D11    ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK2, m_bShowStats   ? BST_CHECKED : BST_UNCHECKED);
@@ -89,7 +91,7 @@ HRESULT CVRMainPPage::OnActivate()
 
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Catmull-Rom");
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Lanczos2");
-	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, 0, 0);
+	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, m_iUpscaling, 0);
 	GetDlgItem(IDC_COMBO2).EnableWindow(FALSE);
 
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Box");
@@ -97,7 +99,7 @@ HRESULT CVRMainPPage::OnActivate()
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Hamming");
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Bicubic");
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Lanczos");
-	SendDlgItemMessageW(IDC_COMBO3, CB_SETCURSEL, 2, 0);
+	SendDlgItemMessageW(IDC_COMBO3, CB_SETCURSEL, m_iDownscaling, 0);
 	GetDlgItem(IDC_COMBO3).EnableWindow(FALSE);
 
 	if (!m_pVideoRenderer->GetActive()) {
@@ -176,34 +178,54 @@ HRESULT CVRMainPPage::OnActivate()
 
 INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	LRESULT lValue;
+	if (uMsg == WM_COMMAND) {
+		LRESULT lValue;
+		const int nID = LOWORD(wParam);
 
-	switch (uMsg) {
-	case WM_COMMAND:
-		if (LOWORD(wParam) == IDC_CHECK1) {
-			m_bUseD3D11 = IsDlgButtonChecked(IDC_CHECK1) == BST_CHECKED;
-			SetDirty();
-			return (LRESULT)1;
-		}
-		if (LOWORD(wParam) == IDC_CHECK2) {
-			m_bShowStats = IsDlgButtonChecked(IDC_CHECK2) == BST_CHECKED;
-			SetDirty();
-			return (LRESULT)1;
-		}
-		if (LOWORD(wParam) == IDC_CHECK3) {
-			m_bDeintDouble = IsDlgButtonChecked(IDC_CHECK3) == BST_CHECKED;
-			SetDirty();
-			return (LRESULT)1;
-		}
-		if (LOWORD(wParam) == IDC_COMBO1 && HIWORD(wParam) == CBN_SELCHANGE) {
-			lValue = SendDlgItemMessageW(IDC_COMBO1, CB_GETCURSEL, 0, 0);
-			if (lValue != m_iSurfaceFmt) {
-				m_iSurfaceFmt = lValue;
+		if (HIWORD(wParam) == BN_CLICKED) {
+			if (nID == IDC_CHECK1) {
+				m_bUseD3D11 = IsDlgButtonChecked(IDC_CHECK1) == BST_CHECKED;
+				SetDirty();
+				return (LRESULT)1;
+			}
+			if (nID == IDC_CHECK2) {
+				m_bShowStats = IsDlgButtonChecked(IDC_CHECK2) == BST_CHECKED;
+				SetDirty();
+				return (LRESULT)1;
+			}
+			if (nID == IDC_CHECK3) {
+				m_bDeintDouble = IsDlgButtonChecked(IDC_CHECK3) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}
 		}
-		break;
+
+		if (HIWORD(wParam) == CBN_SELCHANGE) {
+			if (nID == IDC_COMBO1) {
+				lValue = SendDlgItemMessageW(IDC_COMBO1, CB_GETCURSEL, 0, 0);
+				if (lValue != m_iSurfaceFmt) {
+					m_iSurfaceFmt = lValue;
+					SetDirty();
+					return (LRESULT)1;
+				}
+			}
+			if (nID == IDC_COMBO2) {
+				lValue = SendDlgItemMessageW(IDC_COMBO2, CB_GETCURSEL, 0, 0);
+				if (lValue != m_iUpscaling) {
+					m_iUpscaling = lValue;
+					SetDirty();
+					return (LRESULT)1;
+				}
+			}
+			if (nID == IDC_COMBO3) {
+				lValue = SendDlgItemMessageW(IDC_COMBO3, CB_GETCURSEL, 0, 0);
+				if (lValue != m_iDownscaling) {
+					m_iDownscaling = lValue;
+					SetDirty();
+					return (LRESULT)1;
+				}
+			}
+		}
 	}
 
 	// Let the parent class handle the message.
@@ -216,6 +238,8 @@ HRESULT CVRMainPPage::OnApplyChanges()
 	m_pVideoRenderer->SetOptionShowStatistics(m_bShowStats);
 	m_pVideoRenderer->SetOptionDeintDouble(m_bDeintDouble);
 	m_pVideoRenderer->SetOptionSurfaceFormat(m_iSurfaceFmt);
+	m_pVideoRenderer->SetOptionUpscaling(m_iUpscaling);
+	m_pVideoRenderer->SetOptionDownscaling(m_iDownscaling);
 	m_pVideoRenderer->SaveSettings();
 
 	return S_OK;

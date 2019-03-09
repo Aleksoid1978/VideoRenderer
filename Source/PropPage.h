@@ -33,6 +33,8 @@ class __declspec(uuid("DA46D181-07D6-441D-B314-019AEB10148A"))
 	bool m_bShowStats   = false;
 	bool m_bDeintDouble = false;
 	int  m_iSurfaceFmt  = 0;
+	int  m_iUpscaling   = 0;
+	int  m_iDownscaling = 2;
 
 public:
 	CVRMainPPage(LPUNKNOWN lpunk, HRESULT* phr);
