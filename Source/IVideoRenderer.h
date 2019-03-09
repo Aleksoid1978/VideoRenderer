@@ -29,8 +29,13 @@ enum :int {
 };
 
 enum :int {
-	UPSCALE_CatmullRom = 0,
-	UPSCALE_Lanczos2
+	//UPSCALE_Nearest = 0,
+	//UPSCALE_Bilinear,
+	UPSCALE_Mitchell,
+	UPSCALE_CatmullRom,
+	UPSCALE_Lanczos2,
+	UPSCALE_Lanczos3,
+	UPSCALE_COUNT,
 };
 
 enum :int {
@@ -38,7 +43,8 @@ enum :int {
 	DOWNSCALE_Bilinear,
 	DOWNSCALE_Hamming,
 	DOWNSCALE_Bicubic,
-	DOWNSCALE_Lanczos
+	DOWNSCALE_Lanczos,
+	DOWNSCALE_COUNT,
 };
 
 struct VRFrameInfo {

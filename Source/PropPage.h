@@ -32,9 +32,9 @@ class __declspec(uuid("DA46D181-07D6-441D-B314-019AEB10148A"))
 	bool m_bUseD3D11    = false;
 	bool m_bShowStats   = false;
 	bool m_bDeintDouble = false;
-	int  m_iSurfaceFmt  = 0;
-	int  m_iUpscaling   = 0;
-	int  m_iDownscaling = 2;
+	int  m_iSurfaceFmt  = SURFMT_8INT;
+	int  m_iUpscaling   = UPSCALE_CatmullRom;
+	int  m_iDownscaling = DOWNSCALE_Hamming;
 
 public:
 	CVRMainPPage(LPUNKNOWN lpunk, HRESULT* phr);

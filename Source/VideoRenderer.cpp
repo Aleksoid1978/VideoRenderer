@@ -69,7 +69,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			m_iOptionSurfaceFmt = discard((int)dw, (int)SURFMT_8INT, (int)SURFMT_8INT, (int)SURFMT_16FLOAT);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_Upscaling, dw)) {
-			m_iOptionUpscaling = discard((int)dw, (int)UPSCALE_CatmullRom, (int)UPSCALE_CatmullRom, (int)UPSCALE_Lanczos2);
+			m_iOptionUpscaling = discard((int)dw, (int)UPSCALE_CatmullRom, (int)UPSCALE_Mitchell, (int)UPSCALE_Lanczos3);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_Downscaling, dw)) {
 			m_iOptionDownscaling = discard((int)dw, (int)DOWNSCALE_Hamming, (int)DOWNSCALE_Box, (int)DOWNSCALE_Lanczos);
@@ -547,6 +547,10 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 		} else {
 			bool bChangeDevice = false;
 			hr = m_DX9_VP.Init(m_hWnd, m_iOptionSurfaceFmt, &bChangeDevice);
+			if (S_OK == hr) {
+				m_DX9_VP.SetUpscaling(m_iOptionUpscaling);
+				m_DX9_VP.SetDownscaling(m_iOptionDownscaling);
+			}
 
 			if (bChangeDevice) {
 				OnDisplayChange();
@@ -667,25 +671,37 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(
 	m_bOptionUseD3D11 = bUseD3D11;
 	m_iOptionSurfaceFmt = iSurfaceFmt;
 
+	CAutoLock cRendererLock(&m_RendererLock);
+
 	if (bShowStats != m_bOptionShowStats) {
-		m_DX11_VP.SetShowStats(bShowStats);
-		m_DX9_VP.SetShowStats(bShowStats);
+		if (m_bUsedD3D11) {
+			m_DX11_VP.SetShowStats(bShowStats);
+		} else {
+			m_DX9_VP.SetShowStats(bShowStats);
+		}
 		m_bOptionShowStats = bShowStats;
 	}
 
 	if (bDeintDouble != m_bOptionDeintDouble) {
-		m_DX11_VP.SetDeintDouble(bDeintDouble);
-		m_DX9_VP.SetDeintDouble(bDeintDouble);
+		if (m_bUsedD3D11) {
+			m_DX11_VP.SetDeintDouble(bDeintDouble);
+		} else {
+			m_DX9_VP.SetDeintDouble(bDeintDouble);
+		}
 		m_bOptionDeintDouble = bDeintDouble;
 	}
 
 	if (iUpscaling != m_iOptionUpscaling) {
-		m_DX9_VP.SetUpscaling(iUpscaling);
+		if (!m_bUsedD3D11) {
+			m_DX9_VP.SetUpscaling(iUpscaling);
+		}
 		m_iOptionUpscaling = iUpscaling;
 	}
 
 	if (iDownscaling != m_iOptionDownscaling) {
-		m_DX9_VP.SetDownscaling(iDownscaling);
+		if (!m_bUsedD3D11) {
+			m_DX9_VP.SetDownscaling(iDownscaling);
+		}
 		m_iOptionDownscaling = iDownscaling;
 	}
 }

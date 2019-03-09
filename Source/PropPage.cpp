@@ -90,10 +90,11 @@ HRESULT CVRMainPPage::OnActivate()
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"16-bit Floating Point (DX9 only)");
 	SendDlgItemMessageW(IDC_COMBO1, CB_SETCURSEL, m_iSurfaceFmt, 0);
 
+	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Mitchell-Netravali");
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Catmull-Rom");
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Lanczos2");
+	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Lanczos3");
 	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, m_iUpscaling, 0);
-	GetDlgItem(IDC_COMBO2).EnableWindow(FALSE);
 
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Box");
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Bilinear");
@@ -101,7 +102,6 @@ HRESULT CVRMainPPage::OnActivate()
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Bicubic");
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Lanczos");
 	SendDlgItemMessageW(IDC_COMBO3, CB_SETCURSEL, m_iDownscaling, 0);
-	GetDlgItem(IDC_COMBO3).EnableWindow(FALSE);
 
 	if (!m_pVideoRenderer->GetActive()) {
 		SetDlgItemTextW(IDC_EDIT1, L"filter is not active");

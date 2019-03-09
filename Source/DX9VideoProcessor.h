@@ -110,8 +110,6 @@ private:
 
 	bool m_bDeintDouble = false;
 	bool m_bShowStats   = false;
-	int  m_iUpscaling   = 0;
-	int  m_iDownscaling = 2;
 
 	// Direct3D 9
 	HMODULE m_hD3D9Lib = nullptr;
@@ -174,14 +172,6 @@ private:
 	Tex_t m_TexResize;
 
 	enum {
-		shader_catmull_x,
-		shader_catmull_y,
-		shader_lanczos2_x,
-		shader_lanczos2_y,
-		shader_downscaler_hamming_x,
-		shader_downscaler_hamming_y,
-		shader_downscaler_bicubic_x,
-		shader_downscaler_bicubic_y,
 		shader_convert_color,
 		shader_correction_st2084,
 		shader_correction_hlg,
@@ -193,20 +183,17 @@ private:
 		UINT resid;
 		CComPtr<IDirect3DPixelShader9> pShader;
 	} m_PixelShaders[shader_count] = {
-		{IDF_SHADER_RESIZER_CATMULL4_X},
-		{IDF_SHADER_RESIZER_CATMULL4_Y},
-		{IDF_SHADER_RESIZER_LANCZOS2_X},
-		{IDF_SHADER_RESIZER_LANCZOS2_Y},
-		{IDF_SHADER_DOWNSCALER_HAMMING_X},
-		{IDF_SHADER_DOWNSCALER_HAMMING_Y},
-		{IDF_SHADER_DOWNSCALER_BICUBIC_X},
-		{IDF_SHADER_DOWNSCALER_BICUBIC_Y},
 		{IDF_SHADER_CONVERT_COLOR},
 		{IDF_SHADER_CORRECTION_ST2084},
 		{IDF_SHADER_CORRECTION_HLG},
 		{IDF_SHADER_CORRECTION_YCGCO},
 		{IDF_SHADER_TEST},
 	};
+
+	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleX;
+	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleY;
+	CComPtr<IDirect3DPixelShader9> m_pShaderDownscaleX;
+	CComPtr<IDirect3DPixelShader9> m_pShaderDownscaleY;
 
 	int m_iConvertShader = -1;
 	float m_fConstData[4][4] = {};
@@ -273,8 +260,8 @@ public:
 
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
 	void SetShowStats(bool value) { m_bShowStats = value; };
-	void SetUpscaling(int value) { m_iUpscaling = value; };
-	void SetDownscaling(int value) { m_iDownscaling = value; };
+	void SetUpscaling(int value);
+	void SetDownscaling(int value);
 
 private:
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);

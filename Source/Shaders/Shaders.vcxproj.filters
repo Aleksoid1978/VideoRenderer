@@ -35,6 +35,18 @@
     <FxCompile Include="Convert\correction_ycgco.hlsl">
       <Filter>Convert</Filter>
     </FxCompile>
+    <FxCompile Include="Resizers\resizer_lanczos3_x.hlsl">
+      <Filter>Resizers</Filter>
+    </FxCompile>
+    <FxCompile Include="Resizers\resizer_lanczos3_y.hlsl">
+      <Filter>Resizers</Filter>
+    </FxCompile>
+    <FxCompile Include="Resizers\resizer_mitchell4_x.hlsl">
+      <Filter>Resizers</Filter>
+    </FxCompile>
+    <FxCompile Include="Resizers\resizer_mitchell4_y.hlsl">
+      <Filter>Resizers</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Resizers">

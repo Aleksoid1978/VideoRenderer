@@ -391,6 +391,11 @@ void CDX9VideoProcessor::ReleaseDevice()
 		shader.pShader.Release();
 	}
 
+	m_pShaderUpscaleX.Release();
+	m_pShaderUpscaleY.Release();
+	m_pShaderDownscaleX.Release();
+	m_pShaderDownscaleY.Release();
+
 	m_pD3DDevEx.Release();
 }
 
@@ -1341,6 +1346,58 @@ HRESULT CDX9VideoProcessor::GetDXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCap
 	return S_OK;
 }
 
+void CDX9VideoProcessor::SetUpscaling(int value)
+{
+	struct {
+		UINT shaderX;
+		UINT shaderY;
+	} static const resIDs[UPSCALE_COUNT] = {
+		{IDF_SHADER_RESIZER_MITCHELL4_X, IDF_SHADER_RESIZER_MITCHELL4_Y},
+		{IDF_SHADER_RESIZER_CATMULL4_X,  IDF_SHADER_RESIZER_CATMULL4_Y },
+		{IDF_SHADER_RESIZER_LANCZOS2_X,  IDF_SHADER_RESIZER_LANCZOS2_Y },
+		{IDF_SHADER_RESIZER_LANCZOS3_X,  IDF_SHADER_RESIZER_LANCZOS3_Y },
+	};
+
+	if (value < 0 || value >= UPSCALE_COUNT) {
+		DLog("CDX9VideoProcessor::SetUpscaling() unknown value %d", value);
+		ASSERT(FALSE);
+		return;
+	}
+
+	m_pShaderUpscaleX.Release();
+	m_pShaderUpscaleY.Release();
+
+	EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pShaderUpscaleX, resIDs[value].shaderX));
+	EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pShaderUpscaleY, resIDs[value].shaderY));
+
+};
+
+void CDX9VideoProcessor::SetDownscaling(int value)
+{
+	struct {
+		UINT shaderX;
+		UINT shaderY;
+	} static const resIDs[DOWNSCALE_COUNT] = {
+		{IDF_SHADER_DOWNSCALER_BOX_X,      IDF_SHADER_DOWNSCALER_BOX_Y     },
+		{IDF_SHADER_DOWNSCALER_BILINEAR_X, IDF_SHADER_DOWNSCALER_BILINEAR_Y},
+		{IDF_SHADER_DOWNSCALER_HAMMING_X,  IDF_SHADER_DOWNSCALER_HAMMING_Y },
+		{IDF_SHADER_DOWNSCALER_BICUBIC_X,  IDF_SHADER_DOWNSCALER_BICUBIC_Y },
+		{IDF_SHADER_DOWNSCALER_LANCZOS_X,  IDF_SHADER_DOWNSCALER_LANCZOS_Y }
+	};
+
+	if (value < 0 || value >= DOWNSCALE_COUNT) {
+		DLog("CDX9VideoProcessor::SetDownscaling() unknown value %d", value);
+		ASSERT(FALSE);
+		return;
+	}
+
+	m_pShaderDownscaleX.Release();
+	m_pShaderDownscaleY.Release();
+
+	EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pShaderDownscaleX, resIDs[value].shaderX));
+	EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pShaderDownscaleY, resIDs[value].shaderY));
+};
+
 HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
 	// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx
@@ -1413,8 +1470,8 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 	const int w2 = rDstRect.Width();
 	const int h2 = rDstRect.Height();
 
-	const int resizerX = (w1 == w2) ? -1 : (w1 > 2 * w2) ? shader_downscaler_hamming_x : shader_catmull_x;
-	const int resizerY = (h1 == h2) ? -1 : (h1 > 2 * h2) ? shader_downscaler_hamming_y : shader_catmull_y;
+	IDirect3DPixelShader9* resizerX = (w1 == w2) ? nullptr : (w1 > 2 * w2) ? m_pShaderDownscaleX : m_pShaderUpscaleX;
+	IDirect3DPixelShader9* resizerY = (h1 == h2) ? nullptr : (h1 > 2 * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
 
 	IDirect3DTexture9* pTexture = m_pSrcVideoTexture;
 	IDirect3DSurface9* pSurface = m_SrcSamples.GetAt(0).pSrcSurface;
@@ -1446,7 +1503,7 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 		}
 	}
 
-	if (resizerX < 0 && resizerY < 0) {
+	if (!resizerX && !resizerY) {
 		// no resize
 		return m_pD3DDevEx->StretchRect(pSurface, rSrcRect, pRenderTarget, rDstRect, D3DTEXF_POINT);
 		// alt
@@ -1455,7 +1512,7 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 		// return m_pD3DDevEx->UpdateSurface(m_SrcSamples.GetAt(0).pSrcSurface, rSrcRect, pRenderTarget, &rDstRect.TopLeft())
 	}
 
-	if (resizerX >= 0 && resizerY >= 0) {
+	if (resizerX && resizerY) {
 		// two pass resize
 
 		// check intermediate texture
@@ -1484,21 +1541,21 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 		hr = m_pD3DDevEx->SetRenderTarget(0, m_TexResize.pSurface);
 
 		// resize width
-		hr = TextureResizeShader(pTexture, rSrcRect, resizeRect, m_PixelShaders[resizerX].pShader);
+		hr = TextureResizeShader(pTexture, rSrcRect, resizeRect, resizerX);
 
 		// restore current RenderTarget
 		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
 		// resize height
-		hr = TextureResizeShader(m_TexResize.pTexture, resizeRect, rDstRect, m_PixelShaders[resizerY].pShader);
+		hr = TextureResizeShader(m_TexResize.pTexture, resizeRect, rDstRect, resizerY);
 	}
-	else if (resizerX >= 0) {
+	else if (resizerX) {
 		// one pass resize for width
-		hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, m_PixelShaders[resizerX].pShader);
+		hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, resizerX);
 	}
 	else { // resizerY >= 0
 		// one pass resize for height
-		hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, m_PixelShaders[resizerY].pShader);
+		hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, resizerY);
 	}
 
 	if (FAILED(hr)) {
