@@ -50,9 +50,10 @@ enum Tex2DType {
 	Tex2D_DynamicShaderWrite,
 	Tex2D_DefaultRTarget,
 	Tex2D_StagingRead,
+	Tex2D_DefaultShaderRTargetGDI,
 };
 
-HRESULT CreateTex2D(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type, ID3D11Texture2D** ppTexture2D)
+inline HRESULT CreateTex2D(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type, ID3D11Texture2D** ppTexture2D)
 {
 	D3D11_TEXTURE2D_DESC desc;
 	desc.Width      = width;
@@ -61,28 +62,39 @@ HRESULT CreateTex2D(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT 
 	desc.ArraySize  = 1;
 	desc.Format     = format;
 	desc.SampleDesc = { 1, 0 };
-	desc.MiscFlags  = 0;
+
 	switch (type) {
 	default:
 	case Tex2D_Default:
 		desc.Usage = D3D11_USAGE_DEFAULT;
 		desc.BindFlags = 0;
 		desc.CPUAccessFlags = 0;
+		desc.MiscFlags = 0;
 		break;
 	case Tex2D_DynamicShaderWrite:
 		desc.Usage = D3D11_USAGE_DYNAMIC;
 		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		desc.MiscFlags = 0;
 		break;
 	case Tex2D_DefaultRTarget:
 		desc.Usage = D3D11_USAGE_DEFAULT;
 		desc.BindFlags = D3D11_BIND_RENDER_TARGET;
 		desc.CPUAccessFlags = 0;
+		desc.MiscFlags = 0;
 		break;
 	case Tex2D_StagingRead:
 		desc.Usage = D3D11_USAGE_STAGING;
 		desc.BindFlags = 0;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		desc.MiscFlags = 0;
+		break;
+	case Tex2D_DefaultShaderRTargetGDI:
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+		desc.CPUAccessFlags = 0;
+		desc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
+		break;
 	}
 
 	return pDevice->CreateTexture2D(&desc, nullptr, ppTexture2D);
@@ -393,22 +405,9 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	}
 #endif
 
-	{
-		D3D11_TEXTURE2D_DESC desc = {};
-		desc.Width = STATS_W;
-		desc.Height = STATS_H;
-		desc.ArraySize = 1;
-		desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-		desc.MipLevels = 1;
-		desc.SampleDesc.Count = 1;
-		desc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
-
-		m_pOSDTex2D.Release();
-		HRESULT hr2 = m_pDevice->CreateTexture2D(&desc, nullptr, &m_pOSDTex2D);
-		ASSERT(S_OK == hr2);
-	}
+	m_pOSDTex2D.Release();
+	HRESULT hr2 = CreateTex2D(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DefaultShaderRTargetGDI, &m_pOSDTex2D);
+	ASSERT(S_OK == hr2);
 
 	return hr;
 }
