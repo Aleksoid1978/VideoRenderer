@@ -35,10 +35,11 @@
 #define IDC_CHECK2                      1003
 #define IDC_CHECK3                      1004
 #define IDC_CHECK4                      1005
-#define IDC_COMBO1                      1006
-#define IDC_COMBO2                      1007
-#define IDC_COMBO3                      1008
-#define IDC_EDIT1                       1009
+#define IDC_CHECK5                      1006
+#define IDC_COMBO1                      1007
+#define IDC_COMBO2                      1008
+#define IDC_COMBO3                      1009
+#define IDC_EDIT1                       1010
 
 // Next default values for new objects
 // 
