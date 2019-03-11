@@ -209,6 +209,8 @@ private:
 	HANDLE m_hEvtQuit; // Stop threads event
 	HANDLE m_hSyncThread = nullptr;
 
+	REFERENCE_TIME m_rtStart = 0;
+
 public:
 	CDX9VideoProcessor(CMpcVideoRenderer* pFilter);
 	~CDX9VideoProcessor();

@@ -352,6 +352,10 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 		}
 	}
 
+	if (m_pFilter->m_pSubCallBack) {
+		m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
+	}
+
 	// TODO
 	//StopWorkerThreads();
 	//StartWorkerThreads();
@@ -1007,6 +1011,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 void CDX9VideoProcessor::Start()
 {
+	m_rtStart = 0;
 }
 
 void CDX9VideoProcessor::Stop()
@@ -1032,6 +1037,8 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 {
 	REFERENCE_TIME rtStart, rtEnd;
 	pSample->GetTime(&rtStart, &rtEnd);
+
+	m_rtStart = rtStart;
 
 	const REFERENCE_TIME rtFrameDur = m_pFilter->m_FrameStats.GetAverageFrameDuration();
 	rtEnd = rtStart + rtFrameDur;
@@ -1224,6 +1231,16 @@ HRESULT CDX9VideoProcessor::Render(int field)
 
 	const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 	const CRect rDstPri(m_windowRect);
+
+	if (m_pFilter->m_pSubCallBack) {
+		CRect rDstVid(m_videoRect);
+
+		if (CComQIPtr<ISubRenderCallback4> pSubCallBack4 = m_pFilter->m_pSubCallBack) {
+			pSubCallBack4->RenderEx3(m_rtStart, 0, 0, rDstVid, rDstVid, rSrcPri);
+		} else {
+			m_pFilter->m_pSubCallBack->Render(m_rtStart, rDstVid.left, rDstVid.top, rDstVid.right, rDstVid.bottom, rSrcPri.Width(), rSrcPri.Height());
+		}
+	}
 
 	hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
 

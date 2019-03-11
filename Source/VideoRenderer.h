@@ -28,6 +28,7 @@
 #include "IVideoRenderer.h"
 #include "DX9VideoProcessor.h"
 #include "DX11VideoProcessor.h"
+#include "./Include/ISubRender.h"
 
 
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
@@ -59,6 +60,7 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	, public IVideoWindow
 	, public ISpecifyPropertyPages
 	, public IVideoRenderer
+	, public ISubRender
 {
 private:
 	friend class CVideoRendererInputPin;
@@ -86,6 +88,8 @@ private:
 
 	// D3D11 VideoProcessor
 	CDX11VideoProcessor m_DX11_VP;
+
+	ISubRenderCallback* m_pSubCallBack = nullptr;
 
 public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
@@ -230,4 +234,10 @@ public:
 	);
 
 	STDMETHODIMP SaveSettings();
+
+	// ISubRender
+	STDMETHODIMP SetCallback(ISubRenderCallback* cb) {
+		m_pSubCallBack = cb;
+		return S_OK;
+	}
 };

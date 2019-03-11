@@ -249,6 +249,7 @@ HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 	if (m_State == State_Running) {
 		Render(m_pMediaSample);
 	}
+
 	ClearPendingSample();
 	SendEndOfStream();
 	CancelNotification();
@@ -280,6 +281,9 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 	}
 	else if (riid == __uuidof(IVideoRenderer)) {
 		hr = GetInterface((IVideoRenderer*)this, ppv);
+	}
+	else if (riid == __uuidof(ISubRender)) {
+		hr = GetInterface((ISubRender*)this, ppv);
 	}
 	else {
 		hr = __super::NonDelegatingQueryInterface(riid, ppv);
