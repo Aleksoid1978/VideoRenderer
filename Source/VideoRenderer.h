@@ -29,6 +29,7 @@
 #include "DX9VideoProcessor.h"
 #include "DX11VideoProcessor.h"
 #include "./Include/ISubRender.h"
+#include "./Include/FilterInterfacesImpl.h"
 
 
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
@@ -61,6 +62,7 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	, public ISpecifyPropertyPages
 	, public IVideoRenderer
 	, public ISubRender
+	, public CExFilterInfoImpl
 {
 private:
 	friend class CVideoRendererInputPin;
@@ -82,6 +84,7 @@ private:
 
 	FILTER_STATE m_filterState = State_Stopped;
 	int m_Stepping = 0;
+	REFERENCE_TIME m_rtStartTime = 0;
 
 	// DXVA2 VideoProcessor
 	CDX9VideoProcessor m_DX9_VP;
@@ -95,7 +98,7 @@ public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
 	~CMpcVideoRenderer();
 
-private:
+	void NewSegment(REFERENCE_TIME startTime);
 
 public:
 	// CBaseRenderer
@@ -109,6 +112,7 @@ public:
 
 	// IMediaFilter
 	STDMETHODIMP Run(REFERENCE_TIME rtStart) override;
+	STDMETHODIMP Pause() override;
 	STDMETHODIMP Stop() override;
 
 	// IKsPropertySet
@@ -240,4 +244,7 @@ public:
 		m_pSubCallBack = cb;
 		return S_OK;
 	}
+
+	// IExFilterInfo
+	STDMETHODIMP GetInt(LPCSTR field, int* value) override;
 };

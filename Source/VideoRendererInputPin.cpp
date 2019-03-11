@@ -138,6 +138,16 @@ STDMETHODIMP CVideoRendererInputPin::ReceiveConnection(IPin* pConnector, const A
 	return __super::ReceiveConnection(pConnector, pmt);
 }
 
+STDMETHODIMP CVideoRendererInputPin::NewSegment(REFERENCE_TIME startTime, REFERENCE_TIME stopTime, double rate)
+{
+	DLog(L"CVideoRendererInputPin::NewSegment()");
+
+	CAutoLock cObjectLock(m_pLock);
+
+	m_pBaseRenderer->NewSegment(startTime);
+	return CRendererInputPin::NewSegment(startTime, stopTime, rate);
+}
+
 // IMFGetService
 STDMETHODIMP CVideoRendererInputPin::GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject)
 {

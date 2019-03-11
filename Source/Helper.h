@@ -56,6 +56,8 @@
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p) = nullptr; } }
 #define SAFE_CLOSE_HANDLE(p) { if (p) { if ((p) != INVALID_HANDLE_VALUE) ASSERT(CloseHandle(p)); (p) = nullptr; } }
 
+#define QI(i) (riid == __uuidof(i)) ? GetInterface((i*)this, ppv) :
+
 #define ALIGN(x, a) (((x)+(a)-1)&~((a)-1))
 
 DEFINE_GUID(MEDIASUBTYPE_Y8,    0x20203859, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);

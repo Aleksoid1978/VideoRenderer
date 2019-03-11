@@ -108,6 +108,11 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 {
 }
 
+void CMpcVideoRenderer::NewSegment(REFERENCE_TIME startTime)
+{
+	m_rtStartTime = startTime;
+}
+
 // CBaseRenderer
 
 HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
@@ -260,36 +265,18 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 {
 	CheckPointer(ppv, E_POINTER);
 
-	HRESULT hr;
-	if (riid == __uuidof(IKsPropertySet)) {
-		hr = GetInterface((IKsPropertySet*)this, ppv);
-	}
-	else if (riid == __uuidof(IMFGetService)) {
-		hr = GetInterface((IMFGetService*)this, ppv);
-	}
-	else if (riid == __uuidof(IBasicVideo)) {
-		hr = GetInterface((IBasicVideo*)this, ppv);
-	}
-	else if (riid == __uuidof(IBasicVideo2)) {
-		hr = GetInterface((IBasicVideo2*)this, ppv);
-	}
-	else if (riid == __uuidof(IVideoWindow)) {
-		hr = GetInterface((IVideoWindow*)this, ppv);
-	}
-	else if (riid == __uuidof(ISpecifyPropertyPages)) {
-		hr = GetInterface((ISpecifyPropertyPages*)this, ppv);
-	}
-	else if (riid == __uuidof(IVideoRenderer)) {
-		hr = GetInterface((IVideoRenderer*)this, ppv);
-	}
-	else if (riid == __uuidof(ISubRender)) {
-		hr = GetInterface((ISubRender*)this, ppv);
-	}
-	else {
-		hr = __super::NonDelegatingQueryInterface(riid, ppv);
-	}
+	return
+		QI(IKsPropertySet)
+		QI(IMFGetService)
+		QI(IBasicVideo)
+		QI(IBasicVideo2)
+		QI(IVideoWindow)
+		QI(ISpecifyPropertyPages)
+		QI(IVideoRenderer)
+		QI(ISubRender)
+		QI(IExFilterInfo)
+		__super::NonDelegatingQueryInterface(riid, ppv);
 
-	return hr;
 }
 
 // IMediaFilter
@@ -302,6 +289,7 @@ STDMETHODIMP CMpcVideoRenderer::Run(REFERENCE_TIME rtStart)
 	}
 
 	m_filterState = State_Running;
+
 	if (m_bUsedD3D11) {
 		m_DX11_VP.Start();
 	} else {
@@ -309,6 +297,15 @@ STDMETHODIMP CMpcVideoRenderer::Run(REFERENCE_TIME rtStart)
 	}
 
 	return CBaseVideoRenderer2::Run(rtStart);
+}
+
+STDMETHODIMP CMpcVideoRenderer::Pause()
+{
+	DLog(L"CMpcVideoRenderer::Pause()");
+
+	m_filterState = State_Paused;
+
+	return CBaseVideoRenderer2::Pause();
 }
 
 STDMETHODIMP CMpcVideoRenderer::Stop()
@@ -739,4 +736,18 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 	}
 
 	return S_OK;
+}
+
+// IExFilterInfo
+
+STDMETHODIMP CMpcVideoRenderer::GetInt(LPCSTR field, int* value)
+{
+	CheckPointer(value, E_POINTER);
+
+	if (!strcmp(field, "playbackState")) {
+		*value = m_filterState;
+		return S_OK;
+	}
+
+	return E_INVALIDARG;
 }

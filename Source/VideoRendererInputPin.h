@@ -47,6 +47,7 @@ public:
 	STDMETHODIMP GetAllocator(IMemAllocator **ppAllocator);
 	STDMETHODIMP GetAllocatorRequirements(ALLOCATOR_PROPERTIES* pProps);
 	STDMETHODIMP ReceiveConnection(IPin* pConnector, const AM_MEDIA_TYPE* pmt);
+	STDMETHODIMP NewSegment(REFERENCE_TIME startTime, REFERENCE_TIME stopTime, double rate) override;
 
 	// IMFGetService
 	STDMETHODIMP GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject);

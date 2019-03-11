@@ -1234,11 +1234,12 @@ HRESULT CDX9VideoProcessor::Render(int field)
 
 	if (m_pFilter->m_pSubCallBack) {
 		CRect rDstVid(m_videoRect);
+		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
 
 		if (CComQIPtr<ISubRenderCallback4> pSubCallBack4 = m_pFilter->m_pSubCallBack) {
-			pSubCallBack4->RenderEx3(m_rtStart, 0, 0, rDstVid, rDstVid, rSrcPri);
+			pSubCallBack4->RenderEx3(rtStart, 0, 0, rDstVid, rDstVid, rSrcPri);
 		} else {
-			m_pFilter->m_pSubCallBack->Render(m_rtStart, rDstVid.left, rDstVid.top, rDstVid.right, rDstVid.bottom, rSrcPri.Width(), rSrcPri.Height());
+			m_pFilter->m_pSubCallBack->Render(rtStart, rDstVid.left, rDstVid.top, rDstVid.right, rDstVid.bottom, rSrcPri.Width(), rSrcPri.Height());
 		}
 	}
 
