@@ -62,7 +62,7 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	, public ISpecifyPropertyPages
 	, public IVideoRenderer
 	, public ISubRender
-	, public CExFilterInfoImpl
+	, public CExFilterConfigImpl
 {
 private:
 	friend class CVideoRendererInputPin;
@@ -245,6 +245,9 @@ public:
 		return S_OK;
 	}
 
-	// IExFilterInfo
-	STDMETHODIMP GetInt(LPCSTR field, int* value) override;
+	// IExFilterConfig
+	STDMETHODIMP GetBool(LPCSTR field, bool* value) override;
+	STDMETHODIMP GetInt(LPCSTR field,  int*  value) override;
+
+	STDMETHODIMP SetBool(LPCSTR field, bool  value) override;
 };

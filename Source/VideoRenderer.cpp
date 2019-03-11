@@ -274,7 +274,7 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 		QI(ISpecifyPropertyPages)
 		QI(IVideoRenderer)
 		QI(ISubRender)
-		QI(IExFilterInfo)
+		QI(IExFilterConfig)
 		__super::NonDelegatingQueryInterface(riid, ppv);
 
 }
@@ -738,7 +738,19 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 	return S_OK;
 }
 
-// IExFilterInfo
+// IExFilterConfig
+
+STDMETHODIMP CMpcVideoRenderer::GetBool(LPCSTR field, bool* value)
+{
+	CheckPointer(value, E_POINTER);
+
+	if (!strcmp(field, "statsEnable")) {
+		*value = m_bOptionShowStats;
+		return S_OK;
+	}
+
+	return E_INVALIDARG;
+}
 
 STDMETHODIMP CMpcVideoRenderer::GetInt(LPCSTR field, int* value)
 {
@@ -746,6 +758,21 @@ STDMETHODIMP CMpcVideoRenderer::GetInt(LPCSTR field, int* value)
 
 	if (!strcmp(field, "playbackState")) {
 		*value = m_filterState;
+		return S_OK;
+	}
+
+	return E_INVALIDARG;
+}
+
+STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
+{
+	if (!strcmp(field, "statsEnable")) {
+		m_bOptionShowStats = value;
+		if (m_bUsedD3D11) {
+			m_DX11_VP.SetShowStats(m_bOptionShowStats);
+		} else {
+			m_DX9_VP.SetShowStats(m_bOptionShowStats);
+		}
 		return S_OK;
 	}
 
