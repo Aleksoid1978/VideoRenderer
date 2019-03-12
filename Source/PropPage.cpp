@@ -49,10 +49,6 @@ CVRMainPPage::CVRMainPPage(LPUNKNOWN lpunk, HRESULT* phr) :
 
 CVRMainPPage::~CVRMainPPage()
 {
-	if (m_hMonoFont) {
-		DeleteObject(m_hMonoFont);
-		m_hMonoFont = 0;
-	}
 }
 
 HRESULT CVRMainPPage::OnConnect(IUnknown *pUnk)
@@ -117,71 +113,9 @@ HRESULT CVRMainPPage::OnActivate()
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Lanczos");
 	SendDlgItemMessageW(IDC_COMBO3, CB_SETCURSEL, m_iDownscaling, 0);
 
-	if (!m_pVideoRenderer->GetActive()) {
-		SetDlgItemTextW(IDC_EDIT1, L"filter is not active");
-		return S_OK;
-	}
-	// init monospace font
-	LOGFONTW lf = {};
-	HDC hdc = GetWindowDC();
-	lf.lfHeight = -MulDiv(10, GetDeviceCaps(hdc, LOGPIXELSY), 72);
-	ReleaseDC(hdc);
-	lf.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
-	wcscpy_s(lf.lfFaceName, L"Consolas");
-	m_hMonoFont = CreateFontIndirectW(&lf);
-
-	GetDlgItem(IDC_EDIT1).SetFont(m_hMonoFont);
-	ASSERT(m_pVideoRenderer);
-	CStringW str;
-
-	CStringW value;
-	if (S_OK == m_pVideoRenderer->get_AdapterDecription(value)) {
-		str.Format(L"Graphics adapter: %s", value);
-	}
-
-	if (m_pVideoRenderer->get_UsedD3D11()) {
-		str.Append(L"\r\nVideoProcessor: Direct3D 11");
-	} else {
-		str.Append(L"\r\nVideoProcessor: DXVA2");
-	}
-
-	DXVA2_VideoProcessorCaps dxva2vpcaps;
-	if (S_OK == m_pVideoRenderer->get_DXVA2VPCaps(&dxva2vpcaps)) {
-		UINT dt = dxva2vpcaps.DeinterlaceTechnology;
-		if (dt & DXVA2_DeinterlaceTech_Mask) {
-			str.Append(L"\r\nDeinterlaceTechnology:");
-			if (dt & DXVA2_DeinterlaceTech_BOBLineReplicate)       str.Append(L" BOBLineReplicate,");
-			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch)     str.Append(L" BOBVerticalStretch,");
-			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch4Tap) str.Append(L" BOBVerticalStretch4Tap,");
-			if (dt & DXVA2_DeinterlaceTech_MedianFiltering)        str.Append(L" MedianFiltering,");
-			if (dt & DXVA2_DeinterlaceTech_EdgeFiltering)          str.Append(L" EdgeFiltering,");
-			if (dt & DXVA2_DeinterlaceTech_FieldAdaptive)          str.Append(L" FieldAdaptive,");
-			if (dt & DXVA2_DeinterlaceTech_PixelAdaptive)          str.Append(L" PixelAdaptive,");
-			if (dt & DXVA2_DeinterlaceTech_MotionVectorSteered)    str.Append(L" MotionVectorSteered,");
-			if (dt & DXVA2_DeinterlaceTech_InverseTelecine)        str.Append(L" InverseTelecine");
-			str.TrimRight(',');
-		}
-		if (dxva2vpcaps.NumForwardRefSamples) {
-			str.AppendFormat(L"\r\nForwardRefSamples: %u", dxva2vpcaps.NumForwardRefSamples);
-		}
-		if (dxva2vpcaps.NumBackwardRefSamples) {
-			str.AppendFormat(L"\r\nBackwardRefSamples: %u", dxva2vpcaps.NumBackwardRefSamples);
-		}
-	}
-
-	VRFrameInfo frameinfo;
-	m_pVideoRenderer->get_FrameInfo(&frameinfo);
-	auto FmtConvParams = GetFmtConvParams(frameinfo.Subtype);
-	if (FmtConvParams) {
-		str.Append(L"\r\n\r\n  Input");
-		str.AppendFormat(L"\r\nFormat : %S", FmtConvParams->str);
-		str.AppendFormat(L"\r\nWidth  : %u", frameinfo.Width);
-		str.AppendFormat(L"\r\nHeight : %u", frameinfo.Height);
-	}
-	SetDlgItemTextW(IDC_EDIT1, str);
-
 #ifdef MPCVR_REV_DATE
 #ifdef MPCVR_REV_HASH
+	CStringW str;
 	str.Format(L"Experimental MPC Video Renderer %s (%s)",
 		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_DATE)),
 		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_HASH)));
@@ -267,6 +201,126 @@ HRESULT CVRMainPPage::OnApplyChanges()
 		m_iDownscaling,
 		m_bInterpolateAt50pct);
 	m_pVideoRenderer->SaveSettings();
+
+	return S_OK;
+}
+
+// CVRInfoPPage
+
+CVRInfoPPage::CVRInfoPPage(LPUNKNOWN lpunk, HRESULT* phr) :
+	CBasePropertyPage(L"StatsProp", lpunk, IDD_INFOPROPPAGE, IDS_INFOPROPPAGE_TITLE)
+{
+}
+
+CVRInfoPPage::~CVRInfoPPage()
+{
+	if (m_hMonoFont) {
+		DeleteObject(m_hMonoFont);
+		m_hMonoFont = 0;
+	}
+}
+
+HRESULT CVRInfoPPage::OnConnect(IUnknown *pUnk)
+{
+	if (pUnk == nullptr) return E_POINTER;
+
+	m_pVideoRenderer = pUnk;
+	if (!m_pVideoRenderer) {
+		return E_NOINTERFACE;
+	}
+
+	return S_OK;
+}
+
+HRESULT CVRInfoPPage::OnDisconnect()
+{
+	if (m_pVideoRenderer == nullptr) {
+		return E_UNEXPECTED;
+	}
+
+	m_pVideoRenderer.Release();
+
+	return S_OK;
+}
+
+HRESULT CVRInfoPPage::OnActivate()
+{
+	// set m_hWnd for CWindow
+	m_hWnd = m_hwnd;
+
+	// init monospace font
+	LOGFONTW lf = {};
+	HDC hdc = GetWindowDC();
+	lf.lfHeight = -MulDiv(10, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+	ReleaseDC(hdc);
+	lf.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
+	wcscpy_s(lf.lfFaceName, L"Consolas");
+	m_hMonoFont = CreateFontIndirectW(&lf);
+
+	GetDlgItem(IDC_EDIT1).SetFont(m_hMonoFont);
+	ASSERT(m_pVideoRenderer);
+
+	if (!m_pVideoRenderer->GetActive()) {
+		SetDlgItemTextW(IDC_EDIT1, L"filter is not active");
+		return S_OK;
+	}
+
+	CStringW str;
+	CStringW value;
+	if (S_OK == m_pVideoRenderer->get_AdapterDecription(value)) {
+		str.Format(L"Graphics adapter: %s", value);
+	}
+
+	if (m_pVideoRenderer->get_UsedD3D11()) {
+		str.Append(L"\r\nVideoProcessor: Direct3D 11");
+	}
+	else {
+		str.Append(L"\r\nVideoProcessor: DXVA2");
+	}
+
+	DXVA2_VideoProcessorCaps dxva2vpcaps;
+	if (S_OK == m_pVideoRenderer->get_DXVA2VPCaps(&dxva2vpcaps)) {
+		UINT dt = dxva2vpcaps.DeinterlaceTechnology;
+		if (dt & DXVA2_DeinterlaceTech_Mask) {
+			str.Append(L"\r\nDeinterlaceTechnology:");
+			if (dt & DXVA2_DeinterlaceTech_BOBLineReplicate)       str.Append(L" BOBLineReplicate,");
+			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch)     str.Append(L" BOBVerticalStretch,");
+			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch4Tap) str.Append(L" BOBVerticalStretch4Tap,");
+			if (dt & DXVA2_DeinterlaceTech_MedianFiltering)        str.Append(L" MedianFiltering,");
+			if (dt & DXVA2_DeinterlaceTech_EdgeFiltering)          str.Append(L" EdgeFiltering,");
+			if (dt & DXVA2_DeinterlaceTech_FieldAdaptive)          str.Append(L" FieldAdaptive,");
+			if (dt & DXVA2_DeinterlaceTech_PixelAdaptive)          str.Append(L" PixelAdaptive,");
+			if (dt & DXVA2_DeinterlaceTech_MotionVectorSteered)    str.Append(L" MotionVectorSteered,");
+			if (dt & DXVA2_DeinterlaceTech_InverseTelecine)        str.Append(L" InverseTelecine");
+			str.TrimRight(',');
+		}
+		if (dxva2vpcaps.NumForwardRefSamples) {
+			str.AppendFormat(L"\r\nForwardRefSamples: %u", dxva2vpcaps.NumForwardRefSamples);
+		}
+		if (dxva2vpcaps.NumBackwardRefSamples) {
+			str.AppendFormat(L"\r\nBackwardRefSamples: %u", dxva2vpcaps.NumBackwardRefSamples);
+		}
+	}
+
+	VRFrameInfo frameinfo;
+	m_pVideoRenderer->get_FrameInfo(&frameinfo);
+	auto FmtConvParams = GetFmtConvParams(frameinfo.Subtype);
+	if (FmtConvParams) {
+		str.Append(L"\r\n\r\n  Input");
+		str.AppendFormat(L"\r\nFormat : %S", FmtConvParams->str);
+		str.AppendFormat(L"\r\nWidth  : %u", frameinfo.Width);
+		str.AppendFormat(L"\r\nHeight : %u", frameinfo.Height);
+	}
+	SetDlgItemTextW(IDC_EDIT1, str);
+
+#ifdef MPCVR_REV_DATE
+#ifdef MPCVR_REV_HASH
+	str.Format(L"Experimental MPC Video Renderer %s (%s)",
+		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_DATE)),
+		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_HASH)));
+	SetDlgItemTextW(IDC_STATIC1, str);
+#endif // MPCVR_REV_HASH
+#endif // MPCVR_REV_DATE
 
 	return S_OK;
 }

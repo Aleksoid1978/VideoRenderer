@@ -23,10 +23,11 @@
 #include "BaseClasses\streams.h"
 #include "IVideoRenderer.h"
 
+// CVRMainPPage
+
 class __declspec(uuid("DA46D181-07D6-441D-B314-019AEB10148A"))
 	CVRMainPPage : public CBasePropertyPage, public CWindow
 {
-	HFONT m_hMonoFont = nullptr;
 	CComQIPtr<IVideoRenderer> m_pVideoRenderer;
 
 	bool m_bUseD3D11    = false;
@@ -54,4 +55,22 @@ private:
 	}
 	INT_PTR OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) override;
 	HRESULT OnApplyChanges() override;
+};
+
+// CVRInfoPPage
+
+class __declspec(uuid("D697132B-FCA4-4401-8869-D3B39D0750DB"))
+	CVRInfoPPage : public CBasePropertyPage, public CWindow
+{
+	HFONT m_hMonoFont = nullptr;
+	CComQIPtr<IVideoRenderer> m_pVideoRenderer;
+
+public:
+	CVRInfoPPage(LPUNKNOWN lpunk, HRESULT* phr);
+	~CVRInfoPPage();
+
+private:
+	HRESULT OnConnect(IUnknown* pUnknown) override;
+	HRESULT OnDisconnect() override;
+	HRESULT OnActivate() override;
 };

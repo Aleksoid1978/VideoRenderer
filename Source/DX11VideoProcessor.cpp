@@ -886,8 +886,7 @@ HRESULT CDX11VideoProcessor::SetVertices(UINT dstW, UINT dstH)
 	HRESULT hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pVertexBuffer);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::SetVertices() : CreateBuffer() failed with error %s", HR2Str(hr));
-		m_pShaderResource->Release();
-		m_pShaderResource = nullptr;
+		SAFE_RELEASE(m_pShaderResource);
 		return hr;
 	}
 

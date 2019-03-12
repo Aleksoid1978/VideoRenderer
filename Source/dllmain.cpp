@@ -44,7 +44,8 @@ const AMOVIESETUP_FILTER sudFilter[] = {
 
 CFactoryTemplate g_Templates[] = {
 	{sudFilter[0].strName, &__uuidof(CMpcVideoRenderer), CreateInstance<CMpcVideoRenderer>, nullptr, &sudFilter[0]},
-	{L"MainProp", &__uuidof(CVRMainPPage), CreateInstance<CVRMainPPage>, nullptr, nullptr}
+	{L"MainProp", &__uuidof(CVRMainPPage), CreateInstance<CVRMainPPage>, nullptr, nullptr},
+	{L"InfoProp", &__uuidof(CVRInfoPPage), CreateInstance<CVRInfoPPage>, nullptr, nullptr}
 };
 
 int g_cTemplates = std::size(g_Templates);

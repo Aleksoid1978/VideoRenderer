@@ -3,7 +3,9 @@
 // Used by MpcVideoRenderer.rc
 //
 #define IDD_MAINPROPPAGE                102
-#define IDS_MAINPROPPAGE_TITLE          103
+#define IDD_INFOPROPPAGE                103
+#define IDS_MAINPROPPAGE_TITLE          104
+#define IDS_INFOPROPPAGE_TITLE          105
 #define IDF_SHADER_RESIZER_MITCHELL4_X  712
 #define IDF_SHADER_RESIZER_MITCHELL4_Y  713
 #define IDF_SHADER_RESIZER_CATMULL4_X   714

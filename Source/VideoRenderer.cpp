@@ -606,13 +606,14 @@ STDMETHODIMP CMpcVideoRenderer::GetPages(CAUUID* pPages)
 {
 	CheckPointer(pPages, E_POINTER);
 
-	pPages->cElems = 1;
-	pPages->pElems = reinterpret_cast<GUID*>(CoTaskMemAlloc(sizeof(GUID)));
+	pPages->cElems = 2;
+	pPages->pElems = reinterpret_cast<GUID*>(CoTaskMemAlloc(sizeof(GUID) * pPages->cElems));
 	if (pPages->pElems == nullptr) {
 		return E_OUTOFMEMORY;
 	}
 
 	pPages->pElems[0] = __uuidof(CVRMainPPage);
+	pPages->pElems[1] = __uuidof(CVRInfoPPage);
 
 	return S_OK;
 }
