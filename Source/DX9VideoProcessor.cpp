@@ -512,15 +512,15 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 			return FALSE;
 		}
 
-		if (m_VendorId == PCIV_AMDATI) {
-			// fix AMD driver bug, fill the surface in black
-			m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(i).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
-		}
+		// fill the surface in black, to avoid the "green screen"
+		m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(i).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
 
 		m_DXVA2Samples[i].SampleFormat.value = m_srcExFmt.value;
 		m_DXVA2Samples[i].SampleFormat.SampleFormat = DXVA2_SampleUnknown; // samples that are not used yet
 		m_DXVA2Samples[i].SrcRect = { 0, 0, (LONG)width, (LONG)height }; // will be rewritten in ProcessDXVA2()
 		m_DXVA2Samples[i].PlanarAlpha = DXVA2_Fixed32OpaqueAlpha();
+
+		m_DXVA2Samples[i].SrcSurface = m_SrcSamples.GetAt(i).pSrcSurface;
 	}
 
 	m_SurfaceWidth  = width;
@@ -670,10 +670,8 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT w
 		return FALSE;
 	}
 
-	if (m_VendorId == PCIV_AMDATI) {
-		// fix AMD driver bug, fill the surface in black
-		m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(0).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
-	}
+	// fill the surface in black, to avoid the "green screen"
+	m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(0).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
 
 	m_srcD3DFormat = d3dformat;
 	m_srcWidth     = width;
@@ -1018,13 +1016,12 @@ void CDX9VideoProcessor::Stop()
 {
 	// reset input buffers
 	for (unsigned i = 0; i < m_SrcSamples.Size(); i++) {
-		auto & SrcSample = m_SrcSamples.GetAt(i);
+		auto& SrcSample = m_SrcSamples.GetAt(i);
 		SrcSample.Start = 0;
 		SrcSample.End = 0;
 		SrcSample.SampleFormat = DXVA2_SampleUnknown;
-		if (m_VendorId == PCIV_AMDATI) {
-			m_pD3DDevEx->ColorFill(SrcSample.pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
-		}
+		// fill the surface in black, to avoid the "green screen"
+		m_pD3DDevEx->ColorFill(SrcSample.pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
 	}
 	for (auto& DXVA2Sample : m_DXVA2Samples) {
 		DXVA2Sample.Start = 0;
@@ -1176,7 +1173,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 	m_SrcSamples.Get().SampleFormat = m_CurrentSampleFmt;
 
 	for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
-		auto & SrcSample = m_SrcSamples.GetAt(i);
+		auto& SrcSample = m_SrcSamples.GetAt(i);
 		m_DXVA2Samples[i].Start = SrcSample.Start;
 		m_DXVA2Samples[i].End   = SrcSample.End;
 		m_DXVA2Samples[i].SampleFormat.SampleFormat = SrcSample.SampleFormat;
@@ -1460,7 +1457,7 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 
 	// Initialize main stream video samples
 	for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
-		auto & SrcSample = m_SrcSamples.GetAt(i);
+		auto& SrcSample = m_SrcSamples.GetAt(i);
 		m_DXVA2Samples[i].SrcRect = rSrcRect;
 		m_DXVA2Samples[i].DstRect = VPRect;
 	}
