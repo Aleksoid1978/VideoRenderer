@@ -178,6 +178,10 @@ HRESULT CVRMainPPage::OnActivate()
 	SetDlgItemTextW(IDC_STATIC1, str);
 #endif // MPCVR_REV_HASH
 #endif // MPCVR_REV_DATE
+
+	SetCursor(m_hWnd, IDC_ARROW);
+	SetCursor(m_hWnd, IDC_COMBO1, IDC_HAND);
+
 	return S_OK;
 }
 
