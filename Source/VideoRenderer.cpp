@@ -172,6 +172,7 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	CAutoLock cRendererLock(&m_RendererLock);
 
 	HRESULT hr = S_OK;
+	m_bRenderStart = true;
 
 	if (m_bUsedD3D11) {
 		hr = m_DX11_VP.ProcessSample(pSample);
@@ -436,14 +437,14 @@ STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long
 	CAutoLock cRendererLock(&m_RendererLock);
 	if (m_bUsedD3D11) {
 		m_DX11_VP.SetVideoRect(videoRect);
-		if (m_filterState != State_Stopped) {
+		if (m_bRenderStart && m_filterState != State_Stopped) {
 			m_DX11_VP.Render(0);
 		} else {
 			m_DX11_VP.FillBlack();
 		}
 	} else {
 		m_DX9_VP.SetVideoRect(videoRect);
-		if (m_filterState != State_Stopped) {
+		if (m_bRenderStart && m_filterState != State_Stopped) {
 			m_DX9_VP.Render(0);
 		} else {
 			m_DX9_VP.FillBlack();
@@ -583,14 +584,14 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 	if (m_bUsedD3D11) {
 		m_DX11_VP.InitSwapChain(m_hWnd, windowRect.Width(), windowRect.Height());
 		m_DX11_VP.SetWindowRect(windowRect);
-		if (m_filterState != State_Stopped) {
+		if (m_bRenderStart && m_filterState != State_Stopped) {
 			m_DX11_VP.Render(0);
 		} else {
 			m_DX11_VP.FillBlack();
 		}
 	} else {
 		m_DX9_VP.SetWindowRect(windowRect);
-		if (m_filterState != State_Stopped) {
+		if (m_bRenderStart && m_filterState != State_Stopped) {
 			m_DX9_VP.Render(0);
 		} else {
 			m_DX9_VP.FillBlack();
@@ -773,6 +774,8 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 		} else {
 			m_DX9_VP.SetShowStats(m_bOptionShowStats);
 		}
+
+		SaveSettings();
 		return S_OK;
 	}
 
