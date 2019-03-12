@@ -47,20 +47,9 @@ enum :int {
 	DOWNSCALE_COUNT,
 };
 
-struct VRFrameInfo {
-	GUID Subtype;
-	unsigned Width;
-	unsigned Height;
-	DXVA2_ExtendedFormat ExtFormat;
-};
-
 interface __declspec(uuid("1AB00F10-5F55-42AC-B53F-38649F11BE3E"))
 IVideoRenderer : public IUnknown {
-	STDMETHOD(get_AdapterDecription) (CStringW& str) PURE;
-	STDMETHOD_(bool, get_UsedD3D11()) PURE;
-	STDMETHOD(get_FrameInfo) (VRFrameInfo* pFrameInfo) PURE;
-	STDMETHOD(get_DXVA2VPCaps) (DXVA2_VideoProcessorCaps* pDXVA2VPCaps) PURE;
-
+	STDMETHOD(GetVideoProcessorInfo) (CStringW& str) PURE;
 	STDMETHOD_(bool, GetActive()) PURE;
 
 	STDMETHOD_(void, GetSettings(

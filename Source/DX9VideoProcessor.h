@@ -257,9 +257,7 @@ public:
 	HRESULT GetVideoSize(long *pWidth, long *pHeight);
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
 	HRESULT GetCurentImage(long *pDIBImage);
-	HRESULT GetFrameInfo(VRFrameInfo* pFrameInfo);
-	HRESULT GetAdapterDecription(CStringW& str);
-	HRESULT GetDXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCaps);
+	HRESULT GetVPInfo(CStringW& str);
 
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; }
 	void SetShowStats(bool value) { m_bShowStats = value; }

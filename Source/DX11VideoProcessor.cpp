@@ -1332,21 +1332,12 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	return S_OK;
 }
 
-HRESULT CDX11VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
+HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 {
-	CheckPointer(pFrameInfo, E_POINTER);
+	str = L"DirectX 11";
+	str.AppendFormat(L"\nGraphics adapter: %s", m_strAdapterDescription);
+	str.AppendFormat(L"\nVideoProcessor  : %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");
 
-	pFrameInfo->Subtype = m_srcSubType;
-	pFrameInfo->Width = m_srcWidth;
-	pFrameInfo->Height = m_srcHeight;
-	pFrameInfo->ExtFormat.value = m_srcExFmt.value;
-
-	return S_OK;
-}
-
-HRESULT CDX11VideoProcessor::GetAdapterDecription(CStringW& str)
-{
-	str = m_strAdapterDescription;
 	return S_OK;
 }
 

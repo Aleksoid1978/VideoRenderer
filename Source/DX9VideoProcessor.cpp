@@ -1336,28 +1336,42 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 	return S_OK;
 }
 
-HRESULT CDX9VideoProcessor::GetFrameInfo(VRFrameInfo* pFrameInfo)
+HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 {
-	CheckPointer(pFrameInfo, E_POINTER);
+	str = L"DirectX 9";
+	str.AppendFormat(L"\nGraphics adapter: %s", m_strAdapterDescription);
+	str.AppendFormat(L"\nVideoProcessor  : %s", m_pDXVA2_VP ? L"DXVA2" : L"PS 3.0");
 
-	pFrameInfo->Subtype = m_srcSubType;
-	pFrameInfo->Width = m_srcWidth;
-	pFrameInfo->Height = m_srcHeight;
-	pFrameInfo->ExtFormat.value = m_srcExFmt.value;
+	if (m_pDXVA2_VP) {
+		UINT dt = m_DXVA2VPcaps.DeinterlaceTechnology;
+		if (dt & DXVA2_DeinterlaceTech_Mask) {
+			str.Append(L"\nDeinterlaceTechnology:");
+			if (dt & DXVA2_DeinterlaceTech_BOBLineReplicate)       str.Append(L" BOBLineReplicate,");
+			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch)     str.Append(L" BOBVerticalStretch,");
+			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch4Tap) str.Append(L" BOBVerticalStretch4Tap,");
+			if (dt & DXVA2_DeinterlaceTech_MedianFiltering)        str.Append(L" MedianFiltering,");
+			if (dt & DXVA2_DeinterlaceTech_EdgeFiltering)          str.Append(L" EdgeFiltering,");
+			if (dt & DXVA2_DeinterlaceTech_FieldAdaptive)          str.Append(L" FieldAdaptive,");
+			if (dt & DXVA2_DeinterlaceTech_PixelAdaptive)          str.Append(L" PixelAdaptive,");
+			if (dt & DXVA2_DeinterlaceTech_MotionVectorSteered)    str.Append(L" MotionVectorSteered,");
+			if (dt & DXVA2_DeinterlaceTech_InverseTelecine)        str.Append(L" InverseTelecine");
+			str.TrimRight(',');
+		} else {
+			str.Append(L" none");
+		}
+		if (m_DXVA2VPcaps.NumForwardRefSamples) {
+			str.AppendFormat(L"\nForwardRefSamples : %u", m_DXVA2VPcaps.NumForwardRefSamples);
+		}
+		if (m_DXVA2VPcaps.NumBackwardRefSamples) {
+			str.AppendFormat(L"\nBackwardRefSamples: %u", m_DXVA2VPcaps.NumBackwardRefSamples);
+		}
+	}
+	str.AppendFormat(L"\nDisplay Mode    : %u x %u, %u", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate);
+	if (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
+		str.AppendChar('i');
+	}
+	str.Append(L" Hz");
 
-	return S_OK;
-}
-
-HRESULT CDX9VideoProcessor::GetAdapterDecription(CStringW& str)
-{
-	str = m_strAdapterDescription;
-	return S_OK;
-}
-
-HRESULT CDX9VideoProcessor::GetDXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCaps)
-{
-	CheckPointer(pDXVA2VPCaps, E_POINTER);
-	memcpy(pDXVA2VPCaps, &m_DXVA2VPcaps, sizeof(DXVA2_VideoProcessorCaps));
 	return S_OK;
 }
 

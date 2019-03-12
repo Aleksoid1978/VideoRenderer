@@ -266,50 +266,8 @@ HRESULT CVRInfoPPage::OnActivate()
 	}
 
 	CStringW str;
-	CStringW value;
-	if (S_OK == m_pVideoRenderer->get_AdapterDecription(value)) {
-		str.Format(L"Graphics adapter: %s", value);
-	}
-
-	if (m_pVideoRenderer->get_UsedD3D11()) {
-		str.Append(L"\r\nVideoProcessor: Direct3D 11");
-	}
-	else {
-		str.Append(L"\r\nVideoProcessor: DXVA2");
-	}
-
-	DXVA2_VideoProcessorCaps dxva2vpcaps;
-	if (S_OK == m_pVideoRenderer->get_DXVA2VPCaps(&dxva2vpcaps)) {
-		UINT dt = dxva2vpcaps.DeinterlaceTechnology;
-		if (dt & DXVA2_DeinterlaceTech_Mask) {
-			str.Append(L"\r\nDeinterlaceTechnology:");
-			if (dt & DXVA2_DeinterlaceTech_BOBLineReplicate)       str.Append(L" BOBLineReplicate,");
-			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch)     str.Append(L" BOBVerticalStretch,");
-			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch4Tap) str.Append(L" BOBVerticalStretch4Tap,");
-			if (dt & DXVA2_DeinterlaceTech_MedianFiltering)        str.Append(L" MedianFiltering,");
-			if (dt & DXVA2_DeinterlaceTech_EdgeFiltering)          str.Append(L" EdgeFiltering,");
-			if (dt & DXVA2_DeinterlaceTech_FieldAdaptive)          str.Append(L" FieldAdaptive,");
-			if (dt & DXVA2_DeinterlaceTech_PixelAdaptive)          str.Append(L" PixelAdaptive,");
-			if (dt & DXVA2_DeinterlaceTech_MotionVectorSteered)    str.Append(L" MotionVectorSteered,");
-			if (dt & DXVA2_DeinterlaceTech_InverseTelecine)        str.Append(L" InverseTelecine");
-			str.TrimRight(',');
-		}
-		if (dxva2vpcaps.NumForwardRefSamples) {
-			str.AppendFormat(L"\r\nForwardRefSamples: %u", dxva2vpcaps.NumForwardRefSamples);
-		}
-		if (dxva2vpcaps.NumBackwardRefSamples) {
-			str.AppendFormat(L"\r\nBackwardRefSamples: %u", dxva2vpcaps.NumBackwardRefSamples);
-		}
-	}
-
-	VRFrameInfo frameinfo;
-	m_pVideoRenderer->get_FrameInfo(&frameinfo);
-	auto FmtConvParams = GetFmtConvParams(frameinfo.Subtype);
-	if (FmtConvParams) {
-		str.Append(L"\r\n\r\n  Input");
-		str.AppendFormat(L"\r\nFormat : %S", FmtConvParams->str);
-		str.AppendFormat(L"\r\nWidth  : %u", frameinfo.Width);
-		str.AppendFormat(L"\r\nHeight : %u", frameinfo.Height);
+	if (S_OK == m_pVideoRenderer->GetVideoProcessorInfo(str)) {
+		str.Replace(L"\n", L"\r\n");
 	}
 	SetDlgItemTextW(IDC_EDIT1, str);
 

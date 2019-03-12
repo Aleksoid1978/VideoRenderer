@@ -620,30 +620,12 @@ STDMETHODIMP CMpcVideoRenderer::GetPages(CAUUID* pPages)
 
 // IVideoRenderer
 
-STDMETHODIMP CMpcVideoRenderer::get_AdapterDecription(CStringW& str)
+STDMETHODIMP CMpcVideoRenderer::GetVideoProcessorInfo(CStringW& str)
 {
 	if (m_bUsedD3D11) {
-		return m_DX11_VP.GetAdapterDecription(str);
+		return m_DX11_VP.GetVPInfo(str);
 	} else {
-		return m_DX9_VP.GetAdapterDecription(str);
-	}
-}
-
-STDMETHODIMP CMpcVideoRenderer::get_FrameInfo(VRFrameInfo* pFrameInfo)
-{
-	if (m_bUsedD3D11) {
-		return m_DX11_VP.GetFrameInfo(pFrameInfo);
-	} else {
-		return m_DX9_VP.GetFrameInfo(pFrameInfo);
-	}
-}
-
-STDMETHODIMP CMpcVideoRenderer::get_DXVA2VPCaps(DXVA2_VideoProcessorCaps* pDXVA2VPCaps)
-{
-	if (m_bUsedD3D11) {
-		return E_NOTIMPL;
-	} else {
-		return m_DX9_VP.GetDXVA2VPCaps(pDXVA2VPCaps);
+		return m_DX9_VP.GetVPInfo(str);
 	}
 }
 
