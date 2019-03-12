@@ -28,6 +28,16 @@
 	#include "../revision.h"
 #endif
 
+void SetCursor(HWND m_hWnd, LPCWSTR lpCursorName)
+{
+	SetClassLongPtrW(m_hWnd, GCLP_HCURSOR, (LONG_PTR)::LoadCursorW(nullptr, lpCursorName));
+}
+
+void SetCursor(HWND m_hWnd, UINT nID, LPCWSTR lpCursorName)
+{
+	SetCursor(::GetDlgItem(m_hWnd, nID), lpCursorName);
+}
+
 // CVRMainPPage
 
 // https://msdn.microsoft.com/ru-ru/library/windows/desktop/dd375010(v=vs.85).aspx

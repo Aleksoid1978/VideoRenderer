@@ -419,13 +419,3 @@ void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspac
 		colorspace.gamma = MP_CSP_TRC_AUTO;
 	}
 }
-
-void SetCursor(HWND m_hWnd, LPCWSTR lpCursorName)
-{
-	SetClassLongPtrW(m_hWnd, GCLP_HCURSOR, (LONG_PTR)::LoadCursorW(nullptr, lpCursorName));
-}
-
-void SetCursor(HWND m_hWnd, UINT nID, LPCWSTR lpCursorName)
-{
-	SetCursor(::GetDlgItem(m_hWnd, nID), lpCursorName);
-}
