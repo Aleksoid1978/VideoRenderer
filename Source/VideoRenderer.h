@@ -85,7 +85,6 @@ private:
 	FILTER_STATE m_filterState = State_Stopped;
 	int m_Stepping = 0;
 	REFERENCE_TIME m_rtStartTime = 0;
-	bool m_bRenderStart = false;
 
 	// DXVA2 VideoProcessor
 	CDX9VideoProcessor m_DX9_VP;
