@@ -1096,6 +1096,8 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 	m_FieldDrawn = 0;
 
 	if (CComQIPtr<IMFGetService> pService = pSample) {
+		m_bSrcFromGPU = true;
+
 		CComPtr<IDirect3DSurface9> pSurface;
 		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
 			D3DSURFACE_DESC desc;
@@ -1137,6 +1139,8 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 	else {
+		m_bSrcFromGPU = false;
+
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
@@ -1691,7 +1695,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 {
 	auto FmtConvParams = GetFmtConvParams(m_srcSubType);
 	if (FmtConvParams) {
-		m_strStatsStatic.Format(L"\nInput format  : %S %ux%u", FmtConvParams->str, m_srcWidth, m_srcHeight);
+		m_strStatsStatic.Format(L" %S %ux%u", FmtConvParams->str, m_srcWidth, m_srcHeight);
 		m_strStatsStatic.AppendFormat(L"\nVP output fmt : %s", D3DFormatToString(m_VPOutputFmt));
 		m_strStatsStatic.AppendFormat(L"\nVideoProcessor: %s", m_pDXVA2_VP ? L"DXVA2" : L"PS 3.0");
 	} else {
@@ -1711,6 +1715,10 @@ HRESULT CDX9VideoProcessor::DrawStats()
 		str.AppendChar(L'i');
 	}
 	str.AppendFormat(L",%7.03f", m_pFilter->m_DrawStats.GetAverageFps());
+	str.Append(L"\nInput format  :");
+	if (m_bSrcFromGPU) {
+		str.Append(L" GPU");
+	}
 	str.Append(m_strStatsStatic);
 	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);

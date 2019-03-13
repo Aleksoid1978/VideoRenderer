@@ -203,6 +203,7 @@ private:
 
 	CStatsDrawing m_StatsDrawing;
 	CStringW m_strStatsStatic;
+	bool m_bSrcFromGPU = false;
 	double m_DetectedRefreshRate = 0.0;
 	CCritSec m_RefreshRateLock;
 

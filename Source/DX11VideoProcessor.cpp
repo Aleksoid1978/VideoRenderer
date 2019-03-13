@@ -984,6 +984,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	m_FieldDrawn = 0;
 
 	if (CComQIPtr<IMediaSampleD3D11> pMSD3D11 = pSample) {
+		m_bSrcFromGPU = true;
+
 		CComQIPtr<ID3D11Texture2D> pD3D11Texture2D;
 		UINT ArraySlice = 0;
 		hr = pMSD3D11->GetD3D11Texture(0, &pD3D11Texture2D, &ArraySlice);
@@ -1005,6 +1007,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		m_pDeviceContext->CopySubresourceRegion(m_pSrcTexture2D, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
 	}
 	else {
+		m_bSrcFromGPU = false;
+
 		if (resetmt && m_pVideoProcessor) {
 			// stupid hack for Intel
 			resetmt = false;
@@ -1345,7 +1349,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	auto FmtConvParams = GetFmtConvParams(m_srcSubType);
 	if (FmtConvParams) {
-		m_strStatsStatic.Format(L"\nInput format  : %S %ux%u", FmtConvParams->str, m_srcWidth, m_srcHeight);
+		m_strStatsStatic.Format(L" %S %ux%u", FmtConvParams->str, m_srcWidth, m_srcHeight);
 		m_strStatsStatic.AppendFormat(L"\nVP output fmt : %s", DXGIFormatToString(m_VPOutputFmt));
 		m_strStatsStatic.AppendFormat(L"\nVideoProcessor: %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");
 	} else {
@@ -1365,6 +1369,10 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		str.AppendChar(L'i');
 	}
 	str.AppendFormat(L",%7.03f", m_pFilter->m_DrawStats.GetAverageFps());
+	str.Append(L"\nInput format  :");
+	if (m_bSrcFromGPU) {
+		str.Append(L" GPU");
+	}
 	str.Append(m_strStatsStatic);
 	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);

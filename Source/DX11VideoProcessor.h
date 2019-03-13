@@ -130,6 +130,7 @@ private:
 
 	CStatsDrawing m_StatsDrawing;
 	CStringW m_strStatsStatic;
+	bool m_bSrcFromGPU = false;
 
 	bool resetmt = false;
 
