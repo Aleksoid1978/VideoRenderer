@@ -151,3 +151,25 @@ void CopyFrameY410(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int 
 void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d);
 
 void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspace);
+
+template <class T>
+typename std::enable_if<std::is_unsigned<T>::value, T>::type GCD(const T a, const T b) {
+	return (b ? GCD(b, a % b) : a);
+}
+
+template <class T>
+typename std::enable_if<std::is_signed<T>::value, T>::type GCD(const T a, const T b)
+{
+	using uT = typename std::make_unsigned<T>::type;
+	return T(GCD(uT(std::abs(a)), uT(std::abs(b))));
+}
+
+template <class T>
+void ReduceDim(T& num, T& den)
+{
+	if (den != 0 && num != 0) {
+		const auto gcd = GCD(num, den);
+		num /= gcd;
+		den /= gcd;
+	}
+}

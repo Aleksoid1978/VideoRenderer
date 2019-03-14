@@ -930,6 +930,12 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
 	}
 
+	if (!m_srcAspectRatioX || !m_srcAspectRatioY) {
+		m_srcAspectRatioX = biWidth;
+		m_srcAspectRatioY = biHeight;
+		ReduceDim(m_srcAspectRatioX, m_srcAspectRatioY);
+	}
+
 	if (FmtConvParams->CSType == CS_YUV && m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
 		if (biWidth <= 1024 && biHeight <= 576) { // SD
 			m_srcExFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT601;

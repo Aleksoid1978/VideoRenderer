@@ -542,6 +542,12 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
 	}
 
+	if (!m_srcAspectRatioX || !m_srcAspectRatioY) {
+		m_srcAspectRatioX = biWidth;
+		m_srcAspectRatioY = biHeight;
+		ReduceDim(m_srcAspectRatioX, m_srcAspectRatioY);
+	}
+
 	if (m_srcRect.IsRectNull() && m_trgRect.IsRectNull()) {
 		// Hmm
 		m_srcRect.SetRect(0, 0, biWidth, biHeight);
@@ -559,7 +565,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	// D3D11 Video Processor
-	if (1 && FmtConvParams->VP11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeD3D11VP(FmtConvParams->VP11Format, biWidth, biHeight, false)) {
+	if (FmtConvParams->VP11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeD3D11VP(FmtConvParams->VP11Format, biWidth, biHeight, false)) {
 		m_srcSubType = SubType;
 		UpdateStatsStatic();
 		m_inputMT = *pmt;
