@@ -543,9 +543,9 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	if (!m_srcAspectRatioX || !m_srcAspectRatioY) {
-		m_srcAspectRatioX = biWidth;
-		m_srcAspectRatioY = biHeight;
-		ReduceDim(m_srcAspectRatioX, m_srcAspectRatioY);
+		const auto gcd = std::gcd(biWidth, biHeight);
+		m_srcAspectRatioX = biWidth / gcd;
+		m_srcAspectRatioY = biHeight / gcd;
 	}
 
 	if (m_srcRect.IsRectNull() && m_trgRect.IsRectNull()) {

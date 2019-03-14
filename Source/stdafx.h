@@ -42,6 +42,7 @@ namespace Gdiplus
 	using std::min;
 	using std::max;
 };
+#include <numeric>
 #include <vector>
 
 #define CHECK_HR(hr) { if (FAILED(hr)) return hr; }
