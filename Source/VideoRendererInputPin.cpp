@@ -64,7 +64,7 @@ STDMETHODIMP CVideoRendererInputPin::GetAllocator(IMemAllocator **ppAllocator)
 
 	// No allocator yet, so propose our custom allocator.
 	HRESULT hr = S_OK;
-	CCustomAllocator *pAlloc = new CCustomAllocator(L"Custom allocator", nullptr, &hr);
+	CCustomAllocator* pAlloc = new CCustomAllocator(L"Custom allocator", nullptr, &hr);
 	if (!pAlloc) {
 		return E_OUTOFMEMORY;
 	}

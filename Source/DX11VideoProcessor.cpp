@@ -567,8 +567,9 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	// D3D11 Video Processor
 	if (FmtConvParams->VP11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeD3D11VP(FmtConvParams->VP11Format, biWidth, biHeight, false)) {
 		m_srcSubType = SubType;
-		UpdateStatsStatic();
 		m_inputMT = *pmt;
+		UpdateStatsStatic();
+
 		return TRUE;
 	}
 
@@ -610,8 +611,9 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		}
 
 		m_srcSubType = SubType;
-		UpdateStatsStatic();
 		m_inputMT = *pmt;
+		UpdateStatsStatic();
+
 		return TRUE;
 	}
 
@@ -661,7 +663,6 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 	}
 
 	UINT uiFlags;
-
 	hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(dxgiFormat, &uiFlags);
 	if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT)) {
 		return MF_E_UNSUPPORTED_D3D_TYPE;
