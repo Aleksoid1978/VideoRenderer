@@ -944,9 +944,10 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		}
 	}
 
-	if (m_srcRect.IsRectNull() && m_trgRect.IsRectNull()) {
-		// Hmm
+	if (m_srcRect.IsRectNull()) {
 		m_srcRect.SetRect(0, 0, biWidth, biHeight);
+	}
+	if (m_trgRect.IsRectNull()) {
 		m_trgRect.SetRect(0, 0, biWidth, biHeight);
 	}
 

@@ -548,9 +548,10 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcAspectRatioY = biHeight / gcd;
 	}
 
-	if (m_srcRect.IsRectNull() && m_trgRect.IsRectNull()) {
-		// Hmm
+	if (m_srcRect.IsRectNull()) {
 		m_srcRect.SetRect(0, 0, biWidth, biHeight);
+	}
+	if (m_trgRect.IsRectNull()) {
 		m_trgRect.SetRect(0, 0, biWidth, biHeight);
 	}
 
