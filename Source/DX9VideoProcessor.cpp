@@ -930,12 +930,6 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
 	}
 
-	if (!m_srcAspectRatioX || !m_srcAspectRatioY) {
-		const auto gcd = std::gcd(biWidth, biHeight);
-		m_srcAspectRatioX = biWidth / gcd;
-		m_srcAspectRatioY = biHeight / gcd;
-	}
-
 	if (FmtConvParams->CSType == CS_YUV && m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
 		if (biWidth <= 1024 && biHeight <= 576) { // SD
 			m_srcExFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT601;
@@ -949,6 +943,12 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 	if (m_trgRect.IsRectNull()) {
 		m_trgRect.SetRect(0, 0, biWidth, biHeight);
+	}
+
+	if (!m_srcAspectRatioX || !m_srcAspectRatioY) {
+		const auto gcd = std::gcd(biWidth, biHeight);
+		m_srcAspectRatioX = biWidth / gcd;
+		m_srcAspectRatioY = biHeight / gcd;
 	}
 
 	m_srcD3DFormat = FmtConvParams->D3DFormat;

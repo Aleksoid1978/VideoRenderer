@@ -542,10 +542,12 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
 	}
 
-	if (!m_srcAspectRatioX || !m_srcAspectRatioY) {
-		const auto gcd = std::gcd(biWidth, biHeight);
-		m_srcAspectRatioX = biWidth / gcd;
-		m_srcAspectRatioY = biHeight / gcd;
+	if (FmtConvParams->CSType == CS_YUV && m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
+		if (biWidth <= 1024 && biHeight <= 576) { // SD
+			m_srcExFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT601;
+		} else { // HD
+			m_srcExFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT709;
+		}
 	}
 
 	if (m_srcRect.IsRectNull()) {
@@ -553,6 +555,12 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 	if (m_trgRect.IsRectNull()) {
 		m_trgRect.SetRect(0, 0, biWidth, biHeight);
+	}
+
+	if (!m_srcAspectRatioX || !m_srcAspectRatioY) {
+		const auto gcd = std::gcd(biWidth, biHeight);
+		m_srcAspectRatioX = biWidth / gcd;
+		m_srcAspectRatioY = biHeight / gcd;
 	}
 
 	m_pConvertFn = FmtConvParams->Func;
@@ -1169,15 +1177,8 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 					}
 				}
 			} else {
-				if (m_srcDXGIFormat == DXGI_FORMAT_B8G8R8X8_UNORM) {
-					ColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
-				} else {
-					if (m_srcWidth <= 1024 && m_srcHeight <= 576) { // SD
-						ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
-					} else { // HD
-						ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
-					}
-				}
+				// for RGB 
+				ColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 			}
 			m_pVideoContext1->VideoProcessorSetStreamColorSpace1(m_pVideoProcessor, 0, ColorSpace);
 			m_pVideoContext1->VideoProcessorSetOutputColorSpace1(m_pVideoProcessor, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
@@ -1190,12 +1191,8 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 				colorSpace.RGB_Range = m_srcExFmt.NominalRange == DXVA2_NominalRange_16_235 ? 1 : 0;
 				colorSpace.YCbCr_Matrix = m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601 ? 0 : 1;
 			} else {
-				colorSpace.RGB_Range = 1;
-				if (m_srcWidth <= 1024 && m_srcHeight <= 576) { // SD
-					colorSpace.YCbCr_Matrix = 0;
-				} else { // HD
-					colorSpace.YCbCr_Matrix = 1;
-				}
+				// for RGB
+				colorSpace.RGB_Range = 0;
 			}
 			m_pVideoContext->VideoProcessorSetStreamColorSpace(m_pVideoProcessor, 0, &colorSpace);
 

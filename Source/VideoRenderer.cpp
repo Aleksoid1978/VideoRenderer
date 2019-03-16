@@ -136,8 +136,7 @@ long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_mt)
 			rcSource = { 0, 0, pBIH->biWidth, abs(pBIH->biHeight) };
 		}
 
-#if 0
-	// TODO
+#if 0 // TODO QueryAccept
 		LONG newWidth = 0;
 		LONG newHeight = 0;
 		if (m_bUsedD3D11) {
@@ -200,12 +199,29 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 	CAutoLock cVideoLock(&m_InterfaceLock);
 	CAutoLock cRendererLock(&m_RendererLock);
 
+	CMediaType mt(*pmt);
+
+#if 0 // TODO QueryAccept
+	auto inputPin = static_cast<CVideoRendererInputPin*>(m_pInputPin);
+	if (!inputPin->FrameInVideoMem()) {
+		CMediaType mtNew(*pmt);
+		long ret = CalcImageSize(mtNew, true);
+
+		if (mtNew != mt) {
+			if (S_OK == m_pInputPin->GetConnected()->QueryAccept(&mtNew)) {
+				inputPin->SetNewMediaType(mtNew);
+				mt = mtNew;
+			}
+		}
+	}
+#endif
+
 	if (m_bUsedD3D11) {
-		if (!m_DX11_VP.InitMediaType(pmt)) {
+		if (!m_DX11_VP.InitMediaType(&mt)) {
 			return VFW_E_UNSUPPORTED_VIDEO;
 		}
 	} else {
-		if (!m_DX9_VP.InitMediaType(pmt)) {
+		if (!m_DX9_VP.InitMediaType(&mt)) {
 			return VFW_E_UNSUPPORTED_VIDEO;
 		}
 	}
