@@ -126,7 +126,7 @@ STDMETHODIMP CVideoRendererInputPin::ReceiveConnection(IPin* pConnector, const A
 			return E_FAIL;
 		}
 
-		return SetMediaType(&mt) == S_OK
+		return SetMediaType(&mt) == S_OK // here set mt, not mtNew
 			? S_OK
 			: VFW_E_TYPE_NOT_ACCEPTED;
 	}
