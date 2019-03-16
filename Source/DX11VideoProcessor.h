@@ -80,10 +80,12 @@ private:
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
 
 	// Input parameters
-	GUID        m_srcSubType = GUID_NULL;
-	DXGI_FORMAT m_srcDXGIFormat = DXGI_FORMAT_UNKNOWN;
+	GUID        m_srcSubType      = GUID_NULL;
+	DXGI_FORMAT m_srcDXGIFormat   = DXGI_FORMAT_UNKNOWN;
 	UINT        m_srcWidth        = 0;
 	UINT        m_srcHeight       = 0;
+	UINT        m_srcRectWidth    = 0;
+	UINT        m_srcRectHeight   = 0;
 	int         m_srcPitch        = 0;
 	DWORD       m_srcAspectRatioX = 0;
 	DWORD       m_srcAspectRatioY = 0;

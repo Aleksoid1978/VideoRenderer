@@ -945,10 +945,13 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_trgRect.SetRect(0, 0, biWidth, biHeight);
 	}
 
+	m_srcRectWidth  = m_srcRect.Width();
+	m_srcRectHeight = m_srcRect.Height();
+
 	if (!m_srcAspectRatioX || !m_srcAspectRatioY) {
-		const auto gcd = std::gcd(biWidth, biHeight);
-		m_srcAspectRatioX = biWidth / gcd;
-		m_srcAspectRatioY = biHeight / gcd;
+		const auto gcd = std::gcd(m_srcRectWidth, m_srcRectHeight);
+		m_srcAspectRatioX = m_srcRectWidth / gcd;
+		m_srcAspectRatioY = m_srcRectHeight / gcd;
 	}
 
 	m_srcD3DFormat = FmtConvParams->D3DFormat;
@@ -1281,8 +1284,8 @@ HRESULT CDX9VideoProcessor::GetVideoSize(long *pWidth, long *pHeight)
 	CheckPointer(pWidth, E_POINTER);
 	CheckPointer(pHeight, E_POINTER);
 
-	*pWidth  = m_srcRect.Width();
-	*pHeight = m_srcRect.Height();
+	*pWidth  = m_srcRectWidth;
+	*pHeight = m_srcRectHeight;
 
 	return S_OK;
 }
@@ -1702,7 +1705,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 {
 	auto FmtConvParams = GetFmtConvParams(m_srcSubType);
 	if (FmtConvParams) {
-		m_strStatsStatic.Format(L" %S %ux%u", FmtConvParams->str, m_srcWidth, m_srcHeight);
+		m_strStatsStatic.Format(L" %S %ux%u", FmtConvParams->str, m_srcRectWidth, m_srcRectHeight);
 		m_strStatsStatic.AppendFormat(L"\nVP output fmt : %s", D3DFormatToString(m_VPOutputFmt));
 		m_strStatsStatic.AppendFormat(L"\nVideoProcessor: %s", m_pDXVA2_VP ? L"DXVA2" : L"PS 3.0");
 	} else {

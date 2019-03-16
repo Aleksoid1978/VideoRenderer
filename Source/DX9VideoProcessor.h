@@ -138,6 +138,8 @@ private:
 	D3DFORMAT m_srcD3DFormat    = D3DFMT_UNKNOWN;
 	UINT      m_srcWidth        = 0;
 	UINT      m_srcHeight       = 0;
+	UINT      m_srcRectWidth    = 0;
+	UINT      m_srcRectHeight   = 0;
 	int       m_srcPitch        = 0;
 	DWORD     m_srcAspectRatioX = 0;
 	DWORD     m_srcAspectRatioY = 0;
