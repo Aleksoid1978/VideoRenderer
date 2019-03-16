@@ -42,6 +42,8 @@ public:
 	CVideoRendererInputPin(CBaseRenderer *pRenderer, HRESULT *phr, LPCWSTR Name, CMpcVideoRenderer* pBaseRenderer);
 	~CVideoRendererInputPin();
 
+	bool FrameInVideoMem() { return m_bDXVA || m_bD3D11; }
+
 	// CUnknown
 	DECLARE_IUNKNOWN
 	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv);

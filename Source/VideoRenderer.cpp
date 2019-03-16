@@ -135,9 +135,9 @@ long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_frame_size)
 		LONG newWidth = 0;
 		LONG newHeight = 0;
 		if (m_bUsedD3D11) {
-			m_DX11_VP.CheckAlignmentSize(pmt, newWidth, newHeight);
+			m_DX11_VP.CheckAlignmentSize(&mt, newWidth, newHeight);
 		} else {
-			m_DX9_VP.CheckAlignmentSize(pmt, newWidth);
+			m_DX9_VP.CheckAlignmentSize(&mt, newWidth);
 		}
 
 		if (newWidth) {

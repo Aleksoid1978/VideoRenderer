@@ -118,7 +118,7 @@ STDMETHODIMP CVideoRendererInputPin::ReceiveConnection(IPin* pConnector, const A
 		}
 
 		CMediaType mtNew(*pmt);
-		props.cbBuffer = m_pBaseRenderer->CalcImageSize(mtNew, !m_bD3D11 && !m_bDXVA);
+		props.cbBuffer = m_pBaseRenderer->CalcImageSize(mtNew, !FrameInVideoMem());
 
 		if (FAILED(pMemAllocator->SetProperties(&props, &actual))
 				|| FAILED(pMemAllocator->Commit())
