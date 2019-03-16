@@ -113,7 +113,7 @@ void CMpcVideoRenderer::NewSegment(REFERENCE_TIME startTime)
 	m_rtStartTime = startTime;
 }
 
-long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_frame_size)
+long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_mt)
 {
 	BITMAPINFOHEADER* pBIH = nullptr;
 	if (mt.formattype == FORMAT_VideoInfo2) {
@@ -129,9 +129,15 @@ long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_frame_size)
 		return 0;
 	}
 
+	if (redefine_mt) {
+		RECT& rcSource = ((VIDEOINFOHEADER*)mt.pbFormat)->rcSource;
+		// new media type must have non-empty rcSource
+		if (IsRectEmpty(&rcSource)) {
+			rcSource = { 0, 0, pBIH->biWidth, abs(pBIH->biHeight) };
+		}
+
 #if 0
 	// TODO
-	if (redefine_frame_size) {
 		LONG newWidth = 0;
 		LONG newHeight = 0;
 		if (m_bUsedD3D11) {
@@ -148,8 +154,8 @@ long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_frame_size)
 		}
 
 		pBIH->biSizeImage = DIBSIZE(*pBIH);
-	}
 #endif
+	}
 
 	return pBIH->biSizeImage ? pBIH->biSizeImage : DIBSIZE(*pBIH);
 }

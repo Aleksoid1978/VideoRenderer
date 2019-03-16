@@ -99,7 +99,7 @@ public:
 	~CMpcVideoRenderer();
 
 	void NewSegment(REFERENCE_TIME startTime);
-	long CalcImageSize(CMediaType& mt, bool redefine_frame_size);
+	long CalcImageSize(CMediaType& mt, bool redefine_mt);
 
 public:
 	// CBaseRenderer
