@@ -1,5 +1,5 @@
 /*
-* (C) 2018 see Authors.txt
+* (C) 2018-2019 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -32,7 +32,14 @@ class CCustomAllocator : public CMemAllocator
 protected:
 	HRESULT Alloc();
 
+	CMediaType* m_pNewMT = nullptr;
+
 public:
 	CCustomAllocator(LPCTSTR pName, LPUNKNOWN pUnk, HRESULT *phr);
-	~CCustomAllocator() = default;
+	~CCustomAllocator();
+
+	STDMETHODIMP SetProperties(__in ALLOCATOR_PROPERTIES* pRequest, __out ALLOCATOR_PROPERTIES* pActual);
+	STDMETHODIMP GetBuffer(IMediaSample** ppBuffer, REFERENCE_TIME* pStartTime, REFERENCE_TIME* pEndTime, DWORD dwFlags);
+
+	void SetNewMediaType(const CMediaType& mt);
 };

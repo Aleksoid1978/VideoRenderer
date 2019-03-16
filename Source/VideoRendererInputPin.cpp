@@ -34,6 +34,11 @@ CVideoRendererInputPin::CVideoRendererInputPin(CBaseRenderer *pRenderer, HRESULT
 {
 }
 
+CVideoRendererInputPin::~CVideoRendererInputPin()
+{
+	SAFE_DELETE(m_pNewMT);
+}
+
 STDMETHODIMP CVideoRendererInputPin::NonDelegatingQueryInterface(REFIID riid, void** ppv)
 {
 	CheckPointer(ppv, E_POINTER);
@@ -73,6 +78,11 @@ STDMETHODIMP CVideoRendererInputPin::GetAllocator(IMemAllocator **ppAllocator)
 		return hr;
 	}
 
+	if (m_pNewMT) {
+		pAlloc->SetNewMediaType(*m_pNewMT);
+		SAFE_DELETE(m_pNewMT);
+	}
+
 	// Return the IMemAllocator interface to the caller.
 	return pAlloc->QueryInterface(IID_IMemAllocator, (void**)ppAllocator);
 }
@@ -107,22 +117,24 @@ STDMETHODIMP CVideoRendererInputPin::ReceiveConnection(IPin* pConnector, const A
 			return E_FAIL;
 		}
 
-		DWORD biSizeImage = 0;
-		if (pmt->formattype == FORMAT_VideoInfo2) {
-			const auto vih = (VIDEOINFOHEADER2*)pmt->pbFormat;
-			const auto& bih = vih->bmiHeader;
-			biSizeImage = bih.biSizeImage ? bih.biSizeImage : DIBSIZE(bih);
-		} else if (pmt->formattype == FORMAT_VideoInfo) {
-			const auto vih = (VIDEOINFOHEADER*)pmt->pbFormat;
-			const auto& bih = vih->bmiHeader;
-			biSizeImage = bih.biSizeImage ? bih.biSizeImage : DIBSIZE(bih);
+		CMediaType mtNew(*pmt);
+		PBITMAPINFOHEADER pBIH = nullptr;
+		if (mtNew.formattype == FORMAT_VideoInfo2) {
+			VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)mtNew.pbFormat;
+			pBIH = &vih2->bmiHeader;
+		} else if (mtNew.formattype == FORMAT_VideoInfo) {
+			VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)mtNew.pbFormat;
+			pBIH = &vih->bmiHeader;
 		} else {
 			return VFW_E_TYPE_NOT_ACCEPTED;
 		}
 
-		if (biSizeImage) {
-			props.cbBuffer = biSizeImage;
+		if (!m_bD3D11 && !m_bDXVA) {
+			// TODO
+			//m_pBaseRenderer->CheckAlignmentSize(&mt, pBIH);
 		}
+
+		props.cbBuffer = DIBSIZE(*pBIH);
 
 		if (FAILED(pMemAllocator->SetProperties(&props, &actual))
 				|| FAILED(pMemAllocator->Commit())
@@ -187,4 +199,15 @@ STDMETHODIMP CVideoRendererInputPin::ActivateD3D11Decoding(ID3D11Device *pDevice
 UINT STDMETHODCALLTYPE CVideoRendererInputPin::GetD3D11AdapterIndex()
 {
 	return 0;
+}
+
+void CVideoRendererInputPin::SetNewMediaType(const CMediaType& mt)
+{
+	SAFE_DELETE(m_pNewMT);
+	m_pNewMT = new CMediaType(mt);
+	auto pAlloc = static_cast<CCustomAllocator*>(m_pAllocator);
+	if (pAlloc) {
+		pAlloc->SetNewMediaType(*m_pNewMT);
+		SAFE_DELETE(m_pNewMT);
+	}
 }

@@ -1,5 +1,5 @@
 /*
-* (C) 2018 see Authors.txt
+* (C) 2018-2019 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -20,6 +20,7 @@
 
 #include "stdafx.h"
 #include "CustomAllocator.h"
+#include "Helper.h"
 
 CCustomMediaSample::CCustomMediaSample(LPCTSTR pName, CBaseAllocator *pAllocator, HRESULT *phr, LPBYTE pBuffer, LONG length)
 	: CMediaSample(pName, pAllocator, phr, pBuffer, length)
@@ -29,6 +30,11 @@ CCustomMediaSample::CCustomMediaSample(LPCTSTR pName, CBaseAllocator *pAllocator
 CCustomAllocator::CCustomAllocator(LPCTSTR pName, LPUNKNOWN pUnk, HRESULT *phr)
 	: CMemAllocator(pName, nullptr, phr)
 {
+}
+
+CCustomAllocator::~CCustomAllocator()
+{
+	SAFE_DELETE(m_pNewMT);
 }
 
 HRESULT CCustomAllocator::Alloc(void)
@@ -128,4 +134,47 @@ HRESULT CCustomAllocator::Alloc(void)
 
     m_bChanged = FALSE;
     return NOERROR;
+}
+
+STDMETHODIMP CCustomAllocator::SetProperties(__in ALLOCATOR_PROPERTIES* pRequest, __out ALLOCATOR_PROPERTIES* pActual)
+{
+	CheckPointer(pActual, E_POINTER);
+	ValidateReadWritePtr(pActual, sizeof(ALLOCATOR_PROPERTIES));
+
+	ASSERT(pRequest->cbBuffer > 0);
+
+	if (m_pNewMT) {
+		BITMAPINFOHEADER* pBIH = nullptr;
+		if (m_pNewMT->formattype == FORMAT_VideoInfo2) {
+			VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)m_pNewMT->pbFormat;
+			pBIH = &vih2->bmiHeader;
+		} else if (m_pNewMT->formattype == FORMAT_VideoInfo) {
+			VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)m_pNewMT->pbFormat;
+			pBIH = &vih->bmiHeader;
+		}
+
+		if (pBIH) {
+			pRequest->cbBuffer = pBIH->biSizeImage ? pBIH->biSizeImage : DIBSIZE(*pBIH);
+		}
+	}
+
+	return __super::SetProperties(pRequest, pActual);
+}
+
+HRESULT CCustomAllocator::GetBuffer(IMediaSample** ppBuffer, REFERENCE_TIME* pStartTime, REFERENCE_TIME* pEndTime, DWORD dwFlags)
+{
+	HRESULT hr = __super::GetBuffer(ppBuffer, pStartTime, pEndTime, dwFlags);
+
+	if (SUCCEEDED(hr) && m_pNewMT) {
+		(*ppBuffer)->SetMediaType(m_pNewMT);
+		SAFE_DELETE(m_pNewMT);
+	}
+
+	return hr;
+}
+
+void CCustomAllocator::SetNewMediaType(const CMediaType& mt)
+{
+	SAFE_DELETE(m_pNewMT);
+	m_pNewMT = new CMediaType(mt);
 }

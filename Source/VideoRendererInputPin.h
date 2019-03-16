@@ -1,5 +1,5 @@
 /*
- * (C) 2018 see Authors.txt
+ * (C) 2018-2019 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -36,8 +36,11 @@ private:
 	bool m_bDXVA = false;
 	bool m_bD3D11 = false;
 
+	CMediaType* m_pNewMT = nullptr;
+
 public:
 	CVideoRendererInputPin(CBaseRenderer *pRenderer, HRESULT *phr, LPCWSTR Name, CMpcVideoRenderer* pBaseRenderer);
+	~CVideoRendererInputPin();
 
 	// CUnknown
 	DECLARE_IUNKNOWN
@@ -59,5 +62,7 @@ public:
 	// ID3D11DecoderConfiguration
 	STDMETHODIMP ActivateD3D11Decoding(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, HANDLE hMutex, UINT nFlags);
 	UINT STDMETHODCALLTYPE GetD3D11AdapterIndex();
+
+	void SetNewMediaType(const CMediaType& mt);
 };
 
