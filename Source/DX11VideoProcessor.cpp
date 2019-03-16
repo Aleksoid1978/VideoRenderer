@@ -1270,8 +1270,8 @@ HRESULT CDX11VideoProcessor::GetVideoSize(long *pWidth, long *pHeight)
 	CheckPointer(pWidth, E_POINTER);
 	CheckPointer(pHeight, E_POINTER);
 
-	*pWidth = m_srcWidth;
-	*pHeight = m_srcHeight;
+	*pWidth  = m_srcRect.Width();
+	*pHeight = m_srcRect.Height();
 
 	return S_OK;
 }
