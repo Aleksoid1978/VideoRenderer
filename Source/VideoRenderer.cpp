@@ -113,27 +113,45 @@ void CMpcVideoRenderer::NewSegment(REFERENCE_TIME startTime)
 	m_rtStartTime = startTime;
 }
 
-void CMpcVideoRenderer::CheckAlignmentSize(const CMediaType* pmt, PBITMAPINFOHEADER pBIH)
+long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_frame_size)
 {
-	// TODO
+	BITMAPINFOHEADER* pBIH = nullptr;
+	if (mt.formattype == FORMAT_VideoInfo2) {
+		VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)mt.pbFormat;
+		pBIH = &vih2->bmiHeader;
+	}
+	else if (mt.formattype == FORMAT_VideoInfo) {
+		VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)mt.pbFormat;
+		pBIH = &vih->bmiHeader;
+	} 
+	else {
+		ASSERT(FALSE); // excessive checking
+		return 0;
+	}
+
 #if 0
-	LONG newWidth = 0;
-	LONG newHeight = 0;
-	if (m_bUsedD3D11) {
-		m_DX11_VP.CheckAlignmentSize(pmt, newWidth, newHeight);
-	} else {
-		m_DX9_VP.CheckAlignmentSize(pmt, newWidth);
-	}
+	// TODO
+	if (redefine_frame_size) {
+		LONG newWidth = 0;
+		LONG newHeight = 0;
+		if (m_bUsedD3D11) {
+			m_DX11_VP.CheckAlignmentSize(pmt, newWidth, newHeight);
+		} else {
+			m_DX9_VP.CheckAlignmentSize(pmt, newWidth);
+		}
 
-	if (newWidth) {
-		pBIH->biWidth = newWidth;
-	}
-	if (newHeight) {
-		pBIH->biHeight = pBIH->biHeight < 0 ? -newHeight : newHeight;
-	}
+		if (newWidth) {
+			pBIH->biWidth = newWidth;
+		}
+		if (newHeight) {
+			pBIH->biHeight = pBIH->biHeight < 0 ? -newHeight : newHeight;
+		}
 
-	pBIH->biSizeImage = DIBSIZE(*pBIH);
+		pBIH->biSizeImage = DIBSIZE(*pBIH);
+	}
 #endif
+
+	return pBIH->biSizeImage ? pBIH->biSizeImage : DIBSIZE(*pBIH);
 }
 
 // CBaseRenderer

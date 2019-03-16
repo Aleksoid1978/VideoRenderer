@@ -118,22 +118,7 @@ STDMETHODIMP CVideoRendererInputPin::ReceiveConnection(IPin* pConnector, const A
 		}
 
 		CMediaType mtNew(*pmt);
-		PBITMAPINFOHEADER pBIH = nullptr;
-		if (mtNew.formattype == FORMAT_VideoInfo2) {
-			VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)mtNew.pbFormat;
-			pBIH = &vih2->bmiHeader;
-		} else if (mtNew.formattype == FORMAT_VideoInfo) {
-			VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)mtNew.pbFormat;
-			pBIH = &vih->bmiHeader;
-		} else {
-			return VFW_E_TYPE_NOT_ACCEPTED;
-		}
-
-		if (!m_bD3D11 && !m_bDXVA) {
-			m_pBaseRenderer->CheckAlignmentSize(&mt, pBIH);
-		}
-
-		props.cbBuffer = DIBSIZE(*pBIH);
+		props.cbBuffer = m_pBaseRenderer->CalcImageSize(mtNew, !m_bD3D11 && !m_bDXVA);
 
 		if (FAILED(pMemAllocator->SetProperties(&props, &actual))
 				|| FAILED(pMemAllocator->Commit())

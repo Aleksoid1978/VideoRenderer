@@ -99,7 +99,7 @@ public:
 	~CMpcVideoRenderer();
 
 	void NewSegment(REFERENCE_TIME startTime);
-	void CheckAlignmentSize(const CMediaType* pmt, PBITMAPINFOHEADER pBIH);
+	long CalcImageSize(CMediaType& mt, bool redefine_frame_size);
 
 public:
 	// CBaseRenderer
