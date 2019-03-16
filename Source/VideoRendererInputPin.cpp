@@ -130,8 +130,7 @@ STDMETHODIMP CVideoRendererInputPin::ReceiveConnection(IPin* pConnector, const A
 		}
 
 		if (!m_bD3D11 && !m_bDXVA) {
-			// TODO
-			//m_pBaseRenderer->CheckAlignmentSize(&mt, pBIH);
+			m_pBaseRenderer->CheckAlignmentSize(&mt, pBIH);
 		}
 
 		props.cbBuffer = DIBSIZE(*pBIH);
