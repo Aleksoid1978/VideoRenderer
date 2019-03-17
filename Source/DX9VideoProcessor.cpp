@@ -887,6 +887,40 @@ BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 	return TRUE;
 }
 
+BOOL CDX9VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
+{
+	if (InitMediaType(&mt)) {
+		if (m_SrcSamples.Size() && m_SrcSamples.Get().pSrcSurface) {
+			auto& surface = m_SrcSamples.Get().pSrcSurface;
+
+			INT Pitch = 0;
+			D3DLOCKED_RECT lr;
+			if (SUCCEEDED(surface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK))) {
+				Pitch = lr.Pitch;
+				surface->UnlockRect();
+			}
+
+			if (Pitch) {
+				auto FmtConvParams = GetFmtConvParams(mt.subtype);
+
+				Size.cx = Pitch / FmtConvParams->Packsize;
+
+				if (FmtConvParams->CSType == CS_RGB) {
+					Size.cy = -abs(Size.cy);
+				} else {
+					Size.cy = abs(Size.cy); // need additional checks
+				}
+
+				return TRUE;
+
+				return TRUE;
+			}
+		}
+	}
+
+	return FALSE;
+}
+
 BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 {
 	DLog(L"CDX9VideoProcessor::InitMediaType()");
@@ -965,9 +999,10 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_pConvertFn   = FmtConvParams->Func;
 	m_srcPitch     = biSizeImage * 2 / (biHeight * FmtConvParams->PitchCoeff);
 	m_srcPitch    &= ~1u;
-	if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
-		m_srcPitch = ALIGN(m_srcPitch, 4);
-	}
+	ASSERT(biSizeImage % 4 != 0);
+	//if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
+	//	m_srcPitch = ALIGN(m_srcPitch, 4);
+	//}
 	if (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0) {
 		m_srcPitch = -m_srcPitch;
 	}

@@ -136,24 +136,20 @@ long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_mt)
 			rcSource = { 0, 0, pBIH->biWidth, abs(pBIH->biHeight) };
 		}
 
-#if 0 // TODO QueryAccept
-		LONG newWidth = 0;
-		LONG newHeight = 0;
+		CSize Size(pBIH->biWidth, pBIH->biHeight);
+		BOOL ret = FALSE;
 		if (m_bUsedD3D11) {
-			m_DX11_VP.CheckAlignmentSize(&mt, newWidth, newHeight);
+			ret = m_DX11_VP.GetAlignmentSize(mt, Size);
 		} else {
-			m_DX9_VP.CheckAlignmentSize(&mt, newWidth);
+			ret = m_DX9_VP.GetAlignmentSize(mt, Size);
 		}
 
-		if (newWidth) {
-			pBIH->biWidth = newWidth;
-		}
-		if (newHeight) {
-			pBIH->biHeight = pBIH->biHeight < 0 ? -newHeight : newHeight;
+		if (ret) {
+			pBIH->biWidth  = Size.cx;
+			pBIH->biHeight = Size.cy;
 		}
 
 		pBIH->biSizeImage = DIBSIZE(*pBIH);
-#endif
 	}
 
 	return pBIH->biSizeImage ? pBIH->biSizeImage : DIBSIZE(*pBIH);
@@ -201,7 +197,6 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 	CMediaType mt(*pmt);
 
-#if 0 // TODO QueryAccept
 	auto inputPin = static_cast<CVideoRendererInputPin*>(m_pInputPin);
 	if (!inputPin->FrameInVideoMem()) {
 		CMediaType mtNew(*pmt);
@@ -214,7 +209,6 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			}
 		}
 	}
-#endif
 
 	if (m_bUsedD3D11) {
 		if (!m_DX11_VP.InitMediaType(&mt)) {

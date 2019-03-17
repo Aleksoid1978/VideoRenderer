@@ -499,6 +499,36 @@ BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 	return TRUE;
 }
 
+BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
+{
+	if (InitMediaType(&mt)) {
+		if (m_pSrcTexture2D_CPU) {
+			UINT RowPitch = 0;
+			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+			if (SUCCEEDED(m_pDeviceContext->Map(m_pSrcTexture2D_CPU, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource))) {
+				RowPitch = mappedResource.RowPitch;
+				m_pDeviceContext->Unmap(m_pSrcTexture2D_CPU, 0);
+			}
+
+			if (RowPitch) {
+				auto FmtConvParams = GetFmtConvParams(mt.subtype);
+
+				Size.cx = RowPitch / FmtConvParams->Packsize;
+
+				if (FmtConvParams->CSType == CS_RGB) {
+					Size.cy = -abs(Size.cy);
+				} else {
+					Size.cy = abs(Size.cy); // need additional checks
+				}
+
+				return TRUE;
+			}
+		}
+	}
+
+	return FALSE;
+}
+
 BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 {
 	DLog(L"CDX11VideoProcessor::InitMediaType()");
@@ -576,9 +606,10 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_pConvertFn = FmtConvParams->Func;
 	m_srcPitch   = biSizeImage * 2 / (biHeight * FmtConvParams->PitchCoeff);
 	m_srcPitch  &= ~1u;
-	if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
-		m_srcPitch = ALIGN(m_srcPitch, 4);
-	}
+	ASSERT(biSizeImage % 4 != 0);
+	//if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
+	//	m_srcPitch = ALIGN(m_srcPitch, 4);
+	//}
 	if (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0) {
 		m_srcPitch = -m_srcPitch;
 	}

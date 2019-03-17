@@ -241,6 +241,8 @@ public:
 	BOOL VerifyMediaType(const CMediaType* pmt);
 	BOOL InitMediaType(const CMediaType* pmt);
 
+	BOOL GetAlignmentSize(const CMediaType& mt, SIZE& Size);
+
 	void Start();
 	void Stop();
 
