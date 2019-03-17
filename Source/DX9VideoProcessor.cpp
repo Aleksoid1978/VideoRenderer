@@ -912,8 +912,6 @@ BOOL CDX9VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 				}
 
 				return TRUE;
-
-				return TRUE;
 			}
 		}
 	}
