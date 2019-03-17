@@ -156,7 +156,12 @@ const FmtConvParams_t* GetFmtConvParams(GUID subtype)
 
 void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
 {
-	unsigned linesize = std::min((UINT)abs(src_pitch), dst_pitch);
+	if (dst_pitch == src_pitch) {
+		memcpy(dst, src, dst_pitch * height);
+		return;
+	}
+
+	const UINT linesize = std::min((UINT)abs(src_pitch), dst_pitch);
 
 	for (UINT y = 0; y < height; ++y) {
 		memcpy(dst, src, linesize);
@@ -281,6 +286,11 @@ void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int 
 {
 	ASSERT(src_pitch > 0);
 
+	if (dst_pitch == src_pitch) {
+		memcpy(dst, src, dst_pitch * height * 3 / 2);
+		return;
+	}
+
 	for (UINT y = 0; y < height; ++y) {
 		memcpy(dst, src, src_pitch);
 		src += src_pitch;
@@ -303,7 +313,12 @@ void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int 
 void CopyFramePackedUV(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
 {
 	ASSERT(src_pitch > 0);
-	UINT lines = height * 3 / 2;
+	const UINT lines = height * 3 / 2;
+
+	if (dst_pitch == src_pitch) {
+		memcpy(dst, src, dst_pitch * lines);
+		return;
+	}
 
 	for (UINT y = 0; y < lines; ++y) {
 		memcpy(dst, src, src_pitch);
