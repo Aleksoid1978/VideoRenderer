@@ -115,16 +115,8 @@ void CMpcVideoRenderer::NewSegment(REFERENCE_TIME startTime)
 
 long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_mt)
 {
-	BITMAPINFOHEADER* pBIH = nullptr;
-	if (mt.formattype == FORMAT_VideoInfo2) {
-		VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)mt.pbFormat;
-		pBIH = &vih2->bmiHeader;
-	}
-	else if (mt.formattype == FORMAT_VideoInfo) {
-		VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)mt.pbFormat;
-		pBIH = &vih->bmiHeader;
-	} 
-	else {
+	BITMAPINFOHEADER* pBIH = GetBIHfromVIHs(&mt);
+	if (!pBIH) {
 		ASSERT(FALSE); // excessive checking
 		return 0;
 	}

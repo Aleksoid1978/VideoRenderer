@@ -434,3 +434,16 @@ void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspac
 		colorspace.gamma = MP_CSP_TRC_AUTO;
 	}
 }
+
+BITMAPINFOHEADER* GetBIHfromVIHs(const AM_MEDIA_TYPE* pmt)
+{
+	if (pmt->formattype == FORMAT_VideoInfo2) {
+		return &((VIDEOINFOHEADER2*)pmt->pbFormat)->bmiHeader;
+	}
+
+	if (pmt->formattype == FORMAT_VideoInfo) {
+		return &((VIDEOINFOHEADER*)pmt->pbFormat)->bmiHeader;
+	}
+
+	return nullptr;
+}

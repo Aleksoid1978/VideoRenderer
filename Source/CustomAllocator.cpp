@@ -144,14 +144,7 @@ STDMETHODIMP CCustomAllocator::SetProperties(__in ALLOCATOR_PROPERTIES* pRequest
 	ASSERT(pRequest->cbBuffer > 0);
 
 	if (m_pNewMT) {
-		BITMAPINFOHEADER* pBIH = nullptr;
-		if (m_pNewMT->formattype == FORMAT_VideoInfo2) {
-			VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)m_pNewMT->pbFormat;
-			pBIH = &vih2->bmiHeader;
-		} else if (m_pNewMT->formattype == FORMAT_VideoInfo) {
-			VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)m_pNewMT->pbFormat;
-			pBIH = &vih->bmiHeader;
-		}
+		BITMAPINFOHEADER* pBIH = GetBIHfromVIHs(m_pNewMT);
 
 		if (pBIH) {
 			pRequest->cbBuffer = pBIH->biSizeImage ? pBIH->biSizeImage : DIBSIZE(*pBIH);

@@ -153,3 +153,5 @@ void CopyFrameY410(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int 
 void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d);
 
 void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspace);
+
+BITMAPINFOHEADER* GetBIHfromVIHs(const AM_MEDIA_TYPE* mt);

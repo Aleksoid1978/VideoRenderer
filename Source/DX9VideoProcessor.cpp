@@ -859,17 +859,8 @@ BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 		return FALSE;
 	}
 
-	const BITMAPINFOHEADER* pBIH = nullptr;
-
-	if (pmt->formattype == FORMAT_VideoInfo2) {
-		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
-		pBIH = &vih2->bmiHeader;
-	}
-	else if (pmt->formattype == FORMAT_VideoInfo) {
-		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)pmt->pbFormat;
-		pBIH = &vih->bmiHeader;
-	}
-	else {
+	const BITMAPINFOHEADER* pBIH = GetBIHfromVIHs(pmt);
+	if (!pBIH) {
 		return FALSE;
 	}
 
