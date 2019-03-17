@@ -123,22 +123,22 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
 }
 
 static FmtConvParams_t s_FmtConvMapping[] = {
-	//   subtype          | str     |DXVA2Format     | D3DFormat(DX9)     | VP11Format               | DX11Format              |Packsize|PitchCoeff| CSType |  Func
-	{ MEDIASUBTYPE_YV12,   "YV12",   D3DFMT_YV12,     D3DFMT_UNKNOWN,      DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            1, 3,        CS_YUV,  &CopyFrameYV12,       },
-	{ MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_UNKNOWN,      DXGI_FORMAT_NV12,           DXGI_FORMAT_UNKNOWN,            1, 3,        CS_YUV,  &CopyFramePackedUV,   },
-	{ MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_UNKNOWN,      DXGI_FORMAT_P010,           DXGI_FORMAT_UNKNOWN,            2, 3,        CS_YUV,  &CopyFramePackedUV,   },
-	{ MEDIASUBTYPE_P016,   "P016",   D3DFMT_P016,     D3DFMT_UNKNOWN,      DXGI_FORMAT_P016,           DXGI_FORMAT_UNKNOWN,            2, 3,        CS_YUV,  &CopyFramePackedUV,   },
-	{ MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_UNKNOWN,      DXGI_FORMAT_YUY2,           DXGI_FORMAT_UNKNOWN,            2, 2,        CS_YUV,  &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,     DXGI_FORMAT_AYUV,           DXGI_FORMAT_B8G8R8X8_UNORM,     4, 2,        CS_YUV,  &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_Y410,     D3DFMT_A2B10G10R10,  DXGI_FORMAT_Y410,           DXGI_FORMAT_R10G10B10A2_UNORM,  4, 2,        CS_YUV,  &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_Y416,   "Y416",   D3DFMT_Y416,     D3DFMT_A16B16G16R16, DXGI_FORMAT_Y416,           DXGI_FORMAT_R16G16B16A16_UNORM, 8, 2,        CS_YUV,  &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,     DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,     3, 2,        CS_RGB,  &CopyFrameRGB24SSSE3, },
-	{ MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,     DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,     4, 2,        CS_RGB,  &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,     DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM,     4, 2,        CS_RGB,  &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_RGB48,  "RGB48",  D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM, 6, 2,        CS_RGB,  &CopyFrameRGB48,      },
-	{ MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,           DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            1, 2,        CS_GRAY, &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,           DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            1, 2,        CS_GRAY, &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_Y116,   "Y116",   D3DFMT_UNKNOWN,  D3DFMT_L16,          DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            2, 2,        CS_GRAY, &CopyFrameAsIs,       },
+	//   subtype          | str     |DXVA2Format     | D3DFormat(DX9)     | VP11Format               | DX11Format              |Packsize|PitchCoeff| CSType|Subsampling|  Func
+	{ MEDIASUBTYPE_YV12,   "YV12",   D3DFMT_YV12,     D3DFMT_UNKNOWN,      DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            1, 3,        CS_YUV,  420,       &CopyFrameYV12,       },
+	{ MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_UNKNOWN,      DXGI_FORMAT_NV12,           DXGI_FORMAT_UNKNOWN,            1, 3,        CS_YUV,  420,       &CopyFramePackedUV,   },
+	{ MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_UNKNOWN,      DXGI_FORMAT_P010,           DXGI_FORMAT_UNKNOWN,            2, 3,        CS_YUV,  420,       &CopyFramePackedUV,   },
+	{ MEDIASUBTYPE_P016,   "P016",   D3DFMT_P016,     D3DFMT_UNKNOWN,      DXGI_FORMAT_P016,           DXGI_FORMAT_UNKNOWN,            2, 3,        CS_YUV,  420,       &CopyFramePackedUV,   },
+	{ MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_UNKNOWN,      DXGI_FORMAT_YUY2,           DXGI_FORMAT_UNKNOWN,            2, 2,        CS_YUV,  422,       &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,     DXGI_FORMAT_AYUV,           DXGI_FORMAT_B8G8R8X8_UNORM,     4, 2,        CS_YUV,  444,       &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_Y410,     D3DFMT_A2B10G10R10,  DXGI_FORMAT_Y410,           DXGI_FORMAT_R10G10B10A2_UNORM,  4, 2,        CS_YUV,  444,       &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_Y416,   "Y416",   D3DFMT_Y416,     D3DFMT_A16B16G16R16, DXGI_FORMAT_Y416,           DXGI_FORMAT_R16G16B16A16_UNORM, 8, 2,        CS_YUV,  444,       &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,     DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,     3, 2,        CS_RGB,  444,       &CopyFrameRGB24SSSE3, },
+	{ MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,     DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,     4, 2,        CS_RGB,  444,       &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,     DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM,     4, 2,        CS_RGB,  444,       &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_RGB48,  "RGB48",  D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM, 6, 2,        CS_RGB,  444,       &CopyFrameRGB48,      },
+	{ MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,           DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            1, 2,        CS_GRAY, 400,       &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,           DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            1, 2,        CS_GRAY, 400,       &CopyFrameAsIs,       },
+	{ MEDIASUBTYPE_Y116,   "Y116",   D3DFMT_UNKNOWN,  D3DFMT_L16,          DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            2, 2,        CS_GRAY, 400,       &CopyFrameAsIs,       },
 };
 // Remarks:
 // 1. The table lists all possible formats. The real situation depends on the capabilities of the graphics card and drivers.

@@ -129,6 +129,7 @@ struct FmtConvParams_t {
 	int             Packsize;
 	int             PitchCoeff;
 	ColorSystem_t   CSType;
+	int             Subsampling;
 	CopyFrameDataFn Func;
 };
 

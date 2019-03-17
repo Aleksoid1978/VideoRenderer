@@ -489,6 +489,13 @@ BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 		return FALSE;
 	}
 
+	if (FmtConvParams->Subsampling == 420 && (pBIH->biWidth & 1) && (pBIH->biHeight & 1)) {
+		return FALSE;
+	}
+	if (FmtConvParams->Subsampling == 422 && (pBIH->biWidth & 1)) {
+		return FALSE;
+	}
+
 	return TRUE;
 }
 
