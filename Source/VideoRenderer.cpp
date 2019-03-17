@@ -122,12 +122,6 @@ long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_mt)
 	}
 
 	if (redefine_mt) {
-		RECT& rcSource = ((VIDEOINFOHEADER*)mt.pbFormat)->rcSource;
-		// new media type must have non-empty rcSource
-		if (IsRectEmpty(&rcSource)) {
-			rcSource = { 0, 0, pBIH->biWidth, abs(pBIH->biHeight) };
-		}
-
 		CSize Size(pBIH->biWidth, pBIH->biHeight);
 		BOOL ret = FALSE;
 		if (m_bUsedD3D11) {
@@ -136,12 +130,26 @@ long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_mt)
 			ret = m_DX9_VP.GetAlignmentSize(mt, Size);
 		}
 
-		if (ret) {
+		if (ret && (Size.cx != pBIH->biWidth || Size.cy != pBIH->biHeight)) {
+			BYTE* pbFormat = mt.ReallocFormatBuffer(112 + sizeof(BITMAPINFOHEADER));
+			if (pbFormat) {
+				// update pointer after realoc
+				pBIH = GetBIHfromVIHs(&mt);
+				// copy original BITMAPINFOHEADER
+				memcpy(pbFormat + 112, pBIH, sizeof(BITMAPINFOHEADER));
+			}
+
+			// new media type must have non-empty rcSource
+			RECT& rcSource = ((VIDEOINFOHEADER*)mt.pbFormat)->rcSource;
+			if (IsRectEmpty(&rcSource)) {
+				rcSource = { 0, 0, pBIH->biWidth, abs(pBIH->biHeight) };
+			}
+
+			// overwrite buffer size
 			pBIH->biWidth  = Size.cx;
 			pBIH->biHeight = Size.cy;
+			pBIH->biSizeImage = DIBSIZE(*pBIH);
 		}
-
-		pBIH->biSizeImage = DIBSIZE(*pBIH);
 	}
 
 	return pBIH->biSizeImage ? pBIH->biSizeImage : DIBSIZE(*pBIH);

@@ -563,8 +563,14 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		return FALSE;
 	}
 
-	UINT biWidth     = pBIH->biWidth;
-	UINT biHeight    = labs(pBIH->biHeight);
+	UINT biWidth  = pBIH->biWidth;
+	UINT biHeight = labs(pBIH->biHeight);
+	if (pmt->FormatLength() == 112 + sizeof(BITMAPINFOHEADER)) {
+		BITMAPINFOHEADER* pOriginalBIH = (BITMAPINFOHEADER*)(pmt->pbFormat + 112);
+		biWidth = pOriginalBIH->biWidth;
+		biHeight = labs(pOriginalBIH->biHeight);
+	}
+
 	UINT biSizeImage = pBIH->biSizeImage;
 	if (pBIH->biSizeImage == 0 && pBIH->biCompression == BI_RGB) { // biSizeImage may be zero for BI_RGB bitmaps
 		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
