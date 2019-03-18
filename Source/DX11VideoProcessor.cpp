@@ -603,10 +603,9 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_pConvertFn = FmtConvParams->Func;
 	m_srcPitch   = biSizeImage * 2 / (biHeight * FmtConvParams->PitchCoeff);
 	m_srcPitch  &= ~1u;
-	ASSERT(biSizeImage % 4 == 0);
-	//if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
-	//	m_srcPitch = ALIGN(m_srcPitch, 4);
-	//}
+	if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
+		m_srcPitch = ALIGN(m_srcPitch, 4);
+	}
 	if (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0) {
 		m_srcPitch = -m_srcPitch;
 	}
