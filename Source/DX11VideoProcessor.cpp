@@ -611,15 +611,17 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	// D3D11 Video Processor
-	if (FmtConvParams->VP11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeD3D11VP(FmtConvParams->VP11Format, biWidth, biHeight, false)) {
-		m_srcSubType = SubType;
-		m_inputMT = *pmt;
-		UpdateStatsStatic();
+	if (FmtConvParams->VP11Format != DXGI_FORMAT_UNKNOWN && (biWidth & 1 == 0)) { // D3D11 VP does not work correctly if the odd frame width
+		if (S_OK == InitializeD3D11VP(FmtConvParams->VP11Format, biWidth, biHeight, false)) {
+			m_srcSubType = SubType;
+			m_inputMT = *pmt;
+			UpdateStatsStatic();
 
-		return TRUE;
+			return TRUE;
+		}
+
+		ReleaseVP();
 	}
-
-	ReleaseVP();
 
 	// Tex Video Processor
 	if (FmtConvParams->DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams->DX11Format, biWidth, biHeight)) {
