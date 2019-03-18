@@ -1394,11 +1394,15 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	auto FmtConvParams = GetFmtConvParams(m_srcSubType);
 	if (FmtConvParams) {
-		m_strStatsStatic.Format(L" %S %ux%u", FmtConvParams->str, m_srcRectWidth, m_srcRectHeight);
-		m_strStatsStatic.AppendFormat(L"\nVP output fmt : %s", DXGIFormatToString(m_VPOutputFmt));
-		m_strStatsStatic.AppendFormat(L"\nVideoProcessor: %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");
+		m_strStatsStatic1 = L"Direct3D 11";
+		m_strStatsStatic1.AppendFormat(L"\nGraph. Adapter: %s", m_strAdapterDescription);
+
+		m_strStatsStatic2.Format(L" %S %ux%u", FmtConvParams->str, m_srcRectWidth, m_srcRectHeight);
+		m_strStatsStatic2.AppendFormat(L"\nVP output fmt : %s", DXGIFormatToString(m_VPOutputFmt));
+		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");
 	} else {
-		m_strStatsStatic.Empty();
+		m_strStatsStatic1 = L"Error";
+		m_strStatsStatic2.Empty();
 	}
 }
 
@@ -1408,7 +1412,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		return E_ABORT;
 	}
 
-	CStringW str = L"Direct3D 11";
+	CStringW str = m_strStatsStatic1;
 	str.AppendFormat(L"\nFrame rate    : %7.03f", m_pFilter->m_FrameStats.GetAverageFps());
 	if (m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
 		str.AppendChar(L'i');
@@ -1418,7 +1422,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	if (m_bSrcFromGPU) {
 		str.Append(L" GPU");
 	}
-	str.Append(m_strStatsStatic);
+	str.Append(m_strStatsStatic2);
 	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
 	str.AppendFormat(L"\nCopyTime:%3llu ms, RenderTime:%3llu ms",

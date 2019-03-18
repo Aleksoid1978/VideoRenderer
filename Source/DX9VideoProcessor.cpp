@@ -1741,11 +1741,15 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 {
 	auto FmtConvParams = GetFmtConvParams(m_srcSubType);
 	if (FmtConvParams) {
-		m_strStatsStatic.Format(L" %S %ux%u", FmtConvParams->str, m_srcRectWidth, m_srcRectHeight);
-		m_strStatsStatic.AppendFormat(L"\nVP output fmt : %s", D3DFormatToString(m_VPOutputFmt));
-		m_strStatsStatic.AppendFormat(L"\nVideoProcessor: %s", m_pDXVA2_VP ? L"DXVA2" : L"PS 3.0");
+		m_strStatsStatic1 = L"Direct3D 9Ex";
+		m_strStatsStatic1.AppendFormat(L"\nGraph. Adapter: %s", m_strAdapterDescription);
+
+		m_strStatsStatic2.Format(L" %S %ux%u", FmtConvParams->str, m_srcRectWidth, m_srcRectHeight);
+		m_strStatsStatic2.AppendFormat(L"\nVP output fmt : %s", D3DFormatToString(m_VPOutputFmt));
+		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pDXVA2_VP ? L"DXVA2" : L"PS 3.0");
 	} else {
-		m_strStatsStatic.Empty();
+		m_strStatsStatic1 = L"Error";
+		m_strStatsStatic2.Empty();
 	}
 }
 
@@ -1755,7 +1759,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 		return E_ABORT;
 	}
 
-	CStringW str = L"Direct3D 9Ex";
+	CStringW str = m_strStatsStatic1;
 	str.AppendFormat(L"\nFrame rate    : %7.03f", m_pFilter->m_FrameStats.GetAverageFps());
 	if (m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
 		str.AppendChar(L'i');
@@ -1765,7 +1769,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	if (m_bSrcFromGPU) {
 		str.Append(L" GPU");
 	}
-	str.Append(m_strStatsStatic);
+	str.Append(m_strStatsStatic2);
 	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
 	str.AppendFormat(L"\nCopyTime:%3llu ms, RenderTime:%3llu ms",

@@ -204,7 +204,8 @@ private:
 	CRenderStats m_RenderStats;
 
 	CStatsDrawing m_StatsDrawing;
-	CStringW m_strStatsStatic;
+	CStringW m_strStatsStatic1;
+	CStringW m_strStatsStatic2;
 	bool m_bSrcFromGPU = false;
 	double m_DetectedRefreshRate = 0.0;
 	CCritSec m_RefreshRateLock;

@@ -25,7 +25,7 @@
 #define STATS_X  10
 #define STATS_Y  10
 #define STATS_W 450
-#define STATS_H 200
+#define STATS_H 226
 
 class CStatsDrawing
 {
