@@ -145,6 +145,7 @@ long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_mt)
 				rcSource = { 0, 0, pBIH->biWidth, abs(pBIH->biHeight) };
 			}
 
+			DLog(L"CMpcVideoRenderer::CalcImageSize() buffer size changed from %dx%d to %dx%d", pBIH->biWidth, pBIH->biHeight, Size.cx, Size.cy);
 			// overwrite buffer size
 			pBIH->biWidth  = Size.cx;
 			pBIH->biHeight = Size.cy;
@@ -204,6 +205,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 		if (mtNew != mt) {
 			if (S_OK == m_pInputPin->GetConnected()->QueryAccept(&mtNew)) {
+				DLog(L"CMpcVideoRenderer::SetMediaType() upstream filter accepted new media type. QueryAccept return S_OK");
 				inputPin->SetNewMediaType(mtNew);
 				mt = mtNew;
 			}
