@@ -117,7 +117,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter)
 	if (!m_hD3D11Lib) {
 		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() - failed to load d3d11.dll");
 	}
-	if (m_hDXGILib) {
+	if (m_hD3D11Lib) {
 		m_D3D11CreateDevice = (PFND3D11CREATEDEVICE)GetProcAddress(m_hD3D11Lib, "D3D11CreateDevice");
 	}
 }
