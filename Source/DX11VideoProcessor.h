@@ -48,7 +48,6 @@ private:
 	bool m_bDeintDouble = false;
 	bool m_bShowStats = false;
 
-	HMODULE m_hD3D11Lib = nullptr;
 	CComPtr<ID3D11Device> m_pDevice;
 	CComPtr<ID3D11DeviceContext> m_pDeviceContext;
 	ID3D11SamplerState* m_pSamplerPoint = nullptr;
@@ -136,6 +135,27 @@ private:
 	bool m_bSrcFromGPU = false;
 
 	bool resetmt = false;
+
+	HMODULE m_hDXGILib = nullptr;
+	HMODULE m_hD3D11Lib = nullptr;
+
+	typedef HRESULT(WINAPI *PFNCREATEDXGIFACTORY1)(
+		REFIID riid,
+		void   **ppFactory);
+	typedef HRESULT(WINAPI *PFND3D11CREATEDEVICE)(
+		IDXGIAdapter            *pAdapter,
+		D3D_DRIVER_TYPE         DriverType,
+		HMODULE                 Software,
+		UINT                    Flags,
+		const D3D_FEATURE_LEVEL *pFeatureLevels,
+		UINT                    FeatureLevels,
+		UINT                    SDKVersion,
+		ID3D11Device            **ppDevice,
+		D3D_FEATURE_LEVEL       *pFeatureLevel,
+		ID3D11DeviceContext     **ppImmediateContext);
+
+	PFNCREATEDXGIFACTORY1 m_CreateDXGIFactory1 = nullptr;
+	PFND3D11CREATEDEVICE m_D3D11CreateDevice = nullptr;
 
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter);

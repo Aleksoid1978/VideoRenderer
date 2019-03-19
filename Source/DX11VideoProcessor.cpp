@@ -103,8 +103,23 @@ inline HRESULT CreateTex2D(ID3D11Device* pDevice, const DXGI_FORMAT format, cons
 // CDX11VideoProcessor
 
 CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter)
+	: m_pFilter(pFilter)
 {
-	m_pFilter = pFilter;
+	m_hDXGILib = LoadLibraryW(L"dxgi.dll");
+	if (!m_hDXGILib) {
+		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() - failed to load dxgi.dll");
+	}
+	if (m_hDXGILib) {
+		m_CreateDXGIFactory1 = (PFNCREATEDXGIFACTORY1)GetProcAddress(m_hDXGILib, "CreateDXGIFactory1");
+	}
+
+	m_hD3D11Lib = LoadLibraryW(L"d3d11.dll");
+	if (!m_hD3D11Lib) {
+		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() - failed to load d3d11.dll");
+	}
+	if (m_hDXGILib) {
+		m_D3D11CreateDevice = (PFND3D11CREATEDEVICE)GetProcAddress(m_hD3D11Lib, "D3D11CreateDevice");
+	}
 }
 
 CDX11VideoProcessor::~CDX11VideoProcessor()
@@ -117,37 +132,18 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 	if (m_hD3D11Lib) {
 		FreeLibrary(m_hD3D11Lib);
 	}
+
+	if (m_hDXGILib) {
+		FreeLibrary(m_hDXGILib);
+	}
 }
 
 HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 {
 	DLog(L"CDX11VideoProcessor::Init()");
-	if (!m_hD3D11Lib) {
-		m_hD3D11Lib = LoadLibraryW(L"d3d11.dll");
-	}
-	if (!m_hD3D11Lib) {
-		DLog(L"CDX11VideoProcessor::Init() - failed to load d3d11.dll");
-		return E_FAIL;
-	}
 
-	HRESULT (WINAPI *pfnD3D11CreateDevice)(
-		IDXGIAdapter            *pAdapter,
-		D3D_DRIVER_TYPE         DriverType,
-		HMODULE                 Software,
-		UINT                    Flags,
-		const D3D_FEATURE_LEVEL *pFeatureLevels,
-		UINT                    FeatureLevels,
-		UINT                    SDKVersion,
-		ID3D11Device            **ppDevice,
-		D3D_FEATURE_LEVEL       *pFeatureLevel,
-		ID3D11DeviceContext     **ppImmediateContext
-	);
-
-	(FARPROC &)pfnD3D11CreateDevice = GetProcAddress(m_hD3D11Lib, "D3D11CreateDevice");
-	if (!pfnD3D11CreateDevice) {
-		DLog(L"CDX11VideoProcessor::Init() - failed to get D3D11CreateDevice() function");
-		return E_FAIL;
-	}
+	CheckPointer(m_hD3D11Lib, E_FAIL);
+	CheckPointer(m_D3D11CreateDevice, E_FAIL);
 
 	switch (iSurfaceFmt) {
 	default:
@@ -174,14 +170,14 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 	ID3D11Device *pDevice = nullptr;
 	ID3D11DeviceContext *pDeviceContext = nullptr;
 
-	HRESULT hr = pfnD3D11CreateDevice(
+	HRESULT hr = m_D3D11CreateDevice(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
 #ifdef _DEBUG
-		D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG,
+		D3D11_CREATE_DEVICE_DEBUG,
 #else
-		D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+		0,
 #endif
 		featureLevels,
 		std::size(featureLevels),
@@ -1217,7 +1213,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 					}
 				}
 			} else {
-				// for RGB 
+				// for RGB
 				ColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 			}
 			m_pVideoContext1->VideoProcessorSetStreamColorSpace1(m_pVideoProcessor, 0, ColorSpace);
