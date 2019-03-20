@@ -192,6 +192,9 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 	DLog(L"CDX11VideoProcessor::Init() - D3D11CreateDevice() successfully with feature level %d.%d", (featurelevel >> 12), (featurelevel >> 8) & 0xF);
 
 	hr = SetDevice(pDevice, pDeviceContext);
+	if (S_OK == hr) {
+		UpdateStatsStatic();
+	}
 
 	return hr;
 }
