@@ -102,23 +102,66 @@ inline HRESULT CreateTex2D(ID3D11Device* pDevice, const DXGI_FORMAT format, cons
 
 // CDX11VideoProcessor
 
+static UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAdapter)
+{
+	*ppDXGIAdapter = nullptr;
+
+	CheckPointer(pDXGIFactory, 0);
+
+	const HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+
+	UINT i = 0;
+	IDXGIAdapter* pDXGIAdapter = nullptr;
+	while (SUCCEEDED(pDXGIFactory->EnumAdapters(i, &pDXGIAdapter))) {
+		UINT k = 0;
+		IDXGIOutput* pDXGIOutput = nullptr;
+		while (SUCCEEDED(pDXGIAdapter->EnumOutputs(k, &pDXGIOutput))) {
+			DXGI_OUTPUT_DESC desc = {};
+			if (SUCCEEDED(pDXGIOutput->GetDesc(&desc))) {
+				if (desc.Monitor == hMonitor) {
+					SAFE_RELEASE(pDXGIOutput);
+					*ppDXGIAdapter = pDXGIAdapter;
+					return i;
+				}
+			}
+			SAFE_RELEASE(pDXGIOutput);
+			k++;
+		}
+
+		SAFE_RELEASE(pDXGIAdapter);
+		i++;
+	}
+
+	return 0;
+}
+
 CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter)
 	: m_pFilter(pFilter)
 {
 	m_hDXGILib = LoadLibraryW(L"dxgi.dll");
 	if (!m_hDXGILib) {
 		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() - failed to load dxgi.dll");
+		return;
 	}
-	if (m_hDXGILib) {
-		m_CreateDXGIFactory1 = (PFNCREATEDXGIFACTORY1)GetProcAddress(m_hDXGILib, "CreateDXGIFactory1");
+	m_CreateDXGIFactory1 = (PFNCREATEDXGIFACTORY1)GetProcAddress(m_hDXGILib, "CreateDXGIFactory1");
+	if (!m_CreateDXGIFactory1) {
+		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() - failed to get CreateDXGIFactory1()");
+		return;
+	}
+	HRESULT hr = m_CreateDXGIFactory1(IID_IDXGIFactory1, (void**)&m_pDXGIFactory1);
+	if (FAILED(hr)) {
+		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : CreateDXGIFactory1() failed with error %s", HR2Str(hr));
+		return;
 	}
 
 	m_hD3D11Lib = LoadLibraryW(L"d3d11.dll");
 	if (!m_hD3D11Lib) {
 		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() - failed to load d3d11.dll");
+		return;
 	}
-	if (m_hD3D11Lib) {
-		m_D3D11CreateDevice = (PFND3D11CREATEDEVICE)GetProcAddress(m_hD3D11Lib, "D3D11CreateDevice");
+	m_D3D11CreateDevice = (PFND3D11CREATEDEVICE)GetProcAddress(m_hD3D11Lib, "D3D11CreateDevice");
+	if (!m_D3D11CreateDevice) {
+		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() - failed to get D3D11CreateDevice()");
 	}
 }
 
@@ -129,6 +172,8 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 
 	ReleaseDevice();
 
+	m_pDXGIFactory1.Release();
+
 	if (m_hD3D11Lib) {
 		FreeLibrary(m_hD3D11Lib);
 	}
@@ -138,12 +183,29 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 	}
 }
 
-HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
+HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt)
 {
 	DLog(L"CDX11VideoProcessor::Init()");
 
-	CheckPointer(m_hD3D11Lib, E_FAIL);
 	CheckPointer(m_D3D11CreateDevice, E_FAIL);
+
+	m_hWnd = hwnd;
+
+	IDXGIAdapter* pDXGIAdapter = nullptr;
+	const UINT currentAdapter = GetAdapter(hwnd, m_pDXGIFactory1, &pDXGIAdapter);
+	CheckPointer(pDXGIAdapter, E_FAIL);
+	if (m_nCurrentAdapter == currentAdapter) {
+		SAFE_RELEASE(pDXGIAdapter);
+		if (!m_pDXGISwapChain1) {
+			InitSwapChain();
+		}
+		return S_OK;
+	}
+	m_nCurrentAdapter = currentAdapter;
+
+	m_pDXGISwapChain1.Release();
+	m_pDXGIFactory2.Release();
+	ReleaseDevice();
 
 	switch (iSurfaceFmt) {
 	default:
@@ -171,8 +233,8 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 	ID3D11DeviceContext *pDeviceContext = nullptr;
 
 	HRESULT hr = m_D3D11CreateDevice(
-		nullptr,
-		D3D_DRIVER_TYPE_HARDWARE,
+		pDXGIAdapter,
+		D3D_DRIVER_TYPE_UNKNOWN,
 		nullptr,
 #ifdef _DEBUG
 		D3D11_CREATE_DEVICE_DEBUG,
@@ -185,10 +247,12 @@ HRESULT CDX11VideoProcessor::Init(const int iSurfaceFmt)
 		&pDevice,
 		&featurelevel,
 		&pDeviceContext);
+	SAFE_RELEASE(pDXGIAdapter);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::Init() : D3D11CreateDevice() failed with error %s", HR2Str(hr));
 		return hr;
 	}
+
 	DLog(L"CDX11VideoProcessor::Init() - D3D11CreateDevice() successfully with feature level %d.%d", (featurelevel >> 12), (featurelevel >> 8) & 0xF);
 
 	hr = SetDevice(pDevice, pDeviceContext);
@@ -367,7 +431,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	}
 
 	if (m_hWnd) {
-		hr = InitSwapChain(m_hWnd);
+		hr = InitSwapChain();
 		if (FAILED(hr)) {
 			ReleaseDevice();
 			return hr;
@@ -411,40 +475,16 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, UINT height/* = 0*/)
+HRESULT CDX11VideoProcessor::InitSwapChain()
 {
 	DLog(L"CDX11VideoProcessor::InitSwapChain()");
-
-	CheckPointer(hwnd, E_FAIL);
-	CheckPointer(m_pVideoDevice, E_FAIL);
-
-	HRESULT hr = S_OK;
-
-	if (!width || !height) {
-		RECT rc;
-		GetClientRect(hwnd, &rc);
-		width = rc.right - rc.left;
-		height = rc.bottom - rc.top;
-	}
-
-	hr = SetVertices(width, height);
-
-	if (m_hWnd && m_pDXGISwapChain1) {
-		const HMONITOR hCurMonitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
-		const HMONITOR hNewMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-		if (hCurMonitor == hNewMonitor) {
-			hr = m_pDXGISwapChain1->ResizeBuffers(1, width, height, m_VPOutputFmt, 0);
-			if (SUCCEEDED(hr)) {
-				return hr;
-			}
-		}
-	}
+	CheckPointer(m_pDXGIFactory2, E_FAIL);
 
 	m_pDXGISwapChain1.Release();
 
 	DXGI_SWAP_CHAIN_DESC1 desc = {};
-	desc.Width = width;
-	desc.Height = height;
+	desc.Width = m_windowRect.Width();
+	desc.Height = m_windowRect.Height();
 	desc.Format = m_VPOutputFmt;
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
@@ -452,15 +492,20 @@ HRESULT CDX11VideoProcessor::InitSwapChain(const HWND hwnd, UINT width/* = 0*/, 
 	desc.BufferCount = 1;
 	desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-	hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, hwnd, &desc, nullptr, nullptr, &m_pDXGISwapChain1);
+	HRESULT hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc, nullptr, nullptr, &m_pDXGISwapChain1);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd() failed with error %s", HR2Str(hr));
-		return hr;
 	}
 
-	m_hWnd = hwnd;
-
 	return hr;
+}
+
+HRESULT CDX11VideoProcessor::ResizeSwapChain()
+{
+	CheckPointer(m_pDXGISwapChain1, E_FAIL);
+
+	SetVertices(m_windowRect.Width(), m_windowRect.Height());
+	return m_pDXGISwapChain1->ResizeBuffers(1, m_windowRect.Width(), m_windowRect.Height(), m_VPOutputFmt, 0);
 }
 
 BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)

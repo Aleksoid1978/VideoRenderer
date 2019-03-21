@@ -122,7 +122,7 @@ private:
 	CString m_strAdapterDescription;
 
 	HWND m_hWnd = nullptr;
-	UINT m_CurrentAdapter = D3DADAPTER_DEFAULT;
+	UINT m_nCurrentAdapter = D3DADAPTER_DEFAULT;
 	D3DDISPLAYMODEEX m_DisplayMode = { sizeof(D3DDISPLAYMODEEX) };
 	D3DPRESENT_PARAMETERS m_d3dpp = {};
 

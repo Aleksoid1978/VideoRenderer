@@ -37,11 +37,14 @@
 #include "StatsDrawing.h"
 
 class CMpcVideoRenderer;
+class CVideoRendererInputPin;
 
 class CDX11VideoProcessor
 	: public IMFVideoProcessor
 {
 private:
+	friend class CVideoRendererInputPin;
+
 	long m_nRefCount = 1;
 	CMpcVideoRenderer* m_pFilter = nullptr;
 
@@ -120,6 +123,7 @@ private:
 	CRect m_windowRect;
 
 	HWND m_hWnd = nullptr;
+	UINT m_nCurrentAdapter = -1;
 
 	DWORD m_VendorId = 0;
 	CString m_strAdapterDescription;
@@ -157,11 +161,13 @@ private:
 	PFNCREATEDXGIFACTORY1 m_CreateDXGIFactory1 = nullptr;
 	PFND3D11CREATEDEVICE m_D3D11CreateDevice = nullptr;
 
+	CComPtr<IDXGIFactory1> m_pDXGIFactory1;
+
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter);
 	~CDX11VideoProcessor();
 
-	HRESULT Init(const int iSurfaceFmt);
+	HRESULT Init(const HWND hwnd, const int iSurfaceFmt);
 
 private:
 	void ReleaseVP();
@@ -171,7 +177,8 @@ private:
 
 public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
-	HRESULT InitSwapChain(const HWND hwnd, UINT width = 0, UINT height = 0);
+	HRESULT InitSwapChain();
+	HRESULT ResizeSwapChain();
 
 	BOOL VerifyMediaType(const CMediaType* pmt);
 	BOOL InitMediaType(const CMediaType* pmt);
@@ -195,7 +202,10 @@ public:
 	void GetSourceRect(CRect& sourceRect) { sourceRect = m_srcRect; }
 	void GetVideoRect(CRect& videoRect) { videoRect = m_videoRect; }
 	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
-	void SetWindowRect(const CRect& windowRect) { m_windowRect = windowRect; }
+	void SetWindowRect(const CRect& windowRect) {
+		m_windowRect = windowRect;
+		ResizeSwapChain();
+	}
 
 	HRESULT GetVideoSize(long *pWidth, long *pHeight);
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);

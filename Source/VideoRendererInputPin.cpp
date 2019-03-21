@@ -182,7 +182,7 @@ STDMETHODIMP CVideoRendererInputPin::ActivateD3D11Decoding(ID3D11Device *pDevice
 
 UINT STDMETHODCALLTYPE CVideoRendererInputPin::GetD3D11AdapterIndex()
 {
-	return 0;
+	return m_pBaseRenderer->m_DX11_VP.m_nCurrentAdapter;
 }
 
 void CVideoRendererInputPin::SetNewMediaType(const CMediaType& mt)

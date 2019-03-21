@@ -82,7 +82,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	m_bUsedD3D11 = m_bOptionUseD3D11 && IsWindows8Point1OrGreater();
 	if (m_bUsedD3D11) {
-		*phr = m_DX11_VP.Init(m_iOptionSurfaceFmt);
+		*phr = m_DX11_VP.Init(m_hWnd, m_iOptionSurfaceFmt);
 		if (S_OK == *phr) {
 			m_DX11_VP.SetShowStats(m_bOptionShowStats);
 			m_DX11_VP.SetDeintDouble(m_bOptionDeintDouble);
@@ -610,7 +610,7 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 		HRESULT hr;
 
 		if (m_bUsedD3D11) {
-			hr = m_DX11_VP.InitSwapChain(m_hWnd);
+			hr = m_DX11_VP.Init(m_hWnd, m_iOptionSurfaceFmt);
 		} else {
 			bool bChangeDevice = false;
 			hr = m_DX9_VP.Init(m_hWnd, m_iOptionSurfaceFmt, &bChangeDevice);
@@ -644,7 +644,6 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 	bool bFrameDrawn = m_DrawStats.GetFrames() > 0;
 
 	if (m_bUsedD3D11) {
-		m_DX11_VP.InitSwapChain(m_hWnd, windowRect.Width(), windowRect.Height());
 		m_DX11_VP.SetWindowRect(windowRect);
 		if (bFrameDrawn && m_filterState != State_Stopped) {
 			m_DX11_VP.Render(0);
