@@ -201,7 +201,7 @@ public:
 	void GetSourceRect(CRect& sourceRect) { sourceRect = m_srcRect; }
 	void GetVideoRect(CRect& videoRect) { videoRect = m_videoRect; }
 	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
-	void SetWindowRect(const CRect& windowRect);
+	HRESULT SetWindowRect(const CRect& windowRect);
 
 	HRESULT GetVideoSize(long *pWidth, long *pHeight);
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);

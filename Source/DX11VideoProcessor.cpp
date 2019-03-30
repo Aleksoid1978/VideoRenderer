@@ -1344,7 +1344,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 	return S_OK;
 }
 
-void CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
+HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 {
 	m_windowRect = windowRect;
 
@@ -1355,15 +1355,18 @@ void CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 
 	int w = wndRect.Width();
 	int h = wndRect.Height();
-	SetVertices(w, h);
+	HRESULT hr = SetVertices(w, h);
+
 
 #if 0
 	if (m_pDXGISwapChain1) {
-		EXECUTE_ASSERT(S_OK == m_pDXGISwapChain1->ResizeBuffers(0, w, h, m_VPOutputFmt, 0));
+		hr = m_pDXGISwapChain1->ResizeBuffers(0, w, h, m_VPOutputFmt, 0);
 	}
 #else
-	InitSwapChain();
+	hr = InitSwapChain();
 #endif
+
+	return hr;
 }
 
 HRESULT CDX11VideoProcessor::GetVideoSize(long *pWidth, long *pHeight)

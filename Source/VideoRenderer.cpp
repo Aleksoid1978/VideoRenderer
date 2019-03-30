@@ -642,16 +642,17 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 
 	CAutoLock cRendererLock(&m_RendererLock);
 	bool bFrameDrawn = m_DrawStats.GetFrames() > 0;
+	HRESULT hr;
 
 	if (m_bUsedD3D11) {
-		m_DX11_VP.SetWindowRect(windowRect);
+		hr = m_DX11_VP.SetWindowRect(windowRect);
 		if (bFrameDrawn && m_filterState != State_Stopped) {
 			m_DX11_VP.Render(0);
 		} else {
 			m_DX11_VP.FillBlack();
 		}
 	} else {
-		m_DX9_VP.SetWindowRect(windowRect);
+		hr = m_DX9_VP.SetWindowRect(windowRect);
 		if (bFrameDrawn && m_filterState != State_Stopped) {
 			m_DX9_VP.Render(0);
 		} else {
@@ -659,7 +660,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 		}
 	}
 
-	return S_OK;
+	return hr;
 }
 
 // ISpecifyPropertyPages

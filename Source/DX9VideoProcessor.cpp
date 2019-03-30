@@ -1315,6 +1315,13 @@ HRESULT CDX9VideoProcessor::FillBlack()
 	return hr;
 }
 
+HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
+{
+	m_windowRect = windowRect;
+
+	return S_OK;
+}
+
 HRESULT CDX9VideoProcessor::GetVideoSize(long *pWidth, long *pHeight)
 {
 	CheckPointer(pWidth, E_POINTER);
