@@ -482,9 +482,14 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 
 	m_pDXGISwapChain1.Release();
 
+	CRect wndRect;
+	if (!GetWindowRect(m_hWnd, &wndRect)) {
+		wndRect = m_windowRect;
+	}
+
 	DXGI_SWAP_CHAIN_DESC1 desc = {};
-	desc.Width = m_windowRect.Width();
-	desc.Height = m_windowRect.Height();
+	desc.Width  = wndRect.Width();
+	desc.Height = wndRect.Height();
 	desc.Format = m_VPOutputFmt;
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
@@ -1229,7 +1234,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 
 		// Dest rect
 		m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, pDstRect ? TRUE : FALSE, pDstRect);
-		m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, pWndRect ? TRUE : FALSE, pWndRect);
+		m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, FALSE, nullptr);
 
 		// filters
 		m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_BRIGHTNESS, m_VPFilterSettings[0].Enabled, m_VPFilterSettings[0].Level);
@@ -1350,7 +1355,13 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 void CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 {
 	m_windowRect = windowRect;
-	ResizeSwapChain(m_windowRect.Width(), m_windowRect.Height());
+
+	CRect wndRect;
+	if (!GetWindowRect(m_hWnd, &wndRect)) {
+		wndRect = m_windowRect;
+	}
+
+	ResizeSwapChain(wndRect.Width(), wndRect.Height());
 }
 
 HRESULT CDX11VideoProcessor::GetVideoSize(long *pWidth, long *pHeight)
