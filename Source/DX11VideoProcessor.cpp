@@ -1347,6 +1347,12 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 	return S_OK;
 }
 
+void CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
+{
+	m_windowRect = windowRect;
+	ResizeSwapChain();
+}
+
 HRESULT CDX11VideoProcessor::GetVideoSize(long *pWidth, long *pHeight)
 {
 	CheckPointer(pWidth, E_POINTER);
