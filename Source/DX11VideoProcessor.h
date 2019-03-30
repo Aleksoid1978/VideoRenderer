@@ -213,8 +213,8 @@ public:
 	void SetShowStats(bool value) { m_bShowStats = value; };
 
 private:
-	HRESULT ProcessD3D11(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const RECT* pWndRect, const bool second);
-	HRESULT ProcessTex(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const RECT* pWndRect);
+	HRESULT ProcessD3D11(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const bool second);
+	HRESULT ProcessTex(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect);
 	void UpdateStatsStatic();
 	HRESULT DrawStats(ID3D11Texture2D* pRenderTarget);
 

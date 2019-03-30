@@ -1170,9 +1170,9 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		}
 
 		if (m_pVideoProcessor) {
-			hr = ProcessD3D11(pBackBuffer, rSrcRect, rDstRect, m_windowRect, m_FieldDrawn == 2);
+			hr = ProcessD3D11(pBackBuffer, rSrcRect, rDstRect, m_FieldDrawn == 2);
 		} else {
-			hr = ProcessTex(pBackBuffer, rSrcRect, rDstRect, m_windowRect);
+			hr = ProcessTex(pBackBuffer, rSrcRect, rDstRect);
 		}
 		if (S_OK == hr && m_bShowStats) {
 			hr = DrawStats(pBackBuffer);
@@ -1217,7 +1217,7 @@ HRESULT CDX11VideoProcessor::FillBlack()
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const RECT* pWndRect, const bool second)
+HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const bool second)
 {
 	if (!second) {
 		// input format
@@ -1312,7 +1312,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const RECT* pWndRect)
+HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect)
 {
 	ID3D11RenderTargetView* pRenderTargetView;
 	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
@@ -1416,9 +1416,9 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	}
 
 	if (m_pVideoContext) {
-		hr = ProcessD3D11(pRGB32Texture2D, rSrcRect, nullptr, nullptr, false);
+		hr = ProcessD3D11(pRGB32Texture2D, rSrcRect, nullptr, false);
 	} else {
-		hr = ProcessTex(pRGB32Texture2D, rSrcRect, rDstRect, m_windowRect);
+		hr = ProcessTex(pRGB32Texture2D, rSrcRect, rDstRect);
 	}
 	if (FAILED(hr)) {
 		return hr;
