@@ -500,12 +500,12 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::ResizeSwapChain()
+HRESULT CDX11VideoProcessor::ResizeSwapChain(const UINT width, const UINT height)
 {
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
 
-	SetVertices(m_windowRect.Width(), m_windowRect.Height());
-	return m_pDXGISwapChain1->ResizeBuffers(1, m_windowRect.Width(), m_windowRect.Height(), m_VPOutputFmt, 0);
+	SetVertices(width, height);
+	return m_pDXGISwapChain1->ResizeBuffers(1, width, height, m_VPOutputFmt, 0);
 }
 
 BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)
@@ -1350,7 +1350,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 void CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 {
 	m_windowRect = windowRect;
-	ResizeSwapChain();
+	ResizeSwapChain(m_windowRect.Width(), m_windowRect.Height());
 }
 
 HRESULT CDX11VideoProcessor::GetVideoSize(long *pWidth, long *pHeight)

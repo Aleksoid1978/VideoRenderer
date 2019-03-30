@@ -178,7 +178,7 @@ private:
 public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
 	HRESULT InitSwapChain();
-	HRESULT ResizeSwapChain();
+	HRESULT ResizeSwapChain(const UINT width, const UINT height);
 
 	BOOL VerifyMediaType(const CMediaType* pmt);
 	BOOL InitMediaType(const CMediaType* pmt);
