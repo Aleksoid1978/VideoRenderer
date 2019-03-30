@@ -1431,6 +1431,13 @@ HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 	str.AppendFormat(L"\nGraphics adapter: %s", m_strAdapterDescription);
 	str.AppendFormat(L"\nVideoProcessor  : %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");
 
+#ifdef _DEBUG
+	str.AppendFormat(L"\nSource rect: %d,%d,%d,%d - %dx%d", m_srcRect.left, m_srcRect.top, m_srcRect.right, m_srcRect.bottom, m_srcRect.Width(), m_srcRect.Height());
+	str.AppendFormat(L"\nTarget rect: %d,%d,%d,%d - %dx%d", m_trgRect.left, m_trgRect.top, m_trgRect.right, m_trgRect.bottom, m_trgRect.Width(), m_trgRect.Height());
+	str.AppendFormat(L"\nVideo rect : %d,%d,%d,%d - %dx%d", m_videoRect.left, m_videoRect.top, m_videoRect.right, m_videoRect.bottom, m_videoRect.Width(), m_videoRect.Height());
+	str.AppendFormat(L"\nWindow rect: %d,%d,%d,%d - %dx%d", m_windowRect.left, m_windowRect.top, m_windowRect.right, m_windowRect.bottom, m_windowRect.Width(), m_windowRect.Height());
+#endif
+
 	return S_OK;
 }
 
