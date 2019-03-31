@@ -26,6 +26,7 @@
 #include <Mfidl.h>
 #include <dwmapi.h>
 #include <cmath>
+#include <VersionHelpers.h>
 #include "Helper.h"
 #include "Time.h"
 #include "resource.h"
@@ -489,8 +490,18 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	desc.BufferCount = 1;
-	desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+	if (m_iSwapEffect == SWAPEFFECT_Flip) {
+		desc.BufferCount = 2;
+		if (IsWindows10OrGreater()) {
+			desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+		} else {
+			desc.Scaling = DXGI_SCALING_NONE;
+			desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+		}
+	} else { // default SWAPEFFECT_Discard
+		desc.BufferCount = 1;
+		desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+	}
 	desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 	HRESULT hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc, nullptr, nullptr, &m_pDXGISwapChain1);
 	if (FAILED(hr)) {

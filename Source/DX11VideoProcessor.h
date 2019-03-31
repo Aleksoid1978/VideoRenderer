@@ -49,7 +49,8 @@ private:
 	CMpcVideoRenderer* m_pFilter = nullptr;
 
 	bool m_bDeintDouble = false;
-	bool m_bShowStats = false;
+	bool m_bShowStats   = false;
+	int  m_iSwapEffect  = SWAPEFFECT_Discard;
 
 	CComPtr<ID3D11Device> m_pDevice;
 	CComPtr<ID3D11DeviceContext> m_pDeviceContext;
@@ -210,6 +211,7 @@ public:
 
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
 	void SetShowStats(bool value) { m_bShowStats = value; };
+	void SetSwapEffect(int value) { m_iSwapEffect = value; }
 
 private:
 	HRESULT ProcessD3D11(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const bool second);

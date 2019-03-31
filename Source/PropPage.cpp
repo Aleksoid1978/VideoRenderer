@@ -180,6 +180,14 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 					return (LRESULT)1;
 				}
 			}
+			if (nID == IDC_COMBO4) {
+				lValue = SendDlgItemMessageW(IDC_COMBO4, CB_GETCURSEL, 0, 0);
+				if (lValue != m_SetsPP.iSwapEffect) {
+					m_SetsPP.iSwapEffect = lValue;
+					SetDirty();
+					return (LRESULT)1;
+				}
+			}
 		}
 	}
 

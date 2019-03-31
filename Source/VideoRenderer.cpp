@@ -98,6 +98,8 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	m_bUsedD3D11 = m_Sets.bUseD3D11 && IsWindows8Point1OrGreater();
 	if (m_bUsedD3D11) {
+		m_DX11_VP.SetSwapEffect(m_Sets.iSwapEffect);
+
 		*phr = m_DX11_VP.Init(m_hWnd, m_Sets.iSurfaceFmt);
 		if (S_OK == *phr) {
 			m_DX11_VP.SetShowStats(m_Sets.bShowStats);
@@ -783,6 +785,14 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 			m_DX9_VP.SetInterpolateAt50pct(setings.bInterpolateAt50pct);
 		}
 		m_Sets.bInterpolateAt50pct = setings.bInterpolateAt50pct;
+	}
+
+	if (setings.iSwapEffect != m_Sets.iSwapEffect) {
+		if (m_bUsedD3D11) {
+			m_DX11_VP.SetSwapEffect(setings.iDownscaling);
+			m_DX11_VP.InitSwapChain();
+		}
+		m_Sets.iSwapEffect = setings.iSwapEffect;
 	}
 }
 
