@@ -36,6 +36,8 @@
 #define OPT_Downscaling          L"Downscaling"
 #define OPT_InterpolateAt50pct   L"InterpolateAt50pct"
 
+static const wchar_t g_szClassName[] = L"VRWindow";
+
 //
 // CMpcVideoRenderer
 //
@@ -80,6 +82,16 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 	}
 
+	WNDCLASSEXW wc = {};
+	wc.cbSize = sizeof(wc);
+	wc.lpfnWndProc = ::DefWindowProcW;
+	wc.hInstance = GetModuleHandleW(0);
+	wc.lpszClassName = g_szClassName;
+	if (!RegisterClassExW(&wc)) {
+		*phr = E_FAIL;
+		return;
+	}
+
 	m_bUsedD3D11 = m_bOptionUseD3D11 && IsWindows8Point1OrGreater();
 	if (m_bUsedD3D11) {
 		*phr = m_DX11_VP.Init(m_hWnd, m_iOptionSurfaceFmt);
@@ -106,6 +118,11 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 CMpcVideoRenderer::~CMpcVideoRenderer()
 {
+	if (m_hWnd) {
+		DestroyWindow(m_hWnd);
+	}
+
+	UnregisterClassW(g_szClassName, GetModuleHandleW(0));
 }
 
 void CMpcVideoRenderer::NewSegment(REFERENCE_TIME startTime)
@@ -606,9 +623,23 @@ STDMETHODIMP CMpcVideoRenderer::GetPreferredAspectRatio(long *plAspectX, long *p
 STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 {
 	if (m_hWnd != (HWND)Owner) {
-		m_hWnd = (HWND)Owner;
-		HRESULT hr;
+		if (m_hWnd) {
+			DestroyWindow(m_hWnd); m_hWnd = nullptr;
+		}
 
+		m_hWnd = CreateWindowExW(
+			0,
+			g_szClassName,
+			nullptr,
+			WS_VISIBLE | WS_CHILDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
+			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+			(HWND)Owner,
+			nullptr,
+			GetModuleHandleW(0),
+			nullptr
+		);
+
+		HRESULT hr;
 		if (m_bUsedD3D11) {
 			hr = m_DX11_VP.Init(m_hWnd, m_iOptionSurfaceFmt);
 		} else {
@@ -642,6 +673,10 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 
 	CAutoLock cRendererLock(&m_RendererLock);
 	bool bFrameDrawn = m_DrawStats.GetFrames() > 0;
+
+	if (m_hWnd) {
+		SetWindowPos(m_hWnd, nullptr, Left, Top, Width, Height, SWP_NOZORDER | SWP_NOACTIVATE);
+	}
 
 	if (m_bUsedD3D11) {
 		m_DX11_VP.SetWindowRect(windowRect);

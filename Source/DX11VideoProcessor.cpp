@@ -482,14 +482,9 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 
 	m_pDXGISwapChain1.Release();
 
-	CRect wndRect;
-	if (!GetWindowRect(m_hWnd, &wndRect)) {
-		wndRect = m_windowRect;
-	}
-
 	DXGI_SWAP_CHAIN_DESC1 desc = {};
-	desc.Width  = wndRect.Width();
-	desc.Height = wndRect.Height();
+	desc.Width  = m_windowRect.Width();
+	desc.Height = m_windowRect.Height();
 	desc.Format = m_VPOutputFmt;
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
@@ -1350,22 +1345,13 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 {
 	m_windowRect = windowRect;
 
-	CRect wndRect;
-	if (!GetWindowRect(m_hWnd, &wndRect)) {
-		wndRect = m_windowRect;
-	}
-
-	int w = wndRect.Width();
-	int h = wndRect.Height();
+	const int w = m_windowRect.Width();
+	const int h = m_windowRect.Height();
 	HRESULT hr = SetVertices(w, h);
 
-#if 1
 	if (m_pDXGISwapChain1) {
 		hr = m_pDXGISwapChain1->ResizeBuffers(0, w, h, m_VPOutputFmt, 0);
 	}
-#else
-	hr = InitSwapChain();
-#endif
 
 	return hr;
 }
