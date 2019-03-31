@@ -492,12 +492,8 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	if (m_iSwapEffect == SWAPEFFECT_Flip) {
 		desc.BufferCount = 2;
-		if (IsWindows10OrGreater()) {
-			desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-		} else {
-			desc.Scaling = DXGI_SCALING_NONE;
-			desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-		}
+		desc.Scaling = DXGI_SCALING_NONE;
+		desc.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 	} else { // default SWAPEFFECT_Discard
 		desc.BufferCount = 1;
 		desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
