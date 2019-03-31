@@ -86,16 +86,6 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 	}
 
-	WNDCLASSEXW wc = {};
-	wc.cbSize = sizeof(wc);
-	wc.lpfnWndProc = ::DefWindowProcW;
-	wc.hInstance = GetModuleHandleW(0);
-	wc.lpszClassName = g_szClassName;
-	if (!RegisterClassExW(&wc)) {
-		*phr = E_FAIL;
-		return;
-	}
-
 	m_bUsedD3D11 = m_Sets.bUseD3D11 && IsWindows8Point1OrGreater();
 	if (m_bUsedD3D11) {
 		m_DX11_VP.SetSwapEffect(m_Sets.iSwapEffect);
@@ -128,7 +118,7 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 		DestroyWindow(m_hWnd);
 	}
 
-	UnregisterClassW(g_szClassName, GetModuleHandleW(0));
+	UnregisterClassW(g_szClassName, g_hInst);
 }
 
 void CMpcVideoRenderer::NewSegment(REFERENCE_TIME startTime)
@@ -630,7 +620,18 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 {
 	if (m_hWnd != (HWND)Owner) {
 		if (m_hWnd) {
-			DestroyWindow(m_hWnd); m_hWnd = nullptr;
+			DestroyWindow(m_hWnd);
+			m_hWnd = nullptr;
+		}
+
+		WNDCLASSEXW wc = { sizeof(wc) };
+		if (!GetClassInfoExW(g_hInst, g_szClassName, &wc)) {
+			wc.lpfnWndProc = ::DefWindowProcW;
+			wc.hInstance = g_hInst;
+			wc.lpszClassName = g_szClassName;
+			if (!RegisterClassExW(&wc)) {
+				return E_FAIL;
+			}
 		}
 
 		m_hWnd = CreateWindowExW(
@@ -641,9 +642,13 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
 			(HWND)Owner,
 			nullptr,
-			GetModuleHandleW(0),
+			g_hInst,
 			nullptr
 		);
+
+		if (!m_hWnd) {
+			return E_FAIL;
+		}
 
 		HRESULT hr;
 		if (m_bUsedD3D11) {
