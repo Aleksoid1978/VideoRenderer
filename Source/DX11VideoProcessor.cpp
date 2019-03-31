@@ -1341,6 +1341,8 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 	// Draw textured quad onto render target
 	m_pDeviceContext->Draw(6, 0);
 
+	pRenderTargetView->Release();
+
 	return S_OK;
 }
 
@@ -1357,8 +1359,7 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 	int h = wndRect.Height();
 	HRESULT hr = SetVertices(w, h);
 
-
-#if 0
+#if 1
 	if (m_pDXGISwapChain1) {
 		hr = m_pDXGISwapChain1->ResizeBuffers(0, w, h, m_VPOutputFmt, 0);
 	}
