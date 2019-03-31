@@ -30,13 +30,7 @@ class __declspec(uuid("DA46D181-07D6-441D-B314-019AEB10148A"))
 {
 	CComQIPtr<IVideoRenderer> m_pVideoRenderer;
 
-	bool m_bUseD3D11    = false;
-	bool m_bShowStats   = false;
-	bool m_bDeintDouble = false;
-	int  m_iSurfaceFmt  = SURFMT_8INT;
-	int  m_iUpscaling   = UPSCALE_CatmullRom;
-	int  m_iDownscaling = DOWNSCALE_Hamming;
-	bool m_bInterpolateAt50pct = true;
+	Settings_t m_SetsPP;
 
 public:
 	CVRMainPPage(LPUNKNOWN lpunk, HRESULT* phr);

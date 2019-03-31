@@ -70,13 +70,7 @@ private:
 	friend class CDX11VideoProcessor;
 
 	// Options
-	bool m_bOptionUseD3D11    = false;
-	bool m_bOptionShowStats   = false;
-	bool m_bOptionDeintDouble = false;
-	int  m_iOptionSurfaceFmt  = SURFMT_8INT;
-	int  m_iOptionUpscaling   = UPSCALE_CatmullRom;
-	int  m_iOptionDownscaling = DOWNSCALE_Hamming;
-	bool m_bOptionInterpolateAt50pct = true;
+	Settings_t m_Sets;
 
 	bool m_bUsedD3D11 = false; // current state
 
@@ -215,24 +209,8 @@ public:
 	STDMETHODIMP GetVideoProcessorInfo(CStringW& str);
 	STDMETHODIMP_(bool) GetActive();
 
-	STDMETHODIMP_(void) GetSettings(
-		bool &bUseD3D11,
-		bool &bShowStats,
-		bool &bDeintDouble,
-		int  &iSurfaceFmt,
-		int  &iUpscaling,
-		int  &iDownscaling,
-		bool &bInterpolateAt50pct
-	);
-	STDMETHODIMP_(void) SetSettings(
-		bool bUseD3D11,
-		bool bShowStats,
-		bool bDeintDouble,
-		int  iSurfaceFmt,
-		int  iUpscaling,
-		int  iDownscaling,
-		bool bInterpolateAt50pct
-	);
+	STDMETHODIMP_(void) GetSettings(Settings_t& setings);
+	STDMETHODIMP_(void) SetSettings(const Settings_t setings);
 
 	STDMETHODIMP SaveSettings();
 

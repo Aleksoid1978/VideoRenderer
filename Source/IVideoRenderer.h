@@ -47,29 +47,30 @@ enum :int {
 	DOWNSCALE_COUNT,
 };
 
+enum :int {
+	SWAPEFFECT_Discard = 0,
+	SWAPEFFECT_Flip,
+	SWAPEFFECT_COUNT,
+};
+
+struct Settings_t {
+	bool bUseD3D11           = false;
+	bool bShowStats          = false;
+	bool bDeintDouble        = false;
+	int  iSurfaceFmt         = SURFMT_8INT;
+	int  iUpscaling          = UPSCALE_CatmullRom;
+	int  iDownscaling        = DOWNSCALE_Hamming;
+	bool bInterpolateAt50pct = true;
+	int  iSwapEffect         = SWAPEFFECT_Discard;
+};
+
 interface __declspec(uuid("1AB00F10-5F55-42AC-B53F-38649F11BE3E"))
 IVideoRenderer : public IUnknown {
 	STDMETHOD(GetVideoProcessorInfo) (CStringW& str) PURE;
 	STDMETHOD_(bool, GetActive()) PURE;
 
-	STDMETHOD_(void, GetSettings(
-		bool &bUseD3D11,
-		bool &bShowStats,
-		bool &bDeintDouble,
-		int  &iSurfaceFmt,
-		int  &iUpscaling,
-		int  &iDownscaling,
-		bool &bInterpolateAt50pct
-	)) PURE;
-	STDMETHOD_(void, SetSettings(
-		bool bUseD3D11,
-		bool bShowStats,
-		bool bDeintDouble,
-		int  iSurfaceFmt,
-		int  iUpscaling,
-		int  iDownscaling,
-		bool bInterpolateAt50pct
-	)) PURE;
+	STDMETHOD_(void, GetSettings(Settings_t& setings)) PURE;
+	STDMETHOD_(void, SetSettings(const Settings_t setings)) PURE; // use copy of setings here
 
 	STDMETHOD(SaveSettings()) PURE;
 };

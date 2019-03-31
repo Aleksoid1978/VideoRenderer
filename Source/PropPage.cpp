@@ -79,39 +79,36 @@ HRESULT CVRMainPPage::OnActivate()
 	// set m_hWnd for CWindow
 	m_hWnd = m_hwnd;
 
-	m_pVideoRenderer->GetSettings(
-		m_bUseD3D11,
-		m_bShowStats,
-		m_bDeintDouble,
-		m_iSurfaceFmt,
-		m_iUpscaling,
-		m_iDownscaling,
-		m_bInterpolateAt50pct);
+	m_pVideoRenderer->GetSettings(m_SetsPP);
 
-	CheckDlgButton(IDC_CHECK1, m_bUseD3D11    ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK2, m_bShowStats   ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK3, m_bDeintDouble ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK1, m_SetsPP.bUseD3D11    ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK2, m_SetsPP.bShowStats   ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK3, m_SetsPP.bDeintDouble ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK4, BST_CHECKED);
 	GetDlgItem(IDC_CHECK4).EnableWindow(FALSE);
-	CheckDlgButton(IDC_CHECK5, m_bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK5, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
 
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"8-bit Integer");
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"10-bit Integer");
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"16-bit Floating Point (DX9 only)");
-	SendDlgItemMessageW(IDC_COMBO1, CB_SETCURSEL, m_iSurfaceFmt, 0);
+	SendDlgItemMessageW(IDC_COMBO1, CB_SETCURSEL, m_SetsPP.iSurfaceFmt, 0);
 
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Mitchell-Netravali");
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Catmull-Rom");
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Lanczos2");
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Lanczos3");
-	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, m_iUpscaling, 0);
+	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, m_SetsPP.iUpscaling, 0);
 
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Box");
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Bilinear");
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Hamming");
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Bicubic");
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Lanczos");
-	SendDlgItemMessageW(IDC_COMBO3, CB_SETCURSEL, m_iDownscaling, 0);
+	SendDlgItemMessageW(IDC_COMBO3, CB_SETCURSEL, m_SetsPP.iDownscaling, 0);
+
+	SendDlgItemMessageW(IDC_COMBO4, CB_ADDSTRING, 0, (LPARAM)L"Discard");
+	SendDlgItemMessageW(IDC_COMBO4, CB_ADDSTRING, 0, (LPARAM)L"Flip");
+	SendDlgItemMessageW(IDC_COMBO4, CB_SETCURSEL, m_SetsPP.iSwapEffect, 0);
 
 #ifdef MPCVR_REV_DATE
 #ifdef MPCVR_REV_HASH
@@ -137,22 +134,22 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 
 		if (HIWORD(wParam) == BN_CLICKED) {
 			if (nID == IDC_CHECK1) {
-				m_bUseD3D11 = IsDlgButtonChecked(IDC_CHECK1) == BST_CHECKED;
+				m_SetsPP.bUseD3D11 = IsDlgButtonChecked(IDC_CHECK1) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}
 			if (nID == IDC_CHECK2) {
-				m_bShowStats = IsDlgButtonChecked(IDC_CHECK2) == BST_CHECKED;
+				m_SetsPP.bShowStats = IsDlgButtonChecked(IDC_CHECK2) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}
 			if (nID == IDC_CHECK3) {
-				m_bDeintDouble = IsDlgButtonChecked(IDC_CHECK3) == BST_CHECKED;
+				m_SetsPP.bDeintDouble = IsDlgButtonChecked(IDC_CHECK3) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}
 			if (nID == IDC_CHECK5) {
-				m_bInterpolateAt50pct = IsDlgButtonChecked(IDC_CHECK5) == BST_CHECKED;
+				m_SetsPP.bInterpolateAt50pct = IsDlgButtonChecked(IDC_CHECK5) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}
@@ -161,24 +158,24 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 		if (HIWORD(wParam) == CBN_SELCHANGE) {
 			if (nID == IDC_COMBO1) {
 				lValue = SendDlgItemMessageW(IDC_COMBO1, CB_GETCURSEL, 0, 0);
-				if (lValue != m_iSurfaceFmt) {
-					m_iSurfaceFmt = lValue;
+				if (lValue != m_SetsPP.iSurfaceFmt) {
+					m_SetsPP.iSurfaceFmt = lValue;
 					SetDirty();
 					return (LRESULT)1;
 				}
 			}
 			if (nID == IDC_COMBO2) {
 				lValue = SendDlgItemMessageW(IDC_COMBO2, CB_GETCURSEL, 0, 0);
-				if (lValue != m_iUpscaling) {
-					m_iUpscaling = lValue;
+				if (lValue != m_SetsPP.iUpscaling) {
+					m_SetsPP.iUpscaling = lValue;
 					SetDirty();
 					return (LRESULT)1;
 				}
 			}
 			if (nID == IDC_COMBO3) {
 				lValue = SendDlgItemMessageW(IDC_COMBO3, CB_GETCURSEL, 0, 0);
-				if (lValue != m_iDownscaling) {
-					m_iDownscaling = lValue;
+				if (lValue != m_SetsPP.iDownscaling) {
+					m_SetsPP.iDownscaling = lValue;
 					SetDirty();
 					return (LRESULT)1;
 				}
@@ -192,14 +189,7 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 
 HRESULT CVRMainPPage::OnApplyChanges()
 {
-	m_pVideoRenderer->SetSettings(
-		m_bUseD3D11,
-		m_bShowStats,
-		m_bDeintDouble,
-		m_iSurfaceFmt,
-		m_iUpscaling,
-		m_iDownscaling,
-		m_bInterpolateAt50pct);
+	m_pVideoRenderer->SetSettings(m_SetsPP);
 	m_pVideoRenderer->SaveSettings();
 
 	return S_OK;
