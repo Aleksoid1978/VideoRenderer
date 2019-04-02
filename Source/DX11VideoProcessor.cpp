@@ -493,7 +493,11 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	if (m_iSwapEffect == SWAPEFFECT_Flip) {
 		desc.BufferCount = 2;
 		desc.Scaling = DXGI_SCALING_NONE;
+#if VER_PRODUCTBUILD >= 10000
 		desc.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+#else
+		desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+#endif
 	} else { // default SWAPEFFECT_Discard
 		desc.BufferCount = 1;
 		desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
@@ -1127,7 +1131,10 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
 				m_pConvertFn(m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, src, m_srcPitch);
 				m_pDeviceContext->Unmap(m_pSrcTexture2D_CPU, 0);
-				m_pDeviceContext->CopyResource(m_pSrcTexture2D, m_pSrcTexture2D_CPU); // we can't use texture with D3D11_CPU_ACCESS_WRITE flag
+				if (m_pVideoProcessor) {
+					// ID3D11VideoProcessor does not use textures with D3D11_CPU_ACCESS_WRITE flag
+					m_pDeviceContext->CopyResource(m_pSrcTexture2D, m_pSrcTexture2D_CPU);
+				}
 			}
 		}
 	}
