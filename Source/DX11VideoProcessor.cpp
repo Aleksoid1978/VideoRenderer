@@ -48,8 +48,8 @@ struct PS_COLOR_TRANSFORM {
 
 enum Tex2DType {
 	Tex2D_Default,
-	Tex2D_DefaultShader,
 	Tex2D_DefaultRTarget,
+	Tex2D_DefaultShaderRTarget,
 	Tex2D_DefaultShaderRTargetGDI,
 	Tex2D_DynamicShaderWrite,
 	Tex2D_StagingRead,
@@ -73,15 +73,15 @@ inline HRESULT CreateTex2D(ID3D11Device* pDevice, const DXGI_FORMAT format, cons
 		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = 0;
 		break;
-	case Tex2D_DefaultShader:
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		desc.CPUAccessFlags = 0;
-		desc.MiscFlags = 0;
-		break;
 	case Tex2D_DefaultRTarget:
 		desc.Usage = D3D11_USAGE_DEFAULT;
 		desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+		desc.CPUAccessFlags = 0;
+		desc.MiscFlags = 0;
+		break;
+	case Tex2D_DefaultShaderRTarget:
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = 0;
 		break;
@@ -904,7 +904,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 		return hr;
 	}
 
-	hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_DefaultShader, &m_pSrcTexture2D);
+	hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_DefaultShaderRTarget, &m_pSrcTexture2D);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateTex2D(m_pSrcTexture2D) failed with error %s", HR2Str(hr));
 		return hr;
