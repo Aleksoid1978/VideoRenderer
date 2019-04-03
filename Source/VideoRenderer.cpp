@@ -618,7 +618,9 @@ STDMETHODIMP CMpcVideoRenderer::GetPreferredAspectRatio(long *plAspectX, long *p
 // IVideoWindow
 STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 {
-	if (m_hWnd != (HWND)Owner) {
+	if (m_hWndParent != (HWND)Owner) {
+		m_hWndParent = (HWND)Owner;
+
 		if (m_hWnd) {
 			DestroyWindow(m_hWnd);
 			m_hWnd = nullptr;
@@ -640,7 +642,7 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 			nullptr,
 			WS_VISIBLE | WS_CHILDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
 			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-			(HWND)Owner,
+			m_hWndParent,
 			nullptr,
 			g_hInst,
 			nullptr

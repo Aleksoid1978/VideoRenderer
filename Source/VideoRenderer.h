@@ -75,6 +75,7 @@ private:
 	bool m_bUsedD3D11 = false; // current state
 
 	HWND m_hWnd = nullptr;
+	HWND m_hWndParent = nullptr;
 
 	FILTER_STATE m_filterState = State_Stopped;
 	int m_Stepping = 0;
