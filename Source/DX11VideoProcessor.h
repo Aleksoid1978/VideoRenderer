@@ -55,6 +55,7 @@ private:
 	CComPtr<ID3D11Device> m_pDevice;
 	CComPtr<ID3D11DeviceContext> m_pDeviceContext;
 	ID3D11SamplerState* m_pSamplerPoint = nullptr;
+	ID3D11Buffer* m_pFullFrameVertexBuffer = nullptr;
 	CComPtr<ID3D11VertexShader> m_pVS_Simple;
 	CComPtr<ID3D11PixelShader>  m_pPS_Simple;
 	CComPtr<ID3D11InputLayout>  m_pInputLayout;
@@ -131,7 +132,6 @@ private:
 	CString m_strAdapterDescription;
 
 	CComPtr<ID3D11Texture2D> m_pOSDTex2D;
-	ID3D11Buffer* m_pOSDVertexBuffer = nullptr;
 
 	CRenderStats m_RenderStats;
 

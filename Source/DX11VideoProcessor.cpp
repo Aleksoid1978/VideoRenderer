@@ -312,7 +312,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pVS_Simple.Release();
 	m_pPS_Simple.Release();
 	SAFE_RELEASE(m_pSamplerPoint);
-	SAFE_RELEASE(m_pOSDVertexBuffer);
+	SAFE_RELEASE(m_pFullFrameVertexBuffer);
 
 	m_pDeviceContext.Release();
 	m_pDevice.Release();
@@ -382,6 +382,29 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	SampDesc.MinLOD = 0;
 	SampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateSamplerState(&SampDesc, &m_pSamplerPoint));
+
+	VERTEX Vertices[6] = {
+		// Vertices for drawing whole texture
+		// |\
+		// |_\ lower left triangle
+		{ DirectX::XMFLOAT3(-1, -1, 0), DirectX::XMFLOAT2(0, 1) },
+		{ DirectX::XMFLOAT3(-1, +1, 0), DirectX::XMFLOAT2(0, 0) },
+		{ DirectX::XMFLOAT3(+1, -1, 0), DirectX::XMFLOAT2(1, 1) },
+		// ___
+		// \ |
+		//  \| upper right triangle
+		{ DirectX::XMFLOAT3(+1, -1, 0), DirectX::XMFLOAT2(1, 1) },
+		{ DirectX::XMFLOAT3(-1, +1, 0), DirectX::XMFLOAT2(0, 0) },
+		{ DirectX::XMFLOAT3(+1, +1, 0), DirectX::XMFLOAT2(1, 0) },
+	};
+	D3D11_BUFFER_DESC BufferDesc;
+	ZeroMemory(&BufferDesc, sizeof(BufferDesc));
+	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	BufferDesc.ByteWidth = sizeof(Vertices);
+	BufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	BufferDesc.CPUAccessFlags = 0;
+	D3D11_SUBRESOURCE_DATA InitData = { Vertices, 0, 0 };
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pFullFrameVertexBuffer));
 
 	LPVOID data;
 	DWORD size;
@@ -1005,17 +1028,7 @@ HRESULT CDX11VideoProcessor::SetVertices(UINT dstW, UINT dstH)
 		return hr;
 	}
 
-	// lower left triangle
-	Vertices[0] = { DirectX::XMFLOAT3(-1, -1, 0), DirectX::XMFLOAT2(0, 1) };
-	Vertices[1] = { DirectX::XMFLOAT3(-1, +1, 0), DirectX::XMFLOAT2(0, 0) };
-	Vertices[2] = { DirectX::XMFLOAT3(+1, -1, 0), DirectX::XMFLOAT2(1, 1) };
-	// upper right triangle
-	Vertices[3] = { DirectX::XMFLOAT3(+1, -1, 0), DirectX::XMFLOAT2(1, 1) };
-	Vertices[4] = { DirectX::XMFLOAT3(-1, +1, 0), DirectX::XMFLOAT2(0, 0) };
-	Vertices[5] = { DirectX::XMFLOAT3(+1, +1, 0), DirectX::XMFLOAT2(1, 0) };
 
-	SAFE_RELEASE(m_pOSDVertexBuffer);
-	hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pOSDVertexBuffer);
 
 	return S_OK;
 }
@@ -1327,18 +1340,21 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 
 HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect)
 {
+	const FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
+	const UINT Stride = sizeof(VERTEX);
+	const UINT Offset = 0;
+
+	// Convert color pass
+
 	ID3D11RenderTargetView* pRenderTargetView;
-	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+	HRESULT hr = m_pDevice->CreateRenderTargetView(m_pSrcTexture2D, nullptr, &pRenderTargetView);
 	if (FAILED(hr)) {
 		return hr;
 	}
 
-	D3D11_TEXTURE2D_DESC RTDesc;
-	pRenderTarget->GetDesc(&RTDesc);
-
 	D3D11_VIEWPORT VP;
-	VP.Width = static_cast<FLOAT>(RTDesc.Width);
-	VP.Height = static_cast<FLOAT>(RTDesc.Height);
+	VP.Width = static_cast<FLOAT>(m_TextureWidth);
+	VP.Height = static_cast<FLOAT>(m_TextureHeight);
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
 	VP.TopLeftX = 0;
@@ -1346,16 +1362,43 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 	m_pDeviceContext->RSSetViewports(1, &VP);
 
 	// Set resources
-	UINT Stride = sizeof(VERTEX);
-	UINT Offset = 0;
-	FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
 	m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
 	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 	m_pDeviceContext->PSSetShader(m_pPS_ConvertColor, nullptr, 0);
 	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pShaderResource1);
-	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
+	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pPixelShaderConstants);
+	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
+
+	// Draw textured quad onto render target
+	m_pDeviceContext->Draw(6, 0);
+
+	pRenderTargetView->Release();
+
+	// Additional pass
+
+	hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	D3D11_TEXTURE2D_DESC RTDesc;
+	pRenderTarget->GetDesc(&RTDesc);
+
+	VP.Width = static_cast<FLOAT>(RTDesc.Width);
+	VP.Height = static_cast<FLOAT>(RTDesc.Height);
+	m_pDeviceContext->RSSetViewports(1, &VP);
+
+	// Set resources
+	m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
+	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
+	m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
+	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pShaderResource2);
+	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
+	m_pDeviceContext->PSSetConstantBuffers(0, 0, nullptr);
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &Stride, &Offset);
 
@@ -1586,7 +1629,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
 			m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
 			m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pOSDVertexBuffer, &Stride, &Offset);
+			m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
 
 			// Draw textured quad onto render target
 			m_pDeviceContext->Draw(6, 0);
