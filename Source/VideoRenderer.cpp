@@ -752,6 +752,7 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 {
 	m_Sets.bUseD3D11   = setings.bUseD3D11;
 	m_Sets.iSurfaceFmt = setings.iSurfaceFmt;
+	m_Sets.iSwapEffect = setings.iSwapEffect;
 
 	CAutoLock cRendererLock(&m_RendererLock);
 
@@ -792,14 +793,6 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 			m_DX9_VP.SetInterpolateAt50pct(setings.bInterpolateAt50pct);
 		}
 		m_Sets.bInterpolateAt50pct = setings.bInterpolateAt50pct;
-	}
-
-	if (setings.iSwapEffect != m_Sets.iSwapEffect) {
-		if (m_bUsedD3D11) {
-			m_DX11_VP.SetSwapEffect(setings.iDownscaling);
-			m_DX11_VP.InitSwapChain();
-		}
-		m_Sets.iSwapEffect = setings.iSwapEffect;
 	}
 }
 
