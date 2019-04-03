@@ -48,10 +48,11 @@ struct PS_COLOR_TRANSFORM {
 
 enum Tex2DType {
 	Tex2D_Default,
-	Tex2D_DynamicShaderWrite,
+	Tex2D_DefaultShader,
 	Tex2D_DefaultRTarget,
-	Tex2D_StagingRead,
 	Tex2D_DefaultShaderRTargetGDI,
+	Tex2D_DynamicShaderWrite,
+	Tex2D_StagingRead,
 };
 
 inline HRESULT CreateTex2D(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type, ID3D11Texture2D** ppTexture2D)
@@ -72,10 +73,10 @@ inline HRESULT CreateTex2D(ID3D11Device* pDevice, const DXGI_FORMAT format, cons
 		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = 0;
 		break;
-	case Tex2D_DynamicShaderWrite:
-		desc.Usage = D3D11_USAGE_DYNAMIC;
+	case Tex2D_DefaultShader:
+		desc.Usage = D3D11_USAGE_DEFAULT;
 		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = 0;
 		break;
 	case Tex2D_DefaultRTarget:
@@ -84,17 +85,23 @@ inline HRESULT CreateTex2D(ID3D11Device* pDevice, const DXGI_FORMAT format, cons
 		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = 0;
 		break;
-	case Tex2D_StagingRead:
-		desc.Usage = D3D11_USAGE_STAGING;
-		desc.BindFlags = 0;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-		desc.MiscFlags = 0;
-		break;
 	case Tex2D_DefaultShaderRTargetGDI:
 		desc.Usage = D3D11_USAGE_DEFAULT;
 		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
+		break;
+	case Tex2D_DynamicShaderWrite:
+		desc.Usage = D3D11_USAGE_DYNAMIC;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		desc.MiscFlags = 0;
+		break;
+	case Tex2D_StagingRead:
+		desc.Usage = D3D11_USAGE_STAGING;
+		desc.BindFlags = 0;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		desc.MiscFlags = 0;
 		break;
 	}
 
@@ -272,7 +279,8 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_pSrcTexture2D_CPU.Release();
 	m_pSrcTexture2D.Release();
 
-	SAFE_RELEASE(m_pShaderResource);
+	SAFE_RELEASE(m_pShaderResource1);
+	SAFE_RELEASE(m_pShaderResource2);
 	SAFE_RELEASE(m_pPixelShaderConstants);
 	SAFE_RELEASE(m_pSamplerLinear);
 	SAFE_RELEASE(m_pVertexBuffer);
@@ -896,7 +904,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 		return hr;
 	}
 
-	hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_Default, &m_pSrcTexture2D);
+	hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_DefaultShader, &m_pSrcTexture2D);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateTex2D(m_pSrcTexture2D) failed with error %s", HR2Str(hr));
 		return hr;
@@ -907,7 +915,12 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 	ShaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	ShaderDesc.Texture2D.MostDetailedMip = 0; // = Texture2D desc.MipLevels - 1
 	ShaderDesc.Texture2D.MipLevels = 1;       // = Texture2D desc.MipLevels
-	hr = m_pDevice->CreateShaderResourceView(m_pSrcTexture2D_CPU, &ShaderDesc, &m_pShaderResource);
+	hr = m_pDevice->CreateShaderResourceView(m_pSrcTexture2D_CPU, &ShaderDesc, &m_pShaderResource1);
+	if (FAILED(hr)) {
+		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateShaderResourceView() failed with error %s", HR2Str(hr));
+		return hr;
+	}
+	hr = m_pDevice->CreateShaderResourceView(m_pSrcTexture2D, &ShaderDesc, &m_pShaderResource2);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateShaderResourceView() failed with error %s", HR2Str(hr));
 		return hr;
@@ -989,7 +1002,6 @@ HRESULT CDX11VideoProcessor::SetVertices(UINT dstW, UINT dstH)
 	HRESULT hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pVertexBuffer);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::SetVertices() : CreateBuffer() failed with error %s", HR2Str(hr));
-		SAFE_RELEASE(m_pShaderResource);
 		return hr;
 	}
 
@@ -1341,7 +1353,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 	m_pDeviceContext->PSSetShader(m_pPS_ConvertColor, nullptr, 0);
-	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pShaderResource);
+	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pShaderResource1);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pPixelShaderConstants);
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

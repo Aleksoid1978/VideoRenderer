@@ -74,7 +74,8 @@ private:
 
 	// D3D11 Shader Video Processor
 	CComPtr<ID3D11PixelShader> m_pPS_ConvertColor;
-	ID3D11ShaderResourceView* m_pShaderResource = nullptr;
+	ID3D11ShaderResourceView* m_pShaderResource1 = nullptr;
+	ID3D11ShaderResourceView* m_pShaderResource2 = nullptr;
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;
 	ID3D11Buffer* m_pVertexBuffer = nullptr;
 	ID3D11Buffer* m_pPixelShaderConstants = nullptr;
