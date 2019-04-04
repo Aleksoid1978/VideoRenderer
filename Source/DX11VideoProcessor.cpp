@@ -408,7 +408,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	LPVOID data;
 	DWORD size;
-	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VSHADER11_SIMPLE));
+	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VSH11_SIMPLE));
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateVertexShader(data, size, nullptr, &m_pVS_Simple));
 
 	D3D11_INPUT_ELEMENT_DESC Layout[] = {
@@ -418,10 +418,10 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateInputLayout(Layout, std::size(Layout), data, size, &m_pInputLayout));
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 
-	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PSHADER11_SIMPLE));
+	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PSH11_SIMPLE));
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPS_Simple));
 
-	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PSHADER11_CONVERTCOLOR));
+	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PSH11_CONVERTCOLOR));
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPS_ConvertColor));
 
 	CComPtr<IDXGIDevice> pDXGIDevice;

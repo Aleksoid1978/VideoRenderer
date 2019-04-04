@@ -1,6 +1,15 @@
+#ifndef C_CSP
+    #define C_CSP 1
+#endif
+
+#ifndef C_HDR
+    #define C_HDR 0
+#endif
+
 Texture2D tex : register(t0);
 SamplerState samp : register(s0);
 
+#if C_CSP
 cbuffer PS_COLOR_TRANSFORM : register(b0)
 {
     float3 cm_r;
@@ -9,6 +18,13 @@ cbuffer PS_COLOR_TRANSFORM : register(b0)
     float3 cm_c;
 	// NB: sizeof(float3) == sizeof(float4)
 };
+#endif
+
+#if (C_HDR == 1)
+#include "../convert/correct_st2084.hlsl"
+#elif (C_HDR == 2)
+#include "../convert/correct_hlg.hlsl"
+#endif
 
 struct PS_INPUT
 {
@@ -19,7 +35,16 @@ struct PS_INPUT
 float4 main(PS_INPUT input) : SV_Target
 {
     float4 color = tex.Sample(samp, input.Tex); // original pixel
+
+#if C_CSP
     color.rgb = float3(mul(cm_r, color.rgb), mul(cm_g, color.rgb), mul(cm_b, color.rgb)) + cm_c;
+#endif
+
+#if (C_HDR == 1)
+    color = correct_ST2084(color);
+#elif (C_HDR == 2)
+    color = correct_HLG(color);
+#endif
 
     return color;
 }

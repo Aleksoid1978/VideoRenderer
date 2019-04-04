@@ -39,21 +39,26 @@ CALL "%VCVARS%" x86 > nul
 :fxc_Ok
 
 CALL :SubColorText "0A" "=== Compiling downscaler shaders ===" & ECHO.
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_box_x.cso"      "d3d9\downscaler.hlsl" /DFILTER=0 /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_box_y.cso"      "d3d9\downscaler.hlsl" /DFILTER=0 /DAXIS=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bilinear_x.cso" "d3d9\downscaler.hlsl" /DFILTER=1 /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bilinear_y.cso" "d3d9\downscaler.hlsl" /DFILTER=1 /DAXIS=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_hamming_x.cso"  "d3d9\downscaler.hlsl" /DFILTER=2 /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_hamming_y.cso"  "d3d9\downscaler.hlsl" /DFILTER=2 /DAXIS=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic_x.cso"  "d3d9\downscaler.hlsl" /DFILTER=3 /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic_y.cso"  "d3d9\downscaler.hlsl" /DFILTER=3 /DAXIS=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_x.cso"  "d3d9\downscaler.hlsl" /DFILTER=4 /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_y.cso"  "d3d9\downscaler.hlsl" /DFILTER=4 /DAXIS=1
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_box_x.cso"        "d3d9\downscaler.hlsl" /DFILTER=0 /DAXIS=0
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_box_y.cso"        "d3d9\downscaler.hlsl" /DFILTER=0 /DAXIS=1
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bilinear_x.cso"   "d3d9\downscaler.hlsl" /DFILTER=1 /DAXIS=0
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bilinear_y.cso"   "d3d9\downscaler.hlsl" /DFILTER=1 /DAXIS=1
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_hamming_x.cso"    "d3d9\downscaler.hlsl" /DFILTER=2 /DAXIS=0
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_hamming_y.cso"    "d3d9\downscaler.hlsl" /DFILTER=2 /DAXIS=1
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic_x.cso"    "d3d9\downscaler.hlsl" /DFILTER=3 /DAXIS=0
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic_y.cso"    "d3d9\downscaler.hlsl" /DFILTER=3 /DAXIS=1
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_x.cso"    "d3d9\downscaler.hlsl" /DFILTER=4 /DAXIS=0
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_y.cso"    "d3d9\downscaler.hlsl" /DFILTER=4 /DAXIS=1
 
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\convert_color_st2084.cso"  "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_HDR=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\convert_color_hlg.cso"     "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_HDR=2
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\correction_st2084.cso"     "d3d9\convert_color.hlsl" /DC_CSP=0 /DC_HDR=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\correction_hlg.cso"        "d3d9\convert_color.hlsl" /DC_CSP=0 /DC_HDR=2
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\convert_color_st2084.cso"    "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_HDR=1
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\convert_color_hlg.cso"       "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_HDR=2
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\correction_st2084.cso"       "d3d9\convert_color.hlsl" /DC_CSP=0 /DC_HDR=1
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\correction_hlg.cso"          "d3d9\convert_color.hlsl" /DC_CSP=0 /DC_HDR=2
+
+fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_convert_color_st2084.cso" "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_HDR=1
+fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_convert_color_hlg.cso"    "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_HDR=2
+fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_correction_st2084.cso"    "d3d11\ps_convert_color.hlsl" /DC_CSP=0 /DC_HDR=1
+fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_correction_hlg.cso"       "d3d11\ps_convert_color.hlsl" /DC_CSP=0 /DC_HDR=2
 
 EXIT /B
 
