@@ -50,6 +50,11 @@ fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic_y.cso"  "d3d9\do
 fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_x.cso"  "d3d9\downscaler.hlsl" /DFILTER=4 /DAXIS=0
 fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_y.cso"  "d3d9\downscaler.hlsl" /DFILTER=4 /DAXIS=1
 
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\convert_color_st2084.cso"  "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_HDR=1
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\convert_color_hlg.cso"     "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_HDR=2
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\correction_st2084.cso"     "d3d9\convert_color.hlsl" /DC_CSP=0 /DC_HDR=1
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\correction_hlg.cso"        "d3d9\convert_color.hlsl" /DC_CSP=0 /DC_HDR=2
+
 EXIT /B
 
 :SubColorText

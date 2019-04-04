@@ -1,6 +1,4 @@
-// Convert HDR to SDR for SMPTE ST 2084 after conversion in DXVA2 Video Processor
-
-sampler image : register(s0);
+// Convert HDR to SDR for SMPTE ST 2084
 
 #define ST2084_m1 ((2610.0 / 4096.0) / 4.0)
 #define ST2084_m2 ((2523.0 / 4096.0) * 128.0)
@@ -11,16 +9,13 @@ sampler image : register(s0);
 #define SRC_LUMINANCE_PEAK     10000.0
 #define DISPLAY_LUMINANCE_PEAK 125.0
 
-#include "../convert/hdr_tone_mapping.hlsl"
-#include "../convert/colorspace_gamut_conversion.hlsl"
+#include "hdr_tone_mapping.hlsl"
+#include "colorspace_gamut_conversion.hlsl"
 
 #pragma warning(disable: 3571) // fix warning X3571 in pow().
 
-float4 main(float2 tex : TEXCOORD0) : COLOR
+inline float4 correct_ST2084(float4 pixel)
 {
-    //float4 pixel = saturate(tex2D(image, tex)); // use mindless saturate() for fix warning X3571 in pow()
-    float4 pixel = tex2D(image, tex);
-
     // ST2084 to Linear
     pixel.rgb = pow(pixel.rgb, 1.0 / ST2084_m2);
     pixel.rgb = max(pixel.rgb - ST2084_c1, 0.0) / (ST2084_c2 - ST2084_c3 * pixel.rgb);

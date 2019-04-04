@@ -1,11 +1,9 @@
-// Convert HDR to SDR for ARIB STD-B67 (HLG) after conversion in DXVA2 Video Processor
-
-sampler image : register(s0);
+// Convert HDR to SDR for ARIB STD-B67 (HLG)
 
 #define SRC_LUMINANCE_PEAK     1000.0
 #define DISPLAY_LUMINANCE_PEAK 80.0
 
-#include "../convert/hdr_tone_mapping.hlsl"
+#include "hdr_tone_mapping.hlsl"
 
 inline float inverse_HLG(float x)
 {
@@ -21,10 +19,8 @@ inline float inverse_HLG(float x)
     return x;
 }
 
-float4 main(float2 tex : TEXCOORD0) : COLOR
+inline float4 correct_HLG(float4 pixel)
 {
-    float4 pixel = tex2D(image, tex);
-
     // HLG to Linear
     pixel.r = inverse_HLG(pixel.r);
     pixel.g = inverse_HLG(pixel.g);

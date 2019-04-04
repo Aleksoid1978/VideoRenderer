@@ -33,12 +33,6 @@
     <FxCompile Include="d3d9\convert_color.hlsl">
       <Filter>d3d9</Filter>
     </FxCompile>
-    <FxCompile Include="d3d9\correction_hlg.hlsl">
-      <Filter>d3d9</Filter>
-    </FxCompile>
-    <FxCompile Include="d3d9\correction_st2084.hlsl">
-      <Filter>d3d9</Filter>
-    </FxCompile>
     <FxCompile Include="d3d9\correction_ycgco.hlsl">
       <Filter>d3d9</Filter>
     </FxCompile>
@@ -77,6 +71,12 @@
     </FxCompile>
     <FxCompile Include="d3d11\vs_simple.hlsl">
       <Filter>d3d11</Filter>
+    </FxCompile>
+    <FxCompile Include="convert\correct_hlg.hlsl">
+      <Filter>convert</Filter>
+    </FxCompile>
+    <FxCompile Include="convert\correct_st2084.hlsl">
+      <Filter>convert</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
