@@ -179,7 +179,6 @@ private:
 		shader_correction_st2084,
 		shader_correction_hlg,
 		shader_correction_ycgco,
-		shader_test,
 		shader_count
 	};
 	struct {
