@@ -11,8 +11,8 @@ sampler image : register(s0);
 #define SRC_LUMINANCE_PEAK     10000.0
 #define DISPLAY_LUMINANCE_PEAK 125.0
 
-#include "hdr_tone_mapping.hlsl"
-#include "colorspace_gamut_conversion.hlsl"
+#include "../convert/hdr_tone_mapping.hlsl"
+#include "../convert/colorspace_gamut_conversion.hlsl"
 
 #pragma warning(disable: 3571) // fix warning X3571 in pow().
 

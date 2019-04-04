@@ -18,8 +18,8 @@
 // SHADER
 //
 
-IDF_SHADER_RESIZER_MITCHELL4_X    SHADER                 "..\\bin\\shaders\\resizer_mitchell4_x.cso"
-IDF_SHADER_RESIZER_MITCHELL4_Y    SHADER                 "..\\bin\\shaders\\resizer_mitchell4_y.cso"
+IDF_SHADER_RESIZER_MITCHELL4_X   SHADER                  "..\\bin\\shaders\\resizer_mitchell4_x.cso"
+IDF_SHADER_RESIZER_MITCHELL4_Y   SHADER                  "..\\bin\\shaders\\resizer_mitchell4_y.cso"
 IDF_SHADER_RESIZER_CATMULL4_X    SHADER                  "..\\bin\\shaders\\resizer_catmull4_x.cso"
 IDF_SHADER_RESIZER_CATMULL4_Y    SHADER                  "..\\bin\\shaders\\resizer_catmull4_y.cso"
 IDF_SHADER_RESIZER_LANCZOS2_X    SHADER                  "..\\bin\\shaders\\resizer_lanczos2_x.cso"
@@ -40,8 +40,7 @@ IDF_SHADER_CONVERT_COLOR         SHADER                  "..\\bin\\shaders\\conv
 IDF_SHADER_CORRECTION_ST2084     SHADER                  "..\\bin\\shaders\\correction_st2084.cso"
 IDF_SHADER_CORRECTION_HLG        SHADER                  "..\\bin\\shaders\\correction_hlg.cso"
 IDF_SHADER_CORRECTION_YCGCO      SHADER                  "..\\bin\\shaders\\correction_ycgco.cso"
-IDF_SHADER_TEST                  SHADER                  "..\\bin\\shaders\\test_shader.cso"
 
-IDF_VSHADER11_SIMPLE             SHADER                  "..\\bin\\shaders11\\vs_simple.cso"
-IDF_PSHADER11_SIMPLE             SHADER                  "..\\bin\\shaders11\\ps_simple.cso"
-IDF_PSHADER11_CONVERTCOLOR       SHADER                  "..\\bin\\shaders11\\ps_convert_color.cso"
+IDF_VSHADER11_SIMPLE             SHADER                  "..\\bin\\shaders\\vs_simple.cso"
+IDF_PSHADER11_SIMPLE             SHADER                  "..\\bin\\shaders\\ps_simple.cso"
+IDF_PSHADER11_CONVERTCOLOR       SHADER                  "..\\bin\\shaders\\ps_convert_color.cso"

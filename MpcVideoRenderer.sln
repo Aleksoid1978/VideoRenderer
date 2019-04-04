@@ -4,16 +4,8 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 15.0.27130.2036
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MpcVideoRenderer", "Source\MpcVideoRenderer.vcxproj", "{C9CEECB2-947C-4902-BEF9-B98DCAF14B1C}"
-	ProjectSection(ProjectDependencies) = postProject
-		{3D9A1837-4ECC-45CA-9260-F57AD36C6B5F} = {3D9A1837-4ECC-45CA-9260-F57AD36C6B5F}
-		{E352C7F4-A40F-4A6E-803D-6B5114187B94} = {E352C7F4-A40F-4A6E-803D-6B5114187B94}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BaseClasses", "Source\BaseClasses\BaseClasses.vcxproj", "{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shaders", "Source\Shaders\Shaders.vcxproj", "{E352C7F4-A40F-4A6E-803D-6B5114187B94}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shaders11", "Source\Shaders11\Shaders11.vcxproj", "{3D9A1837-4ECC-45CA-9260-F57AD36C6B5F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Include", "Include", "{C7CAE27C-03BC-45F2-BF8E-DEE05DBF37B8}"
 	ProjectSection(SolutionItems) = preProject
@@ -22,6 +14,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Include", "Include", "{C7CA
 		Source\Include\ID3DVideoMemoryConfiguration.h = Source\Include\ID3DVideoMemoryConfiguration.h
 		Source\Include\ISubRender.h = Source\Include\ISubRender.h
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shaders", "Source\Shaders\Shaders.vcxproj", "{3D9A1837-4ECC-45CA-9260-F57AD36C6B5F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,14 +45,6 @@ Global
 		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}.Release|x86.ActiveCfg = Release|Win32
 		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}.Release|x86.Build.0 = Release|Win32
 		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}.Release|x86.Deploy.0 = Release|Win32
-		{E352C7F4-A40F-4A6E-803D-6B5114187B94}.Debug|x64.ActiveCfg = Debug|x64
-		{E352C7F4-A40F-4A6E-803D-6B5114187B94}.Debug|x64.Build.0 = Debug|x64
-		{E352C7F4-A40F-4A6E-803D-6B5114187B94}.Debug|x86.ActiveCfg = Debug|Win32
-		{E352C7F4-A40F-4A6E-803D-6B5114187B94}.Debug|x86.Build.0 = Debug|Win32
-		{E352C7F4-A40F-4A6E-803D-6B5114187B94}.Release|x64.ActiveCfg = Release|x64
-		{E352C7F4-A40F-4A6E-803D-6B5114187B94}.Release|x64.Build.0 = Release|x64
-		{E352C7F4-A40F-4A6E-803D-6B5114187B94}.Release|x86.ActiveCfg = Release|Win32
-		{E352C7F4-A40F-4A6E-803D-6B5114187B94}.Release|x86.Build.0 = Release|Win32
 		{3D9A1837-4ECC-45CA-9260-F57AD36C6B5F}.Debug|x64.ActiveCfg = Debug|x64
 		{3D9A1837-4ECC-45CA-9260-F57AD36C6B5F}.Debug|x64.Build.0 = Debug|x64
 		{3D9A1837-4ECC-45CA-9260-F57AD36C6B5F}.Debug|x86.ActiveCfg = Debug|Win32

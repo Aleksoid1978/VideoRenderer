@@ -103,9 +103,6 @@
     <ProjectReference Include=".\BaseClasses\BaseClasses.vcxproj">
       <Project>{e8a3f6fa-ae1c-4c8e-a0b6-9c8480324eaa}</Project>
     </ProjectReference>
-    <ProjectReference Include=".\Shaders\Shaders.vcxproj">
-      <Project>{e352c7f4-a40f-4a6e-803d-6b5114187b94}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MpcVideoRenderer.rc" />

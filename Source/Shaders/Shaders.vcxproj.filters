@@ -1,64 +1,93 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <FxCompile Include="test_shader.hlsl" />
-    <FxCompile Include="Resizers\downscaler.hlsl">
-      <Filter>Resizers</Filter>
-    </FxCompile>
-    <FxCompile Include="Resizers\resizer_catmull4_x.hlsl">
-      <Filter>Resizers</Filter>
-    </FxCompile>
-    <FxCompile Include="Resizers\resizer_catmull4_y.hlsl">
-      <Filter>Resizers</Filter>
-    </FxCompile>
-    <FxCompile Include="Resizers\resizer_lanczos2_x.hlsl">
-      <Filter>Resizers</Filter>
-    </FxCompile>
-    <FxCompile Include="Resizers\resizer_lanczos2_y.hlsl">
-      <Filter>Resizers</Filter>
-    </FxCompile>
-    <FxCompile Include="Convert\convert_color.hlsl">
-      <Filter>Convert</Filter>
-    </FxCompile>
-    <FxCompile Include="Convert\correction_hlg.hlsl">
-      <Filter>Convert</Filter>
-    </FxCompile>
-    <FxCompile Include="Convert\correction_st2084.hlsl">
-      <Filter>Convert</Filter>
-    </FxCompile>
-    <FxCompile Include="Convert\correction_ycgco.hlsl">
-      <Filter>Convert</Filter>
-    </FxCompile>
-    <FxCompile Include="Resizers\resizer_lanczos3_x.hlsl">
-      <Filter>Resizers</Filter>
-    </FxCompile>
-    <FxCompile Include="Resizers\resizer_lanczos3_y.hlsl">
-      <Filter>Resizers</Filter>
-    </FxCompile>
-    <FxCompile Include="Resizers\resizer_mitchell4_x.hlsl">
-      <Filter>Resizers</Filter>
-    </FxCompile>
-    <FxCompile Include="Resizers\resizer_mitchell4_y.hlsl">
-      <Filter>Resizers</Filter>
-    </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="Resizers">
-      <UniqueIdentifier>{f4fc5765-0e53-4bcc-a775-81959f4ded58}</UniqueIdentifier>
+    <Filter Include="convert">
+      <UniqueIdentifier>{bd5d128d-b5e4-4335-8894-e80212568cab}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Convert">
-      <UniqueIdentifier>{1862d48b-2a05-4a5a-992f-9b4b6e583ce9}</UniqueIdentifier>
+    <Filter Include="resize">
+      <UniqueIdentifier>{1645e731-3f55-4e38-a562-e08bb0c11911}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="examples">
+      <UniqueIdentifier>{97ce25b0-5d80-45b2-8a24-035b64f4ae70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="d3d9">
+      <UniqueIdentifier>{5a83978b-35bc-4505-be67-1576f258b521}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="d3d11">
+      <UniqueIdentifier>{46aa0043-ada0-4aee-9dfe-972acce3d605}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resizers\downscaler_filters.hlsl">
-      <Filter>Resizers</Filter>
+    <FxCompile Include="examples\ps_mpv.hlsl">
+      <Filter>examples</Filter>
+    </FxCompile>
+    <FxCompile Include="examples\ps_vlc.hlsl">
+      <Filter>examples</Filter>
+    </FxCompile>
+    <FxCompile Include="examples\vs_mpv.hlsl">
+      <Filter>examples</Filter>
+    </FxCompile>
+    <FxCompile Include="examples\vs_vlc.hlsl">
+      <Filter>examples</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d9\convert_color.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d9\correction_hlg.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d9\correction_st2084.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d9\correction_ycgco.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d9\downscaler.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d9\resizer_catmull4_x.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d9\resizer_catmull4_y.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d9\resizer_lanczos2_x.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d9\resizer_lanczos2_y.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d9\resizer_lanczos3_x.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d9\resizer_lanczos3_y.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d9\resizer_mitchell4_x.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d9\resizer_mitchell4_y.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d11\ps_convert_color.hlsl">
+      <Filter>d3d11</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d11\ps_simple.hlsl">
+      <Filter>d3d11</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d11\vs_simple.hlsl">
+      <Filter>d3d11</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="convert\hdr_tone_mapping.hlsl">
+      <Filter>convert</Filter>
     </None>
-    <None Include="Convert\colorspace_gamut_conversion.hlsl">
-      <Filter>Convert</Filter>
+    <None Include="convert\colorspace_gamut_conversion.hlsl">
+      <Filter>convert</Filter>
     </None>
-    <None Include="Convert\hdr_tone_mapping.hlsl">
-      <Filter>Convert</Filter>
+    <None Include="resize\downscaler_filters.hlsl">
+      <Filter>resize</Filter>
     </None>
   </ItemGroup>
 </Project>
