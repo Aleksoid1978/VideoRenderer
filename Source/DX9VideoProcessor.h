@@ -190,7 +190,6 @@ private:
 		{IDF_SHADER_CORRECTION_ST2084},
 		{IDF_SHADER_CORRECTION_HLG},
 		{IDF_SHADER_CORRECTION_YCGCO},
-		{IDF_SHADER_TEST},
 	};
 
 	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleX;

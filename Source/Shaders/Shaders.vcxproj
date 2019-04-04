@@ -174,9 +174,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="Convert\ycbcr_coefficients.hlsl">
-      <FileType>Document</FileType>
-    </None>
     <None Include="Convert\colorspace_gamut_conversion.hlsl">
       <FileType>Document</FileType>
     </None>
@@ -187,8 +184,6 @@
       <FileType>Document</FileType>
     </None>
     <FxCompile Include="Convert\correction_ycgco.hlsl" />
-    <FxCompile Include="Convert\ycbcr_to_rgb.hlsl" />
-    <FxCompile Include="Convert\ycgco_to_rgb.hlsl" />
     <FxCompile Include="Resizers\downscaler.hlsl" />
     <FxCompile Include="Resizers\resizer_lanczos3_x.hlsl" />
     <FxCompile Include="Resizers\resizer_lanczos3_y.hlsl" />

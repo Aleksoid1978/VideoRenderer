@@ -17,12 +17,6 @@
     <FxCompile Include="Resizers\resizer_lanczos2_y.hlsl">
       <Filter>Resizers</Filter>
     </FxCompile>
-    <FxCompile Include="Convert\ycgco_to_rgb.hlsl">
-      <Filter>Convert</Filter>
-    </FxCompile>
-    <FxCompile Include="Convert\ycbcr_to_rgb.hlsl">
-      <Filter>Convert</Filter>
-    </FxCompile>
     <FxCompile Include="Convert\convert_color.hlsl">
       <Filter>Convert</Filter>
     </FxCompile>
@@ -59,9 +53,6 @@
   <ItemGroup>
     <None Include="Resizers\downscaler_filters.hlsl">
       <Filter>Resizers</Filter>
-    </None>
-    <None Include="Convert\ycbcr_coefficients.hlsl">
-      <Filter>Convert</Filter>
     </None>
     <None Include="Convert\colorspace_gamut_conversion.hlsl">
       <Filter>Convert</Filter>
