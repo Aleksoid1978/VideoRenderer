@@ -174,30 +174,17 @@ private:
 	Tex_t m_TexConvert;
 	Tex_t m_TexResize;
 
-	enum {
-		shader_convert_color,
-		shader_correction_st2084,
-		shader_correction_hlg,
-		shader_correction_ycgco,
-		shader_count
-	};
+	CComPtr<IDirect3DPixelShader9> m_pShaderConvert;
 	struct {
-		UINT resid;
-		CComPtr<IDirect3DPixelShader9> pShader;
-	} m_PixelShaders[shader_count] = {
-		{IDF_SHADER_CONVERT_COLOR},
-		{IDF_SHADER_CORRECTION_ST2084},
-		{IDF_SHADER_CORRECTION_HLG},
-		{IDF_SHADER_CORRECTION_YCGCO},
-	};
+		bool bEnable = false;
+		float fConstData[4][4] = {};
+	} m_ShaderConvertData;
+	
 
 	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleX;
 	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleY;
 	CComPtr<IDirect3DPixelShader9> m_pShaderDownscaleX;
 	CComPtr<IDirect3DPixelShader9> m_pShaderDownscaleY;
-
-	int m_iConvertShader = -1;
-	float m_fConstData[4][4] = {};
 
 	CRenderStats m_RenderStats;
 

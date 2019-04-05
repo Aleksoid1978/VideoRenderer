@@ -391,9 +391,8 @@ void CDX9VideoProcessor::ReleaseDevice()
 	m_pOSDTexture.Release();
 
 	m_pDXVA2_VPService.Release();
-	for (auto& shader : m_PixelShaders) {
-		shader.pShader.Release();
-	}
+
+	m_pShaderConvert.Release();
 
 	m_pShaderUpscaleX.Release();
 	m_pShaderUpscaleY.Release();
@@ -719,16 +718,16 @@ void CDX9VideoProcessor::SetShaderConvertColorParams(mp_csp_params& params)
 
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
-			m_fConstData[i][j] = cmatrix.m[i][j];
+			m_ShaderConvertData.fConstData[i][j] = cmatrix.m[i][j];
 		}
 	}
 	for (int j = 0; j < 3; j++) {
-		m_fConstData[3][j] = cmatrix.c[j];
+		m_ShaderConvertData.fConstData[3][j] = cmatrix.c[j];
 	}
 
 	if (m_srcSubType == MEDIASUBTYPE_Y410 || m_srcSubType == MEDIASUBTYPE_Y416) {
 		for (int i = 0; i < 3; i++) {
-			std::swap(m_fConstData[i][0], m_fConstData[i][1]);
+			std::swap(m_ShaderConvertData.fConstData[i][0], m_ShaderConvertData.fConstData[i][1]);
 		}
 	}
 }
@@ -1001,25 +1000,19 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcPitch = -m_srcPitch;
 	}
 
-	for (auto& shader: m_PixelShaders) {
-		if (!shader.pShader) {
-			HRESULT hr = CreateShaderFromResource(&shader.pShader, shader.resid);
-			ASSERT(S_OK == hr);
-		}
-	}
-
-	m_iConvertShader = -1;
+	m_pShaderConvert.Release();
+	m_ShaderConvertData.bEnable = false;
 
 	// DXVA2 Video Processor
 	if (FmtConvParams->DXVA2Format != D3DFMT_UNKNOWN && InitializeDXVA2VP(FmtConvParams->DXVA2Format, biWidth, biHeight, false)) {
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-			m_iConvertShader = shader_correction_st2084;
+			EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pShaderConvert, IDF_SHADER_CORRECTION_ST2084));
 		}
 		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
-			m_iConvertShader = shader_correction_hlg;
+			EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pShaderConvert, IDF_SHADER_CORRECTION_HLG));
 		}
 		else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
-			m_iConvertShader = shader_correction_ycgco;
+			EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pShaderConvert, IDF_SHADER_CORRECTION_YCGCO));
 		}
 
 		m_srcSubType = SubType;
@@ -1031,6 +1024,16 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// Tex Video Processor
 	if (FmtConvParams->D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams->D3DFormat, biWidth, biHeight)) {
+		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+			EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pShaderConvert, IDF_SHADER_CONVERT_COLOR_ST2084));
+		}
+		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
+			EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pShaderConvert, IDF_SHADER_CONVERT_COLOR_HLG));
+		}
+		else {
+			EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pShaderConvert, IDF_SHADER_CONVERT_COLOR));
+		}
+
 		mp_csp_params csp_params;
 		set_colorspace(m_srcExFmt, csp_params.color);
 		csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
@@ -1041,9 +1044,8 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 		m_srcSubType = SubType;
 		bool bPprocessing = FmtConvParams->CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
-
 		if (bPprocessing) {
-			m_iConvertShader = shader_convert_color;
+			m_ShaderConvertData.bEnable = true;
 			SetShaderConvertColorParams(csp_params);
 		}
 		UpdateStatsStatic();
@@ -1501,7 +1503,7 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 	IDirect3DSurface9* pSurface = pRenderTarget;
 
 	CRect VPRect = rDstRect;
-	if (m_iConvertShader >= 0) {
+	if (m_pShaderConvert) {
 		// check intermediate texture
 		const UINT texWidth = rDstRect.Width();
 		const UINT texHeight = rDstRect.Height();
@@ -1547,7 +1549,7 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 
 	if (pTexture) {
 		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-		hr = m_pD3DDevEx->SetPixelShader(m_PixelShaders[m_iConvertShader].pShader);
+		hr = m_pD3DDevEx->SetPixelShader(m_pShaderConvert);
 		TextureResize(pTexture, VPRect, rDstRect, D3DTEXF_POINT);
 		m_pD3DDevEx->SetPixelShader(nullptr);
 	}
@@ -1570,7 +1572,7 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 	IDirect3DTexture9* pTexture = m_pSrcVideoTexture;
 	IDirect3DSurface9* pSurface = m_SrcSamples.GetAt(0).pSrcSurface;
 
-	if (m_iConvertShader >= 0) {
+	if (m_pShaderConvert && m_ShaderConvertData.bEnable) {
 		if (!m_TexConvert.pTexture) {
 			hr = m_pD3DDevEx->CreateTexture(m_srcWidth, m_srcHeight, 1, D3DUSAGE_RENDERTARGET, m_VPOutputFmt, D3DPOOL_DEFAULT, &m_TexConvert.pTexture, nullptr);
 			if (FAILED(hr) || FAILED(m_TexConvert.Update())) {
@@ -1582,10 +1584,8 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 			// set temp RenderTarget
 			hr = m_pD3DDevEx->SetRenderTarget(0, m_TexConvert.pSurface);
 
-			if (m_iConvertShader == shader_convert_color) {
-				hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_fConstData, std::size(m_fConstData));
-			}
-			hr = m_pD3DDevEx->SetPixelShader(m_PixelShaders[m_iConvertShader].pShader);
+			hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_ShaderConvertData.fConstData, std::size(m_ShaderConvertData.fConstData));
+			hr = m_pD3DDevEx->SetPixelShader(m_pShaderConvert);
 			TextureCopy(pTexture);
 			m_pD3DDevEx->SetPixelShader(nullptr);
 
@@ -1924,10 +1924,10 @@ STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 
 			if (bPprocessing) {
 				//TODO: lock "render" here
-				m_iConvertShader = shader_convert_color;
+				m_ShaderConvertData.bEnable = true;
 				SetShaderConvertColorParams(csp_params);
 			} else {
-				m_iConvertShader = -1;
+				m_ShaderConvertData.bEnable = false;
 			}
 		}
 	}
