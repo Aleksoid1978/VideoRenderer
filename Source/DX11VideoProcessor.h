@@ -74,12 +74,16 @@ private:
 	CComPtr<ID3D11VideoProcessorInputView> m_pInputView;
 
 	// D3D11 Shader Video Processor
-	CComPtr<ID3D11PixelShader> m_pPS_ConvertColor;
 	ID3D11ShaderResourceView* m_pShaderResource1 = nullptr;
 	ID3D11ShaderResourceView* m_pShaderResource2 = nullptr;
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;
 	ID3D11Buffer* m_pVertexBuffer = nullptr;
-	ID3D11Buffer* m_pPixelShaderConstants = nullptr;
+	CComPtr<ID3D11PixelShader> m_pPSConvertColor;
+	struct {
+		bool bEnable = false;
+		ID3D11Buffer* pConstants = nullptr;
+	} m_PSConvColorData;
+	
 
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
@@ -176,6 +180,7 @@ private:
 	void ReleaseDevice();
 
 	HRESULT GetDataFromResource(LPVOID& data, DWORD& size, UINT resid);
+	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
 
 public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);

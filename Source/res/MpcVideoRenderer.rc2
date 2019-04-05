@@ -45,7 +45,7 @@ IDF_SHADER_CORRECTION_YCGCO      SHADER                  "..\\bin\\shaders\\corr
 
 IDF_VSH11_SIMPLE                 SHADER                  "..\\bin\\shaders\\vs_simple.cso"
 IDF_PSH11_SIMPLE                 SHADER                  "..\\bin\\shaders\\ps_simple.cso"
-IDF_PSH11_CONVERTCOLOR           SHADER                  "..\\bin\\shaders\\ps_convert_color.cso"
+IDF_PSH11_CONVERT_COLOR          SHADER                  "..\\bin\\shaders\\ps_convert_color.cso"
 IDF_PSH11_CONVERT_COLOR_ST2084   SHADER                  "..\\bin\\shaders\\ps_convert_color_st2084.cso"
 IDF_PSH11_CONVERT_COLOR_HLG      SHADER                  "..\\bin\\shaders\\ps_convert_color_hlg.cso"
 IDF_PSH11_CORRECTION_ST2084      SHADER                  "..\\bin\\shaders\\ps_correction_st2084.cso"

@@ -174,12 +174,11 @@ private:
 	Tex_t m_TexConvert;
 	Tex_t m_TexResize;
 
-	CComPtr<IDirect3DPixelShader9> m_pShaderConvert;
+	CComPtr<IDirect3DPixelShader9> m_pPSConvertColor;
 	struct {
 		bool bEnable = false;
-		float fConstData[4][4] = {};
-	} m_ShaderConvertData;
-	
+		float fConstants[4][4] = {};
+	} m_PSConvColorData;
 
 	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleX;
 	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleY;

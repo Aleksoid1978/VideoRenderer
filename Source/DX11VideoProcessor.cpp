@@ -281,7 +281,7 @@ void CDX11VideoProcessor::ReleaseVP()
 
 	SAFE_RELEASE(m_pShaderResource1);
 	SAFE_RELEASE(m_pShaderResource2);
-	SAFE_RELEASE(m_pPixelShaderConstants);
+	SAFE_RELEASE(m_PSConvColorData.pConstants);
 	SAFE_RELEASE(m_pSamplerLinear);
 	SAFE_RELEASE(m_pVertexBuffer);
 
@@ -301,7 +301,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	ReleaseVP();
 	m_pVideoDevice.Release();
 
-	m_pPS_ConvertColor.Release();
+	m_pPSConvertColor.Release();
 
 #if VER_PRODUCTBUILD >= 10000
 	m_pVideoContext1.Release();
@@ -340,6 +340,22 @@ HRESULT CDX11VideoProcessor::GetDataFromResource(LPVOID& data, DWORD& size, UINT
 	}
 
 	return S_OK;
+}
+
+HRESULT CDX11VideoProcessor::CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid)
+{
+	if (!m_pDevice || !ppPixelShader) {
+		return E_POINTER;
+	}
+
+	LPVOID data;
+	DWORD size;
+	HRESULT hr = GetDataFromResource(data, size, resid);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	return m_pDevice->CreatePixelShader(data, size, nullptr, ppPixelShader);
 }
 
 HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
@@ -418,11 +434,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateInputLayout(Layout, std::size(Layout), data, size, &m_pInputLayout));
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 
-	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PSH11_SIMPLE));
-	EXECUTE_ASSERT(S_OK == m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPS_Simple));
-
-	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PSH11_CONVERTCOLOR));
-	EXECUTE_ASSERT(S_OK == m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPS_ConvertColor));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_Simple, IDF_PSH11_SIMPLE));
 
 	CComPtr<IDXGIDevice> pDXGIDevice;
 	hr = m_pDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDXGIDevice);
@@ -688,10 +700,24 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcPitch = -m_srcPitch;
 	}
 
+	m_pPSConvertColor.Release();
+	m_PSConvColorData.bEnable = false;
+
 	// D3D11 Video Processor
 	if (FmtConvParams->VP11Format != DXGI_FORMAT_UNKNOWN && !(m_VendorId == PCIV_NVIDIA && FmtConvParams->CSType == CS_RGB)) {
 		// D3D11 VP does not work correctly if RGB32 with odd frame width (source or target) on Nvidia adapters
+
 		if (S_OK == InitializeD3D11VP(FmtConvParams->VP11Format, biWidth, biHeight, false)) {
+			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CORRECTION_ST2084));
+			}
+			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CORRECTION_HLG));
+			}
+			//else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
+			//	EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CORRECTION_YCGCO));
+			//}
+
 			m_srcSubType = SubType;
 			m_inputMT = *pmt;
 			UpdateStatsStatic();
@@ -704,6 +730,16 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// Tex Video Processor
 	if (FmtConvParams->DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams->DX11Format, biWidth, biHeight)) {
+		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_COLOR_ST2084));
+		}
+		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_COLOR_HLG));
+		}
+		else {
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_COLOR));
+		}
+
 		mp_csp_params csp_params;
 		set_colorspace(m_srcExFmt, csp_params.color);
 		csp_params.gray = FmtConvParams->CSType == CS_GRAY;
@@ -723,7 +759,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			std::swap(cbuffer.cm_b.x, cbuffer.cm_b.y);
 		}
 
-		SAFE_RELEASE(m_pPixelShaderConstants);
+		SAFE_RELEASE(m_PSConvColorData.pConstants);
 
 		D3D11_BUFFER_DESC BufferDesc = {};
 		BufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -731,11 +767,12 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		BufferDesc.CPUAccessFlags = 0;
 		D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
-		HRESULT hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pPixelShaderConstants);
+		HRESULT hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants);
 		if (FAILED(hr)) {
 			DLog(L"CDX11VideoProcessor::InitMediaType() : CreateBuffer() failed with error %s", HR2Str(hr));
 			return FALSE;
 		}
+		m_PSConvColorData.bEnable = true;
 
 		m_srcSubType = SubType;
 		m_inputMT = *pmt;
@@ -1365,10 +1402,10 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 	m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
 	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-	m_pDeviceContext->PSSetShader(m_pPS_ConvertColor, nullptr, 0);
+	m_pDeviceContext->PSSetShader(m_pPSConvertColor, nullptr, 0);
 	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pShaderResource1);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
-	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pPixelShaderConstants);
+	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
 
