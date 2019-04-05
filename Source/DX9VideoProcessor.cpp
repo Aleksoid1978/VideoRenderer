@@ -687,7 +687,7 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT w
 	return TRUE;
 }
 
-HRESULT CDX9VideoProcessor::CreateShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid)
+HRESULT CDX9VideoProcessor::CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid)
 {
 	if (!m_pD3DDevEx || !ppPixelShader) {
 		return E_POINTER;
@@ -1006,13 +1006,13 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	// DXVA2 Video Processor
 	if (FmtConvParams->DXVA2Format != D3DFMT_UNKNOWN && InitializeDXVA2VP(FmtConvParams->DXVA2Format, biWidth, biHeight, false)) {
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-			EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CORRECTION_ST2084));
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CORRECTION_ST2084));
 		}
 		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
-			EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CORRECTION_HLG));
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CORRECTION_HLG));
 		}
 		else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
-			EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CORRECTION_YCGCO));
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CORRECTION_YCGCO));
 		}
 
 		m_srcSubType = SubType;
@@ -1025,13 +1025,13 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	// Tex Video Processor
 	if (FmtConvParams->D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams->D3DFormat, biWidth, biHeight)) {
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-			EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR_ST2084));
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR_ST2084));
 		}
 		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
-			EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR_HLG));
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR_HLG));
 		}
 		else {
-			EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR));
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR));
 		}
 
 		mp_csp_params csp_params;
@@ -1462,8 +1462,8 @@ void CDX9VideoProcessor::SetUpscaling(int value)
 	m_pShaderUpscaleX.Release();
 	m_pShaderUpscaleY.Release();
 
-	EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pShaderUpscaleX, resIDs[value].shaderX));
-	EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pShaderUpscaleY, resIDs[value].shaderY));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, resIDs[value].shaderX));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, resIDs[value].shaderY));
 
 };
 
@@ -1489,8 +1489,8 @@ void CDX9VideoProcessor::SetDownscaling(int value)
 	m_pShaderDownscaleX.Release();
 	m_pShaderDownscaleY.Release();
 
-	EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pShaderDownscaleX, resIDs[value].shaderX));
-	EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pShaderDownscaleY, resIDs[value].shaderY));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleX, resIDs[value].shaderX));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, resIDs[value].shaderY));
 };
 
 HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)

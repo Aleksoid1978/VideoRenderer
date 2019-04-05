@@ -714,9 +714,9 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CORRECTION_HLG));
 			}
-			//else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
-			//	EXECUTE_ASSERT(S_OK == CreateShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CORRECTION_YCGCO));
-			//}
+			else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CORRECTION_YCGCO));
+			}
 
 			m_srcSubType = SubType;
 			m_inputMT = *pmt;

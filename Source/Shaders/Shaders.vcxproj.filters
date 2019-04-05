@@ -72,11 +72,8 @@
     <FxCompile Include="d3d11\vs_simple.hlsl">
       <Filter>d3d11</Filter>
     </FxCompile>
-    <FxCompile Include="convert\correct_hlg.hlsl">
-      <Filter>convert</Filter>
-    </FxCompile>
-    <FxCompile Include="convert\correct_st2084.hlsl">
-      <Filter>convert</Filter>
+    <FxCompile Include="d3d11\ps_correction_ycgco.hlsl">
+      <Filter>d3d11</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -89,5 +86,7 @@
     <None Include="resize\downscaler_filters.hlsl">
       <Filter>resize</Filter>
     </None>
+    <None Include="convert\correct_hlg.hlsl" />
+    <None Include="convert\correct_st2084.hlsl" />
   </ItemGroup>
 </Project>

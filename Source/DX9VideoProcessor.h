@@ -213,7 +213,7 @@ private:
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
 
 	BOOL InitializeTexVP(const D3DFORMAT d3dformat, const UINT width, const UINT height);
-	HRESULT CreateShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);
+	HRESULT CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams(mp_csp_params& params);
 
 	void StartWorkerThreads();
