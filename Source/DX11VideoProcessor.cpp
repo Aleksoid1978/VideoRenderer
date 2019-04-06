@@ -276,11 +276,13 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_pFilter->ResetStreamingTimes2();
 	m_RenderStats.Reset();
 
-	m_pSrcTexture2D_CPU.Release();
-	m_pSrcTexture2D.Release();
-
 	SAFE_RELEASE(m_pShaderResource1);
 	SAFE_RELEASE(m_pShaderResource2);
+
+	m_pSrcTexture2D_CPU.Release();
+	m_pSrcTexture2D.Release();
+	m_TexConvert.Release();
+
 	SAFE_RELEASE(m_PSConvColorData.pConstants);
 	SAFE_RELEASE(m_pSamplerLinear);
 	SAFE_RELEASE(m_pVertexBuffer);
@@ -1282,6 +1284,43 @@ HRESULT CDX11VideoProcessor::FillBlack()
 
 HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const bool second)
 {
+	HRESULT hr = S_OK;
+
+	ID3D11Texture2D* pTexture = pRenderTarget;
+	CRect VPRect(pDstRect);
+
+	if (m_pPSConvertColor) {
+		// check intermediate texture
+		const UINT texWidth  = VPRect.Width();
+		const UINT texHeight = VPRect.Height();
+		if (texWidth != m_TexConvert.desc.Width || texHeight != m_TexConvert.desc.Height) {
+			m_TexConvert.Release(); // need new texture
+		}
+
+		if (!m_TexConvert.pTexture) {
+			hr = CreateTex2D(m_pDevice, m_VPOutputFmt, texWidth, texWidth, Tex2D_DefaultShaderRTarget, &m_TexConvert.pTexture);
+			if (FAILED(hr) || FAILED(m_TexConvert.Update())) {
+				m_TexConvert.Release();
+			}
+		}
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC ShaderDesc;
+		ShaderDesc.Format = m_VPOutputFmt;
+		ShaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		ShaderDesc.Texture2D.MostDetailedMip = 0; // = Texture2D desc.MipLevels - 1
+		ShaderDesc.Texture2D.MipLevels = 1;       // = Texture2D desc.MipLevels
+		hr = m_pDevice->CreateShaderResourceView(m_TexConvert.pTexture, &ShaderDesc, &m_pShaderResource1);
+		if (FAILED(hr)) {
+			m_TexConvert.Release();
+			return hr;
+		}
+
+		if (m_TexConvert.pTexture) {
+			VPRect.SetRect(0, 0, texWidth, texHeight);
+			pTexture = m_TexConvert.pTexture;
+		}
+	}
+
 	if (!second) {
 		// input format
 		m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, m_SampleFormat);
@@ -1296,7 +1335,11 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 		m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, TRUE, pSrcRect);
 
 		// Dest rect
-		m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, pDstRect ? TRUE : FALSE, pDstRect);
+		if (!pDstRect || m_pPSConvertColor && m_TexConvert.pTexture) {
+			m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, FALSE, nullptr);
+		} else {
+			m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, pDstRect);
+		}
 		m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, FALSE, nullptr);
 
 		// filters
@@ -1357,7 +1400,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 	D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc = {};
 	OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
 	CComPtr<ID3D11VideoProcessorOutputView> pOutputView;
-	HRESULT hr = m_pVideoDevice->CreateVideoProcessorOutputView(pRenderTarget, m_pVideoProcessorEnum, &OutputViewDesc, &pOutputView);
+	hr = m_pVideoDevice->CreateVideoProcessorOutputView(pTexture, m_pVideoProcessorEnum, &OutputViewDesc, &pOutputView);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::ProcessD3D11() : CreateVideoProcessorOutputView() failed with error %s", HR2Str(hr));
 		return hr;
@@ -1370,6 +1413,46 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, 0, 1, &StreamData);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::ProcessD3D11() : VideoProcessorBlt() failed with error %s", HR2Str(hr));
+	}
+
+	if (m_pPSConvertColor && m_TexConvert.pTexture) {
+		const FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
+		const UINT Stride = sizeof(VERTEX);
+		const UINT Offset = 0;
+
+		ID3D11RenderTargetView* pRenderTargetView;
+		hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+		if (FAILED(hr)) {
+			return hr;
+		}
+
+		D3D11_TEXTURE2D_DESC RTDesc;
+		pRenderTarget->GetDesc(&RTDesc);
+
+		D3D11_VIEWPORT VP;
+		VP.Width = static_cast<FLOAT>(RTDesc.Width);
+		VP.Height = static_cast<FLOAT>(RTDesc.Height);
+		VP.MinDepth = 0.0f;
+		VP.MaxDepth = 1.0f;
+		VP.TopLeftX = 0;
+		VP.TopLeftY = 0;
+		m_pDeviceContext->RSSetViewports(1, &VP);
+
+		// Set resources
+		m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
+		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
+		m_pDeviceContext->PSSetShader(m_pPSConvertColor, nullptr, 0);
+		m_pDeviceContext->PSSetShaderResources(0, 1, &m_pShaderResource1);
+		m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
+		m_pDeviceContext->PSSetConstantBuffers(0, 0, nullptr);
+		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &Stride, &Offset);
+
+		// Draw textured quad onto render target
+		m_pDeviceContext->Draw(6, 0);
+
+		pRenderTargetView->Release();
 	}
 
 	return hr;

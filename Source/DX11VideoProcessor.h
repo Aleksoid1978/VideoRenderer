@@ -45,6 +45,22 @@ class CDX11VideoProcessor
 private:
 	friend class CVideoRendererInputPin;
 
+	struct Tex_t {
+		CComPtr<ID3D11Texture2D> pTexture;
+		D3D11_TEXTURE2D_DESC desc = {};
+		bool Update() {
+			if (pTexture) {
+				pTexture->GetDesc(&desc);
+				return true;
+			}
+			return false;
+		}
+		void Release() {
+			pTexture.Release();
+			desc = {};
+		}
+	};
+
 	long m_nRefCount = 1;
 	CMpcVideoRenderer* m_pFilter = nullptr;
 
@@ -72,6 +88,7 @@ private:
 	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
 	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
 	CComPtr<ID3D11VideoProcessorInputView> m_pInputView;
+	Tex_t m_TexConvert;
 
 	// D3D11 Shader Video Processor
 	ID3D11ShaderResourceView* m_pShaderResource1 = nullptr;
