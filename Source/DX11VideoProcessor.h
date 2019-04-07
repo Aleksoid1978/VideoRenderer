@@ -81,9 +81,6 @@ private:
 
 	// D3D11 Video Processor
 	CComPtr<ID3D11VideoContext> m_pVideoContext;
-#if VER_PRODUCTBUILD >= 10000
-	CComPtr<ID3D11VideoContext1> m_pVideoContext1;
-#endif
 	CComPtr<ID3D11VideoDevice> m_pVideoDevice;
 	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
 	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
@@ -100,7 +97,7 @@ private:
 		bool bEnable = false;
 		ID3D11Buffer* pConstants = nullptr;
 	} m_PSConvColorData;
-	
+
 
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;

@@ -305,9 +305,6 @@ void CDX11VideoProcessor::ReleaseDevice()
 
 	m_pPSConvertColor.Release();
 
-#if VER_PRODUCTBUILD >= 10000
-	m_pVideoContext1.Release();
-#endif
 	m_pVideoContext.Release();
 
 	m_pInputLayout.Release();
@@ -386,10 +383,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		ReleaseDevice();
 		return hr;
 	}
-
-#if VER_PRODUCTBUILD >= 10000
-	m_pVideoContext->QueryInterface(__uuidof(ID3D11VideoContext1), (void**)&m_pVideoContext1);
-#endif
 
 	D3D11_SAMPLER_DESC SampDesc = {};
 	SampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
@@ -1352,49 +1345,20 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 		static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f};
 		m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, FALSE, &backgroundColor);
 
-#if VER_PRODUCTBUILD >= 10000
-		if (m_pVideoContext1) {
-			DXGI_COLOR_SPACE_TYPE ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
-			if (m_srcExFmt.value) {
-				if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) { // SMPTE ST 2084
-					ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020;
-				} else if (m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601) { // BT.601
-					if (m_srcExFmt.NominalRange == DXVA2_NominalRange_16_235) {
-						ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P601;
-					} else {
-						ColorSpace = DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601;
-					}
-				} else { // BT.709
-					if (m_srcExFmt.NominalRange == DXVA2_NominalRange_16_235) {
-						ColorSpace = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
-					} else {
-						ColorSpace = DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601;
-					}
-				}
-			} else {
-				// for RGB
-				ColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
-			}
-			m_pVideoContext1->VideoProcessorSetStreamColorSpace1(m_pVideoProcessor, 0, ColorSpace);
-			m_pVideoContext1->VideoProcessorSetOutputColorSpace1(m_pVideoProcessor, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
-		} else
-#endif
-		{
-			// Stream color space
-			D3D11_VIDEO_PROCESSOR_COLOR_SPACE colorSpace = {};
-			if (m_srcExFmt.value) {
-				colorSpace.RGB_Range = m_srcExFmt.NominalRange == DXVA2_NominalRange_16_235 ? 1 : 0;
-				colorSpace.YCbCr_Matrix = m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601 ? 0 : 1;
-			} else {
-				// for RGB
-				colorSpace.RGB_Range = 0;
-			}
-			m_pVideoContext->VideoProcessorSetStreamColorSpace(m_pVideoProcessor, 0, &colorSpace);
-
-			// Output color space
+		// Stream color space
+		D3D11_VIDEO_PROCESSOR_COLOR_SPACE colorSpace = {};
+		if (m_srcExFmt.value) {
+			colorSpace.RGB_Range = m_srcExFmt.NominalRange == DXVA2_NominalRange_16_235 ? 1 : 0;
+			colorSpace.YCbCr_Matrix = m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601 ? 0 : 1;
+		} else {
+			// for RGB
 			colorSpace.RGB_Range = 0;
-			m_pVideoContext->VideoProcessorSetOutputColorSpace(m_pVideoProcessor, &colorSpace);
 		}
+		m_pVideoContext->VideoProcessorSetStreamColorSpace(m_pVideoProcessor, 0, &colorSpace);
+
+		// Output color space
+		colorSpace.RGB_Range = 0;
+		m_pVideoContext->VideoProcessorSetOutputColorSpace(m_pVideoProcessor, &colorSpace);
 	}
 
 	D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc = {};
