@@ -218,15 +218,15 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt)
 	switch (iSurfaceFmt) {
 	default:
 	case SURFMT_8INT:
-		m_VPOutputFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
+		m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
 		break;
 	case SURFMT_10INT:
 	case SURFMT_16FLOAT:
-		m_VPOutputFmt = DXGI_FORMAT_R10G10B10A2_UNORM;
+		m_InternalTexFmt = DXGI_FORMAT_R10G10B10A2_UNORM;
 		break;
 	// TODO
 	//case SURFMT_16FLOAT:
-	//	m_VPOutputFmt = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	//	m_InternalTexFmt = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	//	break;
 	}
 
@@ -827,14 +827,15 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 		return MF_E_UNSUPPORTED_D3D_TYPE;
 	}
 
-	if (m_VPOutputFmt != DXGI_FORMAT_B8G8R8A8_UNORM) {
-		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(m_VPOutputFmt, &uiFlags);
+	if (m_InternalTexFmt != DXGI_FORMAT_B8G8R8A8_UNORM) {
+		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(m_InternalTexFmt, &uiFlags);
 		if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
-			m_VPOutputFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
+			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() - %s is not supported for D3D11 VP output. DXGI_FORMAT_B8G8R8A8_UNORM will be used.", DXGIFormatToString(m_InternalTexFmt));
+			m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
 		}
 	}
-	if (m_VPOutputFmt == DXGI_FORMAT_B8G8R8A8_UNORM) {
-		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(DXGI_FORMAT_B8G8R8A8_UNORM, &uiFlags);
+	if (m_InternalTexFmt == DXGI_FORMAT_B8G8R8A8_UNORM) {
+		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(m_InternalTexFmt, &uiFlags);
 		if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
 			return MF_E_UNSUPPORTED_D3D_TYPE;
 		}
@@ -959,7 +960,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 		return hr;
 	}
 
-	hr = CreateTex2D(m_pDevice, m_VPOutputFmt, width, height, Tex2D_DefaultShaderRTarget, &m_pSrcTexture2D);
+	hr = CreateTex2D(m_pDevice, m_InternalTexFmt, width, height, Tex2D_DefaultShaderRTarget, &m_pSrcTexture2D);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateTex2D(m_pSrcTexture2D) failed with error %s", HR2Str(hr));
 		return hr;
@@ -976,7 +977,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 		return hr;
 	}
 
-	ShaderDesc.Format = m_VPOutputFmt;
+	ShaderDesc.Format = m_InternalTexFmt;
 	hr = m_pDevice->CreateShaderResourceView(m_pSrcTexture2D, &ShaderDesc, &m_pShaderResource2);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateShaderResourceView() failed with error %s", HR2Str(hr));
@@ -1293,14 +1294,14 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 		}
 
 		if (!m_TexConvert.pTexture) {
-			hr = CreateTex2D(m_pDevice, m_VPOutputFmt, texWidth, texWidth, Tex2D_DefaultShaderRTarget, &m_TexConvert.pTexture);
+			hr = CreateTex2D(m_pDevice, m_InternalTexFmt, texWidth, texWidth, Tex2D_DefaultShaderRTarget, &m_TexConvert.pTexture);
 			if (FAILED(hr) || FAILED(m_TexConvert.Update())) {
 				m_TexConvert.Release();
 			}
 		}
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC ShaderDesc;
-		ShaderDesc.Format = m_VPOutputFmt;
+		ShaderDesc.Format = m_TexConvert.desc.Format;
 		ShaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 		ShaderDesc.Texture2D.MostDetailedMip = 0; // = Texture2D desc.MipLevels - 1
 		ShaderDesc.Texture2D.MipLevels = 1;       // = Texture2D desc.MipLevels
@@ -1613,7 +1614,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		m_strStatsStatic1.AppendFormat(L"\nGraph. Adapter: %s", m_strAdapterDescription);
 
 		m_strStatsStatic2.Format(L" %S %ux%u", FmtConvParams->str, m_srcRectWidth, m_srcRectHeight);
-		m_strStatsStatic2.AppendFormat(L"\nVP output fmt : %s", DXGIFormatToString(m_VPOutputFmt));
+		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", DXGIFormatToString(m_InternalTexFmt));
 		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");
 	} else {
 		m_strStatsStatic1 = L"Error";

@@ -125,7 +125,7 @@ private:
 	UINT m_TextureHeight = 0;
 
 	// intermediate texture format
-	DXGI_FORMAT m_VPOutputFmt = DXGI_FORMAT_B8G8R8X8_UNORM;
+	DXGI_FORMAT m_InternalTexFmt = DXGI_FORMAT_B8G8R8X8_UNORM;
 
 	typedef void(*CopyFrameDataFn)(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 	CopyFrameDataFn m_pConvertFn = nullptr;
