@@ -245,13 +245,13 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 	switch (iSurfaceFmt) {
 	default:
 	case SURFMT_8INT:
-		m_VPOutputFmt = D3DFMT_X8R8G8B8;
+		m_InternalTexFmt = D3DFMT_X8R8G8B8;
 		break;
 	case SURFMT_10INT:
-		m_VPOutputFmt = D3DFMT_A2R10G10B10;
+		m_InternalTexFmt = D3DFMT_A2R10G10B10;
 		break;
 	case SURFMT_16FLOAT:
-		m_VPOutputFmt = D3DFMT_A16B16G16R16F;
+		m_InternalTexFmt = D3DFMT_A16B16G16R16F;
 		break;
 	}
 
@@ -570,7 +570,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	}
 
 	// Query video processor capabilities.
-	hr = m_pDXVA2_VPService->GetVideoProcessorCaps(devguid, &videodesc, m_VPOutputFmt, &m_DXVA2VPcaps);
+	hr = m_pDXVA2_VPService->GetVideoProcessorCaps(devguid, &videodesc, m_InternalTexFmt, &m_DXVA2VPcaps);
 	if (FAILED(hr)) {
 		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : GetVideoProcessorCaps() failed with error %s", HR2Str(hr));
 		return FALSE;
@@ -590,7 +590,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	// Query ProcAmp ranges.
 	for (i = 0; i < std::size(m_DXVA2ProcValueRange); i++) {
 		if (m_DXVA2VPcaps.ProcAmpControlCaps & (1 << i)) {
-			hr = m_pDXVA2_VPService->GetProcAmpRange(devguid, &videodesc, m_VPOutputFmt, 1 << i, &m_DXVA2ProcValueRange[i]);
+			hr = m_pDXVA2_VPService->GetProcAmpRange(devguid, &videodesc, m_InternalTexFmt, 1 << i, &m_DXVA2ProcValueRange[i]);
 			if (FAILED(hr)) {
 				DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : GetProcAmpRange() failed with error %s", HR2Str(hr));
 				return FALSE;
@@ -603,7 +603,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	DXVA2_Fixed32 NFilterValues[6] = {};
 	if (m_DXVA2VPcaps.VideoProcessorOperations & DXVA2_VideoProcess_NoiseFilter) {
 		for (i = 0; i < 6u; i++) {
-			if (S_OK == m_pDXVA2_VPService->GetFilterPropertyRange(devguid, &videodesc, m_VPOutputFmt, DXVA2_NoiseFilterLumaLevel + i, &range)) {
+			if (S_OK == m_pDXVA2_VPService->GetFilterPropertyRange(devguid, &videodesc, m_InternalTexFmt, DXVA2_NoiseFilterLumaLevel + i, &range)) {
 				NFilterValues[i] = range.DefaultValue;
 			}
 		}
@@ -612,7 +612,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	DXVA2_Fixed32 DFilterValues[6] = {};
 	if (m_DXVA2VPcaps.VideoProcessorOperations & DXVA2_VideoProcess_DetailFilter) {
 		for (i = 0; i < 6u; i++) {
-			if (S_OK == m_pDXVA2_VPService->GetFilterPropertyRange(devguid, &videodesc, m_VPOutputFmt, DXVA2_DetailFilterLumaLevel + i, &range)) {
+			if (S_OK == m_pDXVA2_VPService->GetFilterPropertyRange(devguid, &videodesc, m_InternalTexFmt, DXVA2_DetailFilterLumaLevel + i, &range)) {
 				DFilterValues[i] = range.DefaultValue;
 			}
 		}
@@ -641,7 +641,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	m_BltParams.DetailFilterChroma.Radius    = DFilterValues[5];
 
 	// Finally create a video processor device.
-	hr = m_pDXVA2_VPService->CreateVideoProcessor(devguid, &videodesc, m_VPOutputFmt, 0, &m_pDXVA2_VP);
+	hr = m_pDXVA2_VPService->CreateVideoProcessor(devguid, &videodesc, m_InternalTexFmt, 0, &m_pDXVA2_VP);
 	if (FAILED(hr)) {
 		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : CreateVideoProcessor failed with error %s", HR2Str(hr));
 		return FALSE;
@@ -1512,7 +1512,7 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 		}
 
 		if (!m_TexConvert.pTexture) {
-			hr = m_pD3DDevEx->CreateTexture(texWidth, texHeight, 1, D3DUSAGE_RENDERTARGET, m_VPOutputFmt, D3DPOOL_DEFAULT, &m_TexConvert.pTexture, nullptr);
+			hr = m_pD3DDevEx->CreateTexture(texWidth, texHeight, 1, D3DUSAGE_RENDERTARGET, m_InternalTexFmt, D3DPOOL_DEFAULT, &m_TexConvert.pTexture, nullptr);
 			if (FAILED(hr) || FAILED(m_TexConvert.Update())) {
 				m_TexConvert.Release();
 			}
@@ -1574,7 +1574,7 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 
 	if (m_pPSConvertColor && m_PSConvColorData.bEnable) {
 		if (!m_TexConvert.pTexture) {
-			hr = m_pD3DDevEx->CreateTexture(m_srcWidth, m_srcHeight, 1, D3DUSAGE_RENDERTARGET, m_VPOutputFmt, D3DPOOL_DEFAULT, &m_TexConvert.pTexture, nullptr);
+			hr = m_pD3DDevEx->CreateTexture(m_srcWidth, m_srcHeight, 1, D3DUSAGE_RENDERTARGET, m_InternalTexFmt, D3DPOOL_DEFAULT, &m_TexConvert.pTexture, nullptr);
 			if (FAILED(hr) || FAILED(m_TexConvert.Update())) {
 				m_TexConvert.Release();
 			}
@@ -1759,7 +1759,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 		m_strStatsStatic1.AppendFormat(L"\nGraph. Adapter: %s", m_strAdapterDescription);
 
 		m_strStatsStatic2.Format(L" %S %ux%u", FmtConvParams->str, m_srcRectWidth, m_srcRectHeight);
-		m_strStatsStatic2.AppendFormat(L"\nVP output fmt : %s", D3DFormatToString(m_VPOutputFmt));
+		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", D3DFormatToString(m_InternalTexFmt));
 		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pDXVA2_VP ? L"DXVA2" : L"PS 3.0");
 	} else {
 		m_strStatsStatic1 = L"Error";

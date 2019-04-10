@@ -152,8 +152,8 @@ private:
 	UINT      m_SurfaceWidth  = 0;
 	UINT      m_SurfaceHeight = 0;
 
-	// Output parameters
-	D3DFORMAT m_VPOutputFmt = D3DFMT_X8R8G8B8;
+	// intermediate texture format
+	D3DFORMAT m_InternalTexFmt = D3DFMT_X8R8G8B8;
 
 	// Processing parameters
 	VideoSurfaceBuffer m_SrcSamples;
