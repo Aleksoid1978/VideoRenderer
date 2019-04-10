@@ -215,7 +215,6 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_RenderStats.Reset();
 
 	SAFE_RELEASE(m_pShaderResource1);
-	SAFE_RELEASE(m_pShaderResource2);
 
 	m_pSrcTexture2D_CPU.Release();
 	m_pSrcTexture2D.Release();
@@ -901,7 +900,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 	hr = m_TexConvert.Create(m_pDevice, m_InternalTexFmt, width, height, Tex2D_DefaultShaderRTarget);
 	if (FAILED(hr)) {
 		m_TexConvert.Release();
-		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateTex2D(m_pSrcTexture2D) failed with error %s", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::InitializeTexVP() : m_TexConvert.Create() failed with error %s", HR2Str(hr));
 		return hr;
 	}
 
@@ -911,13 +910,6 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 	ShaderDesc.Texture2D.MostDetailedMip = 0; // = Texture2D desc.MipLevels - 1
 	ShaderDesc.Texture2D.MipLevels = 1;       // = Texture2D desc.MipLevels
 	hr = m_pDevice->CreateShaderResourceView(m_pSrcTexture2D_CPU, &ShaderDesc, &m_pShaderResource1);
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateShaderResourceView() failed with error %s", HR2Str(hr));
-		return hr;
-	}
-
-	ShaderDesc.Format = m_TexConvert.desc.Format;
-	hr = m_pDevice->CreateShaderResourceView(m_TexConvert.pTexture, &ShaderDesc, &m_pShaderResource2);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateShaderResourceView() failed with error %s", HR2Str(hr));
 		return hr;
@@ -1236,17 +1228,6 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 			}
 		}
 
-		D3D11_SHADER_RESOURCE_VIEW_DESC ShaderDesc;
-		ShaderDesc.Format = m_TexConvert.desc.Format;
-		ShaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		ShaderDesc.Texture2D.MostDetailedMip = 0; // = Texture2D desc.MipLevels - 1
-		ShaderDesc.Texture2D.MipLevels = 1;       // = Texture2D desc.MipLevels
-		hr = m_pDevice->CreateShaderResourceView(m_TexConvert.pTexture, &ShaderDesc, &m_pShaderResource1);
-		if (FAILED(hr)) {
-			m_TexConvert.Release();
-			return hr;
-		}
-
 		if (m_TexConvert.pTexture) {
 			VPRect.SetRect(0, 0, texWidth, texHeight);
 			pTexture = m_TexConvert.pTexture;
@@ -1346,7 +1327,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 		m_pDeviceContext->PSSetShader(m_pPSConvertColor, nullptr, 0);
-		m_pDeviceContext->PSSetShaderResources(0, 1, &m_pShaderResource1);
+		m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexConvert.pShaderResource);
 		m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
 		m_pDeviceContext->PSSetConstantBuffers(0, 0, nullptr);
 		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -1419,7 +1400,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 	m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
-	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pShaderResource2);
+	m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexConvert.pShaderResource);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 	m_pDeviceContext->PSSetConstantBuffers(0, 0, nullptr);
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
