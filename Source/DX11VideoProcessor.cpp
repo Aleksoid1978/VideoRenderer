@@ -960,8 +960,9 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 		return hr;
 	}
 
-	hr = CreateTex2D(m_pDevice, m_InternalTexFmt, width, height, Tex2D_DefaultShaderRTarget, &m_pSrcTexture2D);
-	if (FAILED(hr)) {
+	hr = CreateTex2D(m_pDevice, m_InternalTexFmt, width, height, Tex2D_DefaultShaderRTarget, &m_TexConvert.pTexture);
+	if (FAILED(hr) || !m_TexConvert.Update()) {
+		m_TexConvert.Release();
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateTex2D(m_pSrcTexture2D) failed with error %s", HR2Str(hr));
 		return hr;
 	}
@@ -977,8 +978,8 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 		return hr;
 	}
 
-	ShaderDesc.Format = m_InternalTexFmt;
-	hr = m_pDevice->CreateShaderResourceView(m_pSrcTexture2D, &ShaderDesc, &m_pShaderResource2);
+	ShaderDesc.Format = m_TexConvert.desc.Format;
+	hr = m_pDevice->CreateShaderResourceView(m_TexConvert.pTexture, &ShaderDesc, &m_pShaderResource2);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateShaderResourceView() failed with error %s", HR2Str(hr));
 		return hr;
@@ -1063,8 +1064,6 @@ HRESULT CDX11VideoProcessor::SetVertices(const UINT dstW, const UINT dstH)
 		return hr;
 	}
 
-
-
 	return S_OK;
 }
 
@@ -1122,7 +1121,6 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 {
-	CheckPointer(m_pSrcTexture2D, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
 
 	int64_t ticks = GetPreciseTick();
@@ -1295,7 +1293,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 
 		if (!m_TexConvert.pTexture) {
 			hr = CreateTex2D(m_pDevice, m_InternalTexFmt, texWidth, texWidth, Tex2D_DefaultShaderRTarget, &m_TexConvert.pTexture);
-			if (FAILED(hr) || FAILED(m_TexConvert.Update())) {
+			if (FAILED(hr) || !m_TexConvert.Update()) {
 				m_TexConvert.Release();
 			}
 		}
@@ -1434,7 +1432,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 	// Convert color pass
 
 	ID3D11RenderTargetView* pRenderTargetView;
-	HRESULT hr = m_pDevice->CreateRenderTargetView(m_pSrcTexture2D, nullptr, &pRenderTargetView);
+	HRESULT hr = m_pDevice->CreateRenderTargetView(m_TexConvert.pTexture, nullptr, &pRenderTargetView);
 	if (FAILED(hr)) {
 		return hr;
 	}

@@ -76,8 +76,9 @@ private:
 	CComPtr<ID3D11PixelShader>  m_pPS_Simple;
 	CComPtr<ID3D11InputLayout>  m_pInputLayout;
 
-	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_CPU;
-	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;
+	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_CPU; // Used for sofware decoder
+	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;     // Used if D3D11 VP is active
+	Tex_t m_TexConvert; // Used for additional conversions. Always uses m_InternalTexFmt.
 
 	// D3D11 Video Processor
 	CComPtr<ID3D11VideoContext> m_pVideoContext;
@@ -85,7 +86,6 @@ private:
 	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
 	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
 	CComPtr<ID3D11VideoProcessorInputView> m_pInputView;
-	Tex_t m_TexConvert;
 
 	// D3D11 Shader Video Processor
 	ID3D11ShaderResourceView* m_pShaderResource1 = nullptr;
