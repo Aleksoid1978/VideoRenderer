@@ -32,7 +32,7 @@
 #include <evr9.h> // for IMFVideoProcessor
 #include <DirectXMath.h>
 #include "IVideoRenderer.h"
-#include "Helper.h"
+#include "DX11Helper.h"
 #include "FrameStats.h"
 #include "StatsDrawing.h"
 
@@ -44,22 +44,6 @@ class CDX11VideoProcessor
 {
 private:
 	friend class CVideoRendererInputPin;
-
-	struct Tex_t {
-		CComPtr<ID3D11Texture2D> pTexture;
-		D3D11_TEXTURE2D_DESC desc = {};
-		bool Update() {
-			if (pTexture) {
-				pTexture->GetDesc(&desc);
-				return true;
-			}
-			return false;
-		}
-		void Release() {
-			pTexture.Release();
-			desc = {};
-		}
-	};
 
 	long m_nRefCount = 1;
 	CMpcVideoRenderer* m_pFilter = nullptr;
@@ -78,7 +62,7 @@ private:
 
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_CPU; // Used for sofware decoder
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;     // Used if D3D11 VP is active
-	Tex_t m_TexConvert; // Used for additional conversions. Always uses m_InternalTexFmt.
+	Tex2D_t m_TexConvert; // Used for additional conversions. Always uses m_InternalTexFmt.
 
 	// D3D11 Video Processor
 	CComPtr<ID3D11VideoContext> m_pVideoContext;

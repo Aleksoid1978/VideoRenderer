@@ -46,68 +46,6 @@ struct PS_COLOR_TRANSFORM {
 	DirectX::XMFLOAT4 cm_c;
 };
 
-enum Tex2DType {
-	Tex2D_Default,
-	Tex2D_DefaultRTarget,
-	Tex2D_DefaultShaderRTarget,
-	Tex2D_DefaultShaderRTargetGDI,
-	Tex2D_DynamicShaderWrite,
-	Tex2D_StagingRead,
-};
-
-inline HRESULT CreateTex2D(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type, ID3D11Texture2D** ppTexture2D)
-{
-	D3D11_TEXTURE2D_DESC desc;
-	desc.Width      = width;
-	desc.Height     = height;
-	desc.MipLevels  = 1;
-	desc.ArraySize  = 1;
-	desc.Format     = format;
-	desc.SampleDesc = { 1, 0 };
-
-	switch (type) {
-	default:
-	case Tex2D_Default:
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = 0;
-		desc.CPUAccessFlags = 0;
-		desc.MiscFlags = 0;
-		break;
-	case Tex2D_DefaultRTarget:
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = D3D11_BIND_RENDER_TARGET;
-		desc.CPUAccessFlags = 0;
-		desc.MiscFlags = 0;
-		break;
-	case Tex2D_DefaultShaderRTarget:
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-		desc.CPUAccessFlags = 0;
-		desc.MiscFlags = 0;
-		break;
-	case Tex2D_DefaultShaderRTargetGDI:
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-		desc.CPUAccessFlags = 0;
-		desc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
-		break;
-	case Tex2D_DynamicShaderWrite:
-		desc.Usage = D3D11_USAGE_DYNAMIC;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		desc.MiscFlags = 0;
-		break;
-	case Tex2D_StagingRead:
-		desc.Usage = D3D11_USAGE_STAGING;
-		desc.BindFlags = 0;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-		desc.MiscFlags = 0;
-		break;
-	}
-
-	return pDevice->CreateTexture2D(&desc, nullptr, ppTexture2D);
-}
-
 // CDX11VideoProcessor
 
 static UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAdapter)
@@ -960,8 +898,8 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 		return hr;
 	}
 
-	hr = CreateTex2D(m_pDevice, m_InternalTexFmt, width, height, Tex2D_DefaultShaderRTarget, &m_TexConvert.pTexture);
-	if (FAILED(hr) || !m_TexConvert.Update()) {
+	hr = m_TexConvert.Create(m_pDevice, m_InternalTexFmt, width, height, Tex2D_DefaultShaderRTarget);
+	if (FAILED(hr)) {
 		m_TexConvert.Release();
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateTex2D(m_pSrcTexture2D) failed with error %s", HR2Str(hr));
 		return hr;
@@ -1292,8 +1230,8 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 		}
 
 		if (!m_TexConvert.pTexture) {
-			hr = CreateTex2D(m_pDevice, m_InternalTexFmt, texWidth, texWidth, Tex2D_DefaultShaderRTarget, &m_TexConvert.pTexture);
-			if (FAILED(hr) || !m_TexConvert.Update()) {
+			hr = m_TexConvert.Create(m_pDevice, m_InternalTexFmt, texWidth, texWidth, Tex2D_DefaultShaderRTarget);
+			if (FAILED(hr)) {
 				m_TexConvert.Release();
 			}
 		}
