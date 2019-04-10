@@ -124,7 +124,7 @@ private:
 	UINT m_TextureWidth  = 0;
 	UINT m_TextureHeight = 0;
 
-	// Output parameters
+	// intermediate texture format
 	DXGI_FORMAT m_VPOutputFmt = DXGI_FORMAT_B8G8R8X8_UNORM;
 
 	typedef void(*CopyFrameDataFn)(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);

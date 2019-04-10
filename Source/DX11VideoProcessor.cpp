@@ -890,7 +890,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 		return hr;
 	}
 
-	hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_Default, &m_pSrcTexture2D);
+	hr = CreateTex2D(m_pDevice, m_VPOutputFmt, width, height, Tex2D_Default, &m_pSrcTexture2D);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateTex2D(m_pSrcTexture2D) failed with error %s", HR2Str(hr));
 		return hr;
