@@ -890,7 +890,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 		return hr;
 	}
 
-	hr = CreateTex2D(m_pDevice, m_VPOutputFmt, width, height, Tex2D_Default, &m_pSrcTexture2D);
+	hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_Default, &m_pSrcTexture2D);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateTex2D(m_pSrcTexture2D) failed with error %s", HR2Str(hr));
 		return hr;
@@ -959,7 +959,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 		return hr;
 	}
 
-	hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_DefaultShaderRTarget, &m_pSrcTexture2D);
+	hr = CreateTex2D(m_pDevice, m_VPOutputFmt, width, height, Tex2D_DefaultShaderRTarget, &m_pSrcTexture2D);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateTex2D(m_pSrcTexture2D) failed with error %s", HR2Str(hr));
 		return hr;
@@ -975,6 +975,8 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateShaderResourceView() failed with error %s", HR2Str(hr));
 		return hr;
 	}
+
+	ShaderDesc.Format = m_VPOutputFmt;
 	hr = m_pDevice->CreateShaderResourceView(m_pSrcTexture2D, &ShaderDesc, &m_pShaderResource2);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateShaderResourceView() failed with error %s", HR2Str(hr));
@@ -1012,7 +1014,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 	return S_OK;
 }
 
-HRESULT CDX11VideoProcessor::SetVertices(UINT dstW, UINT dstH)
+HRESULT CDX11VideoProcessor::SetVertices(const UINT dstW, const UINT dstH)
 {
 	CheckPointer(m_pSrcTexture2D_CPU, E_POINTER);
 
@@ -1498,12 +1500,12 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 {
 	m_windowRect = windowRect;
 
-	const int w = m_windowRect.Width();
-	const int h = m_windowRect.Height();
+	const UINT w = m_windowRect.Width();
+	const UINT h = m_windowRect.Height();
 	HRESULT hr = SetVertices(w, h);
 
 	if (m_pDXGISwapChain1) {
-		hr = m_pDXGISwapChain1->ResizeBuffers(0, w, h, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+		hr = m_pDXGISwapChain1->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
 	}
 
 	return hr;
