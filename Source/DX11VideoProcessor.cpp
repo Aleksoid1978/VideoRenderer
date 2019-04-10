@@ -524,7 +524,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	DXGI_SWAP_CHAIN_DESC1 desc = {};
 	desc.Width  = m_windowRect.Width();
 	desc.Height = m_windowRect.Height();
-	desc.Format = m_VPOutputFmt;
+	desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // the most common swap chain format
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -1503,7 +1503,7 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 	HRESULT hr = SetVertices(w, h);
 
 	if (m_pDXGISwapChain1) {
-		hr = m_pDXGISwapChain1->ResizeBuffers(0, w, h, m_VPOutputFmt, 0);
+		hr = m_pDXGISwapChain1->ResizeBuffers(0, w, h, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
 	}
 
 	return hr;
