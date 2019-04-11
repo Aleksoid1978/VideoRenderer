@@ -114,7 +114,7 @@ struct Tex2DShader_t : Tex2D_t
 	HRESULT Create(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type) {
 		HRESULT hr = Tex2D_t::Create(pDevice, format, width, height, type);
 
-		if (S_OK == hr) {
+		if (S_OK == hr && (desc.BindFlags & D3D11_BIND_SHADER_RESOURCE)) {
 			D3D11_SHADER_RESOURCE_VIEW_DESC shaderDesc;
 			shaderDesc.Format = format;
 			shaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
