@@ -1,3 +1,5 @@
+// Catmull-Rom spline4
+
 Texture2D tex : register(t0);
 SamplerState samp : register(s0);
 
