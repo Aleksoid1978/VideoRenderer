@@ -241,6 +241,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pVideoDevice.Release();
 
 	m_pPSConvertColor.Release();
+	m_pPSResizeTest.Release();
 
 	m_pVideoContext.Release();
 
@@ -367,6 +368,8 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_Simple, IDF_PSH11_SIMPLE));
+
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSResizeTest, IDF_PSH11_RESIZE_TEST));
 
 	CComPtr<IDXGIDevice> pDXGIDevice;
 	hr = m_pDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDXGIDevice);
@@ -1395,14 +1398,26 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 	VP.Height = static_cast<FLOAT>(RTDesc.Height);
 	m_pDeviceContext->RSSetViewports(1, &VP);
 
+	//
+	DirectX::XMFLOAT4 dxdy = { (float)m_TextureWidth, (float)m_TextureHeight,  1.0f / m_TextureWidth, 1.0f / m_TextureHeight };
+	ID3D11Buffer* pResizeConstants = nullptr;
+	D3D11_BUFFER_DESC BufferDesc = {};
+	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	BufferDesc.ByteWidth = sizeof(dxdy);
+	BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	BufferDesc.CPUAccessFlags = 0;
+	D3D11_SUBRESOURCE_DATA InitData = { &dxdy, 0, 0 };
+	hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &pResizeConstants);
+	DLogIf(S_OK != hr, L"CDX11VideoProcessor::InitMediaType() : CreateBuffer() failed with error %s", HR2Str(hr));
+
 	// Set resources
 	m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
 	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-	m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
+	m_pDeviceContext->PSSetShader(m_pPSResizeTest, nullptr, 0);
 	m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexConvert.pShaderResource);
-	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
-	m_pDeviceContext->PSSetConstantBuffers(0, 0, nullptr);
+	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
+	m_pDeviceContext->PSSetConstantBuffers(0, 1, &pResizeConstants);
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &Stride, &Offset);
 

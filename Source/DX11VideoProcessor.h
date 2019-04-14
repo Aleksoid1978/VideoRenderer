@@ -80,7 +80,7 @@ private:
 		bool bEnable = false;
 		ID3D11Buffer* pConstants = nullptr;
 	} m_PSConvColorData;
-
+	CComPtr<ID3D11PixelShader> m_pPSResizeTest;
 
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
