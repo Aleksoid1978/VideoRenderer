@@ -15,15 +15,14 @@ struct PS_INPUT
 
 float4 main(PS_INPUT input) : SV_Target
 {
-    float2 pos = input.Tex * wh;
+    float2 pos = (input.Tex) * wh - 0.5;
     float2 t = frac(pos);
-    pos -= t;
+    pos = (pos - t + 0.5) * dxdy;
 
-    float4 c00 = tex.Sample(samp, (pos + 0.5) * dxdy);
-    float4 c01 = tex.Sample(samp, (pos + float2(0.5, 1.5)) * dxdy);
-    float4 c10 = tex.Sample(samp, (pos + float2(1.5, 0.5)) * dxdy);
-    float4 c11 = tex.Sample(samp, (pos + 1.5) * dxdy);
-
+    float4 c00 = tex.Sample(samp, pos);
+    float4 c01 = tex.Sample(samp, pos + dxdy * float2(0, 1));
+    float4 c10 = tex.Sample(samp, pos + dxdy * float2(1, 0));
+    float4 c11 = tex.Sample(samp, pos + dxdy);
 
     return lerp(
         lerp(c00, c10, t.x),
