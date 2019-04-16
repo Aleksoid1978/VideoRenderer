@@ -39,12 +39,6 @@
     <FxCompile Include="d3d9\downscaler.hlsl">
       <Filter>d3d9</Filter>
     </FxCompile>
-    <FxCompile Include="d3d9\resizer_catmull4_x.hlsl">
-      <Filter>d3d9</Filter>
-    </FxCompile>
-    <FxCompile Include="d3d9\resizer_catmull4_y.hlsl">
-      <Filter>d3d9</Filter>
-    </FxCompile>
     <FxCompile Include="d3d9\resizer_lanczos2_x.hlsl">
       <Filter>d3d9</Filter>
     </FxCompile>
@@ -55,12 +49,6 @@
       <Filter>d3d9</Filter>
     </FxCompile>
     <FxCompile Include="d3d9\resizer_lanczos3_y.hlsl">
-      <Filter>d3d9</Filter>
-    </FxCompile>
-    <FxCompile Include="d3d9\resizer_mitchell4_x.hlsl">
-      <Filter>d3d9</Filter>
-    </FxCompile>
-    <FxCompile Include="d3d9\resizer_mitchell4_y.hlsl">
       <Filter>d3d9</Filter>
     </FxCompile>
     <FxCompile Include="d3d11\ps_convert_color.hlsl">
@@ -83,6 +71,12 @@
     </FxCompile>
     <FxCompile Include="examples\ps_resize_onepass_catmull4.hlsl">
       <Filter>examples</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d9\interpolation_spline4.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d11\ps_interpolation_spline4.hlsl">
+      <Filter>d3d11</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
