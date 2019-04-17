@@ -78,6 +78,12 @@
     <FxCompile Include="d3d11\ps_interpolation_spline4.hlsl">
       <Filter>d3d11</Filter>
     </FxCompile>
+    <FxCompile Include="d3d11\ps_interpolation_lanczos2.hlsl">
+      <Filter>d3d11</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d11\ps_interpolation_lanczos3.hlsl">
+      <Filter>d3d11</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="convert\hdr_tone_mapping.hlsl">

@@ -23,23 +23,22 @@ struct PS_INPUT
 
 float4 main(PS_INPUT input) : SV_Target
 {
-    float p = input.Tex[AXIS] * wh[AXIS] - 0.5;
-    float t = frac(p); // calculate the difference between the output pixel and the original surrounding two pixels
+    float pos = input.Tex[AXIS] * wh[AXIS] - 0.5;
+    float t = frac(pos); // calculate the difference between the output pixel and the original surrounding two pixels
+    pos = pos - t;
 
 #if (AXIS == 0)
-    float2 pos = input.Tex - float2(t, 0);
     // original pixels
-    float4 Q0 = tex.Sample(samp, (pos+float2(-.5, .5))*dxdy);
-    float4 Q1 = tex.Sample(samp, (pos+.5)*dxdy);
-    float4 Q2 = tex.Sample(samp, (pos+float2(1.5, .5))*dxdy);
-    float4 Q3 = tex.Sample(samp, (pos + float2(2.5, .5)) * dxdy);
+    float4 Q0 = tex.Sample(samp, float2((pos - 0.5) * dxdy.x, input.Tex.y));
+    float4 Q1 = tex.Sample(samp, float2((pos + 0.5) * dxdy.x, input.Tex.y));
+    float4 Q2 = tex.Sample(samp, float2((pos + 1.5) * dxdy.x, input.Tex.y));
+    float4 Q3 = tex.Sample(samp, float2((pos + 2.5) * dxdy.x, input.Tex.y));
 #elif (AXIS == 1)
-    float2 pos = input.Tex - float2(0, t);
     // original pixels
-    float4 Q0 = tex.Sample(samp, (pos+float2(.5, -.5))*dxdy);
-    float4 Q1 = tex.Sample(samp, (pos+.5)*dxdy);
-    float4 Q2 = tex.Sample(samp, (pos+float2(.5, 1.5))*dxdy);
-    float4 Q3 = tex.Sample(samp, (pos+float2(.5, 2.5))*dxdy);
+    float4 Q0 = tex.Sample(samp, float2(input.Tex.x, (pos - 0.5) * dxdy.y));
+    float4 Q1 = tex.Sample(samp, float2(input.Tex.x, (pos + 0.5) * dxdy.y));
+    float4 Q2 = tex.Sample(samp, float2(input.Tex.x, (pos + 1.5) * dxdy.y));
+    float4 Q3 = tex.Sample(samp, float2(input.Tex.x, (pos + 2.5) * dxdy.y));
 #else
     #error ERROR: incorrect AXIS.
 #endif

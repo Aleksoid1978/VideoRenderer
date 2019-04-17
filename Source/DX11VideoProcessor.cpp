@@ -219,6 +219,7 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_pSrcTexture2D_CPU.Release();
 	m_pSrcTexture2D.Release();
 	m_TexConvert.Release();
+	m_TexResize.Release();
 
 	SAFE_RELEASE(m_PSConvColorData.pConstants);
 	SAFE_RELEASE(m_pSamplerLinear);
@@ -241,7 +242,8 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pVideoDevice.Release();
 
 	m_pPSConvertColor.Release();
-	m_pPSResizeTest.Release();
+	m_pPSResizeTestX.Release();
+	m_pPSResizeTestY.Release();
 
 	m_pVideoContext.Release();
 
@@ -369,7 +371,8 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_Simple, IDF_PSH11_SIMPLE));
 
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSResizeTest, IDF_PSH11_RESIZE_TEST));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSResizeTestX, IDF_PSH11_RESIZER_CATMULL4_X));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSResizeTestY, IDF_PSH11_RESIZER_CATMULL4_Y));
 
 	CComPtr<IDXGIDevice> pDXGIDevice;
 	hr = m_pDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDXGIDevice);
@@ -1345,7 +1348,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect)
+HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
 	const FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
 	const UINT Stride = sizeof(VERTEX);
@@ -1384,19 +1387,31 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 
 	pRenderTargetView->Release();
 
-	// Additional pass
+	// Resize
 
-	hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
-	if (FAILED(hr)) {
-		return hr;
+	const int w1 = rSrcRect.Width();
+	const int h1 = rSrcRect.Height();
+	const int w2 = rDstRect.Width();
+	const int h2 = rDstRect.Height();
+	const int k = m_bInterpolateAt50pct ? 2 : 1;
+
+	// check intermediate texture
+	const UINT texWidth = w2;
+	const UINT texHeight = h1;
+
+	if (m_TexResize.pTexture) {
+		if (texWidth != m_TexResize.desc.Width || texHeight != m_TexResize.desc.Height) {
+			m_TexResize.Release(); // need new texture
+		}
 	}
 
-	D3D11_TEXTURE2D_DESC RTDesc;
-	pRenderTarget->GetDesc(&RTDesc);
-
-	VP.Width = static_cast<FLOAT>(RTDesc.Width);
-	VP.Height = static_cast<FLOAT>(RTDesc.Height);
-	m_pDeviceContext->RSSetViewports(1, &VP);
+	if (!m_TexResize.pTexture) {
+		// use only float textures here
+		hr = m_TexResize.Create(m_pDevice, m_InternalTexFmt, texWidth, texHeight, Tex2D_DefaultShaderRTarget);
+		if (FAILED(hr)) {
+			m_TexResize.Release();
+		}
+	}
 
 	//
 	DirectX::XMFLOAT4 dxdy = { (float)m_TextureWidth, (float)m_TextureHeight,  1.0f / m_TextureWidth, 1.0f / m_TextureHeight };
@@ -1410,12 +1425,53 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const RE
 	hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &pResizeConstants);
 	DLogIf(S_OK != hr, L"CDX11VideoProcessor::InitMediaType() : CreateBuffer() failed with error %s", HR2Str(hr));
 
+	// First resize pass
+
+	hr = m_pDevice->CreateRenderTargetView(m_TexResize.pTexture, nullptr, &pRenderTargetView);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	VP.Width = static_cast<FLOAT>(texWidth);
+	VP.Height = static_cast<FLOAT>(texHeight);
+	m_pDeviceContext->RSSetViewports(1, &VP);
+
 	// Set resources
 	m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
 	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-	m_pDeviceContext->PSSetShader(m_pPSResizeTest, nullptr, 0);
+	m_pDeviceContext->PSSetShader(m_pPSResizeTestX, nullptr, 0);
 	m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexConvert.pShaderResource);
+	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
+	m_pDeviceContext->PSSetConstantBuffers(0, 1, &pResizeConstants);
+	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
+
+	// Draw textured quad onto render target
+	m_pDeviceContext->Draw(6, 0);
+
+	pRenderTargetView->Release();
+
+	// Second resize pass
+
+	hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	D3D11_TEXTURE2D_DESC RTDesc;
+	pRenderTarget->GetDesc(&RTDesc);
+
+	VP.Width = static_cast<FLOAT>(RTDesc.Width);
+	VP.Height = static_cast<FLOAT>(RTDesc.Height);
+	m_pDeviceContext->RSSetViewports(1, &VP);
+
+	// Set resources
+	m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
+	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
+	m_pDeviceContext->PSSetShader(m_pPSResizeTestY, nullptr, 0);
+	m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexResize.pShaderResource);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &pResizeConstants);
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

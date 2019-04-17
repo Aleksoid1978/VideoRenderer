@@ -30,7 +30,7 @@ float4 main(float2 tex : TEXCOORD0) : COLOR
 		float3 w0 = sin(wset0)*sin(wset0s)/(wset0*wset0s);
 		float3 w1 = sin(wset1)*sin(wset1s)/(wset1*wset1s);
 
-		float wc = 1.-dot(1., w0+w1);// compensate truncated window factor by linear factoring on the two nearest samples
+		float wc = 1.-dot(1., w0+w1); // compensate truncated window factor by linear factoring on the two nearest samples
 		w0.z += wc*(1.-t);
 		w1.x += wc*t;
 

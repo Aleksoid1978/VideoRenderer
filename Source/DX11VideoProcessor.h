@@ -50,6 +50,7 @@ private:
 
 	bool m_bDeintDouble = false;
 	bool m_bShowStats   = false;
+	bool m_bInterpolateAt50pct = true;
 	int  m_iSwapEffect  = SWAPEFFECT_Discard;
 
 	CComPtr<ID3D11Device> m_pDevice;
@@ -63,6 +64,7 @@ private:
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_CPU; // Used for sofware decoder
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;     // Used if D3D11 VP is active
 	Tex2DShader_t m_TexConvert; // Used for additional conversions. Always uses m_InternalTexFmt.
+	Tex2DShader_t m_TexResize;
 
 	// D3D11 Video Processor
 	CComPtr<ID3D11VideoContext> m_pVideoContext;
@@ -80,7 +82,8 @@ private:
 		bool bEnable = false;
 		ID3D11Buffer* pConstants = nullptr;
 	} m_PSConvColorData;
-	CComPtr<ID3D11PixelShader> m_pPSResizeTest;
+	CComPtr<ID3D11PixelShader> m_pPSResizeTestX;
+	CComPtr<ID3D11PixelShader> m_pPSResizeTestY;
 
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
@@ -214,11 +217,12 @@ public:
 
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
 	void SetShowStats(bool value) { m_bShowStats = value; };
+	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
 	void SetSwapEffect(int value) { m_iSwapEffect = value; }
 
 private:
 	HRESULT ProcessD3D11(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const bool second);
-	HRESULT ProcessTex(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect);
+	HRESULT ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
 	void UpdateStatsStatic();
 	HRESULT DrawStats(ID3D11Texture2D* pRenderTarget);
 

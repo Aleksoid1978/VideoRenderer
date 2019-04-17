@@ -39,6 +39,10 @@
 #define IDF_PSH11_CORRECTION_HLG        806
 #define IDF_PSH11_CORRECTION_YCGCO      807
 #define IDF_PSH11_RESIZE_TEST           808
+#define IDF_PSH11_RESIZER_MITCHELL4_X   810
+#define IDF_PSH11_RESIZER_MITCHELL4_Y   811
+#define IDF_PSH11_RESIZER_CATMULL4_X    812
+#define IDF_PSH11_RESIZER_CATMULL4_Y    813
 #define IDC_STATIC1                     1001
 #define IDC_CHECK1                      1002
 #define IDC_CHECK2                      1003
