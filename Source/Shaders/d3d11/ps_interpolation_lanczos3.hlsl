@@ -35,7 +35,7 @@ float4 main(PS_INPUT input) : SV_Target
         float4 Q4 = tex.Sample(samp, float2((pos + 2.5) * dxdy.x, input.Tex.y));
         float4 Q5 = tex.Sample(samp, float2((pos + 3.5) * dxdy.x, input.Tex.y));
 #elif (AXIS == 1)
-    float4 Q1 = tex.Sample(samp, float2(input.Tex.x, (pos + 0.5) * dxdy.y));
+    float4 Q2 = tex.Sample(samp, float2(input.Tex.x, (pos + 0.5) * dxdy.y));
     if (t) {
         // original pixels
         float4 Q0 = tex.Sample(samp, float2(input.Tex.x, (pos - 1.5) * dxdy.y));
@@ -60,5 +60,5 @@ float4 main(PS_INPUT input) : SV_Target
         return w0.x * Q0 + w0.y * Q1 + w0.z * Q2 + w1.x * Q3 + w1.y * Q4 + w1.z * Q5; // interpolation output
     }
 
-    return Q2; // case t == 0. is required to return sample Q1, because of a possible division by 0.
+    return Q2; // case t == 0. is required to return sample Q2, because of a possible division by 0.
 }

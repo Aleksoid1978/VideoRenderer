@@ -82,8 +82,10 @@ private:
 		bool bEnable = false;
 		ID3D11Buffer* pConstants = nullptr;
 	} m_PSConvColorData;
-	CComPtr<ID3D11PixelShader> m_pPSResizeTestX;
-	CComPtr<ID3D11PixelShader> m_pPSResizeTestY;
+	CComPtr<ID3D11PixelShader> m_pShaderUpscaleX;
+	CComPtr<ID3D11PixelShader> m_pShaderUpscaleY;
+	CComPtr<ID3D11PixelShader> m_pShaderDownscaleX;
+	CComPtr<ID3D11PixelShader> m_pShaderDownscaleY;
 
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
@@ -217,6 +219,8 @@ public:
 
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
 	void SetShowStats(bool value) { m_bShowStats = value; };
+	void SetUpscaling(int value);
+	void SetDownscaling(int value);
 	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
 	void SetSwapEffect(int value) { m_iSwapEffect = value; }
 

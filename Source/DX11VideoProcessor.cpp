@@ -242,8 +242,8 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pVideoDevice.Release();
 
 	m_pPSConvertColor.Release();
-	m_pPSResizeTestX.Release();
-	m_pPSResizeTestY.Release();
+	m_pShaderUpscaleX.Release();
+	m_pShaderUpscaleY.Release();
 
 	m_pVideoContext.Release();
 
@@ -371,8 +371,8 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_Simple, IDF_PSH11_SIMPLE));
 
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSResizeTestX, IDF_PSH11_RESIZER_CATMULL4_X));
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSResizeTestY, IDF_PSH11_RESIZER_CATMULL4_Y));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, IDF_PSH11_RESIZER_CATMULL4_X));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, IDF_PSH11_RESIZER_CATMULL4_Y));
 
 	CComPtr<IDXGIDevice> pDXGIDevice;
 	hr = m_pDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDXGIDevice);
@@ -1440,7 +1440,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 	m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
 	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-	m_pDeviceContext->PSSetShader(m_pPSResizeTestX, nullptr, 0);
+	m_pDeviceContext->PSSetShader(m_pShaderUpscaleX, nullptr, 0);
 	m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexConvert.pShaderResource);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &pResizeConstants);
@@ -1470,7 +1470,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 	m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
 	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-	m_pDeviceContext->PSSetShader(m_pPSResizeTestY, nullptr, 0);
+	m_pDeviceContext->PSSetShader(m_pShaderUpscaleY, nullptr, 0);
 	m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexResize.pShaderResource);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &pResizeConstants);
@@ -1593,6 +1593,60 @@ HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 
 	return S_OK;
 }
+
+void CDX11VideoProcessor::SetUpscaling(int value)
+{
+	struct {
+		UINT shaderX;
+		UINT shaderY;
+	} static const resIDs[UPSCALE_COUNT] = {
+		{IDF_PSH11_RESIZER_MITCHELL4_X, IDF_PSH11_RESIZER_MITCHELL4_Y},
+		{IDF_PSH11_RESIZER_CATMULL4_X,  IDF_PSH11_RESIZER_CATMULL4_Y },
+		{IDF_PSH11_RESIZER_LANCZOS2_X,  IDF_PSH11_RESIZER_LANCZOS2_Y },
+		{IDF_PSH11_RESIZER_LANCZOS3_X,  IDF_PSH11_RESIZER_LANCZOS3_Y },
+	};
+
+	if (value < 0 || value >= UPSCALE_COUNT) {
+		DLog("CDX9VideoProcessor::SetUpscaling() unknown value %d", value);
+		ASSERT(FALSE);
+		return;
+	}
+
+	m_pShaderUpscaleX.Release();
+	m_pShaderUpscaleY.Release();
+
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, resIDs[value].shaderX));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, resIDs[value].shaderY));
+
+};
+
+void CDX11VideoProcessor::SetDownscaling(int value)
+{
+	/*
+	struct {
+		UINT shaderX;
+		UINT shaderY;
+	} static const resIDs[DOWNSCALE_COUNT] = {
+		{IDF_PSH11_DOWNSCALER_BOX_X,      IDF_PSH11_DOWNSCALER_BOX_Y     },
+		{IDF_PSH11_DOWNSCALER_BILINEAR_X, IDF_PSH11_DOWNSCALER_BILINEAR_Y},
+		{IDF_PSH11_DOWNSCALER_HAMMING_X,  IDF_PSH11_DOWNSCALER_HAMMING_Y },
+		{IDF_PSH11_DOWNSCALER_BICUBIC_X,  IDF_PSH11_DOWNSCALER_BICUBIC_Y },
+		{IDF_PSH11_DOWNSCALER_LANCZOS_X,  IDF_PSH11_DOWNSCALER_LANCZOS_Y }
+	};
+
+	if (value < 0 || value >= DOWNSCALE_COUNT) {
+		DLog("CDX9VideoProcessor::SetDownscaling() unknown value %d", value);
+		ASSERT(FALSE);
+		return;
+	}
+
+	m_pShaderDownscaleX.Release();
+	m_pShaderDownscaleY.Release();
+
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleX, resIDs[value].shaderX));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, resIDs[value].shaderY));
+	*/
+};
 
 void CDX11VideoProcessor::UpdateStatsStatic()
 {

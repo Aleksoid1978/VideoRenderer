@@ -67,6 +67,10 @@ fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_mitchell4_x.cso"  "d3d11
 fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_mitchell4_y.cso"  "d3d11\ps_interpolation_spline4.hlsl" /DMETHOD=0 /DAXIS=1
 fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_catmull4_x.cso"   "d3d11\ps_interpolation_spline4.hlsl" /DMETHOD=1 /DAXIS=0
 fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_catmull4_y.cso"   "d3d11\ps_interpolation_spline4.hlsl" /DMETHOD=1 /DAXIS=1
+fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_lanczos2_x.cso"   "d3d11\ps_interpolation_lanczos2.hlsl" /DAXIS=0
+fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_lanczos2_y.cso"   "d3d11\ps_interpolation_lanczos2.hlsl" /DAXIS=1
+fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_lanczos3_x.cso"   "d3d11\ps_interpolation_lanczos3.hlsl" /DAXIS=0
+fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_lanczos3_y.cso"   "d3d11\ps_interpolation_lanczos3.hlsl" /DAXIS=1
 
 fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_convert_color_st2084.cso" "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_HDR=1
 fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_convert_color_hlg.cso"    "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_HDR=2

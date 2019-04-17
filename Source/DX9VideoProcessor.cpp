@@ -1560,17 +1560,10 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
 	HRESULT hr = S_OK;
-	const int w1 = rSrcRect.Width();
-	const int h1 = rSrcRect.Height();
-	const int w2 = rDstRect.Width();
-	const int h2 = rDstRect.Height();
-	const int k = m_bInterpolateAt50pct ? 2 : 1;
-
-	IDirect3DPixelShader9* resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleX : m_pShaderUpscaleX;
-	IDirect3DPixelShader9* resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
-
 	IDirect3DTexture9* pTexture = m_pSrcVideoTexture;
 	IDirect3DSurface9* pSurface = m_SrcSamples.GetAt(0).pSrcSurface;
+
+	// Convert color pass
 
 	if (m_pPSConvertColor && m_PSConvColorData.bEnable) {
 		if (!m_TexConvert.pTexture) {
@@ -1596,6 +1589,17 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 			pSurface = m_TexConvert.pSurface;
 		}
 	}
+
+	// Resize
+
+	const int w1 = rSrcRect.Width();
+	const int h1 = rSrcRect.Height();
+	const int w2 = rDstRect.Width();
+	const int h2 = rDstRect.Height();
+	const int k = m_bInterpolateAt50pct ? 2 : 1;
+
+	IDirect3DPixelShader9* resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleX : m_pShaderUpscaleX;
+	IDirect3DPixelShader9* resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
 
 	if (!resizerX && !resizerY) {
 		// no resize
