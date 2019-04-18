@@ -84,6 +84,9 @@
     <FxCompile Include="d3d11\ps_interpolation_lanczos3.hlsl">
       <Filter>d3d11</Filter>
     </FxCompile>
+    <FxCompile Include="d3d11\ps_convolution.hlsl">
+      <Filter>d3d11</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="convert\hdr_tone_mapping.hlsl">
@@ -95,7 +98,11 @@
     <None Include="resize\downscaler_filters.hlsl">
       <Filter>resize</Filter>
     </None>
-    <None Include="convert\correct_hlg.hlsl" />
-    <None Include="convert\correct_st2084.hlsl" />
+    <None Include="convert\correct_hlg.hlsl">
+      <Filter>convert</Filter>
+    </None>
+    <None Include="convert\correct_st2084.hlsl">
+      <Filter>convert</Filter>
+    </None>
   </ItemGroup>
 </Project>
