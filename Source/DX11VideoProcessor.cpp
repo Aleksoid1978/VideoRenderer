@@ -1607,7 +1607,7 @@ void CDX11VideoProcessor::SetUpscaling(int value)
 	};
 
 	if (value < 0 || value >= UPSCALE_COUNT) {
-		DLog("CDX9VideoProcessor::SetUpscaling() unknown value %d", value);
+		DLog("CDX11VideoProcessor::SetUpscaling() unknown value %d", value);
 		ASSERT(FALSE);
 		return;
 	}
@@ -1622,7 +1622,6 @@ void CDX11VideoProcessor::SetUpscaling(int value)
 
 void CDX11VideoProcessor::SetDownscaling(int value)
 {
-	/*
 	struct {
 		UINT shaderX;
 		UINT shaderY;
@@ -1635,7 +1634,7 @@ void CDX11VideoProcessor::SetDownscaling(int value)
 	};
 
 	if (value < 0 || value >= DOWNSCALE_COUNT) {
-		DLog("CDX9VideoProcessor::SetDownscaling() unknown value %d", value);
+		DLog("CDX11VideoProcessor::SetDownscaling() unknown value %d", value);
 		ASSERT(FALSE);
 		return;
 	}
@@ -1645,7 +1644,6 @@ void CDX11VideoProcessor::SetDownscaling(int value)
 
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleX, resIDs[value].shaderX));
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, resIDs[value].shaderY));
-	*/
 };
 
 void CDX11VideoProcessor::UpdateStatsStatic()

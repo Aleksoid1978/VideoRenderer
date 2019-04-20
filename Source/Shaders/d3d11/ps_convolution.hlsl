@@ -23,7 +23,7 @@ struct PS_INPUT
 static const float support = filter_support * scale[AXIS];
 static const float ss = 1.0 / scale[AXIS];
 
-#pragma warning(disable: 13595) // disable warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value
+#pragma warning(disable: 3595) // disable warning X3595: gradient instruction used in a loop with varying iteration; partial derivatives may have undefined value
 
 float4 main(PS_INPUT input) : SV_Target
 {
