@@ -94,6 +94,8 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (S_OK == *phr) {
 			m_DX11_VP.SetShowStats(m_Sets.bShowStats);
 			m_DX11_VP.SetDeintDouble(m_Sets.bDeintDouble);
+			m_DX11_VP.SetUpscaling(m_Sets.iUpscaling);
+			m_DX11_VP.SetDownscaling(m_Sets.iDownscaling);
 			DLog(L"Direct3D11 initialization successfully!");
 			return;
 		}
@@ -655,6 +657,10 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 		HRESULT hr;
 		if (m_bUsedD3D11) {
 			hr = m_DX11_VP.Init(m_hWnd, m_Sets.iSurfaceFmt);
+			if (S_OK == hr) {
+				m_DX11_VP.SetUpscaling(m_Sets.iUpscaling);
+				m_DX11_VP.SetDownscaling(m_Sets.iDownscaling);
+			}
 		} else {
 			bool bChangeDevice = false;
 			hr = m_DX9_VP.Init(m_hWnd, m_Sets.iSurfaceFmt, &bChangeDevice);
@@ -775,14 +781,18 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 	}
 
 	if (setings.iUpscaling != m_Sets.iUpscaling) {
-		if (!m_bUsedD3D11) {
+		if (m_bUsedD3D11) {
+			m_DX11_VP.SetUpscaling(setings.iUpscaling);
+		} else {
 			m_DX9_VP.SetUpscaling(setings.iUpscaling);
 		}
 		m_Sets.iUpscaling = setings.iUpscaling;
 	}
 
 	if (setings.iDownscaling != m_Sets.iDownscaling) {
-		if (!m_bUsedD3D11) {
+		if (m_bUsedD3D11) {
+			m_DX11_VP.SetDownscaling(setings.iDownscaling);
+		} else {
 			m_DX9_VP.SetDownscaling(setings.iDownscaling);
 		}
 		m_Sets.iDownscaling = setings.iDownscaling;

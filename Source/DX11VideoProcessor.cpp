@@ -371,9 +371,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_Simple, IDF_PSH11_SIMPLE));
 
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, IDF_PSH11_RESIZER_CATMULL4_X));
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, IDF_PSH11_RESIZER_CATMULL4_Y));
-
 	CComPtr<IDXGIDevice> pDXGIDevice;
 	hr = m_pDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDXGIDevice);
 	if (FAILED(hr)) {
@@ -1395,6 +1392,9 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 	const int h2 = rDstRect.Height();
 	const int k = m_bInterpolateAt50pct ? 2 : 1;
 
+	ID3D11PixelShader* resizerX = (w1 == w2) ? m_pPS_Simple : (w1 > k * w2) ? m_pShaderDownscaleX : m_pShaderUpscaleX;
+	ID3D11PixelShader* resizerY = (h1 == h2) ? m_pPS_Simple : (h1 > k * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
+
 	// check intermediate texture
 	const UINT texWidth = w2;
 	const UINT texHeight = h1;
@@ -1440,7 +1440,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 	m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
 	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-	m_pDeviceContext->PSSetShader(m_pShaderUpscaleX, nullptr, 0);
+	m_pDeviceContext->PSSetShader(resizerX, nullptr, 0);
 	m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexConvert.pShaderResource);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &pResizeConstants);
@@ -1470,7 +1470,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 	m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
 	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-	m_pDeviceContext->PSSetShader(m_pShaderUpscaleY, nullptr, 0);
+	m_pDeviceContext->PSSetShader(resizerY, nullptr, 0);
 	m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexResize.pShaderResource);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &pResizeConstants);
