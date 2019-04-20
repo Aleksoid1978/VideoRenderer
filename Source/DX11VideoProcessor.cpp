@@ -1407,7 +1407,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 
 	if (!m_TexResize.pTexture) {
 		// use only float textures here
-		hr = m_TexResize.Create(m_pDevice, m_InternalTexFmt, texWidth, texHeight, Tex2D_DefaultShaderRTarget);
+		hr = m_TexResize.Create(m_pDevice, DXGI_FORMAT_R16G16B16A16_FLOAT, texWidth, texHeight, Tex2D_DefaultShaderRTarget);
 		if (FAILED(hr)) {
 			m_TexResize.Release();
 		}
