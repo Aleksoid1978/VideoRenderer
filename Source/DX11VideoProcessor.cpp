@@ -1414,14 +1414,17 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 	}
 
 	//
-	DirectX::XMFLOAT4 dxdy = { (float)m_TextureWidth, (float)m_TextureHeight,  1.0f / m_TextureWidth, 1.0f / m_TextureHeight };
+	const FLOAT constants[][4] = {
+		{(float)m_TextureWidth, (float)m_TextureHeight, 1.0f / m_TextureWidth, 1.0f / m_TextureHeight},
+		{(float)w1 / w2, (float)h1 / h2, 0, 0}
+	};
 	ID3D11Buffer* pResizeConstants = nullptr;
 	D3D11_BUFFER_DESC BufferDesc = {};
 	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	BufferDesc.ByteWidth = sizeof(dxdy);
+	BufferDesc.ByteWidth = sizeof(constants);
 	BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	BufferDesc.CPUAccessFlags = 0;
-	D3D11_SUBRESOURCE_DATA InitData = { &dxdy, 0, 0 };
+	D3D11_SUBRESOURCE_DATA InitData = { &constants, 0, 0 };
 	hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &pResizeConstants);
 	DLogIf(S_OK != hr, L"CDX11VideoProcessor::InitMediaType() : CreateBuffer() failed with error %s", HR2Str(hr));
 

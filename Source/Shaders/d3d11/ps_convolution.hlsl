@@ -7,7 +7,7 @@
 Texture2D tex : register(t0);
 SamplerState samp : register(s0);
 
-cbuffer PS_WH : register(b0)
+cbuffer PS_CONSTANTS : register(b0)
 {
     float2 wh;
     float2 dxdy;
