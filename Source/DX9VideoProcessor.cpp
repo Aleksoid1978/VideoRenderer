@@ -1651,7 +1651,7 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 		// one pass resize for width
 		hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, resizerX);
 	}
-	else { // resizerY >= 0
+	else { // if (resizerY)
 		// one pass resize for height
 		hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, resizerY);
 	}
