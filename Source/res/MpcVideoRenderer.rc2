@@ -51,7 +51,6 @@ IDF_PSH11_CONVERT_COLOR_HLG      SHADER                  "..\\bin\\shaders\\ps_c
 IDF_PSH11_CORRECTION_ST2084      SHADER                  "..\\bin\\shaders\\ps_correction_st2084.cso"
 IDF_PSH11_CORRECTION_HLG         SHADER                  "..\\bin\\shaders\\ps_correction_hlg.cso"
 IDF_PSH11_CORRECTION_YCGCO       SHADER                  "..\\bin\\shaders\\ps_correction_ycgco.cso"
-IDF_PSH11_RESIZE_TEST            SHADER                  "..\\bin\\shaders\\ps_resize_test.cso"
 IDF_PSH11_RESIZER_MITCHELL4_X    SHADER                  "..\\bin\\shaders\\ps_resizer_mitchell4_x.cso"
 IDF_PSH11_RESIZER_MITCHELL4_Y    SHADER                  "..\\bin\\shaders\\ps_resizer_mitchell4_y.cso"
 IDF_PSH11_RESIZER_CATMULL4_X     SHADER                  "..\\bin\\shaders\\ps_resizer_catmull4_x.cso"

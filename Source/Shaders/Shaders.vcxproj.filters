@@ -63,9 +63,6 @@
     <FxCompile Include="d3d11\ps_correction_ycgco.hlsl">
       <Filter>d3d11</Filter>
     </FxCompile>
-    <FxCompile Include="d3d11\ps_resize_test.hlsl">
-      <Filter>d3d11</Filter>
-    </FxCompile>
     <FxCompile Include="examples\ps_resize_onepass_bilinear.hlsl">
       <Filter>examples</Filter>
     </FxCompile>
