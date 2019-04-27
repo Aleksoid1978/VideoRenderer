@@ -1399,12 +1399,14 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 {
 	str = L"DirectX 9";
 	str.AppendFormat(L"\nGraphics adapter: %s", m_strAdapterDescription);
-	str.AppendFormat(L"\nVideoProcessor  : %s", m_pDXVA2_VP ? L"DXVA2" : L"PS 3.0");
 
+	str.Append(L"\nVideoProcessor  : ");
 	if (m_pDXVA2_VP) {
+		str.AppendFormat(L"DXVA2 %s", DXVA2VPDeviceToString(m_DXVA2VPGuid));
+
 		UINT dt = m_DXVA2VPcaps.DeinterlaceTechnology;
+		str.Append(L"\nDeinterlaceTechnology:");
 		if (dt & DXVA2_DeinterlaceTech_Mask) {
-			str.Append(L"\nDeinterlaceTechnology:");
 			if (dt & DXVA2_DeinterlaceTech_BOBLineReplicate)       str.Append(L" BOBLineReplicate,");
 			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch)     str.Append(L" BOBVerticalStretch,");
 			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch4Tap) str.Append(L" BOBVerticalStretch4Tap,");
@@ -1424,7 +1426,10 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 		if (m_DXVA2VPcaps.NumBackwardRefSamples) {
 			str.AppendFormat(L"\nBackwardRefSamples: %u", m_DXVA2VPcaps.NumBackwardRefSamples);
 		}
+	} else {
+		str.Append(L"PS 3.0");
 	}
+
 	str.AppendFormat(L"\nDisplay Mode    : %u x %u, %u", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate);
 	if (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
 		str.AppendChar('i');
