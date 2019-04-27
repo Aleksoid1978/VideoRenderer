@@ -74,6 +74,7 @@
     <ClCompile Include="Helper.cpp" />
     <ClCompile Include="PropPage.cpp" />
     <ClCompile Include="renbase2.cpp" />
+    <ClCompile Include="Shaders.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -93,6 +94,7 @@
     <ClInclude Include="PropPage.h" />
     <ClInclude Include="renbase2.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Shaders.h" />
     <ClInclude Include="StatsDrawing.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Time.h" />
