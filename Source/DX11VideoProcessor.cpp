@@ -1303,7 +1303,6 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 	}
 
 	if (m_pPSConvertColor && m_TexConvert.pTexture) {
-		const FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
 		const UINT Stride = sizeof(VERTEX);
 		const UINT Offset = 0;
 
@@ -1326,7 +1325,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 		m_pDeviceContext->RSSetViewports(1, &VP);
 
 		// Set resources
-		m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
+		m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 		m_pDeviceContext->PSSetShader(m_pPSConvertColor, nullptr, 0);
@@ -1347,7 +1346,6 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 
 HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
-	const FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
 	const UINT Stride = sizeof(VERTEX);
 	const UINT Offset = 0;
 
@@ -1369,7 +1367,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 	m_pDeviceContext->RSSetViewports(1, &VP);
 
 	// Set resources
-	m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
+	m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 	m_pDeviceContext->PSSetShader(m_pPSConvertColor, nullptr, 0);
@@ -1398,19 +1396,19 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 	ID3D11PixelShader* resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleX : m_pShaderUpscaleX;
 	ID3D11PixelShader* resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
 
+	// no resize
 	if (!resizerX && !resizerY) {
 		hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
 		if (FAILED(hr)) {
 			return hr;
 		}
 
-		// no resize
 		VP.Width = (FLOAT)RTDesc.Width;
 		VP.Height = (FLOAT)RTDesc.Height;
 		m_pDeviceContext->RSSetViewports(1, &VP);
 
 		// Set resources
-		m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
+		m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 		m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
@@ -1445,9 +1443,8 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 		DLogIf(S_OK != hr, L"CDX11VideoProcessor::InitMediaType() : CreateBuffer() failed with error %s", HR2Str(hr));
 	}
 
+	// two pass resize
 	if (resizerX && resizerY) {
-		// two pass resize
-
 		// check intermediate texture
 		const UINT texWidth = w2;
 		const UINT texHeight = h1;
@@ -1468,7 +1465,6 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 		}
 
 		// First resize pass
-
 		hr = m_pDevice->CreateRenderTargetView(m_TexResize.pTexture, nullptr, &pRenderTargetView);
 		if (FAILED(hr)) {
 			return hr;
@@ -1479,7 +1475,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 		m_pDeviceContext->RSSetViewports(1, &VP);
 
 		// Set resources
-		m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
+		m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 		m_pDeviceContext->PSSetShader(resizerX, nullptr, 0);
@@ -1495,7 +1491,6 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 		pRenderTargetView->Release();
 
 		// Second resize pass
-
 		hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
 		if (FAILED(hr)) {
 			return hr;
@@ -1506,7 +1501,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 		m_pDeviceContext->RSSetViewports(1, &VP);
 
 		// Set resources
-		m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
+		m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 		m_pDeviceContext->PSSetShader(resizerY, nullptr, 0);
@@ -1532,7 +1527,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 		m_pDeviceContext->RSSetViewports(1, &VP);
 
 		// Set resources
-		m_pDeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
+		m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 		if (resizerX) {
@@ -1819,7 +1814,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			// Set resources
 			UINT Stride = sizeof(VERTEX);
 			UINT Offset = 0;
-			m_pDeviceContext->OMSetBlendState(pBlendState, nullptr, 0xffffffff);
+			m_pDeviceContext->OMSetBlendState(pBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
