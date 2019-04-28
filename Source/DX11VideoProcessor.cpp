@@ -1535,7 +1535,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 		} else { // if (resizerY)
 			m_pDeviceContext->PSSetShader(resizerY, nullptr, 0);
 		}
-		m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexResize.pShaderResource);
+		m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexConvert.pShaderResource);
 		m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
 		m_pDeviceContext->PSSetConstantBuffers(0, 1, &pResizeConstants);
 		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
