@@ -954,10 +954,12 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	UINT biWidth  = pBIH->biWidth;
 	UINT biHeight = labs(pBIH->biHeight);
-	if (pmt->FormatLength() == 112 + sizeof(BITMAPINFOHEADER)) {
-		BITMAPINFOHEADER* pOriginalBIH = (BITMAPINFOHEADER*)(pmt->pbFormat + 112);
-		biWidth  = pOriginalBIH->biWidth;
-		biHeight = labs(pOriginalBIH->biHeight);
+	if (pmt->FormatLength() == 112 + sizeof(VR_Extradata)) {
+		const VR_Extradata* vrextra = (VR_Extradata*)(pmt->pbFormat + 112);
+		if (vrextra->QueryWidth == pBIH->biWidth && vrextra->QueryHeight == pBIH->biHeight && vrextra->Compression == pBIH->biCompression) {
+			biWidth  = vrextra->FrameWidth;
+			biHeight = abs(vrextra->FrameHeight);
+		}
 	}
 
 	UINT biSizeImage = pBIH->biSizeImage;

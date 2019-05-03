@@ -146,12 +146,17 @@ long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_mt)
 		}
 
 		if (ret && (Size.cx != pBIH->biWidth || Size.cy != pBIH->biHeight)) {
-			BYTE* pbFormat = mt.ReallocFormatBuffer(112 + sizeof(BITMAPINFOHEADER));
+			BYTE* pbFormat = mt.ReallocFormatBuffer(112 + sizeof(VR_Extradata));
 			if (pbFormat) {
 				// update pointer after realoc
 				pBIH = GetBIHfromVIHs(&mt);
-				// copy original BITMAPINFOHEADER
-				memcpy(pbFormat + 112, pBIH, sizeof(BITMAPINFOHEADER));
+				// copy data to VR_Extradata
+				VR_Extradata* vrextra = (VR_Extradata*)(pbFormat + 112);
+				vrextra->QueryWidth  = Size.cx;
+				vrextra->QueryHeight = Size.cy;
+				vrextra->FrameWidth  = pBIH->biWidth;
+				vrextra->FrameHeight = pBIH->biHeight;
+				vrextra->Compression = pBIH->biCompression
 			}
 
 			// new media type must have non-empty rcSource
