@@ -156,7 +156,7 @@ long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_mt)
 				vrextra->QueryHeight = Size.cy;
 				vrextra->FrameWidth  = pBIH->biWidth;
 				vrextra->FrameHeight = pBIH->biHeight;
-				vrextra->Compression = pBIH->biCompression
+				vrextra->Compression = pBIH->biCompression;
 			}
 
 			// new media type must have non-empty rcSource
