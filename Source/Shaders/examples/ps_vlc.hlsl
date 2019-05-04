@@ -80,8 +80,8 @@ inline float4 sampleTexture(SamplerState samplerState, float3 coords) {
 float4 main( PS_INPUT In ) : SV_TARGET
 {
   float4 sample;
-  
-  if (In.Texture.x > BoundaryX || In.Texture.y > BoundaryY) 
+
+  if (In.Texture.x > BoundaryX || In.Texture.y > BoundaryY)
       sample = sampleTexture( SamplerStates[1], In.Texture );
   else
       sample = sampleTexture( SamplerStates[0], In.Texture );
