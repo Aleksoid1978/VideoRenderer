@@ -1568,11 +1568,11 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 {
 	HRESULT hr = S_OK;
 	IDirect3DTexture9* pTexture = m_pSrcVideoTexture;
-	IDirect3DSurface9* pSurface = m_SrcSamples.GetAt(0).pSrcSurface;
 
 	// Convert color pass
 
 	if (m_pPSConvertColor && m_PSConvColorData.bEnable) {
+
 		if (!m_TexConvert.pTexture) {
 			hr = m_pD3DDevEx->CreateTexture(m_srcWidth, m_srcHeight, 1, D3DUSAGE_RENDERTARGET, m_InternalTexFmt, D3DPOOL_DEFAULT, &m_TexConvert.pTexture, nullptr);
 			if (FAILED(hr) || FAILED(m_TexConvert.Update())) {
@@ -1581,7 +1581,6 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 		}
 
 		if (m_TexConvert.pTexture) {
-			// set temp RenderTarget
 			hr = m_pD3DDevEx->SetRenderTarget(0, m_TexConvert.pSurface);
 
 			hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_PSConvColorData.fConstants, std::size(m_PSConvColorData.fConstants));
@@ -1589,16 +1588,21 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 			TextureCopy(pTexture);
 			m_pD3DDevEx->SetPixelShader(nullptr);
 
-			// restore current RenderTarget
-			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-
 			pTexture = m_TexConvert.pTexture;
-			pSurface = m_TexConvert.pSurface;
 		}
 	}
 
 	// Resize
+	hr = ResizeShader2Pass(pTexture, pRenderTarget, rSrcRect, rDstRect);
 
+	DLogIf(FAILED(hr), L"CDX9VideoProcessor::ProcessTex() : failed with error %s", HR2Str(hr));
+
+	return hr;
+}
+
+HRESULT CDX9VideoProcessor::ResizeShader2Pass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
+{
+	HRESULT hr = S_OK;
 	const int w1 = rSrcRect.Width();
 	const int h1 = rSrcRect.Height();
 	const int w2 = rDstRect.Width();
@@ -1607,15 +1611,6 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 
 	IDirect3DPixelShader9* resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleX : m_pShaderUpscaleX;
 	IDirect3DPixelShader9* resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
-
-	if (!resizerX && !resizerY) {
-		// no resize
-		return m_pD3DDevEx->StretchRect(pSurface, rSrcRect, pRenderTarget, rDstRect, D3DTEXF_POINT);
-		// alt
-		// return TextureResize(m_pSrcVideoTexture, rSrcRect, rDstRect, D3DTEXF_POINT);
-		// alt for sysmem surface?
-		// return m_pD3DDevEx->UpdateSurface(m_SrcSamples.GetAt(0).pSrcSurface, rSrcRect, pRenderTarget, &rDstRect.TopLeft())
-	}
 
 	if (resizerX && resizerY) {
 		// two pass resize
@@ -1642,30 +1637,33 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 
 		CRect resizeRect(0, 0, m_TexResize.Width, m_TexResize.Height);
 
-		// set temp RenderTarget
-		hr = m_pD3DDevEx->SetRenderTarget(0, m_TexResize.pSurface);
-
 		// resize width
+		hr = m_pD3DDevEx->SetRenderTarget(0, m_TexResize.pSurface);
 		hr = TextureResizeShader(pTexture, rSrcRect, resizeRect, resizerX);
 
-		// restore current RenderTarget
-		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-
 		// resize height
+		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 		hr = TextureResizeShader(m_TexResize.pTexture, resizeRect, rDstRect, resizerY);
 	}
-	else if (resizerX) {
-		// one pass resize for width
-		hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, resizerX);
-	}
-	else { // if (resizerY)
-		// one pass resize for height
-		hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, resizerY);
+	else {
+		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
+
+		if (resizerX) {
+			// one pass resize for width
+			hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, resizerX);
+		}
+		else if (resizerY) {
+			// one pass resize for height
+			hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, resizerY);
+		}
+		else {
+			// no resize
+			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
+			hr = TextureResize(m_pSrcVideoTexture, rSrcRect, rDstRect, D3DTEXF_POINT);
+		}
 	}
 
-	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::ProcessTex() : failed with error %s", HR2Str(hr));
-	}
+	DLogIf(FAILED(hr), L"CDX9VideoProcessor::ResizeShader2Pass() : failed with error %s", HR2Str(hr));
 
 	return hr;
 }

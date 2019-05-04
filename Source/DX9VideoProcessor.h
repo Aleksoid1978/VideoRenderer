@@ -257,8 +257,10 @@ public:
 
 private:
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
-
 	HRESULT ProcessTex(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
+
+	HRESULT ResizeShader2Pass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
+
 	HRESULT TextureCopy(IDirect3DTexture9* pTexture);
 	HRESULT TextureResize(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, D3DTEXTUREFILTERTYPE filter);
 	HRESULT TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, IDirect3DPixelShader9* pShader);
