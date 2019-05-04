@@ -38,6 +38,30 @@ void SetCursor(HWND m_hWnd, UINT nID, LPCWSTR lpCursorName)
 	SetCursor(::GetDlgItem(m_hWnd, nID), lpCursorName);
 }
 
+CStringW GetVersionStr()
+{
+	CStringW version;
+#ifdef MPCVR_REV_DATE
+#ifdef MPCVR_REV_HASH
+#ifdef MPCVR_REV_NUM
+	version.Format(L"r%d (%s-%s)",
+		MPCVR_REV_NUM,
+		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_DATE)),
+		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_HASH))
+	);
+#endif // MPCVR_REV_NUM
+#endif // MPCVR_REV_HASH
+#endif // MPCVR_REV_DATE
+	return version;
+}
+
+LPCWSTR GetNameAndVersion()
+{
+	static CStringW version = L"Experimental MPC Video Renderer " + GetVersionStr();
+
+	return (LPCWSTR)version;
+}
+
 // CVRMainPPage
 
 // https://msdn.microsoft.com/ru-ru/library/windows/desktop/dd375010(v=vs.85).aspx
@@ -110,15 +134,7 @@ HRESULT CVRMainPPage::OnActivate()
 	SendDlgItemMessageW(IDC_COMBO4, CB_ADDSTRING, 0, (LPARAM)L"Flip");
 	SendDlgItemMessageW(IDC_COMBO4, CB_SETCURSEL, m_SetsPP.iSwapEffect, 0);
 
-#ifdef MPCVR_REV_DATE
-#ifdef MPCVR_REV_HASH
-	CStringW str;
-	str.Format(L"Experimental MPC Video Renderer %s (%s)",
-		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_DATE)),
-		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_HASH)));
-	SetDlgItemTextW(IDC_STATIC1, str);
-#endif // MPCVR_REV_HASH
-#endif // MPCVR_REV_DATE
+	SetDlgItemTextW(IDC_STATIC1, GetNameAndVersion());
 
 	SetCursor(m_hWnd, IDC_ARROW);
 	SetCursor(m_hWnd, IDC_COMBO1, IDC_HAND);
@@ -269,14 +285,7 @@ HRESULT CVRInfoPPage::OnActivate()
 	}
 	SetDlgItemTextW(IDC_EDIT1, str);
 
-#ifdef MPCVR_REV_DATE
-#ifdef MPCVR_REV_HASH
-	str.Format(L"Experimental MPC Video Renderer %s (%s)",
-		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_DATE)),
-		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_HASH)));
-	SetDlgItemTextW(IDC_STATIC1, str);
-#endif // MPCVR_REV_HASH
-#endif // MPCVR_REV_DATE
+	SetDlgItemTextW(IDC_STATIC1, GetNameAndVersion());
 
 	return S_OK;
 }
