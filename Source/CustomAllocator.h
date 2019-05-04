@@ -33,6 +33,7 @@ protected:
 	HRESULT Alloc();
 
 	CMediaType* m_pNewMT = nullptr;
+	long m_cbBuffer = 0;
 
 public:
 	CCustomAllocator(LPCTSTR pName, LPUNKNOWN pUnk, HRESULT *phr);

@@ -143,12 +143,9 @@ STDMETHODIMP CCustomAllocator::SetProperties(__in ALLOCATOR_PROPERTIES* pRequest
 
 	ASSERT(pRequest->cbBuffer > 0);
 
-	if (m_pNewMT) {
-		BITMAPINFOHEADER* pBIH = GetBIHfromVIHs(m_pNewMT);
-
-		if (pBIH) {
-			pRequest->cbBuffer = pBIH->biSizeImage ? pBIH->biSizeImage : DIBSIZE(*pBIH);
-		}
+	if (m_cbBuffer) {
+		pRequest->cbBuffer = m_cbBuffer;
+		m_cbBuffer = 0;
 	}
 
 	return __super::SetProperties(pRequest, pActual);
@@ -161,6 +158,7 @@ HRESULT CCustomAllocator::GetBuffer(IMediaSample** ppBuffer, REFERENCE_TIME* pSt
 	if (SUCCEEDED(hr) && m_pNewMT) {
 		(*ppBuffer)->SetMediaType(m_pNewMT);
 		SAFE_DELETE(m_pNewMT);
+		m_cbBuffer = 0;
 	}
 
 	return hr;
@@ -170,4 +168,9 @@ void CCustomAllocator::SetNewMediaType(const CMediaType& mt)
 {
 	SAFE_DELETE(m_pNewMT);
 	m_pNewMT = new CMediaType(mt);
+
+	m_cbBuffer = 0;
+	if (const auto pBIH = GetBIHfromVIHs(m_pNewMT); pBIH) {
+		m_cbBuffer = pBIH->biSizeImage ? pBIH->biSizeImage : DIBSIZE(*pBIH);
+	}
 }
