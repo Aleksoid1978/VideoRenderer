@@ -374,6 +374,7 @@ void CDX9VideoProcessor::ReleaseVP()
 
 	m_pSrcVideoTexture.Release();
 	m_TexConvert.Release();
+	m_TexCorrection.Release();
 	m_TexResize.Release();
 
 	m_srcD3DFormat = D3DFMT_UNKNOWN;
@@ -1512,23 +1513,23 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 	CRect VPRect = rDstRect;
 	if (m_pPSConvertColor) {
 		// check intermediate texture
-		const UINT texWidth = rDstRect.Width();
-		const UINT texHeight = rDstRect.Height();
-		if (texWidth != m_TexConvert.Width || texHeight != m_TexConvert.Height) {
-			m_TexConvert.Release(); // need new texture
+		const UINT texWidth = VPRect.Width();
+		const UINT texHeight = VPRect.Height();
+		if (texWidth != m_TexCorrection.Width || texHeight != m_TexCorrection.Height) {
+			m_TexCorrection.Release(); // need new texture
 		}
 
-		if (!m_TexConvert.pTexture) {
-			hr = m_pD3DDevEx->CreateTexture(texWidth, texHeight, 1, D3DUSAGE_RENDERTARGET, m_InternalTexFmt, D3DPOOL_DEFAULT, &m_TexConvert.pTexture, nullptr);
-			if (FAILED(hr) || FAILED(m_TexConvert.Update())) {
-				m_TexConvert.Release();
+		if (!m_TexCorrection.pTexture) {
+			hr = m_pD3DDevEx->CreateTexture(texWidth, texHeight, 1, D3DUSAGE_RENDERTARGET, m_InternalTexFmt, D3DPOOL_DEFAULT, &m_TexCorrection.pTexture, nullptr);
+			if (FAILED(hr) || FAILED(m_TexCorrection.Update())) {
+				m_TexCorrection.Release();
 			}
 		}
 
-		if (m_TexConvert.pTexture) {
+		if (m_TexCorrection.pTexture) {
 			VPRect.SetRect(0, 0, texWidth, texHeight);
-			pTexture = m_TexConvert.pTexture;
-			pSurface = m_TexConvert.pSurface;
+			pTexture = m_TexCorrection.pTexture;
+			pSurface = m_TexCorrection.pSurface;
 		}
 	}
 

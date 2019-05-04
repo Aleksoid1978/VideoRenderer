@@ -171,8 +171,9 @@ private:
 	// D3D9 Video Processor
 	CComPtr<IDirect3DTexture9> m_pSrcVideoTexture;
 	CopyFrameDataFn m_pConvertFn = nullptr;
-	Tex_t m_TexConvert;
-	Tex_t m_TexResize;
+	Tex_t m_TexConvert;    // for result of color conversion
+	Tex_t m_TexCorrection; // for result of correction after DXVA2 VP
+	Tex_t m_TexResize;     // for intermediate result of two-pass resize
 
 	CComPtr<IDirect3DPixelShader9> m_pPSConvertColor;
 	struct {
