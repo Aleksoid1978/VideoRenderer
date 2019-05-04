@@ -48,7 +48,9 @@ FOR /F "tokens=3,4 delims= " %%A IN (
   'FINDSTR /I /L /C:"define MPCVR_REV_DATE" "revision.h"') DO (SET "REVDATE=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
   'FINDSTR /I /L /C:"define MPCVR_REV_HASH" "revision.h"') DO (SET "REVHASH=%%A")
-SET "PCKG_NAME=MPCVideoRenderer-%REVDATE%-%REVHASH%%SUFFIX%"
+FOR /F "tokens=3,4 delims= " %%A IN (
+  'FINDSTR /I /L /C:"define MPCVR_REV_NUM" "revision.h"') DO (SET "REVNUM=%%A")
+SET "PCKG_NAME=MPCVideoRenderer-r%REVNUM%-%REVDATE%-%REVHASH%%SUFFIX%"
 
 CALL :SubDetectSevenzipPath
 IF DEFINED SEVENZIP (
