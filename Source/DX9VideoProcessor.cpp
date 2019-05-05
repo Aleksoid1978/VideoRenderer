@@ -393,6 +393,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 
 	m_pDXVA2_VPService.Release();
 
+	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
 
 	m_pShaderUpscaleX.Release();
@@ -1003,19 +1004,20 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcPitch = -m_srcPitch;
 	}
 
+	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
 	m_PSConvColorData.bEnable = false;
 
 	// DXVA2 Video Processor
 	if (FmtConvParams->DXVA2Format != D3DFMT_UNKNOWN && InitializeDXVA2VP(FmtConvParams->DXVA2Format, biWidth, biHeight, false)) {
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CORRECTION_ST2084));
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_ST2084));
 		}
 		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CORRECTION_HLG));
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_HLG));
 		}
 		else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CORRECTION_YCGCO));
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_YCGCO));
 		}
 
 		m_srcSubType = SubType;
@@ -1511,7 +1513,7 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 	IDirect3DSurface9* pSurface = pRenderTarget;
 
 	CRect VPRect = rDstRect;
-	if (m_pPSConvertColor) {
+	if (m_pPSCorrection) {
 		// check intermediate texture
 		const UINT texWidth = VPRect.Width();
 		const UINT texHeight = VPRect.Height();
@@ -1557,7 +1559,7 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 
 	if (pTexture) {
 		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-		hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColor);
+		hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
 		TextureResize(pTexture, VPRect, rDstRect, D3DTEXF_POINT);
 		m_pD3DDevEx->SetPixelShader(nullptr);
 	}

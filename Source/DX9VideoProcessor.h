@@ -175,6 +175,7 @@ private:
 	Tex_t m_TexCorrection; // for result of correction after DXVA2 VP
 	Tex_t m_TexResize;     // for intermediate result of two-pass resize
 
+	CComPtr<IDirect3DPixelShader9> m_pPSCorrection;
 	CComPtr<IDirect3DPixelShader9> m_pPSConvertColor;
 	struct {
 		bool bEnable = false;
