@@ -110,7 +110,7 @@ HRESULT CVRMainPPage::OnActivate()
 	CheckDlgButton(IDC_CHECK3, m_SetsPP.bDeintDouble ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK4, BST_CHECKED);
 	GetDlgItem(IDC_CHECK4).EnableWindow(FALSE);
-	CheckDlgButton(IDC_CHECK5, BST_CHECKED);
+	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling   ? BST_CHECKED : BST_UNCHECKED);
 	GetDlgItem(IDC_CHECK5).EnableWindow(FALSE);
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
 
@@ -163,6 +163,11 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			}
 			if (nID == IDC_CHECK3) {
 				m_SetsPP.bDeintDouble = IsDlgButtonChecked(IDC_CHECK3) == BST_CHECKED;
+				SetDirty();
+				return (LRESULT)1;
+			}
+			if (nID == IDC_CHECK5) {
+				m_SetsPP.bVPScaling = IsDlgButtonChecked(IDC_CHECK6) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}

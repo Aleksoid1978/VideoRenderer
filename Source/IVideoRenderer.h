@@ -58,6 +58,7 @@ struct Settings_t {
 	bool bShowStats          = false;
 	bool bDeintDouble        = false;
 	int  iSurfaceFmt         = SURFMT_8INT;
+	int  bVPScaling          = true;
 	int  iUpscaling          = UPSCALE_CatmullRom;
 	int  iDownscaling        = DOWNSCALE_Hamming;
 	bool bInterpolateAt50pct = true;
