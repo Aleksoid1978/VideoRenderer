@@ -1092,7 +1092,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 	const REFERENCE_TIME rtFrameDur = m_pFilter->m_FrameStats.GetAverageFrameDuration();
 	rtEnd = rtStart + rtFrameDur;
-	CRefTime rtClock;
+	CRefTime rtClock(rtStart);
 
 	HRESULT hr = CopySample(pSample);
 	if (FAILED(hr)) {
@@ -1103,7 +1103,9 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 	// always Render(1) a frame after CopySample()
 	hr = Render(1);
 	m_pFilter->m_DrawStats.Add(GetPreciseTick());
-	m_pFilter->StreamTime(rtClock);
+	if (m_pFilter->m_filterState == State_Running) {
+		m_pFilter->StreamTime(rtClock);
+	}
 
 	m_RenderStats.syncoffset = rtClock - rtStart;
 
@@ -1115,7 +1117,9 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 		hr = Render(2);
 		m_pFilter->m_DrawStats.Add(GetPreciseTick());
-		m_pFilter->StreamTime(rtClock);
+		if (m_pFilter->m_filterState == State_Running) {
+			m_pFilter->StreamTime(rtClock);
+		}
 
 		rtStart += rtFrameDur / 2;
 		m_RenderStats.syncoffset = rtClock - rtStart;
