@@ -1020,6 +1020,8 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_YCGCO));
 		}
 
+		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
+
 		m_srcSubType = SubType;
 		UpdateStatsStatic();
 		return TRUE;
@@ -1326,6 +1328,17 @@ HRESULT CDX9VideoProcessor::FillBlack()
 	return hr;
 }
 
+void CDX9VideoProcessor::SetVideoRect(const CRect& videoRect)
+{
+	HRESULT hr;
+
+	if (videoRect.Size() != m_videoRect.Size()) {
+		UpdateCorrectionTex(videoRect.Width(), videoRect.Height());
+	}
+
+	m_videoRect = videoRect;
+}
+
 HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 {
 	m_windowRect = windowRect;
@@ -1507,37 +1520,10 @@ void CDX9VideoProcessor::SetDownscaling(int value)
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, resIDs[value].shaderY));
 };
 
-HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
+HRESULT CDX9VideoProcessor::DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
 	// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx
 	ASSERT(m_SrcSamples.Size() == m_DXVA2Samples.size());
-	HRESULT hr = S_OK;
-
-	IDirect3DTexture9* pTexture = nullptr;
-	IDirect3DSurface9* pSurface = pRenderTarget;
-
-	CRect VPRect = rDstRect;
-	if (m_pPSCorrection) {
-		// check intermediate texture
-		const UINT texWidth = VPRect.Width();
-		const UINT texHeight = VPRect.Height();
-		if (texWidth != m_TexCorrection.Width || texHeight != m_TexCorrection.Height) {
-			m_TexCorrection.Release(); // need new texture
-		}
-
-		if (!m_TexCorrection.pTexture) {
-			hr = m_pD3DDevEx->CreateTexture(texWidth, texHeight, 1, D3DUSAGE_RENDERTARGET, m_InternalTexFmt, D3DPOOL_DEFAULT, &m_TexCorrection.pTexture, nullptr);
-			if (FAILED(hr) || FAILED(m_TexCorrection.Update())) {
-				m_TexCorrection.Release();
-			}
-		}
-
-		if (m_TexCorrection.pTexture) {
-			VPRect.SetRect(0, 0, texWidth, texHeight);
-			pTexture = m_TexCorrection.pTexture;
-			pSurface = m_TexCorrection.pSurface;
-		}
-	}
 
 	// Initialize VPBlt parameters
 	if (second) {
@@ -1545,27 +1531,54 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 	} else {
 		m_BltParams.TargetFrame = m_SrcSamples.Get().Start;
 	}
-	m_BltParams.TargetRect = VPRect;
-	m_BltParams.ConstrictionSize.cx = VPRect.Width();
-	m_BltParams.ConstrictionSize.cy = VPRect.Height();
+	m_BltParams.TargetRect = rDstRect;
+	m_BltParams.ConstrictionSize.cx = rDstRect.Width();
+	m_BltParams.ConstrictionSize.cy = rDstRect.Height();
 
 	// Initialize main stream video samples
 	for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
 		auto& SrcSample = m_SrcSamples.GetAt(i);
 		m_DXVA2Samples[i].SrcRect = rSrcRect;
-		m_DXVA2Samples[i].DstRect = VPRect;
+		m_DXVA2Samples[i].DstRect = rDstRect;
 	}
 
-	hr = m_pDXVA2_VP->VideoProcessBlt(pSurface, &m_BltParams, m_DXVA2Samples.data(), m_DXVA2Samples.size(), nullptr);
-	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::ProcessDXVA2() : VideoProcessBlt() failed with error %s", HR2Str(hr));
-	}
+	HRESULT hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &m_BltParams, m_DXVA2Samples.data(), m_DXVA2Samples.size(), nullptr);
+	DLogIf(FAILED(hr), L"CDX9VideoProcessor::DXVA2VPPass() : VideoProcessBlt() failed with error %s", HR2Str(hr));
 
-	if (pTexture) {
+	return hr;
+}
+
+void CDX9VideoProcessor::UpdateCorrectionTex(const int w, const int h)
+{
+	if (m_pPSCorrection) {
+		m_TexCorrection.Release();
+
+		if (w > 0 && h > 0) {
+			HRESULT hr = m_pD3DDevEx->CreateTexture(w, h, 1, D3DUSAGE_RENDERTARGET, m_InternalTexFmt, D3DPOOL_DEFAULT, &m_TexCorrection.pTexture, nullptr);
+			if (FAILED(hr) || FAILED(m_TexCorrection.Update())) {
+				m_TexCorrection.Release();
+			}
+		}
+	}
+}
+
+HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
+{
+	// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx
+	ASSERT(m_SrcSamples.Size() == m_DXVA2Samples.size());
+	HRESULT hr = S_OK;
+
+	if (m_pPSCorrection && m_TexCorrection.pTexture) {
+		CRect VPRect(0, 0, m_TexCorrection.Width, m_TexCorrection.Height);
+
+		hr = DXVA2VPPass(m_TexCorrection.pSurface, rSrcRect, rDstRect, second);
+
 		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 		hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
-		TextureResize(pTexture, VPRect, rDstRect, D3DTEXF_POINT);
+		hr = TextureResize(m_TexCorrection.pTexture, VPRect, rDstRect, D3DTEXF_POINT);
 		m_pD3DDevEx->SetPixelShader(nullptr);
+	} else {
+		hr = DXVA2VPPass(pRenderTarget, rSrcRect, rDstRect, second);
 	}
 
 	return hr;

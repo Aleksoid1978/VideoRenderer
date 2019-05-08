@@ -242,7 +242,7 @@ public:
 
 	void GetSourceRect(CRect& sourceRect) { sourceRect = m_srcRect; }
 	void GetVideoRect(CRect& videoRect) { videoRect = m_videoRect; }
-	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
+	void SetVideoRect(const CRect& videoRect);
 	HRESULT SetWindowRect(const CRect& windowRect);
 
 	IDirect3DDeviceManager9* GetDeviceManager9() { return m_pD3DDeviceManager; }
@@ -258,6 +258,9 @@ public:
 	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
 
 private:
+	HRESULT DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
+	void UpdateCorrectionTex(const int w, const int h);
+
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
 	HRESULT ProcessTex(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
 
