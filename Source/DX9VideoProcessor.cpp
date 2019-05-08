@@ -1553,9 +1553,7 @@ void CDX9VideoProcessor::UpdateCorrectionTex(const int w, const int h)
 
 		if (w > 0 && h > 0) {
 			HRESULT hr = m_TexCorrection.Create(m_pD3DDevEx, m_InternalTexFmt, w, h);
-			if (FAILED(hr)) {
-				m_TexCorrection.Release();
-			}
+			DLogIf(FAILED(hr), "CDX9VideoProcessor::UpdateCorrectionTex() : m_TexCorrection.Create() failed with error %s", HR2Str(hr));
 		}
 	}
 }
@@ -1593,9 +1591,7 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 
 		if (!m_TexConvert.pTexture) {
 			hr = m_TexConvert.Create(m_pD3DDevEx, m_InternalTexFmt, m_srcWidth, m_srcHeight);
-			if (FAILED(hr)) {
-				m_TexConvert.Release();
-			}
+			DLogIf(FAILED(hr), "CDX9VideoProcessor::ProcessTex() : m_TexConvert.Create() failed with error %s", HR2Str(hr));
 		}
 
 		if (m_TexConvert.pTexture) {
@@ -1647,8 +1643,7 @@ HRESULT CDX9VideoProcessor::ResizeShader2Pass(IDirect3DTexture9* pTexture, IDire
 			// use only float textures here
 			hr = m_TexResize.Create(m_pD3DDevEx, D3DFMT_A16B16G16R16F,texWidth, texHeight);
 			if (FAILED(hr)) {
-				m_TexResize.Release();
-				DLog(L"CDX9VideoProcessor::ProcessTex() : filed create m_TexResize");
+				DLog(L"CDX9VideoProcessor::ProcessTex() : m_TexResize.Create() failed with error %s", HR2Str(hr));
 				return TextureResize(pTexture, rSrcRect, rDstRect, D3DTEXF_LINEAR);
 			}
 		}

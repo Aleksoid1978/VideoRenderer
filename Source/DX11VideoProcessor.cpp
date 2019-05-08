@@ -904,7 +904,6 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 
 	hr = m_TexConvert.Create(m_pDevice, m_InternalTexFmt, width, height, Tex2D_DefaultShaderRTarget);
 	if (FAILED(hr)) {
-		m_TexConvert.Release();
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : m_TexConvert.Create() failed with error %s", HR2Str(hr));
 		return hr;
 	}
@@ -1232,9 +1231,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 
 		if (!m_TexConvert.pTexture) {
 			hr = m_TexConvert.Create(m_pDevice, m_InternalTexFmt, texWidth, texWidth, Tex2D_DefaultShaderRTarget);
-			if (FAILED(hr)) {
-				m_TexConvert.Release();
-			}
+			DLogIf(FAILED(hr), L"CDX11VideoProcessor::ProcessD3D11() : m_TexConvert.Create() failed with error %s", HR2Str(hr));
 		}
 
 		if (m_TexConvert.pTexture) {
@@ -1465,7 +1462,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 			// use only float textures here
 			hr = m_TexResize.Create(m_pDevice, DXGI_FORMAT_R16G16B16A16_FLOAT, texWidth, texHeight, Tex2D_DefaultShaderRTarget);
 			if (FAILED(hr)) {
-				m_TexResize.Release();
+				DLog(L"CDX11VideoProcessor::ProcessTex() : m_TexResize.Create() failed with error %s", HR2Str(hr));
 				return hr;
 			}
 		}
