@@ -24,6 +24,7 @@
 #include <evr9.h> // for IMFVideoProcessor
 #include "IVideoRenderer.h"
 #include "Helper.h"
+#include "DX9Helper.h"
 #include "FrameStats.h"
 #include "StatsDrawing.h"
 #include "resource.h"
@@ -76,35 +77,6 @@ class CDX9VideoProcessor
 	: public IMFVideoProcessor
 {
 private:
-	struct Tex_t {
-		CComPtr<IDirect3DTexture9> pTexture;
-		CComPtr<IDirect3DSurface9> pSurface;
-		UINT Width  = 0;
-		UINT Height = 0;
-		HRESULT Update() {
-			if (pTexture) {
-				HRESULT hr = pTexture->GetSurfaceLevel(0, &pSurface);
-				if (S_OK == hr) {
-					D3DSURFACE_DESC desc;
-					hr = pTexture->GetLevelDesc(0, &desc);
-					if (S_OK == hr) {
-						Width  = desc.Width;
-						Height = desc.Height;
-						return S_OK;
-					}
-				}
-				return hr;
-			}
-			return E_ABORT;
-		}
-		void Release() {
-			pSurface.Release();
-			pTexture.Release();
-			Width  = 0;
-			Height = 0;
-		}
-	};
-
 	long m_nRefCount = 1;
 	CMpcVideoRenderer* m_pFilter = nullptr;
 

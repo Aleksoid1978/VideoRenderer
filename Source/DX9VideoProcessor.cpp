@@ -1330,8 +1330,6 @@ HRESULT CDX9VideoProcessor::FillBlack()
 
 void CDX9VideoProcessor::SetVideoRect(const CRect& videoRect)
 {
-	HRESULT hr;
-
 	if (videoRect.Size() != m_videoRect.Size()) {
 		UpdateCorrectionTex(videoRect.Width(), videoRect.Height());
 	}
@@ -1554,8 +1552,8 @@ void CDX9VideoProcessor::UpdateCorrectionTex(const int w, const int h)
 		m_TexCorrection.Release();
 
 		if (w > 0 && h > 0) {
-			HRESULT hr = m_pD3DDevEx->CreateTexture(w, h, 1, D3DUSAGE_RENDERTARGET, m_InternalTexFmt, D3DPOOL_DEFAULT, &m_TexCorrection.pTexture, nullptr);
-			if (FAILED(hr) || FAILED(m_TexCorrection.Update())) {
+			HRESULT hr = m_TexCorrection.Create(m_pD3DDevEx, m_InternalTexFmt, w, h);
+			if (FAILED(hr)) {
 				m_TexCorrection.Release();
 			}
 		}
@@ -1594,8 +1592,8 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 	if (m_pPSConvertColor && m_PSConvColorData.bEnable) {
 
 		if (!m_TexConvert.pTexture) {
-			hr = m_pD3DDevEx->CreateTexture(m_srcWidth, m_srcHeight, 1, D3DUSAGE_RENDERTARGET, m_InternalTexFmt, D3DPOOL_DEFAULT, &m_TexConvert.pTexture, nullptr);
-			if (FAILED(hr) || FAILED(m_TexConvert.Update())) {
+			hr = m_TexConvert.Create(m_pD3DDevEx, m_InternalTexFmt, m_srcWidth, m_srcHeight);
+			if (FAILED(hr)) {
 				m_TexConvert.Release();
 			}
 		}
@@ -1647,8 +1645,8 @@ HRESULT CDX9VideoProcessor::ResizeShader2Pass(IDirect3DTexture9* pTexture, IDire
 
 		if (!m_TexResize.pTexture) {
 			// use only float textures here
-			hr = m_pD3DDevEx->CreateTexture(texWidth, texHeight, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A16B16G16R16F, D3DPOOL_DEFAULT, &m_TexResize.pTexture, nullptr);
-			if (FAILED(hr) || FAILED(m_TexResize.Update())) {
+			hr = m_TexResize.Create(m_pD3DDevEx, D3DFMT_A16B16G16R16F,texWidth, texHeight);
+			if (FAILED(hr)) {
 				m_TexResize.Release();
 				DLog(L"CDX9VideoProcessor::ProcessTex() : filed create m_TexResize");
 				return TextureResize(pTexture, rSrcRect, rDstRect, D3DTEXF_LINEAR);

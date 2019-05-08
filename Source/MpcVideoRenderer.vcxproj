@@ -88,6 +88,7 @@
     <ClInclude Include="CustomAllocator.h" />
     <ClInclude Include="DX11Helper.h" />
     <ClInclude Include="DX11VideoProcessor.h" />
+    <ClInclude Include="DX9Helper.h" />
     <ClInclude Include="DX9VideoProcessor.h" />
     <ClInclude Include="FrameStats.h" />
     <ClInclude Include="Helper.h" />

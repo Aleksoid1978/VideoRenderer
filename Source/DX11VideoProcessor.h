@@ -27,8 +27,6 @@
 #include <strmif.h>
 #include <d3d11.h>
 #include <d3d11_1.h>
-#include <d2d1.h>
-#include <dwrite.h>
 #include <evr9.h> // for IMFVideoProcessor
 #include <DirectXMath.h>
 #include "IVideoRenderer.h"
