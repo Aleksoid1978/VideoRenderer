@@ -59,7 +59,8 @@
 
 #define QI(i) (riid == __uuidof(i)) ? GetInterface((i*)this, ppv) :
 
-#define ALIGN(x, a) (((x)+(a)-1)&~((a)-1))
+#define ALIGN(x, a)           __ALIGN_MASK(x,(decltype(x))(a)-1)
+#define __ALIGN_MASK(x, mask) (((x)+(mask))&~(mask))
 
 DEFINE_GUID(MEDIASUBTYPE_Y8,    0x20203859, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 DEFINE_GUID(MEDIASUBTYPE_Y800,  0x30303859, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
