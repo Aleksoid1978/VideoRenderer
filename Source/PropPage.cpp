@@ -167,7 +167,7 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				return (LRESULT)1;
 			}
 			if (nID == IDC_CHECK5) {
-				m_SetsPP.bVPScaling = IsDlgButtonChecked(IDC_CHECK6) == BST_CHECKED;
+				m_SetsPP.bVPScaling = IsDlgButtonChecked(IDC_CHECK5) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}

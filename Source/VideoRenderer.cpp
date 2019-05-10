@@ -98,6 +98,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (S_OK == *phr) {
 			m_DX11_VP.SetShowStats(m_Sets.bShowStats);
 			m_DX11_VP.SetDeintDouble(m_Sets.bDeintDouble);
+			m_DX11_VP.SetVPScaling(m_Sets.bVPScaling);
 			m_DX11_VP.SetUpscaling(m_Sets.iUpscaling);
 			m_DX11_VP.SetDownscaling(m_Sets.iDownscaling);
 			DLog(L"Direct3D11 initialization successfully!");
@@ -110,6 +111,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	if (S_OK == *phr) {
 		m_DX9_VP.SetShowStats(m_Sets.bShowStats);
 		m_DX9_VP.SetDeintDouble(m_Sets.bDeintDouble);
+		m_DX9_VP.SetVPScaling(m_Sets.bVPScaling);
 		m_DX9_VP.SetUpscaling(m_Sets.iUpscaling);
 		m_DX9_VP.SetDownscaling(m_Sets.iDownscaling);
 		m_DX9_VP.SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
@@ -767,7 +769,6 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 {
 	m_Sets.bUseD3D11   = setings.bUseD3D11;
 	m_Sets.iSurfaceFmt = setings.iSurfaceFmt;
-	m_Sets.bVPScaling  = setings.bVPScaling;
 	m_Sets.iSwapEffect = setings.iSwapEffect;
 
 	CAutoLock cRendererLock(&m_RendererLock);
@@ -788,6 +789,15 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 			m_DX9_VP.SetDeintDouble(setings.bDeintDouble);
 		}
 		m_Sets.bDeintDouble = setings.bDeintDouble;
+	}
+
+	if (setings.bVPScaling != m_Sets.bVPScaling) {
+		if (m_bUsedD3D11) {
+			m_DX11_VP.SetVPScaling(setings.bVPScaling);
+		} else {
+			m_DX9_VP.SetVPScaling(setings.bVPScaling);
+		}
+		m_Sets.bVPScaling = setings.bVPScaling;
 	}
 
 	if (setings.iUpscaling != m_Sets.iUpscaling) {

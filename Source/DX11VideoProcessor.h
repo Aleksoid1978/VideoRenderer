@@ -48,6 +48,7 @@ private:
 
 	bool m_bDeintDouble = false;
 	bool m_bShowStats   = false;
+	bool m_bVPScaling   = true;
 	bool m_bInterpolateAt50pct = true;
 	int  m_iSwapEffect  = SWAPEFFECT_Discard;
 
@@ -216,7 +217,8 @@ public:
 	HRESULT GetVPInfo(CStringW& str);
 
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
-	void SetShowStats(bool value) { m_bShowStats = value; };
+	void SetShowStats(bool value)   { m_bShowStats   = value; };
+	void SetVPScaling(bool value)   { m_bVPScaling   = value; }
 	void SetUpscaling(int value);
 	void SetDownscaling(int value);
 	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
