@@ -1497,6 +1497,13 @@ void CDX9VideoProcessor::SetUpscaling(int value)
 
 };
 
+void CDX9VideoProcessor::SetVPScaling(bool value)
+{
+	m_bVPScaling = value;
+
+	UpdateVideoTex();
+}
+
 void CDX9VideoProcessor::SetDownscaling(int value)
 {
 	struct {

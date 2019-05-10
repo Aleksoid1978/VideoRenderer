@@ -1664,6 +1664,13 @@ HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 	return S_OK;
 }
 
+void CDX11VideoProcessor::SetVPScaling(bool value)
+{
+	m_bVPScaling = value;
+
+	//UpdateVideoTex(); //TODO
+}
+
 void CDX11VideoProcessor::SetUpscaling(int value)
 {
 	struct {

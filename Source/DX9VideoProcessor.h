@@ -230,7 +230,7 @@ public:
 
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; }
 	void SetShowStats(bool value)   { m_bShowStats   = value; }
-	void SetVPScaling(bool value)   { m_bVPScaling   = value; }
+	void SetVPScaling(bool value);
 	void SetUpscaling(int value);
 	void SetDownscaling(int value);
 	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
