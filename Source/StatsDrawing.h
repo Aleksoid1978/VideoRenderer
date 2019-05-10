@@ -49,7 +49,7 @@ public:
 
 		Graphics   graphics(hdc);
 		FontFamily fontFamily(L"Consolas");
-		Font       font(&fontFamily, 20, FontStyleRegular, UnitPixel);
+		Font       font(&fontFamily, 18, FontStyleRegular, UnitPixel);
 		PointF     pointF(5.0f, 5.0f);
 		SolidBrush solidBrush(Color(255, 255, 255));
 

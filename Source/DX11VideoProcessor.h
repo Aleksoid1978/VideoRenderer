@@ -130,6 +130,9 @@ private:
 	CRect m_videoRect;
 	CRect m_windowRect;
 
+	CRect m_srcRenderRect;
+	CRect m_dstRenderRect;
+
 	HWND m_hWnd = nullptr;
 	UINT m_nCurrentAdapter = -1;
 

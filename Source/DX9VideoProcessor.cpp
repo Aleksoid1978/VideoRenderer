@@ -1271,17 +1271,17 @@ HRESULT CDX9VideoProcessor::Render(int field)
 	m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
 
 	if (!m_videoRect.IsRectEmpty()) {
-		CRect rSrcRect(m_srcRect);
-		CRect rDstRect(m_videoRect);
+		m_srcRenderRect = m_srcRect;
+		m_dstRenderRect = m_videoRect;
 		D3DSURFACE_DESC desc = {};
 		if (S_OK == pBackBuffer->GetDesc(&desc)) {
-			ClipToSurface(desc.Width, desc.Height, rSrcRect, rDstRect);
+			ClipToSurface(desc.Width, desc.Height, m_srcRenderRect, m_dstRenderRect);
 		}
 
 		if (m_pDXVA2_VP) {
-			hr = ProcessDXVA2(pBackBuffer, rSrcRect, rDstRect, m_FieldDrawn == 2);
+			hr = ProcessDXVA2(pBackBuffer, m_srcRenderRect, m_dstRenderRect, m_FieldDrawn == 2);
 		} else {
-			hr = ProcessTex(pBackBuffer, rSrcRect, rDstRect);
+			hr = ProcessTex(pBackBuffer, m_srcRenderRect, m_dstRenderRect);
 		}
 
 		if (S_OK == hr && m_bShowStats) {
@@ -1826,6 +1826,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 		str.Append(L" GPU");
 	}
 	str.Append(m_strStatsStatic2);
+	str.AppendFormat(L"\nScaling       : %dx%d -> %dx%d", m_srcRenderRect.Width(), m_srcRenderRect.Height(), m_dstRenderRect.Width(), m_dstRenderRect.Height());
 	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
 	str.AppendFormat(L"\nCopyTime:%3llu ms, RenderTime:%3llu ms",

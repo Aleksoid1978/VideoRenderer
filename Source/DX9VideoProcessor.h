@@ -138,6 +138,9 @@ private:
 	CRect m_videoRect;
 	CRect m_windowRect;
 
+	CRect m_srcRenderRect;
+	CRect m_dstRenderRect;
+
 	CComPtr<IDirect3DTexture9> m_pOSDTexture;
 	CComPtr<IDirect3DSurface9> m_pMemOSDSurface;
 
