@@ -1828,7 +1828,20 @@ HRESULT CDX9VideoProcessor::DrawStats()
 		str.Append(L" GPU");
 	}
 	str.Append(m_strStatsStatic2);
-	str.AppendFormat(L"\nScaling       : %dx%d -> %dx%d", m_srcRenderRect.Width(), m_srcRenderRect.Height(), m_dstRenderRect.Width(), m_dstRenderRect.Height());
+
+	const int srcW = m_srcRenderRect.Width();
+	const int srcH = m_srcRenderRect.Height();
+	const int dstW = m_dstRenderRect.Width();
+	const int dstH = m_dstRenderRect.Height();
+	str.AppendFormat(L"\nScaling       : %dx%d -> %dx%d", srcW, srcH, dstW, dstH);
+	if (srcW != dstW || srcH != dstH) {
+		if (m_pDXVA2_VP && m_bVPScaling) {
+			str.Append(L" DXVA2");
+		} else {
+			str.Append(L" PS 3.0");
+		}
+	}
+
 	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
 	str.AppendFormat(L"\nCopyTime:%3llu ms, RenderTime:%3llu ms",
