@@ -1701,7 +1701,7 @@ HRESULT CDX9VideoProcessor::ResizeShader2Pass(IDirect3DTexture9* pTexture, IDire
 		else {
 			// no resize
 			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-			hr = TextureResize(m_pSrcVideoTexture, rSrcRect, rDstRect, D3DTEXF_POINT);
+			hr = TextureResize(pTexture, rSrcRect, rDstRect, D3DTEXF_POINT);
 		}
 	}
 
