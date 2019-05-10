@@ -373,6 +373,7 @@ void CDX9VideoProcessor::ReleaseVP()
 	m_pDXVA2_VP.Release();
 
 	m_pSrcVideoTexture.Release();
+	m_TexVideo.Release();
 	m_TexConvert.Release();
 	m_TexCorrection.Release();
 	m_TexResize.Release();
@@ -1010,6 +1011,8 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// DXVA2 Video Processor
 	if (FmtConvParams->DXVA2Format != D3DFMT_UNKNOWN && InitializeDXVA2VP(FmtConvParams->DXVA2Format, biWidth, biHeight, false)) {
+		UpdateVideoTex();
+
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_ST2084));
 		}
@@ -1546,6 +1549,15 @@ HRESULT CDX9VideoProcessor::DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const 
 	return hr;
 }
 
+void CDX9VideoProcessor::UpdateVideoTex()
+{
+	if (m_bVPScaling) {
+		m_TexVideo.Release();
+	} else {
+		m_TexVideo.Create(m_pD3DDevEx, m_InternalTexFmt, m_SurfaceWidth, m_SurfaceHeight);
+	}
+}
+
 void CDX9VideoProcessor::UpdateCorrectionTex(const int w, const int h)
 {
 	if (m_pPSCorrection) {
@@ -1565,16 +1577,24 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 	HRESULT hr = S_OK;
 
 	if (m_pPSCorrection && m_TexCorrection.pTexture) {
-		CRect VPRect(0, 0, m_TexCorrection.Width, m_TexCorrection.Height);
-
-		hr = DXVA2VPPass(m_TexCorrection.pSurface, rSrcRect, rDstRect, second);
-
+		CRect rCorrection(0, 0, m_TexCorrection.Width, m_TexCorrection.Height);
+		if (m_bVPScaling) {
+			hr = DXVA2VPPass(m_TexCorrection.pSurface, rSrcRect, rCorrection, second);
+		} else {
+			hr = DXVA2VPPass(m_TexVideo.pSurface, rSrcRect, rSrcRect, second);
+			hr = ResizeShader2Pass(m_TexVideo.pTexture, m_TexCorrection.pSurface, rSrcRect, rCorrection);
+		}
 		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 		hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
-		hr = TextureResize(m_TexCorrection.pTexture, VPRect, rDstRect, D3DTEXF_POINT);
+		hr = TextureResize(m_TexCorrection.pTexture, rCorrection, rDstRect, D3DTEXF_POINT);
 		m_pD3DDevEx->SetPixelShader(nullptr);
 	} else {
-		hr = DXVA2VPPass(pRenderTarget, rSrcRect, rDstRect, second);
+		if (m_bVPScaling) {
+			hr = DXVA2VPPass(pRenderTarget, rSrcRect, rDstRect, second);
+		} else {
+			hr = DXVA2VPPass(m_TexVideo.pSurface, rSrcRect, rSrcRect, second);
+			hr = ResizeShader2Pass(m_TexVideo.pTexture, pRenderTarget, rSrcRect, rDstRect);
+		}
 	}
 
 	return hr;
