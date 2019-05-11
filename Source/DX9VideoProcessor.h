@@ -163,6 +163,8 @@ private:
 	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleY;
 	CComPtr<IDirect3DPixelShader9> m_pShaderDownscaleX;
 	CComPtr<IDirect3DPixelShader9> m_pShaderDownscaleY;
+	const wchar_t* m_strShaderUpscale   = nullptr;
+	const wchar_t* m_strShaderDownscale = nullptr;
 
 	CRenderStats m_RenderStats;
 

@@ -85,6 +85,8 @@ private:
 	CComPtr<ID3D11PixelShader> m_pShaderUpscaleY;
 	CComPtr<ID3D11PixelShader> m_pShaderDownscaleX;
 	CComPtr<ID3D11PixelShader> m_pShaderDownscaleY;
+	const wchar_t* m_strShaderUpscale   = nullptr;
+	const wchar_t* m_strShaderDownscale = nullptr;
 
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;

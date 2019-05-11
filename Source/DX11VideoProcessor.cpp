@@ -242,8 +242,11 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pVideoDevice.Release();
 
 	m_pPSConvertColor.Release();
+
 	m_pShaderUpscaleX.Release();
 	m_pShaderUpscaleY.Release();
+	m_strShaderUpscale   = nullptr;
+	m_strShaderDownscale = nullptr;
 
 	m_pVideoContext.Release();
 
@@ -1676,11 +1679,12 @@ void CDX11VideoProcessor::SetUpscaling(int value)
 	struct {
 		UINT shaderX;
 		UINT shaderY;
+		wchar_t* const description;
 	} static const resIDs[UPSCALE_COUNT] = {
-		{IDF_PSH11_RESIZER_MITCHELL4_X, IDF_PSH11_RESIZER_MITCHELL4_Y},
-		{IDF_PSH11_RESIZER_CATMULL4_X,  IDF_PSH11_RESIZER_CATMULL4_Y },
-		{IDF_PSH11_RESIZER_LANCZOS2_X,  IDF_PSH11_RESIZER_LANCZOS2_Y },
-		{IDF_PSH11_RESIZER_LANCZOS3_X,  IDF_PSH11_RESIZER_LANCZOS3_Y },
+		{IDF_PSH11_RESIZER_MITCHELL4_X, IDF_PSH11_RESIZER_MITCHELL4_Y, L"Mitchell-Netravali"},
+		{IDF_PSH11_RESIZER_CATMULL4_X,  IDF_PSH11_RESIZER_CATMULL4_Y , L"Catmull-Rom"       },
+		{IDF_PSH11_RESIZER_LANCZOS2_X,  IDF_PSH11_RESIZER_LANCZOS2_Y , L"Lanczos2"          },
+		{IDF_PSH11_RESIZER_LANCZOS3_X,  IDF_PSH11_RESIZER_LANCZOS3_Y , L"Lanczos3"          },
 	};
 
 	if (value < 0 || value >= UPSCALE_COUNT) {
@@ -1694,7 +1698,7 @@ void CDX11VideoProcessor::SetUpscaling(int value)
 
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, resIDs[value].shaderX));
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, resIDs[value].shaderY));
-
+	m_strShaderUpscale = resIDs[value].description;
 };
 
 void CDX11VideoProcessor::SetDownscaling(int value)
@@ -1702,12 +1706,13 @@ void CDX11VideoProcessor::SetDownscaling(int value)
 	struct {
 		UINT shaderX;
 		UINT shaderY;
+		wchar_t* const description;
 	} static const resIDs[DOWNSCALE_COUNT] = {
-		{IDF_PSH11_DOWNSCALER_BOX_X,      IDF_PSH11_DOWNSCALER_BOX_Y     },
-		{IDF_PSH11_DOWNSCALER_BILINEAR_X, IDF_PSH11_DOWNSCALER_BILINEAR_Y},
-		{IDF_PSH11_DOWNSCALER_HAMMING_X,  IDF_PSH11_DOWNSCALER_HAMMING_Y },
-		{IDF_PSH11_DOWNSCALER_BICUBIC_X,  IDF_PSH11_DOWNSCALER_BICUBIC_Y },
-		{IDF_PSH11_DOWNSCALER_LANCZOS_X,  IDF_PSH11_DOWNSCALER_LANCZOS_Y }
+		{IDF_PSH11_DOWNSCALER_BOX_X,      IDF_PSH11_DOWNSCALER_BOX_Y     , L"Box"     },
+		{IDF_PSH11_DOWNSCALER_BILINEAR_X, IDF_PSH11_DOWNSCALER_BILINEAR_Y, L"Bilinear"},
+		{IDF_PSH11_DOWNSCALER_HAMMING_X,  IDF_PSH11_DOWNSCALER_HAMMING_Y , L"Hamming" },
+		{IDF_PSH11_DOWNSCALER_BICUBIC_X,  IDF_PSH11_DOWNSCALER_BICUBIC_Y , L"Bicubic" },
+		{IDF_PSH11_DOWNSCALER_LANCZOS_X,  IDF_PSH11_DOWNSCALER_LANCZOS_Y , L"Lanczos" }
 	};
 
 	if (value < 0 || value >= DOWNSCALE_COUNT) {
@@ -1721,6 +1726,7 @@ void CDX11VideoProcessor::SetDownscaling(int value)
 
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleX, resIDs[value].shaderX));
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, resIDs[value].shaderY));
+	m_strShaderDownscale = resIDs[value].description;
 };
 
 void CDX11VideoProcessor::UpdateStatsStatic()
@@ -1763,10 +1769,16 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	const int dstH = m_dstRenderRect.Height();
 	str.AppendFormat(L"\nScaling       : %dx%d -> %dx%d", srcW, srcH, dstW, dstH);
 	if (srcW != dstW || srcH != dstH) {
-		if (m_pVideoProcessor && m_bVPScaling) {
-			str.Append(L" DXVA2");
+		if (m_pVideoProcessor /*TODO:&& m_bVPScaling*/) {
+			str.Append(L" D3D11");
 		} else {
-			str.Append(L" PS 3.0");
+			const int k = m_bInterpolateAt50pct ? 2 : 1;
+			const wchar_t* strX = (srcW > k * dstW) ? m_strShaderDownscale : m_strShaderUpscale;
+			const wchar_t* strY = (srcH > k * dstH) ? m_strShaderDownscale : m_strShaderUpscale;
+			str.AppendFormat(L" %s", strX);
+			if (strY != strX) {
+				str.AppendFormat(L"/%s", strY);
+			}
 		}
 	}
 
