@@ -46,6 +46,64 @@ struct PS_COLOR_TRANSFORM {
 	DirectX::XMFLOAT4 cm_c;
 };
 
+HRESULT TextureBlt11(
+	ID3D11DeviceContext* pDeviceContext,
+	ID3D11Texture2D* pRenderTarget,
+	ID3D11VertexShader* pVertexShader,
+	ID3D11PixelShader* pPixelShader,
+	ID3D11ShaderResourceView* pShaderResourceViews,
+	ID3D11SamplerState* pSampler,
+	ID3D11Buffer* pConstantBuffer,
+	ID3D11Buffer* pVertexBuffer)
+{
+	ASSERT(pDeviceContext);
+	ASSERT(pRenderTarget);
+	ASSERT(pShaderResourceViews);
+
+	const UINT Stride = sizeof(VERTEX);
+	const UINT Offset = 0;
+
+	ID3D11Device* pDevice;
+	pDeviceContext->GetDevice(&pDevice);
+
+	ID3D11RenderTargetView* pRenderTargetView;
+	HRESULT hr = pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+	if (FAILED(hr)) {
+		DLog(L"TextureBlt11() : CreateRenderTargetView() failed with error %s", HR2Str(hr));
+		return hr;
+	}
+
+	D3D11_TEXTURE2D_DESC RTDesc;
+	pRenderTarget->GetDesc(&RTDesc);
+
+	D3D11_VIEWPORT VP;
+	VP.Width = (FLOAT)RTDesc.Width;
+	VP.Height = (FLOAT)RTDesc.Height;
+	VP.MinDepth = 0.0f;
+	VP.MaxDepth = 1.0f;
+	VP.TopLeftX = 0;
+	VP.TopLeftY = 0;
+	pDeviceContext->RSSetViewports(1, &VP);
+
+	// Set resources
+	pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
+	pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+	pDeviceContext->VSSetShader(pVertexShader, nullptr, 0);
+	pDeviceContext->PSSetShader(pPixelShader, nullptr, 0);
+	pDeviceContext->PSSetShaderResources(0, 1, &pShaderResourceViews);
+	pDeviceContext->PSSetSamplers(0, 1, &pSampler);
+	pDeviceContext->PSSetConstantBuffers(0, pConstantBuffer ? 1 : 0, &pConstantBuffer);
+	pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	pDeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &Stride, &Offset);
+
+	// Draw textured quad onto render target
+	pDeviceContext->Draw(6, 0);
+
+	pRenderTargetView->Release();
+
+	return hr;
+}
+
 // CDX11VideoProcessor
 
 static UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAdapter)
@@ -1309,42 +1367,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 	}
 
 	if (m_pPSConvertColor && m_TexConvert.pTexture) {
-		const UINT Stride = sizeof(VERTEX);
-		const UINT Offset = 0;
-
-		ID3D11RenderTargetView* pRenderTargetView;
-		hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
-		if (FAILED(hr)) {
-			return hr;
-		}
-
-		D3D11_TEXTURE2D_DESC RTDesc;
-		pRenderTarget->GetDesc(&RTDesc);
-
-		D3D11_VIEWPORT VP;
-		VP.Width = static_cast<FLOAT>(RTDesc.Width);
-		VP.Height = static_cast<FLOAT>(RTDesc.Height);
-		VP.MinDepth = 0.0f;
-		VP.MaxDepth = 1.0f;
-		VP.TopLeftX = 0;
-		VP.TopLeftY = 0;
-		m_pDeviceContext->RSSetViewports(1, &VP);
-
-		// Set resources
-		m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
-		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-		m_pDeviceContext->PSSetShader(m_pPSConvertColor, nullptr, 0);
-		m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexConvert.pShaderResource);
-		m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
-		m_pDeviceContext->PSSetConstantBuffers(0, 0, nullptr);
-		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &Stride, &Offset);
-
-		// Draw textured quad onto render target
-		m_pDeviceContext->Draw(6, 0);
-
-		pRenderTargetView->Release();
+		TextureBlt11(m_pDeviceContext, pRenderTarget, m_pVS_Simple, m_pPSConvertColor, m_TexConvert.pShaderResource, m_pSamplerPoint, nullptr, m_pVertexBuffer);
 	}
 
 	return hr;
@@ -1352,41 +1375,10 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 
 HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
-	const UINT Stride = sizeof(VERTEX);
-	const UINT Offset = 0;
+	HRESULT hr = S_OK;
 
 	// Convert color pass
-
-	ID3D11RenderTargetView* pRenderTargetView;
-	HRESULT hr = m_pDevice->CreateRenderTargetView(m_TexConvert.pTexture, nullptr, &pRenderTargetView);
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	D3D11_VIEWPORT VP;
-	VP.Width = static_cast<FLOAT>(m_TextureWidth);
-	VP.Height = static_cast<FLOAT>(m_TextureHeight);
-	VP.MinDepth = 0.0f;
-	VP.MaxDepth = 1.0f;
-	VP.TopLeftX = 0;
-	VP.TopLeftY = 0;
-	m_pDeviceContext->RSSetViewports(1, &VP);
-
-	// Set resources
-	m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
-	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-	m_pDeviceContext->PSSetShader(m_pPSConvertColor, nullptr, 0);
-	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pShaderResource1);
-	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
-	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
-	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
-
-	// Draw textured quad onto render target
-	m_pDeviceContext->Draw(6, 0);
-
-	pRenderTargetView->Release();
+	TextureBlt11(m_pDeviceContext, m_TexConvert.pTexture, m_pVS_Simple, m_pPSConvertColor, m_pShaderResource1, m_pSamplerPoint, m_PSConvColorData.pConstants, m_pFullFrameVertexBuffer);
 
 	// Resize
 
@@ -1404,30 +1396,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 
 	// no resize
 	if (!resizerX && !resizerY) {
-		hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
-		if (FAILED(hr)) {
-			return hr;
-		}
-
-		VP.Width = (FLOAT)RTDesc.Width;
-		VP.Height = (FLOAT)RTDesc.Height;
-		m_pDeviceContext->RSSetViewports(1, &VP);
-
-		// Set resources
-		m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
-		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-		m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
-		m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexConvert.pShaderResource);
-		m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
-		m_pDeviceContext->PSSetConstantBuffers(0, 0, nullptr);
-		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &Stride, &Offset);
-
-		// Draw textured quad onto render target
-		m_pDeviceContext->Draw(6, 0);
-
-		pRenderTargetView->Release();
+		hr = TextureBlt11(m_pDeviceContext, pRenderTarget, m_pVS_Simple, m_pPS_Simple, m_TexConvert.pShaderResource, m_pSamplerPoint, nullptr, m_pVertexBuffer);
 
 		return hr;
 	}
@@ -1471,86 +1440,17 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 		}
 
 		// First resize pass
-		hr = m_pDevice->CreateRenderTargetView(m_TexResize.pTexture, nullptr, &pRenderTargetView);
-		if (FAILED(hr)) {
-			return hr;
-		}
-
-		VP.Width = static_cast<FLOAT>(texWidth);
-		VP.Height = static_cast<FLOAT>(texHeight);
-		m_pDeviceContext->RSSetViewports(1, &VP);
-
-		// Set resources
-		m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
-		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-		m_pDeviceContext->PSSetShader(resizerX, nullptr, 0);
-		m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexConvert.pShaderResource);
-		m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
-		m_pDeviceContext->PSSetConstantBuffers(0, 1, &pResizeConstants);
-		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
-
-		// Draw textured quad onto render target
-		m_pDeviceContext->Draw(6, 0);
-
-		pRenderTargetView->Release();
+		hr = TextureBlt11(m_pDeviceContext, m_TexResize.pTexture, m_pVS_Simple, resizerX, m_TexConvert.pShaderResource, m_pSamplerPoint, pResizeConstants, m_pFullFrameVertexBuffer);
 
 		// Second resize pass
-		hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
-		if (FAILED(hr)) {
-			return hr;
-		}
-
-		VP.Width = (FLOAT)RTDesc.Width;
-		VP.Height = (FLOAT)RTDesc.Height;
-		m_pDeviceContext->RSSetViewports(1, &VP);
-
-		// Set resources
-		m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
-		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-		m_pDeviceContext->PSSetShader(resizerY, nullptr, 0);
-		m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexResize.pShaderResource);
-		m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
-		m_pDeviceContext->PSSetConstantBuffers(0, 1, &pResizeConstants);
-		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &Stride, &Offset);
-
-		// Draw textured quad onto render target
-		m_pDeviceContext->Draw(6, 0);
-
-		pRenderTargetView->Release();
+		hr = TextureBlt11(m_pDeviceContext, pRenderTarget, m_pVS_Simple, resizerY, m_TexResize.pShaderResource, m_pSamplerPoint, pResizeConstants, m_pVertexBuffer);
 	}
 	else {
-		hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
-		if (FAILED(hr)) {
-			return hr;
-		}
-
-		VP.Width = (FLOAT)RTDesc.Width;
-		VP.Height = (FLOAT)RTDesc.Height;
-		m_pDeviceContext->RSSetViewports(1, &VP);
-
-		// Set resources
-		m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
-		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 		if (resizerX) {
-			m_pDeviceContext->PSSetShader(resizerX, nullptr, 0);
+			hr = TextureBlt11(m_pDeviceContext, pRenderTarget, m_pVS_Simple, resizerX, m_TexConvert.pShaderResource, m_pSamplerPoint, pResizeConstants, m_pVertexBuffer);
 		} else { // if (resizerY)
-			m_pDeviceContext->PSSetShader(resizerY, nullptr, 0);
+			hr = TextureBlt11(m_pDeviceContext, pRenderTarget, m_pVS_Simple, resizerY, m_TexConvert.pShaderResource, m_pSamplerPoint, pResizeConstants, m_pVertexBuffer);
 		}
-		m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexConvert.pShaderResource);
-		m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
-		m_pDeviceContext->PSSetConstantBuffers(0, 1, &pResizeConstants);
-		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &Stride, &Offset);
-
-		// Draw textured quad onto render target
-		m_pDeviceContext->Draw(6, 0);
-
-		pRenderTargetView->Release();
 	}
 
 	return S_OK;
