@@ -299,10 +299,13 @@ void CDX11VideoProcessor::ReleaseDevice()
 	ReleaseVP();
 	m_pVideoDevice.Release();
 
+	m_pOSDTex2D.Release();
 	m_pPSConvertColor.Release();
 
 	m_pShaderUpscaleX.Release();
 	m_pShaderUpscaleY.Release();
+	m_pShaderDownscaleX.Release();
+	m_pShaderDownscaleY.Release();
 	m_strShaderUpscale   = nullptr;
 	m_strShaderDownscale = nullptr;
 
@@ -315,6 +318,19 @@ void CDX11VideoProcessor::ReleaseDevice()
 	SAFE_RELEASE(m_pFullFrameVertexBuffer);
 
 	m_pDeviceContext.Release();
+
+#if (0 && _DEBUG)
+	if (m_pDevice) {
+		ID3D11Debug* pDebugDevice = nullptr;
+		HRESULT hr2 = m_pDevice->QueryInterface(__uuidof(ID3D11Debug), (void**)(&pDebugDevice));
+		if (S_OK == hr2) {
+			hr2 = pDebugDevice->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+			ASSERT(S_OK == hr2);
+		}
+		SAFE_RELEASE(pDebugDevice);
+	}
+#endif
+
 	m_pDevice.Release();
 }
 
