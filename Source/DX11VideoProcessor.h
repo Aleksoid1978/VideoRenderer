@@ -62,8 +62,9 @@ private:
 
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_CPU; // Used for sofware decoder
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;     // Used if D3D11 VP is active
-	Tex2DShader_t m_TexConvert; // Used for additional conversions. Always uses m_InternalTexFmt.
-	Tex2DShader_t m_TexResize;
+	Tex2DShader_t m_TexConvert;    // for result of color conversion
+	Tex2DShader_t m_TexCorrection; // for result of correction after D3D11 VP
+	Tex2DShader_t m_TexResize;     // for intermediate result of two-pass resize
 
 	// D3D11 Video Processor
 	CComPtr<ID3D11VideoContext> m_pVideoContext;
@@ -76,6 +77,8 @@ private:
 	ID3D11ShaderResourceView* m_pShaderResource1 = nullptr;
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;
 	ID3D11Buffer* m_pVertexBuffer = nullptr;
+
+	CComPtr<ID3D11PixelShader> m_pPSCorrection;
 	CComPtr<ID3D11PixelShader> m_pPSConvertColor;
 	struct {
 		bool bEnable = false;
@@ -213,7 +216,7 @@ public:
 
 	void GetSourceRect(CRect& sourceRect) { sourceRect = m_srcRect; }
 	void GetVideoRect(CRect& videoRect) { videoRect = m_videoRect; }
-	void SetVideoRect(const CRect& videoRect) { m_videoRect = videoRect; }
+	void SetVideoRect(const CRect& videoRect);
 	HRESULT SetWindowRect(const CRect& windowRect);
 
 	HRESULT GetVideoSize(long *pWidth, long *pHeight);
@@ -230,8 +233,11 @@ public:
 	void SetSwapEffect(int value) { m_iSwapEffect = value; }
 
 private:
+	void UpdateCorrectionTex(const int w, const int h);
+
 	HRESULT ProcessD3D11(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const bool second);
 	HRESULT ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
+
 	void UpdateStatsStatic();
 	HRESULT DrawStats(ID3D11Texture2D* pRenderTarget);
 

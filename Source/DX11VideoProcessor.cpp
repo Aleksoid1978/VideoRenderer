@@ -276,6 +276,8 @@ void CDX11VideoProcessor::ReleaseVP()
 
 	m_pSrcTexture2D_CPU.Release();
 	m_pSrcTexture2D.Release();
+
+	m_TexCorrection.Release();
 	m_TexConvert.Release();
 	m_TexResize.Release();
 
@@ -300,6 +302,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pVideoDevice.Release();
 
 	m_pOSDTex2D.Release();
+	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
 
 	m_pShaderUpscaleX.Release();
@@ -714,6 +717,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcPitch = -m_srcPitch;
 	}
 
+	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
 	m_PSConvColorData.bEnable = false;
 
@@ -723,13 +727,13 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 		if (S_OK == InitializeD3D11VP(FmtConvParams->VP11Format, biWidth, biHeight, false)) {
 			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CORRECTION_ST2084));
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_ST2084));
 			}
 			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CORRECTION_HLG));
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_HLG));
 			}
 			else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CORRECTION_YCGCO));
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_YCGCO));
 			}
 
 			m_srcSubType = SubType;
@@ -753,6 +757,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		else {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_COLOR));
 		}
+
+		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
 
 		mp_csp_params csp_params;
 		set_colorspace(m_srcExFmt, csp_params.color);
@@ -1291,6 +1297,18 @@ HRESULT CDX11VideoProcessor::FillBlack()
 	return hr;
 }
 
+void CDX11VideoProcessor::UpdateCorrectionTex(const int w, const int h)
+{
+	if (m_pPSCorrection) {
+		m_TexCorrection.Release();
+
+		if (w > 0 && h > 0) {
+			HRESULT hr = m_TexCorrection.Create(m_pDevice, m_InternalTexFmt, w, h, Tex2D_DefaultShaderRTarget);
+			DLogIf(FAILED(hr), "CDX11VideoProcessor::UpdateCorrectionTex() : m_TexCorrection.Create() failed with error %s", HR2Str(hr));
+		}
+	}
+}
+
 HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const bool second)
 {
 	HRESULT hr = S_OK;
@@ -1298,23 +1316,9 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 	ID3D11Texture2D* pTexture = pRenderTarget;
 	CRect VPRect(pDstRect);
 
-	if (m_pPSConvertColor) {
-		// check intermediate texture
-		const UINT texWidth  = VPRect.Width();
-		const UINT texHeight = VPRect.Height();
-		if (texWidth != m_TexConvert.desc.Width || texHeight != m_TexConvert.desc.Height) {
-			m_TexConvert.Release(); // need new texture
-		}
-
-		if (!m_TexConvert.pTexture) {
-			hr = m_TexConvert.Create(m_pDevice, m_InternalTexFmt, texWidth, texWidth, Tex2D_DefaultShaderRTarget);
-			DLogIf(FAILED(hr), L"CDX11VideoProcessor::ProcessD3D11() : m_TexConvert.Create() failed with error %s", HR2Str(hr));
-		}
-
-		if (m_TexConvert.pTexture) {
-			VPRect.SetRect(0, 0, texWidth, texHeight);
-			pTexture = m_TexConvert.pTexture;
-		}
+	if (m_pPSCorrection && m_TexCorrection.pTexture) {
+		VPRect.SetRect(0, 0, m_TexCorrection.desc.Width, m_TexCorrection.desc.Height);
+		pTexture = m_TexCorrection.pTexture;
 	}
 
 	if (!second) {
@@ -1331,7 +1335,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 		m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, TRUE, pSrcRect);
 
 		// Dest rect
-		if (!pDstRect || m_pPSConvertColor && m_TexConvert.pTexture) {
+		if (!pDstRect || m_pPSCorrection && m_TexCorrection.pTexture) {
 			m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, FALSE, nullptr);
 		} else {
 			m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, pDstRect);
@@ -1382,8 +1386,8 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 		DLog(L"CDX11VideoProcessor::ProcessD3D11() : VideoProcessorBlt() failed with error %s", HR2Str(hr));
 	}
 
-	if (m_pPSConvertColor && m_TexConvert.pTexture) {
-		TextureBlt11(m_pDeviceContext, pRenderTarget, m_pVS_Simple, m_pPSConvertColor, m_TexConvert.pShaderResource, m_pSamplerPoint, nullptr, m_pVertexBuffer);
+	if (m_pPSCorrection && m_TexCorrection.pTexture) {
+		TextureBlt11(m_pDeviceContext, pRenderTarget, m_pVS_Simple, m_pPSCorrection, m_TexCorrection.pShaderResource, m_pSamplerPoint, nullptr, m_pVertexBuffer);
 	}
 
 	return hr;
@@ -1470,6 +1474,15 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 	}
 
 	return S_OK;
+}
+
+void CDX11VideoProcessor::SetVideoRect(const CRect& videoRect)
+{
+	if (videoRect.Size() != m_videoRect.Size()) {
+		UpdateCorrectionTex(videoRect.Width(), videoRect.Height());
+	}
+
+	m_videoRect = videoRect;
 }
 
 HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
