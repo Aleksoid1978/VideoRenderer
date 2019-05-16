@@ -46,6 +46,49 @@ struct PS_COLOR_TRANSFORM {
 	DirectX::XMFLOAT4 cm_c;
 };
 
+HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer, const UINT srcW, const UINT srcH, const RECT& srcRect, const UINT dstW, const UINT dstH, const RECT& dstRect)
+{
+	ASSERT(*ppVertexBuffer == nullptr);
+	ASSERT(ppVertexBuffer == nullptr);
+
+	const float src_dx = 1.0f / srcW;
+	const float src_dy = 1.0f / srcH;
+	const float src_l = src_dx * srcRect.left;
+	const float src_r = src_dx * srcRect.right;
+	const float src_t = src_dy * srcRect.top;
+	const float src_b = src_dy * srcRect.bottom;
+
+	const float dst_dx = 2.0f / dstW;
+	const float dst_dy = 2.0f / dstH;
+	const float dst_l = dst_dx * dstRect.left   - 1.0f;
+	const float dst_r = dst_dx * dstRect.right  - 1.0f;
+	const float dst_t = dst_dy * dstRect.top    - 1.0f;
+	const float dst_b = dst_dy * dstRect.bottom - 1.0f;
+
+	VERTEX Vertices[6] = {
+		// Vertices for drawing whole texture
+		// |\
+		// |_\ lower left triangle
+		{ DirectX::XMFLOAT3(dst_l, dst_t, 0), DirectX::XMFLOAT2(src_l, src_b) },
+		{ DirectX::XMFLOAT3(dst_l, dst_b, 0), DirectX::XMFLOAT2(src_l, src_t) },
+		{ DirectX::XMFLOAT3(dst_r, dst_t, 0), DirectX::XMFLOAT2(src_r, src_b) },
+		// ___
+		// \ |
+		//  \| upper right triangle
+		{ DirectX::XMFLOAT3(dst_r, dst_t, 0), DirectX::XMFLOAT2(src_r, src_b) },
+		{ DirectX::XMFLOAT3(dst_l, dst_b, 0), DirectX::XMFLOAT2(src_l, src_t) },
+		{ DirectX::XMFLOAT3(dst_r, dst_b, 0), DirectX::XMFLOAT2(src_r, src_t) },
+	};
+
+	D3D11_BUFFER_DESC BufferDesc = { sizeof(Vertices), D3D11_USAGE_DEFAULT, D3D11_BIND_VERTEX_BUFFER, 0, 0, 0 };
+	D3D11_SUBRESOURCE_DATA InitData = { Vertices, 0, 0 };
+
+	HRESULT hr = pDevice->CreateBuffer(&BufferDesc, &InitData, ppVertexBuffer);
+	DLogIf(FAILED(hr), L"MakeVertexBuffer() : CreateBuffer() failed with error %s", HR2Str(hr));
+
+	return hr;
+}
+
 HRESULT TextureBlt11(
 	ID3D11DeviceContext* pDeviceContext,
 	ID3D11Texture2D* pRenderTarget,
@@ -414,28 +457,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	SampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateSamplerState(&SampDesc, &m_pSamplerPoint));
 
-	VERTEX Vertices[6] = {
-		// Vertices for drawing whole texture
-		// |\
-		// |_\ lower left triangle
-		{ DirectX::XMFLOAT3(-1, -1, 0), DirectX::XMFLOAT2(0, 1) },
-		{ DirectX::XMFLOAT3(-1, +1, 0), DirectX::XMFLOAT2(0, 0) },
-		{ DirectX::XMFLOAT3(+1, -1, 0), DirectX::XMFLOAT2(1, 1) },
-		// ___
-		// \ |
-		//  \| upper right triangle
-		{ DirectX::XMFLOAT3(+1, -1, 0), DirectX::XMFLOAT2(1, 1) },
-		{ DirectX::XMFLOAT3(-1, +1, 0), DirectX::XMFLOAT2(0, 0) },
-		{ DirectX::XMFLOAT3(+1, +1, 0), DirectX::XMFLOAT2(1, 0) },
-	};
-	D3D11_BUFFER_DESC BufferDesc;
-	ZeroMemory(&BufferDesc, sizeof(BufferDesc));
-	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	BufferDesc.ByteWidth = sizeof(Vertices);
-	BufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	BufferDesc.CPUAccessFlags = 0;
-	D3D11_SUBRESOURCE_DATA InitData = { Vertices, 0, 0 };
-	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pFullFrameVertexBuffer));
+	EXECUTE_ASSERT(S_OK == CreateVertexBuffer(m_pDevice, &m_pFullFrameVertexBuffer, 1, 1, CRect(0, 0, 1, 1), 1, 1, CRect(0, 0, 1, 1)));
 
 	LPVOID data;
 	DWORD size;
@@ -965,7 +987,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 	}
 
 	if (!m_windowRect.IsRectEmpty()) {
-		SetVertices(m_windowRect.Width(), m_windowRect.Height());
+		CreateVertexBuffer(m_pDevice, &m_pVertexBuffer, m_TextureWidth, m_TextureHeight, m_srcRect, m_windowRect.Width(), m_windowRect.Height(), m_videoRect);
 	}
 
 	DLog(L"CDX11VideoProcessor::InitializeD3D11VP() completed successfully");
@@ -1025,61 +1047,10 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 	m_srcHeight     = height;
 
 	if (!m_windowRect.IsRectEmpty()) {
-		SetVertices(m_windowRect.Width(), m_windowRect.Height());
+		CreateVertexBuffer(m_pDevice, &m_pVertexBuffer, m_TextureWidth, m_TextureHeight, m_srcRect, m_windowRect.Width(), m_windowRect.Height(), m_videoRect);
 	}
 
 	DLog(L"CDX11VideoProcessor::InitializeTexVP() completed successfully");
-
-	return S_OK;
-}
-
-HRESULT CDX11VideoProcessor::SetVertices(const UINT dstW, const UINT dstH)
-{
-	CheckPointer(m_pSrcTexture2D_CPU, E_POINTER);
-
-	const float src_dx = 1.0f / m_TextureWidth;
-	const float src_dy = 1.0f / m_TextureHeight;
-	const float src_l = src_dx * m_srcRect.left;
-	const float src_r = src_dx * m_srcRect.right;
-	const float src_t = src_dy * m_srcRect.top;
-	const float src_b = src_dy * m_srcRect.bottom;
-
-	const float dst_dx = 2.0f / dstW;
-	const float dst_dy = 2.0f / dstH;
-	const float dst_l = dst_dx * m_videoRect.left   - 1.0f;
-	const float dst_r = dst_dx * m_videoRect.right  - 1.0f;
-	const float dst_t = dst_dy * m_videoRect.top    - 1.0f;
-	const float dst_b = dst_dy * m_videoRect.bottom - 1.0f;
-
-	VERTEX Vertices[6] = {
-		// Vertices for drawing whole texture
-		// |\
-		// |_\ lower left triangle
-		{ DirectX::XMFLOAT3(dst_l, dst_t, 0), DirectX::XMFLOAT2(src_l, src_b) },
-		{ DirectX::XMFLOAT3(dst_l, dst_b, 0), DirectX::XMFLOAT2(src_l, src_t) },
-		{ DirectX::XMFLOAT3(dst_r, dst_t, 0), DirectX::XMFLOAT2(src_r, src_b) },
-		// ___
-		// \ |
-		//  \| upper right triangle
-		{ DirectX::XMFLOAT3(dst_r, dst_t, 0), DirectX::XMFLOAT2(src_r, src_b) },
-		{ DirectX::XMFLOAT3(dst_l, dst_b, 0), DirectX::XMFLOAT2(src_l, src_t) },
-		{ DirectX::XMFLOAT3(dst_r, dst_b, 0), DirectX::XMFLOAT2(src_r, src_t) },
-	};
-
-	D3D11_BUFFER_DESC BufferDesc;
-	ZeroMemory(&BufferDesc, sizeof(BufferDesc));
-	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	BufferDesc.ByteWidth = sizeof(Vertices);
-	BufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	BufferDesc.CPUAccessFlags = 0;
-	D3D11_SUBRESOURCE_DATA InitData = { Vertices, 0, 0 };
-
-	SAFE_RELEASE(m_pVertexBuffer);
-	HRESULT hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pVertexBuffer);
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::SetVertices() : CreateBuffer() failed with error %s", HR2Str(hr));
-		return hr;
-	}
 
 	return S_OK;
 }
@@ -1300,12 +1271,13 @@ HRESULT CDX11VideoProcessor::FillBlack()
 void CDX11VideoProcessor::UpdateCorrectionTex(const int w, const int h)
 {
 	if (m_pPSCorrection) {
-		m_TexCorrection.Release();
-
-		if (w > 0 && h > 0) {
+		if (w != m_TexCorrection.desc.Width || h != m_TexCorrection.desc.Width) {
 			HRESULT hr = m_TexCorrection.Create(m_pDevice, m_InternalTexFmt, w, h, Tex2D_DefaultShaderRTarget);
 			DLogIf(FAILED(hr), "CDX11VideoProcessor::UpdateCorrectionTex() : m_TexCorrection.Create() failed with error %s", HR2Str(hr));
 		}
+		// else do nothing
+	} else {
+		m_TexCorrection.Release();
 	}
 }
 
@@ -1478,10 +1450,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 
 void CDX11VideoProcessor::SetVideoRect(const CRect& videoRect)
 {
-	if (videoRect.Size() != m_videoRect.Size()) {
-		UpdateCorrectionTex(videoRect.Width(), videoRect.Height());
-	}
-
+	UpdateCorrectionTex(videoRect.Width(), videoRect.Height());
 	m_videoRect = videoRect;
 }
 
@@ -1491,7 +1460,7 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 
 	const UINT w = m_windowRect.Width();
 	const UINT h = m_windowRect.Height();
-	HRESULT hr = SetVertices(w, h);
+	HRESULT hr = CreateVertexBuffer(m_pDevice, &m_pVertexBuffer, m_TextureWidth, m_TextureHeight, m_srcRect, w, h, m_videoRect);
 
 	if (m_pDXGISwapChain1) {
 		hr = m_pDXGISwapChain1->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);

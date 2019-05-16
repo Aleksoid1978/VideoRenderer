@@ -200,7 +200,6 @@ public:
 
 	HRESULT InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height, bool only_update_surface);
 	HRESULT InitializeTexVP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height);
-	HRESULT SetVertices(const UINT dstW, const UINT dstH);
 
 	BOOL GetAlignmentSize(const CMediaType& mt, SIZE& Size);
 

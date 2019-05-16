@@ -1335,10 +1335,7 @@ HRESULT CDX9VideoProcessor::FillBlack()
 
 void CDX9VideoProcessor::SetVideoRect(const CRect& videoRect)
 {
-	if (videoRect.Size() != m_videoRect.Size()) {
-		UpdateCorrectionTex(videoRect.Width(), videoRect.Height());
-	}
-
+	UpdateCorrectionTex(videoRect.Width(), videoRect.Height());
 	m_videoRect = videoRect;
 }
 
@@ -1575,12 +1572,13 @@ void CDX9VideoProcessor::UpdateVideoTex()
 void CDX9VideoProcessor::UpdateCorrectionTex(const int w, const int h)
 {
 	if (m_pPSCorrection) {
-		m_TexCorrection.Release();
-
-		if (w > 0 && h > 0) {
+		if (w != m_TexCorrection.Width || h != m_TexCorrection.Width) {
 			HRESULT hr = m_TexCorrection.Create(m_pD3DDevEx, m_InternalTexFmt, w, h);
 			DLogIf(FAILED(hr), "CDX9VideoProcessor::UpdateCorrectionTex() : m_TexCorrection.Create() failed with error %s", HR2Str(hr));
 		}
+		// else do nothing
+	} else {
+		m_TexCorrection.Release();
 	}
 }
 
