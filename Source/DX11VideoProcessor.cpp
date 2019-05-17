@@ -48,8 +48,8 @@ struct PS_COLOR_TRANSFORM {
 
 HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer, const UINT srcW, const UINT srcH, const RECT& srcRect, const UINT dstW, const UINT dstH, const RECT& dstRect)
 {
+	ASSERT(ppVertexBuffer);
 	ASSERT(*ppVertexBuffer == nullptr);
-	ASSERT(ppVertexBuffer == nullptr);
 
 	const float src_dx = 1.0f / srcW;
 	const float src_dy = 1.0f / srcH;
@@ -987,6 +987,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 	}
 
 	if (!m_windowRect.IsRectEmpty()) {
+		SAFE_RELEASE(m_pVertexBuffer);
 		CreateVertexBuffer(m_pDevice, &m_pVertexBuffer, m_TextureWidth, m_TextureHeight, m_srcRect, m_windowRect.Width(), m_windowRect.Height(), m_videoRect);
 	}
 
@@ -1460,6 +1461,7 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 
 	const UINT w = m_windowRect.Width();
 	const UINT h = m_windowRect.Height();
+	SAFE_RELEASE(m_pVertexBuffer);
 	HRESULT hr = CreateVertexBuffer(m_pDevice, &m_pVertexBuffer, m_TextureWidth, m_TextureHeight, m_srcRect, w, h, m_videoRect);
 
 	if (m_pDXGISwapChain1) {
