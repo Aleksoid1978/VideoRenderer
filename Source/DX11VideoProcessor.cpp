@@ -344,7 +344,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	ReleaseVP();
 	m_pVideoDevice.Release();
 
-	m_pOSDTex2D.Release();
+	m_TexOSD.Release();
 	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
 
@@ -549,9 +549,8 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	}
 #endif
 
-	m_pOSDTex2D.Release();
-	HRESULT hr2 = CreateTex2D(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DefaultShaderRTargetGDI, &m_pOSDTex2D);
-	ASSERT(S_OK == hr2);
+	HRESULT hr2 = m_TexOSD.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DefaultShaderRTargetGDI);
+	ASSERT(S_OK == hr);
 
 	return hr;
 }
@@ -1446,6 +1445,8 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 		}
 	}
 
+	SAFE_RELEASE(pResizeConstants);
+
 	return S_OK;
 }
 
@@ -1690,7 +1691,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	str.AppendFormat(L"\nSync offset   : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
 
 	CComPtr<IDXGISurface1> pDxgiSurface1;
-	HRESULT hr = m_pOSDTex2D->QueryInterface(IID_IDXGISurface1, (void**)&pDxgiSurface1);
+	HRESULT hr = m_TexOSD.pTexture->QueryInterface(IID_IDXGISurface1, (void**)&pDxgiSurface1);
 	if (S_OK == hr) {
 		HDC hdc;
 		hr = pDxgiSurface1->GetDC(FALSE, &hdc);
@@ -1718,19 +1719,6 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			VP.TopLeftY = STATS_Y;
 			m_pDeviceContext->RSSetViewports(1, &VP);
 
-			D3D11_SHADER_RESOURCE_VIEW_DESC ShaderDesc = {};
-			ShaderDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-			ShaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-			ShaderDesc.Texture2D.MostDetailedMip = 0; // = Texture2D desc.MipLevels - 1
-			ShaderDesc.Texture2D.MipLevels = 1;       // = Texture2D desc.MipLevels
-			ID3D11ShaderResourceView* pShaderResource = nullptr;
-			hr = m_pDevice->CreateShaderResourceView(m_pOSDTex2D, &ShaderDesc, &pShaderResource);
-			if (FAILED(hr)) {
-				DLog(L"CDX11VideoProcessor::DrawStats() : CreateShaderResourceView() failed with error %s", HR2Str(hr));
-				pRenderTargetView->Release();
-				return hr;
-			}
-
 			D3D11_BLEND_DESC bdesc = {};
 			bdesc.RenderTarget[0].BlendEnable = TRUE;
 			bdesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
@@ -1744,7 +1732,6 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			hr = m_pDevice->CreateBlendState(&bdesc, &pBlendState);
 			if (FAILED(hr)) {
 				DLog(L"CDX11VideoProcessor::DrawStats() : CreateBlendState() failed with error %s", HR2Str(hr));
-				pShaderResource->Release();
 				pRenderTargetView->Release();
 				return hr;
 			}
@@ -1756,7 +1743,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
-			m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
+			m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexOSD.pShaderResource.p);
 			m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
 			m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
@@ -1764,7 +1751,6 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			// Draw textured quad onto render target
 			m_pDeviceContext->Draw(6, 0);
 
-			pShaderResource->Release();
 			pRenderTargetView->Release();
 		}
 	}

@@ -144,7 +144,7 @@ private:
 	DWORD m_VendorId = 0;
 	CString m_strAdapterDescription;
 
-	CComPtr<ID3D11Texture2D> m_pOSDTex2D;
+	Tex2D_t m_TexOSD;
 
 	CRenderStats m_RenderStats;
 
