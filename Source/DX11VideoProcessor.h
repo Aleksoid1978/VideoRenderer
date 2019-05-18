@@ -60,8 +60,8 @@ private:
 	CComPtr<ID3D11PixelShader>  m_pPS_Simple;
 	CComPtr<ID3D11InputLayout>  m_pInputLayout;
 
-	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_CPU; // Used for sofware decoder
-	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;     // Used if D3D11 VP is active
+	CComPtr<ID3D11Texture2D> m_pSrcTexture2D; // Used if D3D11 VP is active
+	Tex2D_t m_TexSrcCPU;     // for copy of frame from system memory (software decoding)
 	Tex2D_t m_TexConvert;    // for result of color conversion
 	Tex2D_t m_TexCorrection; // for result of correction after D3D11 VP
 	Tex2D_t m_TexResize;     // for intermediate result of two-pass resize
@@ -74,7 +74,6 @@ private:
 	CComPtr<ID3D11VideoProcessorInputView> m_pInputView;
 
 	// D3D11 Shader Video Processor
-	ID3D11ShaderResourceView* m_pShaderResource1 = nullptr;
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;
 	ID3D11Buffer* m_pVertexBuffer = nullptr;
 

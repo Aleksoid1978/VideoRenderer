@@ -315,10 +315,8 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_pFilter->ResetStreamingTimes2();
 	m_RenderStats.Reset();
 
-	SAFE_RELEASE(m_pShaderResource1);
-
-	m_pSrcTexture2D_CPU.Release();
 	m_pSrcTexture2D.Release();
+	m_TexSrcCPU.Release();
 
 	m_TexCorrection.Release();
 	m_TexConvert.Release();
@@ -619,12 +617,12 @@ BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 {
 	if (InitMediaType(&mt)) {
-		if (m_pSrcTexture2D_CPU) {
+		if (m_TexSrcCPU.pTexture) {
 			UINT RowPitch = 0;
 			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-			if (SUCCEEDED(m_pDeviceContext->Map(m_pSrcTexture2D_CPU, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource))) {
+			if (SUCCEEDED(m_pDeviceContext->Map(m_TexSrcCPU.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource))) {
 				RowPitch = mappedResource.RowPitch;
-				m_pDeviceContext->Unmap(m_pSrcTexture2D_CPU, 0);
+				m_pDeviceContext->Unmap(m_TexSrcCPU.pTexture, 0);
 			}
 
 			if (RowPitch) {
@@ -841,7 +839,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 			DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : texture size less than frame size!");
 			return E_FAIL;
 		}
-		m_pSrcTexture2D_CPU.Release();
+		m_TexSrcCPU.Release();
 		m_pInputView.Release();
 		m_pSrcTexture2D.Release();
 		m_pVideoProcessor.Release();
@@ -931,9 +929,9 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 		return hr;
 	}
 
-	hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWrite, &m_pSrcTexture2D_CPU);
+	hr = m_TexSrcCPU.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicDecoderWrite);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateTex2D(m_pSrcTexture2D_CPU) failed with error %s", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : m_TexSrcCPU.Create() failed with error %s", HR2Str(hr));
 		return hr;
 	}
 
@@ -1001,26 +999,15 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 
 	HRESULT hr = S_OK;
 
-	hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWrite, &m_pSrcTexture2D_CPU);
+	hr = m_TexSrcCPU.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWrite);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateTex2D(m_pSrcTexture2D_CPU) failed with error %s", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::InitializeTexVP() : m_TexSrcCPU.Create() failed with error %s", HR2Str(hr));
 		return hr;
 	}
 
 	hr = m_TexConvert.Create(m_pDevice, m_InternalTexFmt, width, height, Tex2D_DefaultShaderRTarget);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : m_TexConvert.Create() failed with error %s", HR2Str(hr));
-		return hr;
-	}
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC ShaderDesc;
-	ShaderDesc.Format = dxgiFormat;
-	ShaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	ShaderDesc.Texture2D.MostDetailedMip = 0; // = Texture2D desc.MipLevels - 1
-	ShaderDesc.Texture2D.MipLevels = 1;       // = Texture2D desc.MipLevels
-	hr = m_pDevice->CreateShaderResourceView(m_pSrcTexture2D_CPU, &ShaderDesc, &m_pShaderResource1);
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateShaderResourceView() failed with error %s", HR2Str(hr));
 		return hr;
 	}
 
@@ -1175,15 +1162,15 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
 			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-			hr = m_pDeviceContext->Map(m_pSrcTexture2D_CPU, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+			hr = m_pDeviceContext->Map(m_TexSrcCPU.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 			if (SUCCEEDED(hr)) {
 				ASSERT(m_pConvertFn);
 				BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
 				m_pConvertFn(m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, src, m_srcPitch);
-				m_pDeviceContext->Unmap(m_pSrcTexture2D_CPU, 0);
+				m_pDeviceContext->Unmap(m_TexSrcCPU.pTexture, 0);
 				if (m_pVideoProcessor) {
 					// ID3D11VideoProcessor does not use textures with D3D11_CPU_ACCESS_WRITE flag
-					m_pDeviceContext->CopyResource(m_pSrcTexture2D, m_pSrcTexture2D_CPU);
+					m_pDeviceContext->CopyResource(m_pSrcTexture2D, m_TexSrcCPU.pTexture);
 				}
 			}
 		}
@@ -1196,7 +1183,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 HRESULT CDX11VideoProcessor::Render(int field)
 {
-	CheckPointer(m_pSrcTexture2D_CPU, E_FAIL);
+	CheckPointer(m_TexSrcCPU.pTexture, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
 
 	int64_t ticks = GetPreciseTick();
@@ -1370,7 +1357,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 	HRESULT hr = S_OK;
 
 	// Convert color pass
-	TextureBlt11(m_pDeviceContext, m_TexConvert.pTexture, m_pVS_Simple, m_pPSConvertColor, m_pShaderResource1, m_pSamplerPoint, m_PSConvColorData.pConstants, m_pFullFrameVertexBuffer);
+	TextureBlt11(m_pDeviceContext, m_TexConvert.pTexture, m_pVS_Simple, m_pPSConvertColor, m_TexSrcCPU.pShaderResource, m_pSamplerPoint, m_PSConvColorData.pConstants, m_pFullFrameVertexBuffer);
 
 	// Resize
 

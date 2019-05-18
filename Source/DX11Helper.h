@@ -28,6 +28,7 @@ enum Tex2DType {
 	Tex2D_DefaultRTarget,
 	Tex2D_DefaultShaderRTarget,
 	Tex2D_DefaultShaderRTargetGDI,
+	Tex2D_DynamicDecoderWrite, // experimental
 	Tex2D_DynamicShaderWrite,
 	Tex2D_StagingRead,
 };
@@ -67,6 +68,12 @@ inline HRESULT CreateTex2D(ID3D11Device* pDevice, const DXGI_FORMAT format, cons
 		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
+		break;
+	case Tex2D_DynamicDecoderWrite:
+		desc.Usage = D3D11_USAGE_DYNAMIC;
+		desc.BindFlags = D3D11_BIND_DECODER; // experimental
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		desc.MiscFlags = 0;
 		break;
 	case Tex2D_DynamicShaderWrite:
 		desc.Usage = D3D11_USAGE_DYNAMIC;
