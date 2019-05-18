@@ -62,9 +62,9 @@ private:
 
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D_CPU; // Used for sofware decoder
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D;     // Used if D3D11 VP is active
-	Tex2DShader_t m_TexConvert;    // for result of color conversion
-	Tex2DShader_t m_TexCorrection; // for result of correction after D3D11 VP
-	Tex2DShader_t m_TexResize;     // for intermediate result of two-pass resize
+	Tex2D_t m_TexConvert;    // for result of color conversion
+	Tex2D_t m_TexCorrection; // for result of correction after D3D11 VP
+	Tex2D_t m_TexResize;     // for intermediate result of two-pass resize
 
 	// D3D11 Video Processor
 	CComPtr<ID3D11VideoContext> m_pVideoContext;
