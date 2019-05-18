@@ -89,7 +89,7 @@ struct Tex2D_t
 {
 	CComPtr<ID3D11Texture2D> pTexture;
 	D3D11_TEXTURE2D_DESC desc = {};
-	ID3D11ShaderResourceView* pShaderResource = nullptr;
+	CComPtr<ID3D11ShaderResourceView> pShaderResource;
 
 	HRESULT Create(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type) {
 		Release();
@@ -116,7 +116,7 @@ struct Tex2D_t
 	}
 
 	virtual void Release() {
-		SAFE_RELEASE(pShaderResource);
+		pShaderResource.Release();
 		pTexture.Release();
 		desc = {};
 	}
