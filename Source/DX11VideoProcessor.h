@@ -75,7 +75,6 @@ private:
 
 	// D3D11 Shader Video Processor
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;
-	ID3D11Buffer* m_pVertexBuffer = nullptr;
 
 	CComPtr<ID3D11PixelShader> m_pPSCorrection;
 	CComPtr<ID3D11PixelShader> m_pPSConvertColor;
@@ -232,6 +231,10 @@ public:
 
 private:
 	void UpdateCorrectionTex(const int w, const int h);
+
+	HRESULT TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
+							const CRect& srcRect, const CRect& destRect,
+							ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer);
 
 	HRESULT ProcessD3D11(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const bool second);
 	HRESULT ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);

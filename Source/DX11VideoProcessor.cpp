@@ -84,14 +84,14 @@ HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
 	D3D11_SUBRESOURCE_DATA InitData = { Vertices, 0, 0 };
 
 	HRESULT hr = pDevice->CreateBuffer(&BufferDesc, &InitData, ppVertexBuffer);
-	DLogIf(FAILED(hr), L"MakeVertexBuffer() : CreateBuffer() failed with error %s", HR2Str(hr));
+	DLogIf(FAILED(hr), L"CreateVertexBuffer() : CreateBuffer() failed with error %s", HR2Str(hr));
 
 	return hr;
 }
 
-HRESULT TextureBlt11(
+void TextureBlt11(
 	ID3D11DeviceContext* pDeviceContext,
-	ID3D11Texture2D* pRenderTarget,
+	ID3D11RenderTargetView* pRenderTargetView, FLOAT RTWidth, FLOAT RTHeight,
 	ID3D11VertexShader* pVertexShader,
 	ID3D11PixelShader* pPixelShader,
 	ID3D11ShaderResourceView* pShaderResourceViews,
@@ -100,28 +100,15 @@ HRESULT TextureBlt11(
 	ID3D11Buffer* pVertexBuffer)
 {
 	ASSERT(pDeviceContext);
-	ASSERT(pRenderTarget);
+	ASSERT(pRenderTargetView);
 	ASSERT(pShaderResourceViews);
 
 	const UINT Stride = sizeof(VERTEX);
 	const UINT Offset = 0;
 
-	ID3D11Device* pDevice;
-	pDeviceContext->GetDevice(&pDevice);
-
-	ID3D11RenderTargetView* pRenderTargetView;
-	HRESULT hr = pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
-	if (FAILED(hr)) {
-		DLog(L"TextureBlt11() : CreateRenderTargetView() failed with error %s", HR2Str(hr));
-		return hr;
-	}
-
-	D3D11_TEXTURE2D_DESC RTDesc;
-	pRenderTarget->GetDesc(&RTDesc);
-
 	D3D11_VIEWPORT VP;
-	VP.Width = (FLOAT)RTDesc.Width;
-	VP.Height = (FLOAT)RTDesc.Height;
+	VP.Width = RTWidth;
+	VP.Height = RTHeight;
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
 	VP.TopLeftX = 0;
@@ -141,8 +128,28 @@ HRESULT TextureBlt11(
 
 	// Draw textured quad onto render target
 	pDeviceContext->Draw(6, 0);
+}
 
-	pRenderTargetView->Release();
+HRESULT CDX11VideoProcessor::TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& destRect, ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer)
+{
+	CComPtr<ID3D11Buffer> pVertexBuffer;
+	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
+
+	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+	if (FAILED(hr)) {
+		DLog(L"TextureCopyRect() : CreateRenderTargetView() failed with error %s", HR2Str(hr));
+		return hr;
+	}
+
+	D3D11_TEXTURE2D_DESC RTDesc;
+	pRenderTarget->GetDesc(&RTDesc);
+
+	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, RTDesc.Width, RTDesc.Height, destRect);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	TextureBlt11(m_pDeviceContext, pRenderTargetView, (FLOAT)RTDesc.Width, (FLOAT)RTDesc.Height, m_pVS_Simple, pPixelShader, Tex.pShaderResource, m_pSamplerPoint, pConstantBuffer, pVertexBuffer);
 
 	return hr;
 }
@@ -324,7 +331,6 @@ void CDX11VideoProcessor::ReleaseVP()
 
 	SAFE_RELEASE(m_PSConvColorData.pConstants);
 	SAFE_RELEASE(m_pSamplerLinear);
-	SAFE_RELEASE(m_pVertexBuffer);
 
 	m_pInputView.Release();
 	m_pVideoProcessor.Release();
@@ -983,11 +989,6 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 		m_srcHeight = height;
 	}
 
-	if (!m_windowRect.IsRectEmpty()) {
-		SAFE_RELEASE(m_pVertexBuffer);
-		CreateVertexBuffer(m_pDevice, &m_pVertexBuffer, m_TextureWidth, m_TextureHeight, m_srcRect, m_windowRect.Width(), m_windowRect.Height(), m_videoRect);
-	}
-
 	DLog(L"CDX11VideoProcessor::InitializeD3D11VP() completed successfully");
 
 	return S_OK;
@@ -1032,10 +1033,6 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 	m_srcDXGIFormat = dxgiFormat;
 	m_srcWidth      = width;
 	m_srcHeight     = height;
-
-	if (!m_windowRect.IsRectEmpty()) {
-		CreateVertexBuffer(m_pDevice, &m_pVertexBuffer, m_TextureWidth, m_TextureHeight, m_srcRect, m_windowRect.Width(), m_windowRect.Height(), m_videoRect);
-	}
 
 	DLog(L"CDX11VideoProcessor::InitializeTexVP() completed successfully");
 
@@ -1346,7 +1343,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 	}
 
 	if (m_pPSCorrection && m_TexCorrection.pTexture) {
-		TextureBlt11(m_pDeviceContext, pRenderTarget, m_pVS_Simple, m_pPSCorrection, m_TexCorrection.pShaderResource, m_pSamplerPoint, nullptr, m_pVertexBuffer);
+		hr = TextureCopyRect(m_TexCorrection, pRenderTarget, VPRect, pDstRect, m_pPSCorrection, nullptr);
 	}
 
 	return hr;
@@ -1357,7 +1354,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 	HRESULT hr = S_OK;
 
 	// Convert color pass
-	TextureBlt11(m_pDeviceContext, m_TexConvert.pTexture, m_pVS_Simple, m_pPSConvertColor, m_TexSrcCPU.pShaderResource, m_pSamplerPoint, m_PSConvColorData.pConstants, m_pFullFrameVertexBuffer);
+	hr = TextureCopyRect(m_TexSrcCPU, m_TexConvert.pTexture, rSrcRect, rSrcRect, m_pPSConvertColor, m_PSConvColorData.pConstants);
 
 	// Resize
 
@@ -1375,7 +1372,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 
 	// no resize
 	if (!resizerX && !resizerY) {
-		hr = TextureBlt11(m_pDeviceContext, pRenderTarget, m_pVS_Simple, m_pPS_Simple, m_TexConvert.pShaderResource, m_pSamplerPoint, nullptr, m_pVertexBuffer);
+		hr = TextureCopyRect(m_TexConvert, pRenderTarget, rSrcRect, rDstRect, m_pPS_Simple, nullptr);
 
 		return hr;
 	}
@@ -1418,17 +1415,18 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 			}
 		}
 
-		// First resize pass
-		hr = TextureBlt11(m_pDeviceContext, m_TexResize.pTexture, m_pVS_Simple, resizerX, m_TexConvert.pShaderResource, m_pSamplerPoint, pResizeConstants, m_pFullFrameVertexBuffer);
+		CRect resizeRect(0, 0, texWidth, texHeight);
 
+		// First resize pass
+		hr = TextureCopyRect(m_TexConvert, m_TexResize.pTexture, rSrcRect, resizeRect, resizerX, pResizeConstants);
 		// Second resize pass
-		hr = TextureBlt11(m_pDeviceContext, pRenderTarget, m_pVS_Simple, resizerY, m_TexResize.pShaderResource, m_pSamplerPoint, pResizeConstants, m_pVertexBuffer);
+		hr = TextureCopyRect(m_TexResize, pRenderTarget, resizeRect, rDstRect, resizerY, pResizeConstants);
 	}
 	else {
 		if (resizerX) {
-			hr = TextureBlt11(m_pDeviceContext, pRenderTarget, m_pVS_Simple, resizerX, m_TexConvert.pShaderResource, m_pSamplerPoint, pResizeConstants, m_pVertexBuffer);
+			hr = TextureCopyRect(m_TexConvert, pRenderTarget, rSrcRect, rDstRect, resizerX, pResizeConstants);
 		} else { // if (resizerY)
-			hr = TextureBlt11(m_pDeviceContext, pRenderTarget, m_pVS_Simple, resizerY, m_TexConvert.pShaderResource, m_pSamplerPoint, pResizeConstants, m_pVertexBuffer);
+			hr = TextureCopyRect(m_TexConvert, pRenderTarget, rSrcRect, rDstRect, resizerY, pResizeConstants);
 		}
 	}
 
@@ -1447,10 +1445,9 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 {
 	m_windowRect = windowRect;
 
+	HRESULT hr = S_OK;
 	const UINT w = m_windowRect.Width();
 	const UINT h = m_windowRect.Height();
-	SAFE_RELEASE(m_pVertexBuffer);
-	HRESULT hr = CreateVertexBuffer(m_pDevice, &m_pVertexBuffer, m_TextureWidth, m_TextureHeight, m_srcRect, w, h, m_videoRect);
 
 	if (m_pDXGISwapChain1) {
 		hr = m_pDXGISwapChain1->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
