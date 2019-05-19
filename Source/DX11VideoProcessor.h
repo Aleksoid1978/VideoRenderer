@@ -239,6 +239,8 @@ private:
 	HRESULT ProcessD3D11(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const bool second);
 	HRESULT ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
 
+	HRESULT ResizeShader2Pass(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
+
 	void UpdateStatsStatic();
 	HRESULT DrawStats(ID3D11Texture2D* pRenderTarget);
 

@@ -107,12 +107,12 @@ void TextureBlt11(
 	const UINT Offset = 0;
 
 	D3D11_VIEWPORT VP;
-	VP.Width = RTWidth;
-	VP.Height = RTHeight;
+	VP.TopLeftX = 0.0f;
+	VP.TopLeftY = 0.0f;
+	VP.Width    = RTWidth;
+	VP.Height   = RTHeight;
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
-	VP.TopLeftX = 0;
-	VP.TopLeftY = 0;
 	pDeviceContext->RSSetViewports(1, &VP);
 
 	// Set resources
@@ -1351,12 +1351,18 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 
 HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
-	HRESULT hr = S_OK;
-
 	// Convert color pass
-	hr = TextureCopyRect(m_TexSrcCPU, m_TexConvert.pTexture, rSrcRect, rSrcRect, m_pPSConvertColor, m_PSConvColorData.pConstants);
+	HRESULT hr = TextureCopyRect(m_TexSrcCPU, m_TexConvert.pTexture, rSrcRect, rSrcRect, m_pPSConvertColor, m_PSConvColorData.pConstants);
 
 	// Resize
+	hr = ResizeShader2Pass(m_TexConvert, pRenderTarget, rSrcRect, rDstRect);
+
+	return hr;
+}
+
+HRESULT CDX11VideoProcessor::ResizeShader2Pass(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
+{
+	HRESULT hr = S_OK;
 
 	D3D11_TEXTURE2D_DESC RTDesc;
 	pRenderTarget->GetDesc(&RTDesc);
@@ -1372,26 +1378,27 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 
 	// no resize
 	if (!resizerX && !resizerY) {
-		hr = TextureCopyRect(m_TexConvert, pRenderTarget, rSrcRect, rDstRect, m_pPS_Simple, nullptr);
+		hr = TextureCopyRect(Tex, pRenderTarget, rSrcRect, rDstRect, m_pPS_Simple, nullptr);
 
 		return hr;
 	}
 
-	ID3D11Buffer* pResizeConstants = nullptr;
-	{
-		const FLOAT constants[][4] = {
-			{(float)m_TextureWidth, (float)m_TextureHeight, 1.0f / m_TextureWidth, 1.0f / m_TextureHeight},
-			{(float)w1 / w2, (float)h1 / h2, 0, 0}
-		};
+	CComPtr<ID3D11Buffer> pResizeConstants;
+	const FLOAT constants[][4] = {
+		{(float)Tex.desc.Width, (float)Tex.desc.Height, 1.0f/Tex.desc.Width, 1.0f/Tex.desc.Height},
+		{(float)w1/w2, (float)h1/h2, 0, 0}
+	};
+	D3D11_BUFFER_DESC BufferDesc = {};
+	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	BufferDesc.ByteWidth = sizeof(constants);
+	BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	BufferDesc.CPUAccessFlags = 0;
+	D3D11_SUBRESOURCE_DATA InitData = { &constants, 0, 0 };
 
-		D3D11_BUFFER_DESC BufferDesc = {};
-		BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		BufferDesc.ByteWidth = sizeof(constants);
-		BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		BufferDesc.CPUAccessFlags = 0;
-		D3D11_SUBRESOURCE_DATA InitData = { &constants, 0, 0 };
-		hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &pResizeConstants);
-		DLogIf(S_OK != hr, L"CDX11VideoProcessor::InitMediaType() : CreateBuffer() failed with error %s", HR2Str(hr));
+	hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &pResizeConstants);
+	if (FAILED(hr)) {
+		DLog(L"CDX11VideoProcessor::ResizeShader2Pass() : CreateBuffer() failed with error %s", HR2Str(hr));
+		return hr;
 	}
 
 	// two pass resize
@@ -1410,7 +1417,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 			// use only float textures here
 			hr = m_TexResize.Create(m_pDevice, DXGI_FORMAT_R16G16B16A16_FLOAT, texWidth, texHeight, Tex2D_DefaultShaderRTarget);
 			if (FAILED(hr)) {
-				DLog(L"CDX11VideoProcessor::ProcessTex() : m_TexResize.Create() failed with error %s", HR2Str(hr));
+				DLog(L"CDX11VideoProcessor::ResizeShader2Pass() : m_TexResize.Create() failed with error %s", HR2Str(hr));
 				return hr;
 			}
 		}
@@ -1418,19 +1425,17 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 		CRect resizeRect(0, 0, texWidth, texHeight);
 
 		// First resize pass
-		hr = TextureCopyRect(m_TexConvert, m_TexResize.pTexture, rSrcRect, resizeRect, resizerX, pResizeConstants);
+		hr = TextureCopyRect(Tex, m_TexResize.pTexture, rSrcRect, resizeRect, resizerX, pResizeConstants);
 		// Second resize pass
 		hr = TextureCopyRect(m_TexResize, pRenderTarget, resizeRect, rDstRect, resizerY, pResizeConstants);
 	}
 	else {
 		if (resizerX) {
-			hr = TextureCopyRect(m_TexConvert, pRenderTarget, rSrcRect, rDstRect, resizerX, pResizeConstants);
+			hr = TextureCopyRect(Tex, pRenderTarget, rSrcRect, rDstRect, resizerX, pResizeConstants);
 		} else { // if (resizerY)
-			hr = TextureCopyRect(m_TexConvert, pRenderTarget, rSrcRect, rDstRect, resizerY, pResizeConstants);
+			hr = TextureCopyRect(Tex, pRenderTarget, rSrcRect, rDstRect, resizerY, pResizeConstants);
 		}
 	}
-
-	SAFE_RELEASE(pResizeConstants);
 
 	return S_OK;
 }
@@ -1695,12 +1700,12 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			pRenderTarget->GetDesc(&RTDesc);
 
 			D3D11_VIEWPORT VP;
+			VP.TopLeftX = STATS_X;
+			VP.TopLeftY = STATS_Y;
 			VP.Width    = STATS_W;
 			VP.Height   = STATS_H;
 			VP.MinDepth = 0.0f;
 			VP.MaxDepth = 1.0f;
-			VP.TopLeftX = STATS_X;
-			VP.TopLeftY = STATS_Y;
 			m_pDeviceContext->RSSetViewports(1, &VP);
 
 			D3D11_BLEND_DESC bdesc = {};
