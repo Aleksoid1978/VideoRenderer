@@ -1265,37 +1265,48 @@ void CDX11VideoProcessor::UpdateCorrectionTex(const int w, const int h)
 	}
 }
 
-HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const RECT* pSrcRect, const RECT* pDstRect, const bool second)
+HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
-	HRESULT hr = S_OK;
-
 	ID3D11Texture2D* pTexture = pRenderTarget;
-	CRect VPRect(pDstRect);
+	CRect VPRect(rDstRect);
 
 	if (m_pPSCorrection && m_TexCorrection.pTexture) {
 		VPRect.SetRect(0, 0, m_TexCorrection.desc.Width, m_TexCorrection.desc.Height);
 		pTexture = m_TexCorrection.pTexture;
 	}
 
+	HRESULT hr = D3D11VPPass(pTexture, rSrcRect, VPRect, second);
+
+	if (m_pPSCorrection && m_TexCorrection.pTexture) {
+		hr = TextureCopyRect(m_TexCorrection, pRenderTarget, VPRect, rDstRect, m_pPSCorrection, nullptr);
+	}
+
+	return hr;
+}
+
+HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
+{
+	// Convert color pass
+	HRESULT hr = TextureCopyRect(m_TexSrcCPU, m_TexConvert.pTexture, rSrcRect, rSrcRect, m_pPSConvertColor, m_PSConvColorData.pConstants);
+
+	// Resize
+	hr = ResizeShader2Pass(m_TexConvert, pRenderTarget, rSrcRect, rDstRect);
+
+	return hr;
+}
+
+HRESULT CDX11VideoProcessor::D3D11VPPass(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
+{
 	if (!second) {
 		// input format
 		m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, m_SampleFormat);
-
 		// Output rate (repeat frames)
 		m_pVideoContext->VideoProcessorSetStreamOutputRate(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_OUTPUT_RATE_NORMAL, TRUE, nullptr);
-
 		// disable automatic video quality by driver
 		m_pVideoContext->VideoProcessorSetStreamAutoProcessingMode(m_pVideoProcessor, 0, FALSE);
 
-		// Source rect
-		m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, TRUE, pSrcRect);
-
-		// Dest rect
-		if (!pDstRect || m_pPSCorrection && m_TexCorrection.pTexture) {
-			m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, FALSE, nullptr);
-		} else {
-			m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, pDstRect);
-		}
+		m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, TRUE, rSrcRect);
+		m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, rDstRect);
 		m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, FALSE, nullptr);
 
 		// filters
@@ -1305,7 +1316,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 		m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_SATURATION, m_VPFilterSettings[3].Enabled, m_VPFilterSettings[3].Level);
 
 		// Output background color (black)
-		static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f};
+		static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 		m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, FALSE, &backgroundColor);
 
 		// Stream color space
@@ -1327,7 +1338,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 	D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc = {};
 	OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
 	CComPtr<ID3D11VideoProcessorOutputView> pOutputView;
-	hr = m_pVideoDevice->CreateVideoProcessorOutputView(pTexture, m_pVideoProcessorEnum, &OutputViewDesc, &pOutputView);
+	HRESULT hr = m_pVideoDevice->CreateVideoProcessorOutputView(pRenderTarget, m_pVideoProcessorEnum, &OutputViewDesc, &pOutputView);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::ProcessD3D11() : CreateVideoProcessorOutputView() failed with error %s", HR2Str(hr));
 		return hr;
@@ -1341,21 +1352,6 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::ProcessD3D11() : VideoProcessorBlt() failed with error %s", HR2Str(hr));
 	}
-
-	if (m_pPSCorrection && m_TexCorrection.pTexture) {
-		hr = TextureCopyRect(m_TexCorrection, pRenderTarget, VPRect, pDstRect, m_pPSCorrection, nullptr);
-	}
-
-	return hr;
-}
-
-HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
-{
-	// Convert color pass
-	HRESULT hr = TextureCopyRect(m_TexSrcCPU, m_TexConvert.pTexture, rSrcRect, rSrcRect, m_pPSConvertColor, m_PSConvColorData.pConstants);
-
-	// Resize
-	hr = ResizeShader2Pass(m_TexConvert, pRenderTarget, rSrcRect, rDstRect);
 
 	return hr;
 }
@@ -1513,7 +1509,7 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	}
 
 	if (m_pVideoContext) {
-		hr = ProcessD3D11(pRGB32Texture2D, rSrcRect, nullptr, false);
+		hr = ProcessD3D11(pRGB32Texture2D, rSrcRect, rDstRect, false);
 	} else {
 		hr = ProcessTex(pRGB32Texture2D, rSrcRect, rDstRect);
 	}
