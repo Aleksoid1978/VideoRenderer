@@ -62,6 +62,7 @@ private:
 
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D; // Used if D3D11 VP is active
 	Tex2D_t m_TexSrcCPU;     // for copy of frame from system memory (software decoding)
+	Tex2D_t m_TexVideo;
 	Tex2D_t m_TexConvert;    // for result of color conversion
 	Tex2D_t m_TexCorrection; // for result of correction after D3D11 VP
 	Tex2D_t m_TexResize;     // for intermediate result of two-pass resize
@@ -230,6 +231,7 @@ public:
 	void SetSwapEffect(int value) { m_iSwapEffect = value; }
 
 private:
+	void UpdateVideoTex();
 	void UpdateCorrectionTex(const int w, const int h);
 
 	HRESULT TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,

@@ -1584,8 +1584,6 @@ void CDX9VideoProcessor::UpdateCorrectionTex(const int w, const int h)
 
 HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
-	// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx
-	ASSERT(m_SrcSamples.Size() == m_DXVA2Samples.size());
 	HRESULT hr = S_OK;
 
 	if (m_pPSCorrection && m_TexCorrection.pTexture) {
@@ -1600,7 +1598,8 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 		hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
 		hr = TextureCopyRect(m_TexCorrection.pTexture, rCorrection, rDstRect, D3DTEXF_POINT);
 		m_pD3DDevEx->SetPixelShader(nullptr);
-	} else {
+	}
+	else {
 		if (m_bVPScaling) {
 			hr = DXVA2VPPass(pRenderTarget, rSrcRect, rDstRect, second);
 		} else {

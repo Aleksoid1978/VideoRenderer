@@ -324,7 +324,7 @@ void CDX11VideoProcessor::ReleaseVP()
 
 	m_pSrcTexture2D.Release();
 	m_TexSrcCPU.Release();
-
+	m_TexVideo.Release();
 	m_TexCorrection.Release();
 	m_TexConvert.Release();
 	m_TexResize.Release();
@@ -751,6 +751,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		// D3D11 VP does not work correctly if RGB32 with odd frame width (source or target) on Nvidia adapters
 
 		if (S_OK == InitializeD3D11VP(FmtConvParams->VP11Format, biWidth, biHeight, false)) {
+			UpdateVideoTex();
+
 			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_ST2084));
 			}
@@ -1252,6 +1254,15 @@ HRESULT CDX11VideoProcessor::FillBlack()
 	return hr;
 }
 
+void CDX11VideoProcessor::UpdateVideoTex()
+{
+	if (m_bVPScaling) {
+		m_TexVideo.Release();
+	} else {
+		m_TexVideo.Create(m_pDevice, m_InternalTexFmt, m_TextureWidth, m_TextureHeight, Tex2D_DefaultShaderRTarget);
+	}
+}
+
 void CDX11VideoProcessor::UpdateCorrectionTex(const int w, const int h)
 {
 	if (m_pPSCorrection) {
@@ -1267,18 +1278,25 @@ void CDX11VideoProcessor::UpdateCorrectionTex(const int w, const int h)
 
 HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
-	ID3D11Texture2D* pTexture = pRenderTarget;
-	CRect VPRect(rDstRect);
+	HRESULT hr = S_OK;
 
 	if (m_pPSCorrection && m_TexCorrection.pTexture) {
-		VPRect.SetRect(0, 0, m_TexCorrection.desc.Width, m_TexCorrection.desc.Height);
-		pTexture = m_TexCorrection.pTexture;
+		CRect rCorrection(0, 0, m_TexCorrection.desc.Width, m_TexCorrection.desc.Height);
+		if (m_bVPScaling) {
+			hr = D3D11VPPass(m_TexCorrection.pTexture, rSrcRect, rCorrection, second);
+		} else {
+			hr = D3D11VPPass(m_TexVideo.pTexture, rSrcRect, rSrcRect, second);
+			hr = ResizeShader2Pass(m_TexVideo, m_TexCorrection.pTexture, rSrcRect, rCorrection);
+		}
+		hr = TextureCopyRect(m_TexCorrection, pRenderTarget, rCorrection, rDstRect, m_pPSCorrection, nullptr);
 	}
-
-	HRESULT hr = D3D11VPPass(pTexture, rSrcRect, VPRect, second);
-
-	if (m_pPSCorrection && m_TexCorrection.pTexture) {
-		hr = TextureCopyRect(m_TexCorrection, pRenderTarget, VPRect, rDstRect, m_pPSCorrection, nullptr);
+	else {
+		if (m_bVPScaling) {
+			hr = D3D11VPPass(pRenderTarget, rSrcRect, rDstRect, second);
+		} else {
+			hr = D3D11VPPass(m_TexVideo.pTexture, rSrcRect, rSrcRect, second);
+			hr = ResizeShader2Pass(m_TexVideo, pRenderTarget, rSrcRect, rDstRect);
+		}
 	}
 
 	return hr;
@@ -1557,7 +1575,7 @@ void CDX11VideoProcessor::SetVPScaling(bool value)
 {
 	m_bVPScaling = value;
 
-	//UpdateVideoTex(); //TODO
+	UpdateVideoTex();
 }
 
 void CDX11VideoProcessor::SetUpscaling(int value)
@@ -1655,7 +1673,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	const int dstH = m_dstRenderRect.Height();
 	str.AppendFormat(L"\nScaling       : %dx%d -> %dx%d", srcW, srcH, dstW, dstH);
 	if (srcW != dstW || srcH != dstH) {
-		if (m_pVideoProcessor /*TODO:&& m_bVPScaling*/) {
+		if (m_pVideoProcessor && m_bVPScaling) {
 			str.Append(L" D3D11");
 		} else {
 			const int k = m_bInterpolateAt50pct ? 2 : 1;
