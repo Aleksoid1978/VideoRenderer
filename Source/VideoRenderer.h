@@ -73,11 +73,12 @@ private:
 	Settings_t m_Sets;
 
 	bool m_bUsedD3D11 = false; // current state
+	FILTER_STATE m_filterState = State_Stopped;
+	int m_iRotation = 0;
 
 	HWND m_hWnd = nullptr;
 	HWND m_hWndParent = nullptr;
 
-	FILTER_STATE m_filterState = State_Stopped;
 	int m_Stepping = 0;
 	REFERENCE_TIME m_rtStartTime = 0;
 
@@ -226,4 +227,5 @@ public:
 	STDMETHODIMP GetInt(LPCSTR field,  int*  value) override;
 
 	STDMETHODIMP SetBool(LPCSTR field, bool  value) override;
+	STDMETHODIMP SetInt(LPCSTR field, int value) override;
 };

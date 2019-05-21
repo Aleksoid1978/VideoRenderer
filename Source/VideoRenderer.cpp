@@ -866,6 +866,10 @@ STDMETHODIMP CMpcVideoRenderer::GetInt(LPCSTR field, int* value)
 		*value = m_filterState;
 		return S_OK;
 	}
+	if (!strcmp(field, "rotation")) {
+		*value = m_iRotation;
+		return S_OK;
+	}
 
 	return E_INVALIDARG;
 }
@@ -882,6 +886,25 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 
 		SaveSettings();
 		return S_OK;
+	}
+
+	return E_INVALIDARG;
+}
+
+STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
+{
+	if (!strcmp(field, "rotation")) {
+		// Allowed angles are multiples of 90.
+		if (value % 90 == 0) {
+			// The allowed rotation angle is reduced to 0, 90, 180, 270.
+			value %= 360;
+			if (value < 0) {
+				value += 360;
+			}
+			m_iRotation = value;
+
+			return S_OK;
+		}
 	}
 
 	return E_INVALIDARG;
