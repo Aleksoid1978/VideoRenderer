@@ -117,8 +117,8 @@ void TextureBlt11(
 
 HRESULT CDX11VideoProcessor::TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& destRect, ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer)
 {
-	CComPtr<ID3D11Buffer> pVertexBuffer;
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
+	CComPtr<ID3D11Buffer> pVertexBuffer;
 
 	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
 	if (FAILED(hr)) {
@@ -136,6 +136,53 @@ HRESULT CDX11VideoProcessor::TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRen
 	VP.TopLeftY = (FLOAT)destRect.top;
 	VP.Width    = (FLOAT)destRect.Width();
 	VP.Height   = (FLOAT)destRect.Height();
+	VP.MinDepth = 0.0f;
+	VP.MaxDepth = 1.0f;
+
+	TextureBlt11(m_pDeviceContext, pRenderTargetView, VP, m_pVS_Simple, pPixelShader, Tex.pShaderResource, m_pSamplerPoint, pConstantBuffer, pVertexBuffer);
+
+	return hr;
+}
+
+HRESULT CDX11VideoProcessor::TextureResizeShader(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, ID3D11PixelShader* pPixelShader)
+{
+	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
+	CComPtr<ID3D11Buffer> pVertexBuffer;
+	CComPtr<ID3D11Buffer> pConstantBuffer;
+
+	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+	if (FAILED(hr)) {
+		DLog(L"TextureResizeShader() : CreateRenderTargetView() failed with error %s", HR2Str(hr));
+		return hr;
+	}
+
+	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	const FLOAT constants[][4] = {
+		{(float)Tex.desc.Width, (float)Tex.desc.Height, 1.0f / Tex.desc.Width, 1.0f / Tex.desc.Height},
+		{(float)srcRect.Width() / dstRect.Width(), (float)srcRect.Height() / dstRect.Height(), 0, 0}
+	};
+	D3D11_BUFFER_DESC BufferDesc = {};
+	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	BufferDesc.ByteWidth = sizeof(constants);
+	BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	BufferDesc.CPUAccessFlags = 0;
+	D3D11_SUBRESOURCE_DATA InitData = { &constants, 0, 0 };
+
+	hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &pConstantBuffer);
+	if (FAILED(hr)) {
+		DLog(L"TextureResizeShader() : Create constant buffer failed with error %s", HR2Str(hr));
+		return hr;
+	}
+
+	D3D11_VIEWPORT VP;
+	VP.TopLeftX = (FLOAT)dstRect.left;
+	VP.TopLeftY = (FLOAT)dstRect.top;
+	VP.Width = (FLOAT)dstRect.Width();
+	VP.Height = (FLOAT)dstRect.Height();
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
 
@@ -1387,31 +1434,6 @@ HRESULT CDX11VideoProcessor::ResizeShader2Pass(Tex2D_t& Tex, ID3D11Texture2D* pR
 	ID3D11PixelShader* resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleX : m_pShaderUpscaleX;
 	ID3D11PixelShader* resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
 
-	// no resize
-	if (!resizerX && !resizerY) {
-		hr = TextureCopyRect(Tex, pRenderTarget, rSrcRect, rDstRect, m_pPS_Simple, nullptr);
-
-		return hr;
-	}
-
-	CComPtr<ID3D11Buffer> pResizeConstants;
-	const FLOAT constants[][4] = {
-		{(float)Tex.desc.Width, (float)Tex.desc.Height, 1.0f/Tex.desc.Width, 1.0f/Tex.desc.Height},
-		{(float)w1/w2, (float)h1/h2, 0, 0}
-	};
-	D3D11_BUFFER_DESC BufferDesc = {};
-	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	BufferDesc.ByteWidth = sizeof(constants);
-	BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	BufferDesc.CPUAccessFlags = 0;
-	D3D11_SUBRESOURCE_DATA InitData = { &constants, 0, 0 };
-
-	hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &pResizeConstants);
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::ResizeShader2Pass() : CreateBuffer() failed with error %s", HR2Str(hr));
-		return hr;
-	}
-
 	// two pass resize
 	if (resizerX && resizerY) {
 		// check intermediate texture
@@ -1436,19 +1458,28 @@ HRESULT CDX11VideoProcessor::ResizeShader2Pass(Tex2D_t& Tex, ID3D11Texture2D* pR
 		CRect resizeRect(0, 0, texWidth, texHeight);
 
 		// First resize pass
-		hr = TextureCopyRect(Tex, m_TexResize.pTexture, rSrcRect, resizeRect, resizerX, pResizeConstants);
+		hr = TextureResizeShader(Tex, m_TexResize.pTexture, rSrcRect, resizeRect, resizerX);
 		// Second resize pass
-		hr = TextureCopyRect(m_TexResize, pRenderTarget, resizeRect, rDstRect, resizerY, pResizeConstants);
+		hr = TextureResizeShader(m_TexResize, pRenderTarget, resizeRect, rDstRect, resizerY);
 	}
 	else {
 		if (resizerX) {
-			hr = TextureCopyRect(Tex, pRenderTarget, rSrcRect, rDstRect, resizerX, pResizeConstants);
-		} else { // if (resizerY)
-			hr = TextureCopyRect(Tex, pRenderTarget, rSrcRect, rDstRect, resizerY, pResizeConstants);
+			// one pass resize for width
+			hr = TextureResizeShader(Tex, pRenderTarget, rSrcRect, rDstRect, resizerX);
+		}
+		else if (resizerY) {
+			// one pass resize for height
+			hr = TextureResizeShader(Tex, pRenderTarget, rSrcRect, rDstRect, resizerY);
+		}
+		else {
+			// no resize
+			hr = TextureCopyRect(Tex, pRenderTarget, rSrcRect, rDstRect, m_pPS_Simple, nullptr);
 		}
 	}
 
-	return S_OK;
+	DLogIf(FAILED(hr), L"CDX11VideoProcessor::ResizeShader2Pass() : failed with error %s", HR2Str(hr));
+
+	return hr;
 }
 
 void CDX11VideoProcessor::SetVideoRect(const CRect& videoRect)
