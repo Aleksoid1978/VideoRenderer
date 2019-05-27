@@ -105,6 +105,11 @@ HRESULT CVRMainPPage::OnActivate()
 
 	m_pVideoRenderer->GetSettings(m_SetsPP);
 
+	if (!IsWindows8Point1OrGreater()) {
+		GetDlgItem(IDC_CHECK1).EnableWindow(FALSE);
+		m_SetsPP.bUseD3D11 = false;
+	}
+
 	CheckDlgButton(IDC_CHECK1, m_SetsPP.bUseD3D11    ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK2, m_SetsPP.bShowStats   ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK3, m_SetsPP.bDeintDouble ? BST_CHECKED : BST_UNCHECKED);

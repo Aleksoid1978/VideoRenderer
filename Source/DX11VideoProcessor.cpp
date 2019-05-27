@@ -26,7 +26,6 @@
 #include <Mfidl.h>
 #include <dwmapi.h>
 #include <cmath>
-#include <VersionHelpers.h>
 #include "Helper.h"
 #include "Time.h"
 #include "resource.h"
