@@ -25,6 +25,7 @@ CStringW HR2Str(const HRESULT hr)
 {
 	CStringW str;
 #define UNPACK_VALUE(VALUE) case VALUE: str = L#VALUE; break;
+#define UNPACK_HR_WIN32(VALUE) case (((VALUE) & 0x0000FFFF) | (FACILITY_WIN32 << 16) | 0x80000000): str = L#VALUE; break;
 	switch (hr) {
 		// common HRESULT values https://docs.microsoft.com/en-us/windows/desktop/seccrypto/common-hresult-values
 		UNPACK_VALUE(S_OK);
@@ -42,13 +43,17 @@ CStringW HR2Str(const HRESULT hr)
 		// some D3DERR values https://docs.microsoft.com/en-us/windows/desktop/direct3d9/d3derr
 		UNPACK_VALUE(D3DERR_DEVICEHUNG);
 		UNPACK_VALUE(D3DERR_DEVICELOST);
+		UNPACK_VALUE(D3DERR_DEVICENOTRESET);
 		UNPACK_VALUE(D3DERR_DRIVERINTERNALERROR);
 		UNPACK_VALUE(D3DERR_INVALIDCALL);
 		UNPACK_VALUE(D3DERR_OUTOFVIDEOMEMORY);
+		// some System Error Codes
+		UNPACK_HR_WIN32(ERROR_INVALID_WINDOW_HANDLE);
 	default:
 		str.Format(L"0x%08x", hr);
 	};
 #undef UNPACK_VALUE
+#undef UNPACK_HR_WIN32
 	return str;
 }
 
