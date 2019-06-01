@@ -882,6 +882,9 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcPitch = -m_srcPitch;
 	}
 
+	UpdateUpscalingShaders();
+	UpdateDownscalingShaders();
+
 	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
 	m_PSConvColorData.bEnable = false;
@@ -911,9 +914,6 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// Tex Video Processor
 	if (FmtConvParams->D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams->D3DFormat, biWidth, biHeight)) {
-		UpdateUpscalingShaders();
-		UpdateDownscalingShaders();
-
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR_ST2084));
 		}
