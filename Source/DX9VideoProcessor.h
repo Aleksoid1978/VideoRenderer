@@ -172,11 +172,6 @@ private:
 	CStringW m_strStatsStatic1;
 	CStringW m_strStatsStatic2;
 	bool m_bSrcFromGPU = false;
-	double m_DetectedRefreshRate = 0.0;
-	CCritSec m_RefreshRateLock;
-
-	HANDLE m_hEvtQuit; // Stop threads event
-	HANDLE m_hSyncThread = nullptr;
 
 	REFERENCE_TIME m_rtStart = 0;
 
@@ -196,12 +191,6 @@ private:
 	BOOL InitializeTexVP(const D3DFORMAT d3dformat, const UINT width, const UINT height);
 	HRESULT CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams(mp_csp_params& params);
-
-	void StartWorkerThreads();
-	void StopWorkerThreads();
-
-	static DWORD WINAPI SyncThreadStatic(LPVOID lpParam);
-	void SyncThread();
 
 public:
 	BOOL VerifyMediaType(const CMediaType* pmt);

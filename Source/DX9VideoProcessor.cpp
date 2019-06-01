@@ -221,8 +221,6 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
 {
-	//StopWorkerThreads();
-
 	ReleaseDevice();
 
 	m_pD3DDeviceManager.Release();
@@ -355,10 +353,6 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 	if (m_pFilter->m_pSubCallBack) {
 		m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
 	}
-
-	// TODO
-	//StopWorkerThreads();
-	//StartWorkerThreads();
 
 	return hr;
 }
@@ -733,125 +727,6 @@ void CDX9VideoProcessor::SetShaderConvertColorParams(mp_csp_params& params)
 	if (m_srcSubType == MEDIASUBTYPE_Y410 || m_srcSubType == MEDIASUBTYPE_Y416) {
 		for (int i = 0; i < 3; i++) {
 			std::swap(m_PSConvColorData.fConstants[i][0], m_PSConvColorData.fConstants[i][1]);
-		}
-	}
-}
-
-
-void CDX9VideoProcessor::StartWorkerThreads()
-{
-	DWORD dwThreadId;
-
-	m_hEvtQuit = CreateEventW(nullptr, TRUE, FALSE, nullptr);
-
-	m_hSyncThread = ::CreateThread(nullptr, 0, SyncThreadStatic, (LPVOID)this, 0, &dwThreadId);
-}
-
-void CDX9VideoProcessor::StopWorkerThreads()
-{
-	SetEvent(m_hEvtQuit);
-
-	if (m_hSyncThread && WaitForSingleObject(m_hSyncThread, 1000) == WAIT_TIMEOUT) {
-		ASSERT(FALSE);
-		TerminateThread(m_hSyncThread, 0xDEAD);
-	}
-
-	SAFE_CLOSE_HANDLE(m_hSyncThread);
-}
-
-DWORD WINAPI CDX9VideoProcessor::SyncThreadStatic(LPVOID lpParam)
-{
-	CDX9VideoProcessor* pThis = (CDX9VideoProcessor*)lpParam;
-	pThis->SyncThread();
-	return 0;
-}
-
-void CDX9VideoProcessor::SyncThread()
-{
-	struct {
-		uint64_t tick;
-		UINT scanline;
-	} ScanLines[61] = {};
-	unsigned ScanLinePos = 0;
-	bool filled = false;
-	UINT prevSL = UINT_MAX;
-	UINT ScanlinesPerFrame = 0;
-
-	bool bQuit = false;
-
-	while (!bQuit) {
-		DWORD dwObject = WaitForSingleObject(m_hEvtQuit, 2);
-		switch (dwObject) {
-		case WAIT_OBJECT_0:
-			bQuit = true;
-			break;
-		case WAIT_TIMEOUT:
-			// Do our stuff
-		{
-			if (!ScanlinesPerFrame) {
-				D3DRASTER_STATUS rasterStatus;
-				if (S_OK == m_pD3DDevEx->GetRasterStatus(0, &rasterStatus)) {
-					while (rasterStatus.ScanLine == 0) { // skip zero scanline with unknown start time
-						Sleep(1);
-						m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
-					}
-					while (rasterStatus.ScanLine != 0) { // find new zero scanline
-						m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
-					}
-					uint64_t tick0 = GetPreciseTick();
-					while (rasterStatus.ScanLine == 0) {
-						m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
-					}
-					uint64_t tick1 = GetPreciseTick();
-
-					Sleep(1);
-					prevSL = 0;
-					while (rasterStatus.ScanLine != 0) {
-						prevSL = rasterStatus.ScanLine;
-						m_pD3DDevEx->GetRasterStatus(0, &rasterStatus);
-					}
-					uint64_t tickLast = GetPreciseTick();
-
-					auto t = tickLast - tick1;
-					ScanlinesPerFrame = (prevSL * (tickLast - tick0) + t/2) / t;
-
-					DLog(L"Detected ScanlinesPerFrame = %u", ScanlinesPerFrame);
-				}
-			}
-			else {
-				D3DRASTER_STATUS rasterStatus;
-				if (S_OK == m_pD3DDevEx->GetRasterStatus(0, &rasterStatus)) {
-					uint64_t tick = GetPreciseTick();
-					if (rasterStatus.ScanLine) { // ignore the zero scan line, it coincides with VBlanc and therefore is very long in time
-						if (rasterStatus.ScanLine < prevSL) {
-							ScanLines[ScanLinePos].tick = tick;
-							ScanLines[ScanLinePos].scanline = rasterStatus.ScanLine;
-							UINT lastpos = ScanLinePos++;
-							if (ScanLinePos >= std::size(ScanLines)) {
-								ScanLinePos = 0;
-								filled = true;
-							}
-
-							double refreshRate = GetPreciseTicksPerSecond();
-							if (filled) {
-								refreshRate *= ScanlinesPerFrame * ((UINT)std::size(ScanLines) - 1) + ScanLines[lastpos].scanline - ScanLines[ScanLinePos].scanline;
-								refreshRate /= ScanlinesPerFrame * (ScanLines[lastpos].tick - ScanLines[ScanLinePos].tick);
-							} else {
-								refreshRate *= ScanlinesPerFrame * ScanLinePos + ScanLines[lastpos].scanline - ScanLines[0].scanline;
-								refreshRate /= ScanlinesPerFrame * (ScanLines[lastpos].tick - ScanLines[0].tick);
-							}
-
-							{
-								CAutoLock Lock(&m_RefreshRateLock);
-								m_DetectedRefreshRate = refreshRate;
-							}
-						}
-						prevSL = rasterStatus.ScanLine;
-					}
-				}
-			}
-		}
-			break;
 		}
 	}
 }
@@ -1870,10 +1745,6 @@ HRESULT CDX9VideoProcessor::DrawStats()
 #else
 	str.AppendFormat(L"\nSync offset   : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
 #endif
-	//{
-	//	CAutoLock Lock(&m_RefreshRateLock);
-	//	str.AppendFormat(L"\nRefresh Rate : %7.03f Hz", m_DetectedRefreshRate);
-	//}
 
 	HDC hdc;
 	HRESULT hr = m_pMemOSDSurface->GetDC(&hdc);
