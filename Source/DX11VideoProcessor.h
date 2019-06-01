@@ -49,6 +49,8 @@ private:
 	bool m_bDeintDouble = false;
 	bool m_bShowStats   = false;
 	bool m_bVPScaling   = true;
+	int  m_iUpscaling   = UPSCALE_CatmullRom; // interpolation
+	int  m_iDownscaling = DOWNSCALE_Hamming;  // convolution
 	bool m_bInterpolateAt50pct = true;
 	int  m_iSwapEffect  = SWAPEFFECT_Discard;
 
@@ -233,6 +235,8 @@ public:
 private:
 	void UpdateVideoTex();
 	void UpdateCorrectionTex(const int w, const int h);
+	void UpdateUpscalingShaders();
+	void UpdateDownscalingShaders();
 
 	HRESULT TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
 							const CRect& srcRect, const CRect& destRect,

@@ -83,6 +83,8 @@ private:
 	bool m_bDeintDouble = false;
 	bool m_bShowStats   = false;
 	bool m_bVPScaling   = true;
+	int  m_iUpscaling   = UPSCALE_CatmullRom; // interpolation
+	int  m_iDownscaling = DOWNSCALE_Hamming;  // convolution
 	bool m_bInterpolateAt50pct = true;
 
 	// Direct3D 9
@@ -230,6 +232,8 @@ private:
 	HRESULT DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
 	void UpdateVideoTex();
 	void UpdateCorrectionTex(const int w, const int h);
+	void UpdateUpscalingShaders();
+	void UpdateDownscalingShaders();
 
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
 	HRESULT ProcessTex(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);

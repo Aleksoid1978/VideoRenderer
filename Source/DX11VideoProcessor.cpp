@@ -1319,6 +1319,49 @@ void CDX11VideoProcessor::UpdateCorrectionTex(const int w, const int h)
 	}
 }
 
+void CDX11VideoProcessor::UpdateUpscalingShaders()
+{
+	struct {
+		UINT shaderX;
+		UINT shaderY;
+		wchar_t* const description;
+	} static const resIDs[UPSCALE_COUNT] = {
+		{IDF_PSH11_RESIZER_MITCHELL4_X, IDF_PSH11_RESIZER_MITCHELL4_Y, L"Mitchell-Netravali"},
+		{IDF_PSH11_RESIZER_CATMULL4_X,  IDF_PSH11_RESIZER_CATMULL4_Y , L"Catmull-Rom"       },
+		{IDF_PSH11_RESIZER_LANCZOS2_X,  IDF_PSH11_RESIZER_LANCZOS2_Y , L"Lanczos2"          },
+		{IDF_PSH11_RESIZER_LANCZOS3_X,  IDF_PSH11_RESIZER_LANCZOS3_Y , L"Lanczos3"          },
+	};
+
+	m_pShaderUpscaleX.Release();
+	m_pShaderUpscaleY.Release();
+
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, resIDs[m_iUpscaling].shaderX));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, resIDs[m_iUpscaling].shaderY));
+	m_strShaderUpscale = resIDs[m_iUpscaling].description;
+}
+
+void CDX11VideoProcessor::UpdateDownscalingShaders()
+{
+	struct {
+		UINT shaderX;
+		UINT shaderY;
+		wchar_t* const description;
+	} static const resIDs[DOWNSCALE_COUNT] = {
+		{IDF_PSH11_DOWNSCALER_BOX_X,      IDF_PSH11_DOWNSCALER_BOX_Y     , L"Box"     },
+		{IDF_PSH11_DOWNSCALER_BILINEAR_X, IDF_PSH11_DOWNSCALER_BILINEAR_Y, L"Bilinear"},
+		{IDF_PSH11_DOWNSCALER_HAMMING_X,  IDF_PSH11_DOWNSCALER_HAMMING_Y , L"Hamming" },
+		{IDF_PSH11_DOWNSCALER_BICUBIC_X,  IDF_PSH11_DOWNSCALER_BICUBIC_Y , L"Bicubic" },
+		{IDF_PSH11_DOWNSCALER_LANCZOS_X,  IDF_PSH11_DOWNSCALER_LANCZOS_Y , L"Lanczos" }
+	};
+
+	m_pShaderDownscaleX.Release();
+	m_pShaderDownscaleY.Release();
+
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleX, resIDs[m_iDownscaling].shaderX));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, resIDs[m_iDownscaling].shaderY));
+	m_strShaderDownscale = resIDs[m_iDownscaling].description;
+}
+
 HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
 	HRESULT hr = S_OK;
@@ -1602,62 +1645,37 @@ void CDX11VideoProcessor::SetVPScaling(bool value)
 {
 	m_bVPScaling = value;
 
-	UpdateVideoTex();
+	if (m_pDevice) {
+		UpdateVideoTex();
+	}
 }
 
 void CDX11VideoProcessor::SetUpscaling(int value)
 {
-	struct {
-		UINT shaderX;
-		UINT shaderY;
-		wchar_t* const description;
-	} static const resIDs[UPSCALE_COUNT] = {
-		{IDF_PSH11_RESIZER_MITCHELL4_X, IDF_PSH11_RESIZER_MITCHELL4_Y, L"Mitchell-Netravali"},
-		{IDF_PSH11_RESIZER_CATMULL4_X,  IDF_PSH11_RESIZER_CATMULL4_Y , L"Catmull-Rom"       },
-		{IDF_PSH11_RESIZER_LANCZOS2_X,  IDF_PSH11_RESIZER_LANCZOS2_Y , L"Lanczos2"          },
-		{IDF_PSH11_RESIZER_LANCZOS3_X,  IDF_PSH11_RESIZER_LANCZOS3_Y , L"Lanczos3"          },
-	};
-
 	if (value < 0 || value >= UPSCALE_COUNT) {
 		DLog("CDX11VideoProcessor::SetUpscaling() unknown value %d", value);
 		ASSERT(FALSE);
 		return;
 	}
+	m_iUpscaling = value;
 
-	m_pShaderUpscaleX.Release();
-	m_pShaderUpscaleY.Release();
-
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, resIDs[value].shaderX));
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, resIDs[value].shaderY));
-	m_strShaderUpscale = resIDs[value].description;
+	if (m_pDevice) {
+		UpdateUpscalingShaders();
+	}
 };
 
 void CDX11VideoProcessor::SetDownscaling(int value)
 {
-	struct {
-		UINT shaderX;
-		UINT shaderY;
-		wchar_t* const description;
-	} static const resIDs[DOWNSCALE_COUNT] = {
-		{IDF_PSH11_DOWNSCALER_BOX_X,      IDF_PSH11_DOWNSCALER_BOX_Y     , L"Box"     },
-		{IDF_PSH11_DOWNSCALER_BILINEAR_X, IDF_PSH11_DOWNSCALER_BILINEAR_Y, L"Bilinear"},
-		{IDF_PSH11_DOWNSCALER_HAMMING_X,  IDF_PSH11_DOWNSCALER_HAMMING_Y , L"Hamming" },
-		{IDF_PSH11_DOWNSCALER_BICUBIC_X,  IDF_PSH11_DOWNSCALER_BICUBIC_Y , L"Bicubic" },
-		{IDF_PSH11_DOWNSCALER_LANCZOS_X,  IDF_PSH11_DOWNSCALER_LANCZOS_Y , L"Lanczos" }
-	};
-
 	if (value < 0 || value >= DOWNSCALE_COUNT) {
 		DLog("CDX11VideoProcessor::SetDownscaling() unknown value %d", value);
 		ASSERT(FALSE);
 		return;
 	}
+	m_iDownscaling = value;
 
-	m_pShaderDownscaleX.Release();
-	m_pShaderDownscaleY.Release();
-
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleX, resIDs[value].shaderX));
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, resIDs[value].shaderY));
-	m_strShaderDownscale = resIDs[value].description;
+	if (m_pDevice) {
+		UpdateDownscalingShaders();
+	}
 };
 
 void CDX11VideoProcessor::UpdateStatsStatic()
