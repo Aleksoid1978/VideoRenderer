@@ -57,6 +57,8 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	m_pInputPin = new CVideoRendererInputPin(this, phr, L"In", this);
 	ASSERT(S_OK == *phr);
 
+	// read settings
+
 	CRegKey key;
 	if (ERROR_SUCCESS == key.Open(HKEY_CURRENT_USER, OPT_REGKEY_VIDEORENDERER, KEY_READ)) {
 		DWORD dw;
@@ -89,23 +91,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 	}
 
-	m_bUsedD3D11 = m_Sets.bUseD3D11 && IsWindows8Point1OrGreater();
-	if (m_bUsedD3D11) {
-		m_DX11_VP.SetShowStats(m_Sets.bShowStats);
-		m_DX11_VP.SetDeintDouble(m_Sets.bDeintDouble);
-		m_DX11_VP.SetVPScaling(m_Sets.bVPScaling);
-		m_DX11_VP.SetUpscaling(m_Sets.iUpscaling);
-		m_DX11_VP.SetDownscaling(m_Sets.iDownscaling);
-		m_DX11_VP.SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
-		m_DX11_VP.SetSwapEffect(m_Sets.iSwapEffect);
-
-		*phr = m_DX11_VP.Init(m_hWnd, m_Sets.iSurfaceFmt);
-		if (S_OK == *phr) {
-			DLog(L"Direct3D11 initialization successfully!");
-			return;
-		}
-		m_bUsedD3D11 = false;
-	}
+	// configure the video processors
 
 	m_DX9_VP.SetShowStats(m_Sets.bShowStats);
 	m_DX9_VP.SetDeintDouble(m_Sets.bDeintDouble);
@@ -113,6 +99,27 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	m_DX9_VP.SetUpscaling(m_Sets.iUpscaling);
 	m_DX9_VP.SetDownscaling(m_Sets.iDownscaling);
 	m_DX9_VP.SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
+	m_DX9_VP.SetSwapEffect(m_Sets.iSwapEffect);
+
+	m_DX11_VP.SetShowStats(m_Sets.bShowStats);
+	m_DX11_VP.SetDeintDouble(m_Sets.bDeintDouble);
+	m_DX11_VP.SetVPScaling(m_Sets.bVPScaling);
+	m_DX11_VP.SetUpscaling(m_Sets.iUpscaling);
+	m_DX11_VP.SetDownscaling(m_Sets.iDownscaling);
+	m_DX11_VP.SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
+	m_DX11_VP.SetSwapEffect(m_Sets.iSwapEffect);
+
+	// initialize the video processor
+
+	m_bUsedD3D11 = m_Sets.bUseD3D11 && IsWindows8Point1OrGreater();
+	if (m_bUsedD3D11) {
+		*phr = m_DX11_VP.Init(m_hWnd, m_Sets.iSurfaceFmt);
+		if (S_OK == *phr) {
+			DLog(L"Direct3D11 initialization successfully!");
+			return;
+		}
+		m_bUsedD3D11 = false;
+	}
 
 	*phr = m_DX9_VP.Init(m_hWnd, m_Sets.iSurfaceFmt, nullptr);
 	if (S_OK == *phr) {
