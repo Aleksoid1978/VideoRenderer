@@ -91,29 +91,32 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	m_bUsedD3D11 = m_Sets.bUseD3D11 && IsWindows8Point1OrGreater();
 	if (m_bUsedD3D11) {
+		m_DX11_VP.SetShowStats(m_Sets.bShowStats);
+		m_DX11_VP.SetDeintDouble(m_Sets.bDeintDouble);
+		m_DX11_VP.SetVPScaling(m_Sets.bVPScaling);
+		m_DX11_VP.SetUpscaling(m_Sets.iUpscaling);
+		m_DX11_VP.SetDownscaling(m_Sets.iDownscaling);
+		m_DX11_VP.SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
 		m_DX11_VP.SetSwapEffect(m_Sets.iSwapEffect);
 
 		*phr = m_DX11_VP.Init(m_hWnd, m_Sets.iSurfaceFmt);
 		if (S_OK == *phr) {
-			m_DX11_VP.SetShowStats(m_Sets.bShowStats);
-			m_DX11_VP.SetDeintDouble(m_Sets.bDeintDouble);
-			m_DX11_VP.SetVPScaling(m_Sets.bVPScaling);
-			m_DX11_VP.SetUpscaling(m_Sets.iUpscaling);
-			m_DX11_VP.SetDownscaling(m_Sets.iDownscaling);
 			DLog(L"Direct3D11 initialization successfully!");
 			return;
 		}
 		m_bUsedD3D11 = false;
 	}
 
+	m_DX9_VP.SetShowStats(m_Sets.bShowStats);
+	m_DX9_VP.SetDeintDouble(m_Sets.bDeintDouble);
+	m_DX9_VP.SetVPScaling(m_Sets.bVPScaling);
+	m_DX9_VP.SetUpscaling(m_Sets.iUpscaling);
+	m_DX9_VP.SetDownscaling(m_Sets.iDownscaling);
+	m_DX9_VP.SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
+
 	*phr = m_DX9_VP.Init(m_hWnd, m_Sets.iSurfaceFmt, nullptr);
 	if (S_OK == *phr) {
-		m_DX9_VP.SetShowStats(m_Sets.bShowStats);
-		m_DX9_VP.SetDeintDouble(m_Sets.bDeintDouble);
-		m_DX9_VP.SetVPScaling(m_Sets.bVPScaling);
-		m_DX9_VP.SetUpscaling(m_Sets.iUpscaling);
-		m_DX9_VP.SetDownscaling(m_Sets.iDownscaling);
-		m_DX9_VP.SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
+		DLog(L"Direct3D9 initialization successfully!");
 	}
 
 	return;
@@ -667,17 +670,9 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 		HRESULT hr;
 		if (m_bUsedD3D11) {
 			hr = m_DX11_VP.Init(m_hWnd, m_Sets.iSurfaceFmt);
-			if (S_OK == hr) {
-				m_DX11_VP.SetUpscaling(m_Sets.iUpscaling);
-				m_DX11_VP.SetDownscaling(m_Sets.iDownscaling);
-			}
 		} else {
 			bool bChangeDevice = false;
 			hr = m_DX9_VP.Init(m_hWnd, m_Sets.iSurfaceFmt, &bChangeDevice);
-			if (S_OK == hr) {
-				m_DX9_VP.SetUpscaling(m_Sets.iUpscaling);
-				m_DX9_VP.SetDownscaling(m_Sets.iDownscaling);
-			}
 
 			if (bChangeDevice) {
 				OnDisplayChange();
