@@ -225,17 +225,17 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 	if (m_bUsedD3D11) {
 		if (!m_DX11_VP.Initialized()) {
 			hr = m_DX11_VP.Init(m_hWnd);
+			DLogIf(S_OK == hr, L"CMpcVideoRenderer::SetMediaType() : Direct3D11 initialization successfully!");
 		}
-		DLogIf(S_OK == hr, L"Direct3D11 initialization successfully!");
 	} else {
 		if (!m_DX9_VP.Initialized()) {
 			hr = m_DX9_VP.Init(m_hWnd, nullptr);
+			DLogIf(S_OK == hr, L"CMpcVideoRenderer::SetMediaType() : Direct3D9 initialization successfully!");
 		}
-		DLogIf(S_OK == hr, L"Direct3D9 initialization successfully!");
 	}
 
 	if (FAILED(hr)) {
-		DLog(L"CMpcVideoRenderer::SetMediaType(): D3D device initialization failed");
+		DLog(L"CMpcVideoRenderer::SetMediaType() : D3D device initialization failed");
 		return hr;
 	}
 
@@ -248,7 +248,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 		if (mtNew != mt) {
 			if (S_OK == m_pInputPin->GetConnected()->QueryAccept(&mtNew)) {
-				DLog(L"CMpcVideoRenderer::SetMediaType() upstream filter accepted new media type. QueryAccept return S_OK");
+				DLog(L"CMpcVideoRenderer::SetMediaType() : upstream filter accepted new media type. QueryAccept return S_OK");
 				inputPin->SetNewMediaType(mtNew);
 				mt = mtNew;
 			}
@@ -378,7 +378,6 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 		QI(ISubRender)
 		QI(IExFilterConfig)
 		__super::NonDelegatingQueryInterface(riid, ppv);
-
 }
 
 // IMediaFilter

@@ -230,12 +230,12 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter)
 {
 	m_hDXGILib = LoadLibraryW(L"dxgi.dll");
 	if (!m_hDXGILib) {
-		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() - failed to load dxgi.dll");
+		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : failed to load dxgi.dll");
 		return;
 	}
 	m_CreateDXGIFactory1 = (PFNCREATEDXGIFACTORY1)GetProcAddress(m_hDXGILib, "CreateDXGIFactory1");
 	if (!m_CreateDXGIFactory1) {
-		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() - failed to get CreateDXGIFactory1()");
+		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : failed to get CreateDXGIFactory1()");
 		return;
 	}
 	HRESULT hr = m_CreateDXGIFactory1(IID_IDXGIFactory1, (void**)&m_pDXGIFactory1);
@@ -246,12 +246,12 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter)
 
 	m_hD3D11Lib = LoadLibraryW(L"d3d11.dll");
 	if (!m_hD3D11Lib) {
-		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() - failed to load d3d11.dll");
+		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : failed to load d3d11.dll");
 		return;
 	}
 	m_D3D11CreateDevice = (PFND3D11CREATEDEVICE)GetProcAddress(m_hD3D11Lib, "D3D11CreateDevice");
 	if (!m_D3D11CreateDevice) {
-		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() - failed to get D3D11CreateDevice()");
+		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : failed to get D3D11CreateDevice()");
 	}
 }
 
@@ -328,7 +328,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd)
 		return hr;
 	}
 
-	DLog(L"CDX11VideoProcessor::Init() - D3D11CreateDevice() successfully with feature level %d.%d", (featurelevel >> 12), (featurelevel >> 8) & 0xF);
+	DLog(L"CDX11VideoProcessor::Init() : D3D11CreateDevice() successfully with feature level %d.%d", (featurelevel >> 12), (featurelevel >> 8) & 0xF);
 
 	hr = SetDevice(pDevice, pDeviceContext);
 	if (S_OK == hr) {
