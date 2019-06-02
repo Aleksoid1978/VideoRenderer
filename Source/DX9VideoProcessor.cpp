@@ -1340,7 +1340,7 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 	return S_OK;
 }
 
-void CDX9VideoProcessor::SetTexFormat(bool value)
+void CDX9VideoProcessor::SetTexFormat(int value)
 {
 	if (value < 0 || value >= SURFMT_COUNT) {
 		DLog("CDX9VideoProcessor::SetTexFormat() unknown value %d", value);

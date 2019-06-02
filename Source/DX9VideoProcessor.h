@@ -226,7 +226,7 @@ public:
 
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; }
 	void SetShowStats(bool value)   { m_bShowStats   = value; }
-	void SetTexFormat(bool value);
+	void SetTexFormat(int value);
 	void SetVPScaling(bool value);
 	void SetUpscaling(int value);
 	void SetDownscaling(int value);

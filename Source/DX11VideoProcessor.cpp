@@ -1634,7 +1634,7 @@ HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 	return S_OK;
 }
 
-void CDX11VideoProcessor::SetTexFormat(bool value)
+void CDX11VideoProcessor::SetTexFormat(int value)
 {
 	if (value < 0 || value >= SURFMT_COUNT) {
 		DLog("CDX11VideoProcessor::SetTexFormat() unknown value %d", value);
