@@ -92,7 +92,6 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	}
 
 	// configure the video processors
-
 	m_DX9_VP.SetShowStats(m_Sets.bShowStats);
 	m_DX9_VP.SetDeintDouble(m_Sets.bDeintDouble);
 	m_DX9_VP.SetTexFormat(m_Sets.iSurfaceFmt);
@@ -114,6 +113,17 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	// other
 	m_bUsedD3D11 = m_Sets.bUseD3D11 && IsWindows8Point1OrGreater();
 
+	// initialize the video processor
+	if (m_bUsedD3D11) {
+		*phr = m_DX11_VP.Init(m_hWnd);
+		if (*phr == S_OK) {
+			DLog(L"Direct3D11 initialization successfully!");
+			return;
+		}
+
+		m_bUsedD3D11 = false;
+	}
+
 	m_evDX9Init.Reset();
 	m_evDX9InitHwnd.Reset();
 	m_evDX9Resize.Reset();
@@ -121,7 +131,11 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	m_evThreadFinishJob.Reset();
 
 	m_DX9Thread = std::thread([this] { DX9Thread(); });
-	*phr = S_OK;
+
+	m_evDX9Init.Set();
+	WaitForSingleObject(m_evThreadFinishJob, INFINITE);
+	*phr = m_hrThread;
+	DLogIf(S_OK == *phr, L"Direct3D9 initialization successfully!");
 
 	return;
 }
@@ -149,13 +163,11 @@ void CMpcVideoRenderer::DX9Thread()
 		m_hrThread = E_FAIL;
 		switch (dwObject) {
 			case WAIT_OBJECT_0:
-				if (!m_bUsedD3D11) {
-					m_hrThread = m_DX9_VP.Init(::GetForegroundWindow(), nullptr);
-				}
+				m_hrThread = m_DX9_VP.Init(::GetForegroundWindow(), nullptr);
 				m_evThreadFinishJob.Set();
 				break;
 			case WAIT_OBJECT_0 + 1:
-				if (!m_bUsedD3D11) {
+				{
 					bool bChangeDevice = false;
 					m_hrThread = m_DX9_VP.Init(m_hWnd, &bChangeDevice);
 					if (bChangeDevice) {
@@ -165,9 +177,7 @@ void CMpcVideoRenderer::DX9Thread()
 				m_evThreadFinishJob.Set();
 				break;
 			case WAIT_OBJECT_0 + 2:
-				if (!m_bUsedD3D11) {
-					m_hrThread = m_DX9_VP.SetWindowRect(m_windowRect);
-				}
+				m_hrThread = m_DX9_VP.SetWindowRect(m_windowRect);
 				m_evThreadFinishJob.Set();
 				break;
 			default:
@@ -268,27 +278,6 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 	CAutoLock cVideoLock(&m_InterfaceLock);
 	CAutoLock cRendererLock(&m_RendererLock);
-
-	// initialize the video processor
-	HRESULT hr = S_OK;
-	if (m_bUsedD3D11) {
-		if (!m_DX11_VP.Initialized()) {
-			hr = m_DX11_VP.Init(m_hWnd);
-			DLogIf(S_OK == hr, L"CMpcVideoRenderer::SetMediaType() : Direct3D11 initialization successfully!");
-		}
-	} else {
-		if (!m_DX9_VP.Initialized()) {
-			m_evDX9Init.Set();
-			WaitForSingleObject(m_evThreadFinishJob, INFINITE);
-			hr = m_hrThread;
-			DLogIf(S_OK == hr, L"CMpcVideoRenderer::SetMediaType() : Direct3D9 initialization successfully!");
-		}
-	}
-
-	if (FAILED(hr)) {
-		DLog(L"CMpcVideoRenderer::SetMediaType() : D3D device initialization failed");
-		return hr;
-	}
 
 	CMediaType mt(*pmt);
 
