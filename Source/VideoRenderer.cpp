@@ -113,6 +113,14 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	// other
 	m_bUsedD3D11 = m_Sets.bUseD3D11 && IsWindows8Point1OrGreater();
+
+	m_evDX9Init.Reset();
+	m_evDX9InitHwnd.Reset();
+	m_evDX9Resize.Reset();
+	m_evQuit.Reset();
+	m_evThreadFinishJob.Reset();
+
+	m_DX9Thread = std::thread([this] { DX9Thread(); });
 	*phr = S_OK;
 
 	return;
@@ -120,11 +128,52 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 CMpcVideoRenderer::~CMpcVideoRenderer()
 {
+	if (m_DX9Thread.joinable()) {
+		m_evQuit.Set();
+		m_DX9Thread.join();
+	}
+
 	if (m_hWnd) {
 		DestroyWindow(m_hWnd);
 	}
 
 	UnregisterClassW(g_szClassName, g_hInst);
+}
+
+void CMpcVideoRenderer::DX9Thread()
+{
+	HANDLE hEvts[] = { m_evDX9Init, m_evDX9InitHwnd, m_evDX9Resize, m_evQuit };
+
+	for (;;) {
+		const auto dwObject = WaitForMultipleObjects(std::size(hEvts), hEvts, FALSE, INFINITE);
+		m_hrThread = E_FAIL;
+		switch (dwObject) {
+			case WAIT_OBJECT_0:
+				if (!m_bUsedD3D11) {
+					m_hrThread = m_DX9_VP.Init(::GetForegroundWindow(), nullptr);
+				}
+				m_evThreadFinishJob.Set();
+				break;
+			case WAIT_OBJECT_0 + 1:
+				if (!m_bUsedD3D11) {
+					bool bChangeDevice = false;
+					m_hrThread = m_DX9_VP.Init(m_hWnd, &bChangeDevice);
+					if (bChangeDevice) {
+						OnDisplayChange();
+					}
+				}
+				m_evThreadFinishJob.Set();
+				break;
+			case WAIT_OBJECT_0 + 2:
+				if (!m_bUsedD3D11) {
+					m_hrThread = m_DX9_VP.SetWindowRect(m_windowRect);
+				}
+				m_evThreadFinishJob.Set();
+				break;
+			default:
+				return;
+		}
+	}
 }
 
 void CMpcVideoRenderer::NewSegment(REFERENCE_TIME startTime)
@@ -229,7 +278,9 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 		}
 	} else {
 		if (!m_DX9_VP.Initialized()) {
-			hr = m_DX9_VP.Init(m_hWnd, nullptr);
+			m_evDX9Init.Set();
+			WaitForSingleObject(m_evThreadFinishJob, INFINITE);
+			hr = m_hrThread;
 			DLogIf(S_OK == hr, L"CMpcVideoRenderer::SetMediaType() : Direct3D9 initialization successfully!");
 		}
 	}
@@ -685,12 +736,9 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 		if (m_bUsedD3D11) {
 			hr = m_DX11_VP.Init(m_hWnd);
 		} else {
-			bool bChangeDevice = false;
-			hr = m_DX9_VP.Init(m_hWnd, &bChangeDevice);
-
-			if (bChangeDevice) {
-				OnDisplayChange();
-			}
+			m_evDX9InitHwnd.Set();
+			WaitForSingleObject(m_evThreadFinishJob, INFINITE);
+			hr = m_hrThread;
 		}
 
 		return hr;
@@ -707,7 +755,7 @@ STDMETHODIMP CMpcVideoRenderer::get_Owner(OAHWND *Owner)
 
 STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Width, long Height)
 {
-	CRect windowRect(Left, Top, Left + Width, Top + Height);
+	m_windowRect = CRect(Left, Top, Left + Width, Top + Height);
 
 	CAutoLock cRendererLock(&m_RendererLock);
 	bool bFrameDrawn = m_DrawStats.GetFrames() > 0;
@@ -717,14 +765,15 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 	}
 
 	if (m_bUsedD3D11) {
-		m_DX11_VP.SetWindowRect(windowRect);
+		m_DX11_VP.SetWindowRect(m_windowRect);
 		if (bFrameDrawn && m_filterState != State_Stopped) {
 			m_DX11_VP.Render(0);
 		} else {
 			m_DX11_VP.FillBlack();
 		}
 	} else {
-		m_DX9_VP.SetWindowRect(windowRect);
+		m_evDX9Resize.Set();
+		WaitForSingleObject(m_evThreadFinishJob, INFINITE);
 		if (bFrameDrawn && m_filterState != State_Stopped) {
 			m_DX9_VP.Render(0);
 		} else {

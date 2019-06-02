@@ -24,6 +24,7 @@
 #include <d3d9.h>
 #include <mfidl.h>
 #include <dxva2api.h>
+#include <thread>
 #include "renbase2.h"
 #include "IVideoRenderer.h"
 #include "DX9VideoProcessor.h"
@@ -89,6 +90,17 @@ private:
 	CDX11VideoProcessor m_DX11_VP;
 
 	ISubRenderCallback* m_pSubCallBack = nullptr;
+
+	CAMEvent m_evDX9Init;
+	CAMEvent m_evDX9InitHwnd;
+	CAMEvent m_evDX9Resize;
+	CAMEvent m_evQuit;
+	CAMEvent m_evThreadFinishJob;
+	HRESULT m_hrThread = E_FAIL;
+	std::thread m_DX9Thread;
+	void DX9Thread();
+
+	CRect m_windowRect;
 
 public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
