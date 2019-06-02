@@ -233,26 +233,13 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	}
 }
 
-HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* pChangeDevice)
+HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 {
 	DLog(L"CDX9VideoProcessor::Init()");
 
 	CheckPointer(m_pD3DEx, E_FAIL);
 
 	m_hWnd = hwnd;
-	switch (iSurfaceFmt) {
-	default:
-	case SURFMT_8INT:
-		m_InternalTexFmt = D3DFMT_X8R8G8B8;
-		break;
-	case SURFMT_10INT:
-		m_InternalTexFmt = D3DFMT_A2R10G10B10;
-		break;
-	case SURFMT_16FLOAT:
-		m_InternalTexFmt = D3DFMT_A16B16G16R16F;
-		break;
-	}
-
 	const UINT currentAdapter = GetAdapter(m_hWnd, m_pD3DEx);
 	bool bTryToReset = (currentAdapter == m_nCurrentAdapter) && m_pD3DDevEx;
 	if (!bTryToReset) {
@@ -355,6 +342,11 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt, bool* p
 	}
 
 	return hr;
+}
+
+bool CDX9VideoProcessor::Initialized()
+{
+	return (m_pD3DDevEx.p != nullptr);
 }
 
 void CDX9VideoProcessor::ReleaseVP()
@@ -1346,6 +1338,24 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 #endif
 
 	return S_OK;
+}
+
+void CDX9VideoProcessor::SetTexFormat(bool value)
+{
+	if (value < 0 || value >= SURFMT_COUNT) {
+		DLog("CDX9VideoProcessor::SetTexFormat() unknown value %d", value);
+		ASSERT(FALSE);
+		return;
+	}
+
+	m_iTexFormat = value;
+
+	switch (value) {
+	default:
+	case SURFMT_8INT:    m_InternalTexFmt = D3DFMT_X8R8G8B8;      break;
+	case SURFMT_10INT:   m_InternalTexFmt = D3DFMT_A2R10G10B10;   break;
+	case SURFMT_16FLOAT: m_InternalTexFmt = D3DFMT_A16B16G16R16F; break;
+	}
 }
 
 void CDX9VideoProcessor::SetVPScaling(bool value)

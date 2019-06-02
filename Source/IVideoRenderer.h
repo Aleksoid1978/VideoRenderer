@@ -25,7 +25,8 @@
 enum :int {
 	SURFMT_8INT = 0,
 	SURFMT_10INT,
-	SURFMT_16FLOAT
+	SURFMT_16FLOAT,
+	SURFMT_COUNT,
 };
 
 enum :int {

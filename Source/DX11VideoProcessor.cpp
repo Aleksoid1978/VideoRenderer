@@ -273,7 +273,7 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 	}
 }
 
-HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt)
+HRESULT CDX11VideoProcessor::Init(const HWND hwnd)
 {
 	DLog(L"CDX11VideoProcessor::Init()");
 
@@ -296,21 +296,6 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt)
 	m_pDXGISwapChain1.Release();
 	m_pDXGIFactory2.Release();
 	ReleaseDevice();
-
-	switch (iSurfaceFmt) {
-	default:
-	case SURFMT_8INT:
-		m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
-		break;
-	case SURFMT_10INT:
-	case SURFMT_16FLOAT:
-		m_InternalTexFmt = DXGI_FORMAT_R10G10B10A2_UNORM;
-		break;
-	// TODO
-	//case SURFMT_16FLOAT:
-	//	m_InternalTexFmt = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	//	break;
-	}
 
 	D3D_FEATURE_LEVEL featureLevels[] = {
 		D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0,
@@ -351,6 +336,11 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const int iSurfaceFmt)
 	}
 
 	return hr;
+}
+
+bool CDX11VideoProcessor::Initialized()
+{
+	return (m_pDevice.p != nullptr && m_pDeviceContext.p != nullptr);
 }
 
 void CDX11VideoProcessor::ReleaseVP()
@@ -1642,6 +1632,32 @@ HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 #endif
 
 	return S_OK;
+}
+
+void CDX11VideoProcessor::SetTexFormat(bool value)
+{
+	if (value < 0 || value >= SURFMT_COUNT) {
+		DLog("CDX11VideoProcessor::SetTexFormat() unknown value %d", value);
+		ASSERT(FALSE);
+		return;
+	}
+
+	m_iTexFormat = value;
+
+	switch (m_iTexFormat) {
+	default:
+	case SURFMT_8INT:
+		m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
+		break;
+	case SURFMT_10INT:
+	case SURFMT_16FLOAT:
+		m_InternalTexFmt = DXGI_FORMAT_R10G10B10A2_UNORM;
+		break;
+	// TODO
+	//case SURFMT_16FLOAT:
+	//	m_InternalTexFmt = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	//	break;
+	}
 }
 
 void CDX11VideoProcessor::SetVPScaling(bool value)

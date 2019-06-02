@@ -46,13 +46,14 @@ private:
 	long m_nRefCount = 1;
 	CMpcVideoRenderer* m_pFilter = nullptr;
 
-	bool m_bDeintDouble = false;
-	bool m_bShowStats   = false;
-	bool m_bVPScaling   = true;
-	int  m_iUpscaling   = UPSCALE_CatmullRom; // interpolation
-	int  m_iDownscaling = DOWNSCALE_Hamming;  // convolution
+	bool m_bShowStats          = false;
+	bool m_bDeintDouble        = false;
+	int  m_iTexFormat          = SURFMT_8INT;
+	bool m_bVPScaling          = true;
+	int  m_iUpscaling          = UPSCALE_CatmullRom; // interpolation
+	int  m_iDownscaling        = DOWNSCALE_Hamming;  // convolution
 	bool m_bInterpolateAt50pct = true;
-	int  m_iSwapEffect  = SWAPEFFECT_Discard;
+	int  m_iSwapEffect         = SWAPEFFECT_Discard;
 
 	CComPtr<ID3D11Device> m_pDevice;
 	CComPtr<ID3D11DeviceContext> m_pDeviceContext;
@@ -183,7 +184,8 @@ public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter);
 	~CDX11VideoProcessor();
 
-	HRESULT Init(const HWND hwnd, const int iSurfaceFmt);
+	HRESULT Init(const HWND hwnd);
+	bool Initialized();
 
 private:
 	void ReleaseVP();
@@ -226,6 +228,7 @@ public:
 
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
 	void SetShowStats(bool value)   { m_bShowStats   = value; };
+	void SetTexFormat(bool value);
 	void SetVPScaling(bool value);
 	void SetUpscaling(int value);
 	void SetDownscaling(int value);

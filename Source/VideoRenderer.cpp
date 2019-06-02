@@ -95,6 +95,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	m_DX9_VP.SetShowStats(m_Sets.bShowStats);
 	m_DX9_VP.SetDeintDouble(m_Sets.bDeintDouble);
+	m_DX9_VP.SetTexFormat(m_Sets.iSurfaceFmt);
 	m_DX9_VP.SetVPScaling(m_Sets.bVPScaling);
 	m_DX9_VP.SetUpscaling(m_Sets.iUpscaling);
 	m_DX9_VP.SetDownscaling(m_Sets.iDownscaling);
@@ -103,28 +104,16 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	m_DX11_VP.SetShowStats(m_Sets.bShowStats);
 	m_DX11_VP.SetDeintDouble(m_Sets.bDeintDouble);
+	m_DX11_VP.SetTexFormat(m_Sets.iSurfaceFmt);
 	m_DX11_VP.SetVPScaling(m_Sets.bVPScaling);
 	m_DX11_VP.SetUpscaling(m_Sets.iUpscaling);
 	m_DX11_VP.SetDownscaling(m_Sets.iDownscaling);
 	m_DX11_VP.SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
 	m_DX11_VP.SetSwapEffect(m_Sets.iSwapEffect);
 
-	// initialize the video processor
-
+	// other
 	m_bUsedD3D11 = m_Sets.bUseD3D11 && IsWindows8Point1OrGreater();
-	if (m_bUsedD3D11) {
-		*phr = m_DX11_VP.Init(m_hWnd, m_Sets.iSurfaceFmt);
-		if (S_OK == *phr) {
-			DLog(L"Direct3D11 initialization successfully!");
-			return;
-		}
-		m_bUsedD3D11 = false;
-	}
-
-	*phr = m_DX9_VP.Init(m_hWnd, m_Sets.iSurfaceFmt, nullptr);
-	if (S_OK == *phr) {
-		DLog(L"Direct3D9 initialization successfully!");
-	}
+	*phr = S_OK;
 
 	return;
 }
@@ -230,6 +219,25 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 	CAutoLock cVideoLock(&m_InterfaceLock);
 	CAutoLock cRendererLock(&m_RendererLock);
+
+	// initialize the video processor
+	HRESULT hr = S_OK;
+	if (m_bUsedD3D11) {
+		if (!m_DX11_VP.Initialized()) {
+			hr = m_DX11_VP.Init(m_hWnd);
+		}
+		DLogIf(S_OK == hr, L"Direct3D11 initialization successfully!");
+	} else {
+		if (!m_DX9_VP.Initialized()) {
+			hr = m_DX9_VP.Init(m_hWnd, nullptr);
+		}
+		DLogIf(S_OK == hr, L"Direct3D9 initialization successfully!");
+	}
+
+	if (FAILED(hr)) {
+		DLog(L"CMpcVideoRenderer::SetMediaType(): D3D device initialization failed");
+		return hr;
+	}
 
 	CMediaType mt(*pmt);
 
@@ -676,10 +684,10 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 
 		HRESULT hr;
 		if (m_bUsedD3D11) {
-			hr = m_DX11_VP.Init(m_hWnd, m_Sets.iSurfaceFmt);
+			hr = m_DX11_VP.Init(m_hWnd);
 		} else {
 			bool bChangeDevice = false;
-			hr = m_DX9_VP.Init(m_hWnd, m_Sets.iSurfaceFmt, &bChangeDevice);
+			hr = m_DX9_VP.Init(m_hWnd, &bChangeDevice);
 
 			if (bChangeDevice) {
 				OnDisplayChange();
