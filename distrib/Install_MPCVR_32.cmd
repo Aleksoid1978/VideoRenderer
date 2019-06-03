@@ -6,7 +6,7 @@
 @echo.
 @echo    Installation succeeded.
 @echo.
-@echo    Please do not delete the MpcVideoRenderer folder.
+@echo    Please do not delete the MpcVideoRenderer.ax file.
 @echo    The installer has not copied the files anywhere.
 @echo.
 @goto done
@@ -15,7 +15,7 @@
 @echo.
 @echo    Installation failed.
 @echo.
-@echo    You need to right click "Install_MPCVR_32.bat" and choose "run as admin".
+@echo    You need to right click "Install_MPCVR_32.cmd" and choose "run as admin".
 @echo.
 :done
 @pause >NUL

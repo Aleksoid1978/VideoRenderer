@@ -12,7 +12,7 @@
 @echo.
 @echo    Uninstallation failed.
 @echo.
-@echo    You need to right click "Uninstall_MPCVR_32.bat" and choose "run as admin".
+@echo    You need to right click "Uninstall_MPCVR_32.cmd" and choose "run as admin".
 @echo.
 :done
 @pause >NUL
