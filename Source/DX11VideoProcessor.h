@@ -77,11 +77,9 @@ private:
 	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
 	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
 	CComPtr<ID3D11VideoProcessorInputView> m_pInputView;
+	CComPtr<ID3D11PixelShader> m_pPSCorrection;
 
 	// D3D11 Shader Video Processor
-	ID3D11SamplerState* m_pSamplerLinear = nullptr;
-
-	CComPtr<ID3D11PixelShader> m_pPSCorrection;
 	CComPtr<ID3D11PixelShader> m_pPSConvertColor;
 	struct {
 		bool bEnable = false;

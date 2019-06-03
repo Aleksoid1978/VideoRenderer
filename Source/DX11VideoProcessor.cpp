@@ -356,7 +356,6 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_TexResize.Release();
 
 	SAFE_RELEASE(m_PSConvColorData.pConstants);
-	SAFE_RELEASE(m_pSamplerLinear);
 
 	m_pInputView.Release();
 	m_pVideoProcessor.Release();
@@ -1052,22 +1051,6 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 	hr = m_TexConvert.Create(m_pDevice, m_InternalTexFmt, width, height, Tex2D_DefaultShaderRTarget);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : m_TexConvert.Create() failed with error %s", HR2Str(hr));
-		return hr;
-	}
-
-	// Create the sample state
-	D3D11_SAMPLER_DESC SampDesc;
-	ZeroMemory(&SampDesc, sizeof(SampDesc));
-	SampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	SampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	SampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	SampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	SampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	SampDesc.MinLOD = 0;
-	SampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	hr = m_pDevice->CreateSamplerState(&SampDesc, &m_pSamplerLinear);
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeTexVP() : CreateSamplerState() failed with error %s", HR2Str(hr));
 		return hr;
 	}
 
