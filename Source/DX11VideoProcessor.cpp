@@ -391,6 +391,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pVS_Simple.Release();
 	m_pPS_Simple.Release();
 	SAFE_RELEASE(m_pSamplerPoint);
+	m_pAlphaBlendState.Release();
 	SAFE_RELEASE(m_pFullFrameVertexBuffer);
 
 	m_pDeviceContext.Release();
@@ -486,6 +487,17 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	SampDesc.MinLOD = 0;
 	SampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateSamplerState(&SampDesc, &m_pSamplerPoint));
+
+	D3D11_BLEND_DESC bdesc = {};
+	bdesc.RenderTarget[0].BlendEnable = TRUE;
+	bdesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	bdesc.RenderTarget[0].DestBlend = D3D11_BLEND_SRC_ALPHA;
+	bdesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	bdesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	bdesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	bdesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	bdesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBlendState(&bdesc, &m_pAlphaBlendState));
 
 	EXECUTE_ASSERT(S_OK == CreateVertexBuffer(m_pDevice, &m_pFullFrameVertexBuffer, 1, 1, CRect(0, 0, 1, 1)));
 
@@ -1786,27 +1798,10 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			VP.MaxDepth = 1.0f;
 			m_pDeviceContext->RSSetViewports(1, &VP);
 
-			D3D11_BLEND_DESC bdesc = {};
-			bdesc.RenderTarget[0].BlendEnable = TRUE;
-			bdesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-			bdesc.RenderTarget[0].DestBlend = D3D11_BLEND_SRC_ALPHA;
-			bdesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-			bdesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-			bdesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-			bdesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-			bdesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-			CComPtr<ID3D11BlendState> pBlendState;
-			hr = m_pDevice->CreateBlendState(&bdesc, &pBlendState);
-			if (FAILED(hr)) {
-				DLog(L"CDX11VideoProcessor::DrawStats() : CreateBlendState() failed with error %s", HR2Str(hr));
-				pRenderTargetView->Release();
-				return hr;
-			}
-
 			// Set resources
 			UINT Stride = sizeof(VERTEX);
 			UINT Offset = 0;
-			m_pDeviceContext->OMSetBlendState(pBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
+			m_pDeviceContext->OMSetBlendState(m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
