@@ -1303,8 +1303,6 @@ HRESULT CDX11VideoProcessor::FillBlack()
 		return hr;
 	}
 
-	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
-
 	float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
 
