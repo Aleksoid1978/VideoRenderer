@@ -58,19 +58,34 @@ UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAda
 	return 0;
 }
 
-HRESULT Dump4ByteTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D* pRGB32Texture2D, const wchar_t* filename)
+HRESULT Dump4ByteTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D* pTexture2D, const wchar_t* filename)
 {
 	HRESULT hr = S_OK;
 	D3D11_TEXTURE2D_DESC desc;
-	pRGB32Texture2D->GetDesc(&desc);
+	pTexture2D->GetDesc(&desc);
 
 	if (desc.Format == DXGI_FORMAT_B8G8R8X8_UNORM || desc.Format == DXGI_FORMAT_B8G8R8A8_UNORM || desc.Format == DXGI_FORMAT_AYUV) {
-		D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-		hr = pDeviceContext->Map(pRGB32Texture2D, 0, D3D11_MAP_READ, 0, &mappedResource);
+		CComPtr<ID3D11Texture2D> pTexture2DShared;
+
+		if (desc.CPUAccessFlags & D3D11_CPU_ACCESS_WRITE) {
+			pTexture2DShared = pTexture2D;
+		} else {
+			ID3D11Device *pDevice;
+			pTexture2D->GetDevice(&pDevice);
+			hr = CreateTex2D(pDevice, desc.Format, desc.Width, desc.Height, Tex2D_StagingRead, &pTexture2DShared);
+			pDevice->Release();
+
+			pDeviceContext->CopyResource(pTexture2DShared, pTexture2D);
+		}
 
 		if (SUCCEEDED(hr)) {
-			hr = SaveARGB32toBMP((BYTE*)mappedResource.pData, mappedResource.RowPitch, desc.Width, desc.Height, filename);
-			pDeviceContext->Unmap(pRGB32Texture2D, 0);
+			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+			hr = pDeviceContext->Map(pTexture2DShared, 0, D3D11_MAP_READ, 0, &mappedResource);
+
+			if (SUCCEEDED(hr)) {
+				hr = SaveARGB32toBMP((BYTE*)mappedResource.pData, mappedResource.RowPitch, desc.Width, desc.Height, filename);
+				pDeviceContext->Unmap(pTexture2DShared, 0);
+			}
 		}
 	}
 
