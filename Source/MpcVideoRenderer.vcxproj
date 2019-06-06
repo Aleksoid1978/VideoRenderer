@@ -70,7 +70,9 @@
     <ClCompile Include="csputils.cpp" />
     <ClCompile Include="CustomAllocator.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="DX11Helper.cpp" />
     <ClCompile Include="DX11VideoProcessor.cpp" />
+    <ClCompile Include="DX9Helper.cpp" />
     <ClCompile Include="DX9VideoProcessor.cpp" />
     <ClCompile Include="Helper.cpp" />
     <ClCompile Include="PropPage.cpp" />

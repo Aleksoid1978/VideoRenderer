@@ -48,3 +48,5 @@ struct Tex_t {
 		Height = 0;
 	}
 };
+
+HRESULT Dump4ByteSurface(IDirect3DSurface9* pRGB32Surface, const wchar_t* filename);

@@ -20,9 +20,6 @@
 
 #pragma once
 
-#include <atlcomcli.h>
-#include <d3d11.h>
-
 enum Tex2DType {
 	Tex2D_Default,
 	Tex2D_DefaultRTarget,
@@ -128,3 +125,5 @@ struct Tex2D_t
 		desc = {};
 	}
 };
+
+HRESULT Dump4ByteTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D* pRGB32Texture2D, const wchar_t* filename);
