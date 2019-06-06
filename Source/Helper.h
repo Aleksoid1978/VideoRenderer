@@ -165,4 +165,4 @@ void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspac
 
 BITMAPINFOHEADER* GetBIHfromVIHs(const AM_MEDIA_TYPE* mt);
 
-bool SaveARGB32toBMP(BYTE* src, const UINT src_pitch, const UINT width, const UINT height, const wchar_t* filename);
+HRESULT SaveARGB32toBMP(BYTE* src, const UINT src_pitch, const UINT width, const UINT height, const wchar_t* filename);

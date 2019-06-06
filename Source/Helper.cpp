@@ -454,10 +454,10 @@ BITMAPINFOHEADER* GetBIHfromVIHs(const AM_MEDIA_TYPE* pmt)
 	return nullptr;
 }
 
-bool SaveARGB32toBMP(BYTE* src, const UINT src_pitch, const UINT width, const UINT height, const wchar_t* filename)
+HRESULT SaveARGB32toBMP(BYTE* src, const UINT src_pitch, const UINT width, const UINT height, const wchar_t* filename)
 {
 	if (!src || !filename) {
-		return false;
+		return E_POINTER;
 	}
 
 	const UINT bitdepth = 32;
@@ -500,9 +500,9 @@ bool SaveARGB32toBMP(BYTE* src, const UINT src_pitch, const UINT width, const UI
 			fwrite(dib.get(), sizeof(BITMAPINFOHEADER) + tablecolors * 4 + len, 1, fp);
 			fclose(fp);
 
-			return true;
+			return S_OK;
 		}
 	}
 
-	return false;
+	return E_FAIL;
 }

@@ -69,7 +69,7 @@ HRESULT Dump4ByteTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D*
 		hr = pDeviceContext->Map(pRGB32Texture2D, 0, D3D11_MAP_READ, 0, &mappedResource);
 
 		if (SUCCEEDED(hr)) {
-			SaveARGB32toBMP((BYTE*)mappedResource.pData, mappedResource.RowPitch, desc.Width, desc.Height, filename);
+			hr = SaveARGB32toBMP((BYTE*)mappedResource.pData, mappedResource.RowPitch, desc.Width, desc.Height, filename);
 			pDeviceContext->Unmap(pRGB32Texture2D, 0);
 		}
 	}
