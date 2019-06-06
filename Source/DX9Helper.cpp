@@ -43,18 +43,34 @@ UINT GetAdapter(HWND hWnd, IDirect3D9Ex* pD3D)
 	return D3DADAPTER_DEFAULT;
 }
 
-HRESULT Dump4ByteSurface(IDirect3DSurface9* pRGB32Surface, const wchar_t* filename)
+HRESULT Dump4ByteSurface(IDirect3DSurface9* pSurface, const wchar_t* filename)
 {
 	D3DSURFACE_DESC desc;
-	HRESULT hr = pRGB32Surface->GetDesc(&desc);
+	HRESULT hr = pSurface->GetDesc(&desc);
 
 	if (SUCCEEDED(hr) && (desc.Format == D3DFMT_A8R8G8B8 || desc.Format == D3DFMT_X8R8G8B8 || desc.Format == D3DFMT_AYUV)) {
-		D3DLOCKED_RECT lr;
-		hr = pRGB32Surface->LockRect(&lr, nullptr, D3DLOCK_READONLY);
+		CComPtr<IDirect3DSurface9> pSurfaceShared;
+
+		if (desc.Pool == D3DPOOL_DEFAULT) {
+			IDirect3DDevice9* pDevice;
+			pSurface->GetDevice(&pDevice);
+			hr = pDevice->CreateOffscreenPlainSurface(desc.Width, desc.Height, desc.Format, D3DPOOL_SYSTEMMEM, &pSurfaceShared, nullptr);
+			if (SUCCEEDED(hr)) {
+				hr = pDevice->GetRenderTargetData(pSurface, pSurfaceShared);
+			}
+			pDevice->Release();
+		} else {
+			pSurfaceShared = pSurface;
+		}
 
 		if (SUCCEEDED(hr)) {
-			hr = SaveARGB32toBMP((BYTE*)lr.pBits, lr.Pitch, desc.Width, desc.Height, filename);
-			pRGB32Surface->UnlockRect();
+			D3DLOCKED_RECT lr;
+			hr = pSurfaceShared->LockRect(&lr, nullptr, D3DLOCK_READONLY);
+
+			if (SUCCEEDED(hr)) {
+				hr = SaveARGB32toBMP((BYTE*)lr.pBits, lr.Pitch, desc.Width, desc.Height, filename);
+				pSurfaceShared->UnlockRect();
+			}
 		}
 	}
 
