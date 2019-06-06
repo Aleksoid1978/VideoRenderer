@@ -519,7 +519,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	D3D11_BLEND_DESC bdesc = {};
 	bdesc.RenderTarget[0].BlendEnable = TRUE;
-	bdesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	bdesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
 	bdesc.RenderTarget[0].DestBlend = D3D11_BLEND_SRC_ALPHA;
 	bdesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 	bdesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
@@ -621,7 +621,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 #endif
 
 	HRESULT hr2 = m_TexOSD.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DefaultShaderRTargetGDI);
-	ASSERT(S_OK == hr);
+	ASSERT(S_OK == hr2);
 
 	return hr;
 }
