@@ -49,4 +49,6 @@ struct Tex_t {
 	}
 };
 
+UINT GetAdapter(HWND hWnd, IDirect3D9Ex* pD3D);
+
 HRESULT Dump4ByteSurface(IDirect3DSurface9* pRGB32Surface, const wchar_t* filename);

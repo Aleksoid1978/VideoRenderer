@@ -25,6 +25,39 @@
 #include "Helper.h"
 #include "DX11Helper.h"
 
+UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAdapter)
+{
+	*ppDXGIAdapter = nullptr;
+
+	CheckPointer(pDXGIFactory, 0);
+
+	const HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+
+	UINT i = 0;
+	IDXGIAdapter* pDXGIAdapter = nullptr;
+	while (SUCCEEDED(pDXGIFactory->EnumAdapters(i, &pDXGIAdapter))) {
+		UINT k = 0;
+		IDXGIOutput* pDXGIOutput = nullptr;
+		while (SUCCEEDED(pDXGIAdapter->EnumOutputs(k, &pDXGIOutput))) {
+			DXGI_OUTPUT_DESC desc = {};
+			if (SUCCEEDED(pDXGIOutput->GetDesc(&desc))) {
+				if (desc.Monitor == hMonitor) {
+					SAFE_RELEASE(pDXGIOutput);
+					*ppDXGIAdapter = pDXGIAdapter;
+					return i;
+				}
+			}
+			SAFE_RELEASE(pDXGIOutput);
+			k++;
+		}
+
+		SAFE_RELEASE(pDXGIAdapter);
+		i++;
+	}
+
+	return 0;
+}
+
 HRESULT Dump4ByteTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D* pRGB32Texture2D, const wchar_t* filename)
 {
 	HRESULT hr = S_OK;

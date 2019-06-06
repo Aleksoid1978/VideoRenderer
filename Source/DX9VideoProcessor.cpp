@@ -163,24 +163,6 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTex
 
 // CDX9VideoProcessor
 
-static UINT GetAdapter(HWND hWnd, IDirect3D9Ex* pD3D)
-{
-	CheckPointer(hWnd, D3DADAPTER_DEFAULT);
-	CheckPointer(pD3D, D3DADAPTER_DEFAULT);
-
-	const HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
-	CheckPointer(hMonitor, D3DADAPTER_DEFAULT);
-
-	for (UINT adp = 0, num_adp = pD3D->GetAdapterCount(); adp < num_adp; ++adp) {
-		const HMONITOR hAdapterMonitor = pD3D->GetAdapterMonitor(adp);
-		if (hAdapterMonitor == hMonitor) {
-			return adp;
-		}
-	}
-
-	return D3DADAPTER_DEFAULT;
-}
-
 CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
 {
 	m_pFilter = pFilter;

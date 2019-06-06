@@ -126,4 +126,6 @@ struct Tex2D_t
 	}
 };
 
+UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAdapter);
+
 HRESULT Dump4ByteTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D* pRGB32Texture2D, const wchar_t* filename);
