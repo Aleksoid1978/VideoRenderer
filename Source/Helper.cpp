@@ -472,7 +472,7 @@ HRESULT SaveARGB32toBMP(BYTE* src, const UINT src_pitch, const UINT width, const
 		memset(bih, 0, sizeof(BITMAPINFOHEADER));
 		bih->biSize = sizeof(BITMAPINFOHEADER);
 		bih->biWidth = width;
-		bih->biHeight = -height;
+		bih->biHeight = -(LONG)height;
 		bih->biBitCount = bitdepth;
 		bih->biPlanes = 1;
 		bih->biSizeImage = DIBSIZE(*bih);
