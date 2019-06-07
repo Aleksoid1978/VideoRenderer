@@ -55,7 +55,7 @@ private:
 	bool m_bInterpolateAt50pct = true;
 	int  m_iSwapEffect         = SWAPEFFECT_Discard;
 
-	CComPtr<ID3D11Device> m_pDevice;
+	CComPtr<ID3D11Device>        m_pDevice;
 	CComPtr<ID3D11DeviceContext> m_pDeviceContext;
 	ID3D11SamplerState*          m_pSamplerPoint = nullptr;
 	CComPtr<ID3D11BlendState>    m_pAlphaBlendState;
@@ -178,6 +178,8 @@ private:
 	PFND3D11CREATEDEVICE m_D3D11CreateDevice = nullptr;
 
 	CComPtr<IDXGIFactory1> m_pDXGIFactory1;
+
+	REFERENCE_TIME m_rtStart = 0;
 
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter);

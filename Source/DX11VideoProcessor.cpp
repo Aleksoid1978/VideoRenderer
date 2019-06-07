@@ -1064,6 +1064,8 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 
 void CDX11VideoProcessor::Start()
 {
+	m_rtStart = 0;
+
 	if (m_VendorId == PCIV_INTEL) {
 		resetmt = true;
 	}
@@ -1077,6 +1079,8 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 {
 	REFERENCE_TIME rtStart, rtEnd;
 	pSample->GetTime(&rtStart, &rtEnd);
+
+	m_rtStart = rtStart;
 
 	const REFERENCE_TIME rtFrameDur = m_pFilter->m_FrameStats.GetAverageFrameDuration();
 	rtEnd = rtStart + rtFrameDur;
@@ -1745,7 +1749,17 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	str.AppendFormat(L"\nCopyTime:%3llu ms, RenderTime:%3llu ms",
 		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.renderticks * 1000 / GetPreciseTicksPerSecondI());
+#if 0
+	str.AppendFormat(L"\n1:%6.03f, 2:%6.03f, 3:%6.03f, 4:%6.03f, 5:%6.03f, 6:%6.03f ms",
+		m_RenderStats.t1 * 1000.0 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.t2 * 1000.0 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.t3 * 1000.0 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.t4 * 1000.0 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.t5 * 1000.0 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.t6 * 1000.0 / GetPreciseTicksPerSecondI());
+#else
 	str.AppendFormat(L"\nSync offset   : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
+#endif
 
 	CComPtr<IDXGISurface1> pDxgiSurface1;
 	HRESULT hr = m_TexOSD.pTexture->QueryInterface(IID_IDXGISurface1, (void**)&pDxgiSurface1);

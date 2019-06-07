@@ -138,9 +138,12 @@ struct CRenderStats {
 	uint64_t renderticks = 0;
 	REFERENCE_TIME syncoffset = 0;
 
-	uint64_t copy1 = 0;
-	uint64_t copy2 = 0;
-	uint64_t copy3 = 0;
+	uint64_t t1 = 0;
+	uint64_t t2 = 0;
+	uint64_t t3 = 0;
+	uint64_t t4 = 0;
+	uint64_t t5 = 0;
+	uint64_t t6 = 0;
 
 	//void NewInterval() {
 	//	skipped_interval = INT_MAX; // needed for forced rendering of the first frame after start or seeking

@@ -1087,9 +1087,9 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 			hr = m_SrcSamples.Get().pSrcSurface->UnlockRect();
 			int64_t tick_4 = GetPreciseTick();
 
-			m_RenderStats.copy1 = tick_2 - tick_1;
-			m_RenderStats.copy2 = tick_3 - tick_2;
-			m_RenderStats.copy3 = tick_4 - tick_3;
+			m_RenderStats.t1 = tick_2 - tick_1;
+			m_RenderStats.t2 = tick_3 - tick_2;
+			m_RenderStats.t3 = tick_4 - tick_3;
 		}
 	}
 
@@ -1792,9 +1792,9 @@ HRESULT CDX9VideoProcessor::DrawStats()
 		m_RenderStats.renderticks * 1000 / GetPreciseTicksPerSecondI());
 #if 0
 	str.AppendFormat(L"\nLR:%6.03f ms, Cnv:%6.03f ms UR:%6.03f ms",
-		m_RenderStats.copy1 * 1000.0 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.copy2 * 1000.0 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.copy3 * 1000.0 / GetPreciseTicksPerSecondI());
+		m_RenderStats.t1 * 1000.0 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.t2 * 1000.0 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.t3 * 1000.0 / GetPreciseTicksPerSecondI());
 #else
 	str.AppendFormat(L"\nSync offset   : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
 #endif
