@@ -625,9 +625,8 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	}
 	desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 	HRESULT hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc, nullptr, nullptr, &m_pDXGISwapChain1);
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd() failed with error %s", HR2Str(hr));
-	}
+
+	DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd() failed with error %s", HR2Str(hr));
 
 	return hr;
 }
@@ -1290,7 +1289,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 
 	uint64_t tick2 = GetPreciseTick();
 
-	if (S_OK == hr && m_bShowStats) {
+	if (m_bShowStats) {
 		hr = DrawStats(pBackBuffer);
 	}
 
