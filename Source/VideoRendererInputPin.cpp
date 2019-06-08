@@ -147,7 +147,7 @@ STDMETHODIMP CVideoRendererInputPin::NewSegment(REFERENCE_TIME startTime, REFERE
 // IMFGetService
 STDMETHODIMP CVideoRendererInputPin::GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject)
 {
-	if (riid == __uuidof(IDirectXVideoMemoryConfiguration) && !m_pBaseRenderer->m_bUsedD3D11) {
+	if (riid == __uuidof(IDirectXVideoMemoryConfiguration)) {
 		return GetInterface((IDirectXVideoMemoryConfiguration*)this, ppvObject);
 	}
 

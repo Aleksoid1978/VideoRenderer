@@ -332,6 +332,9 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd)
 		UpdateStatsStatic();
 	}
 
+	HRESULT hr2 = InitDX9Device(m_hWnd, nullptr);
+	ASSERT(S_OK == hr2);
+
 	return hr;
 }
 
@@ -391,6 +394,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	SAFE_RELEASE(m_pFullFrameVertexBuffer);
 
 	m_pDeviceContext.Release();
+	ReleaseDX9Device();
 
 #if (0 && _DEBUG)
 	if (m_pDevice) {
@@ -1169,6 +1173,44 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 
 		m_pDeviceContext->CopySubresourceRegion(m_pSrcTexture2D, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
+	}
+	else if (CComQIPtr<IMFGetService> pService = pSample) {
+		m_bSrcFromGPU = true;
+
+		CComPtr<IDirect3DSurface9> pSurface9;
+		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface9)))) {
+			D3DSURFACE_DESC desc = {};
+			pSurface9->GetDesc(&desc);
+
+			if (desc.Format != m_srcD3DFormat || desc.Width != m_TextureWidth || desc.Height != m_TextureHeight) {
+				DXGI_FORMAT DXGIFormat = (desc.Format == D3DFMT_NV12) ? DXGI_FORMAT_NV12
+									   : (desc.Format == D3DFMT_P010) ? DXGI_FORMAT_P010
+									   : DXGI_FORMAT_UNKNOWN;
+				hr = InitializeD3D11VP(DXGIFormat, desc.Width, desc.Height, true);
+				if (FAILED(hr)) {
+					return hr;
+				}
+				m_srcD3DFormat = desc.Format;
+			}
+
+			D3DLOCKED_RECT lr_src;
+			hr = pSurface9->LockRect(&lr_src, nullptr, D3DLOCK_READONLY); // slow
+			if (S_OK == hr) {
+				D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+				hr = m_pDeviceContext->Map(m_TexSrcCPU.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+				if (S_OK == hr) {
+					ASSERT(m_pConvertFn);
+					m_pConvertFn(m_TextureHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, (BYTE*)lr_src.pBits, lr_src.Pitch); // slow
+					m_pDeviceContext->Unmap(m_TexSrcCPU.pTexture, 0);
+				}
+				pSurface9->UnlockRect();
+			}
+
+			if (m_pVideoProcessor) {
+				// ID3D11VideoProcessor does not use textures with D3D11_CPU_ACCESS_WRITE flag
+				m_pDeviceContext->CopyResource(m_pSrcTexture2D, m_TexSrcCPU.pTexture);
+			}
+		}
 	}
 	else {
 		m_bSrcFromGPU = false;

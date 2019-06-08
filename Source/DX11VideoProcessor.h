@@ -34,11 +34,14 @@
 #include "FrameStats.h"
 #include "StatsDrawing.h"
 
+#include "DX9Device.h"
+
 class CMpcVideoRenderer;
 class CVideoRendererInputPin;
 
 class CDX11VideoProcessor
-	: public IMFVideoProcessor
+	: public CDX9Device
+	, public IMFVideoProcessor
 {
 private:
 	friend class CVideoRendererInputPin;
