@@ -1171,6 +1171,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 		}
 
+		// for NV12 and P010 textures should be used CopySubresourceRegion instead of CopyResource
 		m_pDeviceContext->CopySubresourceRegion(m_pSrcTexture2D, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
 	}
 	else if (CComQIPtr<IMFGetService> pService = pSample) {
