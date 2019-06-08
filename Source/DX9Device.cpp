@@ -29,19 +29,9 @@
 
 CDX9Device::CDX9Device()
 {
-	if (!m_hD3D9Lib) {
-		m_hD3D9Lib = LoadLibraryW(L"d3d9.dll");
-	}
-	if (!m_hD3D9Lib) {
-		return;
-	}
-
-	HRESULT(WINAPI *pfnDirect3DCreate9Ex)(UINT SDKVersion, IDirect3D9Ex**);
-	(FARPROC &)pfnDirect3DCreate9Ex = GetProcAddress(m_hD3D9Lib, "Direct3DCreate9Ex");
-
-	HRESULT hr = pfnDirect3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
+	HRESULT hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
 	if (!m_pD3DEx) {
-		hr = pfnDirect3DCreate9Ex(D3D9b_SDK_VERSION, &m_pD3DEx);
+		hr = Direct3DCreate9Ex(D3D9b_SDK_VERSION, &m_pD3DEx);
 	}
 	if (!m_pD3DEx) {
 		return;
@@ -61,10 +51,6 @@ CDX9Device::~CDX9Device()
 	m_nResetTocken = 0;
 
 	m_pD3DEx.Release();
-
-	if (m_hD3D9Lib) {
-		FreeLibrary(m_hD3D9Lib);
-	}
 }
 
 HRESULT CDX9Device::InitDX9Device(const HWND hwnd, bool* pChangeDevice)

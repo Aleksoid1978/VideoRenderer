@@ -26,7 +26,6 @@
 class CDX9Device
 {
 private:
-	HMODULE m_hD3D9Lib = nullptr;
 	CComPtr<IDirect3D9Ex>            m_pD3DEx;
 	CComPtr<IDirect3DDeviceManager9> m_pD3DDeviceManager;
 	UINT    m_nResetTocken = 0;

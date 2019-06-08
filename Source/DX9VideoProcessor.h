@@ -90,7 +90,6 @@ private:
 	int  m_iSwapEffect         = SWAPEFFECT_Discard;
 
 	// Direct3D 9
-	HMODULE m_hD3D9Lib = nullptr;
 	CComPtr<IDirect3D9Ex>            m_pD3DEx;
 	CComPtr<IDirect3DDevice9Ex>      m_pD3DDevEx;
 	CComPtr<IDirect3DDeviceManager9> m_pD3DDeviceManager;
