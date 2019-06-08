@@ -982,7 +982,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 {
-	int64_t ticks = GetPreciseTick();
+	uint64_t tick = GetPreciseTick();
 
 	// Get frame type
 	m_CurrentSampleFmt = DXVA2_SampleProgressiveFrame; // Progressive
@@ -1058,24 +1058,17 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 
 			m_SrcSamples.Next();
+
 			D3DLOCKED_RECT lr;
-			int64_t tick_1 = GetPreciseTick();
 			hr = m_SrcSamples.Get().pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
 			if (FAILED(hr)) {
 				return hr;
 			}
-			int64_t tick_2 = GetPreciseTick();
 			ASSERT(m_pConvertFn);
 			BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
 			m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
-			int64_t tick_3 = GetPreciseTick();
 
 			hr = m_SrcSamples.Get().pSrcSurface->UnlockRect();
-			int64_t tick_4 = GetPreciseTick();
-
-			m_RenderStats.t1 = tick_2 - tick_1;
-			m_RenderStats.t2 = tick_3 - tick_2;
-			m_RenderStats.t3 = tick_4 - tick_3;
 		}
 	}
 
@@ -1093,7 +1086,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		m_DXVA2Samples[i].SrcSurface = SrcSample.pSrcSurface;
 	}
 
-	m_RenderStats.copyticks = GetPreciseTick() - ticks;
+	m_RenderStats.copyticks = GetPreciseTick() - tick;
 
 	return hr;
 }
@@ -1104,7 +1097,8 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		return E_POINTER;
 	}
 
-	int64_t ticks = GetPreciseTick();
+	uint64_t tick1 = GetPreciseTick();
+
 	if (field) {
 		m_FieldDrawn = field;
 	}
@@ -1130,14 +1124,11 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		} else {
 			hr = ProcessTex(pBackBuffer, m_srcRenderRect, m_dstRenderRect);
 		}
-
-		if (S_OK == hr && m_bShowStats) {
-			hr = DrawStats();
-		}
 	}
 
 	hr = m_pD3DDevEx->EndScene();
-	m_RenderStats.renderticks = GetPreciseTick() - ticks;
+
+	uint64_t tick2 = GetPreciseTick();
 
 	const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 	const CRect rDstPri(m_windowRect);
@@ -1152,6 +1143,18 @@ HRESULT CDX9VideoProcessor::Render(int field)
 			m_pFilter->m_pSubCallBack->Render(rtStart, rDstVid.left, rDstVid.top, rDstVid.right, rDstVid.bottom, rSrcPri.Width(), rSrcPri.Height());
 		}
 	}
+
+	uint64_t tick3 = GetPreciseTick();
+
+	if (m_bShowStats) {
+		hr = DrawStats();
+	}
+
+	uint64_t tick4 = GetPreciseTick();
+
+	m_RenderStats.renderticks = tick2 - tick1;
+	m_RenderStats.substicks   = tick3 - tick2;
+	m_RenderStats.statsticks  = tick4 - tick3;
 
 	if (m_d3dpp.SwapEffect == D3DSWAPEFFECT_DISCARD) {
 		hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
@@ -1773,14 +1776,19 @@ HRESULT CDX9VideoProcessor::DrawStats()
 
 	str.AppendFormat(L"\nFrames: %5u, skiped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
-	str.AppendFormat(L"\nCopyTime:%3llu ms, RenderTime:%3llu ms",
+	str.AppendFormat(L"\nTimes(ms): Copy%3llu, Render%3llu, Subs%3llu, Stats%3llu",
 		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.renderticks * 1000 / GetPreciseTicksPerSecondI());
+		m_RenderStats.renderticks * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.substicks * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.statsticks * 1000 / GetPreciseTicksPerSecondI());
 #if 0
-	str.AppendFormat(L"\nLR:%6.03f ms, Cnv:%6.03f ms UR:%6.03f ms",
+	str.AppendFormat(L"\n1:%6.03f, 2:%6.03f, 3:%6.03f, 4:%6.03f, 5:%6.03f, 6:%6.03f ms",
 		m_RenderStats.t1 * 1000.0 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.t2 * 1000.0 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.t3 * 1000.0 / GetPreciseTicksPerSecondI());
+		m_RenderStats.t3 * 1000.0 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.t4 * 1000.0 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.t5 * 1000.0 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.t6 * 1000.0 / GetPreciseTicksPerSecondI());
 #else
 	str.AppendFormat(L"\nSync offset   : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
 #endif
