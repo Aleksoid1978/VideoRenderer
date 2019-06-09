@@ -1144,17 +1144,14 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		}
 	}
 
-	uint64_t tick3 = GetPreciseTick();
-
-	if (m_bShowStats) {
+ 	if (m_bShowStats) {
+		hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
+		uint64_t tick3 = GetPreciseTick();
 		hr = DrawStats();
-	}
-
-	uint64_t tick4 = GetPreciseTick();
-
-	m_RenderStats.renderticks = tick2 - tick1;
-	m_RenderStats.substicks   = tick3 - tick2;
-	m_RenderStats.statsticks  = tick4 - tick3;
+		m_RenderStats.renderticks = tick2 - tick1;
+		m_RenderStats.substicks   = tick3 - tick2;
+		m_RenderStats.statsticks  = GetPreciseTick() - tick3;
+ 	}
 
 	if (m_d3dpp.SwapEffect == D3DSWAPEFFECT_DISCARD) {
 		hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
@@ -1805,7 +1802,9 @@ HRESULT CDX9VideoProcessor::DrawStats()
 			hr = m_pD3DDevEx->UpdateSurface(m_pMemOSDSurface, nullptr, pOSDSurface, nullptr);
 		}
 
+		hr = m_pD3DDevEx->BeginScene();
 		hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H), m_pOSDTexture);
+		m_pD3DDevEx->EndScene();
 	}
 
 	return hr;

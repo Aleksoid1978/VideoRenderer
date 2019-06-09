@@ -1288,15 +1288,12 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		}
 	}
 
-	uint64_t tick2 = GetPreciseTick();
-
 	if (m_bShowStats) {
+		uint64_t tick2 = GetPreciseTick();
 		hr = DrawStats(pBackBuffer);
+		m_RenderStats.renderticks = tick2 - tick1;
+		m_RenderStats.statsticks = GetPreciseTick() - tick2;
 	}
-
-	uint64_t tick3 = GetPreciseTick();
-	m_RenderStats.renderticks = tick2 - tick1;
-	m_RenderStats.statsticks = tick3 - tick2;
 
 	hr = m_pDXGISwapChain1->Present(0, 0);
 
