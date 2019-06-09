@@ -325,7 +325,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 		hr2 = m_Font3D.RestoreDeviceObjects();
 	}
 	hr2 = m_Rect3DBackground.InitDeviceObjects(m_pD3DDevEx);
-	hr2 = m_Rect3DBackground.Set(10 + STATS_X, 10 + STATS_Y, 10 + STATS_X + STATS_W, 10 + STATS_X + STATS_H, D3DCOLOR_ARGB(63, 0, 0, 0));
+	hr2 = m_Rect3DBackground.Set(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H, D3DCOLOR_ARGB(63, 0, 0, 0));
 	hr2 = m_Rect3D.InitDeviceObjects(m_pD3DDevEx);
 #endif
 
@@ -1817,12 +1817,12 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	hr = m_pD3DDevEx->BeginScene();
 
 	hr = m_Rect3DBackground.Draw(m_pD3DDevEx);
-	hr = m_Font3D.DrawText(STATS_X + 15, STATS_Y + 15, D3DCOLOR_XRGB(255, 255, 255), str);
+	hr = m_Font3D.DrawText(STATS_X + 5, STATS_Y + 5, D3DCOLOR_XRGB(255, 255, 255), str);
 	static int col = STATS_W;
 	if (--col < 0) {
 		col = STATS_W;
 	}
-	m_Rect3D.Set(col +10, STATS_H - 1, col + 15, STATS_H - 9, D3DCOLOR_XRGB(128, 255, 128));
+	m_Rect3D.Set(col + STATS_X, STATS_Y+STATS_H - 11, col + STATS_X + 5, STATS_Y+STATS_H - 1, D3DCOLOR_XRGB(128, 255, 128));
 	m_Rect3D.Draw(m_pD3DDevEx);
 
 	m_pD3DDevEx->EndScene();
