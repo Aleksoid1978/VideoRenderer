@@ -27,6 +27,7 @@
 class CD3D9Quadrilateral
 {
 protected:
+	bool m_bAlphaBlend = false;
 	struct LINEVERTEX {
 		FLOAT x, y, z, rhw;
 		DWORD color;
@@ -55,6 +56,10 @@ public:
 	{
 		HRESULT hr = S_OK;
 
+		if ((color >> 24) < 0xFF) {
+			m_bAlphaBlend = true;
+		}
+
 		m_Vertices[0] = { x1, y1, 0.5f, 1.0f, color };
 		m_Vertices[1] = { x2, y2, 0.5f, 1.0f, color };
 		m_Vertices[2] = { x3, y3, 0.5f, 1.0f, color };
@@ -76,6 +81,16 @@ public:
 
 	HRESULT Draw(IDirect3DDevice9* pD3DDev)
 	{
+		if (m_bAlphaBlend) {
+			pD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+			pD3DDev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+			pD3DDev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+		}
+		else {
+			pD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+		}
+		pD3DDev->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA);
+
 		HRESULT hr = pD3DDev->SetStreamSource(0, m_pVertexBuffer, 0, sizeof(LINEVERTEX));
 		if (S_OK == hr) {
 			hr = pD3DDev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);

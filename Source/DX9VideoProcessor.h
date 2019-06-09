@@ -183,6 +183,7 @@ private:
 	CStringW m_strStatsStatic2;
 #if STATS_D3D
 	CD3D9Font m_Font3D;
+	CD3D9Rectangle m_Rect3DBackground;
 	CD3D9Rectangle m_Rect3D;
 #else
 	CStatsDrawing m_StatsDrawing;
