@@ -69,6 +69,7 @@
   <ItemGroup>
     <ClCompile Include="csputils.cpp" />
     <ClCompile Include="CustomAllocator.cpp" />
+    <ClCompile Include="D3D9Font.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="DX11Helper.cpp" />
     <ClCompile Include="DX11VideoProcessor.cpp" />
@@ -89,6 +90,7 @@
   <ItemGroup>
     <ClInclude Include="csputils.h" />
     <ClInclude Include="CustomAllocator.h" />
+    <ClInclude Include="D3D9Font.h" />
     <ClInclude Include="DX11Helper.h" />
     <ClInclude Include="DX11VideoProcessor.h" />
     <ClInclude Include="DX9Device.h" />
