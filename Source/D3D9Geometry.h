@@ -24,8 +24,9 @@
 #include <DirectXMath.h>
 #include "Helper.h"
 
-class CD3D9Line
+class CD3D9Quadrilateral
 {
+protected:
 	struct LINEVERTEX {
 		FLOAT x, y, z, rhw;
 		DWORD color;
@@ -50,17 +51,9 @@ public:
 		SAFE_RELEASE(m_pVertexBuffer);
 	}
 
-	HRESULT Set(const float x1, const float y1, const float x2, const float y2, const int thickness, const D3DCOLOR color)
+	HRESULT Set(const float x1, const float y1, const float x2, const float y2, const float x3, const float y3, const float x4, const float y4, const D3DCOLOR color)
 	{
 		HRESULT hr = S_OK;
-
-		const float a = atan2f(y1 - y2, x2 - x1);
-		const float xt = thickness * sinf(a);
-		const float yt = thickness * cosf(a);
-		const float x3 = x2 + xt;
-		const float y3 = y2 + yt;
-		const float x4 = x1 + xt;
-		const float y4 = y1 + yt;
 
 		m_Vertices[0] = { x1, y1, 0.5f, 1.0f, color };
 		m_Vertices[1] = { x2, y2, 0.5f, 1.0f, color };
@@ -92,8 +85,46 @@ public:
 		return hr;
 	}
 
-	~CD3D9Line()
+	~CD3D9Quadrilateral()
 	{
 		InvalidateDeviceObjects();
+	}
+};
+
+
+class CD3D9Rectangle : public CD3D9Quadrilateral
+{
+private:
+	using CD3D9Quadrilateral::Set;
+
+public:
+	HRESULT Set(const int left, const int top, const int right, const int bottom, const D3DCOLOR color)
+	{
+		return CD3D9Quadrilateral::Set(left, top, right, top,  right, bottom, left, bottom, color);
+	}
+	HRESULT Set(const RECT& rect, const D3DCOLOR color)
+	{
+		return CD3D9Quadrilateral::Set(rect.left, rect.top, rect.right, rect.top,  rect.right, rect.bottom, rect.left, rect.bottom, color);
+	}
+};
+
+
+class CD3D9Line : public CD3D9Quadrilateral
+{
+private:
+	using CD3D9Quadrilateral::Set;
+
+public:
+	HRESULT Set(const int x1, const int y1, const int x2, const int y2, const int thickness, const D3DCOLOR color)
+	{
+		const float a = atan2f(y1 - y2, x2 - x1);
+		const float xt = thickness * sinf(a);
+		const float yt = thickness * cosf(a);
+		const float x3 = x2 + xt;
+		const float y3 = y2 + yt;
+		const float x4 = x1 + xt;
+		const float y4 = y1 + yt;
+
+		return CD3D9Quadrilateral::Set(x1, y1, x2, y2, x3, y3, x4, y4, color);
 	}
 };

@@ -128,7 +128,7 @@
     <ClInclude Include="D3D9Font.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="D3D9Line.h">
+    <ClInclude Include="D3D9Geometry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

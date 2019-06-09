@@ -91,7 +91,7 @@
     <ClInclude Include="csputils.h" />
     <ClInclude Include="CustomAllocator.h" />
     <ClInclude Include="D3D9Font.h" />
-    <ClInclude Include="D3D9Line.h" />
+    <ClInclude Include="D3D9Geometry.h" />
     <ClInclude Include="DX11Helper.h" />
     <ClInclude Include="DX11VideoProcessor.h" />
     <ClInclude Include="DX9Device.h" />
