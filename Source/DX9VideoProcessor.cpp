@@ -164,9 +164,7 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTex
 // CDX9VideoProcessor
 
 CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
-#if STATS_D3D
 	: m_Font3D(L"Consolas", 12)
-#endif
 {
 	m_pFilter = pFilter;
 
@@ -300,11 +298,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 		*pChangeDevice = !bTryToReset;
 	}
 
-	m_pMemOSDSurface.Release();
-	m_pOSDTexture.Release();
-	if (S_OK == m_pD3DDevEx->CreateTexture(STATS_W, STATS_H, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_pOSDTexture, nullptr)) {
-		m_pD3DDevEx->CreateOffscreenPlainSurface(STATS_W, STATS_H, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &m_pMemOSDSurface, nullptr);
-	}
+	m_TexStats.Create(m_pD3DDevEx, D3DFMT_A8R8G8B8, STATS_W, STATS_H);
 
 	if (!m_pDXVA2_VPService) {
 		// Create DXVA2 Video Processor Service.
@@ -319,13 +313,11 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 		m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
 	}
 
-#if STATS_D3D
 	HRESULT hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
 	if (S_OK == hr2) {
 		hr2 = m_Font3D.RestoreDeviceObjects();
 	}
 	hr2 = m_Rect3D.InitDeviceObjects(m_pD3DDevEx);
-#endif
 
 	return hr;
 }
@@ -361,8 +353,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 {
 	ReleaseVP();
 
-	m_pMemOSDSurface.Release();
-	m_pOSDTexture.Release();
+	m_TexStats.Release();
 
 	m_pDXVA2_VPService.Release();
 
@@ -376,11 +367,9 @@ void CDX9VideoProcessor::ReleaseDevice()
 	m_strShaderUpscale   = nullptr;
 	m_strShaderDownscale = nullptr;
 
-#if STATS_D3D
 	m_Font3D.InvalidateDeviceObjects();
 	m_Font3D.DeleteDeviceObjects();
 	m_Rect3D.InvalidateDeviceObjects();
-#endif
 
 	m_pD3DDevEx.Release();
 }
@@ -1753,7 +1742,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 
 HRESULT CDX9VideoProcessor::DrawStats()
 {
-	if (!m_pMemOSDSurface) {
+	if (!m_TexStats.pTexture) {
 		return E_ABORT;
 	}
 
@@ -1810,15 +1799,11 @@ HRESULT CDX9VideoProcessor::DrawStats()
 
 	HRESULT hr = S_OK;
 
-#if STATS_D3D
 	CComPtr<IDirect3DSurface9> pRenderTarget;
 	hr = m_pD3DDevEx->GetRenderTarget(0, &pRenderTarget);
+	hr = m_pD3DDevEx->SetRenderTarget(0, m_TexStats.pSurface);
 
-	CComPtr<IDirect3DSurface9> pOSDSurface;
-	hr = m_pOSDTexture->GetSurfaceLevel(0, &pOSDSurface);
-	hr = m_pD3DDevEx->SetRenderTarget(0, pOSDSurface);
-
-	hr = m_pD3DDevEx->ColorFill(pOSDSurface, nullptr, D3DCOLOR_ARGB(192, 0, 0, 0));
+	hr = m_pD3DDevEx->ColorFill(m_TexStats.pSurface, nullptr, D3DCOLOR_ARGB(192, 0, 0, 0));
 	hr = m_Font3D.DrawText(STATS_X + 5, STATS_Y + 5, D3DCOLOR_XRGB(255, 255, 255), str);
 	static int col = STATS_W;
 	if (--col < 0) {
@@ -1830,26 +1815,8 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
 	hr = m_pD3DDevEx->BeginScene();
-	hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H), m_pOSDTexture);
+	hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H), m_TexStats.pTexture);
 	m_pD3DDevEx->EndScene();
-#else
-	HDC hdc;
-	hr = m_pMemOSDSurface->GetDC(&hdc);
-	if (S_OK == hr) {
-		m_StatsDrawing.DrawTextW(hdc, str);
-		m_pMemOSDSurface->ReleaseDC(hdc);
-
-		CComPtr<IDirect3DSurface9> pOSDSurface;
-		hr = m_pOSDTexture->GetSurfaceLevel(0, &pOSDSurface);
-		if (S_OK == hr) {
-			hr = m_pD3DDevEx->UpdateSurface(m_pMemOSDSurface, nullptr, pOSDSurface, nullptr);
-		}
-
-		hr = m_pD3DDevEx->BeginScene();
-		hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H), m_pOSDTexture);
-		m_pD3DDevEx->EndScene();
-	}
-#endif
 
 	return hr;
 }

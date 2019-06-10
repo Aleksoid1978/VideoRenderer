@@ -18,8 +18,6 @@
 *
 */
 
-#define STATS_D3D 0
-
 #pragma once
 
 #include <atltypes.h>
@@ -29,13 +27,8 @@
 #include "DX9Helper.h"
 #include "FrameStats.h"
 #include "resource.h"
-
-#if STATS_D3D
 #include "D3D9Font.h"
 #include "D3D9Geometry.h"
-#else
-#include "StatsDrawing.h"
-#endif
 
 struct VideoSurface {
 	REFERENCE_TIME Start = 0;
@@ -152,8 +145,7 @@ private:
 	CRect m_srcRenderRect;
 	CRect m_dstRenderRect;
 
-	CComPtr<IDirect3DTexture9> m_pOSDTexture;
-	CComPtr<IDirect3DSurface9> m_pMemOSDSurface;
+	Tex_t m_TexStats;
 
 	// D3D9 Video Processor
 	CComPtr<IDirect3DTexture9> m_pSrcVideoTexture;
@@ -181,12 +173,8 @@ private:
 
 	CStringW m_strStatsStatic1;
 	CStringW m_strStatsStatic2;
-#if STATS_D3D
 	CD3D9Font m_Font3D;
 	CD3D9Rectangle m_Rect3D;
-#else
-	CStatsDrawing m_StatsDrawing;
-#endif
 
 	bool m_bSrcFromGPU = false;
 
