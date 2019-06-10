@@ -1278,13 +1278,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		return hr;
 	}
 
-	ID3D11RenderTargetView* pRenderTargetView;
-	if (S_OK == m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView)) {
-		const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
-		pRenderTargetView->Release();
-	}
-
 	if (!m_videoRect.IsRectEmpty() && !m_windowRect.IsRectEmpty()) {
 		m_srcRenderRect = m_srcRect;
 		m_dstRenderRect = m_videoRect;
@@ -1520,6 +1513,13 @@ HRESULT CDX11VideoProcessor::ResizeShader2Pass(Tex2D_t& Tex, ID3D11Texture2D* pR
 
 	ID3D11PixelShader* resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleX : m_pShaderUpscaleX;
 	ID3D11PixelShader* resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
+
+	ID3D11RenderTargetView* pRenderTargetView;
+	if (S_OK == m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView)) {
+		const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
+		pRenderTargetView->Release();
+	}
 
 	// two pass resize
 	if (resizerX && resizerY) {
