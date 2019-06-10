@@ -597,7 +597,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	}
 #endif
 
-	HRESULT hr2 = m_TexOSD.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DefaultShaderRTargetGDI);
+	HRESULT hr2 = m_TexOSD.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DynamicShaderWrite);
 	ASSERT(S_OK == hr2);
 
 #if FW1FONTWRAPPER_ENABLE
@@ -1838,25 +1838,20 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 
 	return E_FAIL;
 #else
-	CComPtr<IDXGISurface1> pDxgiSurface1;
-	HRESULT hr = m_TexOSD.pTexture->QueryInterface(IID_IDXGISurface1, (void**)&pDxgiSurface1);
-	if (S_OK == hr) {
-		HDC hdc;
-		hr = pDxgiSurface1->GetDC(FALSE, &hdc);
-		if (S_OK == hr) {
-			m_StatsDrawing.DrawTextW(hdc, str);
-			pDxgiSurface1->ReleaseDC(0);
+	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+	HRESULT hr = m_pDeviceContext->Map(m_TexOSD.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (SUCCEEDED(hr)) {
+		m_StatsDrawing.DrawTextW((BYTE*)mappedResource.pData, mappedResource.RowPitch, str);
+		m_pDeviceContext->Unmap(m_TexOSD.pTexture, 0);
 
-			D3D11_VIEWPORT VP;
-			VP.TopLeftX = STATS_X;
-			VP.TopLeftY = STATS_Y;
-			VP.Width    = STATS_W;
-			VP.Height   = STATS_H;
-			VP.MinDepth = 0.0f;
-			VP.MaxDepth = 1.0f;
-
-			AlphaBlt(m_TexOSD.pShaderResource, pRenderTarget, VP);
-		}
+		D3D11_VIEWPORT VP;
+		VP.TopLeftX = STATS_X;
+		VP.TopLeftY = STATS_Y;
+		VP.Width = STATS_W;
+		VP.Height = STATS_H;
+		VP.MinDepth = 0.0f;
+		VP.MaxDepth = 1.0f;
+		AlphaBlt(m_TexOSD.pShaderResource, pRenderTarget, VP);
 	}
 
 	return hr;

@@ -34,37 +34,59 @@ private:
 	ULONG_PTR m_gdiplusToken;
 	Gdiplus::GdiplusStartupInput m_gdiplusStartupInput;
 
+	Gdiplus::Bitmap*     m_bitmap;
+	Gdiplus::Graphics*   m_graphics;
+	Gdiplus::FontFamily* m_fontFamily;
+	Gdiplus::Font*       m_font;
+	Gdiplus::SolidBrush* m_solidBrush;
+	Gdiplus::Pen*        m_pen;
+
 public:
 	CStatsDrawing() {
+		using namespace Gdiplus;
 		// GDI+ handling
-		Gdiplus::GdiplusStartup(&m_gdiplusToken, &m_gdiplusStartupInput, nullptr);
+		GdiplusStartup(&m_gdiplusToken, &m_gdiplusStartupInput, nullptr);
+
+		m_bitmap = new Bitmap(STATS_W, STATS_H, PixelFormat32bppARGB);
+		m_graphics = new Graphics(m_bitmap);
+
+		m_fontFamily = new FontFamily(L"Consolas");
+		m_font = new Font(m_fontFamily, 16, FontStyleRegular, UnitPixel);
+		m_solidBrush = new SolidBrush(Color(255, 255, 255));
+		m_pen = new Pen(Color(128, 255, 128), 5);
 	}
 	~CStatsDrawing() {
+		SAFE_DELETE(m_pen);
+		SAFE_DELETE(m_solidBrush);
+		SAFE_DELETE(m_font);
+		SAFE_DELETE(m_fontFamily);
+		SAFE_DELETE(m_graphics);
+		SAFE_DELETE(m_bitmap);
+
 		// GDI+ handling
 		Gdiplus::GdiplusShutdown(m_gdiplusToken);
 	}
 
-	void DrawTextW(HDC& hdc, const WCHAR* str) {
+	void DrawTextW(BYTE* dst, int dst_pitch, const WCHAR* str) {
 		using namespace Gdiplus;
 
-		Graphics   graphics(hdc);
-		FontFamily fontFamily(L"Consolas");
-		Font       font(&fontFamily, 16, FontStyleRegular, UnitPixel);
-		PointF     pointF(5.0f, 5.0f);
-		SolidBrush solidBrush(Color(255, 255, 255));
-
 		Status status = Gdiplus::Ok;
+		status = m_graphics->Clear(Color(192, 0, 0, 0));
+		status = m_graphics->DrawString(str, -1, m_font, { 5.0f, 5.0f }, m_solidBrush);
 
-		status = graphics.Clear(Color(192, 0, 0, 0));
-		status = graphics.DrawString(str, -1, &font, pointF, &solidBrush);
-
-		Pen pen(Color(128, 255, 128), 5);
 		static int col = STATS_W;
 		if (--col < 0) {
 			col = STATS_W;
 		}
-		graphics.DrawLine(&pen, col, STATS_H - 11, col, STATS_H - 1);
+		status = m_graphics->DrawLine(m_pen, col, STATS_H - 11, col, STATS_H - 1);
 
-		graphics.Flush();
+		m_graphics->Flush();
+
+		BitmapData bitmapData;
+		Rect rc(0, 0, STATS_W, STATS_H);
+		if (Ok == m_bitmap->LockBits(&rc, ImageLockModeRead, PixelFormat32bppARGB, &bitmapData)) {
+			CopyFrameAsIs(bitmapData.Height, dst, dst_pitch, (BYTE*)bitmapData.Scan0, bitmapData.Stride);
+			m_bitmap->UnlockBits(&bitmapData);
+		}
 	}
 };
