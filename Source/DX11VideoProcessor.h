@@ -20,6 +20,8 @@
 
 #pragma once
 
+#define FW1FONTWRAPPER_ENABLE 0
+
 #include <atltypes.h>
 #include <ntverp.h>
 #include <DXGI1_2.h>
@@ -33,8 +35,11 @@
 #include "DX11Helper.h"
 #include "FrameStats.h"
 #include "StatsDrawing.h"
-
 #include "DX9Device.h"
+
+#if FW1FONTWRAPPER_ENABLE
+#include "./FW1FontWrapper/FW1FontWrapper.h"
+#endif
 
 class CMpcVideoRenderer;
 class CVideoRendererInputPin;
@@ -183,6 +188,11 @@ private:
 	CComPtr<IDXGIFactory1> m_pDXGIFactory1;
 
 	REFERENCE_TIME m_rtStart = 0;
+
+#if FW1FONTWRAPPER_ENABLE
+	CComPtr<IFW1Factory>m_pFW1Factory;
+	CComPtr<IFW1FontWrapper>m_pFontWrapper;
+#endif
 
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter);

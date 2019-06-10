@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{D1F1B6BA-FEFD-424C-B851-7D22BD4B9EC5}</ProjectGuid>
+    <RootNamespace>FW1FontWrapper</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>FW1FontWrapperr</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="..\..\platform.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>Static</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\common.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+    <TargetName>$(ProjectName)64</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeaderFile>FW1Precompiled.h</PrecompiledHeaderFile>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="CFW1ColorRGBA.h" />
+    <ClInclude Include="CFW1DWriteRenderTarget.h" />
+    <ClInclude Include="CFW1Factory.h" />
+    <ClInclude Include="CFW1FontWrapper.h" />
+    <ClInclude Include="CFW1GlyphAtlas.h" />
+    <ClInclude Include="CFW1GlyphProvider.h" />
+    <ClInclude Include="CFW1GlyphRenderStates.h" />
+    <ClInclude Include="CFW1GlyphSheet.h" />
+    <ClInclude Include="CFW1GlyphVertexDrawer.h" />
+    <ClInclude Include="CFW1Object.h" />
+    <ClInclude Include="CFW1StateSaver.h" />
+    <ClInclude Include="CFW1TextGeometry.h" />
+    <ClInclude Include="CFW1TextRenderer.h" />
+    <ClInclude Include="FW1CompileSettings.h" />
+    <ClInclude Include="FW1FontWrapper.h" />
+    <ClInclude Include="FW1Precompiled.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CFW1ColorRGBA.cpp" />
+    <ClCompile Include="CFW1ColorRGBAInterface.cpp" />
+    <ClCompile Include="CFW1DWriteRenderTarget.cpp" />
+    <ClCompile Include="CFW1DWriteRenderTargetInterface.cpp" />
+    <ClCompile Include="CFW1Factory.cpp" />
+    <ClCompile Include="CFW1FactoryInterface.cpp" />
+    <ClCompile Include="CFW1FontWrapper.cpp" />
+    <ClCompile Include="CFW1FontWrapperInterface.cpp" />
+    <ClCompile Include="CFW1GlyphAtlas.cpp" />
+    <ClCompile Include="CFW1GlyphAtlasInterface.cpp" />
+    <ClCompile Include="CFW1GlyphProvider.cpp" />
+    <ClCompile Include="CFW1GlyphProviderInterface.cpp" />
+    <ClCompile Include="CFW1GlyphRenderStates.cpp" />
+    <ClCompile Include="CFW1GlyphRenderStatesInterface.cpp" />
+    <ClCompile Include="CFW1GlyphSheet.cpp" />
+    <ClCompile Include="CFW1GlyphSheetInterface.cpp" />
+    <ClCompile Include="CFW1GlyphVertexDrawer.cpp" />
+    <ClCompile Include="CFW1GlyphVertexDrawerInterface.cpp" />
+    <ClCompile Include="CFW1StateSaver.cpp" />
+    <ClCompile Include="CFW1TextGeometry.cpp" />
+    <ClCompile Include="CFW1TextGeometryInterface.cpp" />
+    <ClCompile Include="CFW1TextRenderer.cpp" />
+    <ClCompile Include="CFW1TextRendererInterface.cpp" />
+    <ClCompile Include="FW1FontWrapper.cpp" />
+    <ClCompile Include="FW1Precompiled.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

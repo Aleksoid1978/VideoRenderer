@@ -393,6 +393,11 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pAlphaBlendState.Release();
 	SAFE_RELEASE(m_pFullFrameVertexBuffer);
 
+#if FW1FONTWRAPPER_ENABLE
+	m_pFontWrapper.Release();
+	m_pFW1Factory.Release();
+#endif
+
 	m_pDeviceContext.Release();
 	ReleaseDX9Device();
 
@@ -454,6 +459,7 @@ HRESULT CDX11VideoProcessor::CreatePShaderFromResource(ID3D11PixelShader** ppPix
 HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
 {
 	DLog(L"CDX11VideoProcessor::SetDevice()");
+
 	m_pDXGISwapChain1.Release();
 	m_pDXGIFactory2.Release();
 	ReleaseDevice();
@@ -593,6 +599,13 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	HRESULT hr2 = m_TexOSD.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DefaultShaderRTargetGDI);
 	ASSERT(S_OK == hr2);
+
+#if FW1FONTWRAPPER_ENABLE
+	hr2 = FW1CreateFactory(FW1_VERSION, &m_pFW1Factory.p);
+	ASSERT(S_OK == hr2);
+	hr2 = m_pFW1Factory->CreateFontWrapper(pDevice, L"Consolas", &m_pFontWrapper.p);
+	ASSERT(S_OK == hr2);
+#endif
 
 	return hr;
 }
@@ -1808,6 +1821,23 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	str.AppendFormat(L"\nSync offset   : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
 #endif
 
+#if FW1FONTWRAPPER_ENABLE
+	if (m_pFontWrapper) {
+		m_pFontWrapper->DrawString(
+			m_pDeviceContext,
+			str,
+			16.0f,
+			STATS_X,
+			STATS_Y,
+			0xFFFFFFFF, // Text color, AGBR format
+			FW1_RESTORESTATE
+		);
+
+		return S_OK;
+	}
+
+	return E_FAIL;
+#else
 	CComPtr<IDXGISurface1> pDxgiSurface1;
 	HRESULT hr = m_TexOSD.pTexture->QueryInterface(IID_IDXGISurface1, (void**)&pDxgiSurface1);
 	if (S_OK == hr) {
@@ -1830,6 +1860,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	}
 
 	return hr;
+#endif
 }
 
 // IUnknown
