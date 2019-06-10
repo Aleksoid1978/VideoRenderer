@@ -324,8 +324,6 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 	if (S_OK == hr2) {
 		hr2 = m_Font3D.RestoreDeviceObjects();
 	}
-	hr2 = m_Rect3DBackground.InitDeviceObjects(m_pD3DDevEx);
-	hr2 = m_Rect3DBackground.Set(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H, D3DCOLOR_ARGB(63, 0, 0, 0));
 	hr2 = m_Rect3D.InitDeviceObjects(m_pD3DDevEx);
 #endif
 
@@ -382,7 +380,6 @@ void CDX9VideoProcessor::ReleaseDevice()
 	m_Font3D.InvalidateDeviceObjects();
 	m_Font3D.DeleteDeviceObjects();
 	m_Rect3D.InvalidateDeviceObjects();
-	m_Rect3DBackground.InvalidateDeviceObjects();
 #endif
 
 	m_pD3DDevEx.Release();
@@ -1814,17 +1811,26 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	HRESULT hr = S_OK;
 
 #if STATS_D3D
-	hr = m_pD3DDevEx->BeginScene();
+	CComPtr<IDirect3DSurface9> pRenderTarget;
+	hr = m_pD3DDevEx->GetRenderTarget(0, &pRenderTarget);
 
-	hr = m_Rect3DBackground.Draw(m_pD3DDevEx);
+	CComPtr<IDirect3DSurface9> pOSDSurface;
+	hr = m_pOSDTexture->GetSurfaceLevel(0, &pOSDSurface);
+	hr = m_pD3DDevEx->SetRenderTarget(0, pOSDSurface);
+
+	hr = m_pD3DDevEx->ColorFill(pOSDSurface, nullptr, D3DCOLOR_ARGB(192, 0, 0, 0));
 	hr = m_Font3D.DrawText(STATS_X + 5, STATS_Y + 5, D3DCOLOR_XRGB(255, 255, 255), str);
 	static int col = STATS_W;
 	if (--col < 0) {
 		col = STATS_W;
 	}
-	m_Rect3D.Set(col + STATS_X, STATS_Y+STATS_H - 11, col + STATS_X + 5, STATS_Y+STATS_H - 1, D3DCOLOR_XRGB(128, 255, 128));
+	m_Rect3D.Set(col, STATS_H - 11, col + 5, STATS_H - 1, D3DCOLOR_XRGB(128, 255, 128));
 	m_Rect3D.Draw(m_pD3DDevEx);
 
+	hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
+
+	hr = m_pD3DDevEx->BeginScene();
+	hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H), m_pOSDTexture);
 	m_pD3DDevEx->EndScene();
 #else
 	HDC hdc;
