@@ -144,6 +144,41 @@ HRESULT CDX11VideoProcessor::AlphaBlt(ID3D11ShaderResourceView* pShaderResource,
 	return hr;
 }
 
+HRESULT CDX11VideoProcessor::AlphaBltSub(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, D3D11_VIEWPORT& viewport)
+{
+	ID3D11RenderTargetView* pRenderTargetView;
+	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+
+	if (S_OK == hr) {
+		UINT Stride = sizeof(VERTEX);
+		UINT Offset = 0;
+		ID3D11Buffer* pVertexBuffer = nullptr;
+		hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, m_d3dpp.BackBufferWidth, m_d3dpp.BackBufferHeight, srcRect);
+
+		if (S_OK == hr) {
+			// Set resources
+			m_pDeviceContext->RSSetViewports(1, &viewport);
+			m_pDeviceContext->OMSetBlendState(m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
+			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
+			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
+			m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
+			m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
+			m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			m_pDeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &Stride, &Offset);
+
+			// Draw textured quad onto render target
+			m_pDeviceContext->Draw(6, 0);
+
+			pVertexBuffer->Release();
+		}
+		pRenderTargetView->Release();
+	}
+	DLogIf(FAILED(hr), L"CDX11VideoProcessor:AlphaBlt() : CreateRenderTargetView() failed with error %s", HR2Str(hr));
+
+	return hr;
+}
+
 HRESULT CDX11VideoProcessor::TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& destRect, ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
@@ -398,6 +433,11 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pFW1Factory.Release();
 #endif
 
+	m_pShaderResourceSubPic.Release();
+	m_pTextureSubPic.Release();
+
+	m_pSurface9SubPic.Release();
+
 	m_pDeviceContext.Release();
 	ReleaseDX9Device();
 
@@ -641,6 +681,59 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 
 	DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd() failed with error %s", HR2Str(hr));
 
+	if (m_pDXGISwapChain1) {
+		m_pShaderResourceSubPic.Release();
+		m_pTextureSubPic.Release();
+
+		m_pSurface9SubPic.Release();
+
+		if (m_pD3DDevEx) {
+			HANDLE sharedHandle = nullptr;
+			HRESULT hr2 = m_pD3DDevEx->CreateRenderTarget(
+				m_d3dpp.BackBufferWidth,
+				m_d3dpp.BackBufferHeight,
+				D3DFMT_A8R8G8B8,
+				D3DMULTISAMPLE_NONE,
+				0,
+				FALSE,
+				&m_pSurface9SubPic,
+				&sharedHandle);
+			DLogIf(FAILED(hr2), L"CDX11VideoProcessor::InitSwapChain() : CreateRenderTarget(Direct3D9) failed with error %s", HR2Str(hr2));
+
+			if (m_pSurface9SubPic) {
+				hr2 = m_pDevice->OpenSharedResource(sharedHandle, IID_PPV_ARGS(&m_pTextureSubPic));
+				DLogIf(FAILED(hr2), L"CDX11VideoProcessor::InitSwapChain() : OpenSharedResource() failed with error %s", HR2Str(hr2));
+			}
+
+			if (m_pTextureSubPic) {
+				ID3D11RenderTargetView* pRenderTargetView;
+				if (S_OK == m_pDevice->CreateRenderTargetView(m_pTextureSubPic, nullptr, &pRenderTargetView)) {
+					const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+					m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
+					pRenderTargetView->Release();
+				}
+
+				D3D11_TEXTURE2D_DESC desc = {};
+				m_pTextureSubPic->GetDesc(&desc);
+				if (desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) {
+					D3D11_SHADER_RESOURCE_VIEW_DESC shaderDesc;
+					shaderDesc.Format = desc.Format;
+					shaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+					shaderDesc.Texture2D.MostDetailedMip = 0; // = Texture2D desc.MipLevels - 1
+					shaderDesc.Texture2D.MipLevels = 1;       // = Texture2D desc.MipLevels
+
+					hr2 = m_pDevice->CreateShaderResourceView(m_pTextureSubPic, &shaderDesc, &m_pShaderResourceSubPic);
+					DLogIf(FAILED(hr2), L"CDX11VideoProcessor::InitSwapChain() : CreateShaderResourceView() failed with error %s", HR2Str(hr2));
+				}
+
+				if (m_pShaderResourceSubPic) {
+					hr2 = m_pD3DDevEx->SetRenderTarget(0, m_pSurface9SubPic);
+					DLogIf(FAILED(hr2), L"CDX11VideoProcessor::InitSwapChain() : SetRenderTarget(Direct3D9) failed with error %s", HR2Str(hr2));
+				}
+			}
+		}
+	}
+
 	return hr;
 }
 
@@ -820,6 +913,10 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			m_inputMT = *pmt;
 			UpdateStatsStatic();
 
+			if (m_pFilter->m_pSubCallBack) {
+				HRESULT hr = m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
+			}
+
 			return TRUE;
 		}
 
@@ -877,6 +974,10 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcSubType = SubType;
 		m_inputMT = *pmt;
 		UpdateStatsStatic();
+
+		if (m_pFilter->m_pSubCallBack) {
+			hr = m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
+		}
 
 		return TRUE;
 	}
@@ -1294,11 +1395,51 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		}
 	}
 
+	uint64_t tick2 = GetPreciseTick();
+
+	if (m_pFilter->m_pSubCallBack && m_pShaderResourceSubPic) {
+		HRESULT hr2 = S_OK;
+		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
+		const CRect rDstVid(m_videoRect);
+		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
+
+		hr2 = m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, D3DCOLOR_ARGB(255, 0, 0, 0));
+
+		m_pSurface9SubPic->UnlockRect();
+		if (CComQIPtr<ISubRenderCallback4> pSubCallBack4 = m_pFilter->m_pSubCallBack) {
+			hr2 = pSubCallBack4->RenderEx3(rtStart, 0, 0, rDstVid, rDstVid, rSrcPri);
+		} else {
+			hr2 = m_pFilter->m_pSubCallBack->Render(rtStart, rDstVid.left, rDstVid.top, rDstVid.right, rDstVid.bottom, rSrcPri.Width(), rSrcPri.Height());
+		}
+
+		if (S_OK == hr2) {
+			// flush Direct3D9 for immediate update Direct3D11 texture
+			CComPtr<IDirect3DQuery9> pEventQuery;
+			m_pD3DDevEx->CreateQuery(D3DQUERYTYPE_EVENT, &pEventQuery);
+			if (pEventQuery) {
+				pEventQuery->Issue(D3DISSUE_END);
+				BOOL Data = FALSE;
+				pEventQuery->GetData(&Data, sizeof(Data), D3DGETDATA_FLUSH);
+			}
+
+			D3D11_VIEWPORT VP;
+			VP.TopLeftX = rDstVid.left;
+			VP.TopLeftY = rDstVid.top;
+			VP.Width = rDstVid.Width();
+			VP.Height = rDstVid.Height();
+			VP.MinDepth = 0.0f;
+			VP.MaxDepth = 1.0f;
+			hr2 = AlphaBltSub(m_pShaderResourceSubPic, pBackBuffer, rDstVid, VP);
+			ASSERT(S_OK == hr2);
+		}
+	}
+
 	if (m_bShowStats) {
-		uint64_t tick2 = GetPreciseTick();
-		hr = DrawStats(pBackBuffer);
+		uint64_t tick3 = GetPreciseTick();
 		m_RenderStats.renderticks = tick2 - tick1;
-		m_RenderStats.statsticks = GetPreciseTick() - tick2;
+		m_RenderStats.substicks = tick3 - tick2;
+		hr = DrawStats(pBackBuffer);
+		m_RenderStats.statsticks = GetPreciseTick() - tick3;
 	}
 
 	hr = m_pDXGISwapChain1->Present(0, 0);

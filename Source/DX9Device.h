@@ -32,11 +32,11 @@ private:
 
 	UINT m_nCurrentAdapter9 = D3DADAPTER_DEFAULT;
 	D3DDISPLAYMODEEX m_DisplayMode = { sizeof(D3DDISPLAYMODEEX) };
-	D3DPRESENT_PARAMETERS m_d3dpp = {};
 
 protected:
 	CComPtr<IDirect3DDevice9Ex> m_pD3DDevEx;
 	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;
+	D3DPRESENT_PARAMETERS m_d3dpp = {};
 
 public:
 	CDX9Device();

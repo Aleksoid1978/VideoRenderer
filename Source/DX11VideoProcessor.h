@@ -187,6 +187,10 @@ private:
 
 	CComPtr<IDXGIFactory1> m_pDXGIFactory1;
 
+	CComPtr<IDirect3DSurface9>        m_pSurface9SubPic;
+	CComPtr<ID3D11Texture2D>          m_pTextureSubPic;
+	CComPtr<ID3D11ShaderResourceView> m_pShaderResourceSubPic;
+
 	REFERENCE_TIME m_rtStart = 0;
 
 #if FW1FONTWRAPPER_ENABLE
@@ -258,6 +262,7 @@ private:
 	void UpdateDownscalingShaders();
 
 	HRESULT AlphaBlt(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget, D3D11_VIEWPORT& viewport);
+	HRESULT AlphaBltSub(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, D3D11_VIEWPORT& viewport);
 	HRESULT TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
 							const CRect& srcRect, const CRect& destRect,
 							ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer);
