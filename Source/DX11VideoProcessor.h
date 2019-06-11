@@ -34,11 +34,12 @@
 #include "IVideoRenderer.h"
 #include "DX11Helper.h"
 #include "FrameStats.h"
-#include "StatsDrawing.h"
 #include "DX9Device.h"
 
 #if FW1FONTWRAPPER_ENABLE
 #include "./FW1FontWrapper/FW1FontWrapper.h"
+#else
+#include "StatsDrawing.h"
 #endif
 
 class CMpcVideoRenderer;
@@ -157,7 +158,6 @@ private:
 
 	CRenderStats m_RenderStats;
 
-	CStatsDrawing m_StatsDrawing;
 	CStringW m_strStatsStatic1;
 	CStringW m_strStatsStatic2;
 	bool m_bSrcFromGPU = false;
@@ -192,6 +192,8 @@ private:
 #if FW1FONTWRAPPER_ENABLE
 	CComPtr<IFW1Factory>m_pFW1Factory;
 	CComPtr<IFW1FontWrapper>m_pFontWrapper;
+#else
+	CStatsDrawing m_StatsDrawing;
 #endif
 
 public:

@@ -20,6 +20,8 @@
 
 #pragma once
 
+#define D3D9FONT_ENABLE 0
+
 #include <atltypes.h>
 #include <evr9.h> // for IMFVideoProcessor
 #include "IVideoRenderer.h"
@@ -27,8 +29,13 @@
 #include "DX9Helper.h"
 #include "FrameStats.h"
 #include "resource.h"
+
+#if D3D9FONT_ENABLE
 #include "D3D9Font.h"
 #include "D3D9Geometry.h"
+#else
+#include "StatsDrawing.h"
+#endif
 
 struct VideoSurface {
 	REFERENCE_TIME Start = 0;
@@ -145,8 +152,6 @@ private:
 	CRect m_srcRenderRect;
 	CRect m_dstRenderRect;
 
-	Tex_t m_TexStats;
-
 	// D3D9 Video Processor
 	CComPtr<IDirect3DTexture9> m_pSrcVideoTexture;
 	CopyFrameDataFn m_pConvertFn = nullptr;
@@ -170,13 +175,18 @@ private:
 	const wchar_t* m_strShaderDownscale = nullptr;
 
 	CRenderStats m_RenderStats;
-
 	CStringW m_strStatsStatic1;
 	CStringW m_strStatsStatic2;
+	bool m_bSrcFromGPU = false;
+
+	Tex_t m_TexStats;
+#if D3D9FONT_ENABLE
 	CD3D9Font m_Font3D;
 	CD3D9Rectangle m_Rect3D;
-
-	bool m_bSrcFromGPU = false;
+#else
+	CComPtr<IDirect3DSurface9> m_pMemOSDSurface;
+	CStatsDrawing m_StatsDrawing;
+#endif
 
 	REFERENCE_TIME m_rtStart = 0;
 
