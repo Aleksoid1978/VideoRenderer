@@ -1405,6 +1405,13 @@ HRESULT CDX11VideoProcessor::Render(int field)
 
 		hr2 = m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, D3DCOLOR_ARGB(255, 0, 0, 0));
 
+		// set a special blend mode for alpha channels for ISubRenderCallback rendering
+		// this is necessary for the second alpha blending
+		m_pD3DDevEx->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, TRUE);
+		m_pD3DDevEx->SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_ONE);
+		m_pD3DDevEx->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ZERO);
+		m_pD3DDevEx->SetRenderState(D3DRS_BLENDOPALPHA, D3DBLENDOP_ADD);
+
 		if (CComQIPtr<ISubRenderCallback4> pSubCallBack4 = m_pFilter->m_pSubCallBack) {
 			hr2 = pSubCallBack4->RenderEx3(rtStart, 0, 0, rDstVid, rDstVid, rSrcPri);
 		} else {
@@ -1431,6 +1438,9 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			hr2 = AlphaBltSub(m_pShaderResourceSubPic, pBackBuffer, rDstVid, VP);
 			ASSERT(S_OK == hr2);
 		}
+
+		// disable a special blend mode for alpha channels
+		m_pD3DDevEx->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
 	}
 
 	if (m_bShowStats) {
