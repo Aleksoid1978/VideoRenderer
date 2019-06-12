@@ -2,6 +2,14 @@
 
 #include "../../revision.h"
 
+#ifndef MPCVR_REV_DATE
+#define MPCVR_REV_DATE      0
+#endif
+
+#ifndef MPCVR_REV_HASH
+#define MPCVR_REV_HASH      0
+#endif
+
 #ifndef MPCVR_REV_NUM
 #define MPCVR_REV_NUM       0
 #endif

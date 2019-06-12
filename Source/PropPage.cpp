@@ -21,12 +21,8 @@
 #include "stdafx.h"
 #include "resource.h"
 #include "Helper.h"
-
+#include "Include/Version.h"
 #include "PropPage.h"
-
-#if __has_include("../revision.h")
-	#include "../revision.h"
-#endif
 
 void SetCursor(HWND m_hWnd, LPCWSTR lpCursorName)
 {
@@ -41,23 +37,17 @@ void SetCursor(HWND m_hWnd, UINT nID, LPCWSTR lpCursorName)
 CStringW GetVersionStr()
 {
 	CStringW version;
-#ifdef MPCVR_REV_DATE
-#ifdef MPCVR_REV_HASH
-#ifdef MPCVR_REV_NUM
-	version.Format(L"r%d (%s-%s)",
-		MPCVR_REV_NUM,
+	version.Format(L"v%S (git-%s-%s)",
+		MPCVR_VERSION_STR,
 		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_DATE)),
 		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_HASH))
 	);
-#endif // MPCVR_REV_NUM
-#endif // MPCVR_REV_HASH
-#endif // MPCVR_REV_DATE
 	return version;
 }
 
 LPCWSTR GetNameAndVersion()
 {
-	static CStringW version = L"Experimental MPC Video Renderer " + GetVersionStr();
+	static CStringW version = L"MPC Video Renderer " + GetVersionStr();
 
 	return (LPCWSTR)version;
 }
@@ -140,7 +130,7 @@ HRESULT CVRMainPPage::OnActivate()
 	SendDlgItemMessageW(IDC_COMBO4, CB_ADDSTRING, 0, (LPARAM)L"Flip");
 	SendDlgItemMessageW(IDC_COMBO4, CB_SETCURSEL, m_SetsPP.iSwapEffect, 0);
 
-	SetDlgItemTextW(IDC_STATIC1, GetNameAndVersion());
+	SetDlgItemTextW(IDC_EDIT2, GetNameAndVersion());
 
 	SetCursor(m_hWnd, IDC_ARROW);
 	SetCursor(m_hWnd, IDC_COMBO1, IDC_HAND);
@@ -296,7 +286,7 @@ HRESULT CVRInfoPPage::OnActivate()
 	}
 	SetDlgItemTextW(IDC_EDIT1, str);
 
-	SetDlgItemTextW(IDC_STATIC1, GetNameAndVersion());
+	SetDlgItemTextW(IDC_EDIT2, GetNameAndVersion());
 
 	return S_OK;
 }
