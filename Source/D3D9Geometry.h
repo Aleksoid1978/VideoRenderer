@@ -56,9 +56,7 @@ public:
 	{
 		HRESULT hr = S_OK;
 
-		if ((color >> 24) < 0xFF) {
-			m_bAlphaBlend = true;
-		}
+		m_bAlphaBlend = (color >> 24) < 0xFF;
 
 		m_Vertices[0] = { x1, y1, 0.5f, 1.0f, color };
 		m_Vertices[1] = { x2, y2, 0.5f, 1.0f, color };
