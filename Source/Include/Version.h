@@ -1,9 +1,6 @@
 #pragma once
 
-//TODO
-//#if __has_include("../../revision.h")
-//    #include "../../revision.h"
-//#endif
+#include "../../revision.h"
 
 #ifndef MPCVR_REV_NUM
 #define MPCVR_REV_NUM       0
