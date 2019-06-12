@@ -55,7 +55,7 @@ CDX9Device::~CDX9Device()
 
 HRESULT CDX9Device::InitDX9Device(const HWND hwnd, bool* pChangeDevice)
 {
-	DLog(L"CDX9VideoProcessor::Init()");
+	DLog(L"CDX9Device::InitDX9Device()");
 
 	CheckPointer(m_pD3DEx, E_FAIL);
 

@@ -1405,7 +1405,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 
 		hr2 = m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, D3DCOLOR_ARGB(255, 0, 0, 0));
 
-		m_pSurface9SubPic->UnlockRect();
 		if (CComQIPtr<ISubRenderCallback4> pSubCallBack4 = m_pFilter->m_pSubCallBack) {
 			hr2 = pSubCallBack4->RenderEx3(rtStart, 0, 0, rDstVid, rDstVid, rSrcPri);
 		} else {
