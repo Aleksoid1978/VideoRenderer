@@ -20,7 +20,7 @@
 
 #pragma once
 
-#define FW1FONTWRAPPER_ENABLE 0
+#define DIRECTWRITE_ENABLE 0
 
 #include <atltypes.h>
 #include <ntverp.h>
@@ -36,8 +36,9 @@
 #include "FrameStats.h"
 #include "DX9Device.h"
 
-#if FW1FONTWRAPPER_ENABLE
-#include "./FW1FontWrapper/FW1FontWrapper.h"
+#if DIRECTWRITE_ENABLE
+#include "dwrite.h"
+#include "d2d1.h"
 #else
 #include "StatsDrawing.h"
 #endif
@@ -193,9 +194,13 @@ private:
 
 	REFERENCE_TIME m_rtStart = 0;
 
-#if FW1FONTWRAPPER_ENABLE
-	CComPtr<IFW1Factory>m_pFW1Factory;
-	CComPtr<IFW1FontWrapper>m_pFontWrapper;
+#if DIRECTWRITE_ENABLE
+	CComPtr<IDWriteFactory>    m_pDWriteFactory;
+	CComPtr<IDWriteTextFormat> m_pTextFormat;
+
+	CComPtr<ID2D1Factory>         m_pD2D1Factory;
+	CComPtr<ID2D1RenderTarget>    m_pD2D1RenderTarget;
+	CComPtr<ID2D1SolidColorBrush> m_pD2D1Brush;
 #else
 	CStatsDrawing m_StatsDrawing;
 #endif

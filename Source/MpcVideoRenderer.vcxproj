@@ -114,9 +114,6 @@
     <ProjectReference Include=".\BaseClasses\BaseClasses.vcxproj">
       <Project>{e8a3f6fa-ae1c-4c8e-a0b6-9c8480324eaa}</Project>
     </ProjectReference>
-    <ProjectReference Include="FW1FontWrapper\FW1FontWrapper.vcxproj">
-      <Project>{d1f1b6ba-fefd-424c-b851-7d22bd4b9ec5}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MpcVideoRenderer.rc" />

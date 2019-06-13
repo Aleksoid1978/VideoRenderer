@@ -343,6 +343,9 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd)
 		pDXGIAdapter,
 		D3D_DRIVER_TYPE_UNKNOWN,
 		nullptr,
+#if DIRECTWRITE_ENABLE
+		D3D11_CREATE_DEVICE_BGRA_SUPPORT |
+#endif
 #ifdef _DEBUG
 		D3D11_CREATE_DEVICE_DEBUG,
 #else
@@ -428,9 +431,13 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pAlphaBlendState.Release();
 	SAFE_RELEASE(m_pFullFrameVertexBuffer);
 
-#if FW1FONTWRAPPER_ENABLE
-	m_pFontWrapper.Release();
-	m_pFW1Factory.Release();
+#if DIRECTWRITE_ENABLE
+	m_pTextFormat.Release();
+	m_pDWriteFactory.Release();
+
+	m_pD2D1Brush.Release();
+	m_pD2D1RenderTarget.Release();
+	m_pD2D1Factory.Release();
 #endif
 
 	m_pShaderResourceSubPic.Release();
@@ -637,14 +644,48 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	}
 #endif
 
-#if FW1FONTWRAPPER_ENABLE
+#if DIRECTWRITE_ENABLE
 	HRESULT hr2 = m_TexOSD.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DefaultShaderRTarget);
 	ASSERT(S_OK == hr2);
 
-	hr2 = FW1CreateFactory(FW1_VERSION, &m_pFW1Factory.p);
-	ASSERT(S_OK == hr2);
-	hr2 = m_pFW1Factory->CreateFontWrapper(pDevice, L"Consolas", &m_pFontWrapper.p);
-	ASSERT(S_OK == hr2);
+	hr2 = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(m_pDWriteFactory), reinterpret_cast<IUnknown**>(&m_pDWriteFactory));
+	if (S_OK == hr2) {
+		hr2 = m_pDWriteFactory->CreateTextFormat(
+			L"Consolas",
+			nullptr,
+			DWRITE_FONT_WEIGHT_NORMAL,
+			DWRITE_FONT_STYLE_NORMAL,
+			DWRITE_FONT_STRETCH_NORMAL,
+			16,
+			L"", //locale
+			&m_pTextFormat);
+	}
+
+	D2D1_FACTORY_OPTIONS options = {};
+#ifdef _DEBUG
+	options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+#endif
+	hr2 = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, &m_pD2D1Factory);
+	if (S_OK == hr2) {
+		CComPtr<IDXGISurface> pDxgiSurface;
+		hr2 = m_TexOSD.pTexture->QueryInterface(IID_IDXGISurface, (void**)&pDxgiSurface);
+		if (S_OK == hr2) {
+			FLOAT dpiX;
+			FLOAT dpiY;
+			m_pD2D1Factory->GetDesktopDpi(&dpiX, &dpiY);
+
+			D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
+				D2D1_RENDER_TARGET_TYPE_DEFAULT,
+				D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
+				dpiX,
+				dpiY);
+
+			hr2 = m_pD2D1Factory->CreateDxgiSurfaceRenderTarget(pDxgiSurface, &props, &m_pD2D1RenderTarget);
+			if (S_OK == hr2) {
+				hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &m_pD2D1Brush);
+			}
+		}
+	}
 #else
 	HRESULT hr2 = m_TexOSD.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DynamicShaderWrite);
 	ASSERT(S_OK == hr2);
@@ -1974,7 +2015,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	str.AppendFormat(L"\nSync offset   : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
 #endif
 
-#if FW1FONTWRAPPER_ENABLE
+#if DIRECTWRITE_ENABLE
 	ID3D11RenderTargetView* pRenderTargetView = nullptr;
 	HRESULT hr = m_pDevice->CreateRenderTargetView(m_TexOSD.pTexture, nullptr, &pRenderTargetView);
 	if (S_OK == hr) {
@@ -1982,29 +2023,28 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
 		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 
-		if (m_pFontWrapper) {
-			m_pFontWrapper->DrawString(
-				m_pDeviceContext,
-				str,
-				16.0f,
-				5.0f,
-				5.0f,
-				0xFFFFFFFF, // Text color, AGBR format
-				FW1_RESTORESTATE
-			);
+		CComPtr<IDWriteTextLayout> pTextLayout;
+		if (S_OK == m_pDWriteFactory->CreateTextLayout(str, str.GetLength(), m_pTextFormat, m_windowRect.right - 10, m_windowRect.bottom - 10, &pTextLayout)) {
+			m_pD2D1RenderTarget->BeginDraw();
+			m_pD2D1RenderTarget->DrawTextLayout(D2D1::Point2F(5.0f, 5.0f), pTextLayout, m_pD2D1Brush);
+			static int col = STATS_W;
+			if (--col < 0) {
+				col = STATS_W;
+			}
+			D2D1_RECT_F rect = { col, STATS_H - 11, col + 5, STATS_H - 1 };
+			m_pD2D1RenderTarget->FillRectangle(rect, m_pD2D1Brush);
+			m_pD2D1RenderTarget->EndDraw();
+		}
 
-			D3D11_VIEWPORT VP;
-			VP.TopLeftX = STATS_X;
-			VP.TopLeftY = STATS_Y;
-			VP.Width = STATS_W;
-			VP.Height = STATS_H;
-			VP.MinDepth = 0.0f;
-			VP.MaxDepth = 1.0f;
-			hr = AlphaBlt(m_TexOSD.pShaderResource, pRenderTarget, VP);
-		}
-		else {
-			hr = E_POINTER;
-		}
+		D3D11_VIEWPORT VP;
+		VP.TopLeftX = STATS_X;
+		VP.TopLeftY = STATS_Y;
+		VP.Width = STATS_W;
+		VP.Height = STATS_H;
+		VP.MinDepth = 0.0f;
+		VP.MaxDepth = 1.0f;
+		hr = AlphaBlt(m_TexOSD.pShaderResource, pRenderTarget, VP);
+
 		pRenderTargetView->Release();
 	}
 #else
