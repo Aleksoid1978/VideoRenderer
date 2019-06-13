@@ -637,13 +637,16 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	}
 #endif
 
-	HRESULT hr2 = m_TexOSD.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DynamicShaderWrite);
+#if FW1FONTWRAPPER_ENABLE
+	HRESULT hr2 = m_TexOSD.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DefaultShaderRTarget);
 	ASSERT(S_OK == hr2);
 
-#if FW1FONTWRAPPER_ENABLE
 	hr2 = FW1CreateFactory(FW1_VERSION, &m_pFW1Factory.p);
 	ASSERT(S_OK == hr2);
 	hr2 = m_pFW1Factory->CreateFontWrapper(pDevice, L"Consolas", &m_pFontWrapper.p);
+	ASSERT(S_OK == hr2);
+#else
+	HRESULT hr2 = m_TexOSD.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DynamicShaderWrite);
 	ASSERT(S_OK == hr2);
 #endif
 
@@ -1972,21 +1975,38 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 #endif
 
 #if FW1FONTWRAPPER_ENABLE
-	if (m_pFontWrapper) {
-		m_pFontWrapper->DrawString(
-			m_pDeviceContext,
-			str,
-			16.0f,
-			STATS_X,
-			STATS_Y,
-			0xFFFFFFFF, // Text color, AGBR format
-			FW1_RESTORESTATE
-		);
+	ID3D11RenderTargetView* pRenderTargetView = nullptr;
+	HRESULT hr = m_pDevice->CreateRenderTargetView(m_TexOSD.pTexture, nullptr, &pRenderTargetView);
+	if (S_OK == hr) {
+		const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.75f };
+		m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
+		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 
-		return S_OK;
+		if (m_pFontWrapper) {
+			m_pFontWrapper->DrawString(
+				m_pDeviceContext,
+				str,
+				16.0f,
+				5.0f,
+				5.0f,
+				0xFFFFFFFF, // Text color, AGBR format
+				FW1_RESTORESTATE
+			);
+
+			D3D11_VIEWPORT VP;
+			VP.TopLeftX = STATS_X;
+			VP.TopLeftY = STATS_Y;
+			VP.Width = STATS_W;
+			VP.Height = STATS_H;
+			VP.MinDepth = 0.0f;
+			VP.MaxDepth = 1.0f;
+			hr = AlphaBlt(m_TexOSD.pShaderResource, pRenderTarget, VP);
+		}
+		else {
+			hr = E_POINTER;
+		}
+		pRenderTargetView->Release();
 	}
-
-	return E_FAIL;
 #else
 	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 	HRESULT hr = m_pDeviceContext->Map(m_TexOSD.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
@@ -2003,9 +2023,9 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		VP.MaxDepth = 1.0f;
 		AlphaBlt(m_TexOSD.pShaderResource, pRenderTarget, VP);
 	}
+#endif
 
 	return hr;
-#endif
 }
 
 // IUnknown
