@@ -22,10 +22,16 @@ SET "MSBUILD_SWITCHES=/nologo /consoleloggerparameters:Verbosity=minimal /maxcpu
 SET "BUILDTYPE=Build"
 SET "BUILDCFG=Release"
 SET "SUFFIX="
+SET "SIGN=False"
 
-IF /I "%1" == "Debug" (
-  SET "BUILDCFG=Debug"
-  SET "SUFFIX=_Debug"
+FOR %%A IN (%*) DO (
+  IF /I "%%A" == "Debug" (
+    SET "BUILDCFG=Debug"
+    SET "SUFFIX=_Debug"
+  )
+  IF /I "%%A" == "Sign" (
+    SET "SIGN=True"
+  )
 )
 
 CALL :SubVSPath
@@ -43,6 +49,13 @@ CALL "%TOOLSET%" -no_logo -arch=amd64
 REM again set the source directory (fix possible bug in VS2017)
 CD /D %~dp0
 CALL :SubMPCVR x64
+
+IF /I "%SIGN%" == "True" (
+  ECHO Signing is not supported yet.
+  REM \bin\Filters_x86%SUFFIX%\MpcVideoRenderer.ax
+  REM \bin\Filters_x64%SUFFIX%\MpcVideoRenderer64.ax
+  TIMEOUT /T 10
+)
 
 FOR /F "tokens=3,4 delims= " %%A IN (
   'FINDSTR /I /L /C:"define MPCVR_REV_DATE" "revision.h"') DO (SET "REVDATE=%%A")
