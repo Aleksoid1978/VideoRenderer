@@ -38,8 +38,8 @@ private:
 	Gdiplus::Graphics*   m_graphics;
 	Gdiplus::FontFamily* m_fontFamily;
 	Gdiplus::Font*       m_font;
+	Gdiplus::SolidBrush* m_solidBrushText;
 	Gdiplus::SolidBrush* m_solidBrush;
-	Gdiplus::Pen*        m_pen;
 
 public:
 	CStatsDrawing() {
@@ -52,11 +52,11 @@ public:
 
 		m_fontFamily = new FontFamily(L"Consolas");
 		m_font = new Font(m_fontFamily, 16, FontStyleRegular, UnitPixel);
-		m_solidBrush = new SolidBrush(Color(255, 255, 255));
-		m_pen = new Pen(Color(128, 255, 128), 5);
+		m_solidBrushText = new SolidBrush(Color(255, 255, 255));
+		m_solidBrush = new SolidBrush(Color(128, 255, 128));
 	}
 	~CStatsDrawing() {
-		SAFE_DELETE(m_pen);
+		SAFE_DELETE(m_solidBrushText);
 		SAFE_DELETE(m_solidBrush);
 		SAFE_DELETE(m_font);
 		SAFE_DELETE(m_fontFamily);
@@ -72,13 +72,13 @@ public:
 
 		Status status = Gdiplus::Ok;
 		status = m_graphics->Clear(Color(192, 0, 0, 0));
-		status = m_graphics->DrawString(str, -1, m_font, { 5.0f, 5.0f }, m_solidBrush);
+		status = m_graphics->DrawString(str, -1, m_font, { 5.0f, 5.0f }, m_solidBrushText);
 
 		static int col = STATS_W;
 		if (--col < 0) {
 			col = STATS_W;
 		}
-		status = m_graphics->DrawLine(m_pen, col, STATS_H - 11, col, STATS_H - 1);
+		status = m_graphics->FillRectangle(m_solidBrush, col, STATS_H - 11, 5, 10);
 
 		m_graphics->Flush();
 
