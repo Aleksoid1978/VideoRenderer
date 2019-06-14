@@ -896,11 +896,16 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
 	}
 
-	if (FmtConvParams->CSType == CS_YUV && m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
-		if (biWidth <= 1024 && biHeight <= 576) { // SD
-			m_srcExFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT601;
-		} else { // HD
-			m_srcExFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT709;
+	if (FmtConvParams->CSType == CS_YUV) {
+		if (m_srcExFmt.NominalRange == DXVA2_NominalRange_Unknown) {
+			m_srcExFmt.NominalRange = DXVA2_NominalRange_16_235;
+		}
+		if (m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
+			if (biWidth <= 1024 && biHeight <= 576) { // SD
+				m_srcExFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT601;
+			} else { // HD
+				m_srcExFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT709;
+			}
 		}
 	}
 
