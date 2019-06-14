@@ -65,12 +65,25 @@ IF /I "%SIGN%" == "True" (
 )
 
 FOR /F "tokens=3,4 delims= " %%A IN (
+  'FINDSTR /I /L /C:"define MPCVR_VERSION_MAJOR" "Source\Include\Version.h"') DO (SET "VERMAJOR=%%A")
+FOR /F "tokens=3,4 delims= " %%A IN (
+  'FINDSTR /I /L /C:"define MPCVR_VERSION_MINOR" "Source\Include\Version.h"') DO (SET "VERMINOR=%%A")
+FOR /F "tokens=3,4 delims= " %%A IN (
+  'FINDSTR /I /L /C:"define MPCVR_VERSION_BUILD" "Source\Include\Version.h"') DO (SET "VERBUILD=%%A")
+FOR /F "tokens=3,4 delims= " %%A IN (
+  'FINDSTR /I /L /C:"define MPCVR_RELEASE" "Source\Include\Version.h"') DO (SET "RELEASE=%%A")
+FOR /F "tokens=3,4 delims= " %%A IN (
   'FINDSTR /I /L /C:"define MPCVR_REV_DATE" "revision.h"') DO (SET "REVDATE=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
   'FINDSTR /I /L /C:"define MPCVR_REV_HASH" "revision.h"') DO (SET "REVHASH=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_REV_NUM" "revision.h"') DO (SET "REVNUM=%%A")
-SET "PCKG_NAME=MPCVideoRenderer-r%REVNUM%-%REVDATE%-%REVHASH%%SUFFIX%"
+  'FINDSTR /I /L /C:"define MPCVR_REV_NUM" "revision.h"') DO (SET "REVNUM=%%A")  
+
+IF /I "%RELEASE%" == "1" (
+  SET "PCKG_NAME=MPCVideoRenderer-v%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%%SUFFIX%"
+) ELSE (
+  SET "PCKG_NAME=MPCVideoRenderer-v%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%_git%REVDATE%-%REVHASH%%SUFFIX%"
+)
 
 CALL :SubDetectSevenzipPath
 IF DEFINED SEVENZIP (

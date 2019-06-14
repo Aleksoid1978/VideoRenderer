@@ -37,11 +37,15 @@ void SetCursor(HWND m_hWnd, UINT nID, LPCWSTR lpCursorName)
 CStringW GetVersionStr()
 {
 	CStringW version;
-	version.Format(L"v%S (git-%s-%s)",
+#if MPCVR_RELEASE
+	version.Format(L"v%S", MPCVR_VERSION_STR);
+#else
+	version.Format(L"v%S (git-%s-%s)", 
 		MPCVR_VERSION_STR,
 		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_DATE)),
 		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_HASH))
 	);
+#endif
 	return version;
 }
 

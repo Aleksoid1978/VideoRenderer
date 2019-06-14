@@ -17,6 +17,8 @@
 #define DO_MAKE_STR(x)      #x
 #define MAKE_STR(x)         DO_MAKE_STR(x)
 
+#define MPCVR_RELEASE       0
+
 #define MPCVR_VERSION_MAJOR 0
 #define MPCVR_VERSION_MINOR 1
 #define MPCVR_VERSION_BUILD 1
