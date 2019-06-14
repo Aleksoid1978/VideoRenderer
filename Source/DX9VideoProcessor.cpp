@@ -26,6 +26,7 @@
 #include <dwmapi.h>
 #include "Time.h"
 #include "VideoRenderer.h"
+#include "Include/Version.h"
 #include "DX9VideoProcessor.h"
 
 #pragma pack(push, 1)
@@ -1739,10 +1740,17 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 {
 	auto FmtConvParams = GetFmtConvParams(m_srcSubType);
 	if (FmtConvParams) {
-		m_strStatsStatic1 = L"Direct3D 9Ex";
+		m_strStatsStatic1.Format(L"MPC VR v%S, Direct3D 9Ex", MPCVR_VERSION_STR);
 		m_strStatsStatic1.AppendFormat(L"\nGraph. Adapter: %s", m_strAdapterDescription);
 
 		m_strStatsStatic2.Format(L" %S %ux%u", FmtConvParams->str, m_srcRectWidth, m_srcRectHeight);
+		if (FmtConvParams->CSType == CS_YUV) {
+			LPCSTR strs[5] = {};
+			//DXVA2_ExtendedFormat exFmt = SpecifyExtendedFormat(m_srcExFmt, FmtConvParams->CSType, m_srcRectWidth, m_srcRectHeight);
+			GetExtendedFormatString(strs, m_srcExFmt, FmtConvParams->CSType);
+			m_strStatsStatic2.AppendFormat(L"\n  Range: %hS, Matrix: %hS, Lighting: %hS", strs[0], strs[1], strs[2]);
+			m_strStatsStatic2.AppendFormat(L"\n  Primaries: %hS, Function: %hS", strs[3], strs[4]);
+		}
 		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", D3DFormatToString(m_InternalTexFmt));
 		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pDXVA2_VP ? L"DXVA2" : L"PS 3.0");
 	} else {

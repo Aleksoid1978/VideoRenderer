@@ -30,6 +30,7 @@
 #include "Time.h"
 #include "resource.h"
 #include "VideoRenderer.h"
+#include "Include/Version.h"
 #include "DX11VideoProcessor.h"
 #include "./Include/ID3DVideoMemoryConfiguration.h"
 
@@ -1947,10 +1948,17 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	auto FmtConvParams = GetFmtConvParams(m_srcSubType);
 	if (FmtConvParams) {
-		m_strStatsStatic1 = L"Direct3D 11";
+		m_strStatsStatic1.Format(L"MPC VR v%S, Direct3D 11", MPCVR_VERSION_STR);
 		m_strStatsStatic1.AppendFormat(L"\nGraph. Adapter: %s", m_strAdapterDescription);
 
 		m_strStatsStatic2.Format(L" %S %ux%u", FmtConvParams->str, m_srcRectWidth, m_srcRectHeight);
+		if (FmtConvParams->CSType == CS_YUV) {
+			LPCSTR strs[5] = {};
+			//DXVA2_ExtendedFormat exFmt = SpecifyExtendedFormat(m_srcExFmt, FmtConvParams->CSType, m_srcRectWidth, m_srcRectHeight);
+			GetExtendedFormatString(strs, m_srcExFmt, FmtConvParams->CSType);
+			m_strStatsStatic2.AppendFormat(L"\n  Range: %hS, Matrix: %hS, Lighting: %hS", strs[0], strs[1], strs[2]);
+			m_strStatsStatic2.AppendFormat(L"\n  Primaries: %hS, Function: %hS", strs[3], strs[4]);
+		}
 		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", DXGIFormatToString(m_InternalTexFmt));
 		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");
 	} else {

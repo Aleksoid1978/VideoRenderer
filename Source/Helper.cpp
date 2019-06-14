@@ -506,3 +506,69 @@ HRESULT SaveARGB32toBMP(BYTE* src, const UINT src_pitch, const UINT width, const
 
 	return E_FAIL;
 }
+
+DXVA2_ExtendedFormat SpecifyExtendedFormat(DXVA2_ExtendedFormat exFormat, const ColorSystem_t colorSystem, const UINT width, const UINT height)
+{
+	if (colorSystem == CS_RGB) {
+		exFormat.value = 0u;
+	}
+	else if (colorSystem == CS_YUV) {
+		// https://docs.microsoft.com/en-us/windows/desktop/api/dxva2api/ns-dxva2api-dxva2_extendedformat
+
+		if (exFormat.NominalRange == DXVA2_NominalRange_Unknown) {
+			exFormat.NominalRange = DXVA2_NominalRange_16_235;
+		}
+
+		if (exFormat.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
+			if (width <= 1024 && height <= 576) { // SD (more reliable way to determine SD than MicroSoft offers)
+				exFormat.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT601;
+			}
+			else { // HD
+				exFormat.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT709;
+			}
+		}
+
+		if (exFormat.VideoLighting == DXVA2_VideoLighting_Unknown) {
+			exFormat.VideoLighting = DXVA2_VideoLighting_dim;
+		}
+
+		if (exFormat.VideoPrimaries == DXVA2_VideoPrimaries_Unknown) {
+			exFormat.VideoPrimaries = DXVA2_VideoPrimaries_BT709;
+		}
+
+		if (exFormat.VideoTransferFunction == DXVA2_VideoTransFunc_Unknown) {
+			exFormat.VideoTransferFunction = DXVA2_VideoTransFunc_709;
+		}
+	}
+
+	return exFormat;
+}
+
+void GetExtendedFormatString(LPCSTR (&strs)[5], const DXVA2_ExtendedFormat exFormat, const ColorSystem_t colorSystem)
+{
+	static LPCSTR nominalrange[] = { "unknown", "0-255", "16-235", "48-208" };
+	static LPCSTR transfermatrix[] = { "unknown", "BT.709", "BT.601", "SMPTE 240M", "BT.2020", nullptr, nullptr, "YCgCo" };
+	static LPCSTR lighting[] = { "unknown", "bright", "office", "dim", "dark" };
+	static LPCSTR primaries[] = { "unknown", "Reserved", "BT.709", "BT.470-4 System M", "BT.470-4 System B,G",
+		"SMPTE 170M", "SMPTE 240M", "EBU Tech. 3213", "SMPTE C", "BT.2020" };
+	static LPCSTR transfunc[] = { "unknown", "Linear RGB", "1.8 gamma", "2.0 gamma", "2.2 gamma", "BT.709", "SMPTE 240M",
+		"sRGB", "2.8 gamma", "Log100", "Log316", "Symmetric BT.709", "Constant luminance BT.2020", "Non-constant luminance BT.2020",
+		"2.6 gamma", "SMPTE ST 2084 (PQ)", "ARIB STD-B67 (HLG)"};
+
+	auto getDesc = [] (unsigned num, LPCSTR* descs, unsigned count) {
+		if (num < count && descs[num]) {
+			return descs[num];
+		} else {
+			return "invalid";
+		}
+	};
+
+	if (colorSystem == CS_YUV) {
+		strs[0] = getDesc(exFormat.NominalRange, nominalrange, std::size(nominalrange));
+		strs[1] = getDesc(exFormat.VideoTransferMatrix, transfermatrix, std::size(transfermatrix));
+		strs[2] = getDesc(exFormat.VideoLighting, lighting, std::size(lighting));
+		strs[3] = getDesc(exFormat.VideoPrimaries, primaries, std::size(primaries));
+		strs[4] = getDesc(exFormat.VideoTransferFunction, transfunc, std::size(transfunc));
+	}
+}
+
