@@ -77,7 +77,7 @@ FOR /F "tokens=3,4 delims= " %%A IN (
 FOR /F "tokens=3,4 delims= " %%A IN (
   'FINDSTR /I /L /C:"define MPCVR_REV_HASH" "revision.h"') DO (SET "REVHASH=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_REV_NUM" "revision.h"') DO (SET "REVNUM=%%A")  
+  'FINDSTR /I /L /C:"define MPCVR_REV_NUM" "revision.h"') DO (SET "REVNUM=%%A")
 
 IF /I "%RELEASE%" == "1" (
   SET "PCKG_NAME=MPCVideoRenderer-v%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%%SUFFIX%"
@@ -98,6 +98,7 @@ IF DEFINED SEVENZIP (
 .\distrib\Uninstall_MPCVR_32.cmd ^
 .\distrib\Uninstall_MPCVR_64.cmd ^
 .\distrib\Reset_Settings.cmd ^
+.\Readme.md ^
 .\LICENSE
     IF %ERRORLEVEL% NEQ 0 CALL :SubMsg "ERROR" "Unable to create %PCKG_NAME%.zip!"
     CALL :SubMsg "INFO" "%PCKG_NAME%.zip successfully created"

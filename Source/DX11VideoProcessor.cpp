@@ -622,7 +622,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		DLog(L"Graphics adapter: %s", m_strAdapterDescription.GetString());
 	}
 
-#ifdef DEBUG
+#ifdef _DEBUG
 	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc = { D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE, {}, 1920, 1080, {}, 1920, 1080, D3D11_VIDEO_USAGE_PLAYBACK_NORMAL };
 	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcEnum;
 	if (S_OK == m_pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pVideoProcEnum)) {

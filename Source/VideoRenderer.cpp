@@ -48,7 +48,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	, m_DX9_VP(this)
 	, m_DX11_VP(this)
 {
-#ifdef DEBUG
+#ifdef _DEBUG
 	DbgSetModuleLevel(LOG_TRACE, DWORD_MAX);
 	DbgSetModuleLevel(LOG_ERROR, DWORD_MAX);
 #endif

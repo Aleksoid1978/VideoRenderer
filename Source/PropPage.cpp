@@ -46,6 +46,9 @@ CStringW GetVersionStr()
 		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_HASH))
 	);
 #endif
+#ifdef _DEBUG
+	version.Append(L" DEBUG");
+#endif
 	return version;
 }
 
