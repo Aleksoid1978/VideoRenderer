@@ -16,6 +16,7 @@ REM
 REM You should have received a copy of the GNU General Public License
 REM along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+SETLOCAL ENABLEDELAYEDEXPANSION
 CD /D %~dp0
 
 SET "MSBUILD_SWITCHES=/nologo /consoleloggerparameters:Verbosity=minimal /maxcpucount /nodeReuse:true"
@@ -31,6 +32,13 @@ FOR %%A IN (%*) DO (
   )
   IF /I "%%A" == "Sign" (
     SET "SIGN=True"
+  )
+)
+
+IF /I "%SIGN%" == "True" (
+  IF NOT EXIST "%~dp0signinfo.txt" (
+    CALL :SubMsg "WARNING" "signinfo.txt not found."
+    SET "SIGN=False"
   )
 )
 
@@ -51,10 +59,9 @@ CD /D %~dp0
 CALL :SubMPCVR x64
 
 IF /I "%SIGN%" == "True" (
-  ECHO Signing is not supported yet.
-  REM \bin\Filters_x86%SUFFIX%\MpcVideoRenderer.ax
-  REM \bin\Filters_x64%SUFFIX%\MpcVideoRenderer64.ax
-  TIMEOUT /T 10
+  SET FILES="%~dp0bin\Filters_x86%SUFFIX%\MpcVideoRenderer.ax" "%~dp0bin\Filters_x64%SUFFIX%\MpcVideoRenderer64.ax"
+  CALL "%~dp0\sign.cmd" !FILES! || (CALL :SubMsg "ERROR" "Problem signing !FILES!" & EXIT /B)
+  CALL :SubMsg "INFO" "!FILES! signed successfully."
 )
 
 FOR /F "tokens=3,4 delims= " %%A IN (
