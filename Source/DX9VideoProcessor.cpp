@@ -419,7 +419,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 	DXVA2_VideoDesc videodesc = {};
 	videodesc.SampleWidth = width;
 	videodesc.SampleHeight = height;
-	//videodesc.SampleFormat.value = 0; // do not need to fill it here
+	//videodesc.SampleFormat.value = m_srcExFmt.value; // do not need to fill it here
 	videodesc.SampleFormat.SampleFormat = m_bInterlaced ? DXVA2_SampleFieldInterleavedOddFirst : DXVA2_SampleProgressiveFrame;
 	if (d3dformat == D3DFMT_X8R8G8B8 || d3dformat == D3DFMT_A8R8G8B8) {
 		videodesc.Format = D3DFMT_YUY2; // hack
@@ -504,6 +504,10 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 		m_DXVA2Samples[i].PlanarAlpha = DXVA2_Fixed32OpaqueAlpha();
 
 		m_DXVA2Samples[i].SrcSurface = m_SrcSamples.GetAt(i).pSrcSurface;
+	}
+
+	if (m_srcExFmt.NominalRange == DXVA2_NominalRange_0_255 && m_VendorId == PCIV_NVIDIA) {
+		m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_16_235; // hack for Nvidia
 	}
 
 	m_SurfaceWidth  = width;
