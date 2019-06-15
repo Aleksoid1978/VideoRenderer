@@ -1,5 +1,7 @@
 // using code from zimg - https://github.com/sekrit-twc/zimg
 
+#pragma warning(disable: 4122) // disable warning X4122: sum of ... cannot be represented accurately in double precision.
+
 static const float REC_709_PRIMARIES[3][2]  = { { 0.640, 0.330 }, { 0.300, 0.600 }, { 0.150, 0.060 } };
 static const float REC_2020_PRIMARIES[3][2] = { { 0.708, 0.292 }, { 0.170, 0.797 }, { 0.131, 0.046 } };
 
