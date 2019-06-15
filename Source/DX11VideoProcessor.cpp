@@ -1661,19 +1661,15 @@ HRESULT CDX11VideoProcessor::D3D11VPPass(ID3D11Texture2D* pRenderTarget, const C
 		static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 		m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, FALSE, &backgroundColor);
 
-		// Stream color space
 		D3D11_VIDEO_PROCESSOR_COLOR_SPACE colorSpace = {};
 		if (m_srcExFmt.value) {
-			colorSpace.RGB_Range = m_srcExFmt.NominalRange == DXVA2_NominalRange_16_235 ? 1 : 0;
-			colorSpace.YCbCr_Matrix = m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601 ? 0 : 1;
-		} else {
-			// for RGB
-			colorSpace.RGB_Range = 0;
+			colorSpace.RGB_Range = 0; // output RGB always full range (0-255)
+			colorSpace.YCbCr_Matrix = (m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601) ? 0 : 1;
+			colorSpace.Nominal_Range = (m_srcExFmt.NominalRange == DXVA2_NominalRange_0_255)
+									 ? D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255
+									 : D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
 		}
 		m_pVideoContext->VideoProcessorSetStreamColorSpace(m_pVideoProcessor, 0, &colorSpace);
-
-		// Output color space
-		colorSpace.RGB_Range = 0;
 		m_pVideoContext->VideoProcessorSetOutputColorSpace(m_pVideoProcessor, &colorSpace);
 	}
 
