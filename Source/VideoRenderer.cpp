@@ -943,6 +943,7 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 
 STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
 {
+	/*
 	if (!strcmp(field, "rotation")) {
 		// Allowed angles are multiples of 90.
 		if (value % 90 == 0) {
@@ -958,4 +959,6 @@ STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
 	}
 
 	return E_INVALIDARG;
+	*/
+	return E_NOTIMPL;
 }
