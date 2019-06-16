@@ -506,8 +506,14 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 		m_DXVA2Samples[i].SrcSurface = m_SrcSamples.GetAt(i).pSrcSurface;
 	}
 
-	if (m_srcExFmt.NominalRange == DXVA2_NominalRange_0_255 && m_VendorId == PCIV_NVIDIA) {
-		m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_16_235; // hack for Nvidia
+	// set output format parameters
+	m_BltParams.DestFormat.value            = 0; // output to RGB
+	m_BltParams.DestFormat.SampleFormat     = DXVA2_SampleProgressiveFrame; // output to progressive RGB
+	if (m_srcExFmt.NominalRange == DXVA2_NominalRange_0_255 && (m_VendorId == PCIV_NVIDIA || m_VendorId == PCIV_AMDATI)) {
+		// hack for Nvidia and AMD, nothing helps Intel
+		m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_16_235;
+	} else {
+		m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_0_255; // output to full range RGB
 	}
 
 	m_SurfaceWidth  = width;
@@ -608,8 +614,6 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 
 	ZeroMemory(&m_BltParams, sizeof(m_BltParams));
 	m_BltParams.BackgroundColor              = { 128 * 0x100, 128 * 0x100, 16 * 0x100, 0xFFFF }; // black
-	//m_BltParams.DestFormat.value           = 0; // output to RGB
-	m_BltParams.DestFormat.SampleFormat      = DXVA2_SampleProgressiveFrame; // output to progressive RGB
 	m_BltParams.ProcAmpValues.Brightness     = m_DXVA2ProcValueRange[0].DefaultValue; // Hmm
 	m_BltParams.ProcAmpValues.Contrast       = m_DXVA2ProcValueRange[1].DefaultValue;
 	m_BltParams.ProcAmpValues.Hue            = m_DXVA2ProcValueRange[2].DefaultValue;
