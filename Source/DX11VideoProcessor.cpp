@@ -371,9 +371,6 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd)
 		UpdateStatsStatic();
 	}
 
-	HRESULT hr2 = InitDX9Device(m_hWnd, nullptr);
-	ASSERT(S_OK == hr2);
-
 	return hr;
 }
 
@@ -606,6 +603,9 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 			return E_FAIL;
 		}
 	}
+
+	hr = InitDX9Device(m_hWnd, nullptr);
+	ASSERT(S_OK == hr);
 
 	if (m_hWnd) {
 		hr = InitSwapChain();
