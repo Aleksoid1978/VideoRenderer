@@ -102,7 +102,7 @@ HRESULT CVRMainPPage::OnActivate()
 
 	m_pVideoRenderer->GetSettings(m_SetsPP);
 
-	if (!IsWindows8Point1OrGreater()) {
+	if (!IsWindows8OrGreater()) {
 		GetDlgItem(IDC_CHECK1).EnableWindow(FALSE);
 		m_SetsPP.bUseD3D11 = false;
 	}
