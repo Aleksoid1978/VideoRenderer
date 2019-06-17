@@ -589,6 +589,9 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 				DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : GetProcAmpRange() failed with error %s", HR2Str(hr));
 				return FALSE;
 			}
+			DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : ProcAmpRange(%u) : %7.2f, %6.2f, %6.2f, %4.2f",
+				i, DXVA2FixedToFloat(m_DXVA2ProcValueRange[i].MinValue), DXVA2FixedToFloat(m_DXVA2ProcValueRange[i].MaxValue),
+				DXVA2FixedToFloat(m_DXVA2ProcValueRange[i].DefaultValue), DXVA2FixedToFloat(m_DXVA2ProcValueRange[i].StepSize));
 		}
 	}
 
