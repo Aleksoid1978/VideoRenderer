@@ -161,8 +161,6 @@ private:
 	CStringW m_strStatsStatic2;
 	bool m_bSrcFromGPU = false;
 
-	bool resetmt = false;
-
 	HMODULE m_hDXGILib = nullptr;
 	HMODULE m_hD3D11Lib = nullptr;
 

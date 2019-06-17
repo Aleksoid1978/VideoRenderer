@@ -1236,10 +1236,6 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 void CDX11VideoProcessor::Start()
 {
 	m_rtStart = 0;
-
-	if (m_VendorId == PCIV_INTEL) {
-		resetmt = true;
-	}
 }
 
 void CDX11VideoProcessor::Stop()
@@ -1382,15 +1378,6 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	}
 	else {
 		m_bSrcFromGPU = false;
-
-		if (resetmt && m_pVideoProcessor) {
-			// stupid hack for Intel
-			resetmt = false;
-			hr = InitializeD3D11VP(m_srcDXGIFormat, m_srcWidth, m_srcHeight, true);
-			if (FAILED(hr)) {
-				return hr;
-			}
-		}
 
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
