@@ -14,7 +14,7 @@ IF NOT EXIST %gitexe% GOTO END
 %gitexe% log -1 --pretty=format:"#define MPCVR_REV_HASH %%h%%n" >> revision.h
 
 <nul set /p strTemp=#define MPCVR_REV_NUM >> revision.h
-%gitexe% rev-list --all --count >> revision.h
+%gitexe% rev-list --branches=[m]aster --count >> revision.h
 IF %ERRORLEVEL% NEQ 0 (
 ECHO 0 >> revision.h
 )
