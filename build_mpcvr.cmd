@@ -99,6 +99,7 @@ IF DEFINED SEVENZIP (
 .\distrib\Uninstall_MPCVR_64.cmd ^
 .\distrib\Reset_Settings.cmd ^
 .\Readme.md ^
+.\history.txt ^
 .\LICENSE
     IF %ERRORLEVEL% NEQ 0 CALL :SubMsg "ERROR" "Unable to create %PCKG_NAME%.zip!"
     CALL :SubMsg "INFO" "%PCKG_NAME%.zip successfully created"
