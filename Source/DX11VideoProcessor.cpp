@@ -1480,13 +1480,13 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			}
 
 			D3D11_VIEWPORT VP;
-			VP.TopLeftX = rDstVid.left;
-			VP.TopLeftY = rDstVid.top;
-			VP.Width = rDstVid.Width();
-			VP.Height = rDstVid.Height();
+			VP.TopLeftX = 0;
+			VP.TopLeftY = 0;
+			VP.Width = rSrcPri.Width();
+			VP.Height = rSrcPri.Height();
 			VP.MinDepth = 0.0f;
 			VP.MaxDepth = 1.0f;
-			hr2 = AlphaBltSub(m_pShaderResourceSubPic, pBackBuffer, rDstVid, VP);
+			hr2 = AlphaBltSub(m_pShaderResourceSubPic, pBackBuffer, rSrcPri, VP);
 			ASSERT(S_OK == hr2);
 		}
 
