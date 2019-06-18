@@ -938,6 +938,27 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 		return S_OK;
 	}
 
+	if (!strcmp(field, "cmd_redraw") && value) {
+		CAutoLock cRendererLock(&m_RendererLock);
+		bool bFrameDrawn = m_DrawStats.GetFrames() > 0;
+
+		if (m_bUsedD3D11) {
+			if (bFrameDrawn && m_filterState != State_Stopped) {
+				m_DX11_VP.Render(0);
+			} else {
+				m_DX11_VP.FillBlack();
+			}
+		} else {
+			if (bFrameDrawn && m_filterState != State_Stopped) {
+				m_DX9_VP.Render(0);
+			} else {
+				m_DX9_VP.FillBlack();
+			}
+		}
+
+		return S_OK;
+	}
+
 	return E_INVALIDARG;
 }
 
