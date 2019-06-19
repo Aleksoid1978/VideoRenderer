@@ -578,6 +578,7 @@ STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long
 {
 	const CRect videoRect(Left, Top, Left + Width, Top + Height);
 
+	CAutoLock cRendererLock(&m_RendererLock);
 	if (m_bUsedD3D11) {
 		m_DX11_VP.SetVideoRect(videoRect);
 	} else {
@@ -739,6 +740,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 {
 	m_windowRect = CRect(Left, Top, Left + Width, Top + Height);
 
+	CAutoLock cRendererLock(&m_RendererLock);
 	if (m_hWnd) {
 		SetWindowPos(m_hWnd, nullptr, Left, Top, Width, Height, SWP_NOZORDER | SWP_NOACTIVATE);
 	}
