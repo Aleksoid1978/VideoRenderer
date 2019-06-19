@@ -576,26 +576,15 @@ STDMETHODIMP CMpcVideoRenderer::GetSourcePosition(long *pLeft, long *pTop, long 
 
 STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long Width, long Height)
 {
-	CRect videoRect(Left, Top, Left + Width, Top + Height);
-
-	CAutoLock cRendererLock(&m_RendererLock);
-	bool bFrameDrawn = m_DrawStats.GetFrames() > 0;
+	const CRect videoRect(Left, Top, Left + Width, Top + Height);
 
 	if (m_bUsedD3D11) {
 		m_DX11_VP.SetVideoRect(videoRect);
-		if (bFrameDrawn && m_filterState != State_Stopped) {
-			m_DX11_VP.Render(0);
-		} else {
-			m_DX11_VP.FillBlack();
-		}
 	} else {
 		m_DX9_VP.SetVideoRect(videoRect);
-		if (bFrameDrawn && m_filterState != State_Stopped) {
-			m_DX9_VP.Render(0);
-		} else {
-			m_DX9_VP.FillBlack();
-		}
 	}
+
+	Redraw();
 
 	return S_OK;
 }
@@ -750,29 +739,18 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 {
 	m_windowRect = CRect(Left, Top, Left + Width, Top + Height);
 
-	CAutoLock cRendererLock(&m_RendererLock);
-	bool bFrameDrawn = m_DrawStats.GetFrames() > 0;
-
 	if (m_hWnd) {
 		SetWindowPos(m_hWnd, nullptr, Left, Top, Width, Height, SWP_NOZORDER | SWP_NOACTIVATE);
 	}
 
 	if (m_bUsedD3D11) {
 		m_DX11_VP.SetWindowRect(m_windowRect);
-		if (bFrameDrawn && m_filterState != State_Stopped) {
-			m_DX11_VP.Render(0);
-		} else {
-			m_DX11_VP.FillBlack();
-		}
 	} else {
 		m_evDX9Resize.Set();
 		WaitForSingleObject(m_evThreadFinishJob, INFINITE);
-		if (bFrameDrawn && m_filterState != State_Stopped) {
-			m_DX9_VP.Render(0);
-		} else {
-			m_DX9_VP.FillBlack();
-		}
 	}
+
+	Redraw();
 
 	return S_OK;
 }
@@ -935,27 +913,14 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 		}
 
 		SaveSettings();
+		if (m_filterState == State_Paused) {
+			Redraw();
+		}
 		return S_OK;
 	}
 
 	if (!strcmp(field, "cmd_redraw") && value) {
-		CAutoLock cRendererLock(&m_RendererLock);
-		bool bFrameDrawn = m_DrawStats.GetFrames() > 0;
-
-		if (m_bUsedD3D11) {
-			if (bFrameDrawn && m_filterState != State_Stopped) {
-				m_DX11_VP.Render(0);
-			} else {
-				m_DX11_VP.FillBlack();
-			}
-		} else {
-			if (bFrameDrawn && m_filterState != State_Stopped) {
-				m_DX9_VP.Render(0);
-			} else {
-				m_DX9_VP.FillBlack();
-			}
-		}
-
+		Redraw();
 		return S_OK;
 	}
 
@@ -982,4 +947,27 @@ STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
 	return E_INVALIDARG;
 	*/
 	return E_NOTIMPL;
+}
+
+HRESULT CMpcVideoRenderer::Redraw()
+{
+	CAutoLock cRendererLock(&m_RendererLock);
+	const auto bFrameDrawn = m_DrawStats.GetFrames() > 0;
+
+	HRESULT hr = S_OK;
+	if (m_bUsedD3D11) {
+		if (bFrameDrawn && m_filterState != State_Stopped) {
+			hr = m_DX11_VP.Render(0);
+		} else {
+			hr = m_DX11_VP.FillBlack();
+		}
+	} else {
+		if (bFrameDrawn && m_filterState != State_Stopped) {
+			hr = m_DX9_VP.Render(0);
+		} else {
+			hr = m_DX9_VP.FillBlack();
+		}
+	}
+
+	return hr;
 }

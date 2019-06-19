@@ -109,7 +109,6 @@ public:
 	void NewSegment(REFERENCE_TIME startTime);
 	long CalcImageSize(CMediaType& mt, bool redefine_mt);
 
-public:
 	// CBaseRenderer
 	HRESULT CheckMediaType(const CMediaType *pmt) override;
 	HRESULT SetMediaType(const CMediaType *pmt) override;
@@ -240,4 +239,7 @@ public:
 
 	STDMETHODIMP SetBool(LPCSTR field, bool  value) override;
 	STDMETHODIMP SetInt(LPCSTR field, int value) override;
+
+private:
+	HRESULT Redraw();
 };
