@@ -44,6 +44,7 @@ enum :int {
 	DOWNSCALE_Bilinear,
 	DOWNSCALE_Hamming,
 	DOWNSCALE_Bicubic,
+	DOWNSCALE_Bicubic_sharp,
 	DOWNSCALE_Lanczos,
 	DOWNSCALE_COUNT,
 };

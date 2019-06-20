@@ -47,20 +47,22 @@ inline float filter(float x)
 #elif (FILTER == 3)
 
 // bicubic
+// https://en.wikipedia.org/wiki/Bicubic_interpolation#Bicubic_convolution_algorithm
+#ifndef A
+#define A -0.5
+#endif
 #define filter_support (2.0)
 inline float filter(float x)
 {
-    /* https://en.wikipedia.org/wiki/Bicubic_interpolation#Bicubic_convolution_algorithm */
-#define a -0.5
     if (x < 0.0)
         x = -x;
     if (x < 1.0)
-        return ((a + 2.0) * x - (a + 3.0)) * x*x + 1;
+        return ((A + 2.0) * x - (A + 3.0)) * x*x + 1;
     if (x < 2.0)
-        return (((x - 5) * x + 8) * x - 4) * a;
+        return (((x - 5) * x + 8) * x - 4) * A;
     return 0.0;
-#undef a
 }
+#undef A
 
 #elif (FILTER == 4)
 
