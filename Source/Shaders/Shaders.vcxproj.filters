@@ -36,7 +36,7 @@
     <FxCompile Include="d3d9\correction_ycgco.hlsl">
       <Filter>d3d9</Filter>
     </FxCompile>
-    <FxCompile Include="d3d9\downscaler.hlsl">
+    <FxCompile Include="d3d9\convolution.hlsl">
       <Filter>d3d9</Filter>
     </FxCompile>
     <FxCompile Include="d3d9\resizer_lanczos2_x.hlsl">
@@ -92,7 +92,7 @@
     <None Include="convert\colorspace_gamut_conversion.hlsl">
       <Filter>convert</Filter>
     </None>
-    <None Include="resize\downscaler_filters.hlsl">
+    <None Include="resize\convolution_filters.hlsl">
       <Filter>resize</Filter>
     </None>
     <None Include="convert\correct_hlg.hlsl">

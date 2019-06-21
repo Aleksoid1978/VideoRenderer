@@ -3,7 +3,7 @@ sampler s0   : register(s0); // input texture
 float2 dxdy  : register(c0);
 float2 scale : register(c1);
 
-#include "../resize/downscaler_filters.hlsl"
+#include "../resize/convolution_filters.hlsl"
 
 #ifndef AXIS
     #define AXIS 0

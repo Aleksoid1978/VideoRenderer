@@ -2,7 +2,7 @@
     #define AXIS 0
 #endif
 
-#include "../resize/downscaler_filters.hlsl"
+#include "../resize/convolution_filters.hlsl"
 
 Texture2D tex : register(t0);
 SamplerState samp : register(s0);

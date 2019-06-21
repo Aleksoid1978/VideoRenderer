@@ -45,18 +45,18 @@ fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_mitchell4_y.cso"       "d3d
 fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_catmull4_x.cso"        "d3d9\interpolation_spline4.hlsl" /DMETHOD=1 /DAXIS=0
 fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_catmull4_y.cso"        "d3d9\interpolation_spline4.hlsl" /DMETHOD=1 /DAXIS=1
 
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_box_x.cso"          "d3d9\downscaler.hlsl" /DFILTER=0 /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_box_y.cso"          "d3d9\downscaler.hlsl" /DFILTER=0 /DAXIS=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bilinear_x.cso"     "d3d9\downscaler.hlsl" /DFILTER=1 /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bilinear_y.cso"     "d3d9\downscaler.hlsl" /DFILTER=1 /DAXIS=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_hamming_x.cso"      "d3d9\downscaler.hlsl" /DFILTER=2 /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_hamming_y.cso"      "d3d9\downscaler.hlsl" /DFILTER=2 /DAXIS=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic05_x.cso"    "d3d9\downscaler.hlsl" /DFILTER=3 /DAXIS=0 /DA=-0.5
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic05_y.cso"    "d3d9\downscaler.hlsl" /DFILTER=3 /DAXIS=1 /DA=-0.5
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic15_x.cso"    "d3d9\downscaler.hlsl" /DFILTER=3 /DAXIS=0 /DA=-1.5
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic15_y.cso"    "d3d9\downscaler.hlsl" /DFILTER=3 /DAXIS=1 /DA=-1.5
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_x.cso"      "d3d9\downscaler.hlsl" /DFILTER=4 /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_y.cso"      "d3d9\downscaler.hlsl" /DFILTER=4 /DAXIS=1
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_box_x.cso"          "d3d9\convolution.hlsl" /DFILTER=0 /DAXIS=0
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_box_y.cso"          "d3d9\convolution.hlsl" /DFILTER=0 /DAXIS=1
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bilinear_x.cso"     "d3d9\convolution.hlsl" /DFILTER=1 /DAXIS=0
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bilinear_y.cso"     "d3d9\convolution.hlsl" /DFILTER=1 /DAXIS=1
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_hamming_x.cso"      "d3d9\convolution.hlsl" /DFILTER=2 /DAXIS=0
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_hamming_y.cso"      "d3d9\convolution.hlsl" /DFILTER=2 /DAXIS=1
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic05_x.cso"    "d3d9\convolution.hlsl" /DFILTER=3 /DAXIS=0 /DA=-0.5
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic05_y.cso"    "d3d9\convolution.hlsl" /DFILTER=3 /DAXIS=1 /DA=-0.5
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic15_x.cso"    "d3d9\convolution.hlsl" /DFILTER=3 /DAXIS=0 /DA=-1.5
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic15_y.cso"    "d3d9\convolution.hlsl" /DFILTER=3 /DAXIS=1 /DA=-1.5
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_x.cso"      "d3d9\convolution.hlsl" /DFILTER=4 /DAXIS=0
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_y.cso"      "d3d9\convolution.hlsl" /DFILTER=4 /DAXIS=1
 
 fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\convert_color_st2084.cso"      "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_HDR=1
 fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\convert_color_hlg.cso"         "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_HDR=2
