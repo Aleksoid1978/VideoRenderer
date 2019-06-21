@@ -44,6 +44,10 @@ fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_mitchell4_x.cso"       "d3d
 fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_mitchell4_y.cso"       "d3d9\interpolation_spline4.hlsl" /DMETHOD=0 /DAXIS=1
 fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_catmull4_x.cso"        "d3d9\interpolation_spline4.hlsl" /DMETHOD=1 /DAXIS=0
 fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_catmull4_y.cso"        "d3d9\interpolation_spline4.hlsl" /DMETHOD=1 /DAXIS=1
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_lanczos2_x.cso"        "d3d9\interpolation_lanczos2.hlsl" /DAXIS=0
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_lanczos2_y.cso"        "d3d9\interpolation_lanczos2.hlsl" /DAXIS=1
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_lanczos3_x.cso"        "d3d9\interpolation_lanczos3.hlsl" /DAXIS=0
+fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_lanczos3_y.cso"        "d3d9\interpolation_lanczos3.hlsl" /DAXIS=1
 
 fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_box_x.cso"          "d3d9\convolution.hlsl" /DFILTER=0 /DAXIS=0
 fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_box_y.cso"          "d3d9\convolution.hlsl" /DFILTER=0 /DAXIS=1

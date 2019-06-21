@@ -39,16 +39,10 @@
     <FxCompile Include="d3d9\convolution.hlsl">
       <Filter>d3d9</Filter>
     </FxCompile>
-    <FxCompile Include="d3d9\resizer_lanczos2_x.hlsl">
+    <FxCompile Include="d3d9\interpolation_lanczos2.hlsl">
       <Filter>d3d9</Filter>
     </FxCompile>
-    <FxCompile Include="d3d9\resizer_lanczos2_y.hlsl">
-      <Filter>d3d9</Filter>
-    </FxCompile>
-    <FxCompile Include="d3d9\resizer_lanczos3_x.hlsl">
-      <Filter>d3d9</Filter>
-    </FxCompile>
-    <FxCompile Include="d3d9\resizer_lanczos3_y.hlsl">
+    <FxCompile Include="d3d9\interpolation_lanczos3.hlsl">
       <Filter>d3d9</Filter>
     </FxCompile>
     <FxCompile Include="d3d11\ps_convert_color.hlsl">
