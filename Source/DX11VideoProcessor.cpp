@@ -772,6 +772,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 				}
 
 				if (m_pShaderResourceSubPic) {
+					hr2 = m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, D3DCOLOR_ARGB(255, 0, 0, 0));
 					hr2 = m_pD3DDevEx->SetRenderTarget(0, m_pSurface9SubPic);
 					DLogIf(FAILED(hr2), L"CDX11VideoProcessor::InitSwapChain() : SetRenderTarget(Direct3D9) failed with error %s", HR2Str(hr2));
 				}
@@ -1454,8 +1455,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		const CRect rDstVid(m_videoRect);
 		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
 
-		hr2 = m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, D3DCOLOR_ARGB(255, 0, 0, 0));
-
 		// set a special blend mode for alpha channels for ISubRenderCallback rendering
 		// this is necessary for the second alpha blending
 		m_pD3DDevEx->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, TRUE);
@@ -1488,6 +1487,8 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			VP.MaxDepth = 1.0f;
 			hr2 = AlphaBltSub(m_pShaderResourceSubPic, pBackBuffer, rSrcPri, VP);
 			ASSERT(S_OK == hr2);
+
+			hr2 = m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, D3DCOLOR_ARGB(255, 0, 0, 0));
 		}
 
 		// disable a special blend mode for alpha channels
