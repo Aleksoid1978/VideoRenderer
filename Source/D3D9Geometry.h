@@ -21,6 +21,7 @@
 #pragma once
 
 #include <d3d9.h>
+#include <vector>
 #include <DirectXMath.h>
 #include "Helper.h"
 
@@ -36,6 +37,11 @@ protected:
 	IDirect3DVertexBuffer9* m_pVertexBuffer = nullptr;
 
 public:
+	~CD3D9Quadrilateral()
+	{
+		InvalidateDeviceObjects();
+	}
+
 	HRESULT InitDeviceObjects(IDirect3DDevice9* pD3DDev)
 	{
 		InvalidateDeviceObjects();
@@ -97,11 +103,6 @@ public:
 
 		return hr;
 	}
-
-	~CD3D9Quadrilateral()
-	{
-		InvalidateDeviceObjects();
-	}
 };
 
 
@@ -139,5 +140,100 @@ public:
 		const float y4 = y1 + yt;
 
 		return CD3D9Quadrilateral::Set(x1, y1, x2, y2, x3, y3, x4, y4, color);
+	}
+};
+
+class CD3D9Polyline
+{
+protected:
+	IDirect3DDevice9* m_pD3DDev = nullptr;
+
+	bool m_bAlphaBlend = false;
+	struct LINEVERTEX {
+		FLOAT x, y, z, rhw;
+		DWORD color;
+	};
+	std::vector<LINEVERTEX> m_Vertices;
+	IDirect3DVertexBuffer9* m_pVertexBuffer = nullptr;
+
+public:
+	~CD3D9Polyline()
+	{
+		InvalidateDeviceObjects();
+	}
+
+	HRESULT InitDeviceObjects(IDirect3DDevice9* pD3DDev)
+	{
+		InvalidateDeviceObjects();
+		if (!pD3DDev) {
+			return E_POINTER;
+		}
+
+		m_pD3DDev = pD3DDev;
+
+		return S_OK;
+	}
+
+	void InvalidateDeviceObjects()
+	{
+		m_pD3DDev = nullptr;
+		SAFE_RELEASE(m_pVertexBuffer);
+	}
+
+	HRESULT Set(const std::vector<POINT>& dots, const D3DCOLOR color)
+	{
+		if (!dots.size()) {
+			return E_INVALIDARG;
+		}
+		HRESULT hr = S_OK;
+
+		if (m_Vertices.size() != dots.size()) {
+			SAFE_RELEASE(m_pVertexBuffer);
+		}
+
+		m_bAlphaBlend = (color >> 24) < 0xFF;
+
+		m_Vertices.clear();
+		m_Vertices.reserve(dots.size());
+		for (const auto& dot : dots) {
+			m_Vertices.emplace_back(LINEVERTEX{ (FLOAT)dot.x, (FLOAT)dot.y, 0.5f, 1.0f, color });
+		}
+
+		UINT vertexSize = m_Vertices.size() * sizeof(LINEVERTEX);
+
+		if (!m_pVertexBuffer) {
+			HRESULT hr = m_pD3DDev->CreateVertexBuffer(vertexSize, 0, D3DFVF_XYZRHW | D3DFVF_DIFFUSE, D3DPOOL_DEFAULT, &m_pVertexBuffer, nullptr);
+		}
+
+		if (m_pVertexBuffer) {
+			VOID* pVertices;
+			hr = m_pVertexBuffer->Lock(0, vertexSize, (void**)&pVertices, 0);
+			if (S_OK == hr) {
+				memcpy(pVertices, m_Vertices.data(), vertexSize);
+				m_pVertexBuffer->Unlock();
+			};
+		}
+
+		return hr;
+	}
+
+	HRESULT Draw()
+	{
+		if (m_bAlphaBlend) {
+			m_pD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+			m_pD3DDev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+			m_pD3DDev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+		} else {
+			m_pD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+		}
+		m_pD3DDev->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA);
+
+		HRESULT hr = m_pD3DDev->SetStreamSource(0, m_pVertexBuffer, 0, sizeof(LINEVERTEX));
+		if (S_OK == hr) {
+			hr = m_pD3DDev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
+			hr = m_pD3DDev->DrawPrimitive(D3DPT_LINESTRIP, 0, m_Vertices.size());
+		}
+
+		return hr;
 	}
 };
