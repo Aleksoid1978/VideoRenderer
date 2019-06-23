@@ -25,15 +25,16 @@
 #include <DirectXMath.h>
 #include "Helper.h"
 
+struct POINTVERTEX {
+	FLOAT x, y, z, rhw;
+	DWORD color;
+};
+
 class CD3D9Quadrilateral
 {
 protected:
 	bool m_bAlphaBlend = false;
-	struct LINEVERTEX {
-		FLOAT x, y, z, rhw;
-		DWORD color;
-	};
-	LINEVERTEX m_Vertices[6] = {};
+	POINTVERTEX m_Vertices[6] = {};
 	IDirect3DVertexBuffer9* m_pVertexBuffer = nullptr;
 
 public:
@@ -48,7 +49,7 @@ public:
 		if (!pD3DDev) {
 			return E_POINTER;
 		}
-		HRESULT hr = pD3DDev->CreateVertexBuffer(6 * sizeof(LINEVERTEX), 0, D3DFVF_XYZRHW | D3DFVF_DIFFUSE, D3DPOOL_DEFAULT, &m_pVertexBuffer, nullptr);
+		HRESULT hr = pD3DDev->CreateVertexBuffer(6 * sizeof(POINTVERTEX), 0, D3DFVF_XYZRHW | D3DFVF_DIFFUSE, D3DPOOL_DEFAULT, &m_pVertexBuffer, nullptr);
 
 		return hr;
 	}
@@ -95,7 +96,7 @@ public:
 		}
 		pD3DDev->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA);
 
-		HRESULT hr = pD3DDev->SetStreamSource(0, m_pVertexBuffer, 0, sizeof(LINEVERTEX));
+		HRESULT hr = pD3DDev->SetStreamSource(0, m_pVertexBuffer, 0, sizeof(POINTVERTEX));
 		if (S_OK == hr) {
 			hr = pD3DDev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
 			hr =  pD3DDev->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 2);
@@ -143,21 +144,27 @@ public:
 	}
 };
 
-class CD3D9Polyline
+class CD3D9Dots
 {
 protected:
 	IDirect3DDevice9* m_pD3DDev = nullptr;
 
 	bool m_bAlphaBlend = false;
-	struct LINEVERTEX {
-		FLOAT x, y, z, rhw;
-		DWORD color;
-	};
-	std::vector<LINEVERTEX> m_Vertices;
+	std::vector<POINTVERTEX> m_Vertices;
 	IDirect3DVertexBuffer9* m_pVertexBuffer = nullptr;
 
+	virtual inline bool CheckBadPoints(const std::vector<POINT>& poins)
+	{
+		return (poins.size() == 0);
+	}
+
+	virtual inline HRESULT DrawPrimitive()
+	{
+		return m_pD3DDev->DrawPrimitive(D3DPT_POINTLIST, 0, m_Vertices.size());
+	}
+
 public:
-	~CD3D9Polyline()
+	~CD3D9Dots()
 	{
 		InvalidateDeviceObjects();
 	}
@@ -180,26 +187,26 @@ public:
 		SAFE_RELEASE(m_pVertexBuffer);
 	}
 
-	HRESULT Set(const std::vector<POINT>& dots, const D3DCOLOR color)
+	HRESULT Set(const std::vector<POINT>& poins, const D3DCOLOR color)
 	{
-		if (!dots.size()) {
+		if (CheckBadPoints(poins)) {
 			return E_INVALIDARG;
 		}
 		HRESULT hr = S_OK;
 
-		if (m_Vertices.size() != dots.size()) {
+		if (m_Vertices.size() != poins.size()) {
 			SAFE_RELEASE(m_pVertexBuffer);
 		}
 
 		m_bAlphaBlend = (color >> 24) < 0xFF;
 
 		m_Vertices.clear();
-		m_Vertices.reserve(dots.size());
-		for (const auto& dot : dots) {
-			m_Vertices.emplace_back(LINEVERTEX{ (FLOAT)dot.x, (FLOAT)dot.y, 0.5f, 1.0f, color });
+		m_Vertices.reserve(poins.size());
+		for (const auto& point : poins) {
+			m_Vertices.emplace_back(POINTVERTEX{ (FLOAT)point.x, (FLOAT)point.y, 0.5f, 1.0f, color });
 		}
 
-		UINT vertexSize = m_Vertices.size() * sizeof(LINEVERTEX);
+		UINT vertexSize = m_Vertices.size() * sizeof(POINTVERTEX);
 
 		if (!m_pVertexBuffer) {
 			HRESULT hr = m_pD3DDev->CreateVertexBuffer(vertexSize, 0, D3DFVF_XYZRHW | D3DFVF_DIFFUSE, D3DPOOL_DEFAULT, &m_pVertexBuffer, nullptr);
@@ -223,17 +230,46 @@ public:
 			m_pD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
 			m_pD3DDev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
 			m_pD3DDev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-		} else {
+		}
+		else {
 			m_pD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
 		}
 		m_pD3DDev->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA);
 
-		HRESULT hr = m_pD3DDev->SetStreamSource(0, m_pVertexBuffer, 0, sizeof(LINEVERTEX));
+		HRESULT hr = m_pD3DDev->SetStreamSource(0, m_pVertexBuffer, 0, sizeof(POINTVERTEX));
 		if (S_OK == hr) {
 			hr = m_pD3DDev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
-			hr = m_pD3DDev->DrawPrimitive(D3DPT_LINESTRIP, 0, m_Vertices.size());
+			hr = DrawPrimitive();
 		}
 
 		return hr;
+	}
+};
+
+class CD3D9Lines : public CD3D9Dots
+{
+protected:
+	inline bool CheckBadPoints(const std::vector<POINT>& poins) override
+	{
+		return (poins.size() < 2 && poins.size() & 1);
+	}
+
+	inline HRESULT DrawPrimitive() override
+	{
+		return m_pD3DDev->DrawPrimitive(D3DPT_LINELIST, 0, m_Vertices.size());
+	}
+};
+
+class CD3D9Polyline : public CD3D9Dots
+{
+protected:
+	inline bool CheckBadPoints(const std::vector<POINT>& poins) override
+	{
+		return (poins.size() < 2);
+	}
+
+	inline HRESULT DrawPrimitive() override
+	{
+		return m_pD3DDev->DrawPrimitive(D3DPT_LINESTRIP, 0, m_Vertices.size());
 	}
 };
