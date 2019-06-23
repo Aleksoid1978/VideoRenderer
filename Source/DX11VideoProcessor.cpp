@@ -1438,7 +1438,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			ClipToSurface(desc.Width, desc.Height, m_srcRenderRect, m_dstRenderRect);
 		}
 
-		if (!m_bVPScaling || m_pPSCorrection) {
+		if (!(m_pVideoProcessor && m_bVPScaling) || m_pPSCorrection) {
 			// fill the BackBuffer with black only when necessary
 			ID3D11RenderTargetView* pRenderTargetView;
 			if (S_OK == m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView)) {
