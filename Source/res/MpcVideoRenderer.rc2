@@ -42,6 +42,7 @@ IDF_SHADER_CONVOL_LANCZOS_Y      SHADER                  "..\\bin\\shaders\\down
 IDF_SHADER_CONVERT_COLOR         SHADER                  "..\\bin\\shaders\\convert_color.cso"
 IDF_SHADER_CONVERT_COLOR_ST2084  SHADER                  "..\\bin\\shaders\\convert_color_st2084.cso"
 IDF_SHADER_CONVERT_COLOR_HLG     SHADER                  "..\\bin\\shaders\\convert_color_hlg.cso"
+IDF_SHADER_CONVERT_YUY2          SHADER                  "..\\bin\\shaders\\convert_yuy2.cso"
 IDF_SHADER_CORRECTION_ST2084     SHADER                  "..\\bin\\shaders\\correction_st2084.cso"
 IDF_SHADER_CORRECTION_HLG        SHADER                  "..\\bin\\shaders\\correction_hlg.cso"
 IDF_SHADER_CORRECTION_YCGCO      SHADER                  "..\\bin\\shaders\\correction_ycgco.cso"
