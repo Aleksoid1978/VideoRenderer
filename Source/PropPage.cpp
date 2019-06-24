@@ -110,10 +110,13 @@ HRESULT CVRMainPPage::OnActivate()
 	CheckDlgButton(IDC_CHECK1, m_SetsPP.bUseD3D11    ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK2, m_SetsPP.bShowStats   ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK3, m_SetsPP.bDeintDouble ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK4, BST_CHECKED);
+	CheckDlgButton(IDC_CHECK4, BST_CHECKED); // "Other supported formats"
 	GetDlgItem(IDC_CHECK4).EnableWindow(FALSE);
 	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling   ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
+
+	CheckDlgButton(IDC_CHECK8, BST_CHECKED); // "YUY2"
+	GetDlgItem(IDC_CHECK8).EnableWindow(FALSE);
 
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"8-bit Integer");
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"10-bit Integer");
