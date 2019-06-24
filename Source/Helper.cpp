@@ -61,9 +61,10 @@ CStringW HR2Str(const HRESULT hr)
 const wchar_t* D3DFormatToString(const D3DFORMAT format)
 {
 	switch (format) {
-	case D3DFMT_A2B10G10R10:   return L"A2B10G10R10";
 	case D3DFMT_A8R8G8B8:      return L"A8R8G8B8";      // DXVA-HD
 	case D3DFMT_X8R8G8B8:      return L"X8R8G8B8";
+	case D3DFMT_A2B10G10R10:   return L"A2B10G10R10";
+	case D3DFMT_A8B8G8R8:      return L"A8B8G8R8";      // often not supported
 	case D3DFMT_A2R10G10B10:   return L"A2R10G10B10";
 	case D3DFMT_A8P8:          return L"A8P8";          // DXVA-HD
 	case D3DFMT_P8:            return L"P8";            // DXVA-HD
@@ -129,28 +130,35 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
 }
 
 static FmtConvParams_t s_FmtConvMapping[] = {
-	//   subtype          | str     |DXVA2Format     | D3DFormat(DX9)     | VP11Format               | DX11Format              |Packsize|PitchCoeff| CSType|Subsampling|  Func
-	{ MEDIASUBTYPE_YV12,   "YV12",   D3DFMT_YV12,     D3DFMT_UNKNOWN,      DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            1, 3,        CS_YUV,  420,       &CopyFrameYV12,       },
-	{ MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_UNKNOWN,      DXGI_FORMAT_NV12,           DXGI_FORMAT_UNKNOWN,            1, 3,        CS_YUV,  420,       &CopyFramePackedUV,   },
-	{ MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_UNKNOWN,      DXGI_FORMAT_P010,           DXGI_FORMAT_UNKNOWN,            2, 3,        CS_YUV,  420,       &CopyFramePackedUV,   },
-	{ MEDIASUBTYPE_P016,   "P016",   D3DFMT_P016,     D3DFMT_UNKNOWN,      DXGI_FORMAT_P016,           DXGI_FORMAT_UNKNOWN,            2, 3,        CS_YUV,  420,       &CopyFramePackedUV,   },
-	{ MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_UNKNOWN,      DXGI_FORMAT_YUY2,           DXGI_FORMAT_UNKNOWN,            2, 2,        CS_YUV,  422,       &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,     DXGI_FORMAT_AYUV,           DXGI_FORMAT_B8G8R8X8_UNORM,     4, 2,        CS_YUV,  444,       &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_Y410,     D3DFMT_A2B10G10R10,  DXGI_FORMAT_Y410,           DXGI_FORMAT_R10G10B10A2_UNORM,  4, 2,        CS_YUV,  444,       &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_Y416,   "Y416",   D3DFMT_Y416,     D3DFMT_A16B16G16R16, DXGI_FORMAT_Y416,           DXGI_FORMAT_R16G16B16A16_UNORM, 8, 2,        CS_YUV,  444,       &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,     DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,     3, 2,        CS_RGB,  444,       &CopyFrameRGB24SSSE3, },
-	{ MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,     DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,     4, 2,        CS_RGB,  444,       &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,     DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM,     4, 2,        CS_RGB,  444,       &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_RGB48,  "RGB48",  D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM, 6, 2,        CS_RGB,  444,       &CopyFrameRGB48,      },
-	{ MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,           DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            1, 2,        CS_GRAY, 400,       &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,           DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            1, 2,        CS_GRAY, 400,       &CopyFrameAsIs,       },
-	{ MEDIASUBTYPE_Y116,   "Y116",   D3DFMT_UNKNOWN,  D3DFMT_L16,          DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            2, 2,        CS_GRAY, 400,       &CopyFrameAsIs,       },
+	// format  |   subtype          | str     | DXVA2Format    | D3DFormat(DX9)     | VP11Format                | DX11Format             |Packsize|PitchCoeff| CSType|Subsampling|  Func
+	{CF_NONE,   MEDIASUBTYPE_NULL,   "",       D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,      DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            0, 0,        CS_YUV,    0,       nullptr             },
+	{CF_YV12,   MEDIASUBTYPE_YV12,   "YV12",   D3DFMT_YV12,     D3DFMT_UNKNOWN,      DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            1, 3,        CS_YUV,  420,       &CopyFrameYV12      },
+	{CF_NV12,   MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_UNKNOWN,      DXGI_FORMAT_NV12,           DXGI_FORMAT_UNKNOWN,            1, 3,        CS_YUV,  420,       &CopyFramePackedUV  },
+	{CF_P010,   MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_UNKNOWN,      DXGI_FORMAT_P010,           DXGI_FORMAT_UNKNOWN,            2, 3,        CS_YUV,  420,       &CopyFramePackedUV  },
+	{CF_P016,   MEDIASUBTYPE_P016,   "P016",   D3DFMT_P016,     D3DFMT_UNKNOWN,      DXGI_FORMAT_P016,           DXGI_FORMAT_UNKNOWN,            2, 3,        CS_YUV,  420,       &CopyFramePackedUV  },
+	{CF_YUY2,   MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_UNKNOWN,      DXGI_FORMAT_YUY2,           DXGI_FORMAT_UNKNOWN,            2, 2,        CS_YUV,  422,       &CopyFrameAsIs      },
+	{CF_AYUV,   MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,     DXGI_FORMAT_AYUV,           DXGI_FORMAT_B8G8R8X8_UNORM,     4, 2,        CS_YUV,  444,       &CopyFrameAsIs      },
+	{CF_Y410,   MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_Y410,     D3DFMT_A2B10G10R10,  DXGI_FORMAT_Y410,           DXGI_FORMAT_R10G10B10A2_UNORM,  4, 2,        CS_YUV,  444,       &CopyFrameAsIs      },
+	{CF_Y416,   MEDIASUBTYPE_Y416,   "Y416",   D3DFMT_Y416,     D3DFMT_A16B16G16R16, DXGI_FORMAT_Y416,           DXGI_FORMAT_R16G16B16A16_UNORM, 8, 2,        CS_YUV,  444,       &CopyFrameAsIs      },
+	{CF_RGB24,  MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,     DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,     3, 2,        CS_RGB,  444,       &CopyFrameRGB24SSSE3},
+	{CF_XRGB32, MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,     DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,     4, 2,        CS_RGB,  444,       &CopyFrameAsIs      },
+	{CF_ARGB32, MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,     DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM,     4, 2,        CS_RGB,  444,       &CopyFrameAsIs      },
+	{CF_RGB48,  MEDIASUBTYPE_RGB48,  "RGB48",  D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM, 6, 2,        CS_RGB,  444,       &CopyFrameRGB48     },
+	{CF_Y8,     MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,           DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            1, 2,        CS_GRAY, 400,       &CopyFrameAsIs      },
+	{CF_Y800,   MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,           DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            1, 2,        CS_GRAY, 400,       &CopyFrameAsIs      },
+	{CF_Y116,   MEDIASUBTYPE_Y116,   "Y116",   D3DFMT_UNKNOWN,  D3DFMT_L16,          DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            2, 2,        CS_GRAY, 400,       &CopyFrameAsIs      },
 };
 // Remarks:
 // 1. The table lists all possible formats. The real situation depends on the capabilities of the graphics card and drivers.
 // 2. We do not use DXVA2 processor for AYUV format, it works very poorly.
 
-const FmtConvParams_t* GetFmtConvParams(GUID subtype)
+const FmtConvParams_t& GetFmtConvParams(const ColorFormat_t fmt)
+{
+	ASSERT(fmt == s_FmtConvMapping[fmt].format);
+	return s_FmtConvMapping[fmt];
+}
+
+const FmtConvParams_t* GetFmtConvParams(const GUID subtype)
 {
 	for (const auto& fe : s_FmtConvMapping) {
 		if (fe.Subtype == subtype) {

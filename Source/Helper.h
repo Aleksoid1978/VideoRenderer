@@ -122,6 +122,25 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid);
 
 typedef void(*CopyFrameDataFn)(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 
+enum ColorFormat_t {
+	CF_NONE = 0,
+	CF_YV12,
+	CF_NV12,
+	CF_P010,
+	CF_P016,
+	CF_YUY2,
+	CF_AYUV,
+	CF_Y410,
+	CF_Y416,
+	CF_RGB24,
+	CF_XRGB32,
+	CF_ARGB32,
+	CF_RGB48,
+	CF_Y8,
+	CF_Y800,
+	CF_Y116,
+};
+
 enum ColorSystem_t {
 	CS_YUV,
 	CS_RGB,
@@ -129,6 +148,7 @@ enum ColorSystem_t {
 };
 
 struct FmtConvParams_t {
+	ColorFormat_t   format;
 	GUID            Subtype;
 	char*           str;
 	D3DFORMAT       DXVA2Format;
@@ -142,7 +162,8 @@ struct FmtConvParams_t {
 	CopyFrameDataFn Func;
 };
 
-const FmtConvParams_t* GetFmtConvParams(GUID subtype);
+const FmtConvParams_t& GetFmtConvParams(const ColorFormat_t fmt);
+const FmtConvParams_t* GetFmtConvParams(const GUID subtype);
 
 // YUY2, AYUV, RGB32 to D3DFMT_X8R8G8B8, ARGB32 to D3DFMT_A8R8G8B8
 void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
