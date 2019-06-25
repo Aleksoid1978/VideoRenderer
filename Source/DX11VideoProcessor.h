@@ -57,8 +57,9 @@ private:
 	CMpcVideoRenderer* m_pFilter = nullptr;
 
 	bool m_bShowStats          = false;
-	bool m_bDeintDouble        = false;
 	int  m_iTexFormat          = SURFMT_8INT;
+	bool m_bVPEnableYUY2       = true;
+	bool m_bDeintDouble        = false;
 	bool m_bVPScaling          = true;
 	int  m_iUpscaling          = UPSCALE_CatmullRom; // interpolation
 	int  m_iDownscaling        = DOWNSCALE_Hamming;  // convolution
@@ -248,6 +249,7 @@ public:
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
 	void SetShowStats(bool value)   { m_bShowStats   = value; };
 	void SetTexFormat(int value);
+	void SetVPEnableFmts(bool bYUY2) { m_bVPEnableYUY2 = bYUY2; }
 	void SetVPScaling(bool value);
 	void SetUpscaling(int value);
 	void SetDownscaling(int value);
