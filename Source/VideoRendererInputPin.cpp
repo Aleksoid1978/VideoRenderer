@@ -114,7 +114,7 @@ STDMETHODIMP CVideoRendererInputPin::ReceiveConnection(IPin* pConnector, const A
 		if (FAILED(GetAllocator(&pMemAllocator))
 				|| FAILED(pMemAllocator->Decommit())
 				|| FAILED(pMemAllocator->GetProperties(&props))) {
-			return E_FAIL;
+			return FrameInVideoMem() ? S_OK : E_FAIL;
 		}
 
 		CMediaType mtNew(*pmt);
