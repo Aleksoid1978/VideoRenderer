@@ -2,6 +2,10 @@
     #define C_CSP 1
 #endif
 
+#ifndef C_YUY2
+    #define C_YUY2 0
+#endif
+
 #ifndef C_HDR
     #define C_HDR 0
 #endif
@@ -16,7 +20,7 @@ cbuffer PS_COLOR_TRANSFORM : register(b0)
     float3 cm_g;
     float3 cm_b;
     float3 cm_c;
-	// NB: sizeof(float3) == sizeof(float4)
+    // NB: sizeof(float3) == sizeof(float4)
 };
 #endif
 
@@ -35,6 +39,13 @@ struct PS_INPUT
 float4 main(PS_INPUT input) : SV_Target
 {
     float4 color = tex.Sample(samp, input.Tex); // original pixel
+#if C_YUY2
+    if (fmod(input.Tex.x, 2) < 1.0) {
+        color = float4(color[2], color[1], color[3], 0);
+    } else {
+        color = float4(color[0], color[1], color[3], 0);
+    }
+#endif
 
 #if C_CSP
     color.rgb = float3(mul(cm_r, color.rgb), mul(cm_g, color.rgb), mul(cm_b, color.rgb)) + cm_c;
