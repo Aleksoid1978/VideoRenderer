@@ -115,7 +115,7 @@ HRESULT CVRMainPPage::OnActivate()
 	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling   ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
 
-	CheckDlgButton(IDC_CHECK8, BST_CHECKED); // "YUY2"
+	CheckDlgButton(IDC_CHECK8, m_SetsPP.bVPEnableYUY2 ? BST_CHECKED : BST_UNCHECKED);
 	GetDlgItem(IDC_CHECK8).EnableWindow(FALSE);
 
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"8-bit Integer");
@@ -178,6 +178,11 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			}
 			if (nID == IDC_CHECK6) {
 				m_SetsPP.bInterpolateAt50pct = IsDlgButtonChecked(IDC_CHECK6) == BST_CHECKED;
+				SetDirty();
+				return (LRESULT)1;
+			}
+			if (nID == IDC_CHECK8) {
+				m_SetsPP.bVPEnableYUY2 = IsDlgButtonChecked(IDC_CHECK8) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}

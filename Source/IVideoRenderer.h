@@ -58,8 +58,9 @@ enum :int {
 struct Settings_t {
 	bool bUseD3D11           = false;
 	bool bShowStats          = false;
-	bool bDeintDouble        = false;
 	int  iSurfaceFmt         = SURFMT_8INT;
+	bool bVPEnableYUY2       = true;
+	bool bDeintDouble        = false;
 	int  bVPScaling          = true;
 	int  iUpscaling          = UPSCALE_CatmullRom;
 	int  iDownscaling        = DOWNSCALE_Hamming;
