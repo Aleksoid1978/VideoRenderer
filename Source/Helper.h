@@ -148,7 +148,7 @@ enum ColorSystem_t {
 };
 
 struct FmtConvParams_t {
-	ColorFormat_t   format;
+	ColorFormat_t   cformat;
 	GUID            Subtype;
 	char*           str;
 	D3DFORMAT       DXVA2Format;
@@ -163,7 +163,7 @@ struct FmtConvParams_t {
 };
 
 const FmtConvParams_t& GetFmtConvParams(const ColorFormat_t fmt);
-const FmtConvParams_t* GetFmtConvParams(const GUID subtype);
+const FmtConvParams_t& GetFmtConvParams(const GUID subtype);
 
 // YUY2, AYUV, RGB32 to D3DFMT_X8R8G8B8, ARGB32 to D3DFMT_A8R8G8B8
 void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);

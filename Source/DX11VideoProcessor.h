@@ -106,15 +106,16 @@ private:
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
 
 	// Input parameters
-	GUID        m_srcSubType      = GUID_NULL;
-	DXGI_FORMAT m_srcDXGIFormat   = DXGI_FORMAT_UNKNOWN;
-	UINT        m_srcWidth        = 0;
-	UINT        m_srcHeight       = 0;
-	UINT        m_srcRectWidth    = 0;
-	UINT        m_srcRectHeight   = 0;
-	int         m_srcPitch        = 0;
-	DWORD       m_srcAspectRatioX = 0;
-	DWORD       m_srcAspectRatioY = 0;
+	FmtConvParams_t m_srcParams = {};
+	DXGI_FORMAT m_srcDXGIFormat = DXGI_FORMAT_UNKNOWN;
+	CopyFrameDataFn m_pConvertFn = nullptr;
+	UINT  m_srcWidth        = 0;
+	UINT  m_srcHeight       = 0;
+	UINT  m_srcRectWidth    = 0;
+	UINT  m_srcRectHeight   = 0;
+	int   m_srcPitch        = 0;
+	DWORD m_srcAspectRatioX = 0;
+	DWORD m_srcAspectRatioY = 0;
 	CRect m_srcRect;
 	CRect m_trgRect;
 	DXVA2_ExtendedFormat m_srcExFmt = {};
@@ -129,9 +130,6 @@ private:
 
 	// intermediate texture format
 	DXGI_FORMAT m_InternalTexFmt = DXGI_FORMAT_B8G8R8X8_UNORM;
-
-	typedef void(*CopyFrameDataFn)(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
-	CopyFrameDataFn m_pConvertFn = nullptr;
 
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 	int m_FieldDrawn = 0;
@@ -222,8 +220,8 @@ public:
 	BOOL VerifyMediaType(const CMediaType* pmt);
 	BOOL InitMediaType(const CMediaType* pmt);
 
-	HRESULT InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height, bool only_update_surface);
-	HRESULT InitializeTexVP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height);
+	HRESULT InitializeD3D11VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_surface);
+	HRESULT InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height);
 
 	BOOL GetAlignmentSize(const CMediaType& mt, SIZE& Size);
 

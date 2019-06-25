@@ -118,15 +118,16 @@ private:
 	DXVA2_ValueRange m_DXVA2ProcValueRange[4] = {};
 
 	// Input parameters
-	GUID      m_srcSubType      = GUID_NULL;
-	D3DFORMAT m_srcD3DFormat    = D3DFMT_UNKNOWN;
-	UINT      m_srcWidth        = 0;
-	UINT      m_srcHeight       = 0;
-	UINT      m_srcRectWidth    = 0;
-	UINT      m_srcRectHeight   = 0;
-	int       m_srcPitch        = 0;
-	DWORD     m_srcAspectRatioX = 0;
-	DWORD     m_srcAspectRatioY = 0;
+	FmtConvParams_t m_srcParams = {};
+	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;
+	CopyFrameDataFn m_pConvertFn = nullptr;
+	UINT  m_srcWidth        = 0;
+	UINT  m_srcHeight       = 0;
+	UINT  m_srcRectWidth    = 0;
+	UINT  m_srcRectHeight   = 0;
+	int   m_srcPitch        = 0;
+	DWORD m_srcAspectRatioX = 0;
+	DWORD m_srcAspectRatioY = 0;
 	CRect m_srcRect;
 	CRect m_trgRect;
 	DXVA2_ExtendedFormat m_srcExFmt = {};
@@ -154,7 +155,6 @@ private:
 
 	// D3D9 Video Processor
 	CComPtr<IDirect3DTexture9> m_pSrcVideoTexture;
-	CopyFrameDataFn m_pConvertFn = nullptr;
 	Tex_t m_TexVideo;
 	Tex_t m_TexConvert;    // for result of color conversion
 	Tex_t m_TexCorrection; // for result of correction after DXVA2 VP
@@ -201,10 +201,10 @@ private:
 	void ReleaseVP();
 	void ReleaseDevice();
 
-	BOOL InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height, bool only_update_surface);
+	BOOL InitializeDXVA2VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_surface);
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
 
-	BOOL InitializeTexVP(const D3DFORMAT d3dformat, const UINT width, const UINT height);
+	BOOL InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height);
 	HRESULT CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams(mp_csp_params& params);
 

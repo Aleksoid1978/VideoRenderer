@@ -130,8 +130,8 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
 }
 
 static FmtConvParams_t s_FmtConvMapping[] = {
-	// format  |   subtype          | str     | DXVA2Format    | D3DFormat(DX9)     | VP11Format                | DX11Format             |Packsize|PitchCoeff| CSType|Subsampling|  Func
-	{CF_NONE,   MEDIASUBTYPE_NULL,   "",       D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,      DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            0, 0,        CS_YUV,    0,       nullptr             },
+	// cformat |   subtype          | str     | DXVA2Format    | D3DFormat(DX9)     | VP11Format                | DX11Format             |Packsize|PitchCoeff| CSType|Subsampling|  Func
+	{CF_NONE,   GUID_NULL,           "",       D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,      DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            0, 0,        CS_YUV,    0,       nullptr             },
 	{CF_YV12,   MEDIASUBTYPE_YV12,   "YV12",   D3DFMT_YV12,     D3DFMT_UNKNOWN,      DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            1, 3,        CS_YUV,  420,       &CopyFrameYV12      },
 	{CF_NV12,   MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_UNKNOWN,      DXGI_FORMAT_NV12,           DXGI_FORMAT_UNKNOWN,            1, 3,        CS_YUV,  420,       &CopyFramePackedUV  },
 	{CF_P010,   MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_UNKNOWN,      DXGI_FORMAT_P010,           DXGI_FORMAT_UNKNOWN,            2, 3,        CS_YUV,  420,       &CopyFramePackedUV  },
@@ -154,18 +154,18 @@ static FmtConvParams_t s_FmtConvMapping[] = {
 
 const FmtConvParams_t& GetFmtConvParams(const ColorFormat_t fmt)
 {
-	ASSERT(fmt == s_FmtConvMapping[fmt].format);
+	ASSERT(fmt == s_FmtConvMapping[fmt].cformat);
 	return s_FmtConvMapping[fmt];
 }
 
-const FmtConvParams_t* GetFmtConvParams(const GUID subtype)
+const FmtConvParams_t& GetFmtConvParams(const GUID subtype)
 {
 	for (const auto& fe : s_FmtConvMapping) {
 		if (fe.Subtype == subtype) {
-			return &fe;
+			return fe;
 		}
 	}
-	return nullptr;
+	return s_FmtConvMapping[CF_NONE];
 }
 
 void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)

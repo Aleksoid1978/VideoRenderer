@@ -397,11 +397,14 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_pVideoProcessor.Release();
 	m_pVideoProcessorEnum.Release();
 
-	m_srcDXGIFormat = DXGI_FORMAT_UNKNOWN;
-	m_srcWidth  = 0;
-	m_srcHeight = 0;
-	m_TextureWidth  = 0;
-	m_TextureHeight = 0;
+	m_srcParams      = {};
+	m_srcDXGIFormat  = DXGI_FORMAT_UNKNOWN;
+	m_srcDXVA2Format = D3DFMT_UNKNOWN;
+	m_pConvertFn     = nullptr;
+	m_srcWidth       = 0;
+	m_srcHeight      = 0;
+	m_TextureWidth   = 0;
+	m_TextureHeight  = 0;
 }
 
 void CDX11VideoProcessor::ReleaseDevice()
@@ -793,8 +796,8 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 
 BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 {
-	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
-	if (!FmtConvParams || FmtConvParams->VP11Format == DXGI_FORMAT_UNKNOWN && FmtConvParams->DX11Format == DXGI_FORMAT_UNKNOWN) {
+	const auto FmtConvParams = GetFmtConvParams(pmt->subtype);
+	if (FmtConvParams.VP11Format == DXGI_FORMAT_UNKNOWN && FmtConvParams.DX11Format == DXGI_FORMAT_UNKNOWN) {
 		return FALSE;
 	}
 
@@ -807,10 +810,10 @@ BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 		return FALSE;
 	}
 
-	if (FmtConvParams->Subsampling == 420 && ((pBIH->biWidth & 1) || (pBIH->biHeight & 1))) {
+	if (FmtConvParams.Subsampling == 420 && ((pBIH->biWidth & 1) || (pBIH->biHeight & 1))) {
 		return FALSE;
 	}
-	if (FmtConvParams->Subsampling == 422 && (pBIH->biWidth & 1)) {
+	if (FmtConvParams.Subsampling == 422 && (pBIH->biWidth & 1)) {
 		return FALSE;
 	}
 
@@ -829,11 +832,11 @@ BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 			}
 
 			if (RowPitch) {
-				auto FmtConvParams = GetFmtConvParams(mt.subtype);
+				const auto FmtConvParams = GetFmtConvParams(mt.subtype);
 
-				Size.cx = RowPitch / FmtConvParams->Packsize;
+				Size.cx = RowPitch / FmtConvParams.Packsize;
 
-				if (FmtConvParams->CSType == CS_RGB) {
+				if (FmtConvParams.CSType == CS_RGB) {
 					Size.cy = -abs(Size.cy);
 				} else {
 					Size.cy = abs(Size.cy); // need additional checks
@@ -857,7 +860,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	ReleaseVP();
 
-	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
+	const auto FmtConvParams = GetFmtConvParams(pmt->subtype);
 	const GUID SubType = pmt->subtype;
 	const BITMAPINFOHEADER* pBIH = nullptr;
 
@@ -868,7 +871,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_trgRect = vih2->rcTarget;
 		m_srcAspectRatioX = vih2->dwPictAspectRatioX;
 		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
-		if (FmtConvParams->CSType == CS_YUV && (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT))) {
+		if (FmtConvParams.CSType == CS_YUV && (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT))) {
 			m_srcExFmt.value = vih2->dwControlFlags;
 			m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
 		} else {
@@ -905,7 +908,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
 	}
 
-	if (FmtConvParams->CSType == CS_YUV) {
+	if (FmtConvParams.CSType == CS_YUV) {
 		if (m_srcExFmt.NominalRange == DXVA2_NominalRange_Unknown) {
 			m_srcExFmt.NominalRange = DXVA2_NominalRange_16_235;
 		}
@@ -934,8 +937,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcAspectRatioY = m_srcRectHeight / gcd;
 	}
 
-	m_pConvertFn = FmtConvParams->Func;
-	m_srcPitch   = biSizeImage * 2 / (biHeight * FmtConvParams->PitchCoeff);
+	m_srcPitch   = biSizeImage * 2 / (biHeight * FmtConvParams.PitchCoeff);
 	m_srcPitch  &= ~1u;
 	if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
 		m_srcPitch = ALIGN(m_srcPitch, 4);
@@ -952,10 +954,10 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_PSConvColorData.bEnable = false;
 
 	// D3D11 Video Processor
-	if (FmtConvParams->VP11Format != DXGI_FORMAT_UNKNOWN && !(m_VendorId == PCIV_NVIDIA && FmtConvParams->CSType == CS_RGB)) {
+	if (FmtConvParams.VP11Format != DXGI_FORMAT_UNKNOWN && !(m_VendorId == PCIV_NVIDIA && FmtConvParams.CSType == CS_RGB)) {
 		// D3D11 VP does not work correctly if RGB32 with odd frame width (source or target) on Nvidia adapters
 
-		if (S_OK == InitializeD3D11VP(FmtConvParams->VP11Format, biWidth, biHeight, false)) {
+		if (S_OK == InitializeD3D11VP(FmtConvParams, biWidth, biHeight, false)) {
 			UpdateVideoTex();
 
 			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
@@ -968,7 +970,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_YCGCO));
 			}
 
-			m_srcSubType = SubType;
 			m_inputMT = *pmt;
 			UpdateStatsStatic();
 
@@ -983,7 +984,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	// Tex Video Processor
-	if (FmtConvParams->DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams->DX11Format, biWidth, biHeight)) {
+	if (FmtConvParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_COLOR_ST2084));
 		}
@@ -998,7 +999,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 		mp_csp_params csp_params;
 		set_colorspace(m_srcExFmt, csp_params.color);
-		csp_params.gray = FmtConvParams->CSType == CS_GRAY;
+		csp_params.gray = FmtConvParams.CSType == CS_GRAY;
 
 		mp_cmat cmatrix;
 		mp_get_csp_matrix(csp_params, cmatrix);
@@ -1030,7 +1031,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		}
 		m_PSConvColorData.bEnable = true;
 
-		m_srcSubType = SubType;
 		m_inputMT = *pmt;
 		UpdateStatsStatic();
 
@@ -1044,8 +1044,10 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	return FALSE;
 }
 
-HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height, bool only_update_texture)
+HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_texture)
 {
+	auto& dxgiFormat = params.VP11Format;
+
 	DLog(L"CDX11VideoProcessor::InitializeD3D11VP() started with input surface: %s, %u x %u", DXGIFormatToString(dxgiFormat), width, height);
 
 	CheckPointer(m_pVideoDevice, E_FAIL);
@@ -1203,9 +1205,12 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 	m_TextureWidth  = width;
 	m_TextureHeight = height;
 	if (!only_update_texture) {
-		m_srcDXGIFormat = dxgiFormat;
-		m_srcWidth  = width;
-		m_srcHeight = height;
+		m_srcParams      = params;
+		m_srcDXGIFormat  = dxgiFormat;
+		m_srcDXVA2Format = params.DXVA2Format;
+		m_pConvertFn     = params.Func;
+		m_srcWidth       = width;
+		m_srcHeight      = height;
 	}
 
 	DLog(L"CDX11VideoProcessor::InitializeD3D11VP() completed successfully");
@@ -1213,13 +1218,15 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const DXGI_FORMAT dxgiFormat, con
 	return S_OK;
 }
 
-HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const UINT width, const UINT height)
+HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height)
 {
-	DLog(L"CDX11VideoProcessor::InitializeTexVP() started with input surface: %s, %u x %u", DXGIFormatToString(dxgiFormat), width, height);
+	auto& srcDXGIFormat = params.DX11Format;
+
+	DLog(L"CDX11VideoProcessor::InitializeTexVP() started with input surface: %s, %u x %u", DXGIFormatToString(srcDXGIFormat), width, height);
 
 	HRESULT hr = S_OK;
 
-	hr = m_TexSrcCPU.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWrite);
+	hr = m_TexSrcCPU.Create(m_pDevice, srcDXGIFormat, width, height, Tex2D_DynamicShaderWrite);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : m_TexSrcCPU.Create() failed with error %s", HR2Str(hr));
 		return hr;
@@ -1231,11 +1238,14 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const DXGI_FORMAT dxgiFormat, const
 		return hr;
 	}
 
-	m_TextureWidth  = width;
-	m_TextureHeight = height;
-	m_srcDXGIFormat = dxgiFormat;
-	m_srcWidth      = width;
-	m_srcHeight     = height;
+	m_TextureWidth   = width;
+	m_TextureHeight  = height;
+	m_srcParams      = params;
+	m_srcDXGIFormat  = srcDXGIFormat;
+	m_srcDXVA2Format = params.DXVA2Format;
+	m_pConvertFn     = params.Func;
+	m_srcWidth       = width;
+	m_srcHeight      = height;
 
 	DLog(L"CDX11VideoProcessor::InitializeTexVP() completed successfully");
 
@@ -1336,9 +1346,12 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 		D3D11_TEXTURE2D_DESC desc = {};
 		pD3D11Texture2D->GetDesc(&desc);
+		if (desc.Format != m_srcDXGIFormat) {
+			return hr;
+		}
 
-		if (desc.Format != m_srcDXGIFormat || desc.Width != m_TextureWidth || desc.Height != m_TextureHeight) {
-			hr = InitializeD3D11VP(desc.Format, desc.Width, desc.Height, true);
+		if (desc.Width != m_TextureWidth || desc.Height != m_TextureHeight) {
+			hr = InitializeD3D11VP(m_srcParams, desc.Width, desc.Height, true);
 			if (FAILED(hr)) {
 				return hr;
 			}
@@ -1353,17 +1366,16 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		CComPtr<IDirect3DSurface9> pSurface9;
 		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface9)))) {
 			D3DSURFACE_DESC desc = {};
-			pSurface9->GetDesc(&desc);
+			hr = pSurface9->GetDesc(&desc);
+			if (FAILED(hr) || desc.Format != m_srcDXVA2Format) {
+				return E_FAIL;
+			}
 
-			if (desc.Format != m_srcD3DFormat || desc.Width != m_TextureWidth || desc.Height != m_TextureHeight) {
-				DXGI_FORMAT DXGIFormat = (desc.Format == D3DFMT_NV12) ? DXGI_FORMAT_NV12
-									   : (desc.Format == D3DFMT_P010) ? DXGI_FORMAT_P010
-									   : DXGI_FORMAT_UNKNOWN;
-				hr = InitializeD3D11VP(DXGIFormat, desc.Width, desc.Height, true);
+			if (desc.Width != m_TextureWidth || desc.Height != m_TextureHeight) {
+				hr = InitializeD3D11VP(m_srcParams, desc.Width, desc.Height, true);
 				if (FAILED(hr)) {
 					return hr;
 				}
-				m_srcD3DFormat = desc.Format;
 			}
 
 			D3DLOCKED_RECT lr_src;
@@ -1948,16 +1960,15 @@ void CDX11VideoProcessor::SetDownscaling(int value)
 
 void CDX11VideoProcessor::UpdateStatsStatic()
 {
-	auto FmtConvParams = GetFmtConvParams(m_srcSubType);
-	if (FmtConvParams) {
+	if (m_srcParams.cformat) {
 		m_strStatsStatic1.Format(L"MPC VR v%S, Direct3D 11", MPCVR_VERSION_STR);
 		m_strStatsStatic1.AppendFormat(L"\nGraph. Adapter: %s", m_strAdapterDescription);
 
-		m_strStatsStatic2.Format(L" %S %ux%u", FmtConvParams->str, m_srcRectWidth, m_srcRectHeight);
-		if (FmtConvParams->CSType == CS_YUV) {
+		m_strStatsStatic2.Format(L" %S %ux%u", m_srcParams.str, m_srcRectWidth, m_srcRectHeight);
+		if (m_srcParams.CSType == CS_YUV) {
 			LPCSTR strs[5] = {};
 			//DXVA2_ExtendedFormat exFmt = SpecifyExtendedFormat(m_srcExFmt, FmtConvParams->CSType, m_srcRectWidth, m_srcRectHeight);
-			GetExtendedFormatString(strs, m_srcExFmt, FmtConvParams->CSType);
+			GetExtendedFormatString(strs, m_srcExFmt, m_srcParams.CSType);
 			m_strStatsStatic2.AppendFormat(L"\n  Range: %hS, Matrix: %hS, Lighting: %hS", strs[0], strs[1], strs[2]);
 			m_strStatsStatic2.AppendFormat(L"\n  Primaries: %hS, Function: %hS", strs[3], strs[4]);
 		}

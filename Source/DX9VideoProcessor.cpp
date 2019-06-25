@@ -349,9 +349,11 @@ void CDX9VideoProcessor::ReleaseVP()
 	m_TexCorrection.Release();
 	m_TexResize.Release();
 
-	m_srcD3DFormat = D3DFMT_UNKNOWN;
-	m_srcWidth  = 0;
-	m_srcHeight = 0;
+	m_srcParams     = {};
+	m_srcD3DFormat  = D3DFMT_UNKNOWN;
+	m_pConvertFn    = nullptr;
+	m_srcWidth      = 0;
+	m_srcHeight     = 0;
 	m_SurfaceWidth  = 0;
 	m_SurfaceHeight = 0;
 }
@@ -386,8 +388,10 @@ void CDX9VideoProcessor::ReleaseDevice()
 	m_pD3DDevEx.Release();
 }
 
-BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT width, const UINT height, bool only_update_surface)
+BOOL CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_surface)
 {
+	auto& d3dformat = params.DXVA2Format;
+
 	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() started with input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
 
 	CheckPointer(m_pDXVA2_VPService, FALSE);
@@ -519,7 +523,9 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const D3DFORMAT d3dformat, const UINT
 	m_SurfaceWidth  = width;
 	m_SurfaceHeight = height;
 	if (!only_update_surface) {
+		m_srcParams    = params;
 		m_srcD3DFormat = d3dformat;
+		m_pConvertFn   = params.Func;
 		m_srcWidth     = width;
 		m_srcHeight    = height;
 	}
@@ -647,8 +653,10 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	return TRUE;
 }
 
-BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT width, const UINT height)
+BOOL CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height)
 {
+	auto& d3dformat = params.D3DFormat;
+
 	DLog("CDX9VideoProcessor::InitializeTexVP() started with input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
 
 	HRESULT hr = m_pD3DDevEx->CreateTexture(width, height, 1, D3DUSAGE_DYNAMIC, d3dformat, D3DPOOL_DEFAULT, &m_pSrcVideoTexture, nullptr);
@@ -667,7 +675,9 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const D3DFORMAT d3dformat, const UINT w
 	// fill the surface in black, to avoid the "green screen"
 	m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(0).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
 
+	m_srcParams    = params;
 	m_srcD3DFormat = d3dformat;
+	m_pConvertFn   = params.Func;
 	m_srcWidth     = width;
 	m_srcHeight    = height;
 
@@ -720,7 +730,7 @@ void CDX9VideoProcessor::SetShaderConvertColorParams(mp_csp_params& params)
 		m_PSConvColorData.fConstants[3][j] = cmatrix.c[j];
 	}
 
-	if (m_srcSubType == MEDIASUBTYPE_Y410 || m_srcSubType == MEDIASUBTYPE_Y416) {
+	if (m_srcParams.cformat == CF_Y410 || m_srcParams.cformat == CF_Y416) {
 		for (int i = 0; i < 3; i++) {
 			std::swap(m_PSConvColorData.fConstants[i][0], m_PSConvColorData.fConstants[i][1]);
 		}
@@ -729,8 +739,8 @@ void CDX9VideoProcessor::SetShaderConvertColorParams(mp_csp_params& params)
 
 BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 {
-	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
-	if (!FmtConvParams) {
+	const auto FmtConvParams = GetFmtConvParams(pmt->subtype);
+	if (FmtConvParams.DXVA2Format == D3DFMT_UNKNOWN && FmtConvParams.D3DFormat == D3DFMT_UNKNOWN) {
 		return FALSE;
 	}
 
@@ -743,10 +753,10 @@ BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 		return FALSE;
 	}
 
-	if (FmtConvParams->Subsampling == 420 && ((pBIH->biWidth & 1) || (pBIH->biHeight & 1))) {
+	if (FmtConvParams.Subsampling == 420 && ((pBIH->biWidth & 1) || (pBIH->biHeight & 1))) {
 		return FALSE;
 	}
-	if (FmtConvParams->Subsampling == 422 && (pBIH->biWidth & 1)) {
+	if (FmtConvParams.Subsampling == 422 && (pBIH->biWidth & 1)) {
 		return FALSE;
 	}
 
@@ -767,11 +777,11 @@ BOOL CDX9VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 			}
 
 			if (Pitch) {
-				auto FmtConvParams = GetFmtConvParams(mt.subtype);
+				const auto FmtConvParams = GetFmtConvParams(mt.subtype);
 
-				Size.cx = Pitch / FmtConvParams->Packsize;
+				Size.cx = Pitch / FmtConvParams.Packsize;
 
-				if (FmtConvParams->CSType == CS_RGB) {
+				if (FmtConvParams.CSType == CS_RGB) {
 					Size.cy = -abs(Size.cy);
 				} else {
 					Size.cy = abs(Size.cy); // need additional checks
@@ -795,7 +805,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	ReleaseVP();
 
-	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
+	const auto FmtConvParams = GetFmtConvParams(pmt->subtype);
 	const GUID SubType = pmt->subtype;
 	const BITMAPINFOHEADER* pBIH = nullptr;
 
@@ -806,7 +816,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_trgRect = vih2->rcTarget;
 		m_srcAspectRatioX = vih2->dwPictAspectRatioX;
 		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
-		if (FmtConvParams->CSType == CS_YUV && (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT))) {
+		if (FmtConvParams.CSType == CS_YUV && (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT))) {
 			m_srcExFmt.value = vih2->dwControlFlags;
 			m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
 		} else {
@@ -843,7 +853,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
 	}
 
-	if (FmtConvParams->CSType == CS_YUV) {
+	if (FmtConvParams.CSType == CS_YUV) {
 		if (m_srcExFmt.NominalRange == DXVA2_NominalRange_Unknown) {
 			m_srcExFmt.NominalRange = DXVA2_NominalRange_16_235;
 		}
@@ -872,9 +882,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcAspectRatioY = m_srcRectHeight / gcd;
 	}
 
-	m_srcD3DFormat = FmtConvParams->D3DFormat;
-	m_pConvertFn   = FmtConvParams->Func;
-	m_srcPitch     = biSizeImage * 2 / (biHeight * FmtConvParams->PitchCoeff);
+	m_srcPitch     = biSizeImage * 2 / (biHeight * FmtConvParams.PitchCoeff);
 	m_srcPitch    &= ~1u;
 	if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
 		m_srcPitch = ALIGN(m_srcPitch, 4);
@@ -891,7 +899,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_PSConvColorData.bEnable = false;
 
 	// DXVA2 Video Processor
-	if (FmtConvParams->DXVA2Format != D3DFMT_UNKNOWN && InitializeDXVA2VP(FmtConvParams->DXVA2Format, biWidth, biHeight, false)) {
+	if (FmtConvParams.DXVA2Format != D3DFMT_UNKNOWN && InitializeDXVA2VP(FmtConvParams, biWidth, biHeight, false)) {
 		UpdateVideoTex();
 
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
@@ -905,16 +913,15 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		}
 
 		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
-
-		m_srcSubType = SubType;
 		UpdateStatsStatic();
+
 		return TRUE;
 	}
 
 	ReleaseVP();
 
 	// Tex Video Processor
-	if (FmtConvParams->D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams->D3DFormat, biWidth, biHeight)) {
+	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR_ST2084));
 		}
@@ -933,8 +940,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
 		csp_params.gray = SubType == MEDIASUBTYPE_Y8 || SubType == MEDIASUBTYPE_Y800 || SubType == MEDIASUBTYPE_Y116;
 
-		m_srcSubType = SubType;
-		bool bPprocessing = FmtConvParams->CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
+		bool bPprocessing = FmtConvParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
 		if (bPprocessing) {
 			m_PSConvColorData.bEnable = true;
 			SetShaderConvertColorParams(csp_params);
@@ -1045,11 +1051,11 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
 			D3DSURFACE_DESC desc;
 			hr = pSurface->GetDesc(&desc);
-			if (FAILED(hr)) {
-				return hr;
+			if (FAILED(hr) || desc.Format != m_srcD3DFormat) {
+				return E_FAIL;
 			}
-			if (desc.Width != m_SurfaceWidth || desc.Height != m_SurfaceHeight || desc.Format != m_srcD3DFormat) {
-				if (!InitializeDXVA2VP(desc.Format, desc.Width, desc.Height, true)) {
+			if (desc.Width != m_SurfaceWidth || desc.Height != m_SurfaceHeight) {
+				if (!InitializeDXVA2VP(m_srcParams, desc.Width, desc.Height, true)) {
 					return E_FAIL;
 				}
 			}
@@ -1087,7 +1093,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
-			if (m_srcD3DFormat == D3DFMT_UNKNOWN) {
+			if (m_srcParams.cformat == CF_NONE) {
 				return E_FAIL;
 			}
 
@@ -1755,16 +1761,15 @@ HRESULT CDX9VideoProcessor::TextureResizeShader(IDirect3DTexture9* pTexture, con
 
 void CDX9VideoProcessor::UpdateStatsStatic()
 {
-	auto FmtConvParams = GetFmtConvParams(m_srcSubType);
-	if (FmtConvParams) {
+	if (m_srcParams.cformat) {
 		m_strStatsStatic1.Format(L"MPC VR v%S, Direct3D 9Ex", MPCVR_VERSION_STR);
 		m_strStatsStatic1.AppendFormat(L"\nGraph. Adapter: %s", m_strAdapterDescription);
 
-		m_strStatsStatic2.Format(L" %S %ux%u", FmtConvParams->str, m_srcRectWidth, m_srcRectHeight);
-		if (FmtConvParams->CSType == CS_YUV) {
+		m_strStatsStatic2.Format(L" %S %ux%u", m_srcParams.str, m_srcRectWidth, m_srcRectHeight);
+		if (m_srcParams.CSType == CS_YUV) {
 			LPCSTR strs[5] = {};
 			//DXVA2_ExtendedFormat exFmt = SpecifyExtendedFormat(m_srcExFmt, FmtConvParams->CSType, m_srcRectWidth, m_srcRectHeight);
-			GetExtendedFormatString(strs, m_srcExFmt, FmtConvParams->CSType);
+			GetExtendedFormatString(strs, m_srcExFmt, m_srcParams.CSType);
 			m_strStatsStatic2.AppendFormat(L"\n  Range: %hS, Matrix: %hS, Lighting: %hS", strs[0], strs[1], strs[2]);
 			m_strStatsStatic2.AppendFormat(L"\n  Primaries: %hS, Function: %hS", strs[3], strs[4]);
 		}
@@ -1911,7 +1916,7 @@ STDMETHODIMP_(ULONG) CDX9VideoProcessor::Release()
 
 STDMETHODIMP CDX9VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange)
 {
-	if (m_srcSubType == GUID_NULL) {
+	if (m_srcParams.cformat == CF_NONE) {
 		return MF_E_INVALIDREQUEST;
 	}
 
@@ -1929,7 +1934,7 @@ STDMETHODIMP CDX9VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRa
 
 STDMETHODIMP CDX9VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *Values)
 {
-	if (m_srcSubType == GUID_NULL) {
+	if (m_srcParams.cformat == CF_NONE) {
 		return MF_E_INVALIDREQUEST;
 	}
 
@@ -1943,7 +1948,7 @@ STDMETHODIMP CDX9VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 
 STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *pValues)
 {
-	if (m_srcSubType == GUID_NULL) {
+	if (m_srcParams.cformat == CF_NONE) {
 		return MF_E_INVALIDREQUEST;
 	}
 
@@ -1962,25 +1967,22 @@ STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 	}
 
 	if (!m_pDXVA2_VP) {
-		auto FmtConvParams = GetFmtConvParams(m_srcSubType);
-		if (FmtConvParams) {
-			mp_csp_params csp_params;
-			set_colorspace(m_srcExFmt, csp_params.color);
-			csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
-			csp_params.contrast = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
-			csp_params.hue = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
-			csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
-			csp_params.gray = m_srcSubType == MEDIASUBTYPE_Y8 || m_srcSubType == MEDIASUBTYPE_Y800 || m_srcSubType == MEDIASUBTYPE_Y116;
+		mp_csp_params csp_params;
+		set_colorspace(m_srcExFmt, csp_params.color);
+		csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
+		csp_params.contrast = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
+		csp_params.hue = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
+		csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
+		csp_params.gray = m_srcParams.cformat == CF_Y8 || m_srcParams.cformat == CF_Y800 || m_srcParams.cformat == CF_Y116;
 
-			bool bPprocessing = FmtConvParams->CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
+		bool bPprocessing = m_srcParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
 
-			if (bPprocessing) {
-				//TODO: lock "render" here
-				m_PSConvColorData.bEnable = true;
-				SetShaderConvertColorParams(csp_params);
-			} else {
-				m_PSConvColorData.bEnable = false;
-			}
+		if (bPprocessing) {
+			//TODO: lock "render" here
+			m_PSConvColorData.bEnable = true;
+			SetShaderConvertColorParams(csp_params);
+		} else {
+			m_PSConvColorData.bEnable = false;
 		}
 	}
 

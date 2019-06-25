@@ -35,7 +35,7 @@ private:
 
 protected:
 	CComPtr<IDirect3DDevice9Ex> m_pD3DDevEx;
-	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;
+	D3DFORMAT m_srcDXVA2Format = D3DFMT_UNKNOWN;
 	D3DPRESENT_PARAMETERS m_d3dpp = {};
 
 public:
