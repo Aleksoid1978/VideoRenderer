@@ -525,7 +525,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const 
 	if (!only_update_surface) {
 		m_srcParams    = params;
 		m_srcD3DFormat = d3dformat;
-		m_pConvertFn   = params.Func;
+		m_pConvertFn   = GetCopyFunction(params);
 		m_srcWidth     = width;
 		m_srcHeight    = height;
 	}
@@ -677,7 +677,7 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UI
 
 	m_srcParams    = params;
 	m_srcD3DFormat = d3dformat;
-	m_pConvertFn   = params.Func;
+	m_pConvertFn   = GetCopyFunction(params);
 	m_srcWidth     = width;
 	m_srcHeight    = height;
 

@@ -67,6 +67,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CPUInfo.cpp" />
     <ClCompile Include="csputils.cpp" />
     <ClCompile Include="CustomAllocator.cpp" />
     <ClCompile Include="D3D9Font.cpp" />
@@ -88,6 +89,7 @@
     <ClCompile Include="VideoRendererInputPin.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CPUInfo.h" />
     <ClInclude Include="csputils.h" />
     <ClInclude Include="CustomAllocator.h" />
     <ClInclude Include="D3D9Font.h" />

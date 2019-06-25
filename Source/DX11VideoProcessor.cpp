@@ -1208,7 +1208,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		m_srcParams      = params;
 		m_srcDXGIFormat  = dxgiFormat;
 		m_srcDXVA2Format = params.DXVA2Format;
-		m_pConvertFn     = params.Func;
+		m_pConvertFn     = GetCopyFunction(params);
 		m_srcWidth       = width;
 		m_srcHeight      = height;
 	}
@@ -1243,7 +1243,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 	m_srcParams      = params;
 	m_srcDXGIFormat  = srcDXGIFormat;
 	m_srcDXVA2Format = params.DXVA2Format;
-	m_pConvertFn     = params.Func;
+	m_pConvertFn     = GetCopyFunction(params);
 	m_srcWidth       = width;
 	m_srcHeight      = height;
 

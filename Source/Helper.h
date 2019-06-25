@@ -160,10 +160,12 @@ struct FmtConvParams_t {
 	ColorSystem_t   CSType;
 	int             Subsampling;
 	CopyFrameDataFn Func;
+	CopyFrameDataFn FuncSSSE3;
 };
 
 const FmtConvParams_t& GetFmtConvParams(const ColorFormat_t fmt);
 const FmtConvParams_t& GetFmtConvParams(const GUID subtype);
+CopyFrameDataFn GetCopyFunction(FmtConvParams_t params);
 
 // YUY2, AYUV, RGB32 to D3DFMT_X8R8G8B8, ARGB32 to D3DFMT_A8R8G8B8
 void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
