@@ -209,7 +209,7 @@ HRESULT CDX11VideoProcessor::TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRen
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::TextureConvertColor(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect)
+HRESULT CDX11VideoProcessor::TextureConvertColor(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
 	CComPtr<ID3D11Buffer> pVertexBuffer;
@@ -222,21 +222,19 @@ HRESULT CDX11VideoProcessor::TextureConvertColor(Tex2D_t& Tex, ID3D11Texture2D* 
 
 	UINT width = (m_srcParams.cformat == CF_YUY2) ? Tex.desc.Width * 2 : Tex.desc.Width;
 
-	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect);
+	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, width, Tex.desc.Height, CRect(0, 0, width, Tex.desc.Height));
 	if (FAILED(hr)) {
 		return hr;
 	}
 
 	D3D11_VIEWPORT VP;
-	VP.TopLeftX = (FLOAT)srcRect.left;
-	VP.TopLeftY = (FLOAT)srcRect.top;
-	VP.Width = (FLOAT)srcRect.Width();
-	VP.Height = (FLOAT)srcRect.Height();
+	VP.TopLeftX = 0;
+	VP.TopLeftY = 0;
+	VP.Width = (FLOAT)width;
+	VP.Height = (FLOAT)Tex.desc.Height;
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
 	if (m_srcParams.cformat == CF_YUY2) {
-		VP.TopLeftX *= 2;
-		VP.Width *= 2;
 		m_pDeviceContext->PSSetConstantBuffers(4, m_PSConvColorData.pConstants4 ? 1 : 0, &m_PSConvColorData.pConstants4);
 	}
 
@@ -1692,7 +1690,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
 	// Convert color pass
-	HRESULT hr = TextureConvertColor(m_TexSrcCPU, m_TexConvert.pTexture, rSrcRect);
+	HRESULT hr = TextureConvertColor(m_TexSrcCPU, m_TexConvert.pTexture);
 
 	// Resize
 	hr = ResizeShader2Pass(m_TexConvert, pRenderTarget, rSrcRect, rDstRect);
