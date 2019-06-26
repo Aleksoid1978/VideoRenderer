@@ -40,16 +40,17 @@ float4 main(float2 tex : TEXCOORD0) : COLOR
 
 #if C_YUY2
     if (fmod(tex.x*width, 2) < 1.0) {
-#if (C_YUY2 == 1) // nearest neighbor
+        // used D3DFMT_A8R8G8B8 is used because D3DFMT_A8B8G8R8 cannot be used on some video cards
         color = float4(color[2], color[1], color[3], 0);
+    } else {
+#if (C_YUY2 == 1) // nearest neighbor
+        color = float4(color[0], color[1], color[3], 0);
 #elif (C_YUY2 == 2) // linear
         float2 chroma0 = color.yw;
         float2 chroma1 = tex2D(s0, tex + float2(dx, 0)).yw;
         float2 chroma = (chroma0 + chroma1) * 0.5;
-        color = float4(color[2], chroma, 0);
+        color = float4(color[0], chroma, 0);
 #endif
-    } else {
-        color = float4(color[0], color[1], color[3], 0);
     }
 #endif
 
