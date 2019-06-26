@@ -1376,7 +1376,7 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 			str.AppendFormat(L"\nBackwardRefSamples: %u", m_DXVA2VPcaps.NumBackwardRefSamples);
 		}
 	} else {
-		str.Append(L"PS 3.0");
+		str.Append(L"Shaders");
 	}
 
 	str.AppendFormat(L"\nDisplay Mode    : %u x %u, %u", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate);
@@ -1812,7 +1812,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 			m_strStatsStatic2.AppendFormat(L"\n  Primaries: %hS, Function: %hS", strs[3], strs[4]);
 		}
 		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", D3DFormatToString(m_InternalTexFmt));
-		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pDXVA2_VP ? L"DXVA2" : L"PS 3.0");
+		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pDXVA2_VP ? L"DXVA2" : L"Shaders");
 	} else {
 		m_strStatsStatic1 = L"Error";
 		m_strStatsStatic2.Empty();
