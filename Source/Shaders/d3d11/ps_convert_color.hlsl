@@ -52,7 +52,14 @@ float4 main(PS_INPUT input) : SV_Target
     if (fmod(input.Tex.x*width, 2) < 1.0) {
         color = float4(color[0], color[1], color[3], 0);
     } else {
+#if (C_YUY2 == 1) // nearest neighbor
         color = float4(color[2], color[1], color[3], 0);
+#elif (C_YUY2 == 2) // linear
+        float2 chroma0 = color.yw;
+        float2 chroma1 = tex.Sample(samp, input.Tex + float2(0, dx)).yw;
+        float2 chroma = (chroma0 + chroma1) * 0.5;
+        color = float4(color[2], chroma, 0);
+#endif
     }
 #endif
 

@@ -20,7 +20,11 @@ float3 cm_c : register(c3);
 #endif
 
 #if C_YUY2
-float width : register(c4);
+float4 p4 : register(c4);
+#define width  (p4[0])
+#define height (p4[1])
+#define dx     (p4[2])
+#define dy     (p4[3])
 #endif
 
 #if (C_HDR == 1)
@@ -33,9 +37,17 @@ float width : register(c4);
 float4 main(float2 tex : TEXCOORD0) : COLOR
 {
     float4 color = tex2D(s0, tex); // original pixel
+
 #if C_YUY2
     if (fmod(tex.x*width, 2) < 1.0) {
+#if (C_YUY2 == 1) // nearest neighbor
         color = float4(color[2], color[1], color[3], 0);
+#elif (C_YUY2 == 2) // linear
+        float2 chroma0 = color.yw;
+        float2 chroma1 = tex2D(s0, tex + float2(0, dx)).yw;
+        float2 chroma = (chroma0 + chroma1) * 0.5;
+        color = float4(color[2], chroma, 0);
+#endif
     } else {
         color = float4(color[0], color[1], color[3], 0);
     }
