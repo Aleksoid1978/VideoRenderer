@@ -95,6 +95,7 @@ private:
 	struct {
 		bool bEnable = false;
 		ID3D11Buffer* pConstants = nullptr;
+		ID3D11Buffer* pConstants4 = nullptr;
 	} m_PSConvColorData;
 	CComPtr<ID3D11PixelShader> m_pShaderUpscaleX;
 	CComPtr<ID3D11PixelShader> m_pShaderUpscaleY;
@@ -267,6 +268,7 @@ private:
 	HRESULT TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
 							const CRect& srcRect, const CRect& destRect,
 							ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer);
+	HRESULT TextureConvertColor(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect);
 	HRESULT TextureResizeShader(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
 							const CRect& srcRect, const CRect& destRect,
 							ID3D11PixelShader* pPixelShader);

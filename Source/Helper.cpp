@@ -137,7 +137,7 @@ static FmtConvParams_t s_FmtConvMapping[] = {
 	{CF_NV12,   MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_UNKNOWN,      DXGI_FORMAT_NV12,           DXGI_FORMAT_UNKNOWN,            1, 3,        CS_YUV,  420,       &CopyFramePackedUV, nullptr},
 	{CF_P010,   MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_UNKNOWN,      DXGI_FORMAT_P010,           DXGI_FORMAT_UNKNOWN,            2, 3,        CS_YUV,  420,       &CopyFramePackedUV, nullptr},
 	{CF_P016,   MEDIASUBTYPE_P016,   "P016",   D3DFMT_P016,     D3DFMT_UNKNOWN,      DXGI_FORMAT_P016,           DXGI_FORMAT_UNKNOWN,            2, 3,        CS_YUV,  420,       &CopyFramePackedUV, nullptr},
-	{CF_YUY2,   MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_UNKNOWN,      DXGI_FORMAT_YUY2,           DXGI_FORMAT_UNKNOWN,            2, 2,        CS_YUV,  422,       &CopyFrameAsIs,     nullptr},
+	{CF_YUY2,   MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_A8R8G8B8,     DXGI_FORMAT_YUY2,           DXGI_FORMAT_R8G8B8A8_UNORM,     2, 2,        CS_YUV,  422,       &CopyFrameAsIs,     nullptr},
 	{CF_AYUV,   MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,     DXGI_FORMAT_AYUV,           DXGI_FORMAT_B8G8R8X8_UNORM,     4, 2,        CS_YUV,  444,       &CopyFrameAsIs,     nullptr},
 	{CF_Y410,   MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_Y410,     D3DFMT_A2B10G10R10,  DXGI_FORMAT_Y410,           DXGI_FORMAT_R10G10B10A2_UNORM,  4, 2,        CS_YUV,  444,       &CopyFrameAsIs,     nullptr},
 	{CF_Y416,   MEDIASUBTYPE_Y416,   "Y416",   D3DFMT_Y416,     D3DFMT_A16B16G16R16, DXGI_FORMAT_Y416,           DXGI_FORMAT_R16G16B16A16_UNORM, 8, 2,        CS_YUV,  444,       &CopyFrameAsIs,     nullptr},

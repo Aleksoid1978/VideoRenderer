@@ -209,6 +209,42 @@ HRESULT CDX11VideoProcessor::TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRen
 	return hr;
 }
 
+HRESULT CDX11VideoProcessor::TextureConvertColor(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect)
+{
+	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
+	CComPtr<ID3D11Buffer> pVertexBuffer;
+
+	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+	if (FAILED(hr)) {
+		DLog(L"TextureCopyRect() : CreateRenderTargetView() failed with error %s", HR2Str(hr));
+		return hr;
+	}
+
+	UINT width = (m_srcParams.cformat == CF_YUY2) ? Tex.desc.Width * 2 : Tex.desc.Width;
+
+	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	D3D11_VIEWPORT VP;
+	VP.TopLeftX = (FLOAT)srcRect.left;
+	VP.TopLeftY = (FLOAT)srcRect.top;
+	VP.Width = (FLOAT)srcRect.Width();
+	VP.Height = (FLOAT)srcRect.Height();
+	VP.MinDepth = 0.0f;
+	VP.MaxDepth = 1.0f;
+	if (m_srcParams.cformat == CF_YUY2) {
+		VP.TopLeftX *= 2;
+		VP.Width *= 2;
+		m_pDeviceContext->PSSetConstantBuffers(4, m_PSConvColorData.pConstants4 ? 1 : 0, &m_PSConvColorData.pConstants4);
+	}
+
+	TextureBlt11(m_pDeviceContext, pRenderTargetView, VP, m_pVS_Simple, m_pPSConvertColor, Tex.pShaderResource, m_pSamplerPoint, m_PSConvColorData.pConstants, pVertexBuffer);
+
+	return hr;
+}
+
 HRESULT CDX11VideoProcessor::TextureResizeShader(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, ID3D11PixelShader* pPixelShader)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
@@ -392,6 +428,7 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_TexResize.Release();
 
 	SAFE_RELEASE(m_PSConvColorData.pConstants);
+	SAFE_RELEASE(m_PSConvColorData.pConstants4);
 
 	m_pInputView.Release();
 	m_pVideoProcessor.Release();
@@ -860,7 +897,10 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	ReleaseVP();
 
-	const auto FmtConvParams = GetFmtConvParams(pmt->subtype);
+	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
+	if (FmtConvParams.cformat == CF_YUY2 && !m_bVPEnableYUY2) {
+		FmtConvParams.VP11Format = DXGI_FORMAT_UNKNOWN;
+	}
 	const GUID SubType = pmt->subtype;
 	const BITMAPINFOHEADER* pBIH = nullptr;
 
@@ -985,14 +1025,19 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// Tex Video Processor
 	if (FmtConvParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
-		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_COLOR_ST2084));
-		}
-		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_COLOR_HLG));
+		if (FmtConvParams.cformat == CF_YUY2) {
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_YUY2));
 		}
 		else {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_COLOR));
+			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_COLOR_ST2084));
+			}
+			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_COLOR_HLG));
+			}
+			else {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_COLOR));
+			}
 		}
 
 		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
@@ -1017,6 +1062,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		}
 
 		SAFE_RELEASE(m_PSConvColorData.pConstants);
+		SAFE_RELEASE(m_PSConvColorData.pConstants4);
 
 		D3D11_BUFFER_DESC BufferDesc = {};
 		BufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -1024,18 +1070,22 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		BufferDesc.CPUAccessFlags = 0;
 		D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
-		HRESULT hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants);
-		if (FAILED(hr)) {
-			DLog(L"CDX11VideoProcessor::InitMediaType() : CreateBuffer() failed with error %s", HR2Str(hr));
-			return FALSE;
+		EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants));
+
+		if (m_srcParams.cformat == CF_YUY2) {
+			DirectX::XMFLOAT4 cbuffer4 = { (float)m_srcWidth, (float)m_srcHeight, 1.0f / m_srcWidth, 1.0f / m_srcHeight };
+			BufferDesc.ByteWidth = sizeof(cbuffer4);
+			InitData = { &cbuffer4, 0, 0 };
+			EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants4));
 		}
+
 		m_PSConvColorData.bEnable = true;
 
 		m_inputMT = *pmt;
 		UpdateStatsStatic();
 
 		if (m_pFilter->m_pSubCallBack) {
-			hr = m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
+			HRESULT hr = m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
 		}
 
 		return TRUE;
@@ -1224,9 +1274,9 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 
 	DLog(L"CDX11VideoProcessor::InitializeTexVP() started with input surface: %s, %u x %u", DXGIFormatToString(srcDXGIFormat), width, height);
 
-	HRESULT hr = S_OK;
+	UINT texW = (params.cformat == CF_YUY2) ? width / 2 : width;
 
-	hr = m_TexSrcCPU.Create(m_pDevice, srcDXGIFormat, width, height, Tex2D_DynamicShaderWrite);
+	HRESULT hr = m_TexSrcCPU.Create(m_pDevice, srcDXGIFormat, texW, height, Tex2D_DynamicShaderWrite);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : m_TexSrcCPU.Create() failed with error %s", HR2Str(hr));
 		return hr;
@@ -1642,7 +1692,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
 	// Convert color pass
-	HRESULT hr = TextureCopyRect(m_TexSrcCPU, m_TexConvert.pTexture, rSrcRect, rSrcRect, m_pPSConvertColor, m_PSConvColorData.pConstants);
+	HRESULT hr = TextureConvertColor(m_TexSrcCPU, m_TexConvert.pTexture, rSrcRect);
 
 	// Resize
 	hr = ResizeShader2Pass(m_TexConvert, pRenderTarget, rSrcRect, rDstRect);

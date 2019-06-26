@@ -23,6 +23,15 @@ cbuffer PS_COLOR_TRANSFORM : register(b0)
     // NB: sizeof(float3) == sizeof(float4)
 };
 #endif
+#if C_YUY2
+cbuffer PS_TEX_DIMENSIONS : register(b4)
+{
+    float width;
+    float height;
+    float dx;
+    float dy;
+};
+#endif
 
 #if (C_HDR == 1)
 #include "../convert/correct_st2084.hlsl"
@@ -40,10 +49,10 @@ float4 main(PS_INPUT input) : SV_Target
 {
     float4 color = tex.Sample(samp, input.Tex); // original pixel
 #if C_YUY2
-    if (fmod(input.Tex.x, 2) < 1.0) {
-        color = float4(color[2], color[1], color[3], 0);
-    } else {
+    if (fmod(input.Tex.x*width, 2) < 1.0) {
         color = float4(color[0], color[1], color[3], 0);
+    } else {
+        color = float4(color[2], color[1], color[3], 0);
     }
 #endif
 

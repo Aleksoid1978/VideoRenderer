@@ -659,7 +659,9 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UI
 
 	DLog("CDX9VideoProcessor::InitializeTexVP() started with input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
 
-	HRESULT hr = m_pD3DDevEx->CreateTexture(width, height, 1, D3DUSAGE_DYNAMIC, d3dformat, D3DPOOL_DEFAULT, &m_pSrcVideoTexture, nullptr);
+	UINT texW = (params.cformat == CF_YUY2) ? width / 2 : width;
+
+	HRESULT hr = m_pD3DDevEx->CreateTexture(texW, height, 1, D3DUSAGE_DYNAMIC, d3dformat, D3DPOOL_DEFAULT, &m_pSrcVideoTexture, nullptr);
 	if (FAILED(hr)) {
 		DLog(L"CDX9VideoProcessor::InitializeTexVP() : failed create SrcVideoTexture");
 		return FALSE;
@@ -805,7 +807,10 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	ReleaseVP();
 
-	const auto FmtConvParams = GetFmtConvParams(pmt->subtype);
+	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
+	if (FmtConvParams.cformat == CF_YUY2 && !m_bVPEnableYUY2) {
+		FmtConvParams.DXVA2Format = D3DFMT_UNKNOWN;
+	}
 	const GUID SubType = pmt->subtype;
 	const BITMAPINFOHEADER* pBIH = nullptr;
 
@@ -922,14 +927,19 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// Tex Video Processor
 	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
-		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR_ST2084));
-		}
-		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR_HLG));
+		if (FmtConvParams.cformat == CF_YUY2) {
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_YUY2));
 		}
 		else {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR));
+			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR_ST2084));
+			}
+			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR_HLG));
+			}
+			else {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR));
+			}
 		}
 
 		mp_csp_params csp_params;
@@ -1584,8 +1594,12 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 			hr = m_pD3DDevEx->SetRenderTarget(0, m_TexConvert.pSurface);
 
 			hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_PSConvColorData.fConstants, std::size(m_PSConvColorData.fConstants));
+			if (m_srcParams.cformat == CF_YUY2) {
+				float fConstData[][4] = { { m_srcWidth, m_srcHeight, 1.0f / m_srcWidth, 1.0f / m_srcHeight } };
+				hr = m_pD3DDevEx->SetPixelShaderConstantF(4, (float*)fConstData, std::size(fConstData));
+			}
 			hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColor);
-			TextureCopy(pTexture);
+			TextureConvertColor(pTexture);
 			m_pD3DDevEx->SetPixelShader(nullptr);
 
 			pTexture = m_TexConvert.pTexture;
@@ -1677,6 +1691,30 @@ HRESULT CDX9VideoProcessor::TextureCopy(IDirect3DTexture9* pTexture)
 	}
 
 	float w = (float)desc.Width - 0.5f;
+	float h = (float)desc.Height - 0.5f;
+
+	MYD3DVERTEX<1> v[] = {
+		{-0.5f, -0.5f, 0.5f, 2.0f, 0, 0},
+		{    w, -0.5f, 0.5f, 2.0f, 1, 0},
+		{-0.5f,     h, 0.5f, 2.0f, 0, 1},
+		{    w,     h, 0.5f, 2.0f, 1, 1},
+	};
+
+	hr = m_pD3DDevEx->SetTexture(0, pTexture);
+
+	return TextureBlt(m_pD3DDevEx, v, D3DTEXF_POINT);
+}
+
+HRESULT CDX9VideoProcessor::TextureConvertColor(IDirect3DTexture9* pTexture)
+{
+	HRESULT hr;
+
+	D3DSURFACE_DESC desc;
+	if (!pTexture || FAILED(pTexture->GetLevelDesc(0, &desc))) {
+		return E_FAIL;
+	}
+
+	float w = (float)(m_srcParams.cformat == CF_YUY2 ? desc.Width * 2 : desc.Width) - 0.5f;
 	float h = (float)desc.Height - 0.5f;
 
 	MYD3DVERTEX<1> v[] = {

@@ -116,7 +116,6 @@ HRESULT CVRMainPPage::OnActivate()
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
 
 	CheckDlgButton(IDC_CHECK8, m_SetsPP.bVPEnableYUY2 ? BST_CHECKED : BST_UNCHECKED);
-	GetDlgItem(IDC_CHECK8).EnableWindow(FALSE);
 
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"8-bit Integer");
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"10-bit Integer");

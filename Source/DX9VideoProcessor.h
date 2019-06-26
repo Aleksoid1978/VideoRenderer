@@ -259,6 +259,7 @@ private:
 	HRESULT ResizeShader2Pass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
 
 	HRESULT TextureCopy(IDirect3DTexture9* pTexture);
+	HRESULT TextureConvertColor(IDirect3DTexture9* pTexture);
 	HRESULT TextureCopyRect(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, D3DTEXTUREFILTERTYPE filter);
 	HRESULT TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, IDirect3DPixelShader9* pShader);
 
