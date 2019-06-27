@@ -19,7 +19,7 @@ REM along with this program.  If not, see <http://www.gnu.org/licenses/>.
 PUSHD %~dp0
 
 where /q fxc.exe
-IF %ERRORLEVEL% EQU 0 goto fxc_Ok
+IF %ERRORLEVEL% EQU 0 goto fxc_OK
 
 IF NOT DEFINED VS150COMNTOOLS (
   FOR /F "tokens=2*" %%A IN (
@@ -36,67 +36,74 @@ IF DEFINED VS150COMNTOOLS (
 
 CALL "%VCVARS%" x86 > nul
 
-:fxc_Ok
+:fxc_OK
+
+SET workdir=..\..\bin\shaders
+IF NOT EXIST "%workdir%\" MKDIR "%workdir%"
 
 CALL :SubColorText "0A" "=== Compiling D3D9 shaders ===" & ECHO.
 
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_mitchell4_x.cso"       "d3d9\interpolation_spline4.hlsl" /DMETHOD=0 /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_mitchell4_y.cso"       "d3d9\interpolation_spline4.hlsl" /DMETHOD=0 /DAXIS=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_catmull4_x.cso"        "d3d9\interpolation_spline4.hlsl" /DMETHOD=1 /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_catmull4_y.cso"        "d3d9\interpolation_spline4.hlsl" /DMETHOD=1 /DAXIS=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_lanczos2_x.cso"        "d3d9\interpolation_lanczos2.hlsl" /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_lanczos2_y.cso"        "d3d9\interpolation_lanczos2.hlsl" /DAXIS=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_lanczos3_x.cso"        "d3d9\interpolation_lanczos3.hlsl" /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\resizer_lanczos3_y.cso"        "d3d9\interpolation_lanczos3.hlsl" /DAXIS=1
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\resizer_mitchell4_x.cso"       "d3d9\interpolation_spline4.hlsl" /DMETHOD=0 /DAXIS=0
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\resizer_mitchell4_y.cso"       "d3d9\interpolation_spline4.hlsl" /DMETHOD=0 /DAXIS=1
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\resizer_catmull4_x.cso"        "d3d9\interpolation_spline4.hlsl" /DMETHOD=1 /DAXIS=0
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\resizer_catmull4_y.cso"        "d3d9\interpolation_spline4.hlsl" /DMETHOD=1 /DAXIS=1
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\resizer_lanczos2_x.cso"        "d3d9\interpolation_lanczos2.hlsl" /DAXIS=0
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\resizer_lanczos2_y.cso"        "d3d9\interpolation_lanczos2.hlsl" /DAXIS=1
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\resizer_lanczos3_x.cso"        "d3d9\interpolation_lanczos3.hlsl" /DAXIS=0
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\resizer_lanczos3_y.cso"        "d3d9\interpolation_lanczos3.hlsl" /DAXIS=1
 
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_box_x.cso"          "d3d9\convolution.hlsl" /DFILTER=0 /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_box_y.cso"          "d3d9\convolution.hlsl" /DFILTER=0 /DAXIS=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bilinear_x.cso"     "d3d9\convolution.hlsl" /DFILTER=1 /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bilinear_y.cso"     "d3d9\convolution.hlsl" /DFILTER=1 /DAXIS=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_hamming_x.cso"      "d3d9\convolution.hlsl" /DFILTER=2 /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_hamming_y.cso"      "d3d9\convolution.hlsl" /DFILTER=2 /DAXIS=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic05_x.cso"    "d3d9\convolution.hlsl" /DFILTER=3 /DAXIS=0 /DA=-0.5
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic05_y.cso"    "d3d9\convolution.hlsl" /DFILTER=3 /DAXIS=1 /DA=-0.5
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic15_x.cso"    "d3d9\convolution.hlsl" /DFILTER=3 /DAXIS=0 /DA=-1.5
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_bicubic15_y.cso"    "d3d9\convolution.hlsl" /DFILTER=3 /DAXIS=1 /DA=-1.5
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_x.cso"      "d3d9\convolution.hlsl" /DFILTER=4 /DAXIS=0
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\downscaler_lanczos_y.cso"      "d3d9\convolution.hlsl" /DFILTER=4 /DAXIS=1
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\downscaler_box_x.cso"          "d3d9\convolution.hlsl" /DFILTER=0 /DAXIS=0
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\downscaler_box_y.cso"          "d3d9\convolution.hlsl" /DFILTER=0 /DAXIS=1
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\downscaler_bilinear_x.cso"     "d3d9\convolution.hlsl" /DFILTER=1 /DAXIS=0
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\downscaler_bilinear_y.cso"     "d3d9\convolution.hlsl" /DFILTER=1 /DAXIS=1
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\downscaler_hamming_x.cso"      "d3d9\convolution.hlsl" /DFILTER=2 /DAXIS=0
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\downscaler_hamming_y.cso"      "d3d9\convolution.hlsl" /DFILTER=2 /DAXIS=1
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\downscaler_bicubic05_x.cso"    "d3d9\convolution.hlsl" /DFILTER=3 /DAXIS=0 /DA=-0.5
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\downscaler_bicubic05_y.cso"    "d3d9\convolution.hlsl" /DFILTER=3 /DAXIS=1 /DA=-0.5
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\downscaler_bicubic15_x.cso"    "d3d9\convolution.hlsl" /DFILTER=3 /DAXIS=0 /DA=-1.5
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\downscaler_bicubic15_y.cso"    "d3d9\convolution.hlsl" /DFILTER=3 /DAXIS=1 /DA=-1.5
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\downscaler_lanczos_x.cso"      "d3d9\convolution.hlsl" /DFILTER=4 /DAXIS=0
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\downscaler_lanczos_y.cso"      "d3d9\convolution.hlsl" /DFILTER=4 /DAXIS=1
 
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\convert_color_st2084.cso"      "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_HDR=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\convert_color_hlg.cso"         "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_HDR=2
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\convert_yuy2.cso"              "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_YUY2=2
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\correction_st2084.cso"         "d3d9\convert_color.hlsl" /DC_CSP=0 /DC_HDR=1
-fxc /nologo /T ps_3_0 /Fo "..\..\bin\shaders\correction_hlg.cso"            "d3d9\convert_color.hlsl" /DC_CSP=0 /DC_HDR=2
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\convert_color_st2084.cso"      "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_HDR=1
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\convert_color_hlg.cso"         "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_HDR=2
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\convert_yuy2.cso"              "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_YUY2=3
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\convert_yuy2_st2084.cso"       "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_YUY2=3 /DC_HDR=1
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\convert_yuy2_hlg.cso"          "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_YUY2=3 /DC_HDR=2
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\correction_st2084.cso"         "d3d9\convert_color.hlsl" /DC_CSP=0 /DC_HDR=1
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\correction_hlg.cso"            "d3d9\convert_color.hlsl" /DC_CSP=0 /DC_HDR=2
 
 CALL :SubColorText "0A" "=== Compiling D3D11 shaders ===" & ECHO.
 
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_mitchell4_x.cso"    "d3d11\ps_interpolation_spline4.hlsl" /DMETHOD=0 /DAXIS=0
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_mitchell4_y.cso"    "d3d11\ps_interpolation_spline4.hlsl" /DMETHOD=0 /DAXIS=1
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_catmull4_x.cso"     "d3d11\ps_interpolation_spline4.hlsl" /DMETHOD=1 /DAXIS=0
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_catmull4_y.cso"     "d3d11\ps_interpolation_spline4.hlsl" /DMETHOD=1 /DAXIS=1
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_lanczos2_x.cso"     "d3d11\ps_interpolation_lanczos2.hlsl" /DAXIS=0
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_lanczos2_y.cso"     "d3d11\ps_interpolation_lanczos2.hlsl" /DAXIS=1
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_lanczos3_x.cso"     "d3d11\ps_interpolation_lanczos3.hlsl" /DAXIS=0
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_resizer_lanczos3_y.cso"     "d3d11\ps_interpolation_lanczos3.hlsl" /DAXIS=1
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_resizer_mitchell4_x.cso"    "d3d11\ps_interpolation_spline4.hlsl" /DMETHOD=0 /DAXIS=0
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_resizer_mitchell4_y.cso"    "d3d11\ps_interpolation_spline4.hlsl" /DMETHOD=0 /DAXIS=1
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_resizer_catmull4_x.cso"     "d3d11\ps_interpolation_spline4.hlsl" /DMETHOD=1 /DAXIS=0
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_resizer_catmull4_y.cso"     "d3d11\ps_interpolation_spline4.hlsl" /DMETHOD=1 /DAXIS=1
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_resizer_lanczos2_x.cso"     "d3d11\ps_interpolation_lanczos2.hlsl" /DAXIS=0
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_resizer_lanczos2_y.cso"     "d3d11\ps_interpolation_lanczos2.hlsl" /DAXIS=1
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_resizer_lanczos3_x.cso"     "d3d11\ps_interpolation_lanczos3.hlsl" /DAXIS=0
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_resizer_lanczos3_y.cso"     "d3d11\ps_interpolation_lanczos3.hlsl" /DAXIS=1
 
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_downscaler_box_x.cso"       "d3d11\ps_convolution.hlsl" /DFILTER=0 /DAXIS=0
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_downscaler_box_y.cso"       "d3d11\ps_convolution.hlsl" /DFILTER=0 /DAXIS=1
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_downscaler_bilinear_x.cso"  "d3d11\ps_convolution.hlsl" /DFILTER=1 /DAXIS=0
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_downscaler_bilinear_y.cso"  "d3d11\ps_convolution.hlsl" /DFILTER=1 /DAXIS=1
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_downscaler_hamming_x.cso"   "d3d11\ps_convolution.hlsl" /DFILTER=2 /DAXIS=0
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_downscaler_hamming_y.cso"   "d3d11\ps_convolution.hlsl" /DFILTER=2 /DAXIS=1
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_downscaler_bicubic05_x.cso" "d3d11\ps_convolution.hlsl" /DFILTER=3 /DAXIS=0 /DA=-0.5
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_downscaler_bicubic05_y.cso" "d3d11\ps_convolution.hlsl" /DFILTER=3 /DAXIS=1 /DA=-0.5
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_downscaler_bicubic15_x.cso" "d3d11\ps_convolution.hlsl" /DFILTER=3 /DAXIS=0 /DA=-1.5
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_downscaler_bicubic15_y.cso" "d3d11\ps_convolution.hlsl" /DFILTER=3 /DAXIS=1 /DA=-1.5
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_downscaler_lanczos_x.cso"   "d3d11\ps_convolution.hlsl" /DFILTER=4 /DAXIS=0
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_downscaler_lanczos_y.cso"   "d3d11\ps_convolution.hlsl" /DFILTER=4 /DAXIS=1
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_downscaler_box_x.cso"       "d3d11\ps_convolution.hlsl" /DFILTER=0 /DAXIS=0
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_downscaler_box_y.cso"       "d3d11\ps_convolution.hlsl" /DFILTER=0 /DAXIS=1
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_downscaler_bilinear_x.cso"  "d3d11\ps_convolution.hlsl" /DFILTER=1 /DAXIS=0
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_downscaler_bilinear_y.cso"  "d3d11\ps_convolution.hlsl" /DFILTER=1 /DAXIS=1
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_downscaler_hamming_x.cso"   "d3d11\ps_convolution.hlsl" /DFILTER=2 /DAXIS=0
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_downscaler_hamming_y.cso"   "d3d11\ps_convolution.hlsl" /DFILTER=2 /DAXIS=1
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_downscaler_bicubic05_x.cso" "d3d11\ps_convolution.hlsl" /DFILTER=3 /DAXIS=0 /DA=-0.5
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_downscaler_bicubic05_y.cso" "d3d11\ps_convolution.hlsl" /DFILTER=3 /DAXIS=1 /DA=-0.5
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_downscaler_bicubic15_x.cso" "d3d11\ps_convolution.hlsl" /DFILTER=3 /DAXIS=0 /DA=-1.5
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_downscaler_bicubic15_y.cso" "d3d11\ps_convolution.hlsl" /DFILTER=3 /DAXIS=1 /DA=-1.5
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_downscaler_lanczos_x.cso"   "d3d11\ps_convolution.hlsl" /DFILTER=4 /DAXIS=0
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_downscaler_lanczos_y.cso"   "d3d11\ps_convolution.hlsl" /DFILTER=4 /DAXIS=1
 
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_convert_color_st2084.cso"   "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_HDR=1
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_convert_color_hlg.cso"      "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_HDR=2
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_convert_yuy2.cso"           "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_YUY2=2
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_correction_st2084.cso"      "d3d11\ps_convert_color.hlsl" /DC_CSP=0 /DC_HDR=1
-fxc /nologo /T ps_4_0 /Fo "..\..\bin\shaders\ps_correction_hlg.cso"         "d3d11\ps_convert_color.hlsl" /DC_CSP=0 /DC_HDR=2
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_color_st2084.cso"   "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_HDR=1
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_color_hlg.cso"      "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_HDR=2
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_yuy2.cso"           "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_YUY2=3
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_yuy2_st2084.cso"    "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_YUY2=3 /DC_HDR=1
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_yuy2_hlg.cso"       "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_YUY2=3 /DC_HDR=2
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_correction_st2084.cso"      "d3d11\ps_convert_color.hlsl" /DC_CSP=0 /DC_HDR=1
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_correction_hlg.cso"         "d3d11\ps_convert_color.hlsl" /DC_CSP=0 /DC_HDR=2
 
 EXIT /B
 

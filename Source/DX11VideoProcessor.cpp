@@ -1023,20 +1023,23 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// Tex Video Processor
 	if (FmtConvParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
-		if (FmtConvParams.cformat == CF_YUY2) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_YUY2));
+		UINT resid = 0;
+		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+			resid = (FmtConvParams.cformat == CF_YUY2)
+				? IDF_PSH11_CONVERT_YUY2_ST2084
+				: IDF_PSH11_CONVERT_COLOR_ST2084;
+		}
+		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
+			resid = (FmtConvParams.cformat == CF_YUY2)
+				? IDF_PSH11_CONVERT_YUY2_HLG
+				: IDF_PSH11_CONVERT_COLOR_HLG;
 		}
 		else {
-			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_COLOR_ST2084));
-			}
-			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_COLOR_HLG));
-			}
-			else {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_PSH11_CONVERT_COLOR));
-			}
+			resid = (FmtConvParams.cformat == CF_YUY2)
+				? IDF_PSH11_CONVERT_YUY2
+				: IDF_PSH11_CONVERT_COLOR;
 		}
+		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
 
 		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
 

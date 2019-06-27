@@ -59,6 +59,13 @@ float4 main(PS_INPUT input) : SV_Target
         float2 chroma1 = tex.Sample(samp, input.Tex + float2(dx, 0)).yw;
         float2 chroma = (chroma0 + chroma1) * 0.5;
         color = float4(color[2], chroma, 0);
+#elif (C_YUY2 == 3) // cubic
+        float2 chroma0 = tex.Sample(samp, input.Tex + float2(-dx, 0)).yw;
+        float2 chroma1 = color.yw;
+        float2 chroma2 = tex.Sample(samp, input.Tex + float2(dx, 0)).yw;
+        float2 chroma3 = tex.Sample(samp, input.Tex + float2(2*dx, 0)).yw;
+        float2 chroma = (9 * (chroma1 + chroma2) - (chroma0 + chroma3)) * 0.0625;
+        color = float4(color[2], chroma, 0);
 #endif
     }
 #endif

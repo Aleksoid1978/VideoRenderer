@@ -19,6 +19,15 @@
 // SHADER
 //
 
+IDF_SHADER_CONVERT_COLOR         SHADER                  "..\\bin\\shaders\\convert_color.cso"
+IDF_SHADER_CONVERT_COLOR_ST2084  SHADER                  "..\\bin\\shaders\\convert_color_st2084.cso"
+IDF_SHADER_CONVERT_COLOR_HLG     SHADER                  "..\\bin\\shaders\\convert_color_hlg.cso"
+IDF_SHADER_CONVERT_YUY2          SHADER                  "..\\bin\\shaders\\convert_yuy2.cso"
+IDF_SHADER_CONVERT_YUY2_ST2084   SHADER                  "..\\bin\\shaders\\convert_yuy2_st2084.cso"
+IDF_SHADER_CONVERT_YUY2_HLG      SHADER                  "..\\bin\\shaders\\convert_yuy2_hlg.cso"
+IDF_SHADER_CORRECTION_ST2084     SHADER                  "..\\bin\\shaders\\correction_st2084.cso"
+IDF_SHADER_CORRECTION_HLG        SHADER                  "..\\bin\\shaders\\correction_hlg.cso"
+IDF_SHADER_CORRECTION_YCGCO      SHADER                  "..\\bin\\shaders\\correction_ycgco.cso"
 IDF_SHADER_INTERP_MITCHELL4_X    SHADER                  "..\\bin\\shaders\\resizer_mitchell4_x.cso"
 IDF_SHADER_INTERP_MITCHELL4_Y    SHADER                  "..\\bin\\shaders\\resizer_mitchell4_y.cso"
 IDF_SHADER_INTERP_CATMULL4_X     SHADER                  "..\\bin\\shaders\\resizer_catmull4_x.cso"
@@ -39,13 +48,6 @@ IDF_SHADER_CONVOL_BICUBIC15_X    SHADER                  "..\\bin\\shaders\\down
 IDF_SHADER_CONVOL_BICUBIC15_Y    SHADER                  "..\\bin\\shaders\\downscaler_bicubic15_y.cso"
 IDF_SHADER_CONVOL_LANCZOS_X      SHADER                  "..\\bin\\shaders\\downscaler_lanczos_x.cso"
 IDF_SHADER_CONVOL_LANCZOS_Y      SHADER                  "..\\bin\\shaders\\downscaler_lanczos_y.cso"
-IDF_SHADER_CONVERT_COLOR         SHADER                  "..\\bin\\shaders\\convert_color.cso"
-IDF_SHADER_CONVERT_COLOR_ST2084  SHADER                  "..\\bin\\shaders\\convert_color_st2084.cso"
-IDF_SHADER_CONVERT_COLOR_HLG     SHADER                  "..\\bin\\shaders\\convert_color_hlg.cso"
-IDF_SHADER_CONVERT_YUY2          SHADER                  "..\\bin\\shaders\\convert_yuy2.cso"
-IDF_SHADER_CORRECTION_ST2084     SHADER                  "..\\bin\\shaders\\correction_st2084.cso"
-IDF_SHADER_CORRECTION_HLG        SHADER                  "..\\bin\\shaders\\correction_hlg.cso"
-IDF_SHADER_CORRECTION_YCGCO      SHADER                  "..\\bin\\shaders\\correction_ycgco.cso"
 
 IDF_VSH11_SIMPLE                 SHADER                  "..\\bin\\shaders\\vs_simple.cso"
 IDF_PSH11_SIMPLE                 SHADER                  "..\\bin\\shaders\\ps_simple.cso"
@@ -53,6 +55,8 @@ IDF_PSH11_CONVERT_COLOR          SHADER                  "..\\bin\\shaders\\ps_c
 IDF_PSH11_CONVERT_COLOR_ST2084   SHADER                  "..\\bin\\shaders\\ps_convert_color_st2084.cso"
 IDF_PSH11_CONVERT_COLOR_HLG      SHADER                  "..\\bin\\shaders\\ps_convert_color_hlg.cso"
 IDF_PSH11_CONVERT_YUY2           SHADER                  "..\\bin\\shaders\\ps_convert_yuy2.cso"
+IDF_PSH11_CONVERT_YUY2_ST2084    SHADER                  "..\\bin\\shaders\\ps_convert_yuy2_st2084.cso"
+IDF_PSH11_CONVERT_YUY2_HLG       SHADER                  "..\\bin\\shaders\\ps_convert_yuy2_hlg.cso"
 IDF_PSH11_CORRECTION_ST2084      SHADER                  "..\\bin\\shaders\\ps_correction_st2084.cso"
 IDF_PSH11_CORRECTION_HLG         SHADER                  "..\\bin\\shaders\\ps_correction_hlg.cso"
 IDF_PSH11_CORRECTION_YCGCO       SHADER                  "..\\bin\\shaders\\ps_correction_ycgco.cso"

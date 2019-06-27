@@ -927,20 +927,23 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// Tex Video Processor
 	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
-		if (FmtConvParams.cformat == CF_YUY2) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_YUY2));
+		UINT resid = 0;
+		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+			resid = (FmtConvParams.cformat == CF_YUY2)
+				? IDF_SHADER_CONVERT_YUY2_ST2084
+				: IDF_SHADER_CONVERT_COLOR_ST2084;
+		}
+		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
+			resid = (FmtConvParams.cformat == CF_YUY2)
+				? IDF_SHADER_CONVERT_YUY2_HLG
+				: IDF_SHADER_CONVERT_COLOR_HLG;
 		}
 		else {
-			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR_ST2084));
-			}
-			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR_HLG));
-			}
-			else {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, IDF_SHADER_CONVERT_COLOR));
-			}
+			resid = (FmtConvParams.cformat == CF_YUY2)
+				? IDF_SHADER_CONVERT_YUY2
+				: IDF_SHADER_CONVERT_COLOR;
 		}
+		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
 
 		mp_csp_params csp_params;
 		set_colorspace(m_srcExFmt, csp_params.color);

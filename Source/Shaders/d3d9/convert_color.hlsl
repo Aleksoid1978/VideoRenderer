@@ -50,6 +50,13 @@ float4 main(float2 tex : TEXCOORD0) : COLOR
         float2 chroma1 = tex2D(s0, tex + float2(dx, 0)).yw;
         float2 chroma = (chroma0 + chroma1) * 0.5;
         color = float4(color[0], chroma, 0);
+#elif (C_YUY2 == 3) // cubic
+        float2 chroma0 = tex2D(s0, tex + float2(-dx, 0)).yw;
+        float2 chroma1 = color.yw;
+        float2 chroma2 = tex2D(s0, tex + float2(dx, 0)).yw;
+        float2 chroma3 = tex2D(s0, tex + float2(2*dx, 0)).yw;
+        float2 chroma = (9 * (chroma1 + chroma2) - (chroma0 + chroma3)) * 0.0625;
+        color = float4(color[0], chroma, 0);
 #endif
     }
 #endif
