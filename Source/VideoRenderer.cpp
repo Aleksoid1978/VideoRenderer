@@ -29,7 +29,7 @@
 #define OPT_REGKEY_VIDEORENDERER L"Software\\MPC-BE Filters\\MPC Video Renderer"
 #define OPT_UseD3D11             L"UseD3D11"
 #define OPT_ShowStatistics       L"ShowStatistics"
-#define OPT_SurfaceFormat        L"SurfaceFormat"
+#define OPT_TextureFormat        L"TextureFormat"
 #define OPT_VPEnableYUY2         L"VPEnableYUY2"
 #define OPT_DoubleFrateDeint     L"DoubleFramerateDeinterlace"
 #define OPT_VPScaling            L"VPScaling"
@@ -69,8 +69,17 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ShowStatistics, dw)) {
 			m_Sets.bShowStats = !!dw;
 		}
-		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_SurfaceFormat, dw)) {
-			m_Sets.iSurfaceFmt = discard((int)dw, (int)SURFMT_8INT, (int)SURFMT_8INT, (int)SURFMT_16FLOAT);
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_TextureFormat, dw)) {
+			switch (dw) {
+			case TEXFMT_AUTO:
+			case TEXFMT_8INT:
+			case TEXFMT_10INT:
+			case TEXFMT_16FLOAT:
+				m_Sets.iTextureFmt = dw;
+				break;
+			default:
+				m_Sets.iTextureFmt = TEXFMT_8INT;
+			}
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableYUY2, dw)) {
 			m_Sets.bVPEnableYUY2 = !!dw;
@@ -97,7 +106,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	// configure the video processors
 	m_DX9_VP.SetShowStats(m_Sets.bShowStats);
-	m_DX9_VP.SetTexFormat(m_Sets.iSurfaceFmt);
+	m_DX9_VP.SetTexFormat(m_Sets.iTextureFmt);
 	m_DX9_VP.SetVPEnableFmts(m_Sets.bVPEnableYUY2);
 	m_DX9_VP.SetDeintDouble(m_Sets.bDeintDouble);
 	m_DX9_VP.SetVPScaling(m_Sets.bVPScaling);
@@ -107,7 +116,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	m_DX9_VP.SetSwapEffect(m_Sets.iSwapEffect);
 
 	m_DX11_VP.SetShowStats(m_Sets.bShowStats);
-	m_DX11_VP.SetTexFormat(m_Sets.iSurfaceFmt);
+	m_DX11_VP.SetTexFormat(m_Sets.iTextureFmt);
 	m_DX11_VP.SetVPEnableFmts(m_Sets.bVPEnableYUY2);
 	m_DX11_VP.SetDeintDouble(m_Sets.bDeintDouble);
 	m_DX11_VP.SetVPScaling(m_Sets.bVPScaling);
@@ -804,7 +813,7 @@ STDMETHODIMP_(void) CMpcVideoRenderer::GetSettings(Settings_t& setings)
 STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 {
 	m_Sets.bUseD3D11     = setings.bUseD3D11;
-	m_Sets.iSurfaceFmt   = setings.iSurfaceFmt;
+	m_Sets.iTextureFmt   = setings.iTextureFmt;
 	m_Sets.bVPEnableYUY2 = setings.bVPEnableYUY2;
 	m_Sets.iSwapEffect   = setings.iSwapEffect;
 
@@ -869,7 +878,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 	if (ERROR_SUCCESS == key.Create(HKEY_CURRENT_USER, OPT_REGKEY_VIDEORENDERER)) {
 		key.SetDWORDValue(OPT_UseD3D11,           m_Sets.bUseD3D11);
 		key.SetDWORDValue(OPT_ShowStatistics,     m_Sets.bShowStats);
-		key.SetDWORDValue(OPT_SurfaceFormat,      m_Sets.iSurfaceFmt);
+		key.SetDWORDValue(OPT_TextureFormat,      m_Sets.iTextureFmt);
 		key.SetDWORDValue(OPT_VPEnableYUY2,       m_Sets.bVPEnableYUY2);
 		key.SetDWORDValue(OPT_DoubleFrateDeint,   m_Sets.bDeintDouble);
 		key.SetDWORDValue(OPT_VPScaling,          m_Sets.bVPScaling);

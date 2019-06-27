@@ -159,6 +159,7 @@ struct FmtConvParams_t {
 	int             PitchCoeff;
 	ColorSystem_t   CSType;
 	int             Subsampling;
+	int             CDepth;
 	CopyFrameDataFn Func;
 	CopyFrameDataFn FuncSSSE3;
 };

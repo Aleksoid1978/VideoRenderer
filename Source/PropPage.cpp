@@ -40,7 +40,7 @@ CStringW GetVersionStr()
 #if MPCVR_RELEASE
 	version.Format(L"v%S", MPCVR_VERSION_STR);
 #else
-	version.Format(L"v%S (git-%s-%s)", 
+	version.Format(L"v%S (git-%s-%s)",
 		MPCVR_VERSION_STR,
 		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_DATE)),
 		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_HASH))
@@ -116,11 +116,22 @@ HRESULT CVRMainPPage::OnActivate()
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
 
 	CheckDlgButton(IDC_CHECK8, m_SetsPP.bVPEnableYUY2 ? BST_CHECKED : BST_UNCHECKED);
-
+	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"Auto 8/10-bit Integer");
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"8-bit Integer");
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"10-bit Integer");
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"16-bit Floating Point (DX9 only)");
-	SendDlgItemMessageW(IDC_COMBO1, CB_SETCURSEL, m_SetsPP.iSurfaceFmt, 0);
+	SendDlgItemMessageW(IDC_COMBO1, CB_SETITEMDATA, 0, LPARAM(0));
+	SendDlgItemMessageW(IDC_COMBO1, CB_SETITEMDATA, 1, LPARAM(8));
+	SendDlgItemMessageW(IDC_COMBO1, CB_SETITEMDATA, 2, LPARAM(10));
+	SendDlgItemMessageW(IDC_COMBO1, CB_SETITEMDATA, 3, LPARAM(16));
+	const int count = (int)SendDlgItemMessageW(IDC_COMBO1, CB_GETCOUNT, 0, 0);
+	for (int i = 0; i < count; i++) {
+		const LRESULT lValue = SendDlgItemMessageW(IDC_COMBO1, CB_GETITEMDATA, i, 0);
+		if (m_SetsPP.iTextureFmt == lValue) {
+			SendDlgItemMessageW(IDC_COMBO1, CB_SETCURSEL, i, 0);
+			break;
+		}
+	}
 
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Mitchell-Netravali");
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Catmull-Rom");
@@ -190,8 +201,9 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 		if (HIWORD(wParam) == CBN_SELCHANGE) {
 			if (nID == IDC_COMBO1) {
 				lValue = SendDlgItemMessageW(IDC_COMBO1, CB_GETCURSEL, 0, 0);
-				if (lValue != m_SetsPP.iSurfaceFmt) {
-					m_SetsPP.iSurfaceFmt = lValue;
+				lValue = SendDlgItemMessageW(IDC_COMBO1, CB_GETITEMDATA, lValue, 0);
+				if (lValue != m_SetsPP.iTextureFmt) {
+					m_SetsPP.iTextureFmt = lValue;
 					SetDirty();
 					return (LRESULT)1;
 				}

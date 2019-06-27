@@ -23,10 +23,10 @@
 #include <dxva2api.h>
 
 enum :int {
-	SURFMT_8INT = 0,
-	SURFMT_10INT,
-	SURFMT_16FLOAT,
-	SURFMT_COUNT,
+	TEXFMT_AUTO = 0,
+	TEXFMT_8INT = 8,
+	TEXFMT_10INT = 10,
+	TEXFMT_16FLOAT = 16,
 };
 
 enum :int {
@@ -58,7 +58,7 @@ enum :int {
 struct Settings_t {
 	bool bUseD3D11           = false;
 	bool bShowStats          = false;
-	int  iSurfaceFmt         = SURFMT_8INT;
+	int  iTextureFmt         = TEXFMT_8INT;
 	bool bVPEnableYUY2       = true;
 	bool bDeintDouble        = false;
 	int  bVPScaling          = true;

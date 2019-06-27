@@ -903,6 +903,17 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_pPSConvertColor.Release();
 	m_PSConvColorData.bEnable = false;
 
+	switch (m_iTexFormat) {
+	case TEXFMT_AUTO:
+		m_InternalTexFmt = (FmtConvParams.CDepth > 8) ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
+		break;
+	case TEXFMT_8INT:    m_InternalTexFmt = D3DFMT_X8R8G8B8;      break;
+	case TEXFMT_10INT:   m_InternalTexFmt = D3DFMT_A2R10G10B10;   break;
+	case TEXFMT_16FLOAT: m_InternalTexFmt = D3DFMT_A16B16G16R16F; break;
+	default:
+		ASSERT(FALSE);
+	}
+
 	// DXVA2 Video Processor
 	if (FmtConvParams.DXVA2Format != D3DFMT_UNKNOWN && InitializeDXVA2VP(FmtConvParams, biWidth, biHeight, false)) {
 		UpdateVideoTex();
@@ -1402,19 +1413,17 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 
 void CDX9VideoProcessor::SetTexFormat(int value)
 {
-	if (value < 0 || value >= SURFMT_COUNT) {
+	switch (value) {
+	case TEXFMT_AUTO:
+	case TEXFMT_8INT:
+	case TEXFMT_10INT:
+	case TEXFMT_16FLOAT:
+		m_iTexFormat = value;
+		break;
+	default:
 		DLog("CDX9VideoProcessor::SetTexFormat() unknown value %d", value);
 		ASSERT(FALSE);
 		return;
-	}
-
-	m_iTexFormat = value;
-
-	switch (value) {
-	default:
-	case SURFMT_8INT:    m_InternalTexFmt = D3DFMT_X8R8G8B8;      break;
-	case SURFMT_10INT:   m_InternalTexFmt = D3DFMT_A2R10G10B10;   break;
-	case SURFMT_16FLOAT: m_InternalTexFmt = D3DFMT_A16B16G16R16F; break;
 	}
 }
 

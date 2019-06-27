@@ -991,6 +991,17 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_pPSConvertColor.Release();
 	m_PSConvColorData.bEnable = false;
 
+	switch (m_iTexFormat) {
+	case TEXFMT_AUTO:
+		m_InternalTexFmt = (FmtConvParams.CDepth > 8) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
+		break;
+	case TEXFMT_8INT:    m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM; break;
+	case TEXFMT_10INT:
+	case TEXFMT_16FLOAT: m_InternalTexFmt = DXGI_FORMAT_R10G10B10A2_UNORM; break;
+	default:
+		ASSERT(FALSE);
+	}
+
 	// D3D11 Video Processor
 	if (FmtConvParams.VP11Format != DXGI_FORMAT_UNKNOWN && !(m_VendorId == PCIV_NVIDIA && FmtConvParams.CSType == CS_RGB)) {
 		// D3D11 VP does not work correctly if RGB32 with odd frame width (source or target) on Nvidia adapters
@@ -1948,27 +1959,17 @@ HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 
 void CDX11VideoProcessor::SetTexFormat(int value)
 {
-	if (value < 0 || value >= SURFMT_COUNT) {
+	switch (value) {
+	case TEXFMT_AUTO:
+	case TEXFMT_8INT:
+	case TEXFMT_10INT:
+	case TEXFMT_16FLOAT:
+		m_iTexFormat = value;
+		break;
+	default:
 		DLog("CDX11VideoProcessor::SetTexFormat() unknown value %d", value);
 		ASSERT(FALSE);
 		return;
-	}
-
-	m_iTexFormat = value;
-
-	switch (m_iTexFormat) {
-	default:
-	case SURFMT_8INT:
-		m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
-		break;
-	case SURFMT_10INT:
-	case SURFMT_16FLOAT:
-		m_InternalTexFmt = DXGI_FORMAT_R10G10B10A2_UNORM;
-		break;
-	// TODO
-	//case SURFMT_16FLOAT:
-	//	m_InternalTexFmt = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	//	break;
 	}
 }
 
