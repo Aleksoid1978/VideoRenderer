@@ -100,9 +100,9 @@ void TextureBlt11(
 	const UINT Offset = 0;
 
 	// Set resources
+	pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 	pDeviceContext->RSSetViewports(1, &viewport);
 	pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-	pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 	pDeviceContext->VSSetShader(pVertexShader, nullptr, 0);
 	pDeviceContext->PSSetShader(pPixelShader, nullptr, 0);
 	pDeviceContext->PSSetShaderResources(0, 1, &pShaderResourceViews);
@@ -125,9 +125,9 @@ HRESULT CDX11VideoProcessor::AlphaBlt(ID3D11ShaderResourceView* pShaderResource,
 		UINT Offset = 0;
 
 		// Set resources
+		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 		m_pDeviceContext->RSSetViewports(1, &viewport);
 		m_pDeviceContext->OMSetBlendState(m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 		m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
 		m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
@@ -158,9 +158,9 @@ HRESULT CDX11VideoProcessor::AlphaBltSub(ID3D11ShaderResourceView* pShaderResour
 
 		if (S_OK == hr) {
 			// Set resources
+			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 			m_pDeviceContext->RSSetViewports(1, &viewport);
 			m_pDeviceContext->OMSetBlendState(m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
 			m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
