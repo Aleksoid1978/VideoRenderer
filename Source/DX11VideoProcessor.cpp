@@ -113,6 +113,9 @@ void TextureBlt11(
 
 	// Draw textured quad onto render target
 	pDeviceContext->Draw(6, 0);
+
+	ID3D11ShaderResourceView* views[1] = {};
+	pDeviceContext->PSSetShaderResources(0, 1, views);
 }
 
 HRESULT CDX11VideoProcessor::AlphaBlt(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget, D3D11_VIEWPORT& viewport)
