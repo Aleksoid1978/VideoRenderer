@@ -185,14 +185,11 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
 	}
 
 	// set default ProcAmp ranges and values
-	m_DXVA2ProcValueRange[0] = {DXVA2FloatToFixed(-100), DXVA2FloatToFixed(100), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)};
-	m_DXVA2ProcValueRange[1] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f)};
-	m_DXVA2ProcValueRange[2] = {DXVA2FloatToFixed(-180), DXVA2FloatToFixed(180), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)};
-	m_DXVA2ProcValueRange[3] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f)};
-	m_BltParams.ProcAmpValues.Brightness = DXVA2FloatToFixed(0);
-	m_BltParams.ProcAmpValues.Contrast   = DXVA2FloatToFixed(1);
-	m_BltParams.ProcAmpValues.Hue        = DXVA2FloatToFixed(0);
-	m_BltParams.ProcAmpValues.Saturation = DXVA2FloatToFixed(1);
+	SetDefaultDXVA2ProcValueRange(m_DXVA2ProcValueRange);
+	m_BltParams.ProcAmpValues.Brightness = m_DXVA2ProcValueRange[0].DefaultValue;
+	m_BltParams.ProcAmpValues.Contrast   = m_DXVA2ProcValueRange[1].DefaultValue;
+	m_BltParams.ProcAmpValues.Hue        = m_DXVA2ProcValueRange[2].DefaultValue;
+	m_BltParams.ProcAmpValues.Saturation = m_DXVA2ProcValueRange[3].DefaultValue;
 }
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
@@ -683,11 +680,8 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UI
 	m_srcWidth     = width;
 	m_srcHeight    = height;
 
-	// set ProcAmp ranges
-	m_DXVA2ProcValueRange[0] = {DXVA2FloatToFixed(-100), DXVA2FloatToFixed(100), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)};
-	m_DXVA2ProcValueRange[1] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f)};
-	m_DXVA2ProcValueRange[2] = {DXVA2FloatToFixed(-180), DXVA2FloatToFixed(180), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)};
-	m_DXVA2ProcValueRange[3] = {DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f)};
+	// set default ProcAmp ranges
+	SetDefaultDXVA2ProcValueRange(m_DXVA2ProcValueRange);
 
 	DLog(L"CDX9VideoProcessor::InitializeTexVP() completed successfully");
 

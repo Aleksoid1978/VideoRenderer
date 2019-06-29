@@ -130,6 +130,14 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
 	return CStringFromGUID(guid);
 }
 
+void SetDefaultDXVA2ProcValueRange(DXVA2_ValueRange(&DXVA2ProcValueRange)[4])
+{
+	DXVA2ProcValueRange[0] = { DXVA2FloatToFixed(-100), DXVA2FloatToFixed(100), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)     };
+	DXVA2ProcValueRange[1] = { DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f) };
+	DXVA2ProcValueRange[2] = { DXVA2FloatToFixed(-180), DXVA2FloatToFixed(180), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)     };
+	DXVA2ProcValueRange[3] = { DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f) };
+}
+
 static FmtConvParams_t s_FmtConvMapping[] = {
 	// cformat |   subtype          | str     | DXVA2Format    | D3DFormat(DX9)     | VP11Format                | DX11Format             |Packsize|PitchCoeff| CSType|Subsampling|CDepth| Func              |FuncSSSE3
 	{CF_NONE,   GUID_NULL,           "",       D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,      DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            0, 0,        CS_YUV,    0,       0,     nullptr,            nullptr},
