@@ -139,7 +139,11 @@ private:
 	D3D11_VIDEO_PROCESSOR_CAPS m_VPCaps = {};
 	D3D11_VIDEO_PROCESSOR_FILTER_RANGE m_VPFilterRange[4] = {};
 	int m_VPFilterLevels[4] = {};
+	bool m_bFltLevelsNeedInit = true;
 	bool m_bUpdateFilters = false;
+
+	DXVA2_ValueRange m_DXVA2ProcValueRange[4] = {};
+	DXVA2_Fixed32 m_DXVA2ProcValue[4] = {};
 
 	CRect m_videoRect;
 	CRect m_windowRect;
