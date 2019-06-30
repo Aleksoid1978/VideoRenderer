@@ -712,10 +712,20 @@ HRESULT CDX9VideoProcessor::CreatePShaderFromResource(IDirect3DPixelShader9** pp
 	return m_pD3DDevEx->CreatePixelShader((const DWORD*)LockResource(hGlobal), ppPixelShader);
 }
 
-void CDX9VideoProcessor::SetShaderConvertColorParams(mp_csp_params& params)
+void CDX9VideoProcessor::SetShaderConvertColorParams()
 {
+	mp_csp_params csp_params;
+	set_colorspace(m_srcExFmt, csp_params.color);
+	csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
+	csp_params.contrast   = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
+	csp_params.hue        = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
+	csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
+	csp_params.gray       = m_srcParams.CSType == CS_GRAY;
+
+	m_PSConvColorData.bEnable = m_srcParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;;
+
 	mp_cmat cmatrix;
-	mp_get_csp_matrix(params, cmatrix);
+	mp_get_csp_matrix(csp_params, cmatrix);
 
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
@@ -950,19 +960,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		}
 		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
 
-		mp_csp_params csp_params;
-		set_colorspace(m_srcExFmt, csp_params.color);
-		csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
-		csp_params.contrast   = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
-		csp_params.hue        = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
-		csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
-		csp_params.gray = FmtConvParams.CSType == CS_GRAY;
-
-		bool bPprocessing = FmtConvParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
-		if (bPprocessing) {
-			m_PSConvColorData.bEnable = true;
-			SetShaderConvertColorParams(csp_params);
-		}
+		SetShaderConvertColorParams();
 		UpdateStatsStatic();
 		return TRUE;
 	}
@@ -2016,23 +2014,7 @@ STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 		}
 
 		if (!m_pDXVA2_VP) {
-			mp_csp_params csp_params;
-			set_colorspace(m_srcExFmt, csp_params.color);
-			csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
-			csp_params.contrast = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
-			csp_params.hue = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
-			csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
-			csp_params.gray = m_srcParams.CSType == CS_GRAY;
-
-			bool bPprocessing = m_srcParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
-
-			if (bPprocessing) {
-				m_PSConvColorData.bEnable = true;
-				SetShaderConvertColorParams(csp_params);
-			}
-			else {
-				m_PSConvColorData.bEnable = false;
-			}
+			SetShaderConvertColorParams();
 		}
 	}
 

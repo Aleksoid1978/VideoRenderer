@@ -207,7 +207,7 @@ private:
 
 	BOOL InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height);
 	HRESULT CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);
-	void SetShaderConvertColorParams(mp_csp_params& params);
+	void SetShaderConvertColorParams();
 
 public:
 	BOOL VerifyMediaType(const CMediaType* pmt);

@@ -590,6 +590,53 @@ HRESULT CDX11VideoProcessor::CreatePShaderFromResource(ID3D11PixelShader** ppPix
 	return m_pDevice->CreatePixelShader(data, size, nullptr, ppPixelShader);
 }
 
+void CDX11VideoProcessor::SetShaderConvertColorParams()
+{
+	mp_csp_params csp_params;
+	set_colorspace(m_srcExFmt, csp_params.color);
+	csp_params.brightness = DXVA2FixedToFloat(m_DXVA2ProcValue[0]) / 100;
+	csp_params.contrast   = DXVA2FixedToFloat(m_DXVA2ProcValue[1]);
+	csp_params.hue        = DXVA2FixedToFloat(m_DXVA2ProcValue[2]) / 180 * acos(-1);
+	csp_params.saturation = DXVA2FixedToFloat(m_DXVA2ProcValue[3]);
+	csp_params.gray       = m_srcParams.CSType == CS_GRAY;
+
+	m_PSConvColorData.bEnable = m_srcParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;;
+
+	mp_cmat cmatrix;
+	mp_get_csp_matrix(csp_params, cmatrix);
+
+	PS_COLOR_TRANSFORM cbuffer = {
+		{cmatrix.m[0][0], cmatrix.m[0][1], cmatrix.m[0][2], 0},
+		{cmatrix.m[1][0], cmatrix.m[1][1], cmatrix.m[1][2], 0},
+		{cmatrix.m[2][0], cmatrix.m[2][1], cmatrix.m[2][2], 0},
+		{cmatrix.c[0],    cmatrix.c[1],    cmatrix.c[2],    0},
+	};
+
+	if (m_srcParams.cformat == CF_Y410 || m_srcParams.cformat == CF_Y416) {
+		std::swap(cbuffer.cm_r.x, cbuffer.cm_r.y);
+		std::swap(cbuffer.cm_g.x, cbuffer.cm_g.y);
+		std::swap(cbuffer.cm_b.x, cbuffer.cm_b.y);
+	}
+
+	SAFE_RELEASE(m_PSConvColorData.pConstants);
+	SAFE_RELEASE(m_PSConvColorData.pConstants4);
+
+	D3D11_BUFFER_DESC BufferDesc = {};
+	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	BufferDesc.ByteWidth = sizeof(cbuffer);
+	BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	BufferDesc.CPUAccessFlags = 0;
+	D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants));
+
+	if (m_srcParams.cformat == CF_YUY2) {
+		DirectX::XMFLOAT4 cbuffer4 = { (float)m_srcWidth, (float)m_srcHeight, 1.0f / m_srcWidth, 1.0f / m_srcHeight };
+		BufferDesc.ByteWidth = sizeof(cbuffer4);
+		InitData = { &cbuffer4, 0, 0 };
+		EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants4));
+	}
+}
+
 HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
 {
 	DLog(L"CDX11VideoProcessor::SetDevice()");
@@ -1104,53 +1151,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
 
 		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
-
-		mp_csp_params csp_params;
-		set_colorspace(m_srcExFmt, csp_params.color);
-		csp_params.brightness = DXVA2FixedToFloat(m_DXVA2ProcValue[0]) / 100;
-		csp_params.contrast   = DXVA2FixedToFloat(m_DXVA2ProcValue[1]);
-		csp_params.hue        = DXVA2FixedToFloat(m_DXVA2ProcValue[2]) / 180 * acos(-1);
-		csp_params.saturation = DXVA2FixedToFloat(m_DXVA2ProcValue[3]);
-		csp_params.gray = FmtConvParams.CSType == CS_GRAY;
-
-		bool bPprocessing = FmtConvParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
-
-		mp_cmat cmatrix;
-		mp_get_csp_matrix(csp_params, cmatrix);
-		PS_COLOR_TRANSFORM cbuffer = {
-			{cmatrix.m[0][0], cmatrix.m[0][1], cmatrix.m[0][2], 0},
-			{cmatrix.m[1][0], cmatrix.m[1][1], cmatrix.m[1][2], 0},
-			{cmatrix.m[2][0], cmatrix.m[2][1], cmatrix.m[2][2], 0},
-			{cmatrix.c[0], cmatrix.c[1], cmatrix.c[2], 0},
-		};
-
-		if (FmtConvParams.cformat == CF_Y410 || FmtConvParams.cformat == CF_Y416) {
-			std::swap(cbuffer.cm_r.x, cbuffer.cm_r.y);
-			std::swap(cbuffer.cm_g.x, cbuffer.cm_g.y);
-			std::swap(cbuffer.cm_b.x, cbuffer.cm_b.y);
-		}
-
-		SAFE_RELEASE(m_PSConvColorData.pConstants);
-		SAFE_RELEASE(m_PSConvColorData.pConstants4);
-
-		D3D11_BUFFER_DESC BufferDesc = {};
-		BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		BufferDesc.ByteWidth = sizeof(cbuffer);
-		BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		BufferDesc.CPUAccessFlags = 0;
-		D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
-		EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants));
-
-		if (m_srcParams.cformat == CF_YUY2) {
-			DirectX::XMFLOAT4 cbuffer4 = { (float)m_srcWidth, (float)m_srcHeight, 1.0f / m_srcWidth, 1.0f / m_srcHeight };
-			BufferDesc.ByteWidth = sizeof(cbuffer4);
-			InitData = { &cbuffer4, 0, 0 };
-			EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants4));
-		}
-
-		m_PSConvColorData.bEnable = true;
-
 		m_inputMT = *pmt;
+		SetShaderConvertColorParams();
 		UpdateStatsStatic();
 
 		if (m_pFilter->m_pSubCallBack) {
@@ -2319,50 +2321,7 @@ STDMETHODIMP CDX11VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpV
 		m_bUpdateFilters = true;
 
 		if (!m_pVideoProcessor) {
-			mp_csp_params csp_params;
-			set_colorspace(m_srcExFmt, csp_params.color);
-			csp_params.brightness = DXVA2FixedToFloat(m_DXVA2ProcValue[0]) / 100;
-			csp_params.contrast   = DXVA2FixedToFloat(m_DXVA2ProcValue[1]);
-			csp_params.hue        = DXVA2FixedToFloat(m_DXVA2ProcValue[2]) / 180 * acos(-1);
-			csp_params.saturation = DXVA2FixedToFloat(m_DXVA2ProcValue[3]);
-			csp_params.gray = m_srcParams.CSType == CS_GRAY;
-
-			bool bPprocessing = m_srcParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
-
-			mp_cmat cmatrix;
-			mp_get_csp_matrix(csp_params, cmatrix);
-			PS_COLOR_TRANSFORM cbuffer = {
-				{cmatrix.m[0][0], cmatrix.m[0][1], cmatrix.m[0][2], 0},
-				{cmatrix.m[1][0], cmatrix.m[1][1], cmatrix.m[1][2], 0},
-				{cmatrix.m[2][0], cmatrix.m[2][1], cmatrix.m[2][2], 0},
-				{cmatrix.c[0], cmatrix.c[1], cmatrix.c[2], 0},
-			};
-
-			if (m_srcParams.cformat == CF_Y410 || m_srcParams.cformat == CF_Y416) {
-				std::swap(cbuffer.cm_r.x, cbuffer.cm_r.y);
-				std::swap(cbuffer.cm_g.x, cbuffer.cm_g.y);
-				std::swap(cbuffer.cm_b.x, cbuffer.cm_b.y);
-			}
-
-			SAFE_RELEASE(m_PSConvColorData.pConstants);
-			SAFE_RELEASE(m_PSConvColorData.pConstants4);
-
-			D3D11_BUFFER_DESC BufferDesc = {};
-			BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-			BufferDesc.ByteWidth = sizeof(cbuffer);
-			BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-			BufferDesc.CPUAccessFlags = 0;
-			D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
-			EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants));
-
-			if (m_srcParams.cformat == CF_YUY2) {
-				DirectX::XMFLOAT4 cbuffer4 = { (float)m_srcWidth, (float)m_srcHeight, 1.0f / m_srcWidth, 1.0f / m_srcHeight };
-				BufferDesc.ByteWidth = sizeof(cbuffer4);
-				InitData = { &cbuffer4, 0, 0 };
-				EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants4));
-			}
-
-			m_PSConvColorData.bEnable = true;
+			SetShaderConvertColorParams();
 		}
 	}
 

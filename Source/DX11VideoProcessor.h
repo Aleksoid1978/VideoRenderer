@@ -218,6 +218,7 @@ private:
 
 	HRESULT GetDataFromResource(LPVOID& data, DWORD& size, UINT resid);
 	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
+	void SetShaderConvertColorParams();
 
 public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
