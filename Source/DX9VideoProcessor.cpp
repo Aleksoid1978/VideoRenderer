@@ -708,7 +708,7 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 {
 	mp_csp_params csp_params;
 	set_colorspace(m_srcExFmt, csp_params.color);
-	csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100 * 0.4f; // multiplier 0.4 to match with DXVA2 and D3D11 VP.
+	csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 255;
 	csp_params.contrast   = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
 	csp_params.hue        = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
 	csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
