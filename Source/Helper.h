@@ -119,7 +119,9 @@ CStringW HR2Str(const HRESULT hr);
 const wchar_t* D3DFormatToString(const D3DFORMAT format);
 const wchar_t* DXGIFormatToString(const DXGI_FORMAT format);
 const wchar_t* DXVA2VPDeviceToString(const GUID& guid);
-void SetDefaultDXVA2ProcValueRange(DXVA2_ValueRange(&DXVA2ProcValueRange)[4]);
+void SetDefaultDXVA2ProcAmpRanges(DXVA2_ValueRange(&DXVA2ProcAmpRanges)[4]);
+void SetDefaultDXVA2ProcAmpValues(DXVA2_ProcAmpValues& DXVA2ProcAmpValues);
+bool IsDefaultDXVA2ProcAmpValues(const DXVA2_ProcAmpValues& DXVA2ProcAmpValues);
 
 typedef void(*CopyFrameDataFn)(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 

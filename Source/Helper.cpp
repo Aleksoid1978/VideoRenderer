@@ -130,12 +130,35 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
 	return CStringFromGUID(guid);
 }
 
-void SetDefaultDXVA2ProcValueRange(DXVA2_ValueRange(&DXVA2ProcValueRange)[4])
+static const DXVA2_ValueRange s_DefaultDXVA2ProcAmpRanges[4] = {
+	{ DXVA2FloatToFixed(-100), DXVA2FloatToFixed(100), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)     },
+	{ DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f) },
+	{ DXVA2FloatToFixed(-180), DXVA2FloatToFixed(180), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)     },
+	{ DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f) },
+};
+
+void SetDefaultDXVA2ProcAmpRanges(DXVA2_ValueRange(&DXVA2ProcAmpRanges)[4])
 {
-	DXVA2ProcValueRange[0] = { DXVA2FloatToFixed(-100), DXVA2FloatToFixed(100), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)     };
-	DXVA2ProcValueRange[1] = { DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f) };
-	DXVA2ProcValueRange[2] = { DXVA2FloatToFixed(-180), DXVA2FloatToFixed(180), DXVA2FloatToFixed(0), DXVA2FloatToFixed(1)     };
-	DXVA2ProcValueRange[3] = { DXVA2FloatToFixed(0),    DXVA2FloatToFixed(2),   DXVA2FloatToFixed(1), DXVA2FloatToFixed(0.01f) };
+	DXVA2ProcAmpRanges[0] = s_DefaultDXVA2ProcAmpRanges[0];
+	DXVA2ProcAmpRanges[1] = s_DefaultDXVA2ProcAmpRanges[1];
+	DXVA2ProcAmpRanges[2] = s_DefaultDXVA2ProcAmpRanges[2];
+	DXVA2ProcAmpRanges[3] = s_DefaultDXVA2ProcAmpRanges[3];
+}
+
+void SetDefaultDXVA2ProcAmpValues(DXVA2_ProcAmpValues& DXVA2ProcAmpValues)
+{
+	DXVA2ProcAmpValues.Brightness = s_DefaultDXVA2ProcAmpRanges[0].DefaultValue;
+	DXVA2ProcAmpValues.Contrast   = s_DefaultDXVA2ProcAmpRanges[1].DefaultValue;
+	DXVA2ProcAmpValues.Hue        = s_DefaultDXVA2ProcAmpRanges[2].DefaultValue;
+	DXVA2ProcAmpValues.Saturation = s_DefaultDXVA2ProcAmpRanges[3].DefaultValue;
+}
+
+bool IsDefaultDXVA2ProcAmpValues(const DXVA2_ProcAmpValues& DXVA2ProcAmpValues)
+{
+	return DXVA2ProcAmpValues.Brightness.ll == s_DefaultDXVA2ProcAmpRanges[0].DefaultValue.ll
+		&& DXVA2ProcAmpValues.Contrast.ll   == s_DefaultDXVA2ProcAmpRanges[1].DefaultValue.ll
+		&& DXVA2ProcAmpValues.Hue.ll        == s_DefaultDXVA2ProcAmpRanges[2].DefaultValue.ll
+		&& DXVA2ProcAmpValues.Saturation.ll == s_DefaultDXVA2ProcAmpRanges[3].DefaultValue.ll;
 }
 
 static FmtConvParams_t s_FmtConvMapping[] = {

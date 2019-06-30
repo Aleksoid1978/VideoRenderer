@@ -116,7 +116,7 @@ private:
 	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
 	GUID m_DXVA2VPGuid = GUID_NULL;
 	DXVA2_VideoProcessorCaps m_DXVA2VPcaps = {};
-	DXVA2_ValueRange m_DXVA2ProcValueRange[4] = {};
+	DXVA2_ValueRange m_DXVA2ProcAmpRanges[4] = {};
 
 	// Input parameters
 	FmtConvParams_t m_srcParams = {};

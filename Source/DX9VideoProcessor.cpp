@@ -185,11 +185,8 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
 	}
 
 	// set default ProcAmp ranges and values
-	SetDefaultDXVA2ProcValueRange(m_DXVA2ProcValueRange);
-	m_BltParams.ProcAmpValues.Brightness = m_DXVA2ProcValueRange[0].DefaultValue;
-	m_BltParams.ProcAmpValues.Contrast   = m_DXVA2ProcValueRange[1].DefaultValue;
-	m_BltParams.ProcAmpValues.Hue        = m_DXVA2ProcValueRange[2].DefaultValue;
-	m_BltParams.ProcAmpValues.Saturation = m_DXVA2ProcValueRange[3].DefaultValue;
+	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
+	SetDefaultDXVA2ProcAmpValues(m_BltParams.ProcAmpValues);
 }
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
@@ -585,16 +582,16 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	}
 
 	// Query ProcAmp ranges.
-	for (i = 0; i < std::size(m_DXVA2ProcValueRange); i++) {
+	for (i = 0; i < std::size(m_DXVA2ProcAmpRanges); i++) {
 		if (m_DXVA2VPcaps.ProcAmpControlCaps & (1 << i)) {
-			hr = m_pDXVA2_VPService->GetProcAmpRange(devguid, &videodesc, m_InternalTexFmt, 1 << i, &m_DXVA2ProcValueRange[i]);
+			hr = m_pDXVA2_VPService->GetProcAmpRange(devguid, &videodesc, m_InternalTexFmt, 1 << i, &m_DXVA2ProcAmpRanges[i]);
 			if (FAILED(hr)) {
 				DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : GetProcAmpRange() failed with error %s", HR2Str(hr));
 				return FALSE;
 			}
 			DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : ProcAmpRange(%u) : %7.2f, %6.2f, %6.2f, %4.2f",
-				i, DXVA2FixedToFloat(m_DXVA2ProcValueRange[i].MinValue), DXVA2FixedToFloat(m_DXVA2ProcValueRange[i].MaxValue),
-				DXVA2FixedToFloat(m_DXVA2ProcValueRange[i].DefaultValue), DXVA2FixedToFloat(m_DXVA2ProcValueRange[i].StepSize));
+				i, DXVA2FixedToFloat(m_DXVA2ProcAmpRanges[i].MinValue), DXVA2FixedToFloat(m_DXVA2ProcAmpRanges[i].MaxValue),
+				DXVA2FixedToFloat(m_DXVA2ProcAmpRanges[i].DefaultValue), DXVA2FixedToFloat(m_DXVA2ProcAmpRanges[i].StepSize));
 		}
 	}
 
@@ -618,12 +615,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 		}
 	}
 
-	ZeroMemory(&m_BltParams, sizeof(m_BltParams));
 	m_BltParams.BackgroundColor              = { 128 * 0x100, 128 * 0x100, 16 * 0x100, 0xFFFF }; // black
-	m_BltParams.ProcAmpValues.Brightness     = m_DXVA2ProcValueRange[0].DefaultValue; // Hmm
-	m_BltParams.ProcAmpValues.Contrast       = m_DXVA2ProcValueRange[1].DefaultValue;
-	m_BltParams.ProcAmpValues.Hue            = m_DXVA2ProcValueRange[2].DefaultValue;
-	m_BltParams.ProcAmpValues.Saturation     = m_DXVA2ProcValueRange[3].DefaultValue;
 	m_BltParams.Alpha                        = DXVA2_Fixed32OpaqueAlpha();
 	m_BltParams.NoiseFilterLuma.Level        = NFilterValues[0];
 	m_BltParams.NoiseFilterLuma.Threshold    = NFilterValues[1];
@@ -681,7 +673,7 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UI
 	m_srcHeight    = height;
 
 	// set default ProcAmp ranges
-	SetDefaultDXVA2ProcValueRange(m_DXVA2ProcValueRange);
+	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
 
 	DLog(L"CDX9VideoProcessor::InitializeTexVP() completed successfully");
 
@@ -1964,10 +1956,10 @@ STDMETHODIMP CDX9VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRa
 	}
 
 	switch (dwProperty) {
-	case DXVA2_ProcAmp_Brightness: memcpy(pPropRange, &m_DXVA2ProcValueRange[0], sizeof(DXVA2_ValueRange)); break;
-	case DXVA2_ProcAmp_Contrast:   memcpy(pPropRange, &m_DXVA2ProcValueRange[1], sizeof(DXVA2_ValueRange)); break;
-	case DXVA2_ProcAmp_Hue:        memcpy(pPropRange, &m_DXVA2ProcValueRange[2], sizeof(DXVA2_ValueRange)); break;
-	case DXVA2_ProcAmp_Saturation: memcpy(pPropRange, &m_DXVA2ProcValueRange[3], sizeof(DXVA2_ValueRange)); break;
+	case DXVA2_ProcAmp_Brightness: memcpy(pPropRange, &m_DXVA2ProcAmpRanges[0], sizeof(DXVA2_ValueRange)); break;
+	case DXVA2_ProcAmp_Contrast:   memcpy(pPropRange, &m_DXVA2ProcAmpRanges[1], sizeof(DXVA2_ValueRange)); break;
+	case DXVA2_ProcAmp_Hue:        memcpy(pPropRange, &m_DXVA2ProcAmpRanges[2], sizeof(DXVA2_ValueRange)); break;
+	case DXVA2_ProcAmp_Saturation: memcpy(pPropRange, &m_DXVA2ProcAmpRanges[3], sizeof(DXVA2_ValueRange)); break;
 	default:
 		return E_INVALIDARG;
 	}
@@ -2001,16 +1993,16 @@ STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 		CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
 		if (dwFlags&DXVA2_ProcAmp_Brightness) {
-			m_BltParams.ProcAmpValues.Brightness.ll = std::clamp(pValues->Brightness.ll, m_DXVA2ProcValueRange[0].MinValue.ll, m_DXVA2ProcValueRange[0].MaxValue.ll);
+			m_BltParams.ProcAmpValues.Brightness.ll = std::clamp(pValues->Brightness.ll, m_DXVA2ProcAmpRanges[0].MinValue.ll, m_DXVA2ProcAmpRanges[0].MaxValue.ll);
 		}
 		if (dwFlags&DXVA2_ProcAmp_Contrast) {
-			m_BltParams.ProcAmpValues.Contrast.ll = std::clamp(pValues->Contrast.ll, m_DXVA2ProcValueRange[1].MinValue.ll, m_DXVA2ProcValueRange[1].MaxValue.ll);
+			m_BltParams.ProcAmpValues.Contrast.ll = std::clamp(pValues->Contrast.ll, m_DXVA2ProcAmpRanges[1].MinValue.ll, m_DXVA2ProcAmpRanges[1].MaxValue.ll);
 		}
 		if (dwFlags&DXVA2_ProcAmp_Hue) {
-			m_BltParams.ProcAmpValues.Hue.ll = std::clamp(pValues->Hue.ll, m_DXVA2ProcValueRange[2].MinValue.ll, m_DXVA2ProcValueRange[2].MaxValue.ll);
+			m_BltParams.ProcAmpValues.Hue.ll = std::clamp(pValues->Hue.ll, m_DXVA2ProcAmpRanges[2].MinValue.ll, m_DXVA2ProcAmpRanges[2].MaxValue.ll);
 		}
 		if (dwFlags&DXVA2_ProcAmp_Saturation) {
-			m_BltParams.ProcAmpValues.Saturation.ll = std::clamp(pValues->Saturation.ll, m_DXVA2ProcValueRange[3].MinValue.ll, m_DXVA2ProcValueRange[3].MaxValue.ll);
+			m_BltParams.ProcAmpValues.Saturation.ll = std::clamp(pValues->Saturation.ll, m_DXVA2ProcAmpRanges[3].MinValue.ll, m_DXVA2ProcAmpRanges[3].MaxValue.ll);
 		}
 
 		if (!m_pDXVA2_VP) {

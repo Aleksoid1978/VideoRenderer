@@ -366,11 +366,8 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter)
 	}
 
 	// set default ProcAmp ranges and values
-	SetDefaultDXVA2ProcValueRange(m_DXVA2ProcValueRange);
-	m_DXVA2ProcValue[0] = m_DXVA2ProcValueRange[0].DefaultValue;
-	m_DXVA2ProcValue[1] = m_DXVA2ProcValueRange[1].DefaultValue;
-	m_DXVA2ProcValue[2] = m_DXVA2ProcValueRange[2].DefaultValue;
-	m_DXVA2ProcValue[3] = m_DXVA2ProcValueRange[3].DefaultValue;
+	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
+	SetDefaultDXVA2ProcAmpValues(m_DXVA2ProcAmpValues);
 }
 
 CDX11VideoProcessor::~CDX11VideoProcessor()
@@ -594,10 +591,10 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 {
 	mp_csp_params csp_params;
 	set_colorspace(m_srcExFmt, csp_params.color);
-	csp_params.brightness = DXVA2FixedToFloat(m_DXVA2ProcValue[0]) / 100;
-	csp_params.contrast   = DXVA2FixedToFloat(m_DXVA2ProcValue[1]);
-	csp_params.hue        = DXVA2FixedToFloat(m_DXVA2ProcValue[2]) / 180 * acos(-1);
-	csp_params.saturation = DXVA2FixedToFloat(m_DXVA2ProcValue[3]);
+	csp_params.brightness = DXVA2FixedToFloat(m_DXVA2ProcAmpValues.Brightness) / 100;
+	csp_params.contrast   = DXVA2FixedToFloat(m_DXVA2ProcAmpValues.Contrast);
+	csp_params.hue        = DXVA2FixedToFloat(m_DXVA2ProcAmpValues.Hue) / 180 * acos(-1);
+	csp_params.saturation = DXVA2FixedToFloat(m_DXVA2ProcAmpValues.Saturation);
 	csp_params.gray       = m_srcParams.CSType == CS_GRAY;
 
 	m_PSConvColorData.bEnable = m_srcParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;;
@@ -1245,25 +1242,21 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 					m_VPCaps.FilterCaps = 0;
 					break;
 				}
-				if (m_bFltLevelsNeedInit) {
-					m_VPFilterLevels[i] = m_VPFilterRange[i].Default;
-					m_bFltLevelsNeedInit = false;
-				}
 				DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : FilterRange(%u) : %4d, %3d, %3d, %f",
 					i, m_VPFilterRange[i].Minimum, m_VPFilterRange[i].Maximum, m_VPFilterRange[i].Default, m_VPFilterRange[i].Multiplier);
 			}
 		}
 
 		if (m_VPCaps.FilterCaps) {
-			FilterRangeD3D11toDXVA2(m_DXVA2ProcValueRange[0], m_VPFilterRange[0]);
-			FilterRangeD3D11toDXVA2(m_DXVA2ProcValueRange[1], m_VPFilterRange[1]);
-			FilterRangeD3D11toDXVA2(m_DXVA2ProcValueRange[2], m_VPFilterRange[2]);
-			FilterRangeD3D11toDXVA2(m_DXVA2ProcValueRange[3], m_VPFilterRange[3]);
+			m_VPFilterLevels[0] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Brightness, m_VPFilterRange[0]);
+			m_VPFilterLevels[1] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Contrast,   m_VPFilterRange[1]);
+			m_VPFilterLevels[2] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Hue,        m_VPFilterRange[2]);
+			m_VPFilterLevels[3] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Saturation, m_VPFilterRange[3]);
 
-			LevelD3D11toDXVA2(m_DXVA2ProcValue[0], m_VPFilterLevels[0], m_VPFilterRange[0]);
-			LevelD3D11toDXVA2(m_DXVA2ProcValue[1], m_VPFilterLevels[1], m_VPFilterRange[1]);
-			LevelD3D11toDXVA2(m_DXVA2ProcValue[2], m_VPFilterLevels[2], m_VPFilterRange[2]);
-			LevelD3D11toDXVA2(m_DXVA2ProcValue[3], m_VPFilterLevels[3], m_VPFilterRange[3]);
+			FilterRangeD3D11toDXVA2(m_DXVA2ProcAmpRanges[0], m_VPFilterRange[0]);
+			FilterRangeD3D11toDXVA2(m_DXVA2ProcAmpRanges[1], m_VPFilterRange[1]);
+			FilterRangeD3D11toDXVA2(m_DXVA2ProcAmpRanges[2], m_VPFilterRange[2]);
+			FilterRangeD3D11toDXVA2(m_DXVA2ProcAmpRanges[3], m_VPFilterRange[3]);
 
 			m_bUpdateFilters = true;
 		}
@@ -1386,7 +1379,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 	m_srcHeight      = height;
 
 	// set default ProcAmp ranges
-	SetDefaultDXVA2ProcValueRange(m_DXVA2ProcValueRange);
+	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
 
 	DLog(L"CDX11VideoProcessor::InitializeTexVP() completed successfully");
 
@@ -2271,10 +2264,10 @@ STDMETHODIMP CDX11VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueR
 	}
 
 	switch (dwProperty) {
-	case DXVA2_ProcAmp_Brightness: *pPropRange = m_DXVA2ProcValueRange[0]; break;
-	case DXVA2_ProcAmp_Contrast:   *pPropRange = m_DXVA2ProcValueRange[1]; break;
-	case DXVA2_ProcAmp_Hue:        *pPropRange = m_DXVA2ProcValueRange[2]; break;
-	case DXVA2_ProcAmp_Saturation: *pPropRange = m_DXVA2ProcValueRange[3]; break;
+	case DXVA2_ProcAmp_Brightness: *pPropRange = m_DXVA2ProcAmpRanges[0]; break;
+	case DXVA2_ProcAmp_Contrast:   *pPropRange = m_DXVA2ProcAmpRanges[1]; break;
+	case DXVA2_ProcAmp_Hue:        *pPropRange = m_DXVA2ProcAmpRanges[2]; break;
+	case DXVA2_ProcAmp_Saturation: *pPropRange = m_DXVA2ProcAmpRanges[3]; break;
 	default:
 		return E_INVALIDARG;
 	}
@@ -2289,10 +2282,10 @@ STDMETHODIMP CDX11VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpV
 		return MF_E_TRANSFORM_TYPE_NOT_SET;
 	}
 
-	if (dwFlags&DXVA2_ProcAmp_Brightness) { Values->Brightness = m_DXVA2ProcValue[0]; }
-	if (dwFlags&DXVA2_ProcAmp_Contrast)   { Values->Contrast   = m_DXVA2ProcValue[1]; }
-	if (dwFlags&DXVA2_ProcAmp_Hue)        { Values->Hue        = m_DXVA2ProcValue[2]; }
-	if (dwFlags&DXVA2_ProcAmp_Saturation) { Values->Saturation = m_DXVA2ProcValue[3]; }
+	if (dwFlags&DXVA2_ProcAmp_Brightness) { Values->Brightness = m_DXVA2ProcAmpValues.Brightness; }
+	if (dwFlags&DXVA2_ProcAmp_Contrast)   { Values->Contrast   = m_DXVA2ProcAmpValues.Contrast  ; }
+	if (dwFlags&DXVA2_ProcAmp_Hue)        { Values->Hue        = m_DXVA2ProcAmpValues.Hue       ; }
+	if (dwFlags&DXVA2_ProcAmp_Saturation) { Values->Saturation = m_DXVA2ProcAmpValues.Saturation; }
 
 	return S_OK;
 }
@@ -2305,25 +2298,25 @@ STDMETHODIMP CDX11VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpV
 	}
 
 	if (dwFlags&DXVA2_ProcAmp_Brightness) {
-		m_DXVA2ProcValue[0].ll = std::clamp(pValues->Brightness.ll, m_DXVA2ProcValueRange[0].MinValue.ll, m_DXVA2ProcValueRange[0].MaxValue.ll);
+		m_DXVA2ProcAmpValues.Brightness.ll = std::clamp(pValues->Brightness.ll, m_DXVA2ProcAmpRanges[0].MinValue.ll, m_DXVA2ProcAmpRanges[0].MaxValue.ll);
 	}
 	if (dwFlags&DXVA2_ProcAmp_Contrast) {
-		m_DXVA2ProcValue[1].ll = std::clamp(pValues->Contrast.ll, m_DXVA2ProcValueRange[1].MinValue.ll, m_DXVA2ProcValueRange[1].MaxValue.ll);
+		m_DXVA2ProcAmpValues.Contrast.ll = std::clamp(pValues->Contrast.ll, m_DXVA2ProcAmpRanges[1].MinValue.ll, m_DXVA2ProcAmpRanges[1].MaxValue.ll);
 	}
 	if (dwFlags&DXVA2_ProcAmp_Hue) {
-		m_DXVA2ProcValue[2].ll = std::clamp(pValues->Hue.ll, m_DXVA2ProcValueRange[2].MinValue.ll, m_DXVA2ProcValueRange[2].MaxValue.ll);
+		m_DXVA2ProcAmpValues.Hue.ll = std::clamp(pValues->Hue.ll, m_DXVA2ProcAmpRanges[2].MinValue.ll, m_DXVA2ProcAmpRanges[2].MaxValue.ll);
 	}
 	if (dwFlags&DXVA2_ProcAmp_Saturation) {
-		m_DXVA2ProcValue[3].ll = std::clamp(pValues->Saturation.ll, m_DXVA2ProcValueRange[3].MinValue.ll, m_DXVA2ProcValueRange[3].MaxValue.ll);
+		m_DXVA2ProcAmpValues.Saturation.ll = std::clamp(pValues->Saturation.ll, m_DXVA2ProcAmpRanges[3].MinValue.ll, m_DXVA2ProcAmpRanges[3].MaxValue.ll);
 	}
 
 	if (dwFlags&DXVA2_ProcAmp_Mask) {
 		CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
-		m_VPFilterLevels[0] = ValueDXVA2toD3D11(m_DXVA2ProcValue[0], m_VPFilterRange[0]);
-		m_VPFilterLevels[1] = ValueDXVA2toD3D11(m_DXVA2ProcValue[1], m_VPFilterRange[1]);
-		m_VPFilterLevels[2] = ValueDXVA2toD3D11(m_DXVA2ProcValue[2], m_VPFilterRange[2]);
-		m_VPFilterLevels[3] = ValueDXVA2toD3D11(m_DXVA2ProcValue[3], m_VPFilterRange[3]);
+		m_VPFilterLevels[0] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Brightness, m_VPFilterRange[0]);
+		m_VPFilterLevels[1] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Contrast,   m_VPFilterRange[1]);
+		m_VPFilterLevels[2] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Hue,        m_VPFilterRange[2]);
+		m_VPFilterLevels[3] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Saturation, m_VPFilterRange[3]);
 		m_bUpdateFilters = true;
 
 		if (!m_pVideoProcessor) {
