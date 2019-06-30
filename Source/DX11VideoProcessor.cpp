@@ -1107,7 +1107,13 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 		mp_csp_params csp_params;
 		set_colorspace(m_srcExFmt, csp_params.color);
+		csp_params.brightness = DXVA2FixedToFloat(m_DXVA2ProcValue[0]) / 100;
+		csp_params.contrast   = DXVA2FixedToFloat(m_DXVA2ProcValue[1]);
+		csp_params.hue        = DXVA2FixedToFloat(m_DXVA2ProcValue[2]) / 180 * acos(-1);
+		csp_params.saturation = DXVA2FixedToFloat(m_DXVA2ProcValue[3]);
 		csp_params.gray = FmtConvParams.CSType == CS_GRAY;
+
+		bool bPprocessing = FmtConvParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
 
 		mp_cmat cmatrix;
 		mp_get_csp_matrix(csp_params, cmatrix);
@@ -1118,7 +1124,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			{cmatrix.c[0], cmatrix.c[1], cmatrix.c[2], 0},
 		};
 
-		if (SubType == MEDIASUBTYPE_Y410 || SubType == MEDIASUBTYPE_Y416) {
+		if (FmtConvParams.cformat == CF_Y410 || FmtConvParams.cformat == CF_Y416) {
 			std::swap(cbuffer.cm_r.x, cbuffer.cm_r.y);
 			std::swap(cbuffer.cm_g.x, cbuffer.cm_g.y);
 			std::swap(cbuffer.cm_b.x, cbuffer.cm_b.y);
@@ -2252,8 +2258,9 @@ STDMETHODIMP_(ULONG) CDX11VideoProcessor::Release()
 STDMETHODIMP CDX11VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange)
 {
 	CheckPointer(pPropRange, E_POINTER);
-	CheckPointer(m_pVideoProcessor, MF_E_TRANSFORM_TYPE_NOT_SET);
-	if (!m_VPCaps.FilterCaps) { return E_NOTIMPL; }
+	if (m_srcParams.cformat == CF_NONE) {
+		return MF_E_TRANSFORM_TYPE_NOT_SET;
+	}
 
 	switch (dwProperty) {
 	case DXVA2_ProcAmp_Brightness: *pPropRange = m_DXVA2ProcValueRange[0]; break;
@@ -2270,8 +2277,9 @@ STDMETHODIMP CDX11VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueR
 STDMETHODIMP CDX11VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *Values)
 {
 	CheckPointer(Values, E_POINTER);
-	CheckPointer(m_pVideoProcessor, MF_E_TRANSFORM_TYPE_NOT_SET);
-	if (!m_VPCaps.FilterCaps) { return E_NOTIMPL; }
+	if (m_srcParams.cformat == CF_NONE) {
+		return MF_E_TRANSFORM_TYPE_NOT_SET;
+	}
 
 	if (dwFlags&DXVA2_ProcAmp_Brightness) { Values->Brightness = m_DXVA2ProcValue[0]; }
 	if (dwFlags&DXVA2_ProcAmp_Contrast)   { Values->Contrast   = m_DXVA2ProcValue[1]; }
@@ -2284,10 +2292,9 @@ STDMETHODIMP CDX11VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpV
 STDMETHODIMP CDX11VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *pValues)
 {
 	CheckPointer(pValues, E_POINTER);
-	if (!m_pVideoProcessor || !m_pVideoContext) {
+	if (m_srcParams.cformat == CF_NONE) {
 		return MF_E_TRANSFORM_TYPE_NOT_SET;
-	};
-	if (!m_VPCaps.FilterCaps) { return E_NOTIMPL; }
+	}
 
 	if (dwFlags&DXVA2_ProcAmp_Brightness) {
 		m_DXVA2ProcValue[0].ll = std::clamp(pValues->Brightness.ll, m_DXVA2ProcValueRange[0].MinValue.ll, m_DXVA2ProcValueRange[0].MaxValue.ll);
@@ -2302,13 +2309,61 @@ STDMETHODIMP CDX11VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpV
 		m_DXVA2ProcValue[3].ll = std::clamp(pValues->Saturation.ll, m_DXVA2ProcValueRange[3].MinValue.ll, m_DXVA2ProcValueRange[3].MaxValue.ll);
 	}
 
-
 	if (dwFlags&DXVA2_ProcAmp_Mask) {
+		CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
+
 		m_VPFilterLevels[0] = ValueDXVA2toD3D11(m_DXVA2ProcValue[0], m_VPFilterRange[0]);
 		m_VPFilterLevels[1] = ValueDXVA2toD3D11(m_DXVA2ProcValue[1], m_VPFilterRange[1]);
 		m_VPFilterLevels[2] = ValueDXVA2toD3D11(m_DXVA2ProcValue[2], m_VPFilterRange[2]);
 		m_VPFilterLevels[3] = ValueDXVA2toD3D11(m_DXVA2ProcValue[3], m_VPFilterRange[3]);
 		m_bUpdateFilters = true;
+
+		if (!m_pVideoProcessor) {
+			mp_csp_params csp_params;
+			set_colorspace(m_srcExFmt, csp_params.color);
+			csp_params.brightness = DXVA2FixedToFloat(m_DXVA2ProcValue[0]) / 100;
+			csp_params.contrast   = DXVA2FixedToFloat(m_DXVA2ProcValue[1]);
+			csp_params.hue        = DXVA2FixedToFloat(m_DXVA2ProcValue[2]) / 180 * acos(-1);
+			csp_params.saturation = DXVA2FixedToFloat(m_DXVA2ProcValue[3]);
+			csp_params.gray = m_srcParams.CSType == CS_GRAY;
+
+			bool bPprocessing = m_srcParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
+
+			mp_cmat cmatrix;
+			mp_get_csp_matrix(csp_params, cmatrix);
+			PS_COLOR_TRANSFORM cbuffer = {
+				{cmatrix.m[0][0], cmatrix.m[0][1], cmatrix.m[0][2], 0},
+				{cmatrix.m[1][0], cmatrix.m[1][1], cmatrix.m[1][2], 0},
+				{cmatrix.m[2][0], cmatrix.m[2][1], cmatrix.m[2][2], 0},
+				{cmatrix.c[0], cmatrix.c[1], cmatrix.c[2], 0},
+			};
+
+			if (m_srcParams.cformat == CF_Y410 || m_srcParams.cformat == CF_Y416) {
+				std::swap(cbuffer.cm_r.x, cbuffer.cm_r.y);
+				std::swap(cbuffer.cm_g.x, cbuffer.cm_g.y);
+				std::swap(cbuffer.cm_b.x, cbuffer.cm_b.y);
+			}
+
+			SAFE_RELEASE(m_PSConvColorData.pConstants);
+			SAFE_RELEASE(m_PSConvColorData.pConstants4);
+
+			D3D11_BUFFER_DESC BufferDesc = {};
+			BufferDesc.Usage = D3D11_USAGE_DEFAULT;
+			BufferDesc.ByteWidth = sizeof(cbuffer);
+			BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+			BufferDesc.CPUAccessFlags = 0;
+			D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
+			EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants));
+
+			if (m_srcParams.cformat == CF_YUY2) {
+				DirectX::XMFLOAT4 cbuffer4 = { (float)m_srcWidth, (float)m_srcHeight, 1.0f / m_srcWidth, 1.0f / m_srcHeight };
+				BufferDesc.ByteWidth = sizeof(cbuffer4);
+				InitData = { &cbuffer4, 0, 0 };
+				EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants4));
+			}
+
+			m_PSConvColorData.bEnable = true;
+		}
 	}
 
 	return S_OK;

@@ -956,7 +956,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		csp_params.contrast   = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
 		csp_params.hue        = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
 		csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
-		csp_params.gray = SubType == MEDIASUBTYPE_Y8 || SubType == MEDIASUBTYPE_Y800 || SubType == MEDIASUBTYPE_Y116;
+		csp_params.gray = FmtConvParams.CSType == CS_GRAY;
 
 		bool bPprocessing = FmtConvParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
 		if (bPprocessing) {
@@ -1960,11 +1960,11 @@ STDMETHODIMP_(ULONG) CDX9VideoProcessor::Release()
 
 STDMETHODIMP CDX9VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange)
 {
+	CheckPointer(pPropRange, E_POINTER);
 	if (m_srcParams.cformat == CF_NONE) {
-		return MF_E_INVALIDREQUEST;
+		return MF_E_TRANSFORM_TYPE_NOT_SET;
 	}
 
-	CheckPointer(pPropRange, E_POINTER);
 	switch (dwProperty) {
 	case DXVA2_ProcAmp_Brightness: memcpy(pPropRange, &m_DXVA2ProcValueRange[0], sizeof(DXVA2_ValueRange)); break;
 	case DXVA2_ProcAmp_Contrast:   memcpy(pPropRange, &m_DXVA2ProcValueRange[1], sizeof(DXVA2_ValueRange)); break;
@@ -1973,60 +1973,66 @@ STDMETHODIMP CDX9VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRa
 	default:
 		return E_INVALIDARG;
 	}
+
 	return S_OK;
 }
 
 STDMETHODIMP CDX9VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *Values)
 {
+	CheckPointer(Values, E_POINTER);
 	if (m_srcParams.cformat == CF_NONE) {
-		return MF_E_INVALIDREQUEST;
+		return MF_E_TRANSFORM_TYPE_NOT_SET;
 	}
 
-	CheckPointer(Values, E_POINTER);
 	if (dwFlags&DXVA2_ProcAmp_Brightness) { Values->Brightness = m_BltParams.ProcAmpValues.Brightness; }
 	if (dwFlags&DXVA2_ProcAmp_Contrast)   { Values->Contrast   = m_BltParams.ProcAmpValues.Contrast; }
 	if (dwFlags&DXVA2_ProcAmp_Hue)        { Values->Hue        = m_BltParams.ProcAmpValues.Hue; }
 	if (dwFlags&DXVA2_ProcAmp_Saturation) { Values->Saturation = m_BltParams.ProcAmpValues.Saturation; }
+
 	return S_OK;
 }
 
 STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *pValues)
 {
-	if (m_srcParams.cformat == CF_NONE) {
-		return MF_E_INVALIDREQUEST;
-	}
-
 	CheckPointer(pValues, E_POINTER);
-	if (dwFlags&DXVA2_ProcAmp_Brightness) {
-		m_BltParams.ProcAmpValues.Brightness.ll = std::clamp(pValues->Brightness.ll, m_DXVA2ProcValueRange[0].MinValue.ll, m_DXVA2ProcValueRange[0].MaxValue.ll);
-	}
-	if (dwFlags&DXVA2_ProcAmp_Contrast) {
-		m_BltParams.ProcAmpValues.Contrast.ll = std::clamp(pValues->Contrast.ll, m_DXVA2ProcValueRange[1].MinValue.ll, m_DXVA2ProcValueRange[1].MaxValue.ll);
-	}
-	if (dwFlags&DXVA2_ProcAmp_Hue) {
-		m_BltParams.ProcAmpValues.Hue.ll = std::clamp(pValues->Hue.ll, m_DXVA2ProcValueRange[2].MinValue.ll, m_DXVA2ProcValueRange[2].MaxValue.ll);
-	}
-	if (dwFlags&DXVA2_ProcAmp_Saturation) {
-		m_BltParams.ProcAmpValues.Saturation.ll = std::clamp(pValues->Saturation.ll, m_DXVA2ProcValueRange[3].MinValue.ll, m_DXVA2ProcValueRange[3].MaxValue.ll);
+	if (m_srcParams.cformat == CF_NONE) {
+		return MF_E_TRANSFORM_TYPE_NOT_SET;
 	}
 
-	if (!m_pDXVA2_VP) {
-		mp_csp_params csp_params;
-		set_colorspace(m_srcExFmt, csp_params.color);
-		csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
-		csp_params.contrast = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
-		csp_params.hue = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
-		csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
-		csp_params.gray = m_srcParams.cformat == CF_Y8 || m_srcParams.cformat == CF_Y800 || m_srcParams.cformat == CF_Y116;
+	if (dwFlags&DXVA2_ProcAmp_Mask) {
+		CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
-		bool bPprocessing = m_srcParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
+		if (dwFlags&DXVA2_ProcAmp_Brightness) {
+			m_BltParams.ProcAmpValues.Brightness.ll = std::clamp(pValues->Brightness.ll, m_DXVA2ProcValueRange[0].MinValue.ll, m_DXVA2ProcValueRange[0].MaxValue.ll);
+		}
+		if (dwFlags&DXVA2_ProcAmp_Contrast) {
+			m_BltParams.ProcAmpValues.Contrast.ll = std::clamp(pValues->Contrast.ll, m_DXVA2ProcValueRange[1].MinValue.ll, m_DXVA2ProcValueRange[1].MaxValue.ll);
+		}
+		if (dwFlags&DXVA2_ProcAmp_Hue) {
+			m_BltParams.ProcAmpValues.Hue.ll = std::clamp(pValues->Hue.ll, m_DXVA2ProcValueRange[2].MinValue.ll, m_DXVA2ProcValueRange[2].MaxValue.ll);
+		}
+		if (dwFlags&DXVA2_ProcAmp_Saturation) {
+			m_BltParams.ProcAmpValues.Saturation.ll = std::clamp(pValues->Saturation.ll, m_DXVA2ProcValueRange[3].MinValue.ll, m_DXVA2ProcValueRange[3].MaxValue.ll);
+		}
 
-		if (bPprocessing) {
-			//TODO: lock "render" here
-			m_PSConvColorData.bEnable = true;
-			SetShaderConvertColorParams(csp_params);
-		} else {
-			m_PSConvColorData.bEnable = false;
+		if (!m_pDXVA2_VP) {
+			mp_csp_params csp_params;
+			set_colorspace(m_srcExFmt, csp_params.color);
+			csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 100;
+			csp_params.contrast = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
+			csp_params.hue = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
+			csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
+			csp_params.gray = m_srcParams.CSType == CS_GRAY;
+
+			bool bPprocessing = m_srcParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
+
+			if (bPprocessing) {
+				m_PSConvColorData.bEnable = true;
+				SetShaderConvertColorParams(csp_params);
+			}
+			else {
+				m_PSConvColorData.bEnable = false;
+			}
 		}
 	}
 
