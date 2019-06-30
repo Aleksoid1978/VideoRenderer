@@ -1782,11 +1782,17 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 
 HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
-	// Convert color pass
-	HRESULT hr = TextureConvertColor(m_TexSrcCPU, m_TexConvert.pTexture);
+	HRESULT hr = S_OK;
 
-	// Resize
-	hr = ResizeShader2Pass(m_TexConvert, pRenderTarget, rSrcRect, rDstRect);
+	if (m_PSConvColorData.bEnable) {
+		// Convert color pass
+		hr = TextureConvertColor(m_TexSrcCPU, m_TexConvert.pTexture);
+		// Resize
+		hr = ResizeShader2Pass(m_TexConvert, pRenderTarget, rSrcRect, rDstRect);
+	} else {
+		// Resize
+		hr = ResizeShader2Pass(m_TexSrcCPU, pRenderTarget, rSrcRect, rDstRect);
+	}
 
 	return hr;
 }
