@@ -1411,6 +1411,12 @@ void CDX9VideoProcessor::SetTexFormat(int value)
 	}
 }
 
+void CDX9VideoProcessor::SetVPEnableFmts(bool bNV12, bool bYUY2)
+{
+	m_bVPEnableNV12 = bNV12;
+	m_bVPEnableYUY2 = bYUY2;
+}
+
 void CDX9VideoProcessor::SetVPScaling(bool value)
 {
 	m_bVPScaling = value;

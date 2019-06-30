@@ -30,6 +30,7 @@
 #define OPT_UseD3D11             L"UseD3D11"
 #define OPT_ShowStatistics       L"ShowStatistics"
 #define OPT_TextureFormat        L"TextureFormat"
+#define OPT_VPEnableNV12         L"VPEnableNV12"
 #define OPT_VPEnableYUY2         L"VPEnableYUY2"
 #define OPT_DoubleFrateDeint     L"DoubleFramerateDeinterlace"
 #define OPT_VPScaling            L"VPScaling"
@@ -81,6 +82,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 				m_Sets.iTextureFmt = TEXFMT_8INT;
 			}
 		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableNV12, dw)) {
+			m_Sets.bVPEnableNV12 = !!dw;
+		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableYUY2, dw)) {
 			m_Sets.bVPEnableYUY2 = !!dw;
 		}
@@ -107,7 +111,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	// configure the video processors
 	m_DX9_VP.SetShowStats(m_Sets.bShowStats);
 	m_DX9_VP.SetTexFormat(m_Sets.iTextureFmt);
-	m_DX9_VP.SetVPEnableFmts(m_Sets.bVPEnableYUY2);
+	m_DX9_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableYUY2);
 	m_DX9_VP.SetDeintDouble(m_Sets.bDeintDouble);
 	m_DX9_VP.SetVPScaling(m_Sets.bVPScaling);
 	m_DX9_VP.SetUpscaling(m_Sets.iUpscaling);
@@ -117,7 +121,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	m_DX11_VP.SetShowStats(m_Sets.bShowStats);
 	m_DX11_VP.SetTexFormat(m_Sets.iTextureFmt);
-	m_DX11_VP.SetVPEnableFmts(m_Sets.bVPEnableYUY2);
+	m_DX11_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableYUY2);
 	m_DX11_VP.SetDeintDouble(m_Sets.bDeintDouble);
 	m_DX11_VP.SetVPScaling(m_Sets.bVPScaling);
 	m_DX11_VP.SetUpscaling(m_Sets.iUpscaling);
@@ -814,6 +818,7 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 {
 	m_Sets.bUseD3D11     = setings.bUseD3D11;
 	m_Sets.iTextureFmt   = setings.iTextureFmt;
+	m_Sets.bVPEnableNV12 = setings.bVPEnableNV12;
 	m_Sets.bVPEnableYUY2 = setings.bVPEnableYUY2;
 	m_Sets.iSwapEffect   = setings.iSwapEffect;
 
@@ -879,6 +884,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_UseD3D11,           m_Sets.bUseD3D11);
 		key.SetDWORDValue(OPT_ShowStatistics,     m_Sets.bShowStats);
 		key.SetDWORDValue(OPT_TextureFormat,      m_Sets.iTextureFmt);
+		key.SetDWORDValue(OPT_VPEnableNV12,       m_Sets.bVPEnableNV12);
 		key.SetDWORDValue(OPT_VPEnableYUY2,       m_Sets.bVPEnableYUY2);
 		key.SetDWORDValue(OPT_DoubleFrateDeint,   m_Sets.bDeintDouble);
 		key.SetDWORDValue(OPT_VPScaling,          m_Sets.bVPScaling);
