@@ -823,6 +823,7 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 	m_Sets.bUseD3D11     = setings.bUseD3D11;
 	m_Sets.iTextureFmt   = setings.iTextureFmt;
 	m_Sets.bVPEnableNV12 = setings.bVPEnableNV12;
+	m_Sets.bVPEnableP01x = setings.bVPEnableP01x;
 	m_Sets.bVPEnableYUY2 = setings.bVPEnableYUY2;
 	m_Sets.iSwapEffect   = setings.iSwapEffect;
 

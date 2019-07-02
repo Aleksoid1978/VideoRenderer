@@ -111,9 +111,9 @@ HRESULT CVRMainPPage::OnActivate()
 	CheckDlgButton(IDC_CHECK2, m_SetsPP.bShowStats   ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK3, m_SetsPP.bDeintDouble ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK7, m_SetsPP.bVPEnableNV12 ? BST_CHECKED : BST_UNCHECKED);
-	GetDlgItem(IDC_CHECK7).EnableWindow(FALSE);
+	//GetDlgItem(IDC_CHECK7).EnableWindow(FALSE);
 	CheckDlgButton(IDC_CHECK8, m_SetsPP.bVPEnableP01x ? BST_CHECKED : BST_UNCHECKED);
-	GetDlgItem(IDC_CHECK8).EnableWindow(FALSE);
+	//GetDlgItem(IDC_CHECK8).EnableWindow(FALSE);
 	CheckDlgButton(IDC_CHECK9, m_SetsPP.bVPEnableYUY2 ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK4, BST_CHECKED); // "Other supported formats"
 	GetDlgItem(IDC_CHECK4).EnableWindow(FALSE);
