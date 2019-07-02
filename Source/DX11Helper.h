@@ -95,7 +95,7 @@ struct Tex2D_t
 	D3D11_TEXTURE2D_DESC desc = {};
 	CComPtr<ID3D11ShaderResourceView> pShaderResource;
 
-	HRESULT Create(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type) {
+	virtual HRESULT Create(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type) {
 		Release();
 
 		HRESULT hr = CreateTex2D(pDevice, format, width, height, type, &pTexture);
@@ -123,6 +123,59 @@ struct Tex2D_t
 		pShaderResource.Release();
 		pTexture.Release();
 		desc = {};
+	}
+};
+
+struct TexVideo_t : Tex2D_t
+{
+	CComPtr<ID3D11ShaderResourceView> pShaderResource2;
+
+	HRESULT Create(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type) override {
+		Release();
+
+		HRESULT hr = CreateTex2D(pDevice, format, width, height, type, &pTexture);
+		if (S_OK == hr) {
+			pTexture->GetDesc(&desc);
+
+			if (desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) {
+				D3D11_SHADER_RESOURCE_VIEW_DESC shaderDesc;
+				shaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+				shaderDesc.Texture2D.MostDetailedMip = 0;
+				shaderDesc.Texture2D.MipLevels = 1;
+
+				switch (format){
+				case DXGI_FORMAT_NV12: shaderDesc.Format = DXGI_FORMAT_R8_UNORM; break;
+				case DXGI_FORMAT_P010:
+				case DXGI_FORMAT_P016: shaderDesc.Format = DXGI_FORMAT_R16_UNORM; break;
+				default:
+					shaderDesc.Format = format;
+					break;
+				}
+				hr = pDevice->CreateShaderResourceView(pTexture, &shaderDesc, &pShaderResource);
+
+				if (S_OK == hr) {
+					switch (format) {
+					case DXGI_FORMAT_NV12: shaderDesc.Format = DXGI_FORMAT_R8G8_UNORM; break;
+					case DXGI_FORMAT_P010:
+					case DXGI_FORMAT_P016: shaderDesc.Format = DXGI_FORMAT_R16G16_UNORM; break;
+					default:
+						return hr;;
+					}
+					hr = pDevice->CreateShaderResourceView(pTexture, &shaderDesc, &pShaderResource2);
+				}
+
+				if (FAILED(hr)) {
+					Release();
+				}
+			}
+		}
+
+		return hr;
+	}
+
+	void Release() override {
+		pShaderResource2.Release();
+		Tex2D_t::Release();
 	}
 };
 
