@@ -60,6 +60,7 @@ struct Settings_t {
 	bool bShowStats          = false;
 	int  iTextureFmt         = TEXFMT_8INT;
 	bool bVPEnableNV12       = true;
+	bool bVPEnableP01x       = true;
 	bool bVPEnableYUY2       = true;
 	bool bDeintDouble        = false;
 	int  bVPScaling          = true;

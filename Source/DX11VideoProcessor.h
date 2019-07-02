@@ -59,6 +59,7 @@ private:
 	bool m_bShowStats          = false;
 	int  m_iTexFormat          = TEXFMT_8INT;
 	bool m_bVPEnableNV12       = true;
+	bool m_bVPEnableP01x       = true;
 	bool m_bVPEnableYUY2       = true;
 	bool m_bDeintDouble        = false;
 	bool m_bVPScaling          = true;

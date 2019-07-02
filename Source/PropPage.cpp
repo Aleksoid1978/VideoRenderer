@@ -112,7 +112,9 @@ HRESULT CVRMainPPage::OnActivate()
 	CheckDlgButton(IDC_CHECK3, m_SetsPP.bDeintDouble ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK7, m_SetsPP.bVPEnableNV12 ? BST_CHECKED : BST_UNCHECKED);
 	GetDlgItem(IDC_CHECK7).EnableWindow(FALSE);
-	CheckDlgButton(IDC_CHECK8, m_SetsPP.bVPEnableYUY2 ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK8, m_SetsPP.bVPEnableP01x ? BST_CHECKED : BST_UNCHECKED);
+	GetDlgItem(IDC_CHECK8).EnableWindow(FALSE);
+	CheckDlgButton(IDC_CHECK9, m_SetsPP.bVPEnableYUY2 ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK4, BST_CHECKED); // "Other supported formats"
 	GetDlgItem(IDC_CHECK4).EnableWindow(FALSE);
 	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling   ? BST_CHECKED : BST_UNCHECKED);
@@ -199,7 +201,12 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				return (LRESULT)1;
 			}
 			if (nID == IDC_CHECK8) {
-				m_SetsPP.bVPEnableYUY2 = IsDlgButtonChecked(IDC_CHECK8) == BST_CHECKED;
+				m_SetsPP.bVPEnableP01x = IsDlgButtonChecked(IDC_CHECK8) == BST_CHECKED;
+				SetDirty();
+				return (LRESULT)1;
+			}
+			if (nID == IDC_CHECK9) {
+				m_SetsPP.bVPEnableYUY2 = IsDlgButtonChecked(IDC_CHECK9) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}

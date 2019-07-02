@@ -31,6 +31,7 @@
 #define OPT_ShowStatistics       L"ShowStatistics"
 #define OPT_TextureFormat        L"TextureFormat"
 #define OPT_VPEnableNV12         L"VPEnableNV12"
+#define OPT_VPEnableP01x         L"VPEnableP01x"
 #define OPT_VPEnableYUY2         L"VPEnableYUY2"
 #define OPT_DoubleFrateDeint     L"DoubleFramerateDeinterlace"
 #define OPT_VPScaling            L"VPScaling"
@@ -84,6 +85,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableNV12, dw)) {
 			m_Sets.bVPEnableNV12 = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableP01x, dw)) {
+			m_Sets.bVPEnableP01x = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableYUY2, dw)) {
 			m_Sets.bVPEnableYUY2 = !!dw;
@@ -885,6 +889,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_ShowStatistics,     m_Sets.bShowStats);
 		key.SetDWORDValue(OPT_TextureFormat,      m_Sets.iTextureFmt);
 		key.SetDWORDValue(OPT_VPEnableNV12,       m_Sets.bVPEnableNV12);
+		key.SetDWORDValue(OPT_VPEnableP01x,       m_Sets.bVPEnableP01x);
 		key.SetDWORDValue(OPT_VPEnableYUY2,       m_Sets.bVPEnableYUY2);
 		key.SetDWORDValue(OPT_DoubleFrateDeint,   m_Sets.bDeintDouble);
 		key.SetDWORDValue(OPT_VPScaling,          m_Sets.bVPScaling);

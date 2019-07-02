@@ -256,7 +256,6 @@ HRESULT CDX11VideoProcessor::TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRen
 HRESULT CDX11VideoProcessor::TextureConvertColor(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
-	CComPtr<ID3D11Buffer> pVertexBuffer;
 
 	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
 	if (FAILED(hr)) {
@@ -265,11 +264,6 @@ HRESULT CDX11VideoProcessor::TextureConvertColor(Tex2D_t& Tex, ID3D11Texture2D* 
 	}
 
 	UINT width = (m_srcParams.cformat == CF_YUY2) ? Tex.desc.Width * 2 : Tex.desc.Width;
-
-	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, width, Tex.desc.Height, CRect(0, 0, width, Tex.desc.Height));
-	if (FAILED(hr)) {
-		return hr;
-	}
 
 	D3D11_VIEWPORT VP;
 	VP.TopLeftX = 0;
@@ -282,7 +276,7 @@ HRESULT CDX11VideoProcessor::TextureConvertColor(Tex2D_t& Tex, ID3D11Texture2D* 
 		m_pDeviceContext->PSSetConstantBuffers(4, 1, &m_PSConvColorData.pConstants4);
 	}
 
-	TextureBlt11(m_pDeviceContext, pRenderTargetView, VP, m_pVS_Simple, m_pPSConvertColor, Tex.pShaderResource, m_pSamplerPoint, m_PSConvColorData.pConstants, pVertexBuffer);
+	TextureBlt11(m_pDeviceContext, pRenderTargetView, VP, m_pVS_Simple, m_pPSConvertColor, Tex.pShaderResource, m_pSamplerPoint, m_PSConvColorData.pConstants, m_pFullFrameVertexBuffer);
 
 	return hr;
 }
@@ -993,6 +987,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	if (FmtConvParams.cformat == CF_YUY2 && !m_bVPEnableYUY2) {
 		FmtConvParams.VP11Format = DXGI_FORMAT_UNKNOWN;
 	}
+
 	const GUID SubType = pmt->subtype;
 	const BITMAPINFOHEADER* pBIH = nullptr;
 
