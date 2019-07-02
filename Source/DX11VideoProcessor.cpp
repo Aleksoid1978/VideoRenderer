@@ -2047,9 +2047,10 @@ void CDX11VideoProcessor::SetTexFormat(int value)
 	}
 }
 
-void CDX11VideoProcessor::SetVPEnableFmts(bool bNV12, bool bYUY2)
+void CDX11VideoProcessor::SetVPEnableFmts(bool bNV12, bool bP01x, bool bYUY2)
 {
 	m_bVPEnableNV12 = bNV12;
+	m_bVPEnableP01x = bP01x;
 	m_bVPEnableYUY2 = bYUY2;
 }
 

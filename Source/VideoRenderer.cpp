@@ -115,7 +115,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	// configure the video processors
 	m_DX9_VP.SetShowStats(m_Sets.bShowStats);
 	m_DX9_VP.SetTexFormat(m_Sets.iTextureFmt);
-	m_DX9_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableYUY2);
+	m_DX9_VP.SetVPEnableFmts(m_Sets.bVPEnableYUY2);
 	m_DX9_VP.SetDeintDouble(m_Sets.bDeintDouble);
 	m_DX9_VP.SetVPScaling(m_Sets.bVPScaling);
 	m_DX9_VP.SetUpscaling(m_Sets.iUpscaling);
@@ -125,7 +125,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	m_DX11_VP.SetShowStats(m_Sets.bShowStats);
 	m_DX11_VP.SetTexFormat(m_Sets.iTextureFmt);
-	m_DX11_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableYUY2);
+	m_DX11_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableP01x, m_Sets.bVPEnableYUY2);
 	m_DX11_VP.SetDeintDouble(m_Sets.bDeintDouble);
 	m_DX11_VP.SetVPScaling(m_Sets.bVPScaling);
 	m_DX11_VP.SetUpscaling(m_Sets.iUpscaling);
