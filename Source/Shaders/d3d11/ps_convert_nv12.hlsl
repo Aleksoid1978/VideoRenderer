@@ -5,6 +5,7 @@
 Texture2D texY : register(t0);
 Texture2D texUV : register(t1);
 SamplerState samp : register(s0);
+SamplerState sampL : register(s1);
 
 cbuffer PS_COLOR_TRANSFORM : register(b0)
 {
@@ -37,7 +38,7 @@ struct PS_INPUT
 float4 main(PS_INPUT input) : SV_Target
 {
     float colorY = texY.Sample(samp, input.Tex).r;
-    float2 colorUV = texUV.Sample(samp, input.Tex).rg;
+    float2 colorUV = texUV.Sample(sampL, input.Tex).rg;
 
     float4 color = float4(colorY, colorUV, 0);
 

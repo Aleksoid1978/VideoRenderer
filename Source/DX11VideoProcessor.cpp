@@ -285,6 +285,7 @@ HRESULT CDX11VideoProcessor::TextureConvertColor(TexVideo_t& texVideo, ID3D11Tex
 	m_pDeviceContext->PSSetShaderResources(0, 1, &texVideo.pShaderResource.p);
 	m_pDeviceContext->PSSetShaderResources(1, 1, &texVideo.pShaderResource2.p);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
+	m_pDeviceContext->PSSetSamplers(1, 1, &m_pSamplerLinear);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
 	m_pDeviceContext->PSSetConstantBuffers(4, 1, &m_PSConvColorData.pConstants4);
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -523,6 +524,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pVS_Simple.Release();
 	m_pPS_Simple.Release();
 	SAFE_RELEASE(m_pSamplerPoint);
+	SAFE_RELEASE(m_pSamplerLinear);
 	m_pAlphaBlendState.Release();
 	SAFE_RELEASE(m_pFullFrameVertexBuffer);
 
@@ -682,6 +684,8 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	SampDesc.MinLOD = 0;
 	SampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateSamplerState(&SampDesc, &m_pSamplerPoint));
+	SampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateSamplerState(&SampDesc, &m_pSamplerLinear));
 
 	D3D11_BLEND_DESC bdesc = {};
 	bdesc.RenderTarget[0].BlendEnable = TRUE;
