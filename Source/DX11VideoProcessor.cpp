@@ -1145,13 +1145,13 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	if (FmtConvParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
 		UINT resid = 0;
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-			resid = (FmtConvParams.cformat == CF_YUY2)
-				? IDF_PSH11_CONVERT_YUY2_ST2084
+			resid = (FmtConvParams.cformat == CF_YUY2) ? IDF_PSH11_CONVERT_YUY2_ST2084
+				: (FmtConvParams.cformat == CF_NV12 || FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) ? IDF_PSH11_CONVERT_NV12_ST2084
 				: IDF_PSH11_CONVERT_COLOR_ST2084;
 		}
 		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
-			resid = (FmtConvParams.cformat == CF_YUY2)
-				? IDF_PSH11_CONVERT_YUY2_HLG
+			resid = (FmtConvParams.cformat == CF_YUY2) ? IDF_PSH11_CONVERT_YUY2_HLG
+				: (FmtConvParams.cformat == CF_NV12 || FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) ? IDF_PSH11_CONVERT_NV12_HLG
 				: IDF_PSH11_CONVERT_COLOR_HLG;
 		}
 		else {
