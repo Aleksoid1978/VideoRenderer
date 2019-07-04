@@ -161,9 +161,9 @@ bool IsDefaultDXVA2ProcAmpValues(const DXVA2_ProcAmpValues& DXVA2ProcAmpValues)
 		&& DXVA2ProcAmpValues.Saturation.ll == s_DefaultDXVA2ProcAmpRanges[3].DefaultValue.ll;
 }
 
-static FmtConvParams_t s_FmtConvMapping[] = {
+static const FmtConvParams_t s_FmtConvMapping[] = {
 	// cformat |   subtype          | str     | DXVA2Format    | D3DFormat(DX9)     | VP11Format                | DX11Format             |Packsize|PitchCoeff| CSType|Subsampling|CDepth| Func              |FuncSSSE3
-	{CF_NONE,   GUID_NULL,           "",       D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,      DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            0, 0,        CS_YUV,    0,       0,     nullptr,            nullptr},
+	{CF_NONE,   GUID_NULL,           nullptr,  D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,      DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            0, 0,        CS_YUV,    0,       0,     nullptr,            nullptr},
 	{CF_YV12,   MEDIASUBTYPE_YV12,   "YV12",   D3DFMT_YV12,     D3DFMT_UNKNOWN,      DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            1, 3,        CS_YUV,  420,       8,     &CopyFrameYV12,     nullptr},
 	{CF_NV12,   MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_UNKNOWN,      DXGI_FORMAT_NV12,           DXGI_FORMAT_NV12,               1, 3,        CS_YUV,  420,       8,     &CopyFramePackedUV, nullptr},
 	{CF_P010,   MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_UNKNOWN,      DXGI_FORMAT_P010,           DXGI_FORMAT_P010,               2, 3,        CS_YUV,  420,       10,    &CopyFramePackedUV, nullptr},
@@ -482,8 +482,7 @@ void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspac
 	case DXVA2_VideoTransFunc_sRGB:    colorspace.gamma = MP_CSP_TRC_SRGB;    break;
 	case DXVA2_VideoTransFunc_28:      colorspace.gamma = MP_CSP_TRC_GAMMA28; break;
 	case VIDEOTRANSFUNC_2084:          colorspace.gamma = MP_CSP_TRC_PQ;      break;
-	case VIDEOTRANSFUNC_HLG:
-	case VIDEOTRANSFUNC_HLG_temp:      colorspace.gamma = MP_CSP_TRC_HLG;     break;
+	case VIDEOTRANSFUNC_HLG:           colorspace.gamma = MP_CSP_TRC_HLG;     break;
 	default:
 		colorspace.gamma = MP_CSP_TRC_AUTO;
 	}

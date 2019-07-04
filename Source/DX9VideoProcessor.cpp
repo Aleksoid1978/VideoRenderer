@@ -916,7 +916,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_ST2084));
 		}
-		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
+		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_HLG));
 		}
 		else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
@@ -939,7 +939,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 				? IDF_SHADER_CONVERT_YUY2_ST2084
 				: IDF_SHADER_CONVERT_COLOR_ST2084;
 		}
-		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
+		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
 			resid = (FmtConvParams.cformat == CF_YUY2)
 				? IDF_SHADER_CONVERT_YUY2_HLG
 				: IDF_SHADER_CONVERT_COLOR_HLG;

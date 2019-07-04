@@ -1125,7 +1125,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_ST2084));
 			}
-			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
+			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_HLG));
 			}
 			else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
@@ -1153,7 +1153,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 				: (FmtConvParams.cformat == CF_NV12 || FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) ? IDF_PSH11_CONVERT_NV12_ST2084
 				: IDF_PSH11_CONVERT_COLOR_ST2084;
 		}
-		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG_temp) {
+		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
 			resid = (FmtConvParams.cformat == CF_YUY2) ? IDF_PSH11_CONVERT_YUY2_HLG
 				: (FmtConvParams.cformat == CF_NV12 || FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) ? IDF_PSH11_CONVERT_NV12_HLG
 				: IDF_PSH11_CONVERT_COLOR_HLG;

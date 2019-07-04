@@ -88,7 +88,6 @@ DEFINE_GUID(MEDIASUBTYPE_RGB48, 0x30424752, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0x
 #define VIDEOTRANSFUNC_2084       15
 #define VIDEOTRANSFUNC_HLG        16
 #define VIDEOTRANSFUNC_10_rel     17
-#define VIDEOTRANSFUNC_HLG_temp   18 // non-standard, will be removed in the future
 
 struct VR_Extradata {
 	LONG  QueryWidth;
