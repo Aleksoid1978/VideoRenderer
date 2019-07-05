@@ -128,6 +128,7 @@ struct Tex2D_t
 
 struct TexVideo_t : Tex2D_t
 {
+	CComPtr<ID3D11Texture2D> pTexture2;
 	CComPtr<ID3D11ShaderResourceView> pShaderResource2;
 
 	HRESULT CreateEx(ID3D11Device* pDevice, const DXGI_FORMAT format, const DX11PlanarPrms_t* pPlanes, const UINT width, const UINT height, const Tex2DType type) {
@@ -154,11 +155,25 @@ struct TexVideo_t : Tex2D_t
 					shaderDesc.Format = pPlanes->FmtPlane2;
 					hr = pDevice->CreateShaderResourceView(pTexture, &shaderDesc, &pShaderResource2);
 				}
-
-				if (FAILED(hr)) {
-					Release();
+			}
+		}
+		else if (pPlanes) {
+			hr = Create(pDevice, pPlanes->FmtPlane1, width, height, type);
+			if (S_OK == hr) {
+				hr = CreateTex2D(pDevice, pPlanes->FmtPlane2, width/2, height/2, type, &pTexture2);
+				if (S_OK == hr && desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) {
+					D3D11_SHADER_RESOURCE_VIEW_DESC shaderDesc;
+					shaderDesc.Format = pPlanes->FmtPlane2;
+					shaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+					shaderDesc.Texture2D.MostDetailedMip = 0;
+					shaderDesc.Texture2D.MipLevels = 1;
+					hr = pDevice->CreateShaderResourceView(pTexture2, &shaderDesc, &pShaderResource2);
 				}
 			}
+		}
+
+		if (FAILED(hr)) {
+			Release();
 		}
 
 		return hr;
@@ -166,6 +181,7 @@ struct TexVideo_t : Tex2D_t
 
 	void Release() override {
 		pShaderResource2.Release();
+		pTexture2.Release();
 		Tex2D_t::Release();
 	}
 };

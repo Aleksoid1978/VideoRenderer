@@ -1555,15 +1555,29 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
 			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-			hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-			if (SUCCEEDED(hr)) {
-				ASSERT(m_pConvertFn);
-				BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
-				m_pConvertFn(m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, src, m_srcPitch);
-				m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
-				if (m_pVideoProcessor) {
-					// ID3D11VideoProcessor does not use textures with D3D11_CPU_ACCESS_WRITE flag
-					m_pDeviceContext->CopyResource(m_pSrcTexture2D, m_TexSrcVideo.pTexture);
+
+			if (m_TexSrcVideo.pTexture2) {
+				hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+				if (SUCCEEDED(hr)) {
+					CopyFrameAsIs(m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, m_srcPitch);
+					m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
+				}
+				hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture2, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+				if (SUCCEEDED(hr)) {
+					CopyFrameAsIs(m_srcHeight/2, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data + m_srcPitch* m_srcHeight, m_srcPitch);
+					m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture2, 0);
+				}
+			} else {
+				hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+				if (SUCCEEDED(hr)) {
+					ASSERT(m_pConvertFn);
+					BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
+					m_pConvertFn(m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, src, m_srcPitch);
+					m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
+					if (m_pVideoProcessor) {
+						// ID3D11VideoProcessor does not use textures with D3D11_CPU_ACCESS_WRITE flag
+						m_pDeviceContext->CopyResource(m_pSrcTexture2D, m_TexSrcVideo.pTexture);
+					}
 				}
 			}
 		}
