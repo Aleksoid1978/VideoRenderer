@@ -131,6 +131,7 @@ private:
 	DWORD m_srcAspectRatioY = 0;
 	CRect m_srcRect;
 	CRect m_trgRect;
+	DXVA2_ExtendedFormat m_decExFmt = {};
 	DXVA2_ExtendedFormat m_srcExFmt = {};
 	bool m_bInterlaced = false;
 

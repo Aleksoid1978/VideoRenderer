@@ -1014,6 +1014,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	const GUID SubType = pmt->subtype;
 	const BITMAPINFOHEADER* pBIH = nullptr;
+	m_decExFmt.value = 0;
 
 	if (pmt->formattype == FORMAT_VideoInfo2) {
 		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
@@ -1023,10 +1024,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcAspectRatioX = vih2->dwPictAspectRatioX;
 		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
 		if (FmtConvParams.CSType == CS_YUV && (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT))) {
-			m_srcExFmt.value = vih2->dwControlFlags;
-			m_srcExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
-		} else {
-			m_srcExFmt.value = 0; // ignore color info for RGB
+			m_decExFmt.value = vih2->dwControlFlags;
+			m_decExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
 		}
 		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
 	}
@@ -1037,7 +1036,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_trgRect = vih->rcTarget;
 		m_srcAspectRatioX = 0;
 		m_srcAspectRatioY = 0;
-		m_srcExFmt.value = 0;
 		m_bInterlaced = 0;
 	}
 	else {
@@ -1059,18 +1057,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
 	}
 
-	if (FmtConvParams.CSType == CS_YUV) {
-		if (m_srcExFmt.NominalRange == DXVA2_NominalRange_Unknown) {
-			m_srcExFmt.NominalRange = DXVA2_NominalRange_16_235;
-		}
-		if (m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
-			if (biWidth <= 1024 && biHeight <= 576) { // SD
-				m_srcExFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT601;
-			} else { // HD
-				m_srcExFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT709;
-			}
-		}
-	}
+	m_srcExFmt = SpecifyExtendedFormat(m_decExFmt, FmtConvParams.CSType, m_srcRectWidth, m_srcRectHeight);
 
 	if (m_srcRect.IsRectNull()) {
 		m_srcRect.SetRect(0, 0, biWidth, biHeight);
@@ -2134,10 +2121,27 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		m_strStatsStatic2.Format(L" %S %ux%u", m_srcParams.str, m_srcRectWidth, m_srcRectHeight);
 		if (m_srcParams.CSType == CS_YUV) {
 			LPCSTR strs[5] = {};
-			//DXVA2_ExtendedFormat exFmt = SpecifyExtendedFormat(m_srcExFmt, FmtConvParams->CSType, m_srcRectWidth, m_srcRectHeight);
 			GetExtendedFormatString(strs, m_srcExFmt, m_srcParams.CSType);
-			m_strStatsStatic2.AppendFormat(L"\n  Range: %hS, Matrix: %hS, Lighting: %hS", strs[0], strs[1], strs[2]);
-			m_strStatsStatic2.AppendFormat(L"\n  Primaries: %hS, Function: %hS", strs[3], strs[4]);
+			m_strStatsStatic2.AppendFormat(L"\n  Range: %hS", strs[0]);
+			if (m_decExFmt.NominalRange == DXVA2_NominalRange_Unknown) {
+				m_strStatsStatic2.AppendChar('*');
+			};
+			m_strStatsStatic2.AppendFormat(L", Matrix: %hS", strs[1]);
+			if (m_decExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
+				m_strStatsStatic2.AppendChar('*');
+			};
+			m_strStatsStatic2.AppendFormat(L", Lighting: %hS", strs[2]);
+			if (m_decExFmt.VideoLighting == DXVA2_VideoLighting_Unknown) {
+				m_strStatsStatic2.AppendChar('*');
+			};
+			m_strStatsStatic2.AppendFormat(L"\n  Primaries: %hS", strs[3]);
+			if (m_decExFmt.VideoPrimaries == DXVA2_VideoPrimaries_Unknown) {
+				m_strStatsStatic2.AppendChar('*');
+			};
+			m_strStatsStatic2.AppendFormat(L", Function: %hS", strs[4]);
+			if (m_decExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_Unknown) {
+				m_strStatsStatic2.AppendChar('*');
+			};
 		}
 		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", DXGIFormatToString(m_InternalTexFmt));
 		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");

@@ -580,7 +580,7 @@ DXVA2_ExtendedFormat SpecifyExtendedFormat(DXVA2_ExtendedFormat exFormat, const 
 		}
 
 		if (exFormat.VideoPrimaries == DXVA2_VideoPrimaries_Unknown) {
-			exFormat.VideoPrimaries = DXVA2_VideoPrimaries_BT709;
+			exFormat.VideoPrimaries = DXVA2_VideoPrimaries_BT709; // pick BT.709 to minimize damage
 		}
 
 		if (exFormat.VideoTransferFunction == DXVA2_VideoTransFunc_Unknown) {
