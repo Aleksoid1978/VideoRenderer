@@ -149,21 +149,27 @@ enum ColorSystem_t {
 	CS_GRAY
 };
 
+struct DX11PlanarPrms_t {
+	DXGI_FORMAT     FmtPlane1;
+	DXGI_FORMAT     FmtPlane2;
+};
+
 struct FmtConvParams_t {
-	ColorFormat_t   cformat;
-	GUID            Subtype;
-	char*           str;
-	D3DFORMAT       DXVA2Format;
-	D3DFORMAT       D3DFormat;
-	DXGI_FORMAT     VP11Format;
-	DXGI_FORMAT     DX11Format;
-	int             Packsize;
-	int             PitchCoeff;
-	ColorSystem_t   CSType;
-	int             Subsampling;
-	int             CDepth;
-	CopyFrameDataFn Func;
-	CopyFrameDataFn FuncSSSE3;
+	ColorFormat_t     cformat;
+	GUID              Subtype;
+	char*             str;
+	D3DFORMAT         DXVA2Format;
+	D3DFORMAT         D3DFormat;
+	DXGI_FORMAT       VP11Format;
+	DXGI_FORMAT       DX11Format;
+	DX11PlanarPrms_t* pDX11Planes;
+	int               Packsize;
+	int               PitchCoeff;
+	ColorSystem_t     CSType;
+	int               Subsampling;
+	int               CDepth;
+	CopyFrameDataFn   Func;
+	CopyFrameDataFn   FuncSSSE3;
 };
 
 const FmtConvParams_t& GetFmtConvParams(const ColorFormat_t fmt);

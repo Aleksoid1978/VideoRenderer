@@ -130,7 +130,7 @@ struct TexVideo_t : Tex2D_t
 {
 	CComPtr<ID3D11ShaderResourceView> pShaderResource2;
 
-	HRESULT CreateEx(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type) {
+	HRESULT CreateEx(ID3D11Device* pDevice, const DXGI_FORMAT format, const DX11PlanarPrms_t* pPlanes, const UINT width, const UINT height, const Tex2DType type) {
 		Release();
 
 		HRESULT hr = CreateTex2D(pDevice, format, width, height, type, &pTexture);
@@ -143,24 +143,15 @@ struct TexVideo_t : Tex2D_t
 				shaderDesc.Texture2D.MostDetailedMip = 0;
 				shaderDesc.Texture2D.MipLevels = 1;
 
-				switch (format){
-				case DXGI_FORMAT_NV12: shaderDesc.Format = DXGI_FORMAT_R8_UNORM; break;
-				case DXGI_FORMAT_P010:
-				case DXGI_FORMAT_P016: shaderDesc.Format = DXGI_FORMAT_R16_UNORM; break;
-				default:
+				if (pPlanes) {
+					shaderDesc.Format = pPlanes->FmtPlane1;
+				} else {
 					shaderDesc.Format = format;
-					break;
 				}
 				hr = pDevice->CreateShaderResourceView(pTexture, &shaderDesc, &pShaderResource);
 
-				if (S_OK == hr) {
-					switch (format) {
-					case DXGI_FORMAT_NV12: shaderDesc.Format = DXGI_FORMAT_R8G8_UNORM; break;
-					case DXGI_FORMAT_P010:
-					case DXGI_FORMAT_P016: shaderDesc.Format = DXGI_FORMAT_R16G16_UNORM; break;
-					default:
-						return hr;;
-					}
+				if (S_OK == hr && pPlanes) {
+					shaderDesc.Format = pPlanes->FmtPlane2;
 					hr = pDevice->CreateShaderResourceView(pTexture, &shaderDesc, &pShaderResource2);
 				}
 

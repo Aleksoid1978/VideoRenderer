@@ -1362,7 +1362,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 
 	UINT texW = (params.cformat == CF_YUY2) ? width / 2 : width;
 
-	HRESULT hr = m_TexSrcVideo.CreateEx(m_pDevice, srcDXGIFormat, texW, height, Tex2D_DynamicShaderWrite);
+	HRESULT hr = m_TexSrcVideo.CreateEx(m_pDevice, srcDXGIFormat, params.pDX11Planes, texW, height, Tex2D_DynamicShaderWrite);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeTexVP() : m_TexSrcVideo.CreateEx() failed with error %s", HR2Str(hr));
 		return hr;
