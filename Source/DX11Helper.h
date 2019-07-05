@@ -95,7 +95,7 @@ struct Tex2D_t
 	D3D11_TEXTURE2D_DESC desc = {};
 	CComPtr<ID3D11ShaderResourceView> pShaderResource;
 
-	virtual HRESULT Create(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type) {
+	HRESULT Create(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type) {
 		Release();
 
 		HRESULT hr = CreateTex2D(pDevice, format, width, height, type, &pTexture);
@@ -130,7 +130,7 @@ struct TexVideo_t : Tex2D_t
 {
 	CComPtr<ID3D11ShaderResourceView> pShaderResource2;
 
-	HRESULT Create(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type) override {
+	HRESULT CreateEx(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type) {
 		Release();
 
 		HRESULT hr = CreateTex2D(pDevice, format, width, height, type, &pTexture);

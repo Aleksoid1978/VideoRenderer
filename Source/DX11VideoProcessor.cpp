@@ -1294,7 +1294,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 
 	hr = m_TexSrcVideo.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicDecoderWrite);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : m_TexSrcCPU.Create() failed with error %s", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : m_TexSrcVideo.Create() failed with error %s", HR2Str(hr));
 		return hr;
 	}
 
@@ -1362,9 +1362,9 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 
 	UINT texW = (params.cformat == CF_YUY2) ? width / 2 : width;
 
-	HRESULT hr = m_TexSrcVideo.Create(m_pDevice, srcDXGIFormat, texW, height, Tex2D_DynamicShaderWrite);
+	HRESULT hr = m_TexSrcVideo.CreateEx(m_pDevice, srcDXGIFormat, texW, height, Tex2D_DynamicShaderWrite);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeTexVP() : m_TexSrcVideo.Create() failed with error %s", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::InitializeTexVP() : m_TexSrcVideo.CreateEx() failed with error %s", HR2Str(hr));
 		return hr;
 	}
 
