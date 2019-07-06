@@ -475,6 +475,8 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const 
 	m_DXVA2Samples.resize(NumRefSamples);
 
 	for (unsigned i = 0; i < NumRefSamples; ++i) {
+		auto& vsample = m_SrcSamples.GetAt(i);
+
 		hr = m_pDXVA2_VPService->CreateSurface(
 			width,
 			height,
@@ -483,7 +485,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const 
 			m_DXVA2VPcaps.InputPool,
 			0,
 			DXVA2_VideoProcessorRenderTarget,
-			&m_SrcSamples.GetAt(i).pSrcSurface,
+			&vsample.pSrcSurface,
 			nullptr
 		);
 		if (FAILED(hr)) {
@@ -493,14 +495,14 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const 
 		}
 
 		// fill the surface in black, to avoid the "green screen"
-		m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(i).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+		m_pD3DDevEx->ColorFill(vsample.pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
 
 		m_DXVA2Samples[i].SampleFormat.value = m_srcExFmt.value;
 		m_DXVA2Samples[i].SampleFormat.SampleFormat = DXVA2_SampleUnknown; // samples that are not used yet
 		m_DXVA2Samples[i].SrcRect = { 0, 0, (LONG)width, (LONG)height }; // will be rewritten in ProcessDXVA2()
 		m_DXVA2Samples[i].PlanarAlpha = DXVA2_Fixed32OpaqueAlpha();
 
-		m_DXVA2Samples[i].SrcSurface = m_SrcSamples.GetAt(i).pSrcSurface;
+		m_DXVA2Samples[i].SrcSurface = vsample.pSrcSurface;
 	}
 
 	// set output format parameters
