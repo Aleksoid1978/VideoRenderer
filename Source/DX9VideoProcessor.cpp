@@ -308,7 +308,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 		m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
 	}
 
-	HRESULT hr2 = m_TexStats.Create(m_pD3DDevEx, D3DFMT_A8R8G8B8, STATS_W, STATS_H);
+	HRESULT hr2 = m_TexStats.Create(m_pD3DDevEx, D3DFMT_A8R8G8B8, STATS_W, STATS_H, D3DUSAGE_RENDERTARGET);
 #if D3D9FONT_ENABLE
 	hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
 	if (S_OK == hr2) {
@@ -1472,7 +1472,7 @@ void CDX9VideoProcessor::UpdateVideoTexDXVA2VP()
 		if (m_bVPScaling) {
 			m_TexConvert.Release();
 		} else {
-			m_TexConvert.Create(m_pD3DDevEx, m_InternalTexFmt, m_SurfaceWidth, m_SurfaceHeight);
+			m_TexConvert.Create(m_pD3DDevEx, m_InternalTexFmt, m_SurfaceWidth, m_SurfaceHeight, D3DUSAGE_RENDERTARGET);
 		}
 	}
 }
@@ -1481,7 +1481,7 @@ void CDX9VideoProcessor::UpdateCorrectionTex(const int w, const int h)
 {
 	if (m_pPSCorrection) {
 		if (w != m_TexCorrection.Width || h != m_TexCorrection.Width) {
-			HRESULT hr = m_TexCorrection.Create(m_pD3DDevEx, m_InternalTexFmt, w, h);
+			HRESULT hr = m_TexCorrection.Create(m_pD3DDevEx, m_InternalTexFmt, w, h, D3DUSAGE_RENDERTARGET);
 			DLogIf(FAILED(hr), "CDX9VideoProcessor::UpdateCorrectionTex() : m_TexCorrection.Create() failed with error %s", HR2Str(hr));
 		}
 		// else do nothing
@@ -1573,7 +1573,7 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 	if (m_pPSConvertColor && m_PSConvColorData.bEnable) {
 
 		if (!m_TexConvert.pTexture) {
-			hr = m_TexConvert.Create(m_pD3DDevEx, m_InternalTexFmt, m_srcWidth, m_srcHeight);
+			hr = m_TexConvert.Create(m_pD3DDevEx, m_InternalTexFmt, m_srcWidth, m_srcHeight, D3DUSAGE_RENDERTARGET);
 			DLogIf(FAILED(hr), "CDX9VideoProcessor::ProcessTex() : m_TexConvert.Create() failed with error %s", HR2Str(hr));
 		}
 
@@ -1628,7 +1628,7 @@ HRESULT CDX9VideoProcessor::ResizeShader2Pass(IDirect3DTexture9* pTexture, IDire
 
 		if (!m_TexResize.pTexture) {
 			// use only float textures here
-			hr = m_TexResize.Create(m_pD3DDevEx, D3DFMT_A16B16G16R16F,texWidth, texHeight);
+			hr = m_TexResize.Create(m_pD3DDevEx, D3DFMT_A16B16G16R16F,texWidth, texHeight, D3DUSAGE_RENDERTARGET);
 			if (FAILED(hr)) {
 				DLog(L"CDX9VideoProcessor::ProcessTex() : m_TexResize.Create() failed with error %s", HR2Str(hr));
 				return TextureCopyRect(pTexture, rSrcRect, rDstRect, D3DTEXF_LINEAR);

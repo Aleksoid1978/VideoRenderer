@@ -27,12 +27,11 @@ struct Tex_t
 	UINT Width  = 0;
 	UINT Height = 0;
 
-	HRESULT Create(IDirect3DDevice9Ex* pDevice, const D3DFORMAT format, const UINT width, const UINT height) {
+	HRESULT Create(IDirect3DDevice9Ex* pDevice, const D3DFORMAT format, const UINT width, const UINT height, DWORD usage) {
 		Release();
 
-		HRESULT hr = pDevice->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, format, D3DPOOL_DEFAULT, &pTexture, nullptr);
+		HRESULT hr = pDevice->CreateTexture(width, height, 1, usage, format, D3DPOOL_DEFAULT, &pTexture, nullptr);
 		if (S_OK == hr) {
-			// don't use pTexture->GetLevelDesc(0, &desc) directly
 			EXECUTE_ASSERT(S_OK == pTexture->GetSurfaceLevel(0, &pSurface));
 			D3DSURFACE_DESC desc = {};
 			EXECUTE_ASSERT(S_OK == pSurface->GetDesc(&desc));
@@ -56,19 +55,22 @@ struct Tex9Video_t : Tex_t
 	CComPtr<IDirect3DTexture9> pTexture2;
 	CComPtr<IDirect3DSurface9> pSurface2;
 
-	HRESULT CreateEx(IDirect3DDevice9Ex* pDevice, const D3DFORMAT format, const DX9PlanarPrms_t* pPlanes, const UINT width, const UINT height) {
+	HRESULT CreateEx(IDirect3DDevice9Ex* pDevice, const D3DFORMAT format, const DX9PlanarPrms_t* pPlanes, const UINT width, const UINT height, DWORD usage) {
 		Release();
 
 		HRESULT hr;
 
 		if (pPlanes) {
-			hr = Create(pDevice, pPlanes->FmtPlane1, width, height);
+			hr = Create(pDevice, pPlanes->FmtPlane1, width, height, usage);
 			if (S_OK == hr) {
-				hr = pDevice->CreateTexture(width/2, height/2, 1, D3DUSAGE_RENDERTARGET, pPlanes->FmtPlane2, D3DPOOL_DEFAULT, &pTexture, nullptr);
+				hr = pDevice->CreateTexture(width/2, height/2, 1, usage, pPlanes->FmtPlane2, D3DPOOL_DEFAULT, &pTexture, nullptr);
+				if (S_OK == hr) {
+					EXECUTE_ASSERT(S_OK == pTexture->GetSurfaceLevel(0, &pSurface2));
+				}
 			}
 		}
 		else {
-			hr = Create(pDevice, format, width, height);
+			hr = Create(pDevice, format, width, height, usage);
 		}
 
 		if (FAILED(hr)) {
