@@ -115,7 +115,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	// configure the video processors
 	m_DX9_VP.SetShowStats(m_Sets.bShowStats);
 	m_DX9_VP.SetTexFormat(m_Sets.iTextureFmt);
-	m_DX9_VP.SetVPEnableFmts(m_Sets.bVPEnableYUY2);
+	m_DX9_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableP01x, m_Sets.bVPEnableYUY2);
 	m_DX9_VP.SetDeintDouble(m_Sets.bDeintDouble);
 	m_DX9_VP.SetVPScaling(m_Sets.bVPScaling);
 	m_DX9_VP.SetUpscaling(m_Sets.iUpscaling);

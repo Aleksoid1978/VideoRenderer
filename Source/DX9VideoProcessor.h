@@ -90,6 +90,8 @@ private:
 
 	bool m_bShowStats          = false;
 	int  m_iTexFormat          = TEXFMT_8INT;
+	bool m_bVPEnableNV12       = true;
+	bool m_bVPEnableP01x       = true;
 	bool m_bVPEnableYUY2       = true;
 	bool m_bDeintDouble        = false;
 	bool m_bVPScaling          = true;
@@ -239,7 +241,7 @@ public:
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; }
 	void SetShowStats(bool value)   { m_bShowStats   = value; }
 	void SetTexFormat(int value);
-	void SetVPEnableFmts(bool bYUY2);
+	void SetVPEnableFmts(bool bNV12, bool bP01x, bool bYUY2);
 	void SetVPScaling(bool value);
 	void SetUpscaling(int value);
 	void SetDownscaling(int value);
@@ -259,7 +261,7 @@ private:
 	HRESULT ResizeShader2Pass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
 
 	HRESULT TextureCopy(IDirect3DTexture9* pTexture);
-	HRESULT TextureConvertColor(IDirect3DTexture9* pTexture);
+	HRESULT TextureConvertColor(Tex9Video_t& texVideo);
 	HRESULT TextureCopyRect(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, D3DTEXTUREFILTERTYPE filter);
 	HRESULT TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, IDirect3DPixelShader9* pShader);
 

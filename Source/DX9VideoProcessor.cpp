@@ -651,7 +651,7 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UI
 
 	UINT texW = (params.cformat == CF_YUY2) ? width / 2 : width;
 
-	HRESULT hr = m_TexSrcVideo.Create(m_pD3DDevEx, d3dformat, texW, height, D3DUSAGE_DYNAMIC);
+	HRESULT hr = m_TexSrcVideo.CreateEx(m_pD3DDevEx, d3dformat, params.pDX9Planes, texW, height, D3DUSAGE_DYNAMIC);
 	if (FAILED(hr)) {
 		DLog(L"CDX9VideoProcessor::InitializeTexVP() : failed m_TexSrcVideo.Create()");
 		return FALSE;
@@ -803,7 +803,9 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	ReleaseVP();
 
 	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
-	if (FmtConvParams.cformat == CF_YUY2 && !m_bVPEnableYUY2) {
+	if (FmtConvParams.cformat == CF_NV12 && !m_bVPEnableNV12
+		|| (FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) && !m_bVPEnableP01x
+		|| FmtConvParams.cformat == CF_YUY2 && !m_bVPEnableYUY2) {
 		FmtConvParams.DXVA2Format = D3DFMT_UNKNOWN;
 	}
 	const GUID SubType = pmt->subtype;
@@ -922,18 +924,18 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
 		UINT resid = 0;
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-			resid = (FmtConvParams.cformat == CF_YUY2)
-				? IDF_SHADER_CONVERT_YUY2_ST2084
+			resid = (FmtConvParams.cformat == CF_YUY2) ? IDF_SHADER_CONVERT_YUY2_ST2084
+				: (FmtConvParams.cformat == CF_NV12 || FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) ? IDF_SHADER_CONVERT_NV12_ST2084
 				: IDF_SHADER_CONVERT_COLOR_ST2084;
 		}
 		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
-			resid = (FmtConvParams.cformat == CF_YUY2)
-				? IDF_SHADER_CONVERT_YUY2_HLG
+			resid = (FmtConvParams.cformat == CF_YUY2) ? IDF_SHADER_CONVERT_YUY2_HLG
+				: (FmtConvParams.cformat == CF_NV12 || FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) ? IDF_SHADER_CONVERT_NV12_HLG
 				: IDF_SHADER_CONVERT_COLOR_HLG;
 		}
 		else {
-			resid = (FmtConvParams.cformat == CF_YUY2)
-				? IDF_SHADER_CONVERT_YUY2
+			resid = (FmtConvParams.cformat == CF_YUY2) ? IDF_SHADER_CONVERT_YUY2
+				: (FmtConvParams.cformat == CF_NV12 || FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) ? IDF_SHADER_CONVERT_NV12
 				: IDF_SHADER_CONVERT_COLOR;
 		}
 		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
@@ -1098,24 +1100,42 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				return E_FAIL;
 			}
 
-			IDirect3DSurface9* pSrcSurface;
+			D3DLOCKED_RECT lr;
+
 			if (m_pDXVA2_VP) {
 				m_SrcSamples.Next();
-				pSrcSurface = m_SrcSamples.Get().pSrcSurface;
+				IDirect3DSurface9* pSrcSurface = m_SrcSamples.Get().pSrcSurface;
+
+				hr = pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
+				if (S_OK == hr) {
+					ASSERT(m_pConvertFn);
+					BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
+					m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
+					hr = pSrcSurface->UnlockRect();
+				}
 			} else {
-				pSrcSurface = m_TexSrcVideo.pSurface;
+				if (m_TexSrcVideo.pSurface2) {
+					hr = m_TexSrcVideo.pSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
+					if (S_OK == hr) {
+						CopyFrameAsIs(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, data, m_srcPitch);
+						hr = m_TexSrcVideo.pSurface->UnlockRect();
+					}
+					hr = m_TexSrcVideo.pSurface2->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
+					if (S_OK == hr) {
+						CopyFrameAsIs(m_srcHeight/2, (BYTE*)lr.pBits, lr.Pitch, data + m_srcPitch* m_srcHeight, m_srcPitch);
+						hr = m_TexSrcVideo.pSurface2->UnlockRect();
+					}
+				}
+				else {
+					hr = m_TexSrcVideo.pSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
+					if (S_OK == hr) {
+						ASSERT(m_pConvertFn);
+						BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
+						m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
+						hr = m_TexSrcVideo.pSurface->UnlockRect();
+					}
+				}
 			}
-
-			D3DLOCKED_RECT lr;
-			hr = pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
-			if (FAILED(hr)) {
-				return hr;
-			}
-			ASSERT(m_pConvertFn);
-			BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
-			m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
-
-			hr = pSrcSurface->UnlockRect();
 		}
 	}
 
@@ -1408,8 +1428,10 @@ void CDX9VideoProcessor::SetTexFormat(int value)
 	}
 }
 
-void CDX9VideoProcessor::SetVPEnableFmts(bool bYUY2)
+void CDX9VideoProcessor::SetVPEnableFmts(bool bNV12, bool bP01x, bool bYUY2)
 {
+	m_bVPEnableNV12 = bNV12;
+	m_bVPEnableP01x = bP01x;
 	m_bVPEnableYUY2 = bYUY2;
 }
 
@@ -1597,7 +1619,7 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 				hr = m_pD3DDevEx->SetPixelShaderConstantF(4, (float*)fConstData, std::size(fConstData));
 			}
 			hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColor);
-			TextureConvertColor(pTexture);
+			TextureConvertColor(m_TexSrcVideo);
 			m_pD3DDevEx->SetPixelShader(nullptr);
 
 			pTexture = m_TexConvert.pTexture;
@@ -1703,17 +1725,12 @@ HRESULT CDX9VideoProcessor::TextureCopy(IDirect3DTexture9* pTexture)
 	return TextureBlt(m_pD3DDevEx, v, D3DTEXF_POINT);
 }
 
-HRESULT CDX9VideoProcessor::TextureConvertColor(IDirect3DTexture9* pTexture)
+HRESULT CDX9VideoProcessor::TextureConvertColor(Tex9Video_t& texVideo)
 {
 	HRESULT hr;
 
-	D3DSURFACE_DESC desc;
-	if (!pTexture || FAILED(pTexture->GetLevelDesc(0, &desc))) {
-		return E_FAIL;
-	}
-
-	float w = (float)(m_srcParams.cformat == CF_YUY2 ? desc.Width * 2 : desc.Width) - 0.5f;
-	float h = (float)desc.Height - 0.5f;
+	float w = (float)(m_srcParams.cformat == CF_YUY2 ? texVideo.Width * 2 : texVideo.Width) - 0.5f;
+	float h = (float)texVideo.Height - 0.5f;
 
 	MYD3DVERTEX<1> v[] = {
 		{-0.5f, -0.5f, 0.5f, 2.0f, 0, 0},
@@ -1722,9 +1739,43 @@ HRESULT CDX9VideoProcessor::TextureConvertColor(IDirect3DTexture9* pTexture)
 		{    w,     h, 0.5f, 2.0f, 1, 1},
 	};
 
-	hr = m_pD3DDevEx->SetTexture(0, pTexture);
+	hr = m_pD3DDevEx->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+	hr = m_pD3DDevEx->SetRenderState(D3DRS_LIGHTING, FALSE);
+	hr = m_pD3DDevEx->SetRenderState(D3DRS_ZENABLE, FALSE);
+	hr = m_pD3DDevEx->SetRenderState(D3DRS_STENCILENABLE, FALSE);
+	hr = m_pD3DDevEx->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+	hr = m_pD3DDevEx->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+	hr = m_pD3DDevEx->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+	hr = m_pD3DDevEx->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_ALPHA | D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_RED);
 
-	return TextureBlt(m_pD3DDevEx, v, D3DTEXF_POINT);
+	hr = m_pD3DDevEx->SetTexture(0, texVideo.pTexture);
+	DWORD FVF = D3DFVF_TEX1;
+	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+
+	if (texVideo.pTexture2) {
+		hr = m_pD3DDevEx->SetTexture(1, texVideo.pTexture2);
+		FVF = D3DFVF_TEX2;
+		hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+		hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+		hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+		hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+		hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+	}
+
+	hr = m_pD3DDevEx->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX2);
+	//hr = pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(v[0]));
+	std::swap(v[2], v[3]);
+	hr = m_pD3DDevEx->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, v, sizeof(v[0]));
+
+	m_pD3DDevEx->SetTexture(0, nullptr);
+	m_pD3DDevEx->SetTexture(1, nullptr);
+
+	return hr;
+
 }
 
 HRESULT CDX9VideoProcessor::TextureCopyRect(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, D3DTEXTUREFILTERTYPE filter)
