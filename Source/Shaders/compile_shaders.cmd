@@ -1,5 +1,5 @@
 @ECHO OFF
-REM (C) 2018 see Authors.txt
+REM (C) 2018-2019 see Authors.txt
 REM
 REM This file is part of MPC-BE.
 REM
