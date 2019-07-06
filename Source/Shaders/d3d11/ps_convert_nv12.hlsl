@@ -15,6 +15,7 @@ cbuffer PS_COLOR_TRANSFORM : register(b0)
     float3 cm_c;
     // NB: sizeof(float3) == sizeof(float4)
 };
+/*
 cbuffer PS_TEX_DIMENSIONS : register(b4)
 {
     float width;
@@ -22,6 +23,7 @@ cbuffer PS_TEX_DIMENSIONS : register(b4)
     float dx;
     float dy;
 };
+*/
 
 #if (C_HDR == 1)
 #include "../convert/correct_st2084.hlsl"

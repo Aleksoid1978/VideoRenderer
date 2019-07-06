@@ -83,6 +83,8 @@ CALL :SubColorText "0A" "=== Compiling D3D9 shaders ===" & ECHO.
 %fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\convert_yuy2.cso"              "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_YUY2=3
 %fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\convert_yuy2_st2084.cso"       "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_YUY2=3 /DC_HDR=1
 %fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\convert_yuy2_hlg.cso"          "d3d9\convert_color.hlsl" /DC_CSP=1 /DC_YUY2=3 /DC_HDR=2
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\convert_nv12_st2084.cso"       "d3d9\convert_nv12.hlsl" /DC_HDR=1
+%fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\convert_nv12_hlg.cso"          "d3d9\convert_nv12.hlsl" /DC_HDR=2
 %fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\correction_st2084.cso"         "d3d9\convert_color.hlsl" /DC_CSP=0 /DC_HDR=1
 %fxcexe% /nologo /T ps_3_0 /Fo "%workdir%\correction_hlg.cso"            "d3d9\convert_color.hlsl" /DC_CSP=0 /DC_HDR=2
 

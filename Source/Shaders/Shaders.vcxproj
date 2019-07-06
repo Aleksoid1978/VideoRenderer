@@ -71,6 +71,10 @@
       <ShaderModel>3.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
+    <FxCompile Include="d3d9\convert_nv12.hlsl">
+      <ShaderModel>3.0</ShaderModel>
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="d3d9\correction_ycgco.hlsl">
       <ShaderModel>3.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
