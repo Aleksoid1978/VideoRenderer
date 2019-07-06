@@ -657,9 +657,6 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UI
 		return FALSE;
 	}
 
-	m_SrcSamples.Resize(1);
-	m_SrcSamples.GetAt(0).pSrcSurface = m_TexSrcVideo.pSurface;
-
 	// fill the surface in black, to avoid the "green screen"
 	m_pD3DDevEx->ColorFill(m_TexSrcVideo.pSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
 
@@ -761,14 +758,19 @@ BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 BOOL CDX9VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 {
 	if (InitMediaType(&mt)) {
-		if (m_SrcSamples.Size() && m_SrcSamples.Get().pSrcSurface) {
-			auto& surface = m_SrcSamples.Get().pSrcSurface;
+		CComPtr<IDirect3DSurface9> pSurface;
+		if (m_pDXVA2_VP && m_SrcSamples.Size()) {
+			pSurface = m_SrcSamples.Get().pSrcSurface;
+		} else {
+			pSurface = m_TexSrcVideo.pSurface;
+		}
 
+		if (pSurface) {
 			INT Pitch = 0;
 			D3DLOCKED_RECT lr;
-			if (SUCCEEDED(surface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK))) {
+			if (SUCCEEDED(pSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK))) {
 				Pitch = lr.Pitch;
-				surface->UnlockRect();
+				pSurface->UnlockRect();
 			}
 
 			if (Pitch) {
@@ -1061,8 +1063,13 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				}
 			}
 #endif
-			m_SrcSamples.Next();
-			IDirect3DSurface9* pSrcSurface = m_SrcSamples.Get().pSrcSurface;;
+			IDirect3DSurface9* pSrcSurface;
+			if (m_pDXVA2_VP) {
+				m_SrcSamples.Next();
+				pSrcSurface = m_SrcSamples.Get().pSrcSurface;
+			} else {
+				pSrcSurface = m_TexSrcVideo.pSurface;
+			}
 
 			hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, pSrcSurface, nullptr, D3DTEXF_NONE);
 			if (FAILED(hr)) {
@@ -1091,8 +1098,13 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				return E_FAIL;
 			}
 
-			m_SrcSamples.Next();
-			IDirect3DSurface9* pSrcSurface = m_SrcSamples.Get().pSrcSurface;
+			IDirect3DSurface9* pSrcSurface;
+			if (m_pDXVA2_VP) {
+				m_SrcSamples.Next();
+				pSrcSurface = m_SrcSamples.Get().pSrcSurface;
+			} else {
+				pSrcSurface = m_TexSrcVideo.pSurface;
+			}
 
 			D3DLOCKED_RECT lr;
 			hr = pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
@@ -1107,18 +1119,20 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 
-	const REFERENCE_TIME start_100ns = m_pFilter->m_FrameStats.GetFrames() * 170000i64;
-	const REFERENCE_TIME end_100ns = start_100ns + 170000i64;
-	m_SrcSamples.Get().Start = start_100ns;
-	m_SrcSamples.Get().End = end_100ns;
-	m_SrcSamples.Get().SampleFormat = m_CurrentSampleFmt;
+	if (m_pDXVA2_VP) {
+		const REFERENCE_TIME start_100ns = m_pFilter->m_FrameStats.GetFrames() * 170000i64;
+		const REFERENCE_TIME end_100ns = start_100ns + 170000i64;
+		m_SrcSamples.Get().Start = start_100ns;
+		m_SrcSamples.Get().End   = end_100ns;
+		m_SrcSamples.Get().SampleFormat = m_CurrentSampleFmt;
 
-	for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
-		auto& SrcSample = m_SrcSamples.GetAt(i);
-		m_DXVA2Samples[i].Start = SrcSample.Start;
-		m_DXVA2Samples[i].End   = SrcSample.End;
-		m_DXVA2Samples[i].SampleFormat.SampleFormat = SrcSample.SampleFormat;
-		m_DXVA2Samples[i].SrcSurface = SrcSample.pSrcSurface;
+		for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
+			auto& SrcSample = m_SrcSamples.GetAt(i);
+			m_DXVA2Samples[i].Start = SrcSample.Start;
+			m_DXVA2Samples[i].End   = SrcSample.End;
+			m_DXVA2Samples[i].SampleFormat.SampleFormat = SrcSample.SampleFormat;
+			m_DXVA2Samples[i].SrcSurface = SrcSample.pSrcSurface;
+		}
 	}
 
 	m_RenderStats.copyticks = GetPreciseTick() - tick;
@@ -1128,10 +1142,6 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 
 HRESULT CDX9VideoProcessor::Render(int field)
 {
-	if (m_SrcSamples.Empty()) {
-		return E_POINTER;
-	}
-
 	uint64_t tick1 = GetPreciseTick();
 
 	if (field) {
