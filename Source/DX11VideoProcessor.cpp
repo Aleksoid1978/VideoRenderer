@@ -253,7 +253,7 @@ HRESULT CDX11VideoProcessor::TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRen
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::TextureConvertColor(TexVideo_t& texVideo, ID3D11Texture2D* pRenderTarget)
+HRESULT CDX11VideoProcessor::TextureConvertColor(Tex11Video_t& texVideo, ID3D11Texture2D* pRenderTarget)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
 

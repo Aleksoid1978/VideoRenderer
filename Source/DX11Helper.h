@@ -126,7 +126,7 @@ struct Tex2D_t
 	}
 };
 
-struct TexVideo_t : Tex2D_t
+struct Tex11Video_t : Tex2D_t
 {
 	CComPtr<ID3D11Texture2D> pTexture2;
 	CComPtr<ID3D11ShaderResourceView> pShaderResource2;

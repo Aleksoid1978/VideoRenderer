@@ -20,7 +20,8 @@
 
 #pragma once
 
-struct Tex_t {
+struct Tex_t
+{
 	CComPtr<IDirect3DTexture9> pTexture;
 	CComPtr<IDirect3DSurface9> pSurface;
 	UINT Width  = 0;
@@ -31,6 +32,7 @@ struct Tex_t {
 
 		HRESULT hr = pDevice->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, format, D3DPOOL_DEFAULT, &pTexture, nullptr);
 		if (S_OK == hr) {
+			// don't use pTexture->GetLevelDesc(0, &desc) directly
 			EXECUTE_ASSERT(S_OK == pTexture->GetSurfaceLevel(0, &pSurface));
 			D3DSURFACE_DESC desc = {};
 			EXECUTE_ASSERT(S_OK == pSurface->GetDesc(&desc));
@@ -41,11 +43,45 @@ struct Tex_t {
 		return hr;
 	}
 
-	void Release() {
+	virtual void Release() {
 		pSurface.Release();
 		pTexture.Release();
 		Width  = 0;
 		Height = 0;
+	}
+};
+
+struct Tex9Video_t : Tex_t
+{
+	CComPtr<IDirect3DTexture9> pTexture2;
+	CComPtr<IDirect3DSurface9> pSurface2;
+
+	HRESULT CreateEx(IDirect3DDevice9Ex* pDevice, const D3DFORMAT format, const DX9PlanarPrms_t* pPlanes, const UINT width, const UINT height) {
+		Release();
+
+		HRESULT hr;
+
+		if (pPlanes) {
+			hr = Create(pDevice, pPlanes->FmtPlane1, width, height);
+			if (S_OK == hr) {
+				hr = pDevice->CreateTexture(width/2, height/2, 1, D3DUSAGE_RENDERTARGET, pPlanes->FmtPlane2, D3DPOOL_DEFAULT, &pTexture, nullptr);
+			}
+		}
+		else {
+			hr = Create(pDevice, format, width, height);
+		}
+
+		if (FAILED(hr)) {
+			Release();
+		}
+
+		return hr;
+	}
+
+	void Release() override {
+		pSurface2.Release();
+		pTexture2.Release();
+		Tex_t::Release();
 	}
 };
 

@@ -79,7 +79,7 @@ private:
 	CComPtr<ID3D11InputLayout>   m_pInputLayout;
 
 	CComPtr<ID3D11Texture2D> m_pSrcTexture2D; // Used if D3D11 VP is active
-	TexVideo_t m_TexSrcVideo; // for copy of frame
+	Tex11Video_t m_TexSrcVideo; // for copy of frame
 	Tex2D_t m_TexConvert;     // for result of color conversion
 	Tex2D_t m_TexCorrection;  // for result of correction after D3D11 VP
 	Tex2D_t m_TexResize;      // for intermediate result of two-pass resize
@@ -275,7 +275,7 @@ private:
 	HRESULT TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
 							const CRect& srcRect, const CRect& destRect,
 							ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer);
-	HRESULT TextureConvertColor(TexVideo_t& Tex, ID3D11Texture2D* pRenderTarget);
+	HRESULT TextureConvertColor(Tex11Video_t& Tex, ID3D11Texture2D* pRenderTarget);
 	HRESULT TextureResizeShader(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
 							const CRect& srcRect, const CRect& destRect,
 							ID3D11PixelShader* pPixelShader);
