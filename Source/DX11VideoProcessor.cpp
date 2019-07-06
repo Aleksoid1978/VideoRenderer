@@ -610,7 +610,7 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 	csp_params.saturation = DXVA2FixedToFloat(m_DXVA2ProcAmpValues.Saturation);
 	csp_params.gray       = m_srcParams.CSType == CS_GRAY;
 
-	m_PSConvColorData.bEnable = m_srcParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;;
+	m_PSConvColorData.bEnable = m_srcParams.CSType == CS_YUV || csp_params.gray || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;;
 
 	mp_cmat cmatrix;
 	mp_get_csp_matrix(csp_params, cmatrix);
@@ -626,6 +626,12 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 		std::swap(cbuffer.cm_r.x, cbuffer.cm_r.y);
 		std::swap(cbuffer.cm_g.x, cbuffer.cm_g.y);
 		std::swap(cbuffer.cm_b.x, cbuffer.cm_b.y);
+	}
+	else if (csp_params.gray) {
+		cbuffer.cm_g.x = cbuffer.cm_g.y;
+		cbuffer.cm_g.y = 0;
+		cbuffer.cm_b.x = cbuffer.cm_b.z;
+		cbuffer.cm_b.z = 0;
 	}
 
 	SAFE_RELEASE(m_PSConvColorData.pConstants);
