@@ -149,6 +149,11 @@ enum ColorSystem_t {
 	CS_GRAY
 };
 
+struct DX9PlanarPrms_t {
+	D3DFORMAT       FmtPlane1;
+	D3DFORMAT       FmtPlane2;
+};
+
 struct DX11PlanarPrms_t {
 	DXGI_FORMAT     FmtPlane1;
 	DXGI_FORMAT     FmtPlane2;
@@ -160,6 +165,7 @@ struct FmtConvParams_t {
 	char*             str;
 	D3DFORMAT         DXVA2Format;
 	D3DFORMAT         D3DFormat;
+	DX9PlanarPrms_t*  pDX9Planes;
 	DXGI_FORMAT       VP11Format;
 	DXGI_FORMAT       DX11Format;
 	DX11PlanarPrms_t* pDX11Planes;
