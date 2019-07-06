@@ -114,7 +114,9 @@ STDMETHODIMP CVideoRendererInputPin::ReceiveConnection(IPin* pConnector, const A
 		if (FAILED(GetAllocator(&pMemAllocator))
 				|| FAILED(pMemAllocator->Decommit())
 				|| FAILED(pMemAllocator->GetProperties(&props))) {
-			return FrameInVideoMem() ? S_OK : E_FAIL;
+			return FrameInVideoMem()
+				? S_OK // hack for Microsoft DTV-DVD Video Decoder
+				: E_FAIL;
 		}
 
 		CMediaType mtNew(*pmt);
