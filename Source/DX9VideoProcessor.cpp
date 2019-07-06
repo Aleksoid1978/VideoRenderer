@@ -337,7 +337,7 @@ void CDX9VideoProcessor::ReleaseVP()
 	m_DXVA2Samples.clear();
 	m_pDXVA2_VP.Release();
 
-	m_pSrcVideoTexture.Release();
+	m_TexSrcVideo.Release();
 	m_TexConvert.Release();
 	m_TexCorrection.Release();
 	m_TexResize.Release();
@@ -649,21 +649,17 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UI
 
 	UINT texW = (params.cformat == CF_YUY2) ? width / 2 : width;
 
-	HRESULT hr = m_pD3DDevEx->CreateTexture(texW, height, 1, D3DUSAGE_DYNAMIC, d3dformat, D3DPOOL_DEFAULT, &m_pSrcVideoTexture, nullptr);
+	HRESULT hr = m_TexSrcVideo.Create(m_pD3DDevEx, d3dformat, texW, height, D3DUSAGE_DYNAMIC);
 	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::InitializeTexVP() : failed create SrcVideoTexture");
+		DLog(L"CDX9VideoProcessor::InitializeTexVP() : failed m_TexSrcVideo.Create()");
 		return FALSE;
 	}
 
 	m_SrcSamples.Resize(1);
-	hr = m_pSrcVideoTexture->GetSurfaceLevel(0, &m_SrcSamples.GetAt(0).pSrcSurface);
-	if (FAILED(hr)) {
-		m_SrcSamples.Clear();
-		return FALSE;
-	}
+	m_SrcSamples.GetAt(0).pSrcSurface = m_TexSrcVideo.pSurface;
 
 	// fill the surface in black, to avoid the "green screen"
-	m_pD3DDevEx->ColorFill(m_SrcSamples.GetAt(0).pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+	m_pD3DDevEx->ColorFill(m_TexSrcVideo.pSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
 
 	m_srcParams    = params;
 	m_srcD3DFormat = d3dformat;
@@ -1064,11 +1060,13 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 #endif
 			m_SrcSamples.Next();
-			hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, m_SrcSamples.Get().pSrcSurface, nullptr, D3DTEXF_NONE);
+			IDirect3DSurface9* pSrcSurface = m_SrcSamples.Get().pSrcSurface;;
+
+			hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, pSrcSurface, nullptr, D3DTEXF_NONE);
 			if (FAILED(hr)) {
 				// sometimes StretchRect does not work on non-primary display on Intel GPU
 				D3DLOCKED_RECT lr_dst;
-				hr = m_SrcSamples.Get().pSrcSurface->LockRect(&lr_dst, nullptr, D3DLOCK_NOSYSLOCK);
+				hr = pSrcSurface->LockRect(&lr_dst, nullptr, D3DLOCK_NOSYSLOCK);
 				if (S_OK == hr) {
 					D3DLOCKED_RECT lr_src;
 					hr = pSurface->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
@@ -1076,7 +1074,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 						memcpy((BYTE*)lr_dst.pBits, (BYTE*)lr_src.pBits, lr_src.Pitch * desc.Height * 3 / 2);
 						hr = pSurface->UnlockRect();
 					}
-					hr = m_SrcSamples.Get().pSrcSurface->UnlockRect();
+					hr = pSrcSurface->UnlockRect();
 				}
 			}
 		}
@@ -1092,9 +1090,10 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 
 			m_SrcSamples.Next();
+			IDirect3DSurface9* pSrcSurface = m_SrcSamples.Get().pSrcSurface;
 
 			D3DLOCKED_RECT lr;
-			hr = m_SrcSamples.Get().pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
+			hr = pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
 			if (FAILED(hr)) {
 				return hr;
 			}
@@ -1102,7 +1101,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 			BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
 			m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
 
-			hr = m_SrcSamples.Get().pSrcSurface->UnlockRect();
+			hr = pSrcSurface->UnlockRect();
 		}
 	}
 
@@ -1566,7 +1565,7 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
 	HRESULT hr = S_OK;
-	IDirect3DTexture9* pTexture = m_pSrcVideoTexture;
+	IDirect3DTexture9* pTexture = m_TexSrcVideo.pTexture;
 
 	// Convert color pass
 

@@ -156,7 +156,7 @@ private:
 	CRect m_dstRenderRect;
 
 	// D3D9 Video Processor
-	CComPtr<IDirect3DTexture9> m_pSrcVideoTexture;
+	Tex9Video_t m_TexSrcVideo; // for copy of frame
 	Tex_t m_TexConvert;    // for result of color conversion
 	Tex_t m_TexCorrection; // for result of correction after DXVA2 VP
 	Tex_t m_TexResize;     // for intermediate result of two-pass resize
