@@ -66,10 +66,12 @@ const wchar_t* D3DFormatToString(const D3DFORMAT format)
 	case D3DFMT_X8R8G8B8:      return L"X8R8G8B8";
 	case D3DFMT_A2B10G10R10:   return L"A2B10G10R10";
 	case D3DFMT_A8B8G8R8:      return L"A8B8G8R8";      // often not supported
+	case D3DFMT_G16R16:        return L"G16R16";
 	case D3DFMT_A2R10G10B10:   return L"A2R10G10B10";
 	case D3DFMT_A8P8:          return L"A8P8";          // DXVA-HD
 	case D3DFMT_P8:            return L"P8";            // DXVA-HD
 	case D3DFMT_L8:            return L"L8";
+	case D3DFMT_A8L8:          return L"A8L8";
 	case D3DFMT_L16:           return L"L16";
 	case D3DFMT_A16B16G16R16F: return L"A16B16G16R16F";
 	case D3DFMT_A32B32G32R32F: return L"A32B32G32R32F";
@@ -78,6 +80,7 @@ const wchar_t* D3DFormatToString(const D3DFORMAT format)
 	case D3DFMT_NV12:          return L"NV12";
 	case D3DFMT_YV12:          return L"YV12";
 	case D3DFMT_P010:          return L"P010";
+	case D3DFMT_P016:          return L"P010";
 	case D3DFMT_AYUV:          return L"AYUV";          // DXVA-HD
 	case FCC('AIP8'):          return L"AIP8";          // DXVA-HD
 	case FCC('AI44'):          return L"AI44";          // DXVA-HD
@@ -94,8 +97,12 @@ const wchar_t* DXGIFormatToString(const DXGI_FORMAT format)
 	case DXGI_FORMAT_R10G10B10A2_UNORM:          return L"R10G10B10A2_UNORM";
 	case DXGI_FORMAT_R8G8B8A8_UNORM:             return L"R8G8B8A8_UNORM";
 	case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:        return L"R8G8B8A8_UNORM_SRGB";
+	case DXGI_FORMAT_R16G16_UNORM:               return L"R16G16_UNORM";
+	case DXGI_FORMAT_R8G8_UNORM:                 return L"R8G8_UNORM";
 	case DXGI_FORMAT_R16_TYPELESS:               return L"R16_TYPELESS";
+	case DXGI_FORMAT_R16_UNORM:                  return L"R16_UNORM";
 	case DXGI_FORMAT_R8_TYPELESS:                return L"R8_TYPELES";
+	case DXGI_FORMAT_R8_UNORM:                   return L"R8_UNORM";
 	case DXGI_FORMAT_B8G8R8A8_UNORM:             return L"B8G8R8A8_UNORM";
 	case DXGI_FORMAT_B8G8R8X8_UNORM:             return L"B8G8R8X8_UNORM";
 	case DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM: return L"R10G10B10_XR_BIAS_A2_UNORM";

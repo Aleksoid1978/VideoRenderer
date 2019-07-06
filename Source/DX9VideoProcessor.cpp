@@ -647,7 +647,7 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UI
 {
 	auto& d3dformat = params.D3DFormat;
 
-	DLog("CDX9VideoProcessor::InitializeTexVP() started with input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
+	DLog(L"CDX9VideoProcessor::InitializeTexVP() started with input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
 
 	UINT texW = (params.cformat == CF_YUY2) ? width / 2 : width;
 
@@ -1059,7 +1059,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				CComPtr<IDirect3DDevice9> pD3DDev;
 				pSurface->GetDevice(&pD3DDev);
 				if (pD3DDev != m_pD3DDevEx) {
-					DLog("WARNING: Different adapters for decoding and processing! StretchRect will fail.");
+					DLog(L"WARNING: Different adapters for decoding and processing! StretchRect will fail.");
 				}
 			}
 #endif
@@ -1402,7 +1402,7 @@ void CDX9VideoProcessor::SetTexFormat(int value)
 		m_iTexFormat = value;
 		break;
 	default:
-		DLog("CDX9VideoProcessor::SetTexFormat() unknown value %d", value);
+		DLog(L"CDX9VideoProcessor::SetTexFormat() unknown value %d", value);
 		ASSERT(FALSE);
 		return;
 	}
@@ -1423,7 +1423,7 @@ void CDX9VideoProcessor::SetVPScaling(bool value)
 void CDX9VideoProcessor::SetUpscaling(int value)
 {
 	if (value < 0 || value >= UPSCALE_COUNT) {
-		DLog("CDX9VideoProcessor::SetUpscaling() unknown value %d", value);
+		DLog(L"CDX9VideoProcessor::SetUpscaling() unknown value %d", value);
 		ASSERT(FALSE);
 		return;
 	}
@@ -1437,7 +1437,7 @@ void CDX9VideoProcessor::SetUpscaling(int value)
 void CDX9VideoProcessor::SetDownscaling(int value)
 {
 	if (value < 0 || value >= DOWNSCALE_COUNT) {
-		DLog("CDX9VideoProcessor::SetDownscaling() unknown value %d", value);
+		DLog(L"CDX9VideoProcessor::SetDownscaling() unknown value %d", value);
 		ASSERT(FALSE);
 		return;
 	}

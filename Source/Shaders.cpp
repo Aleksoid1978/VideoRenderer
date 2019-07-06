@@ -48,7 +48,7 @@ HRESULT CompileShader(const CStringA& srcCode, const D3D_SHADER_MACRO* pDefines,
 			CStringA strErrorMsgs((char*)pErrorBlob->GetBufferPointer(), pErrorBlob->GetBufferSize());
 			DLog(strErrorMsgs);
 		} else {
-			DLog("Unexpected compiler error");
+			DLog(L"Unexpected compiler error");
 		}
 	}
 

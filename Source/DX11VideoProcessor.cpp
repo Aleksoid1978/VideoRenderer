@@ -2078,7 +2078,7 @@ void CDX11VideoProcessor::SetTexFormat(int value)
 		m_iTexFormat = value;
 		break;
 	default:
-		DLog("CDX11VideoProcessor::SetTexFormat() unknown value %d", value);
+		DLog(L"CDX11VideoProcessor::SetTexFormat() unknown value %d", value);
 		ASSERT(FALSE);
 		return;
 	}
@@ -2101,7 +2101,7 @@ void CDX11VideoProcessor::SetVPScaling(bool value)
 void CDX11VideoProcessor::SetUpscaling(int value)
 {
 	if (value < 0 || value >= UPSCALE_COUNT) {
-		DLog("CDX11VideoProcessor::SetUpscaling() unknown value %d", value);
+		DLog(L"CDX11VideoProcessor::SetUpscaling() unknown value %d", value);
 		ASSERT(FALSE);
 		return;
 	}
@@ -2115,7 +2115,7 @@ void CDX11VideoProcessor::SetUpscaling(int value)
 void CDX11VideoProcessor::SetDownscaling(int value)
 {
 	if (value < 0 || value >= DOWNSCALE_COUNT) {
-		DLog("CDX11VideoProcessor::SetDownscaling() unknown value %d", value);
+		DLog(L"CDX11VideoProcessor::SetDownscaling() unknown value %d", value);
 		ASSERT(FALSE);
 		return;
 	}
