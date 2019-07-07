@@ -974,7 +974,19 @@ BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 {
 	if (InitMediaType(&mt)) {
-		if (m_TexSrcVideo.pTexture) {
+		const auto& FmtParams = GetFmtConvParams(mt.subtype);
+
+		if (FmtParams.cformat == CF_RGB24) {
+			Size.cx = ALIGN(Size.cx, 4);
+		}
+		else if (FmtParams.cformat == CF_RGB48) {
+			Size.cx = ALIGN(Size.cx, 2);
+		}
+		else {
+			if (!m_TexSrcVideo.pTexture) {
+				return FALSE;
+			}
+
 			UINT RowPitch = 0;
 			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 			if (SUCCEEDED(m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource))) {
@@ -982,20 +994,21 @@ BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 				m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
 			}
 
-			if (RowPitch) {
-				const auto FmtConvParams = GetFmtConvParams(mt.subtype);
-
-				Size.cx = RowPitch / FmtConvParams.Packsize;
-
-				if (FmtConvParams.CSType == CS_RGB) {
-					Size.cy = -abs(Size.cy);
-				} else {
-					Size.cy = abs(Size.cy); // need additional checks
-				}
-
-				return TRUE;
+			if (!RowPitch) {
+				return FALSE;
 			}
+
+			Size.cx = RowPitch / FmtParams.Packsize;
 		}
+
+		if (FmtParams.CSType == CS_RGB) {
+			Size.cy = -abs(Size.cy);
+		} else {
+			Size.cy = abs(Size.cy);
+		}
+
+		return TRUE;
+
 	}
 
 	return FALSE;

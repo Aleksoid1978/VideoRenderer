@@ -758,14 +758,26 @@ BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 BOOL CDX9VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 {
 	if (InitMediaType(&mt)) {
-		CComPtr<IDirect3DSurface9> pSurface;
-		if (m_pDXVA2_VP && m_SrcSamples.Size()) {
-			pSurface = m_SrcSamples.Get().pSrcSurface;
-		} else {
-			pSurface = m_TexSrcVideo.pSurface;
-		}
+		const auto& FmtParams = GetFmtConvParams(mt.subtype);
 
-		if (pSurface) {
+		if (FmtParams.cformat == CF_RGB24) {
+			Size.cx = ALIGN(Size.cx, 4);
+		}
+		else if (FmtParams.cformat == CF_RGB48) {
+			Size.cx = ALIGN(Size.cx, 2);
+		}
+		else {
+			CComPtr<IDirect3DSurface9> pSurface;
+			if (m_pDXVA2_VP && m_SrcSamples.Size()) {
+				pSurface = m_SrcSamples.Get().pSrcSurface;
+			} else {
+				pSurface = m_TexSrcVideo.pSurface;
+			}
+
+			if (!pSurface) {
+				return FALSE;
+			}
+
 			INT Pitch = 0;
 			D3DLOCKED_RECT lr;
 			if (SUCCEEDED(pSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK))) {
@@ -773,20 +785,20 @@ BOOL CDX9VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 				pSurface->UnlockRect();
 			}
 
-			if (Pitch) {
-				const auto FmtConvParams = GetFmtConvParams(mt.subtype);
-
-				Size.cx = Pitch / FmtConvParams.Packsize;
-
-				if (FmtConvParams.CSType == CS_RGB) {
-					Size.cy = -abs(Size.cy);
-				} else {
-					Size.cy = abs(Size.cy); // need additional checks
-				}
-
-				return TRUE;
+			if (!Pitch) {
+				return FALSE;
 			}
+
+			Size.cx = Pitch / FmtParams.Packsize;
 		}
+
+		if (FmtParams.CSType == CS_RGB) {
+			Size.cy = -abs(Size.cy);
+		} else {
+			Size.cy = abs(Size.cy); // need additional checks
+		}
+
+		return TRUE;
 	}
 
 	return FALSE;
