@@ -381,23 +381,23 @@ void CDX9VideoProcessor::ReleaseDevice()
 	m_pD3DDevEx.Release();
 }
 
-BOOL CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_surface)
+HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_surface)
 {
-	auto& d3dformat = params.DXVA2Format;
+	auto& dxva2format = params.DXVA2Format;
 
-	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() started with input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
+	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() started with input surface: %s, %u x %u", D3DFormatToString(dxva2format), width, height);
 
-	CheckPointer(m_pDXVA2_VPService, FALSE);
+	CheckPointer(m_pDXVA2_VPService, E_FAIL);
 
 	if (only_update_surface) {
-		if (d3dformat != m_srcD3DFormat) {
+		if (dxva2format != m_srcParams.DXVA2Format) {
 			DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : incorrect surface format!");
 			ASSERT(0);
-			return FALSE;
+			return E_FAIL;
 		}
 		if (width < m_srcWidth || height < m_srcHeight) {
 			DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : surface size less than frame size!");
-			return FALSE;
+			return E_FAIL;
 		}
 		m_SrcSamples.Clear();
 		m_DXVA2Samples.clear();
@@ -407,9 +407,9 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const 
 		m_SurfaceHeight = 0;
 	}
 
-	if (m_VendorId != PCIV_INTEL && (d3dformat == D3DFMT_X8R8G8B8 || d3dformat == D3DFMT_A8R8G8B8)) {
+	if (m_VendorId != PCIV_INTEL && (dxva2format == D3DFMT_X8R8G8B8 || dxva2format == D3DFMT_A8R8G8B8)) {
 		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : RGB input is not supported");
-		return FALSE;
+		return E_FAIL;
 	}
 
 	// Initialize the video descriptor.
@@ -418,10 +418,10 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const 
 	videodesc.SampleHeight = height;
 	//videodesc.SampleFormat.value = m_srcExFmt.value; // do not need to fill it here
 	videodesc.SampleFormat.SampleFormat = m_bInterlaced ? DXVA2_SampleFieldInterleavedOddFirst : DXVA2_SampleProgressiveFrame;
-	if (d3dformat == D3DFMT_X8R8G8B8 || d3dformat == D3DFMT_A8R8G8B8) {
+	if (dxva2format == D3DFMT_X8R8G8B8 || dxva2format == D3DFMT_A8R8G8B8) {
 		videodesc.Format = D3DFMT_YUY2; // hack
 	} else {
-		videodesc.Format = d3dformat;
+		videodesc.Format = dxva2format;
 	}
 	videodesc.InputSampleFreq.Numerator = 60;
 	videodesc.InputSampleFreq.Denominator = 1;
@@ -435,7 +435,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const 
 	hr = m_pDXVA2_VPService->GetVideoProcessorDeviceGuids(&videodesc, &count, &guids);
 	if (FAILED(hr)) {
 		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : GetVideoProcessorDeviceGuids() failed with error %s", HR2Str(hr));
-		return FALSE;
+		return hr;
 	}
 	UINT NumRefSamples = 1;
 	if (m_bInterlaced) {
@@ -465,7 +465,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const 
 	}
 
 	if (!m_pDXVA2_VP) {
-		return FALSE;
+		return E_FAIL;
 	}
 
 	NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
@@ -481,7 +481,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const 
 			width,
 			height,
 			0,
-			d3dformat,
+			dxva2format,
 			m_DXVA2VPcaps.InputPool,
 			0,
 			DXVA2_VideoProcessorRenderTarget,
@@ -491,7 +491,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const 
 		if (FAILED(hr)) {
 			m_SrcSamples.Clear();
 			m_DXVA2Samples.clear();
-			return FALSE;
+			return hr;
 		}
 
 		// fill the surface in black, to avoid the "green screen"
@@ -519,7 +519,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const 
 	m_SurfaceHeight = height;
 	if (!only_update_surface) {
 		m_srcParams    = params;
-		m_srcD3DFormat = d3dformat;
+		m_srcD3DFormat = dxva2format;
 		m_pConvertFn   = GetCopyFunction(params);
 		m_srcWidth     = width;
 		m_srcHeight    = height;
@@ -527,7 +527,7 @@ BOOL CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const 
 
 	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() completed successfully");
 
-	return TRUE;
+	return S_OK;
 }
 
 BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc)
@@ -643,7 +643,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	return TRUE;
 }
 
-BOOL CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height)
+HRESULT CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height)
 {
 	auto& d3dformat = params.D3DFormat;
 
@@ -654,7 +654,7 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UI
 	HRESULT hr = m_TexSrcVideo.CreateEx(m_pD3DDevEx, d3dformat, params.pDX9Planes, texW, height, D3DUSAGE_DYNAMIC);
 	if (FAILED(hr)) {
 		DLog(L"CDX9VideoProcessor::InitializeTexVP() : failed m_TexSrcVideo.Create()");
-		return FALSE;
+		return hr;
 	}
 
 	// fill the surface in black, to avoid the "green screen"
@@ -671,7 +671,7 @@ BOOL CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UI
 
 	DLog(L"CDX9VideoProcessor::InitializeTexVP() completed successfully");
 
-	return TRUE;
+	return S_OK;
 }
 
 HRESULT CDX9VideoProcessor::CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid)
@@ -918,7 +918,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	// DXVA2 Video Processor
-	if (FmtConvParams.DXVA2Format != D3DFMT_UNKNOWN && InitializeDXVA2VP(FmtConvParams, biWidth, biHeight, false)) {
+	if (FmtConvParams.DXVA2Format != D3DFMT_UNKNOWN && S_OK == InitializeDXVA2VP(FmtConvParams, biWidth, biHeight, false)) {
 		UpdateVideoTexDXVA2VP();
 
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
@@ -940,7 +940,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	ReleaseVP();
 
 	// Tex Video Processor
-	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
+	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
 		UINT resid = 0;
 		if (FmtConvParams.cformat == CF_YUY2) {
 			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_YUY2_ST2084
@@ -1070,8 +1070,9 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				return E_FAIL;
 			}
 			if (desc.Width != m_SurfaceWidth || desc.Height != m_SurfaceHeight) {
-				if (!InitializeDXVA2VP(m_srcParams, desc.Width, desc.Height, true)) {
-					return E_FAIL;
+				hr = InitializeDXVA2VP(m_srcParams, desc.Width, desc.Height, true);
+				if (FAILED(hr)) {
+					return hr;
 				}
 			}
 
@@ -1125,7 +1126,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				m_SrcSamples.Next();
 				IDirect3DSurface9* pSrcSurface = m_SrcSamples.Get().pSrcSurface;
 
-				hr = pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
+				hr = pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 				if (S_OK == hr) {
 					ASSERT(m_pConvertFn);
 					BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
@@ -1134,19 +1135,19 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				}
 			} else {
 				if (m_TexSrcVideo.pSurface2) {
-					hr = m_TexSrcVideo.pSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
+					hr = m_TexSrcVideo.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 					if (S_OK == hr) {
 						CopyFrameAsIs(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, data, m_srcPitch);
 						hr = m_TexSrcVideo.pSurface->UnlockRect();
 					}
-					hr = m_TexSrcVideo.pSurface2->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
+					hr = m_TexSrcVideo.pSurface2->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 					if (S_OK == hr) {
 						CopyFrameAsIs(m_srcHeight/m_srcParams.pDX9Planes->div_chroma_h, (BYTE*)lr.pBits, lr.Pitch, data + m_srcPitch* m_srcHeight, m_srcPitch);
 						hr = m_TexSrcVideo.pSurface2->UnlockRect();
 					}
 				}
 				else {
-					hr = m_TexSrcVideo.pSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
+					hr = m_TexSrcVideo.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 					if (S_OK == hr) {
 						ASSERT(m_pConvertFn);
 						BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;

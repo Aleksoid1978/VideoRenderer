@@ -205,10 +205,10 @@ private:
 	void ReleaseVP();
 	void ReleaseDevice();
 
-	BOOL InitializeDXVA2VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_surface);
+	HRESULT InitializeDXVA2VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_surface);
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc);
 
-	BOOL InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height);
+	HRESULT InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height);
 	HRESULT CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
 
