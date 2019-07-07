@@ -629,7 +629,7 @@ DXVA2_ExtendedFormat SpecifyExtendedFormat(DXVA2_ExtendedFormat exFormat, const 
 
 void GetExtendedFormatString(LPCSTR (&strs)[6], const DXVA2_ExtendedFormat exFormat, const ColorSystem_t colorSystem)
 {
-	static LPCSTR ñhromalocation[] = { "unknown", "Center(MPEG-1)", nullptr, nullptr, nullptr, "Left(MPEG-2)", "TopLeft(PAL DV)", "TopLeft(Co-sited)" };
+	static LPCSTR chromalocation[] = { "unknown", "Center(MPEG-1)", nullptr, nullptr, nullptr, "Left(MPEG-2)", "TopLeft(PAL DV)", "TopLeft(Co-sited)" };
 	static LPCSTR nominalrange[] = { "unknown", "0-255", "16-235", "48-208" };
 	static LPCSTR transfermatrix[] = { "unknown", "BT.709", "BT.601", "SMPTE 240M", "BT.2020", nullptr, nullptr, "YCgCo" };
 	static LPCSTR lighting[] = { "unknown", "bright", "office", "dim", "dark" };
@@ -648,7 +648,7 @@ void GetExtendedFormatString(LPCSTR (&strs)[6], const DXVA2_ExtendedFormat exFor
 	};
 
 	if (colorSystem == CS_YUV) {
-		strs[0] = getDesc(exFormat.VideoChromaSubsampling, ñhromalocation, std::size(ñhromalocation));
+		strs[0] = getDesc(exFormat.VideoChromaSubsampling, chromalocation, std::size(chromalocation));
 		strs[1] = getDesc(exFormat.NominalRange, nominalrange, std::size(nominalrange));
 		strs[2] = getDesc(exFormat.VideoTransferMatrix, transfermatrix, std::size(transfermatrix));
 		strs[3] = getDesc(exFormat.VideoLighting, lighting, std::size(lighting));
