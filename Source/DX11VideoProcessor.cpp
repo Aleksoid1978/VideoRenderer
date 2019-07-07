@@ -1208,7 +1208,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 			return E_FAIL;
 		}
 		if (width < m_srcWidth || height < m_srcHeight) {
-			DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : texture size less than frame size!");
+			DLog(L"CDX9VideoProcessor::InitializeD3D11VP() : texture size less than frame size!");
 			return E_FAIL;
 		}
 		m_TexSrcVideo.Release();

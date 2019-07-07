@@ -108,6 +108,19 @@ inline T discard(T const& val, T const& def, T const& lo, T const& hi)
 	return (val > hi || val < lo) ? def : val;
 }
 
+template <typename T>
+inline T round_pow2(T number, T pow2)
+{
+	ASSERT(pow2 > 0);
+	ASSERT(!(pow2 & (pow2 - 1)));
+	--pow2;
+	if (number < 0) {
+		return (number - pow2) & ~pow2;
+	} else {
+		return (number + pow2) & ~pow2;
+	}
+}
+
 inline CStringW CStringFromGUID(const GUID& guid)
 {
 	WCHAR buff[40] = {};
