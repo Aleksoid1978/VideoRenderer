@@ -1012,9 +1012,16 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	ReleaseVP();
 
 	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
-	if (FmtConvParams.cformat == CF_NV12 && !m_bVPEnableNV12
-			|| (FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) && !m_bVPEnableP01x
-			|| FmtConvParams.cformat == CF_YUY2 && !m_bVPEnableYUY2) {
+	bool disableD3D11VP = false;
+	switch (FmtConvParams.cformat) {
+	case CF_NV12: disableD3D11VP = !m_bVPEnableNV12; break;
+	case CF_P010:
+	case CF_P016: disableD3D11VP = !m_bVPEnableP01x; break;
+	case CF_YUY2: disableD3D11VP = !m_bVPEnableYUY2; break;
+	case CF_P210:
+	case CF_P216: disableD3D11VP = !m_bVPEnableP21x; break;
+	}
+	if (disableD3D11VP) {
 		FmtConvParams.VP11Format = DXGI_FORMAT_UNKNOWN;
 	}
 
@@ -1141,19 +1148,19 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	// Tex Video Processor
 	if (FmtConvParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
 		UINT resid = 0;
-		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-			resid = (FmtConvParams.cformat == CF_YUY2) ? IDF_PSH11_CONVERT_YUY2_ST2084
-				: (FmtConvParams.cformat == CF_NV12 || FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) ? IDF_PSH11_CONVERT_NV12_ST2084
-				: IDF_PSH11_CONVERT_COLOR_ST2084;
+		if (FmtConvParams.cformat == CF_YUY2) {
+			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_YUY2_ST2084
+				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_YUY2_HLG
+				: IDF_PSH11_CONVERT_YUY2;
 		}
-		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
-			resid = (FmtConvParams.cformat == CF_YUY2) ? IDF_PSH11_CONVERT_YUY2_HLG
-				: (FmtConvParams.cformat == CF_NV12 || FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) ? IDF_PSH11_CONVERT_NV12_HLG
-				: IDF_PSH11_CONVERT_COLOR_HLG;
+		else if (FmtConvParams.pDX11Planes) {
+			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_BIPL_ST2084
+				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_BIPL_HLG
+				: IDF_PSH11_CONVERT_BIPLANAR;
 		}
 		else {
-			resid = (FmtConvParams.cformat == CF_YUY2) ? IDF_PSH11_CONVERT_YUY2
-				: (FmtConvParams.cformat == CF_NV12 || FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) ? IDF_PSH11_CONVERT_NV12
+			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_COLOR_ST2084
+				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_COLOR_HLG
 				: IDF_PSH11_CONVERT_COLOR;
 		}
 		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
@@ -1570,7 +1577,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				}
 				hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture2, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 				if (SUCCEEDED(hr)) {
-					CopyFrameAsIs(m_srcHeight/2, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data + m_srcPitch* m_srcHeight, m_srcPitch);
+					CopyFrameAsIs(m_srcHeight/m_srcParams.pDX9Planes->div_chroma_h, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data + m_srcPitch* m_srcHeight, m_srcPitch);
 					m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture2, 0);
 				}
 			} else {
@@ -2090,11 +2097,12 @@ void CDX11VideoProcessor::SetTexFormat(int value)
 	}
 }
 
-void CDX11VideoProcessor::SetVPEnableFmts(bool bNV12, bool bP01x, bool bYUY2)
+void CDX11VideoProcessor::SetVPEnableFmts(bool bNV12, bool bP01x, bool bYUY2, bool bP21x)
 {
 	m_bVPEnableNV12 = bNV12;
 	m_bVPEnableP01x = bP01x;
 	m_bVPEnableYUY2 = bYUY2;
+	m_bVPEnableP21x = bP21x;
 }
 
 void CDX11VideoProcessor::SetVPScaling(bool value)

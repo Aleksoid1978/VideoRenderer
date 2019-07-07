@@ -41,6 +41,8 @@
 #define D3DFMT_Y410 (D3DFORMAT)FCC('Y410')
 #define D3DFMT_Y416 (D3DFORMAT)FCC('Y416')
 
+#define DXGI_FORMAT_PLANAR (DXGI_FORMAT)0xFFFF
+
 #define PCIV_AMDATI      0x1002
 #define PCIV_NVIDIA      0x10DE
 #define PCIV_INTEL       0x8086
@@ -163,6 +165,8 @@ struct DX9PlanarPrms_t {
 struct DX11PlanarPrms_t {
 	DXGI_FORMAT FmtPlane1;
 	DXGI_FORMAT FmtPlane2;
+	UINT        div_chroma_w;
+	UINT        div_chroma_h;
 };
 
 struct FmtConvParams_t {

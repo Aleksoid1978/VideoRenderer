@@ -160,7 +160,7 @@ struct Tex11Video_t : Tex2D_t
 		else if (pPlanes) {
 			hr = Create(pDevice, pPlanes->FmtPlane1, width, height, type);
 			if (S_OK == hr) {
-				hr = CreateTex2D(pDevice, pPlanes->FmtPlane2, width/2, height/2, type, &pTexture2);
+				hr = CreateTex2D(pDevice, pPlanes->FmtPlane2, width/pPlanes->div_chroma_w, height/pPlanes->div_chroma_h, type, &pTexture2);
 				if (S_OK == hr && desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) {
 					D3D11_SHADER_RESOURCE_VIEW_DESC shaderDesc;
 					shaderDesc.Format = pPlanes->FmtPlane2;
