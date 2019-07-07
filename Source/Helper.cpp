@@ -175,23 +175,25 @@ static DX11PlanarPrms_t DX11PlanarNV12 = { DXGI_FORMAT_R8_UNORM, DXGI_FORMAT_R8G
 static DX11PlanarPrms_t DX11PlanarP01x = { DXGI_FORMAT_R16_UNORM, DXGI_FORMAT_R16G16_UNORM };
 
 static const FmtConvParams_t s_FmtConvMapping[] = {
-	// cformat |   subtype          | str     | DXVA2Format    | D3DFormat(DX9)    |pDX9Planes| VP11Format                | DX11Format          |pDX11Planes|Packsize|PitchCoeff| CSType|Subsampling|CDepth| Func               |FuncSSSE3
-	{CF_NONE,   GUID_NULL,           nullptr,  D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,        nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            nullptr, 0, 0,        CS_YUV,    0,       0,     nullptr,                      nullptr},
-	{CF_YV12,   MEDIASUBTYPE_YV12,   "YV12",   D3DFMT_YV12,     D3DFMT_UNKNOWN,        nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            nullptr, 1, 3,        CS_YUV,  420,       8,     &CopyFrameYV12,               nullptr},
-	{CF_NV12,   MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_NV12,    &DX9PlanarNV12, DXGI_FORMAT_NV12,           DXGI_FORMAT_NV12,       &DX11PlanarNV12, 1, 3,        CS_YUV,  420,       8,     &CopyFramePackedUV,           nullptr},
-	{CF_P010,   MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_P010,    &DX9PlanarP01x, DXGI_FORMAT_P010,           DXGI_FORMAT_P010,       &DX11PlanarP01x, 2, 3,        CS_YUV,  420,       10,    &CopyFramePackedUV,           nullptr},
-	{CF_P016,   MEDIASUBTYPE_P016,   "P016",   D3DFMT_P016,     D3DFMT_P016,    &DX9PlanarP01x, DXGI_FORMAT_P016,           DXGI_FORMAT_P016,       &DX11PlanarP01x, 2, 3,        CS_YUV,  420,       16,    &CopyFramePackedUV,           nullptr},
-	{CF_YUY2,   MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_A8R8G8B8,       nullptr, DXGI_FORMAT_YUY2,           DXGI_FORMAT_R8G8B8A8_UNORM,     nullptr, 2, 2,        CS_YUV,  422,       8,     &CopyFrameAsIs,               nullptr},
-	{CF_AYUV,   MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,       nullptr, DXGI_FORMAT_AYUV,           DXGI_FORMAT_B8G8R8X8_UNORM,     nullptr, 4, 2,        CS_YUV,  444,       8,     &CopyFrameAsIs,               nullptr},
-	{CF_Y410,   MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_Y410,     D3DFMT_A2B10G10R10,    nullptr, DXGI_FORMAT_Y410,           DXGI_FORMAT_R10G10B10A2_UNORM,  nullptr, 4, 2,        CS_YUV,  444,       10,    &CopyFrameAsIs,               nullptr},
-	{CF_Y416,   MEDIASUBTYPE_Y416,   "Y416",   D3DFMT_Y416,     D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_Y416,           DXGI_FORMAT_R16G16B16A16_UNORM, nullptr, 8, 2,        CS_YUV,  444,       16,    &CopyFrameAsIs,               nullptr},
-	{CF_RGB24,  MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,       nullptr, DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,     nullptr, 3, 2,        CS_RGB,  444,       8,     &CopyFrameRGB24, &CopyFrameRGB24SSSE3},
-	{CF_XRGB32, MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,       nullptr, DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,     nullptr, 4, 2,        CS_RGB,  444,       8,     &CopyFrameAsIs,               nullptr},
-	{CF_ARGB32, MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,       nullptr, DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM,     nullptr, 4, 2,        CS_RGB,  444,       8,     &CopyFrameAsIs,               nullptr},
-	{CF_RGB48,  MEDIASUBTYPE_RGB48,  "RGB48",  D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM, nullptr, 6, 2,        CS_RGB,  444,       16,    &CopyFrameRGB48,              nullptr},
-	{CF_Y8,     MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R8_UNORM,           nullptr, 1, 2,        CS_GRAY, 400,       8,     &CopyFrameAsIs,               nullptr},
-	{CF_Y800,   MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R8_UNORM,           nullptr, 1, 2,        CS_GRAY, 400,       8,     &CopyFrameAsIs,               nullptr},
-	{CF_Y116,   MEDIASUBTYPE_Y116,   "Y116",   D3DFMT_UNKNOWN,  D3DFMT_L16,            nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16_UNORM,          nullptr, 2, 2,        CS_GRAY, 400,       16,    &CopyFrameAsIs,               nullptr},
+	// cformat |   subtype          | str     | DXVA2Format    | D3DFormat(DX9)    |pDX9Planes| VP11Format                | DX11Format          |pDX11Planes|Packsize|PitchCoeff| CSType|Subsampling|CDepth| Func             |FuncSSSE3
+	{CF_NONE,   GUID_NULL,           nullptr,  D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,        nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            nullptr, 0, 0,        CS_YUV,    0,       0,     nullptr,                   nullptr},
+	{CF_YV12,   MEDIASUBTYPE_YV12,   "YV12",   D3DFMT_YV12,     D3DFMT_UNKNOWN,        nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            nullptr, 1, 3,        CS_YUV,  420,       8,     &CopyFrameYV12,            nullptr},
+	{CF_NV12,   MEDIASUBTYPE_NV12,   "NV12",   D3DFMT_NV12,     D3DFMT_NV12,    &DX9PlanarNV12, DXGI_FORMAT_NV12,           DXGI_FORMAT_NV12,       &DX11PlanarNV12, 1, 3,        CS_YUV,  420,       8,     &CopyBiPlanar420,          nullptr},
+	{CF_P010,   MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_P010,    &DX9PlanarP01x, DXGI_FORMAT_P010,           DXGI_FORMAT_P010,       &DX11PlanarP01x, 2, 3,        CS_YUV,  420,       10,    &CopyBiPlanar420,          nullptr},
+	{CF_P016,   MEDIASUBTYPE_P016,   "P016",   D3DFMT_P016,     D3DFMT_P016,    &DX9PlanarP01x, DXGI_FORMAT_P016,           DXGI_FORMAT_P016,       &DX11PlanarP01x, 2, 3,        CS_YUV,  420,       16,    &CopyBiPlanar420,          nullptr},
+	{CF_YUY2,   MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_A8R8G8B8,       nullptr, DXGI_FORMAT_YUY2,           DXGI_FORMAT_R8G8B8A8_UNORM,     nullptr, 2, 2,        CS_YUV,  422,       8,     &CopyFrameAsIs,            nullptr},
+	{CF_P210,   MEDIASUBTYPE_P210,   "P210",   D3DFMT_P210,     D3DFMT_UNKNOWN,        nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            nullptr, 2, 4,        CS_YUV,  422,       10,    &CopyBiPlanar422,          nullptr},
+	{CF_P216,   MEDIASUBTYPE_P216,   "P216",   D3DFMT_P216,     D3DFMT_UNKNOWN,        nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            nullptr, 2, 4,        CS_YUV,  422,       16,    &CopyBiPlanar422,          nullptr},
+	{CF_AYUV,   MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,       nullptr, DXGI_FORMAT_AYUV,           DXGI_FORMAT_B8G8R8X8_UNORM,     nullptr, 4, 2,        CS_YUV,  444,       8,     &CopyFrameAsIs,            nullptr},
+	{CF_Y410,   MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_Y410,     D3DFMT_A2B10G10R10,    nullptr, DXGI_FORMAT_Y410,           DXGI_FORMAT_R10G10B10A2_UNORM,  nullptr, 4, 2,        CS_YUV,  444,       10,    &CopyFrameAsIs,            nullptr},
+	{CF_Y416,   MEDIASUBTYPE_Y416,   "Y416",   D3DFMT_Y416,     D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_Y416,           DXGI_FORMAT_R16G16B16A16_UNORM, nullptr, 8, 2,        CS_YUV,  444,       16,    &CopyFrameAsIs,            nullptr},
+	{CF_RGB24,  MEDIASUBTYPE_RGB24,  "RGB24",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,       nullptr, DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,     nullptr, 3, 2,        CS_RGB,  444,       8,     &CopyFrameRGB24,  &CopyRGB24_SSSE3},
+	{CF_XRGB32, MEDIASUBTYPE_RGB32,  "RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,       nullptr, DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,     nullptr, 4, 2,        CS_RGB,  444,       8,     &CopyFrameAsIs,            nullptr},
+	{CF_ARGB32, MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,       nullptr, DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM,     nullptr, 4, 2,        CS_RGB,  444,       8,     &CopyFrameAsIs,            nullptr},
+	{CF_RGB48,  MEDIASUBTYPE_RGB48,  "RGB48",  D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM, nullptr, 6, 2,        CS_RGB,  444,       16,    &CopyFrameRGB48,           nullptr},
+	{CF_Y8,     MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R8_UNORM,           nullptr, 1, 2,        CS_GRAY, 400,       8,     &CopyFrameAsIs,            nullptr},
+	{CF_Y800,   MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R8_UNORM,           nullptr, 1, 2,        CS_GRAY, 400,       8,     &CopyFrameAsIs,            nullptr},
+	{CF_Y116,   MEDIASUBTYPE_Y116,   "Y116",   D3DFMT_UNKNOWN,  D3DFMT_L16,            nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16_UNORM,          nullptr, 2, 2,        CS_GRAY, 400,       16,    &CopyFrameAsIs,            nullptr},
 };
 // Remarks:
 // 1. The table lists all possible formats. The real situation depends on the capabilities of the graphics card and drivers.
@@ -262,7 +264,7 @@ void CopyFrameRGB24(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int
 	}
 }
 
-void CopyFrameRGB24SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+void CopyRGB24_SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
 {
 	UINT line_pixels = abs(src_pitch) / 3;
 	__m128i mask = _mm_setr_epi8(0, 1, 2, -1, 3, 4, 5, -1, 6, 7, 8, -1, 9, 10, 11, -1);
@@ -318,7 +320,7 @@ void CopyFrameRGB48(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int
 	}
 }
 
-void CopyFrameRGB48SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+void CopyRGB48_SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
 {
 	UINT line_pixels = abs(src_pitch) / 6;
 	__m128i mask = _mm_setr_epi8(0, 1, 2, 3, 4, 5, -1, -1, 6, 7, 8, 9, 10, 11, -1, -1);
@@ -377,10 +379,27 @@ void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int 
 	}
 }
 
-void CopyFramePackedUV(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+void CopyBiPlanar420(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
 {
 	ASSERT(src_pitch > 0);
 	const UINT lines = height * 3 / 2;
+
+	if (dst_pitch == src_pitch) {
+		memcpy(dst, src, dst_pitch * lines);
+		return;
+	}
+
+	for (UINT y = 0; y < lines; ++y) {
+		memcpy(dst, src, src_pitch);
+		src += src_pitch;
+		dst += dst_pitch;
+	}
+}
+
+void CopyBiPlanar422(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+{
+	ASSERT(src_pitch > 0);
+	const UINT lines = height * 2;
 
 	if (dst_pitch == src_pitch) {
 		memcpy(dst, src, dst_pitch * lines);

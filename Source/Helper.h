@@ -31,10 +31,12 @@
                   (((DWORD)(ch4) & 0xFF000000) >> 24))
 #endif
 
-#define D3DFMT_NV12 (D3DFORMAT)FCC('NV12')
 #define D3DFMT_YV12 (D3DFORMAT)FCC('YV12')
+#define D3DFMT_NV12 (D3DFORMAT)FCC('NV12')
 #define D3DFMT_P010 (D3DFORMAT)FCC('P010')
 #define D3DFMT_P016 (D3DFORMAT)FCC('P016')
+#define D3DFMT_P210 (D3DFORMAT)FCC('P210')
+#define D3DFMT_P216 (D3DFORMAT)FCC('P216')
 #define D3DFMT_AYUV (D3DFORMAT)FCC('AYUV')
 #define D3DFMT_Y410 (D3DFORMAT)FCC('Y410')
 #define D3DFMT_Y416 (D3DFORMAT)FCC('Y416')
@@ -131,6 +133,8 @@ enum ColorFormat_t {
 	CF_P010,
 	CF_P016,
 	CF_YUY2,
+	CF_P210,
+	CF_P216,
 	CF_AYUV,
 	CF_Y410,
 	CF_Y416,
@@ -186,15 +190,17 @@ CopyFrameDataFn GetCopyFunction(FmtConvParams_t params);
 void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 // RGB24 to D3DFMT_X8R8G8B8
 void CopyFrameRGB24(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
-void CopyFrameRGB24SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch); // 30% faster than CopyFrameRGB24().
+void CopyRGB24_SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch); // 30% faster than CopyFrameRGB24().
 // RGB48 to D3DFMT_A16B16G16R16
 void CopyFrameRGB48(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
-void CopyFrameRGB48SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch); // Not faster than CopyFrameRGB48().
+void CopyRGB48_SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch); // Not faster than CopyFrameRGB48().
 // YV12
 void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
-// NV12, P010
-void CopyFramePackedUV(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
-// Y410
+// NV12, P010, P016
+void CopyBiPlanar420(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
+// P210, P216
+void CopyBiPlanar422(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
+// Y410 (not used)
 void CopyFrameY410(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 
 void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d);
