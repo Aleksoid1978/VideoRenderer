@@ -342,13 +342,13 @@ void CDX9VideoProcessor::ReleaseVP()
 	m_TexCorrection.Release();
 	m_TexResize.Release();
 
-	m_srcParams     = {};
-	m_srcD3DFormat  = D3DFMT_UNKNOWN;
-	m_pConvertFn    = nullptr;
-	m_srcWidth      = 0;
-	m_srcHeight     = 0;
-	m_SurfaceWidth  = 0;
-	m_SurfaceHeight = 0;
+	m_srcParams      = {};
+	m_srcDXVA2Format = D3DFMT_UNKNOWN;
+	m_pConvertFn     = nullptr;
+	m_srcWidth       = 0;
+	m_srcHeight      = 0;
+	m_SurfaceWidth   = 0;
+	m_SurfaceHeight  = 0;
 }
 
 void CDX9VideoProcessor::ReleaseDevice()
@@ -518,11 +518,11 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 	m_SurfaceWidth  = width;
 	m_SurfaceHeight = height;
 	if (!only_update_surface) {
-		m_srcParams    = params;
-		m_srcD3DFormat = dxva2format;
-		m_pConvertFn   = GetCopyFunction(params);
-		m_srcWidth     = width;
-		m_srcHeight    = height;
+		m_srcParams      = params;
+		m_srcDXVA2Format = dxva2format;
+		m_pConvertFn     = GetCopyFunction(params);
+		m_srcWidth       = width;
+		m_srcHeight      = height;
 	}
 
 	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() completed successfully");
@@ -660,11 +660,11 @@ HRESULT CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const
 	// fill the surface in black, to avoid the "green screen"
 	m_pD3DDevEx->ColorFill(m_TexSrcVideo.pSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
 
-	m_srcParams    = params;
-	m_srcD3DFormat = d3dformat;
-	m_pConvertFn   = GetCopyFunction(params);
-	m_srcWidth     = width;
-	m_srcHeight    = height;
+	m_srcParams      = params;
+	m_srcDXVA2Format = d3dformat;
+	m_pConvertFn     = GetCopyFunction(params);
+	m_srcWidth       = width;
+	m_srcHeight      = height;
 
 	// set default ProcAmp ranges
 	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
@@ -1066,46 +1066,64 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
 			D3DSURFACE_DESC desc;
 			hr = pSurface->GetDesc(&desc);
-			if (FAILED(hr) || desc.Format != m_srcD3DFormat) {
+			if (FAILED(hr) || desc.Format != m_srcDXVA2Format) {
 				return E_FAIL;
 			}
 			if (desc.Width != m_SurfaceWidth || desc.Height != m_SurfaceHeight) {
-				hr = InitializeDXVA2VP(m_srcParams, desc.Width, desc.Height, true);
+				if (m_pDXVA2_VP) {
+					hr = InitializeDXVA2VP(m_srcParams, desc.Width, desc.Height, true);
+				} else {
+					hr = InitializeTexVP(m_srcParams, desc.Width, desc.Height);
+				}
 				if (FAILED(hr)) {
 					return hr;
 				}
 			}
 
-#ifdef _DEBUG
-			if (m_pFilter->m_FrameStats.GetFrames() < 2) {
-				CComPtr<IDirect3DDevice9> pD3DDev;
-				pSurface->GetDevice(&pD3DDev);
-				if (pD3DDev != m_pD3DDevEx) {
-					DLog(L"WARNING: Different adapters for decoding and processing! StretchRect will fail.");
-				}
-			}
-#endif
-			IDirect3DSurface9* pSrcSurface;
 			if (m_pDXVA2_VP) {
 				m_SrcSamples.Next();
-				pSrcSurface = m_SrcSamples.Get().pSrcSurface;
-			} else {
-				pSrcSurface = m_TexSrcVideo.pSurface;
-			}
-
-			hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, pSrcSurface, nullptr, D3DTEXF_NONE);
-			if (FAILED(hr)) {
-				// sometimes StretchRect does not work on non-primary display on Intel GPU
-				D3DLOCKED_RECT lr_dst;
-				hr = pSrcSurface->LockRect(&lr_dst, nullptr, D3DLOCK_NOSYSLOCK);
-				if (S_OK == hr) {
+				IDirect3DSurface9* pDstSurface = m_SrcSamples.Get().pSrcSurface;
+				hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, pDstSurface, nullptr, D3DTEXF_NONE);
+				if (FAILED(hr)) {
+#ifdef _DEBUG
+					if (m_pFilter->m_FrameStats.GetFrames() < 2) {
+						CComPtr<IDirect3DDevice9> pD3DDev;
+						pSurface->GetDevice(&pD3DDev);
+						if (pD3DDev != m_pD3DDevEx) {
+							DLog(L"WARNING: Different adapters for decoding and processing! StretchRect fail.");
+						} else {
+							DLog(L"WARNING: StretchRect fail.");
+						}
+					}
+#endif
 					D3DLOCKED_RECT lr_src;
 					hr = pSurface->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
 					if (S_OK == hr) {
-						memcpy((BYTE*)lr_dst.pBits, (BYTE*)lr_src.pBits, lr_src.Pitch * desc.Height * 3 / 2);
+						D3DLOCKED_RECT lr;
+						hr = pDstSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
+						if (S_OK == hr) {
+							m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, (BYTE*)lr_src.pBits, lr_src.Pitch);
+							hr = pDstSurface->UnlockRect();
+						}
 						hr = pSurface->UnlockRect();
 					}
-					hr = pSrcSurface->UnlockRect();
+				}
+			} else if (m_TexSrcVideo.pSurface2) {
+				D3DLOCKED_RECT lr_src;
+				hr = pSurface->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
+				if (S_OK == hr) {
+					D3DLOCKED_RECT lr;
+					hr = m_TexSrcVideo.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
+					if (S_OK == hr) {
+						CopyFrameAsIs(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, (BYTE*)lr_src.pBits, lr_src.Pitch);
+						hr = m_TexSrcVideo.pSurface->UnlockRect();
+					}
+					hr = m_TexSrcVideo.pSurface2->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
+					if (S_OK == hr) {
+						CopyFrameAsIs(m_srcHeight/m_srcParams.pDX9Planes->div_chroma_h, (BYTE*)lr.pBits, lr.Pitch, (BYTE*)lr_src.pBits + lr_src.Pitch * m_srcHeight, lr_src.Pitch);
+						hr = m_TexSrcVideo.pSurface2->UnlockRect();
+					}
+					hr = pSurface->UnlockRect();
 				}
 			}
 		}

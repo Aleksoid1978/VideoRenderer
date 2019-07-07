@@ -123,7 +123,7 @@ private:
 
 	// Input parameters
 	FmtConvParams_t m_srcParams = {};
-	D3DFORMAT m_srcD3DFormat = D3DFMT_UNKNOWN;
+	D3DFORMAT m_srcDXVA2Format = D3DFMT_UNKNOWN;
 	CopyFrameDataFn m_pConvertFn = nullptr;
 	UINT  m_srcWidth        = 0;
 	UINT  m_srcHeight       = 0;
