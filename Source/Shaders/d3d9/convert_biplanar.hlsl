@@ -1,6 +1,9 @@
 #ifndef C_HDR
     #define C_HDR 0
 #endif
+#ifndef C_A8L8
+    #define C_A8L8 0
+#endif
 
 sampler sY : register(s0);
 sampler sUV : register(s1);
@@ -27,7 +30,11 @@ float4 p4 : register(c4);
 float4 main(float2 tex : TEXCOORD0) : COLOR
 {
     float colorY = tex2D(sY, tex).r;
-    float2 colorUV = tex2D(sUV, tex).rg;
+#if (C_A8L8)
+    float2 colorUV = tex2D(sUV, tex).ra; // for D3DFMT_A8L8
+#else
+    float2 colorUV = tex2D(sUV, tex).rg; // for D3DFMT_G16R16
+#endif
 
     float4 color = float4(colorY, colorUV, 0);
 

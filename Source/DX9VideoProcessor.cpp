@@ -727,6 +727,9 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 			std::swap(m_PSConvColorData.fConstants[i][0], m_PSConvColorData.fConstants[i][1]);
 		}
 	}
+	else {
+
+	}
 }
 
 BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
@@ -946,6 +949,11 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_YUY2_ST2084
 				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_YUY2_HLG
 				: IDF_SHADER_CONVERT_YUY2;
+		}
+		else if (FmtConvParams.cformat == CF_NV12) {
+			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_NV12_ST2084
+				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_NV12_HLG
+				: IDF_SHADER_CONVERT_NV12;
 		}
 		else if (FmtConvParams.pDX9Planes) {
 			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_BIPL_ST2084
