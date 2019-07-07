@@ -62,6 +62,7 @@ struct Settings_t {
 	bool bVPEnableNV12       = true;
 	bool bVPEnableP01x       = true;
 	bool bVPEnableYUY2       = true;
+	bool bVPEnableP21x       = true;
 	bool bDeintDouble        = false;
 	int  bVPScaling          = true;
 	int  iUpscaling          = UPSCALE_CatmullRom;

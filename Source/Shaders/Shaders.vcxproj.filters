@@ -81,7 +81,7 @@
     <FxCompile Include="d3d11\ps_convert_nv12.hlsl">
       <Filter>d3d11</Filter>
     </FxCompile>
-    <FxCompile Include="d3d9\convert_nv12.hlsl">
+    <FxCompile Include="d3d9\convert_biplanar.hlsl">
       <Filter>d3d9</Filter>
     </FxCompile>
   </ItemGroup>

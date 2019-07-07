@@ -12,9 +12,9 @@
 #define IDF_SHADER_CONVERT_YUY2         613
 #define IDF_SHADER_CONVERT_YUY2_ST2084  614
 #define IDF_SHADER_CONVERT_YUY2_HLG     615
-#define IDF_SHADER_CONVERT_NV12         616
-#define IDF_SHADER_CONVERT_NV12_ST2084  617
-#define IDF_SHADER_CONVERT_NV12_HLG     618
+#define IDF_SHADER_CONVERT_BIPLANAR     616
+#define IDF_SHADER_CONVERT_BIPL_ST2084  617
+#define IDF_SHADER_CONVERT_BIPL_HLG     618
 #define IDF_SHADER_CORRECTION_ST2084    620
 #define IDF_SHADER_CORRECTION_HLG       621
 #define IDF_SHADER_CORRECTION_YCGCO     622
@@ -82,12 +82,15 @@
 #define IDC_CHECK7                      1008
 #define IDC_CHECK8                      1009
 #define IDC_CHECK9                      1010
-#define IDC_COMBO1                      1011
-#define IDC_COMBO2                      1012
-#define IDC_COMBO3                      1013
-#define IDC_COMBO4                      1014
-#define IDC_EDIT1                       1015
-#define IDC_EDIT2                       1016
+#define IDC_CHECK10                     1011
+#define IDC_CHECK11                     1012
+#define IDC_CHECK12                     1013
+#define IDC_COMBO1                      1014
+#define IDC_COMBO2                      1015
+#define IDC_COMBO3                      1016
+#define IDC_COMBO4                      1017
+#define IDC_EDIT1                       1018
+#define IDC_EDIT2                       1019
 
 // Next default values for new objects
 // 

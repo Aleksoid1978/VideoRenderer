@@ -154,13 +154,15 @@ enum ColorSystem_t {
 };
 
 struct DX9PlanarPrms_t {
-	D3DFORMAT       FmtPlane1;
-	D3DFORMAT       FmtPlane2;
+	D3DFORMAT   FmtPlane1;
+	D3DFORMAT   FmtPlane2;
+	UINT        div_chroma_w;
+	UINT        div_chroma_h;
 };
 
 struct DX11PlanarPrms_t {
-	DXGI_FORMAT     FmtPlane1;
-	DXGI_FORMAT     FmtPlane2;
+	DXGI_FORMAT FmtPlane1;
+	DXGI_FORMAT FmtPlane2;
 };
 
 struct FmtConvParams_t {
@@ -184,7 +186,7 @@ struct FmtConvParams_t {
 
 const FmtConvParams_t& GetFmtConvParams(const ColorFormat_t fmt);
 const FmtConvParams_t& GetFmtConvParams(const GUID subtype);
-CopyFrameDataFn GetCopyFunction(FmtConvParams_t params);
+CopyFrameDataFn GetCopyFunction(const FmtConvParams_t& params);
 
 // YUY2, AYUV, RGB32 to D3DFMT_X8R8G8B8, ARGB32 to D3DFMT_A8R8G8B8
 void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);

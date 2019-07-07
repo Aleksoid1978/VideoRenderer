@@ -803,9 +803,16 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	ReleaseVP();
 
 	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
-	if (FmtConvParams.cformat == CF_NV12 && !m_bVPEnableNV12
-		|| (FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) && !m_bVPEnableP01x
-		|| FmtConvParams.cformat == CF_YUY2 && !m_bVPEnableYUY2) {
+	bool disableDXVA2 = false;
+	switch (FmtConvParams.cformat) {
+	case CF_NV12: disableDXVA2 = !m_bVPEnableNV12; break;
+	case CF_P010:
+	case CF_P016: disableDXVA2 = !m_bVPEnableP01x; break;
+	case CF_YUY2: disableDXVA2 = !m_bVPEnableYUY2; break;
+	case CF_P210:
+	case CF_P216: disableDXVA2 = !m_bVPEnableP21x; break;
+	}
+	if (disableDXVA2) {
 		FmtConvParams.DXVA2Format = D3DFMT_UNKNOWN;
 	}
 	const GUID SubType = pmt->subtype;
@@ -923,19 +930,19 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	// Tex Video Processor
 	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
 		UINT resid = 0;
-		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-			resid = (FmtConvParams.cformat == CF_YUY2) ? IDF_SHADER_CONVERT_YUY2_ST2084
-				: (FmtConvParams.cformat == CF_NV12 || FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) ? IDF_SHADER_CONVERT_NV12_ST2084
-				: IDF_SHADER_CONVERT_COLOR_ST2084;
+		if (FmtConvParams.cformat == CF_YUY2) {
+			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_YUY2_ST2084
+				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_YUY2_HLG
+				: IDF_SHADER_CONVERT_YUY2;
 		}
-		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
-			resid = (FmtConvParams.cformat == CF_YUY2) ? IDF_SHADER_CONVERT_YUY2_HLG
-				: (FmtConvParams.cformat == CF_NV12 || FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) ? IDF_SHADER_CONVERT_NV12_HLG
-				: IDF_SHADER_CONVERT_COLOR_HLG;
+		else if (FmtConvParams.pDX9Planes) {
+			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_BIPL_ST2084
+				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_BIPL_HLG
+				: IDF_SHADER_CONVERT_BIPLANAR;
 		}
 		else {
-			resid = (FmtConvParams.cformat == CF_YUY2) ? IDF_SHADER_CONVERT_YUY2
-				: (FmtConvParams.cformat == CF_NV12 || FmtConvParams.cformat == CF_P010 || FmtConvParams.cformat == CF_P016) ? IDF_SHADER_CONVERT_NV12
+			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_COLOR_ST2084
+				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_COLOR_HLG
 				: IDF_SHADER_CONVERT_COLOR;
 		}
 		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
@@ -1122,7 +1129,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 					}
 					hr = m_TexSrcVideo.pSurface2->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK);
 					if (S_OK == hr) {
-						CopyFrameAsIs(m_srcHeight/2, (BYTE*)lr.pBits, lr.Pitch, data + m_srcPitch* m_srcHeight, m_srcPitch);
+						CopyFrameAsIs(m_srcHeight/m_srcParams.pDX9Planes->div_chroma_h, (BYTE*)lr.pBits, lr.Pitch, data + m_srcPitch* m_srcHeight, m_srcPitch);
 						hr = m_TexSrcVideo.pSurface2->UnlockRect();
 					}
 				}
@@ -1428,11 +1435,12 @@ void CDX9VideoProcessor::SetTexFormat(int value)
 	}
 }
 
-void CDX9VideoProcessor::SetVPEnableFmts(bool bNV12, bool bP01x, bool bYUY2)
+void CDX9VideoProcessor::SetVPEnableFmts(bool bNV12, bool bP01x, bool bYUY2, bool bP21x)
 {
 	m_bVPEnableNV12 = bNV12;
 	m_bVPEnableP01x = bP01x;
 	m_bVPEnableYUY2 = bYUY2;
+	m_bVPEnableP21x = bP21x;
 }
 
 void CDX9VideoProcessor::SetVPScaling(bool value)

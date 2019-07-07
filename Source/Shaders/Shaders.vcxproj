@@ -71,7 +71,7 @@
       <ShaderModel>3.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
-    <FxCompile Include="d3d9\convert_nv12.hlsl">
+    <FxCompile Include="d3d9\convert_biplanar.hlsl">
       <ShaderModel>3.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>

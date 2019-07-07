@@ -168,8 +168,9 @@ bool IsDefaultDXVA2ProcAmpValues(const DXVA2_ProcAmpValues& DXVA2ProcAmpValues)
 		&& DXVA2ProcAmpValues.Saturation.ll == s_DefaultDXVA2ProcAmpRanges[3].DefaultValue.ll;
 }
 
-static DX9PlanarPrms_t DX9PlanarNV12 = { D3DFMT_L8, D3DFMT_A8L8 };
-static DX9PlanarPrms_t DX9PlanarP01x = { D3DFMT_L16, D3DFMT_G16R16 };
+static DX9PlanarPrms_t DX9PlanarNV12 = { D3DFMT_L8, D3DFMT_A8L8, 2, 2 };
+static DX9PlanarPrms_t DX9PlanarP01x = { D3DFMT_L16, D3DFMT_G16R16, 2, 2 };
+static DX9PlanarPrms_t DX9PlanarP21x = { D3DFMT_L16, D3DFMT_G16R16, 2, 1 };
 
 static DX11PlanarPrms_t DX11PlanarNV12 = { DXGI_FORMAT_R8_UNORM, DXGI_FORMAT_R8G8_UNORM };
 static DX11PlanarPrms_t DX11PlanarP01x = { DXGI_FORMAT_R16_UNORM, DXGI_FORMAT_R16G16_UNORM };
@@ -182,8 +183,8 @@ static const FmtConvParams_t s_FmtConvMapping[] = {
 	{CF_P010,   MEDIASUBTYPE_P010,   "P010",   D3DFMT_P010,     D3DFMT_P010,    &DX9PlanarP01x, DXGI_FORMAT_P010,           DXGI_FORMAT_P010,       &DX11PlanarP01x, 2, 3,        CS_YUV,  420,       10,    &CopyBiPlanar420,          nullptr},
 	{CF_P016,   MEDIASUBTYPE_P016,   "P016",   D3DFMT_P016,     D3DFMT_P016,    &DX9PlanarP01x, DXGI_FORMAT_P016,           DXGI_FORMAT_P016,       &DX11PlanarP01x, 2, 3,        CS_YUV,  420,       16,    &CopyBiPlanar420,          nullptr},
 	{CF_YUY2,   MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_A8R8G8B8,       nullptr, DXGI_FORMAT_YUY2,           DXGI_FORMAT_R8G8B8A8_UNORM,     nullptr, 2, 2,        CS_YUV,  422,       8,     &CopyFrameAsIs,            nullptr},
-	{CF_P210,   MEDIASUBTYPE_P210,   "P210",   D3DFMT_P210,     D3DFMT_UNKNOWN,        nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            nullptr, 2, 4,        CS_YUV,  422,       10,    &CopyBiPlanar422,          nullptr},
-	{CF_P216,   MEDIASUBTYPE_P216,   "P216",   D3DFMT_P216,     D3DFMT_UNKNOWN,        nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            nullptr, 2, 4,        CS_YUV,  422,       16,    &CopyBiPlanar422,          nullptr},
+	{CF_P210,   MEDIASUBTYPE_P210,   "P210",   D3DFMT_P210,     D3DFMT_P210,    &DX9PlanarP21x, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            nullptr, 2, 4,        CS_YUV,  422,       10,    &CopyBiPlanar422,          nullptr},
+	{CF_P216,   MEDIASUBTYPE_P216,   "P216",   D3DFMT_P216,     D3DFMT_P216,    &DX9PlanarP21x, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,            nullptr, 2, 4,        CS_YUV,  422,       16,    &CopyBiPlanar422,          nullptr},
 	{CF_AYUV,   MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,       nullptr, DXGI_FORMAT_AYUV,           DXGI_FORMAT_B8G8R8X8_UNORM,     nullptr, 4, 2,        CS_YUV,  444,       8,     &CopyFrameAsIs,            nullptr},
 	{CF_Y410,   MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_Y410,     D3DFMT_A2B10G10R10,    nullptr, DXGI_FORMAT_Y410,           DXGI_FORMAT_R10G10B10A2_UNORM,  nullptr, 4, 2,        CS_YUV,  444,       10,    &CopyFrameAsIs,            nullptr},
 	{CF_Y416,   MEDIASUBTYPE_Y416,   "Y416",   D3DFMT_Y416,     D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_Y416,           DXGI_FORMAT_R16G16B16A16_UNORM, nullptr, 8, 2,        CS_YUV,  444,       16,    &CopyFrameAsIs,            nullptr},
@@ -215,7 +216,7 @@ const FmtConvParams_t& GetFmtConvParams(const GUID subtype)
 	return s_FmtConvMapping[CF_NONE];
 }
 
-CopyFrameDataFn GetCopyFunction(FmtConvParams_t params)
+CopyFrameDataFn GetCopyFunction(const FmtConvParams_t& params)
 {
 	if (CPUInfo::HaveSSSE3() && params.FuncSSSE3) {
 		return params.FuncSSSE3;
