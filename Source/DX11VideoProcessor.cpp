@@ -2148,28 +2148,32 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 
 		m_strStatsStatic2.Format(L" %S %ux%u", m_srcParams.str, m_srcRectWidth, m_srcRectHeight);
 		if (m_srcParams.CSType == CS_YUV) {
-			LPCSTR strs[5] = {};
+			LPCSTR strs[6] = {};
 			GetExtendedFormatString(strs, m_srcExFmt, m_srcParams.CSType);
-			m_strStatsStatic2.AppendFormat(L"\n  Range: %hS", strs[0]);
+			m_strStatsStatic2.AppendFormat(L"\n  Range: %hS", strs[1]);
 			if (m_decExFmt.NominalRange == DXVA2_NominalRange_Unknown) {
 				m_strStatsStatic2.AppendChar('*');
 			};
-			m_strStatsStatic2.AppendFormat(L", Matrix: %hS", strs[1]);
+			m_strStatsStatic2.AppendFormat(L", Matrix: %hS", strs[2]);
 			if (m_decExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
 				m_strStatsStatic2.AppendChar('*');
 			};
-			m_strStatsStatic2.AppendFormat(L", Lighting: %hS", strs[2]);
+			m_strStatsStatic2.AppendFormat(L", Lighting: %hS", strs[3]);
 			if (m_decExFmt.VideoLighting == DXVA2_VideoLighting_Unknown) {
 				m_strStatsStatic2.AppendChar('*');
 			};
-			m_strStatsStatic2.AppendFormat(L"\n  Primaries: %hS", strs[3]);
+			m_strStatsStatic2.AppendFormat(L"\n  Primaries: %hS", strs[4]);
 			if (m_decExFmt.VideoPrimaries == DXVA2_VideoPrimaries_Unknown) {
 				m_strStatsStatic2.AppendChar('*');
 			};
-			m_strStatsStatic2.AppendFormat(L", Function: %hS", strs[4]);
+			m_strStatsStatic2.AppendFormat(L", Function: %hS", strs[5]);
 			if (m_decExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_Unknown) {
 				m_strStatsStatic2.AppendChar('*');
 			};
+			//m_strStatsStatic2.AppendFormat(L", ChromaLocation: %hS", strs[0]);
+			//if (m_decExFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Unknown) {
+			//	m_strStatsStatic2.AppendChar('*');
+			//};
 		}
 		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", DXGIFormatToString(m_InternalTexFmt));
 		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");
