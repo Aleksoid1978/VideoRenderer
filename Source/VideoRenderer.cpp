@@ -604,6 +604,9 @@ STDMETHODIMP CMpcVideoRenderer::GetSourcePosition(long *pLeft, long *pTop, long 
 STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long Width, long Height)
 {
 	const CRect videoRect(Left, Top, Left + Width, Top + Height);
+	if (videoRect.IsRectNull()) {
+		return S_OK;
+	}
 
 	CAutoLock cRendererLock(&m_RendererLock);
 	if (m_bUsedD3D11) {
