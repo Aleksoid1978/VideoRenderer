@@ -717,6 +717,7 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 		for (int j = 0; j < 3; j++) {
 			m_PSConvColorData.fConstants[i][j] = cmatrix.m[i][j];
 		}
+		m_PSConvColorData.fConstants[i][3] = 0.0f;
 	}
 	for (int j = 0; j < 3; j++) {
 		m_PSConvColorData.fConstants[3][j] = cmatrix.c[j];
@@ -727,8 +728,10 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 			std::swap(m_PSConvColorData.fConstants[i][0], m_PSConvColorData.fConstants[i][1]);
 		}
 	}
-	else {
-
+	else if (m_srcParams.cformat == CF_NV12) {
+		for (int i = 0; i < 3; i++) {
+			std::swap(m_PSConvColorData.fConstants[i][2], m_PSConvColorData.fConstants[i][3]);
+		}
 	}
 }
 
@@ -949,11 +952,6 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_YUY2_ST2084
 				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_YUY2_HLG
 				: IDF_SHADER_CONVERT_YUY2;
-		}
-		else if (FmtConvParams.cformat == CF_NV12) {
-			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_NV12_ST2084
-				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_NV12_HLG
-				: IDF_SHADER_CONVERT_NV12;
 		}
 		else if (FmtConvParams.pDX9Planes) {
 			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_BIPL_ST2084
