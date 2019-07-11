@@ -286,7 +286,7 @@ HRESULT CDX11VideoProcessor::TextureConvertColor(Tex11Video_t& texVideo, ID3D11T
 	m_pDeviceContext->PSSetShaderResources(1, 1, &texVideo.pShaderResource2.p);
 	m_pDeviceContext->PSSetShaderResources(2, 1, &texVideo.pShaderResource3.p);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
-	m_pDeviceContext->PSSetSamplers(1, 1, &m_pSamplerLinear);
+	m_pDeviceContext->PSSetSamplers(1, 1, (m_srcParams.Subsampling == 444) ? &m_pSamplerPoint : &m_pSamplerLinear);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
 	m_pDeviceContext->PSSetConstantBuffers(4, 1, &m_PSConvColorData.pConstants4);
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

@@ -1820,9 +1820,11 @@ HRESULT CDX9VideoProcessor::TextureConvertColor(Tex9Video_t& texVideo)
 	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
 
 	if (texVideo.Plane2.pTexture) {
+		DWORD dwMagFilter = (m_srcParams.Subsampling == 444) ? D3DTEXF_POINT : D3DTEXF_LINEAR;
+
 		hr = m_pD3DDevEx->SetTexture(1, texVideo.Plane2.pTexture);
 		FVF = D3DFVF_TEX2;
-		hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+		hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MAGFILTER, dwMagFilter);
 		hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 		hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
 		hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
@@ -1831,7 +1833,7 @@ HRESULT CDX9VideoProcessor::TextureConvertColor(Tex9Video_t& texVideo)
 		if (texVideo.Plane3.pTexture) {
 			hr = m_pD3DDevEx->SetTexture(2, texVideo.Plane3.pTexture);
 			FVF = D3DFVF_TEX3;
-			hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+			hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_MAGFILTER, dwMagFilter);
 			hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 			hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
 			hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
