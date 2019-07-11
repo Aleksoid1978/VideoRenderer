@@ -1119,7 +1119,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_PSConvColorData.bEnable = false;
 
 	switch (m_iTexFormat) {
-	case TEXFMT_AUTO:
+	case TEXFMT_AUTOINT:
 		m_InternalTexFmt = (FmtConvParams.CDepth > 8) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 		break;
 	case TEXFMT_8INT:    m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM; break;
@@ -2118,7 +2118,7 @@ HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 void CDX11VideoProcessor::SetTexFormat(int value)
 {
 	switch (value) {
-	case TEXFMT_AUTO:
+	case TEXFMT_AUTOINT:
 	case TEXFMT_8INT:
 	case TEXFMT_10INT:
 	case TEXFMT_16FLOAT:

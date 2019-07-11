@@ -74,14 +74,14 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_TextureFormat, dw)) {
 			switch (dw) {
-			case TEXFMT_AUTO:
+			case TEXFMT_AUTOINT:
 			case TEXFMT_8INT:
 			case TEXFMT_10INT:
 			case TEXFMT_16FLOAT:
 				m_Sets.iTextureFmt = dw;
 				break;
 			default:
-				m_Sets.iTextureFmt = TEXFMT_8INT;
+				m_Sets.iTextureFmt = TEXFMT_AUTOINT;
 			}
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableNV12, dw)) {

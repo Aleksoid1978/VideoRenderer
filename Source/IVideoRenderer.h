@@ -23,7 +23,7 @@
 #include <dxva2api.h>
 
 enum :int {
-	TEXFMT_AUTO = 0,
+	TEXFMT_AUTOINT = 0,
 	TEXFMT_8INT = 8,
 	TEXFMT_10INT = 10,
 	TEXFMT_16FLOAT = 16,
@@ -58,7 +58,7 @@ enum :int {
 struct Settings_t {
 	bool bUseD3D11           = false;
 	bool bShowStats          = false;
-	int  iTextureFmt         = TEXFMT_8INT;
+	int  iTextureFmt         = TEXFMT_AUTOINT;
 	bool bVPEnableNV12       = true;
 	bool bVPEnableP01x       = true;
 	bool bVPEnableYUY2       = true;

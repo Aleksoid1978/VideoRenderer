@@ -57,7 +57,7 @@ private:
 	CMpcVideoRenderer* m_pFilter = nullptr;
 
 	bool m_bShowStats          = false;
-	int  m_iTexFormat          = TEXFMT_8INT;
+	int  m_iTexFormat          = TEXFMT_AUTOINT;
 	bool m_bVPEnableNV12       = true;
 	bool m_bVPEnableP01x       = true;
 	bool m_bVPEnableYUY2       = true;

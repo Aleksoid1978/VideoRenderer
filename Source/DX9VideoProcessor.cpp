@@ -913,7 +913,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_PSConvColorData.bEnable = false;
 
 	switch (m_iTexFormat) {
-	case TEXFMT_AUTO:
+	case TEXFMT_AUTOINT:
 		m_InternalTexFmt = (FmtConvParams.CDepth > 8) ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
 		break;
 	case TEXFMT_8INT:    m_InternalTexFmt = D3DFMT_X8R8G8B8;      break;
@@ -1477,7 +1477,7 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 void CDX9VideoProcessor::SetTexFormat(int value)
 {
 	switch (value) {
-	case TEXFMT_AUTO:
+	case TEXFMT_AUTOINT:
 	case TEXFMT_8INT:
 	case TEXFMT_10INT:
 	case TEXFMT_16FLOAT:
