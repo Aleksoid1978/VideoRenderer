@@ -42,7 +42,7 @@ float4 main(PS_INPUT input) : SV_Target
 {
     float colorY = texY.Sample(samp, input.Tex).r;
     float colorU = texU.Sample(sampL, input.Tex).r;
-    float colorV = texU.Sample(sampL, input.Tex).r;
+    float colorV = texV.Sample(sampL, input.Tex).r;
 
     float4 color = float4(colorY, colorU, colorV, 0);
 

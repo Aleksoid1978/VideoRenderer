@@ -175,10 +175,10 @@ static DX9PlanarPrms_t DX9PlanarP01x = { D3DFMT_L16, D3DFMT_G16R16, D3DFMT_UNKNO
 static DX9PlanarPrms_t DX9PlanarP21x = { D3DFMT_L16, D3DFMT_G16R16, D3DFMT_UNKNOWN, 2, 1 };
 static DX9PlanarPrms_t DX9PlanarYV24 = { D3DFMT_L8,  D3DFMT_L8,     D3DFMT_L8,      1, 1 };
 
-static DX11PlanarPrms_t DX11PlanarNV12 = { DXGI_FORMAT_R8_UNORM,  DXGI_FORMAT_R8G8_UNORM,   DXGI_FORMAT_UNKNOWN,   2, 2 };
-static DX11PlanarPrms_t DX11PlanarP01x = { DXGI_FORMAT_R16_UNORM, DXGI_FORMAT_R16G16_UNORM, DXGI_FORMAT_UNKNOWN,   2, 2 };
-static DX11PlanarPrms_t DX11PlanarP21x = { DXGI_FORMAT_R16_UNORM, DXGI_FORMAT_R16G16_UNORM, DXGI_FORMAT_UNKNOWN,   2, 1 };
-static DX11PlanarPrms_t DX11PlanarYV24 = { DXGI_FORMAT_R16_UNORM, DXGI_FORMAT_R16_UNORM,    DXGI_FORMAT_R16_UNORM, 1, 1 };
+static DX11PlanarPrms_t DX11PlanarNV12 = { DXGI_FORMAT_R8_UNORM,  DXGI_FORMAT_R8G8_UNORM,   DXGI_FORMAT_UNKNOWN,  2, 2 };
+static DX11PlanarPrms_t DX11PlanarP01x = { DXGI_FORMAT_R16_UNORM, DXGI_FORMAT_R16G16_UNORM, DXGI_FORMAT_UNKNOWN,  2, 2 };
+static DX11PlanarPrms_t DX11PlanarP21x = { DXGI_FORMAT_R16_UNORM, DXGI_FORMAT_R16G16_UNORM, DXGI_FORMAT_UNKNOWN,  2, 1 };
+static DX11PlanarPrms_t DX11PlanarYV24 = { DXGI_FORMAT_R8_UNORM,  DXGI_FORMAT_R8_UNORM,     DXGI_FORMAT_R8_UNORM, 1, 1 };
 
 static const FmtConvParams_t s_FmtConvMapping[] = {
 	// cformat |   subtype          | str     | DXVA2Format    | D3DFormat(DX9)    |pDX9Planes| VP11Format                | DX11Format                |  pDX11Planes  |Packsize|PitchCoeff| CSType|Subsampling|CDepth| Func             |FuncSSSE3
@@ -190,7 +190,7 @@ static const FmtConvParams_t s_FmtConvMapping[] = {
 	{CF_YUY2,   MEDIASUBTYPE_YUY2,   "YUY2",   D3DFMT_YUY2,     D3DFMT_A8R8G8B8,       nullptr, DXGI_FORMAT_YUY2,           DXGI_FORMAT_R8G8B8A8_UNORM,        nullptr,       2, 2,        CS_YUV,  422,       8,     &CopyFrameAsIs,            nullptr},
 	{CF_P210,   MEDIASUBTYPE_P210,   "P210",   D3DFMT_P210,     D3DFMT_P210,    &DX9PlanarP21x, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11PlanarP21x,       2, 4,        CS_YUV,  422,       10,    &CopyBiPlanar422,          nullptr},
 	{CF_P216,   MEDIASUBTYPE_P216,   "P216",   D3DFMT_P216,     D3DFMT_P216,    &DX9PlanarP21x, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11PlanarP21x,       2, 4,        CS_YUV,  422,       16,    &CopyBiPlanar422,          nullptr},
-	{CF_YV24,   MEDIASUBTYPE_YV24,   "YV24",   D3DFMT_UNKNOWN,  D3DFMT_YV24,    &DX9PlanarYV24, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,               nullptr,       1, 6,        CS_YUV,  444,       8,     &CopyFrameAsIs,            nullptr},
+	{CF_YV24,   MEDIASUBTYPE_YV24,   "YV24",   D3DFMT_UNKNOWN,  D3DFMT_YV24,    &DX9PlanarYV24, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11PlanarYV24,       1, 6,        CS_YUV,  444,       8,     &CopyFrameAsIs,            nullptr},
 	{CF_AYUV,   MEDIASUBTYPE_AYUV,   "AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,       nullptr, DXGI_FORMAT_AYUV,           DXGI_FORMAT_B8G8R8X8_UNORM,        nullptr,       4, 2,        CS_YUV,  444,       8,     &CopyFrameAsIs,            nullptr},
 	{CF_Y410,   MEDIASUBTYPE_Y410,   "Y410",   D3DFMT_Y410,     D3DFMT_A2B10G10R10,    nullptr, DXGI_FORMAT_Y410,           DXGI_FORMAT_R10G10B10A2_UNORM,     nullptr,       4, 2,        CS_YUV,  444,       10,    &CopyFrameAsIs,            nullptr},
 	{CF_Y416,   MEDIASUBTYPE_Y416,   "Y416",   D3DFMT_Y416,     D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_Y416,           DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_YUV,  444,       16,    &CopyFrameAsIs,            nullptr},

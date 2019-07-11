@@ -284,6 +284,7 @@ HRESULT CDX11VideoProcessor::TextureConvertColor(Tex11Video_t& texVideo, ID3D11T
 	m_pDeviceContext->PSSetShader(m_pPSConvertColor, nullptr, 0);
 	m_pDeviceContext->PSSetShaderResources(0, 1, &texVideo.pShaderResource.p);
 	m_pDeviceContext->PSSetShaderResources(1, 1, &texVideo.pShaderResource2.p);
+	m_pDeviceContext->PSSetShaderResources(2, 1, &texVideo.pShaderResource3.p);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
 	m_pDeviceContext->PSSetSamplers(1, 1, &m_pSamplerLinear);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
@@ -294,8 +295,8 @@ HRESULT CDX11VideoProcessor::TextureConvertColor(Tex11Video_t& texVideo, ID3D11T
 	// Draw textured quad onto render target
 	m_pDeviceContext->Draw(6, 0);
 
-	ID3D11ShaderResourceView* views[2] = {};
-	m_pDeviceContext->PSSetShaderResources(0, 2, views);
+	ID3D11ShaderResourceView* views[3] = {};
+	m_pDeviceContext->PSSetShaderResources(0, 3, views);
 
 	return hr;;
 }
@@ -1167,7 +1168,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 				: IDF_PSH11_CONVERT_YUY2;
 		}
 		else if (FmtConvParams.pDX11Planes) {
-			if (0 && FmtConvParams.pDX11Planes->FmtPlane3) { // disabled yet
+			if (FmtConvParams.pDX11Planes->FmtPlane3) {
 				resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_PLAN_ST2084
 					: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_PLAN_HLG
 					: IDF_PSH11_CONVERT_PLANAR;
@@ -1593,12 +1594,26 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				if (SUCCEEDED(hr)) {
 					CopyFrameAsIs(m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, m_srcPitch);
 					m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
+
+					hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture2, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+					if (SUCCEEDED(hr)) {
+						const UINT cromaH = m_srcHeight / m_srcParams.pDX11Planes->div_chroma_h;
+						data += m_srcPitch * m_srcHeight;
+						CopyFrameAsIs(cromaH, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, m_srcPitch);
+						m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture2, 0);
+
+						if (m_TexSrcVideo.pTexture3) {
+							hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture3, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+							if (SUCCEEDED(hr)) {
+								data += m_srcPitch * cromaH;
+								CopyFrameAsIs(m_srcHeight / m_srcParams.pDX9Planes->div_chroma_h, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, m_srcPitch);
+								m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture3, 0);
+							}
+						}
+					}
 				}
-				hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture2, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-				if (SUCCEEDED(hr)) {
-					CopyFrameAsIs(m_srcHeight/m_srcParams.pDX9Planes->div_chroma_h, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data + m_srcPitch* m_srcHeight, m_srcPitch);
-					m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture2, 0);
-				}
+
+
 			} else {
 				hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 				if (SUCCEEDED(hr)) {

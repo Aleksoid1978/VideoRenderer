@@ -129,7 +129,9 @@ struct Tex2D_t
 struct Tex11Video_t : Tex2D_t
 {
 	CComPtr<ID3D11Texture2D> pTexture2;
+	CComPtr<ID3D11Texture2D> pTexture3;
 	CComPtr<ID3D11ShaderResourceView> pShaderResource2;
+	CComPtr<ID3D11ShaderResourceView> pShaderResource3;
 
 	HRESULT CreateEx(ID3D11Device* pDevice, const DXGI_FORMAT format, const DX11PlanarPrms_t* pPlanes, const UINT width, const UINT height, const Tex2DType type) {
 		Release();
@@ -145,29 +147,43 @@ struct Tex11Video_t : Tex2D_t
 				shaderDesc.Texture2D.MipLevels = 1;
 
 				if (pPlanes) {
+					// 1 texture, 2 SRV
 					shaderDesc.Format = pPlanes->FmtPlane1;
+					hr = pDevice->CreateShaderResourceView(pTexture, &shaderDesc, &pShaderResource);
+					if (S_OK == hr) {
+						shaderDesc.Format = pPlanes->FmtPlane2;
+						hr = pDevice->CreateShaderResourceView(pTexture, &shaderDesc, &pShaderResource2);
+					}
 				} else {
+					// 1 texture, 1 SRV
 					shaderDesc.Format = format;
-				}
-				hr = pDevice->CreateShaderResourceView(pTexture, &shaderDesc, &pShaderResource);
-
-				if (S_OK == hr && pPlanes) {
-					shaderDesc.Format = pPlanes->FmtPlane2;
-					hr = pDevice->CreateShaderResourceView(pTexture, &shaderDesc, &pShaderResource2);
+					hr = pDevice->CreateShaderResourceView(pTexture, &shaderDesc, &pShaderResource);
 				}
 			}
 		}
 		else if (pPlanes) {
+			// 2 textures, 2 SRV
 			hr = Create(pDevice, pPlanes->FmtPlane1, width, height, type);
 			if (S_OK == hr) {
-				hr = CreateTex2D(pDevice, pPlanes->FmtPlane2, width/pPlanes->div_chroma_w, height/pPlanes->div_chroma_h, type, &pTexture2);
-				if (S_OK == hr && desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) {
+				const UINT chromaWidth = width / pPlanes->div_chroma_w;
+				const UINT chromaHeight = height / pPlanes->div_chroma_h;
+				hr = CreateTex2D(pDevice, pPlanes->FmtPlane2, chromaWidth, chromaHeight, type, &pTexture2);
+				if (S_OK == hr) {
 					D3D11_SHADER_RESOURCE_VIEW_DESC shaderDesc;
 					shaderDesc.Format = pPlanes->FmtPlane2;
 					shaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 					shaderDesc.Texture2D.MostDetailedMip = 0;
 					shaderDesc.Texture2D.MipLevels = 1;
 					hr = pDevice->CreateShaderResourceView(pTexture2, &shaderDesc, &pShaderResource2);
+
+					if (S_OK == hr && pPlanes->FmtPlane3) {
+						// 3 textures, 3 SRV
+						hr = CreateTex2D(pDevice, pPlanes->FmtPlane3, chromaWidth, chromaHeight, type, &pTexture3);
+						if (S_OK == hr) {
+							shaderDesc.Format = pPlanes->FmtPlane3;
+							hr = pDevice->CreateShaderResourceView(pTexture3, &shaderDesc, &pShaderResource3);
+						}
+					}
 				}
 			}
 		}
@@ -180,6 +196,8 @@ struct Tex11Video_t : Tex2D_t
 	}
 
 	void Release() override {
+		pShaderResource3.Release();
+		pTexture3.Release();
 		pShaderResource2.Release();
 		pTexture2.Release();
 		Tex2D_t::Release();
