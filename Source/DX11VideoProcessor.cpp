@@ -1167,9 +1167,15 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 				: IDF_PSH11_CONVERT_YUY2;
 		}
 		else if (FmtConvParams.pDX11Planes) {
-			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_BIPL_ST2084
-				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_BIPL_HLG
-				: IDF_PSH11_CONVERT_BIPLANAR;
+			if (0 && FmtConvParams.pDX11Planes->FmtPlane3) { // disabled yet
+				resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_PLAN_ST2084
+					: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_PLAN_HLG
+					: IDF_PSH11_CONVERT_PLANAR;
+			} else {
+				resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_BIPL_ST2084
+					: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_BIPL_HLG
+					: IDF_PSH11_CONVERT_BIPLANAR;
+			}
 		}
 		else {
 			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_COLOR_ST2084

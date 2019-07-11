@@ -84,6 +84,12 @@
     <FxCompile Include="d3d9\convert_biplanar.hlsl">
       <Filter>d3d9</Filter>
     </FxCompile>
+    <FxCompile Include="d3d9\convert_planar.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d11\ps_convert_planar.hlsl">
+      <Filter>d3d11</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="convert\hdr_tone_mapping.hlsl">

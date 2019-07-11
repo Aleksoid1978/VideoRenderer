@@ -954,9 +954,15 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 				: IDF_SHADER_CONVERT_YUY2;
 		}
 		else if (FmtConvParams.pDX9Planes) {
-			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_BIPL_ST2084
-				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_BIPL_HLG
-				: IDF_SHADER_CONVERT_BIPLANAR;
+			if (FmtConvParams.pDX9Planes->FmtPlane3) {
+				resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_PLAN_ST2084
+					: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_PLAN_HLG
+					: IDF_SHADER_CONVERT_PLANAR;
+			} else {
+				resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_BIPL_ST2084
+					: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_BIPL_HLG
+					: IDF_SHADER_CONVERT_BIPLANAR;
+			}
 		}
 		else {
 			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_COLOR_ST2084
@@ -1114,7 +1120,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 						hr = pSurface->UnlockRect();
 					}
 				}
-			} else if (m_TexSrcVideo.pSurface2) {
+			} else if (m_TexSrcVideo.Plane2.pSurface) {
 				D3DLOCKED_RECT lr_src;
 				hr = pSurface->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
 				if (S_OK == hr) {
@@ -1124,10 +1130,10 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 						CopyFrameAsIs(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, (BYTE*)lr_src.pBits, lr_src.Pitch);
 						hr = m_TexSrcVideo.pSurface->UnlockRect();
 					}
-					hr = m_TexSrcVideo.pSurface2->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
+					hr = m_TexSrcVideo.Plane2.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 					if (S_OK == hr) {
 						CopyFrameAsIs(m_srcHeight/m_srcParams.pDX9Planes->div_chroma_h, (BYTE*)lr.pBits, lr.Pitch, (BYTE*)lr_src.pBits + lr_src.Pitch * m_srcHeight, lr_src.Pitch);
-						hr = m_TexSrcVideo.pSurface2->UnlockRect();
+						hr = m_TexSrcVideo.Plane2.pSurface->UnlockRect();
 					}
 					hr = pSurface->UnlockRect();
 				}
@@ -1158,16 +1164,28 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 					hr = pSrcSurface->UnlockRect();
 				}
 			} else {
-				if (m_TexSrcVideo.pSurface2) {
+				if (m_TexSrcVideo.Plane2.pSurface) {
 					hr = m_TexSrcVideo.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 					if (S_OK == hr) {
 						CopyFrameAsIs(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, data, m_srcPitch);
 						hr = m_TexSrcVideo.pSurface->UnlockRect();
-					}
-					hr = m_TexSrcVideo.pSurface2->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
-					if (S_OK == hr) {
-						CopyFrameAsIs(m_srcHeight/m_srcParams.pDX9Planes->div_chroma_h, (BYTE*)lr.pBits, lr.Pitch, data + m_srcPitch* m_srcHeight, m_srcPitch);
-						hr = m_TexSrcVideo.pSurface2->UnlockRect();
+
+						hr = m_TexSrcVideo.Plane2.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
+						if (S_OK == hr) {
+							const UINT cromaH = m_srcHeight / m_srcParams.pDX9Planes->div_chroma_h;
+							data += m_srcPitch * m_srcHeight;
+							CopyFrameAsIs(cromaH, (BYTE*)lr.pBits, lr.Pitch, data, m_srcPitch);
+							hr = m_TexSrcVideo.Plane2.pSurface->UnlockRect();
+
+							if (m_TexSrcVideo.Plane3.pSurface) {
+								hr = m_TexSrcVideo.Plane3.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD | D3DLOCK_NOSYSLOCK);
+								if (S_OK == hr) {
+									data += m_srcPitch * cromaH;
+									CopyFrameAsIs(cromaH, (BYTE*)lr.pBits, lr.Pitch, data, m_srcPitch);
+									hr = m_TexSrcVideo.Plane3.pSurface->UnlockRect();
+								}
+							}
+						}
 					}
 				}
 				else {
@@ -1801,23 +1819,34 @@ HRESULT CDX9VideoProcessor::TextureConvertColor(Tex9Video_t& texVideo)
 	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
 	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
 
-	if (texVideo.pTexture2) {
-		hr = m_pD3DDevEx->SetTexture(1, texVideo.pTexture2);
+	if (texVideo.Plane2.pTexture) {
+		hr = m_pD3DDevEx->SetTexture(1, texVideo.Plane2.pTexture);
 		FVF = D3DFVF_TEX2;
 		hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 		hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 		hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
 		hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
 		hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+
+		if (texVideo.Plane3.pTexture) {
+			hr = m_pD3DDevEx->SetTexture(2, texVideo.Plane3.pTexture);
+			FVF = D3DFVF_TEX3;
+			hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+			hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+			hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+			hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+			hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+		}
 	}
 
-	hr = m_pD3DDevEx->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX2);
+	hr = m_pD3DDevEx->SetFVF(D3DFVF_XYZRHW | FVF);
 	//hr = pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(v[0]));
 	std::swap(v[2], v[3]);
 	hr = m_pD3DDevEx->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, v, sizeof(v[0]));
 
 	m_pD3DDevEx->SetTexture(0, nullptr);
 	m_pD3DDevEx->SetTexture(1, nullptr);
+	m_pD3DDevEx->SetTexture(2, nullptr);
 
 	return hr;
 

@@ -52,8 +52,8 @@ struct Tex_t
 
 struct Tex9Video_t : Tex_t
 {
-	CComPtr<IDirect3DTexture9> pTexture2;
-	CComPtr<IDirect3DSurface9> pSurface2;
+	Tex_t Plane2;
+	Tex_t Plane3;
 
 	HRESULT CreateEx(IDirect3DDevice9Ex* pDevice, const D3DFORMAT format, const DX9PlanarPrms_t* pPlanes, const UINT width, const UINT height, DWORD usage) {
 		Release();
@@ -63,9 +63,11 @@ struct Tex9Video_t : Tex_t
 		if (pPlanes) {
 			hr = Create(pDevice, pPlanes->FmtPlane1, width, height, usage);
 			if (S_OK == hr) {
-				hr = pDevice->CreateTexture(width/pPlanes->div_chroma_w, height/pPlanes->div_chroma_h, 1, usage, pPlanes->FmtPlane2, D3DPOOL_DEFAULT, &pTexture2, nullptr);
-				if (S_OK == hr) {
-					EXECUTE_ASSERT(S_OK == pTexture2->GetSurfaceLevel(0, &pSurface2));
+				const UINT chromaWidth  = width / pPlanes->div_chroma_w;
+				const UINT chromaHeight = height / pPlanes->div_chroma_h;
+				hr = Plane2.Create(pDevice, pPlanes->FmtPlane2, chromaWidth, chromaHeight, usage);
+				if (S_OK == hr && pPlanes->FmtPlane3) {
+					hr = Plane3.Create(pDevice, pPlanes->FmtPlane3, chromaWidth, chromaHeight, usage);
 				}
 			}
 		}
@@ -81,8 +83,8 @@ struct Tex9Video_t : Tex_t
 	}
 
 	void Release() override {
-		pSurface2.Release();
-		pTexture2.Release();
+		Plane3.Release();
+		Plane2.Release();
 		Tex_t::Release();
 	}
 };
