@@ -227,15 +227,9 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			}
 
 			if (nID == IDC_BUTTON1) {
-				int msgboxID = MessageBoxW(L"Settings will be reset.\nDo you want to continue?",
-					L"Reset settings",
-					MB_ICONEXCLAMATION | MB_OKCANCEL | MB_DEFBUTTON2
-				);
-				if (msgboxID == IDOK) {
-					m_SetsPP.SetDefault();
-					SetControls();
-					SetDirty();
-				}
+				m_SetsPP.SetDefault();
+				SetControls();
+				SetDirty();
 				return (LRESULT)1;
 			}
 		}
