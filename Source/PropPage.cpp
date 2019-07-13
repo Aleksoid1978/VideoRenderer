@@ -72,6 +72,35 @@ CVRMainPPage::~CVRMainPPage()
 {
 }
 
+void CVRMainPPage::SetControls()
+{
+	CheckDlgButton(IDC_CHECK1,  m_SetsPP.bUseD3D11     ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK2,  m_SetsPP.bShowStats    ? BST_CHECKED : BST_UNCHECKED);
+
+	CheckDlgButton(IDC_CHECK7,  m_SetsPP.bVPEnableNV12 ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK8,  m_SetsPP.bVPEnableP01x ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK9,  m_SetsPP.bVPEnableYUY2 ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK10, m_SetsPP.bVPEnableP21x ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK3,  m_SetsPP.bDeintDouble  ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK5,  m_SetsPP.bVPScaling    ? BST_CHECKED : BST_UNCHECKED);
+
+	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
+
+	const int count = (int)SendDlgItemMessageW(IDC_COMBO1, CB_GETCOUNT, 0, 0);
+	for (int i = 0; i < count; i++) {
+		const LRESULT lValue = SendDlgItemMessageW(IDC_COMBO1, CB_GETITEMDATA, i, 0);
+		if (m_SetsPP.iTextureFmt == lValue) {
+			SendDlgItemMessageW(IDC_COMBO1, CB_SETCURSEL, i, 0);
+			break;
+		}
+	}
+
+	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, m_SetsPP.iUpscaling, 0);
+	SendDlgItemMessageW(IDC_COMBO3, CB_SETCURSEL, m_SetsPP.iDownscaling, 0);
+
+	SendDlgItemMessageW(IDC_COMBO4, CB_SETCURSEL, m_SetsPP.iSwapEffect, 0);
+}
+
 HRESULT CVRMainPPage::OnConnect(IUnknown *pUnk)
 {
 	if (pUnk == nullptr) return E_POINTER;
@@ -107,17 +136,8 @@ HRESULT CVRMainPPage::OnActivate()
 		m_SetsPP.bUseD3D11 = false;
 	}
 
-	CheckDlgButton(IDC_CHECK1,  m_SetsPP.bUseD3D11     ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK2,  m_SetsPP.bShowStats    ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK3,  m_SetsPP.bDeintDouble  ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK7,  m_SetsPP.bVPEnableNV12 ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK8,  m_SetsPP.bVPEnableP01x ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK9,  m_SetsPP.bVPEnableYUY2 ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK10, m_SetsPP.bVPEnableP21x ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK4, BST_CHECKED); // "Other supported formats"
 	GetDlgItem(IDC_CHECK4).EnableWindow(FALSE);
-	CheckDlgButton(IDC_CHECK5,  m_SetsPP.bVPScaling    ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
 
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"Auto 8/10-bit Integer");
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"8-bit Integer");
@@ -127,20 +147,11 @@ HRESULT CVRMainPPage::OnActivate()
 	SendDlgItemMessageW(IDC_COMBO1, CB_SETITEMDATA, 1, LPARAM(8));
 	SendDlgItemMessageW(IDC_COMBO1, CB_SETITEMDATA, 2, LPARAM(10));
 	SendDlgItemMessageW(IDC_COMBO1, CB_SETITEMDATA, 3, LPARAM(16));
-	const int count = (int)SendDlgItemMessageW(IDC_COMBO1, CB_GETCOUNT, 0, 0);
-	for (int i = 0; i < count; i++) {
-		const LRESULT lValue = SendDlgItemMessageW(IDC_COMBO1, CB_GETITEMDATA, i, 0);
-		if (m_SetsPP.iTextureFmt == lValue) {
-			SendDlgItemMessageW(IDC_COMBO1, CB_SETCURSEL, i, 0);
-			break;
-		}
-	}
 
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Mitchell-Netravali");
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Catmull-Rom");
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Lanczos2");
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Lanczos3");
-	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, m_SetsPP.iUpscaling, 0);
 
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Box");
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Bilinear");
@@ -148,13 +159,15 @@ HRESULT CVRMainPPage::OnActivate()
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Bicubic");
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Bicubic sharp");
 	SendDlgItemMessageW(IDC_COMBO3, CB_ADDSTRING, 0, (LPARAM)L"Lanczos");
-	SendDlgItemMessageW(IDC_COMBO3, CB_SETCURSEL, m_SetsPP.iDownscaling, 0);
 
 	SendDlgItemMessageW(IDC_COMBO4, CB_ADDSTRING, 0, (LPARAM)L"Discard");
 	SendDlgItemMessageW(IDC_COMBO4, CB_ADDSTRING, 0, (LPARAM)L"Flip");
-	SendDlgItemMessageW(IDC_COMBO4, CB_SETCURSEL, m_SetsPP.iSwapEffect, 0);
 
 	SetDlgItemTextW(IDC_EDIT2, GetNameAndVersion());
+
+	GetDlgItem(IDC_BUTTON1).ShowWindow(SW_HIDE); // TODO
+
+	SetControls();
 
 	SetCursor(m_hWnd, IDC_ARROW);
 	SetCursor(m_hWnd, IDC_COMBO1, IDC_HAND);

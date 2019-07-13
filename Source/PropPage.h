@@ -37,6 +37,8 @@ public:
 	~CVRMainPPage();
 
 private:
+	void SetControls();
+
 	HRESULT OnConnect(IUnknown* pUnknown) override;
 	HRESULT OnDisconnect() override;
 	HRESULT OnActivate() override;

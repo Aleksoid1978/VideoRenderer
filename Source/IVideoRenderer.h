@@ -56,19 +56,39 @@ enum :int {
 };
 
 struct Settings_t {
-	bool bUseD3D11           = false;
-	bool bShowStats          = false;
-	int  iTextureFmt         = TEXFMT_AUTOINT;
-	bool bVPEnableNV12       = true;
-	bool bVPEnableP01x       = true;
-	bool bVPEnableYUY2       = true;
-	bool bVPEnableP21x       = true;
-	bool bDeintDouble        = false;
-	int  bVPScaling          = true;
-	int  iUpscaling          = UPSCALE_CatmullRom;
-	int  iDownscaling        = DOWNSCALE_Hamming;
-	bool bInterpolateAt50pct = true;
-	int  iSwapEffect         = SWAPEFFECT_Discard;
+	bool bUseD3D11;
+	bool bShowStats;
+	int  iTextureFmt;
+	bool bVPEnableNV12;
+	bool bVPEnableP01x;
+	bool bVPEnableYUY2;
+	bool bVPEnableP21x;
+	bool bDeintDouble;
+	int  bVPScaling;
+	int  iUpscaling;
+	int  iDownscaling;
+	bool bInterpolateAt50pct;
+	int  iSwapEffect;
+
+	Settings_t() {
+		SetDefault();
+	}
+
+	void SetDefault() {
+		bUseD3D11           = false;
+		bShowStats          = false;
+		iTextureFmt         = TEXFMT_AUTOINT;
+		bVPEnableNV12       = true;
+		bVPEnableP01x       = true;
+		bVPEnableYUY2       = true;
+		bVPEnableP21x       = true;
+		bDeintDouble        = false;
+		bVPScaling          = true;
+		iUpscaling          = UPSCALE_CatmullRom;
+		iDownscaling        = DOWNSCALE_Hamming;
+		bInterpolateAt50pct = true;
+		iSwapEffect         = SWAPEFFECT_Discard;
+	}
 };
 
 interface __declspec(uuid("1AB00F10-5F55-42AC-B53F-38649F11BE3E"))
