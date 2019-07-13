@@ -1598,15 +1598,16 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture2, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 					if (SUCCEEDED(hr)) {
 						const UINT cromaH = m_srcHeight / m_srcParams.pDX11Planes->div_chroma_h;
+						const UINT cromaPitch = (m_TexSrcVideo.pTexture3) ? m_srcPitch / m_srcParams.pDX11Planes->div_chroma_w : m_srcPitch;
 						data += m_srcPitch * m_srcHeight;
-						CopyFrameAsIs(cromaH, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, m_srcPitch);
+						CopyFrameAsIs(cromaH, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, cromaPitch);
 						m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture2, 0);
 
 						if (m_TexSrcVideo.pTexture3) {
 							hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture3, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 							if (SUCCEEDED(hr)) {
-								data += m_srcPitch * cromaH;
-								CopyFrameAsIs(m_srcHeight / m_srcParams.pDX9Planes->div_chroma_h, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, m_srcPitch);
+								data += cromaPitch * cromaH;
+								CopyFrameAsIs(cromaH, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, cromaPitch);
 								m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture3, 0);
 							}
 						}

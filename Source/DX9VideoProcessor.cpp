@@ -1173,15 +1173,16 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 						hr = m_TexSrcVideo.Plane2.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 						if (S_OK == hr) {
 							const UINT cromaH = m_srcHeight / m_srcParams.pDX9Planes->div_chroma_h;
+							const UINT cromaPitch = (m_TexSrcVideo.Plane3.pSurface) ? m_srcPitch / m_srcParams.pDX9Planes->div_chroma_w : m_srcPitch;
 							data += m_srcPitch * m_srcHeight;
-							CopyFrameAsIs(cromaH, (BYTE*)lr.pBits, lr.Pitch, data, m_srcPitch);
+							CopyFrameAsIs(cromaH, (BYTE*)lr.pBits, lr.Pitch, data, cromaPitch);
 							hr = m_TexSrcVideo.Plane2.pSurface->UnlockRect();
 
 							if (m_TexSrcVideo.Plane3.pSurface) {
 								hr = m_TexSrcVideo.Plane3.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD | D3DLOCK_NOSYSLOCK);
 								if (S_OK == hr) {
-									data += m_srcPitch * cromaH;
-									CopyFrameAsIs(cromaH, (BYTE*)lr.pBits, lr.Pitch, data, m_srcPitch);
+									data += cromaPitch * cromaH;
+									CopyFrameAsIs(cromaH, (BYTE*)lr.pBits, lr.Pitch, data, cromaPitch);
 									hr = m_TexSrcVideo.Plane3.pSurface->UnlockRect();
 								}
 							}
