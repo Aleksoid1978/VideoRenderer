@@ -1640,7 +1640,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	CheckPointer(m_TexSrcVideo.pTexture, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
 
-	uint64_t tick1 = GetPreciseTick();
 
 	if (field) {
 		m_FieldDrawn = field;
@@ -1652,6 +1651,34 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		DLog(L"CDX11VideoProcessor::Render() : GetBuffer() failed with error %s", HR2Str(hr));
 		return hr;
 	}
+
+	uint64_t tick0 = GetPreciseTick();
+
+	HRESULT hrSubPic = E_FAIL;
+	if (m_pFilter->m_pSubCallBack && m_pShaderResourceSubPic) {
+		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
+		const CRect rDstVid(m_videoRect);
+		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
+
+		if (CComQIPtr<ISubRenderCallback4> pSubCallBack4 = m_pFilter->m_pSubCallBack) {
+			hrSubPic = pSubCallBack4->RenderEx3(rtStart, 0, 0, rDstVid, rDstVid, rSrcPri);
+		} else {
+			hrSubPic = m_pFilter->m_pSubCallBack->Render(rtStart, rDstVid.left, rDstVid.top, rDstVid.right, rDstVid.bottom, rSrcPri.Width(), rSrcPri.Height());
+		}
+
+		if (S_OK == hrSubPic) {
+			// flush Direct3D9 for immediate update Direct3D11 texture
+			CComPtr<IDirect3DQuery9> pEventQuery;
+			m_pD3DDevEx->CreateQuery(D3DQUERYTYPE_EVENT, &pEventQuery);
+			if (pEventQuery) {
+				pEventQuery->Issue(D3DISSUE_END);
+				BOOL Data = FALSE;
+				pEventQuery->GetData(&Data, sizeof(Data), D3DGETDATA_FLUSH);
+			}
+		}
+	}
+
+	uint64_t tick1 = GetPreciseTick();
 
 	if (!m_videoRect.IsRectEmpty() && !m_windowRect.IsRectEmpty()) {
 		m_srcRenderRect = m_srcRect;
@@ -1681,46 +1708,26 @@ HRESULT CDX11VideoProcessor::Render(int field)
 
 	uint64_t tick2 = GetPreciseTick();
 
-	if (m_pFilter->m_pSubCallBack && m_pShaderResourceSubPic) {
-		HRESULT hr2 = S_OK;
+	if (S_OK == hrSubPic) {
 		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
-		const CRect rDstVid(m_videoRect);
-		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
 
-		if (CComQIPtr<ISubRenderCallback4> pSubCallBack4 = m_pFilter->m_pSubCallBack) {
-			hr2 = pSubCallBack4->RenderEx3(rtStart, 0, 0, rDstVid, rDstVid, rSrcPri);
-		} else {
-			hr2 = m_pFilter->m_pSubCallBack->Render(rtStart, rDstVid.left, rDstVid.top, rDstVid.right, rDstVid.bottom, rSrcPri.Width(), rSrcPri.Height());
-		}
+		D3D11_VIEWPORT VP;
+		VP.TopLeftX = 0;
+		VP.TopLeftY = 0;
+		VP.Width = rSrcPri.Width();
+		VP.Height = rSrcPri.Height();
+		VP.MinDepth = 0.0f;
+		VP.MaxDepth = 1.0f;
+		hrSubPic = AlphaBltSub(m_pShaderResourceSubPic, pBackBuffer, rSrcPri, VP);
+		ASSERT(S_OK == hrSubPic);
 
-		if (S_OK == hr2) {
-			// flush Direct3D9 for immediate update Direct3D11 texture
-			CComPtr<IDirect3DQuery9> pEventQuery;
-			m_pD3DDevEx->CreateQuery(D3DQUERYTYPE_EVENT, &pEventQuery);
-			if (pEventQuery) {
-				pEventQuery->Issue(D3DISSUE_END);
-				BOOL Data = FALSE;
-				pEventQuery->GetData(&Data, sizeof(Data), D3DGETDATA_FLUSH);
-			}
-
-			D3D11_VIEWPORT VP;
-			VP.TopLeftX = 0;
-			VP.TopLeftY = 0;
-			VP.Width = rSrcPri.Width();
-			VP.Height = rSrcPri.Height();
-			VP.MinDepth = 0.0f;
-			VP.MaxDepth = 1.0f;
-			hr2 = AlphaBltSub(m_pShaderResourceSubPic, pBackBuffer, rSrcPri, VP);
-			ASSERT(S_OK == hr2);
-
-			hr2 = m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, D3DCOLOR_ARGB(255, 0, 0, 0));
-		}
+		hrSubPic = m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, D3DCOLOR_ARGB(255, 0, 0, 0));
 	}
 
 	if (m_bShowStats) {
 		uint64_t tick3 = GetPreciseTick();
 		m_RenderStats.renderticks = tick2 - tick1;
-		m_RenderStats.substicks = tick3 - tick2;
+		m_RenderStats.substicks = (tick3 - tick2) + (tick1 - tick0);
 		hr = DrawStats(pBackBuffer);
 		m_RenderStats.statsticks = GetPreciseTick() - tick3;
 	}
