@@ -165,8 +165,6 @@ HRESULT CVRMainPPage::OnActivate()
 
 	SetDlgItemTextW(IDC_EDIT2, GetNameAndVersion());
 
-	GetDlgItem(IDC_BUTTON1).ShowWindow(SW_HIDE); // TODO
-
 	SetControls();
 
 	SetCursor(m_hWnd, IDC_ARROW);
@@ -225,6 +223,19 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			if (nID == IDC_CHECK10) {
 				m_SetsPP.bVPEnableP21x = IsDlgButtonChecked(IDC_CHECK10) == BST_CHECKED;
 				SetDirty();
+				return (LRESULT)1;
+			}
+
+			if (nID == IDC_BUTTON1) {
+				int msgboxID = MessageBoxW(L"Settings will be reset.\nDo you want to continue?",
+					L"Reset settings",
+					MB_ICONEXCLAMATION | MB_OKCANCEL | MB_DEFBUTTON2
+				);
+				if (msgboxID == IDOK) {
+					m_SetsPP.SetDefault();
+					SetControls();
+					SetDirty();
+				}
 				return (LRESULT)1;
 			}
 		}
