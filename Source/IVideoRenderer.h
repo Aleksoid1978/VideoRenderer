@@ -30,7 +30,7 @@ enum :int {
 };
 
 enum :int {
-	//UPSCALE_Nearest = 0,
+	UPSCALE_Nearest = 0,
 	//UPSCALE_Bilinear,
 	UPSCALE_Mitchell,
 	UPSCALE_CatmullRom,

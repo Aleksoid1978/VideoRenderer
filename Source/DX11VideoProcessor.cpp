@@ -1798,6 +1798,7 @@ void CDX11VideoProcessor::UpdateUpscalingShaders()
 		UINT shaderY;
 		wchar_t* const description;
 	} static const resIDs[UPSCALE_COUNT] = {
+		{0,                            0,                            L"Nearest-neighbor"  },
 		{IDF_PSH11_INTERP_MITCHELL4_X, IDF_PSH11_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
 		{IDF_PSH11_INTERP_CATMULL4_X,  IDF_PSH11_INTERP_CATMULL4_Y , L"Catmull-Rom"       },
 		{IDF_PSH11_INTERP_LANCZOS2_X,  IDF_PSH11_INTERP_LANCZOS2_Y , L"Lanczos2"          },
@@ -1807,8 +1808,10 @@ void CDX11VideoProcessor::UpdateUpscalingShaders()
 	m_pShaderUpscaleX.Release();
 	m_pShaderUpscaleY.Release();
 
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, resIDs[m_iUpscaling].shaderX));
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, resIDs[m_iUpscaling].shaderY));
+	if (m_iUpscaling != UPSCALE_Nearest) {
+		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, resIDs[m_iUpscaling].shaderX));
+		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, resIDs[m_iUpscaling].shaderY));
+	}
 	m_strShaderUpscale = resIDs[m_iUpscaling].description;
 }
 
