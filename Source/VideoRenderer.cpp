@@ -33,7 +33,7 @@
 #define OPT_VPEnableNV12         L"VPEnableNV12"
 #define OPT_VPEnableP01x         L"VPEnableP01x"
 #define OPT_VPEnableYUY2         L"VPEnableYUY2"
-#define OPT_VPEnableP21x         L"VPEnableP21x"
+#define OPT_VPEnableOther        L"VPEnableOther"
 #define OPT_DoubleFrateDeint     L"DoubleFramerateDeinterlace"
 #define OPT_VPScaling            L"VPScaling"
 #define OPT_Upscaling            L"Upscaling"
@@ -93,8 +93,8 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableYUY2, dw)) {
 			m_Sets.bVPEnableYUY2 = !!dw;
 		}
-		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableP21x, dw)) {
-			m_Sets.bVPEnableP21x = !!dw;
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableOther, dw)) {
+			m_Sets.bVPEnableOther = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_DoubleFrateDeint, dw)) {
 			m_Sets.bDeintDouble = !!dw;
@@ -119,7 +119,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	// configure the video processors
 	m_DX9_VP.SetShowStats(m_Sets.bShowStats);
 	m_DX9_VP.SetTexFormat(m_Sets.iTextureFmt);
-	m_DX9_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableP01x, m_Sets.bVPEnableYUY2, m_Sets.bVPEnableP21x);
+	m_DX9_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableP01x, m_Sets.bVPEnableYUY2, m_Sets.bVPEnableOther);
 	m_DX9_VP.SetDeintDouble(m_Sets.bDeintDouble);
 	m_DX9_VP.SetVPScaling(m_Sets.bVPScaling);
 	m_DX9_VP.SetUpscaling(m_Sets.iUpscaling);
@@ -129,7 +129,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	m_DX11_VP.SetShowStats(m_Sets.bShowStats);
 	m_DX11_VP.SetTexFormat(m_Sets.iTextureFmt);
-	m_DX11_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableP01x, m_Sets.bVPEnableYUY2, m_Sets.bVPEnableP21x);
+	m_DX11_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableP01x, m_Sets.bVPEnableYUY2, m_Sets.bVPEnableOther);
 	m_DX11_VP.SetDeintDouble(m_Sets.bDeintDouble);
 	m_DX11_VP.SetVPScaling(m_Sets.bVPScaling);
 	m_DX11_VP.SetUpscaling(m_Sets.iUpscaling);
@@ -827,13 +827,13 @@ STDMETHODIMP_(void) CMpcVideoRenderer::GetSettings(Settings_t& setings)
 
 STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 {
-	m_Sets.bUseD3D11     = setings.bUseD3D11;
-	m_Sets.iTextureFmt   = setings.iTextureFmt;
-	m_Sets.bVPEnableNV12 = setings.bVPEnableNV12;
-	m_Sets.bVPEnableP01x = setings.bVPEnableP01x;
-	m_Sets.bVPEnableYUY2 = setings.bVPEnableYUY2;
-	m_Sets.bVPEnableP21x = setings.bVPEnableP21x;
-	m_Sets.iSwapEffect   = setings.iSwapEffect;
+	m_Sets.bUseD3D11      = setings.bUseD3D11;
+	m_Sets.iTextureFmt    = setings.iTextureFmt;
+	m_Sets.bVPEnableNV12  = setings.bVPEnableNV12;
+	m_Sets.bVPEnableP01x  = setings.bVPEnableP01x;
+	m_Sets.bVPEnableYUY2  = setings.bVPEnableYUY2;
+	m_Sets.bVPEnableOther = setings.bVPEnableOther;
+	m_Sets.iSwapEffect    = setings.iSwapEffect;
 
 	CAutoLock cRendererLock(&m_RendererLock);
 
@@ -900,7 +900,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_VPEnableNV12,       m_Sets.bVPEnableNV12);
 		key.SetDWORDValue(OPT_VPEnableP01x,       m_Sets.bVPEnableP01x);
 		key.SetDWORDValue(OPT_VPEnableYUY2,       m_Sets.bVPEnableYUY2);
-		key.SetDWORDValue(OPT_VPEnableP21x,       m_Sets.bVPEnableP21x);
+		key.SetDWORDValue(OPT_VPEnableOther,      m_Sets.bVPEnableOther);
 		key.SetDWORDValue(OPT_DoubleFrateDeint,   m_Sets.bDeintDouble);
 		key.SetDWORDValue(OPT_VPScaling,          m_Sets.bVPScaling);
 		key.SetDWORDValue(OPT_Upscaling,          m_Sets.iUpscaling);

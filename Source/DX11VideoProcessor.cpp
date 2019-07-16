@@ -1030,10 +1030,9 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	switch (FmtConvParams.cformat) {
 	case CF_NV12: disableD3D11VP = !m_bVPEnableNV12; break;
 	case CF_P010:
-	case CF_P016: disableD3D11VP = !m_bVPEnableP01x; break;
-	case CF_YUY2: disableD3D11VP = !m_bVPEnableYUY2; break;
-	case CF_P210:
-	case CF_P216: disableD3D11VP = !m_bVPEnableP21x; break;
+	case CF_P016: disableD3D11VP = !m_bVPEnableP01x;  break;
+	case CF_YUY2: disableD3D11VP = !m_bVPEnableYUY2;  break;
+	default:      disableD3D11VP = !m_bVPEnableOther; break;
 	}
 	if (disableD3D11VP) {
 		FmtConvParams.VP11Format = DXGI_FORMAT_UNKNOWN;
@@ -2142,12 +2141,12 @@ void CDX11VideoProcessor::SetTexFormat(int value)
 	}
 }
 
-void CDX11VideoProcessor::SetVPEnableFmts(bool bNV12, bool bP01x, bool bYUY2, bool bP21x)
+void CDX11VideoProcessor::SetVPEnableFmts(bool bNV12, bool bP01x, bool bYUY2, bool bOther)
 {
-	m_bVPEnableNV12 = bNV12;
-	m_bVPEnableP01x = bP01x;
-	m_bVPEnableYUY2 = bYUY2;
-	m_bVPEnableP21x = bP21x;
+	m_bVPEnableNV12  = bNV12;
+	m_bVPEnableP01x  = bP01x;
+	m_bVPEnableYUY2  = bYUY2;
+	m_bVPEnableOther = bOther;
 }
 
 void CDX11VideoProcessor::SetVPScaling(bool value)

@@ -74,15 +74,15 @@ CVRMainPPage::~CVRMainPPage()
 
 void CVRMainPPage::SetControls()
 {
-	CheckDlgButton(IDC_CHECK1,  m_SetsPP.bUseD3D11     ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK2,  m_SetsPP.bShowStats    ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK1, m_SetsPP.bUseD3D11      ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK2, m_SetsPP.bShowStats     ? BST_CHECKED : BST_UNCHECKED);
 
-	CheckDlgButton(IDC_CHECK7,  m_SetsPP.bVPEnableNV12 ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK8,  m_SetsPP.bVPEnableP01x ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK9,  m_SetsPP.bVPEnableYUY2 ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK10, m_SetsPP.bVPEnableP21x ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK3,  m_SetsPP.bDeintDouble  ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK5,  m_SetsPP.bVPScaling    ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK7, m_SetsPP.bVPEnableNV12  ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK8, m_SetsPP.bVPEnableP01x  ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK9, m_SetsPP.bVPEnableYUY2  ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK4, m_SetsPP.bVPEnableOther ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK3, m_SetsPP.bDeintDouble   ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling     ? BST_CHECKED : BST_UNCHECKED);
 
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
 
@@ -135,9 +135,6 @@ HRESULT CVRMainPPage::OnActivate()
 		GetDlgItem(IDC_CHECK1).EnableWindow(FALSE);
 		m_SetsPP.bUseD3D11 = false;
 	}
-
-	CheckDlgButton(IDC_CHECK4, BST_CHECKED); // "Other supported formats"
-	GetDlgItem(IDC_CHECK4).EnableWindow(FALSE);
 
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"Auto 8/10-bit Integer");
 	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"8-bit Integer");
@@ -221,8 +218,8 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				SetDirty();
 				return (LRESULT)1;
 			}
-			if (nID == IDC_CHECK10) {
-				m_SetsPP.bVPEnableP21x = IsDlgButtonChecked(IDC_CHECK10) == BST_CHECKED;
+			if (nID == IDC_CHECK4) {
+				m_SetsPP.bVPEnableOther = IsDlgButtonChecked(IDC_CHECK4) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}
