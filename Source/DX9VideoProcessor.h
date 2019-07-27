@@ -28,7 +28,6 @@
 #include "Helper.h"
 #include "DX9Helper.h"
 #include "FrameStats.h"
-#include "resource.h"
 
 #if D3D9FONT_ENABLE
 #include "D3D9Font.h"

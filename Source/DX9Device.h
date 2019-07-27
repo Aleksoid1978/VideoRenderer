@@ -21,7 +21,6 @@
 #pragma once
 
 #include <atltypes.h>
-#include "resource.h"
 
 class CDX9Device
 {

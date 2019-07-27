@@ -14,6 +14,16 @@
 
 #include "../Include/Version.h"
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// FILE
+//
+
+IDF_HLSL_HDR_TONE_MAPPING       FILE                    "Shaders\\convert\\hdr_tone_mapping.hlsl"
+IDF_HLSL_COLORSPACE_GAMUT_CONV  FILE                    "Shaders\\convert\\colorspace_gamut_conversion.hlsl"
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // SHADER

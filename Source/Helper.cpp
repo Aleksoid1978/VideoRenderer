@@ -665,3 +665,26 @@ void GetExtendedFormatString(LPCSTR (&strs)[6], const DXVA2_ExtendedFormat exFor
 	}
 }
 
+HRESULT GetDataFromResource(LPVOID& data, DWORD& size, UINT resid)
+{
+	static const HMODULE hModule = (HMODULE)&__ImageBase;
+
+	HRSRC hrsrc = FindResourceW(hModule, MAKEINTRESOURCEW(resid), L"SHADER");
+	if (!hrsrc) {
+		return E_INVALIDARG;
+	}
+	HGLOBAL hGlobal = LoadResource(hModule, hrsrc);
+	if (!hGlobal) {
+		return E_FAIL;
+	}
+	size = SizeofResource(hModule, hrsrc);
+	if (!size) {
+		return E_FAIL;
+	}
+	data = LockResource(hGlobal);
+	if (!data) {
+		return E_FAIL;
+	}
+
+	return S_OK;
+}

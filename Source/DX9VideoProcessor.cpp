@@ -25,6 +25,7 @@
 #include <Mferror.h>
 #include <dwmapi.h>
 #include "Time.h"
+#include "resource.h"
 #include "VideoRenderer.h"
 #include "Include/Version.h"
 #include "DX9VideoProcessor.h"

@@ -241,3 +241,5 @@ HRESULT SaveARGB32toBMP(BYTE* src, const UINT src_pitch, const UINT width, const
 DXVA2_ExtendedFormat SpecifyExtendedFormat(DXVA2_ExtendedFormat exFormat, const ColorSystem_t colorSystem, const UINT width, const UINT height);
 
 void GetExtendedFormatString(LPCSTR (&strs)[6], const DXVA2_ExtendedFormat exFormat, const ColorSystem_t colorSystem);
+
+HRESULT GetDataFromResource(LPVOID& data, DWORD& size, UINT resid);
