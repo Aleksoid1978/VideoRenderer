@@ -683,7 +683,7 @@ HRESULT CDX9VideoProcessor::CreatePShaderFromResource(IDirect3DPixelShader9** pp
 
 	static const HMODULE hModule = (HMODULE)&__ImageBase;
 
-	HRSRC hrsrc = FindResourceW(hModule, MAKEINTRESOURCEW(resid), L"SHADER");
+	HRSRC hrsrc = FindResourceW(hModule, MAKEINTRESOURCEW(resid), L"FILE");
 	if (!hrsrc) {
 		return E_INVALIDARG;
 	}

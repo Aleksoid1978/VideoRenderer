@@ -669,7 +669,7 @@ HRESULT GetDataFromResource(LPVOID& data, DWORD& size, UINT resid)
 {
 	static const HMODULE hModule = (HMODULE)&__ImageBase;
 
-	HRSRC hrsrc = FindResourceW(hModule, MAKEINTRESOURCEW(resid), L"SHADER");
+	HRSRC hrsrc = FindResourceW(hModule, MAKEINTRESOURCEW(resid), L"FILE");
 	if (!hrsrc) {
 		return E_INVALIDARG;
 	}
