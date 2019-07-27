@@ -12,10 +12,12 @@
 #include "hdr_tone_mapping.hlsl"
 #include "colorspace_gamut_conversion.hlsl"
 
-#pragma warning(disable: 3571) // fix warning X3571 in pow().
+//#pragma warning(disable: 3571) // fix warning X3571 in pow()
 
 inline float4 correct_ST2084(float4 pixel)
 {
+    pixel = saturate(pixel); // use saturate(), because pow() can not take negative values
+
     // ST2084 to Linear
     pixel.rgb = pow(pixel.rgb, 1.0 / ST2084_m2);
     pixel.rgb = max(pixel.rgb - ST2084_c1, 0.0) / (ST2084_c2 - ST2084_c3 * pixel.rgb);
