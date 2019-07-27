@@ -1,7 +1,3 @@
-#ifndef C_CSP
-    #define C_CSP 1
-#endif
-
 #ifndef C_YUY2
     #define C_YUY2 0
 #endif
@@ -12,12 +8,10 @@
 
 sampler s0 : register(s0);
 
-#if C_CSP
 float3 cm_r : register(c0);
 float3 cm_g : register(c1);
 float3 cm_b : register(c2);
 float3 cm_c : register(c3);
-#endif
 
 #if C_YUY2
 float4 p4 : register(c4);
@@ -61,9 +55,7 @@ float4 main(float2 tex : TEXCOORD0) : COLOR
     }
 #endif
 
-#if C_CSP
     color.rgb = float3(mul(cm_r, color.rgb), mul(cm_g, color.rgb), mul(cm_b, color.rgb)) + cm_c;
-#endif
 
 #if (C_HDR == 1)
     color = correct_ST2084(color);
