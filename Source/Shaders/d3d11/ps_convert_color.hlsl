@@ -1,7 +1,3 @@
-#ifndef C_CSP
-    #define C_CSP 1
-#endif
-
 #ifndef C_YUY2
     #define C_YUY2 0
 #endif
@@ -13,7 +9,6 @@
 Texture2D tex : register(t0);
 SamplerState samp : register(s0);
 
-#if C_CSP
 cbuffer PS_COLOR_TRANSFORM : register(b0)
 {
     float3 cm_r;
@@ -22,7 +17,6 @@ cbuffer PS_COLOR_TRANSFORM : register(b0)
     float3 cm_c;
     // NB: sizeof(float3) == sizeof(float4)
 };
-#endif
 #if C_YUY2
 cbuffer PS_TEX_DIMENSIONS : register(b4)
 {
@@ -70,9 +64,7 @@ float4 main(PS_INPUT input) : SV_Target
     }
 #endif
 
-#if C_CSP
     color.rgb = float3(mul(cm_r, color.rgb), mul(cm_g, color.rgb), mul(cm_b, color.rgb)) + cm_c;
-#endif
 
 #if (C_HDR == 1)
     color = correct_ST2084(color);

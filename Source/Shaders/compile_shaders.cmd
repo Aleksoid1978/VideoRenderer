@@ -114,17 +114,15 @@ CALL :SubColorText "0A" "=== Compiling D3D11 shaders ===" & ECHO.
 %fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_downscaler_lanczos_x.cso"    "d3d11\ps_convolution.hlsl" /DFILTER=4 /DAXIS=0
 %fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_downscaler_lanczos_y.cso"    "d3d11\ps_convolution.hlsl" /DFILTER=4 /DAXIS=1
 
-%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_color_st2084.cso"    "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_HDR=1
-%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_color_hlg.cso"       "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_HDR=2
-%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_yuy2.cso"            "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_YUY2=3
-%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_yuy2_st2084.cso"     "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_YUY2=3 /DC_HDR=1
-%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_yuy2_hlg.cso"        "d3d11\ps_convert_color.hlsl" /DC_CSP=1 /DC_YUY2=3 /DC_HDR=2
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_color_st2084.cso"    "d3d11\ps_convert_color.hlsl" /DC_HDR=1
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_color_hlg.cso"       "d3d11\ps_convert_color.hlsl" /DC_HDR=2
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_yuy2.cso"            "d3d11\ps_convert_color.hlsl" /DC_YUY2=3
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_yuy2_st2084.cso"     "d3d11\ps_convert_color.hlsl" /DC_YUY2=3 /DC_HDR=1
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_yuy2_hlg.cso"        "d3d11\ps_convert_color.hlsl" /DC_YUY2=3 /DC_HDR=2
 %fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_biplanar_st2084.cso" "d3d11\ps_convert_biplanar.hlsl" /DC_HDR=1
 %fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_biplanar_hlg.cso"    "d3d11\ps_convert_biplanar.hlsl" /DC_HDR=2
 %fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_planar_st2084.cso"   "d3d11\ps_convert_planar.hlsl" /DC_HDR=1
 %fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_planar_hlg.cso"      "d3d11\ps_convert_planar.hlsl" /DC_HDR=2
-%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_correction_st2084.cso"       "d3d11\ps_convert_color.hlsl" /DC_CSP=0 /DC_HDR=1
-%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_correction_hlg.cso"          "d3d11\ps_convert_color.hlsl" /DC_CSP=0 /DC_HDR=2
 
 EXIT /B
 
