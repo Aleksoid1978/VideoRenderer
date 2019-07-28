@@ -29,6 +29,7 @@
 #include "VideoRenderer.h"
 #include "Include/Version.h"
 #include "DX9VideoProcessor.h"
+#include "Shaders.h"
 
 #pragma pack(push, 1)
 template<unsigned texcoords>
@@ -947,29 +948,46 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// Tex Video Processor
 	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
-		UINT resid = 0;
-		if (FmtConvParams.cformat == CF_YUY2) {
-			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_YUY2_ST2084
-				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_YUY2_HLG
-				: IDF_SHADER_CONVERT_YUY2;
-		}
-		else if (FmtConvParams.pDX9Planes) {
-			if (FmtConvParams.pDX9Planes->FmtPlane3) {
-				resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_PLAN_ST2084
-					: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_PLAN_HLG
-					: IDF_SHADER_CONVERT_PLANAR;
-			} else {
-				resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_BIPL_ST2084
-					: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_BIPL_HLG
-					: IDF_SHADER_CONVERT_BIPLANAR;
+		HRESULT hr = E_ABORT;
+
+		if (FmtConvParams.cformat != CF_YUY2) {
+			int iHDR = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? 1
+				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? 2
+				: 0;
+			ID3DBlob* pShaderCode = nullptr;
+			hr = GetShaderConvertColor(false, FmtConvParams, iHDR, &pShaderCode);
+			if (S_OK == hr) {
+				hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);
+				pShaderCode->Release();
 			}
 		}
-		else {
-			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_COLOR_ST2084
-				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_COLOR_HLG
-				: IDF_SHADER_CONVERT_COLOR;
+
+		if (FAILED(hr)) {
+			UINT resid = 0;
+			if (FmtConvParams.cformat == CF_YUY2) {
+				resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_YUY2_ST2084
+					: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_YUY2_HLG
+					: IDF_SHADER_CONVERT_YUY2;
+			}
+			else if (FmtConvParams.pDX9Planes) {
+				if (FmtConvParams.pDX9Planes->FmtPlane3) {
+					resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_PLAN_ST2084
+						: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_PLAN_HLG
+						: IDF_SHADER_CONVERT_PLANAR;
+				}
+				else {
+					resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_BIPL_ST2084
+						: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_BIPL_HLG
+						: IDF_SHADER_CONVERT_BIPLANAR;
+				}
+			}
+			else {
+				resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_SHADER_CONVERT_COLOR_ST2084
+					: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_SHADER_CONVERT_COLOR_HLG
+					: IDF_SHADER_CONVERT_COLOR;
+			}
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
 		}
-		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
 
 		SetShaderConvertColorParams();
 		UpdateStatsStatic();
