@@ -33,6 +33,7 @@
 #include "Include/Version.h"
 #include "DX11VideoProcessor.h"
 #include "./Include/ID3DVideoMemoryConfiguration.h"
+#include "Shaders.h"
 
 struct VERTEX {
 	DirectX::XMFLOAT3 Pos;
@@ -1136,29 +1137,46 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// Tex Video Processor
 	if (FmtConvParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
-		UINT resid = 0;
-		if (FmtConvParams.cformat == CF_YUY2) {
-			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_YUY2_ST2084
-				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_YUY2_HLG
-				: IDF_PSH11_CONVERT_YUY2;
-		}
-		else if (FmtConvParams.pDX11Planes) {
-			if (FmtConvParams.pDX11Planes->FmtPlane3) {
-				resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_PLAN_ST2084
-					: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_PLAN_HLG
-					: IDF_PSH11_CONVERT_PLANAR;
-			} else {
-				resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_BIPL_ST2084
-					: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_BIPL_HLG
-					: IDF_PSH11_CONVERT_BIPLANAR;
+		HRESULT hr = E_ABORT;
+
+		if (FmtConvParams.cformat != CF_YUY2) {
+			int iHDR = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? 1
+				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? 2
+				: 0;
+			ID3DBlob* pShaderCode = nullptr;
+			hr = GetShaderConvertColor(true, FmtConvParams, iHDR, &pShaderCode);
+			if (S_OK == hr) {
+				hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
+				pShaderCode->Release();
 			}
 		}
-		else {
-			resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_COLOR_ST2084
-				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_COLOR_HLG
-				: IDF_PSH11_CONVERT_COLOR;
+
+		if (FAILED(hr)) {
+			UINT resid = 0;
+			if (FmtConvParams.cformat == CF_YUY2) {
+				resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_YUY2_ST2084
+					: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_YUY2_HLG
+					: IDF_PSH11_CONVERT_YUY2;
+			}
+			else if (FmtConvParams.pDX11Planes) {
+				if (FmtConvParams.pDX11Planes->FmtPlane3) {
+					resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_PLAN_ST2084
+						: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_PLAN_HLG
+						: IDF_PSH11_CONVERT_PLANAR;
+				}
+				else {
+					resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_BIPL_ST2084
+						: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_BIPL_HLG
+						: IDF_PSH11_CONVERT_BIPLANAR;
+				}
+			}
+			else {
+				resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_COLOR_ST2084
+					: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_COLOR_HLG
+					: IDF_PSH11_CONVERT_COLOR;
+			}
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
 		}
-		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
 
 		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
 		m_inputMT = *pmt;
@@ -1166,7 +1184,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		UpdateStatsStatic();
 
 		if (m_pFilter->m_pSubCallBack) {
-			HRESULT hr = m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
+			HRESULT hr2 = m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
 		}
 
 		return TRUE;
