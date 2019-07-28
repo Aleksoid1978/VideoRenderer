@@ -10,13 +10,6 @@ float4 cm_r : register(c0);
 float4 cm_g : register(c1);
 float4 cm_b : register(c2);
 float3 cm_c : register(c3);
-/*
-float4 p4 : register(c4);
-#define width  (p4[0])
-#define height (p4[1])
-#define dx     (p4[2])
-#define dy     (p4[3])
-*/
 
 #if (C_HDR == 1)
 #include "../convert/correct_st2084.hlsl"
