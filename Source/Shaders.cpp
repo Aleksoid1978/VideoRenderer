@@ -166,28 +166,41 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams,
 		}
 
 		code.Append("SamplerState samp : register(s0);\n"
-					"SamplerState sampL : register(s1);\n"
-		);
+					"SamplerState sampL : register(s1);\n");
 
 		code.Append("cbuffer PS_COLOR_TRANSFORM : register(b0) {"
 						"float3 cm_r;" // NB: sizeof(float3) == sizeof(float4)
 						"float3 cm_g;"
 						"float3 cm_b;"
 						"float3 cm_c;"
-					"};\n"
-		);
+					"};\n");
+
+		if (fmtParams.cformat == CF_YUY2) {
+			code.Append("cbuffer PS_TEX_DIMENSIONS : register(b4) {\n"
+							"float width;\n"
+							"float height;\n"
+							"float dx;\n"
+							"float dy;\n"
+						"};\n");
+		}
 
 		code.Append("struct PS_INPUT {"
 						"float4 Pos : SV_POSITION;"
 						"float2 Tex : TEXCOORD;"
-					"};\n"
-		);
+					"};\n");
 
 		code.Append("\nfloat4 main(PS_INPUT input) : SV_Target\n{\n");
 
 		switch (planes) {
 		case 1:
 			code.Append("float4 color = tex.Sample(samp, input.Tex);\n");
+			if (fmtParams.cformat == CF_YUY2) {
+				code.Append("if (fmod(input.Tex.x*width, 2) < 1.0) {\n"
+								"color = float4(color[0], color[1], color[3], 0);\n"
+							"} else {\n"
+								"color = float4(color[2], color[1], color[3], 0);\n"
+							"}\n");
+			}
 			break;
 		case 2:
 			code.Append("float colorY = texY.Sample(samp, input.Tex).r;\n"
@@ -228,12 +241,27 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams,
 					"float4 cm_b : register(c2);\n"
 					"float3 cm_c : register(c3);\n");
 
+		if (fmtParams.cformat == CF_YUY2) {
+			code.Append("float4 p4 : register(c4);\n"
+						"#define width  (p4[0])\n"
+						"#define height (p4[1])\n"
+						"#define dx     (p4[2])\n"
+						"#define dy     (p4[3])\n");
+		}
+
 		code.Append("float4 main(float2 tex : TEXCOORD0) : COLOR\n"
 					"{\n");
 
 		switch (planes) {
 		case 1:
 			code.Append("float4 color = tex2D(s0, tex);\n");
+			if (fmtParams.cformat == CF_YUY2) {
+				code.Append("if (fmod(tex.x*width, 2) < 1.0) {\n"
+								"color = float4(color[2], color[1], color[3], 0);\n"
+							"} else {\n"
+								"color = float4(color[0], color[1], color[3], 0);\n"
+							"}\n");
+			}
 			break;
 		case 2:
 			code.Append("float colorY = tex2D(sY, tex).r;\n"

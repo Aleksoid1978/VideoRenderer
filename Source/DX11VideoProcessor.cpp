@@ -1137,18 +1137,14 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// Tex Video Processor
 	if (FmtConvParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
-		HRESULT hr = E_ABORT;
-
-		if (FmtConvParams.cformat != CF_YUY2) {
-			int iHDR = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? 1
-				: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? 2
-				: 0;
-			ID3DBlob* pShaderCode = nullptr;
-			hr = GetShaderConvertColor(true, FmtConvParams, iHDR, &pShaderCode);
-			if (S_OK == hr) {
-				hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
-				pShaderCode->Release();
-			}
+		int iHDR = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? 1
+			: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? 2
+			: 0;
+		ID3DBlob* pShaderCode = nullptr;
+		HRESULT hr = GetShaderConvertColor(true, FmtConvParams, iHDR, &pShaderCode);
+		if (S_OK == hr) {
+			hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
+			pShaderCode->Release();
 		}
 
 		if (FAILED(hr)) {
