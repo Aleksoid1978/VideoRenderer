@@ -198,7 +198,9 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams,
 				code.Append("if (fmod(input.Tex.x*width, 2) < 1.0) {\n"
 								"color = float4(color[0], color[1], color[3], 0);\n"
 							"} else {\n"
-								"color = float4(color[2], color[1], color[3], 0);\n"
+								//"color = float4(color[2], color[1], color[3], 0);\n" // nearest neighbor
+								"float2 chroma = (color.yw + tex.Sample(samp, input.Tex + float2(dx, 0)).yw) * 0.5;\n"
+								"color = float4(color[2], chroma, 0);\n" // linear
 							"}\n");
 			}
 			break;
@@ -259,7 +261,9 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams,
 				code.Append("if (fmod(tex.x*width, 2) < 1.0) {\n"
 								"color = float4(color[2], color[1], color[3], 0);\n"
 							"} else {\n"
-								"color = float4(color[0], color[1], color[3], 0);\n"
+								//"color = float4(color[0], color[1], color[3], 0);\n" // nearest neighbor
+								"float2 chroma = (color.yw + tex2D(s0, tex + float2(dx, 0)).yw) * 0.5;\n"
+								"color = float4(color[0], chroma, 0);\n" // linear
 							"}\n");
 			}
 			break;
