@@ -1154,26 +1154,17 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		if (FAILED(hr)) {
 			UINT resid = 0;
 			if (FmtConvParams.cformat == CF_YUY2) {
-				resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_YUY2_ST2084
-					: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_YUY2_HLG
-					: IDF_PSH11_CONVERT_YUY2;
+				resid = IDF_PSH11_CONVERT_YUY2;
 			}
 			else if (FmtConvParams.pDX11Planes) {
 				if (FmtConvParams.pDX11Planes->FmtPlane3) {
-					resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_PLAN_ST2084
-						: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_PLAN_HLG
-						: IDF_PSH11_CONVERT_PLANAR;
-				}
-				else {
-					resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_BIPL_ST2084
-						: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_BIPL_HLG
-						: IDF_PSH11_CONVERT_BIPLANAR;
+					resid = IDF_PSH11_CONVERT_PLANAR;
+				} else {
+					resid = IDF_PSH11_CONVERT_BIPLANAR;
 				}
 			}
 			else {
-				resid = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? IDF_PSH11_CONVERT_COLOR_ST2084
-					: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? IDF_PSH11_CONVERT_COLOR_HLG
-					: IDF_PSH11_CONVERT_COLOR;
+				resid = IDF_PSH11_CONVERT_COLOR;
 			}
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
 		}
