@@ -1152,6 +1152,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 #endif
 
 		if (FAILED(hr)) {
+			ASSERT(0);
 			UINT resid = 0;
 			if (FmtConvParams.cformat == CF_YUY2) {
 				resid = IDF_PSH11_CONVERT_YUY2;

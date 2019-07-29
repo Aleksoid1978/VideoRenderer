@@ -963,6 +963,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 #endif
 
 		if (FAILED(hr)) {
+			ASSERT(0);
 			UINT resid = 0;
 			if (FmtConvParams.cformat == CF_YUY2) {
 				resid = IDF_SHADER_CONVERT_YUY2;
