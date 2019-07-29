@@ -606,6 +606,10 @@ DXVA2_ExtendedFormat SpecifyExtendedFormat(DXVA2_ExtendedFormat exFormat, const 
 	else if (colorSystem == CS_YUV) {
 		// https://docs.microsoft.com/en-us/windows/desktop/api/dxva2api/ns-dxva2api-dxva2_extendedformat
 
+		if (exFormat.VideoChromaSubsampling != DXVA2_VideoChromaSubsampling_Unknown) {
+			exFormat.VideoChromaSubsampling = DXVA2_VideoChromaSubsampling_MPEG2;
+		}
+
 		if (exFormat.NominalRange == DXVA2_NominalRange_Unknown) {
 			exFormat.NominalRange = DXVA2_NominalRange_16_235;
 		}

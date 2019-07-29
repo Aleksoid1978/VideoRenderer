@@ -1966,10 +1966,10 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 			if (m_decExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_Unknown) {
 				m_strStatsStatic2.AppendChar('*');
 			};
-			//m_strStatsStatic2.AppendFormat(L", ChromaLoc: %hS", strs[0]);
-			//if (m_decExFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Unknown) {
-			//	m_strStatsStatic2.AppendChar('*');
-			//};
+			m_strStatsStatic2.AppendFormat(L"\n  ChromaLocation: %hS", strs[0]);
+			if (m_decExFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Unknown) {
+				m_strStatsStatic2.AppendChar('*');
+			};
 		}
 		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", D3DFormatToString(m_InternalTexFmt));
 		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pDXVA2_VP ? L"DXVA2" : L"Shaders");
