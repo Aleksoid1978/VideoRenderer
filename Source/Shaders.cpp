@@ -120,7 +120,7 @@ const char correct_HLG[] =
 		"return pixel;\n"
 	"}\n";
 
-HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams, const int iHdr, ID3DBlob** ppCode)
+HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams, const int iHdr, const int iChromaLoc, ID3DBlob** ppCode)
 {
 	CStringA code;
 
@@ -144,6 +144,21 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams,
 			} else {
 				code.Append(correct_HLG);
 			}
+		}
+	}
+
+	char* strChromaPos = "";
+	if (fmtParams.Subsampling == 420) {
+		switch (iChromaLoc) {
+		case DXVA2_VideoChromaSubsampling_Cosited:
+			strChromaPos = "+float2(dx*0.5,dy*0.5)";
+			break;
+		case DXVA2_VideoChromaSubsampling_MPEG1:
+			//strChromaPos = "";
+			break;
+		case DXVA2_VideoChromaSubsampling_MPEG2:
+		default:
+			strChromaPos = "+float2(dx*0.5,0)";
 		}
 	}
 
@@ -175,14 +190,12 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams,
 						"float3 cm_c;"
 					"};\n");
 
-		if (fmtParams.cformat == CF_YUY2) {
-			code.Append("cbuffer PS_TEX_DIMENSIONS : register(b4) {\n"
-							"float width;\n"
-							"float height;\n"
-							"float dx;\n"
-							"float dy;\n"
-						"};\n");
-		}
+		code.Append("cbuffer PS_TEX_DIMENSIONS : register(b4) {\n"
+						"float width;\n"
+						"float height;\n"
+						"float dx;\n"
+						"float dy;\n"
+					"};\n");
 
 		code.Append("struct PS_INPUT {"
 						"float4 Pos : SV_POSITION;"
@@ -205,15 +218,17 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams,
 			}
 			break;
 		case 2:
-			code.Append("float colorY = texY.Sample(samp, input.Tex).r;\n"
-						"float2 colorUV = texUV.Sample(sampL, input.Tex).rg; \n"
-						"float4 color = float4(colorY, colorUV, 0);\n");
+			code.AppendFormat("float colorY = texY.Sample(samp, input.Tex).r;\n"
+				"float2 colorUV = texUV.Sample(sampL, input.Tex%s).rg; \n"
+				"float4 color = float4(colorY, colorUV, 0);\n"
+				, strChromaPos);
 			break;
 		case 3:
-			code.Append("float colorY = texY.Sample(samp, input.Tex).r;\n"
-						"float colorU = texU.Sample(sampL, input.Tex).r\n"
-						"float colorV = texV.Sample(sampL, input.Tex).r;\n"
-						"float4 color = float4(colorY, colorU, colorV, 0);\n");
+			code.AppendFormat("float colorY = texY.Sample(samp, input.Tex).r;\n"
+				"float colorU = texU.Sample(sampL, input.Tex%s).r\n"
+				"float colorV = texV.Sample(sampL, input.Tex%s).r;\n"
+				"float4 color = float4(colorY, colorU, colorV, 0);\n"
+				, strChromaPos);
 			break;
 		}
 
@@ -243,13 +258,11 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams,
 					"float4 cm_b : register(c2);\n"
 					"float3 cm_c : register(c3);\n");
 
-		if (fmtParams.cformat == CF_YUY2) {
-			code.Append("float4 p4 : register(c4);\n"
-						"#define width  (p4[0])\n"
-						"#define height (p4[1])\n"
-						"#define dx     (p4[2])\n"
-						"#define dy     (p4[3])\n");
-		}
+		code.Append("float4 p4 : register(c4);\n"
+					"#define width  (p4[0])\n"
+					"#define height (p4[1])\n"
+					"#define dx     (p4[2])\n"
+					"#define dy     (p4[3])\n");
 
 		code.Append("float4 main(float2 tex : TEXCOORD0) : COLOR\n"
 					"{\n");
@@ -268,15 +281,17 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams,
 			}
 			break;
 		case 2:
-			code.Append("float colorY = tex2D(sY, tex).r;\n"
-						"float3 colorUV = tex2D(sUV, tex).rga;\n"
-						"float4 color = float4(colorY, colorUV);\n");
+			code.AppendFormat("float colorY = tex2D(sY, tex).r;\n"
+				"float3 colorUV = tex2D(sUV, tex%s).rga;\n"
+				"float4 color = float4(colorY, colorUV);\n"
+				, strChromaPos);
 			break;
 		case 3:
-			code.Append("float colorY = tex2D(sY, tex).r;\n"
-						"float colorU = tex2D(sU, tex).r;\n"
-						"float colorV = tex2D(sV, tex).r;\n"
-						"float4 color = float4(colorY, colorU, colorV, 0);\n");
+			code.AppendFormat("float colorY = tex2D(sY, tex).r;\n"
+				"float colorU = tex2D(sU, tex%s).r;\n"
+				"float colorV = tex2D(sV, tex%s).r;\n"
+				"float4 color = float4(colorY, colorU, colorV, 0);\n"
+				, strChromaPos);
 			break;
 		}
 

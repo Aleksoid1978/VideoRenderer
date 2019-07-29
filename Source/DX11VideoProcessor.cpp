@@ -623,7 +623,7 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 	D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants));
 
-	if (m_srcParams.cformat == CF_YUY2) {
+	if (m_srcParams.cformat == CF_YUY2 || m_srcParams.Subsampling == 420) {
 		DirectX::XMFLOAT4 cbuffer4 = { (float)m_srcWidth, (float)m_srcHeight, 1.0f / m_srcWidth, 1.0f / m_srcHeight };
 		BufferDesc.ByteWidth = sizeof(cbuffer4);
 		InitData = { &cbuffer4, 0, 0 };
@@ -1142,7 +1142,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? 2
 			: 0;
 		ID3DBlob* pShaderCode = nullptr;
-		HRESULT hr = GetShaderConvertColor(true, FmtConvParams, iHDR, &pShaderCode);
+		HRESULT hr = GetShaderConvertColor(true, FmtConvParams, iHDR, m_decExFmt.VideoChromaSubsampling, &pShaderCode);
 		if (S_OK == hr) {
 			hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
 			pShaderCode->Release();
@@ -2200,7 +2200,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 			if (m_decExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_Unknown) {
 				m_strStatsStatic2.AppendChar('*');
 			};
-			//m_strStatsStatic2.AppendFormat(L", ChromaLocation: %hS", strs[0]);
+			//m_strStatsStatic2.AppendFormat(L", ChromaLoc: %hS", strs[0]);
 			//if (m_decExFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Unknown) {
 			//	m_strStatsStatic2.AppendChar('*');
 			//};

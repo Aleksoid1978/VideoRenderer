@@ -953,7 +953,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 			: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? 2
 			: 0;
 		ID3DBlob* pShaderCode = nullptr;
-		HRESULT hr = GetShaderConvertColor(false, FmtConvParams, iHDR, &pShaderCode);
+		HRESULT hr = GetShaderConvertColor(false, FmtConvParams, iHDR, m_decExFmt.VideoChromaSubsampling, &pShaderCode);
 		if (S_OK == hr) {
 			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);
 			pShaderCode->Release();
@@ -1691,7 +1691,7 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 			hr = m_pD3DDevEx->SetRenderTarget(0, m_TexConvert.pSurface);
 
 			hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_PSConvColorData.fConstants, std::size(m_PSConvColorData.fConstants));
-			if (m_srcParams.cformat == CF_YUY2) {
+			if (m_srcParams.cformat == CF_YUY2 || m_srcParams.Subsampling == 420) {
 				float fConstData[][4] = { { m_srcWidth, m_srcHeight, 1.0f / m_srcWidth, 1.0f / m_srcHeight } };
 				hr = m_pD3DDevEx->SetPixelShaderConstantF(4, (float*)fConstData, std::size(fConstData));
 			}
@@ -1966,7 +1966,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 			if (m_decExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_Unknown) {
 				m_strStatsStatic2.AppendChar('*');
 			};
-			//m_strStatsStatic2.AppendFormat(L", ChromaLocation: %hS", strs[0]);
+			//m_strStatsStatic2.AppendFormat(L", ChromaLoc: %hS", strs[0]);
 			//if (m_decExFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Unknown) {
 			//	m_strStatsStatic2.AppendChar('*');
 			//};
