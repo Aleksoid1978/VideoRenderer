@@ -1138,11 +1138,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	// Tex Video Processor
 	if (FmtConvParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
 #if 1
-		int iHDR = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? 1
-			: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? 2
-			: 0;
 		ID3DBlob* pShaderCode = nullptr;
-		HRESULT hr = GetShaderConvertColor(true, FmtConvParams, iHDR, m_decExFmt.VideoChromaSubsampling, &pShaderCode);
+		HRESULT hr = GetShaderConvertColor(true, FmtConvParams, m_srcExFmt, &pShaderCode);
 		if (S_OK == hr) {
 			hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
 			pShaderCode->Release();

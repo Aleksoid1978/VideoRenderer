@@ -949,11 +949,8 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	// Tex Video Processor
 	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
 #if 1
-		int iHDR = (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? 1
-			: (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? 2
-			: 0;
 		ID3DBlob* pShaderCode = nullptr;
-		HRESULT hr = GetShaderConvertColor(false, FmtConvParams, iHDR, m_decExFmt.VideoChromaSubsampling, &pShaderCode);
+		HRESULT hr = GetShaderConvertColor(false, FmtConvParams, m_srcExFmt, &pShaderCode);
 		if (S_OK == hr) {
 			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);
 			pShaderCode->Release();

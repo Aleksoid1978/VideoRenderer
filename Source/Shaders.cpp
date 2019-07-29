@@ -120,7 +120,7 @@ const char correct_HLG[] =
 		"return pixel;\n"
 	"}\n";
 
-HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams, const int iHdr, const int iChromaLoc, ID3DBlob** ppCode)
+HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams, const DXVA2_ExtendedFormat exFmt, ID3DBlob** ppCode)
 {
 	CStringA code;
 
@@ -128,13 +128,13 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams,
 	LPVOID data;
 	DWORD size;
 
-	if (iHdr == 1 || iHdr == 2) {
+	if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
 		hr = GetDataFromResource(data, size, IDF_HLSL_HDR_TONE_MAPPING);
 		if (S_OK == hr) {
 			code.Append((LPCSTR)data, size);
 			code.AppendChar('\n');
 
-			if (iHdr == 1) {
+			if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 				hr = GetDataFromResource(data, size, IDF_HLSL_COLORSPACE_GAMUT_CONV);
 				if (S_OK == hr) {
 					code.Append((LPCSTR)data, size);
@@ -149,7 +149,7 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams,
 
 	char* strChromaPos = "";
 	if (fmtParams.Subsampling == 420) {
-		switch (iChromaLoc) {
+		switch (exFmt.VideoChromaSubsampling) {
 		case DXVA2_VideoChromaSubsampling_Cosited:
 			strChromaPos = "+float2(dx*0.5,dy*0.5)";
 			break;
@@ -298,10 +298,10 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams,
 		code.Append("color.rgb = float3(mul(cm_r, color), mul(cm_g, color), mul(cm_b, color)) + cm_c;\n");
 	}
 
-	if (iHdr == 1) {
+	if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 		code.Append("color = correct_ST2084(color);\n");
 	}
-	else if (iHdr == 2) {
+	else if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
 		code.Append("color = correct_HLG(color);\n");
 	}
 
