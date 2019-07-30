@@ -30,6 +30,12 @@ enum :int {
 };
 
 enum :int {
+	CHROMA_Bilinear = 0,
+	CHROMA_CatmullRom,
+	CHROMA_COUNT,
+};
+
+enum :int {
 	UPSCALE_Nearest = 0,
 	//UPSCALE_Bilinear,
 	UPSCALE_Mitchell,
@@ -65,6 +71,7 @@ struct Settings_t {
 	bool bVPEnableOther;
 	bool bDeintDouble;
 	int  bVPScaling;
+	int  iChromaScaling;
 	int  iUpscaling;
 	int  iDownscaling;
 	bool bInterpolateAt50pct;
@@ -84,6 +91,7 @@ struct Settings_t {
 		bVPEnableOther      = true;
 		bDeintDouble        = false;
 		bVPScaling          = true;
+		iChromaScaling      = CHROMA_Bilinear;
 		iUpscaling          = UPSCALE_CatmullRom;
 		iDownscaling        = DOWNSCALE_Hamming;
 		bInterpolateAt50pct = true;
@@ -101,3 +109,5 @@ IVideoRenderer : public IUnknown {
 
 	STDMETHOD(SaveSettings()) PURE;
 };
+
+#define ENABLE_CHROMA_SCALING 0

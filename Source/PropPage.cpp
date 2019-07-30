@@ -95,7 +95,7 @@ void CVRMainPPage::SetControls()
 		}
 	}
 
-	SendDlgItemMessageW(IDC_COMBO5, CB_SETCURSEL, 0, 0);
+	SendDlgItemMessageW(IDC_COMBO5, CB_SETCURSEL, m_SetsPP.iChromaScaling, 0);
 	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, m_SetsPP.iUpscaling, 0);
 	SendDlgItemMessageW(IDC_COMBO3, CB_SETCURSEL, m_SetsPP.iDownscaling, 0);
 
@@ -148,7 +148,9 @@ HRESULT CVRMainPPage::OnActivate()
 
 	SendDlgItemMessageW(IDC_COMBO5, CB_ADDSTRING, 0, (LPARAM)L"Bilinear");
 	SendDlgItemMessageW(IDC_COMBO5, CB_ADDSTRING, 0, (LPARAM)L"Catmull-Rom");
+#if !ENABLE_CHROMA_SCALING
 	GetDlgItem(IDC_COMBO5).EnableWindow(FALSE);
+#endif
 
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Nearest-neighbor");
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Mitchell-Netravali");
@@ -243,6 +245,14 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				lValue = SendDlgItemMessageW(IDC_COMBO1, CB_GETITEMDATA, lValue, 0);
 				if (lValue != m_SetsPP.iTextureFmt) {
 					m_SetsPP.iTextureFmt = lValue;
+					SetDirty();
+					return (LRESULT)1;
+				}
+			}
+			if (nID == IDC_COMBO5) {
+				lValue = SendDlgItemMessageW(IDC_COMBO5, CB_GETCURSEL, 0, 0);
+				if (lValue != m_SetsPP.iChromaScaling) {
+					m_SetsPP.iChromaScaling = lValue;
 					SetDirty();
 					return (LRESULT)1;
 				}
