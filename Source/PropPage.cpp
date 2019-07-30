@@ -95,6 +95,7 @@ void CVRMainPPage::SetControls()
 		}
 	}
 
+	SendDlgItemMessageW(IDC_COMBO5, CB_SETCURSEL, 0, 0);
 	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, m_SetsPP.iUpscaling, 0);
 	SendDlgItemMessageW(IDC_COMBO3, CB_SETCURSEL, m_SetsPP.iDownscaling, 0);
 
@@ -144,6 +145,10 @@ HRESULT CVRMainPPage::OnActivate()
 	SendDlgItemMessageW(IDC_COMBO1, CB_SETITEMDATA, 1, LPARAM(8));
 	SendDlgItemMessageW(IDC_COMBO1, CB_SETITEMDATA, 2, LPARAM(10));
 	SendDlgItemMessageW(IDC_COMBO1, CB_SETITEMDATA, 3, LPARAM(16));
+
+	SendDlgItemMessageW(IDC_COMBO5, CB_ADDSTRING, 0, (LPARAM)L"Bilinear");
+	SendDlgItemMessageW(IDC_COMBO5, CB_ADDSTRING, 0, (LPARAM)L"Catmull-Rom");
+	GetDlgItem(IDC_COMBO5).EnableWindow(FALSE);
 
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Nearest-neighbor");
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Mitchell-Netravali");
