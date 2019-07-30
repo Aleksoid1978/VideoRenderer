@@ -24,4 +24,4 @@
 
 HRESULT CompileShader(const CStringA& srcCode, const D3D_SHADER_MACRO* pDefines, LPCSTR pTarget, ID3DBlob** ppCode);
 
-HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams, const DXVA2_ExtendedFormat& exFmt, ID3DBlob** ppCode);
+HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams, const DXVA2_ExtendedFormat exFmt, ID3DBlob** ppCode);

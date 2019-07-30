@@ -120,7 +120,7 @@ const char correct_HLG[] =
 		"return pixel;\n"
 	"}\n";
 
-HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams, const DXVA2_ExtendedFormat& exFmt, ID3DBlob** ppCode)
+HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams, const DXVA2_ExtendedFormat exFmt, ID3DBlob** ppCode)
 {
 	CStringA code;
 
