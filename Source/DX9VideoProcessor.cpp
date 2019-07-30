@@ -1686,16 +1686,7 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 
 		if (m_TexConvert.pTexture) {
 			hr = m_pD3DDevEx->SetRenderTarget(0, m_TexConvert.pSurface);
-
-			hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_PSConvColorData.fConstants, std::size(m_PSConvColorData.fConstants));
-			if (m_srcParams.cformat == CF_YUY2 || m_srcParams.Subsampling == 420) {
-				float fConstData[][4] = { { m_srcWidth, m_srcHeight, 1.0f / m_srcWidth, 1.0f / m_srcHeight } };
-				hr = m_pD3DDevEx->SetPixelShaderConstantF(4, (float*)fConstData, std::size(fConstData));
-			}
-			hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColor);
 			TextureConvertColor(m_TexSrcVideo);
-			m_pD3DDevEx->SetPixelShader(nullptr);
-
 			pTexture = m_TexConvert.pTexture;
 		}
 	}
@@ -1813,6 +1804,13 @@ HRESULT CDX9VideoProcessor::TextureConvertColor(Tex9Video_t& texVideo)
 		{    w,     h, 0.5f, 2.0f, 1, 1},
 	};
 
+	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_PSConvColorData.fConstants, std::size(m_PSConvColorData.fConstants));
+	if (m_srcParams.cformat == CF_YUY2 || m_srcParams.Subsampling == 420) {
+		float fConstData[][4] = { { m_srcWidth, m_srcHeight, 1.0f / m_srcWidth, 1.0f / m_srcHeight } };
+		hr = m_pD3DDevEx->SetPixelShaderConstantF(4, (float*)fConstData, std::size(fConstData));
+	}
+	hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColor);
+
 	hr = m_pD3DDevEx->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 	hr = m_pD3DDevEx->SetRenderState(D3DRS_LIGHTING, FALSE);
 	hr = m_pD3DDevEx->SetRenderState(D3DRS_ZENABLE, FALSE);
@@ -1856,6 +1854,8 @@ HRESULT CDX9VideoProcessor::TextureConvertColor(Tex9Video_t& texVideo)
 	//hr = pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(v[0]));
 	std::swap(v[2], v[3]);
 	hr = m_pD3DDevEx->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, v, sizeof(v[0]));
+
+	m_pD3DDevEx->SetPixelShader(nullptr);
 
 	m_pD3DDevEx->SetTexture(0, nullptr);
 	m_pD3DDevEx->SetTexture(1, nullptr);
