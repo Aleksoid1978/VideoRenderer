@@ -228,7 +228,7 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams,
 				"float colorU = texU.Sample(sampL, input.Tex%s).r\n"
 				"float colorV = texV.Sample(sampL, input.Tex%s).r;\n"
 				"float4 color = float4(colorY, colorU, colorV, 0);\n"
-				, strChromaPos);
+				, strChromaPos, strChromaPos);
 			break;
 		}
 
@@ -291,7 +291,7 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t fmtParams,
 				"float colorU = tex2D(sU, tex%s).r;\n"
 				"float colorV = tex2D(sV, tex%s).r;\n"
 				"float4 color = float4(colorY, colorU, colorV, 0);\n"
-				, strChromaPos);
+				, strChromaPos, strChromaPos);
 			break;
 		}
 
