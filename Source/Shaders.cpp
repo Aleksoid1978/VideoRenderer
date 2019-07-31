@@ -147,22 +147,22 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams
 		}
 	}
 
-	char* strChromaPos = "";
-	if (fmtParams.Subsampling == 420) {
-		switch (exFmt.VideoChromaSubsampling) {
-		case DXVA2_VideoChromaSubsampling_Cosited:
-			strChromaPos = "+float2(dx*0.5,dy*0.5)";
-			break;
-		case DXVA2_VideoChromaSubsampling_MPEG1:
-			//strChromaPos = "";
-			break;
-		case DXVA2_VideoChromaSubsampling_MPEG2:
-		default:
-			strChromaPos = "+float2(dx*0.5,0)";
-		}
-	}
-
 	if (bDX11) {
+		char* strChromaPos = "";
+		if (fmtParams.Subsampling == 420) {
+			switch (exFmt.VideoChromaSubsampling) {
+			case DXVA2_VideoChromaSubsampling_Cosited:
+				strChromaPos = "+float2(dx*0.5,dy*0.5)";
+				break;
+			case DXVA2_VideoChromaSubsampling_MPEG1:
+				//strChromaPos = "";
+				break;
+			case DXVA2_VideoChromaSubsampling_MPEG2:
+			default:
+				strChromaPos = "+float2(dx*0.5,0)";
+			}
+		}
+
 		const int planes = fmtParams.pDX11Planes ? (fmtParams.pDX11Planes->FmtPlane3 ? 3 : 2) : 1;
 
 		switch (planes) {
@@ -264,11 +264,10 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams
 					"#define dx     (p4[2])\n"
 					"#define dy     (p4[3])\n");
 
-		code.Append("float4 main(float2 tex : TEXCOORD0) : COLOR\n"
-					"{\n");
-
 		switch (planes) {
 		case 1:
+			code.Append("float4 main(float2 tex : TEXCOORD0) : COLOR\n"
+				"{\n");
 			code.Append("float4 color = tex2D(s0, tex);\n");
 			if (fmtParams.cformat == CF_YUY2) {
 				code.Append("if (fmod(tex.x*width, 2) < 1.0) {\n"
@@ -281,17 +280,19 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams
 			}
 			break;
 		case 2:
-			code.AppendFormat("float colorY = tex2D(sY, tex).r;\n"
-				"float3 colorUV = tex2D(sUV, tex%s).rga;\n"
-				"float4 color = float4(colorY, colorUV);\n"
-				, strChromaPos);
+			code.Append("float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n"
+				"{\n");
+			code.Append("float colorY = tex2D(sY, t0).r;\n"
+				"float3 colorUV = tex2D(sUV, t1).rga;\n"
+				"float4 color = float4(colorY, colorUV);\n");
 			break;
 		case 3:
-			code.AppendFormat("float colorY = tex2D(sY, tex).r;\n"
-				"float colorU = tex2D(sU, tex%s).r;\n"
-				"float colorV = tex2D(sV, tex%s).r;\n"
-				"float4 color = float4(colorY, colorU, colorV, 0);\n"
-				, strChromaPos, strChromaPos);
+			code.Append("float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n"
+				"{\n");
+			code.AppendFormat("float colorY = tex2D(sY, t0).r;\n"
+				"float colorU = tex2D(sU, t1).r;\n"
+				"float colorV = tex2D(sV, t1).r;\n"
+				"float4 color = float4(colorY, colorU, colorV, 0);\n");
 			break;
 		}
 

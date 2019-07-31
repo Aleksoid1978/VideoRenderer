@@ -1794,14 +1794,37 @@ HRESULT CDX9VideoProcessor::TextureConvertColor(Tex9Video_t& texVideo)
 {
 	HRESULT hr;
 
-	float w = (float)(m_srcParams.cformat == CF_YUY2 ? texVideo.Width * 2 : texVideo.Width) - 0.5f;
-	float h = (float)texVideo.Height - 0.5f;
+	float w = (float)texVideo.Width;
+	float h = (float)texVideo.Height;
+	float sx = 0.0f;
+	float sy = 0.0f;
 
-	MYD3DVERTEX<1> v[] = {
-		{-0.5f, -0.5f, 0.5f, 2.0f, 0, 0},
-		{    w, -0.5f, 0.5f, 2.0f, 1, 0},
-		{-0.5f,     h, 0.5f, 2.0f, 0, 1},
-		{    w,     h, 0.5f, 2.0f, 1, 1},
+	if (m_srcParams.cformat == CF_YUY2) {
+		w *= 2;
+	}
+	else if (m_srcParams.Subsampling == 420) {
+		switch (m_srcExFmt.VideoChromaSubsampling) {
+		case DXVA2_VideoChromaSubsampling_Cosited:
+			sx = 0.5f / w;
+			sy = 0.5f / h;
+			break;
+		case DXVA2_VideoChromaSubsampling_MPEG1:
+			//nothing;
+			break;
+		case DXVA2_VideoChromaSubsampling_MPEG2:
+		default:
+			sx = 0.5f / w;
+		}
+	}
+
+	w -= 0.5f;
+	h -= 0.5f;
+
+	MYD3DVERTEX<2> v[] = {
+		{-0.5f, -0.5f, 0.5f, 2.0f, {{0, 0}, {0+sx, 0+sy}}},
+		{    w, -0.5f, 0.5f, 2.0f, {{1, 0}, {1+sx, 0+sy}}},
+		{-0.5f,     h, 0.5f, 2.0f, {{0, 1}, {0+sx, 1+sy}}},
+		{    w,     h, 0.5f, 2.0f, {{1, 1}, {1+sx, 1+sy}}},
 	};
 
 	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_PSConvColorData.fConstants, std::size(m_PSConvColorData.fConstants));
