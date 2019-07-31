@@ -106,6 +106,8 @@ private:
 
 	CRect m_windowRect;
 
+	bool m_bSubInvAlpha = false;
+
 public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
 	~CMpcVideoRenderer();

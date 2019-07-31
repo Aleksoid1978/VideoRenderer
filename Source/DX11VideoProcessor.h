@@ -74,6 +74,7 @@ private:
 	ID3D11SamplerState*          m_pSamplerPoint = nullptr;
 	ID3D11SamplerState*          m_pSamplerLinear = nullptr;
 	CComPtr<ID3D11BlendState>    m_pAlphaBlendState;
+	CComPtr<ID3D11BlendState>    m_pAlphaBlendStateInv;
 	ID3D11Buffer*                m_pFullFrameVertexBuffer = nullptr;
 	CComPtr<ID3D11VertexShader>  m_pVS_Simple;
 	CComPtr<ID3D11PixelShader>   m_pPS_Simple;

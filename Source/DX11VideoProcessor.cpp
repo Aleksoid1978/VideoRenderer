@@ -205,7 +205,7 @@ HRESULT CDX11VideoProcessor::AlphaBltSub(ID3D11ShaderResourceView* pShaderResour
 			// Set resources
 			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 			m_pDeviceContext->RSSetViewports(1, &viewport);
-			m_pDeviceContext->OMSetBlendState(m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
+			m_pDeviceContext->OMSetBlendState(m_pFilter->m_bSubInvAlpha ? m_pAlphaBlendStateInv : m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
 			m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
@@ -528,6 +528,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	SAFE_RELEASE(m_pSamplerPoint);
 	SAFE_RELEASE(m_pSamplerLinear);
 	m_pAlphaBlendState.Release();
+	m_pAlphaBlendStateInv.Release();
 	SAFE_RELEASE(m_pFullFrameVertexBuffer);
 
 #if DIRECTWRITE_ENABLE
@@ -681,6 +682,9 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	bdesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	bdesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBlendState(&bdesc, &m_pAlphaBlendState));
+
+	bdesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBlendState(&bdesc, &m_pAlphaBlendStateInv));
 
 	EXECUTE_ASSERT(S_OK == CreateVertexBuffer(m_pDevice, &m_pFullFrameVertexBuffer, 1, 1, CRect(0, 0, 1, 1)));
 
@@ -1704,7 +1708,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hrSubPic = AlphaBltSub(m_pShaderResourceSubPic, pBackBuffer, rSrcPri, VP);
 		ASSERT(S_OK == hrSubPic);
 
-		hrSubPic = m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, D3DCOLOR_ARGB(255, 0, 0, 0));
+		hrSubPic = m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, m_pFilter->m_bSubInvAlpha ? D3DCOLOR_ARGB(0, 0, 0, 0) : D3DCOLOR_ARGB(255, 0, 0, 0));
 	}
 
 	if (m_bShowStats) {
