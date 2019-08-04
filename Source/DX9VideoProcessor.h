@@ -237,6 +237,7 @@ public:
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
 	HRESULT GetCurentImage(long *pDIBImage);
 	HRESULT GetVPInfo(CStringW& str);
+	ColorFormat_t GetColorFormat() { return m_srcParams.cformat; }
 
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; }
 	void SetShowStats(bool value)   { m_bShowStats   = value; }
