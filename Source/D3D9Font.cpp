@@ -78,6 +78,11 @@ CD3D9Font::CD3D9Font( const WCHAR* strFontName, DWORD dwHeight, DWORD dwFlags )
 	m_strFontName[_countof(m_strFontName) - 1] = '\0';
 	m_dwFontHeight         = dwHeight;
 	m_dwFontFlags          = dwFlags;
+
+	m_dwTexWidth           = 0;
+	m_dwTexHeight          = 0;
+	m_fTextScale           = 0;
+	ZeroMemory(m_fTexCoords, sizeof(m_fTexCoords));
 	m_dwSpacing            = 0;
 
 	m_pd3dDevice           = nullptr;
