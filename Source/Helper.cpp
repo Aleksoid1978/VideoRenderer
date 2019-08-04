@@ -598,15 +598,18 @@ HRESULT SaveARGB32toBMP(BYTE* src, const UINT src_pitch, const UINT width, const
 	return E_FAIL;
 }
 
-DXVA2_ExtendedFormat SpecifyExtendedFormat(DXVA2_ExtendedFormat exFormat, const ColorSystem_t colorSystem, const UINT width, const UINT height)
+DXVA2_ExtendedFormat SpecifyExtendedFormat(DXVA2_ExtendedFormat exFormat, const FmtConvParams_t& fmtParams, const UINT width, const UINT height)
 {
-	if (colorSystem == CS_RGB) {
+	if (fmtParams.CSType == CS_RGB) {
 		exFormat.value = 0u;
 	}
-	else if (colorSystem == CS_YUV) {
+	else if (fmtParams.CSType == CS_YUV) {
 		// https://docs.microsoft.com/en-us/windows/desktop/api/dxva2api/ns-dxva2api-dxva2_extendedformat
 
-		if (exFormat.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Unknown) {
+		if (fmtParams.Subsampling != 420) {
+			exFormat.VideoChromaSubsampling = DXVA2_VideoChromaSubsampling_Unknown;
+		}
+		else if (exFormat.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Unknown) {
 			exFormat.VideoChromaSubsampling = DXVA2_VideoChromaSubsampling_MPEG2;
 		}
 

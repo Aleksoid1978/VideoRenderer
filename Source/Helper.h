@@ -241,7 +241,7 @@ BITMAPINFOHEADER* GetBIHfromVIHs(const AM_MEDIA_TYPE* mt);
 
 HRESULT SaveARGB32toBMP(BYTE* src, const UINT src_pitch, const UINT width, const UINT height, const wchar_t* filename);
 
-DXVA2_ExtendedFormat SpecifyExtendedFormat(DXVA2_ExtendedFormat exFormat, const ColorSystem_t colorSystem, const UINT width, const UINT height);
+DXVA2_ExtendedFormat SpecifyExtendedFormat(DXVA2_ExtendedFormat exFormat, const FmtConvParams_t& fmtParams, const UINT width, const UINT height);
 
 void GetExtendedFormatString(LPCSTR (&strs)[6], const DXVA2_ExtendedFormat exFormat, const ColorSystem_t colorSystem);
 

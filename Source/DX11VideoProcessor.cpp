@@ -1064,7 +1064,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
 	}
 
-	m_srcExFmt = SpecifyExtendedFormat(m_decExFmt, FmtConvParams.CSType, m_srcRectWidth, m_srcRectHeight);
+	m_srcExFmt = SpecifyExtendedFormat(m_decExFmt, FmtConvParams, m_srcRectWidth, m_srcRectHeight);
 
 	if (m_srcRect.IsRectNull()) {
 		m_srcRect.SetRect(0, 0, biWidth, biHeight);
@@ -2201,10 +2201,12 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 			if (m_decExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_Unknown) {
 				m_strStatsStatic2.AppendChar('*');
 			};
-			m_strStatsStatic2.AppendFormat(L"\n  ChromaLocation: %hS", strs[0]);
-			if (m_decExFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Unknown) {
-				m_strStatsStatic2.AppendChar('*');
-			};
+			if (m_srcParams.Subsampling == 420) {
+				m_strStatsStatic2.AppendFormat(L"\n  ChromaLocation: %hS", strs[0]);
+				if (m_decExFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Unknown) {
+					m_strStatsStatic2.AppendChar('*');
+				};
+			}
 		}
 		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", DXGIFormatToString(m_InternalTexFmt));
 		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");
