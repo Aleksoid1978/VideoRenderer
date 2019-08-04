@@ -854,13 +854,8 @@ STDMETHODIMP_(void) CMpcVideoRenderer::GetSettings(Settings_t& setings)
 
 STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 {
-	m_Sets.bUseD3D11      = setings.bUseD3D11;
-	m_Sets.iTextureFmt    = setings.iTextureFmt;
-	m_Sets.bVPEnableNV12  = setings.bVPEnableNV12;
-	m_Sets.bVPEnableP01x  = setings.bVPEnableP01x;
-	m_Sets.bVPEnableYUY2  = setings.bVPEnableYUY2;
-	m_Sets.bVPEnableOther = setings.bVPEnableOther;
-	m_Sets.iSwapEffect    = setings.iSwapEffect;
+	m_Sets.bUseD3D11   = setings.bUseD3D11;
+	m_Sets.iSwapEffect = setings.iSwapEffect;
 
 	CAutoLock cRendererLock(&m_RendererLock);
 
@@ -914,6 +909,35 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 			m_DX9_VP.SetInterpolateAt50pct(setings.bInterpolateAt50pct);
 		}
 		m_Sets.bInterpolateAt50pct = setings.bInterpolateAt50pct;
+	}
+
+	if (m_Sets.iTextureFmt != setings.iTextureFmt
+		|| setings.bVPEnableNV12 != m_Sets.bVPEnableNV12
+		|| setings.bVPEnableP01x != m_Sets.bVPEnableP01x
+		|| setings.bVPEnableYUY2 != m_Sets.bVPEnableYUY2
+		|| setings.bVPEnableOther != m_Sets.bVPEnableOther) {
+
+		m_Sets.iTextureFmt    = setings.iTextureFmt;
+		m_Sets.bVPEnableNV12  = setings.bVPEnableNV12;
+		m_Sets.bVPEnableP01x  = setings.bVPEnableP01x;
+		m_Sets.bVPEnableYUY2  = setings.bVPEnableYUY2;
+		m_Sets.bVPEnableOther = setings.bVPEnableOther;
+
+		AM_MEDIA_TYPE mt;
+		if (m_pInputPin && SUCCEEDED(m_pInputPin->ConnectionMediaType(&mt))) {
+			CMediaType mtype(mt);
+			FreeMediaType(mt);
+			BOOL ret;
+			if (m_bUsedD3D11) {
+				m_DX11_VP.SetTexFormat(m_Sets.iTextureFmt);
+				m_DX11_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableP01x, m_Sets.bVPEnableYUY2, m_Sets.bVPEnableOther);
+				ret = m_DX11_VP.InitMediaType(&mtype);
+			} else {
+				m_DX9_VP.SetTexFormat(m_Sets.iTextureFmt);
+				m_DX9_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableP01x, m_Sets.bVPEnableYUY2, m_Sets.bVPEnableOther);
+				ret = m_DX9_VP.InitMediaType(&mtype);
+			}
+		}
 	}
 }
 
