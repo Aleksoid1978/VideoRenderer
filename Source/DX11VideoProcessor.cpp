@@ -2210,6 +2210,25 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		}
 		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", DXGIFormatToString(m_InternalTexFmt));
 		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");
+
+		DXGI_SWAP_CHAIN_DESC1 swapchain_desc;
+		if (S_OK == m_pDXGISwapChain1->GetDesc1(&swapchain_desc)) {
+			m_strStatsStatic2.Append(L"\nPresentation  : ");
+			switch (swapchain_desc.SwapEffect) {
+			case DXGI_SWAP_EFFECT_DISCARD:
+				m_strStatsStatic2.Append(L"Discard");
+				break;
+			case DXGI_SWAP_EFFECT_SEQUENTIAL:
+				m_strStatsStatic2.Append(L"Sequential");
+				break;
+			case DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL:
+				m_strStatsStatic2.Append(L"Flip sequential");
+				break;
+			case DXGI_SWAP_EFFECT_FLIP_DISCARD:
+				m_strStatsStatic2.Append(L"Flip discard");
+				break;
+			}
+		}
 	} else {
 		m_strStatsStatic1 = L"Error";
 		m_strStatsStatic2.Empty();

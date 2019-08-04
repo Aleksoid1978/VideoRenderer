@@ -1995,6 +1995,27 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 		}
 		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", D3DFormatToString(m_InternalTexFmt));
 		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pDXVA2_VP ? L"DXVA2" : L"Shaders");
+
+		if (m_d3dpp.SwapEffect) {
+			m_strStatsStatic2.Append(L"\nPresentation  : ");
+			switch (m_d3dpp.SwapEffect) {
+			case D3DSWAPEFFECT_DISCARD:
+				m_strStatsStatic2.Append(L"Discard");
+				break;
+			case D3DSWAPEFFECT_FLIP:
+				m_strStatsStatic2.Append(L"Flip");
+				break;
+			case D3DSWAPEFFECT_COPY:
+				m_strStatsStatic2.Append(L"Copy");
+				break;
+			case D3DSWAPEFFECT_OVERLAY:
+				m_strStatsStatic2.Append(L"Overlay");
+				break;
+			case D3DSWAPEFFECT_FLIPEX:
+				m_strStatsStatic2.Append(L"FlipEx");
+				break;
+			}
+		}
 	} else {
 		m_strStatsStatic1 = L"Error";
 		m_strStatsStatic2.Empty();

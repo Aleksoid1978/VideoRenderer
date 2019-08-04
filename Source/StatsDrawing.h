@@ -51,7 +51,7 @@ public:
 		m_graphics = new Graphics(m_bitmap);
 
 		m_fontFamily = new FontFamily(L"Consolas");
-		m_font = new Font(m_fontFamily, 16, FontStyleRegular, UnitPixel);
+		m_font = new Font(m_fontFamily, 14, FontStyleRegular, UnitPixel);
 		m_solidBrushText = new SolidBrush(Color(255, 255, 255));
 		m_solidBrush = new SolidBrush(Color(128, 255, 128));
 	}
