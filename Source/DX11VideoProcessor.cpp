@@ -2212,7 +2212,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");
 
 		DXGI_SWAP_CHAIN_DESC1 swapchain_desc;
-		if (S_OK == m_pDXGISwapChain1->GetDesc1(&swapchain_desc)) {
+		if (m_pDXGISwapChain1 && S_OK == m_pDXGISwapChain1->GetDesc1(&swapchain_desc)) {
 			m_strStatsStatic2.Append(L"\nPresentation  : ");
 			switch (swapchain_desc.SwapEffect) {
 			case DXGI_SWAP_EFFECT_DISCARD:
