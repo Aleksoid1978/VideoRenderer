@@ -2224,9 +2224,11 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 			case DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL:
 				m_strStatsStatic2.Append(L"Flip sequential");
 				break;
+#if VER_PRODUCTBUILD >= 10000
 			case DXGI_SWAP_EFFECT_FLIP_DISCARD:
 				m_strStatsStatic2.Append(L"Flip discard");
 				break;
+#endif
 			}
 		}
 	} else {
