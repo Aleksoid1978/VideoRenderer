@@ -821,11 +821,9 @@ STDMETHODIMP CMpcVideoRenderer::GetPages(CAUUID* pPages)
 {
 	CheckPointer(pPages, E_POINTER);
 
-	static GUID GUIDS[] = {
-		{ 0x565DCEF2, 0xAFC5, 0x11D2, 0x88, 0x53, 0x00, 0x00, 0xF8, 0x08, 0x83, 0xE3 }
-	};
+	static const GUID guidQualityPPage = { 0x565DCEF2, 0xAFC5, 0x11D2, 0x88, 0x53, 0x00, 0x00, 0xF8, 0x08, 0x83, 0xE3 };
 
-	pPages->cElems = 2 + std::size(GUIDS);
+	pPages->cElems = 3;
 	pPages->pElems = reinterpret_cast<GUID*>(CoTaskMemAlloc(sizeof(GUID) * pPages->cElems));
 	if (pPages->pElems == nullptr) {
 		return E_OUTOFMEMORY;
@@ -833,7 +831,7 @@ STDMETHODIMP CMpcVideoRenderer::GetPages(CAUUID* pPages)
 
 	pPages->pElems[0] = __uuidof(CVRMainPPage);
 	pPages->pElems[1] = __uuidof(CVRInfoPPage);
-	memcpy(&pPages->pElems[2], GUIDS, sizeof(GUIDS));
+	pPages->pElems[2] = guidQualityPPage;
 
 	return S_OK;
 }
