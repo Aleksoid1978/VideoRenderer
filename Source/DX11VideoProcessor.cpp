@@ -1142,12 +1142,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	// Tex Video Processor
 	if (FmtConvParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
 #if 1
-		ID3DBlob* pShaderCode = nullptr;
-		HRESULT hr = GetShaderConvertColor(true, FmtConvParams, m_srcExFmt, &pShaderCode);
-		if (S_OK == hr) {
-			hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
-			pShaderCode->Release();
-		}
+		HRESULT hr = UpdateChromaScalingShader();
 #else
 		HRESULT hr = E_ABORT;
 #endif
@@ -1824,6 +1819,20 @@ void CDX11VideoProcessor::UpdateDownscalingShaders()
 	m_strShaderDownscale = resIDs[m_iDownscaling].description;
 }
 
+HRESULT CDX11VideoProcessor::UpdateChromaScalingShader()
+{
+	m_pPSConvertColor.Release();
+	ID3DBlob* pShaderCode = nullptr;
+
+	HRESULT hr = GetShaderConvertColor(true, m_srcParams, m_srcExFmt, &pShaderCode);
+	if (S_OK == hr) {
+		hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
+		pShaderCode->Release();
+	}
+
+	return hr;
+}
+
 HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
 	HRESULT hr = S_OK;
@@ -2138,6 +2147,20 @@ void CDX11VideoProcessor::SetVPScaling(bool value)
 	m_bVPScaling = value;
 
 	UpdateConvertTexD3D11VP();
+}
+
+void CDX11VideoProcessor::SetChromaScaling(int value)
+{
+	if (value < 0 || value >= CHROMA_COUNT) {
+		DLog(L"CDX11VideoProcessor::SetChromaScaling() unknown value %d", value);
+		ASSERT(FALSE);
+		return;
+	}
+	m_iChromaScaling = value;
+
+	if (m_pDevice) {
+		EXECUTE_ASSERT(S_OK == UpdateChromaScalingShader());
+	}
 }
 
 void CDX11VideoProcessor::SetUpscaling(int value)

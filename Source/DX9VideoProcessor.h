@@ -92,6 +92,7 @@ private:
 	VPEnableFormats_t m_VPFormats = {true, true, true, true};
 	bool m_bDeintDouble        = false;
 	bool m_bVPScaling          = true;
+	int  m_iChromaScaling      = CHROMA_Bilinear;
 	int  m_iUpscaling          = UPSCALE_CatmullRom; // interpolation
 	int  m_iDownscaling        = DOWNSCALE_Hamming;  // convolution
 	bool m_bInterpolateAt50pct = true;
@@ -241,6 +242,7 @@ public:
 	void SetTexFormat(int value);
 	void SetVPEnableFmts(VPEnableFormats_t& VPFormats);
 	void SetVPScaling(bool value);
+	void SetChromaScaling(int value);
 	void SetUpscaling(int value);
 	void SetDownscaling(int value);
 	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
@@ -252,6 +254,7 @@ private:
 	void UpdateCorrectionTex(const int w, const int h);
 	void UpdateUpscalingShaders();
 	void UpdateDownscalingShaders();
+	HRESULT UpdateChromaScalingShader();
 
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
 	HRESULT ProcessTex(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);

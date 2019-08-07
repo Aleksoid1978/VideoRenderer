@@ -949,12 +949,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	// Tex Video Processor
 	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
 #if 1
-		ID3DBlob* pShaderCode = nullptr;
-		HRESULT hr = GetShaderConvertColor(false, FmtConvParams, m_srcExFmt, &pShaderCode);
-		if (S_OK == hr) {
-			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);
-			pShaderCode->Release();
-		}
+		HRESULT hr = UpdateChromaScalingShader();
 #else
 		HRESULT hr = E_ABORT;
 #endif
@@ -1510,6 +1505,20 @@ void CDX9VideoProcessor::SetVPScaling(bool value)
 	UpdateVideoTexDXVA2VP();
 }
 
+void CDX9VideoProcessor::SetChromaScaling(int value)
+{
+	if (value < 0 || value >= CHROMA_COUNT) {
+		DLog(L"CDX9VideoProcessor::SetChromaScaling() unknown value %d", value);
+		ASSERT(FALSE);
+		return;
+	}
+	m_iChromaScaling = value;
+
+	if (m_pD3DDevEx) {
+		EXECUTE_ASSERT(S_OK == UpdateChromaScalingShader());
+	}
+}
+
 void CDX9VideoProcessor::SetUpscaling(int value)
 {
 	if (value < 0 || value >= UPSCALE_COUNT) {
@@ -1636,6 +1645,20 @@ void CDX9VideoProcessor::UpdateDownscalingShaders()
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleX, resIDs[m_iDownscaling].shaderX));
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, resIDs[m_iDownscaling].shaderY));
 	m_strShaderDownscale = resIDs[m_iDownscaling].description;
+}
+
+HRESULT CDX9VideoProcessor::UpdateChromaScalingShader()
+{
+	m_pPSConvertColor.Release();
+	ID3DBlob* pShaderCode = nullptr;
+
+	HRESULT hr = GetShaderConvertColor(false, m_srcParams, m_srcExFmt, &pShaderCode);
+	if (S_OK == hr) {
+		hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);
+		pShaderCode->Release();
+	}
+
+	return hr;
 }
 
 HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)

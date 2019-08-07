@@ -128,6 +128,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	m_DX9_VP.SetVPEnableFmts(m_Sets.VPFmts);
 	m_DX9_VP.SetDeintDouble(m_Sets.bDeintDouble);
 	m_DX9_VP.SetVPScaling(m_Sets.bVPScaling);
+	m_DX9_VP.SetChromaScaling(m_Sets.iChromaScaling);
 	m_DX9_VP.SetUpscaling(m_Sets.iUpscaling);
 	m_DX9_VP.SetDownscaling(m_Sets.iDownscaling);
 	m_DX9_VP.SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
@@ -138,6 +139,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	m_DX11_VP.SetVPEnableFmts(m_Sets.VPFmts);
 	m_DX11_VP.SetDeintDouble(m_Sets.bDeintDouble);
 	m_DX11_VP.SetVPScaling(m_Sets.bVPScaling);
+	m_DX11_VP.SetChromaScaling(m_Sets.iChromaScaling);
 	m_DX11_VP.SetUpscaling(m_Sets.iUpscaling);
 	m_DX11_VP.SetDownscaling(m_Sets.iDownscaling);
 	m_DX11_VP.SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
@@ -895,6 +897,15 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 			m_DX9_VP.SetVPScaling(setings.bVPScaling);
 		}
 		m_Sets.bVPScaling = setings.bVPScaling;
+	}
+
+	if (setings.iChromaScaling != m_Sets.iChromaScaling) {
+		if (m_bUsedD3D11) {
+			m_DX11_VP.SetChromaScaling(setings.iChromaScaling);
+		} else {
+			m_DX9_VP.SetChromaScaling(setings.iChromaScaling);
+		}
+		m_Sets.iChromaScaling = setings.iChromaScaling;
 	}
 
 	if (setings.iUpscaling != m_Sets.iUpscaling) {
