@@ -86,16 +86,16 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			}
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableNV12, dw)) {
-			m_Sets.bVPEnableNV12 = !!dw;
+			m_Sets.VPFmts.bNV12 = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableP01x, dw)) {
-			m_Sets.bVPEnableP01x = !!dw;
+			m_Sets.VPFmts.bP01x = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableYUY2, dw)) {
-			m_Sets.bVPEnableYUY2 = !!dw;
+			m_Sets.VPFmts.bYUY2 = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableOther, dw)) {
-			m_Sets.bVPEnableOther = !!dw;
+			m_Sets.VPFmts.bOther = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_DoubleFrateDeint, dw)) {
 			m_Sets.bDeintDouble = !!dw;
@@ -125,7 +125,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	// configure the video processors
 	m_DX9_VP.SetShowStats(m_Sets.bShowStats);
 	m_DX9_VP.SetTexFormat(m_Sets.iTextureFmt);
-	m_DX9_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableP01x, m_Sets.bVPEnableYUY2, m_Sets.bVPEnableOther);
+	m_DX9_VP.SetVPEnableFmts(m_Sets.VPFmts);
 	m_DX9_VP.SetDeintDouble(m_Sets.bDeintDouble);
 	m_DX9_VP.SetVPScaling(m_Sets.bVPScaling);
 	m_DX9_VP.SetUpscaling(m_Sets.iUpscaling);
@@ -135,7 +135,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	m_DX11_VP.SetShowStats(m_Sets.bShowStats);
 	m_DX11_VP.SetTexFormat(m_Sets.iTextureFmt);
-	m_DX11_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableP01x, m_Sets.bVPEnableYUY2, m_Sets.bVPEnableOther);
+	m_DX11_VP.SetVPEnableFmts(m_Sets.VPFmts);
 	m_DX11_VP.SetDeintDouble(m_Sets.bDeintDouble);
 	m_DX11_VP.SetVPScaling(m_Sets.bVPScaling);
 	m_DX11_VP.SetUpscaling(m_Sets.iUpscaling);
@@ -923,16 +923,13 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 	}
 
 	if (m_Sets.iTextureFmt != setings.iTextureFmt
-		|| setings.bVPEnableNV12 != m_Sets.bVPEnableNV12
-		|| setings.bVPEnableP01x != m_Sets.bVPEnableP01x
-		|| setings.bVPEnableYUY2 != m_Sets.bVPEnableYUY2
-		|| setings.bVPEnableOther != m_Sets.bVPEnableOther) {
+		|| setings.VPFmts.bNV12  != m_Sets.VPFmts.bNV12
+		|| setings.VPFmts.bP01x  != m_Sets.VPFmts.bP01x
+		|| setings.VPFmts.bYUY2  != m_Sets.VPFmts.bYUY2
+		|| setings.VPFmts.bOther != m_Sets.VPFmts.bOther) {
 
-		m_Sets.iTextureFmt    = setings.iTextureFmt;
-		m_Sets.bVPEnableNV12  = setings.bVPEnableNV12;
-		m_Sets.bVPEnableP01x  = setings.bVPEnableP01x;
-		m_Sets.bVPEnableYUY2  = setings.bVPEnableYUY2;
-		m_Sets.bVPEnableOther = setings.bVPEnableOther;
+		m_Sets.iTextureFmt = setings.iTextureFmt;
+		m_Sets.VPFmts      = setings.VPFmts;
 
 		AM_MEDIA_TYPE mt;
 		if (m_pInputPin && SUCCEEDED(m_pInputPin->ConnectionMediaType(&mt))) {
@@ -941,11 +938,11 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 			BOOL ret;
 			if (m_bUsedD3D11) {
 				m_DX11_VP.SetTexFormat(m_Sets.iTextureFmt);
-				m_DX11_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableP01x, m_Sets.bVPEnableYUY2, m_Sets.bVPEnableOther);
+				m_DX11_VP.SetVPEnableFmts(m_Sets.VPFmts);
 				ret = m_DX11_VP.InitMediaType(&mtype);
 			} else {
 				m_DX9_VP.SetTexFormat(m_Sets.iTextureFmt);
-				m_DX9_VP.SetVPEnableFmts(m_Sets.bVPEnableNV12, m_Sets.bVPEnableP01x, m_Sets.bVPEnableYUY2, m_Sets.bVPEnableOther);
+				m_DX9_VP.SetVPEnableFmts(m_Sets.VPFmts);
 				ret = m_DX9_VP.InitMediaType(&mtype);
 			}
 		}
@@ -959,10 +956,10 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_UseD3D11,           m_Sets.bUseD3D11);
 		key.SetDWORDValue(OPT_ShowStatistics,     m_Sets.bShowStats);
 		key.SetDWORDValue(OPT_TextureFormat,      m_Sets.iTextureFmt);
-		key.SetDWORDValue(OPT_VPEnableNV12,       m_Sets.bVPEnableNV12);
-		key.SetDWORDValue(OPT_VPEnableP01x,       m_Sets.bVPEnableP01x);
-		key.SetDWORDValue(OPT_VPEnableYUY2,       m_Sets.bVPEnableYUY2);
-		key.SetDWORDValue(OPT_VPEnableOther,      m_Sets.bVPEnableOther);
+		key.SetDWORDValue(OPT_VPEnableNV12,       m_Sets.VPFmts.bNV12);
+		key.SetDWORDValue(OPT_VPEnableP01x,       m_Sets.VPFmts.bP01x);
+		key.SetDWORDValue(OPT_VPEnableYUY2,       m_Sets.VPFmts.bYUY2);
+		key.SetDWORDValue(OPT_VPEnableOther,      m_Sets.VPFmts.bOther);
 		key.SetDWORDValue(OPT_DoubleFrateDeint,   m_Sets.bDeintDouble);
 		key.SetDWORDValue(OPT_VPScaling,          m_Sets.bVPScaling);
 #if ENABLE_CHROMA_SCALING

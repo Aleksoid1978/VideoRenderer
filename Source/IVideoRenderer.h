@@ -61,14 +61,18 @@ enum :int {
 	SWAPEFFECT_COUNT,
 };
 
+struct VPEnableFormats_t {
+	bool bNV12;
+	bool bP01x;
+	bool bYUY2;
+	bool bOther;
+};
+
 struct Settings_t {
 	bool bUseD3D11;
 	bool bShowStats;
 	int  iTextureFmt;
-	bool bVPEnableNV12;
-	bool bVPEnableP01x;
-	bool bVPEnableYUY2;
-	bool bVPEnableOther;
+	VPEnableFormats_t VPFmts;
 	bool bDeintDouble;
 	int  bVPScaling;
 	int  iChromaScaling;
@@ -85,10 +89,10 @@ struct Settings_t {
 		bUseD3D11           = false;
 		bShowStats          = false;
 		iTextureFmt         = TEXFMT_AUTOINT;
-		bVPEnableNV12       = true;
-		bVPEnableP01x       = true;
-		bVPEnableYUY2       = true;
-		bVPEnableOther      = true;
+		VPFmts.bNV12        = true;
+		VPFmts.bP01x        = true;
+		VPFmts.bYUY2        = true;
+		VPFmts.bOther       = true;
 		bDeintDouble        = false;
 		bVPScaling          = true;
 		iChromaScaling      = CHROMA_Bilinear;

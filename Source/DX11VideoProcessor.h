@@ -58,10 +58,7 @@ private:
 
 	bool m_bShowStats          = false;
 	int  m_iTexFormat          = TEXFMT_AUTOINT;
-	bool m_bVPEnableNV12       = true;
-	bool m_bVPEnableP01x       = true;
-	bool m_bVPEnableYUY2       = true;
-	bool m_bVPEnableOther      = true;
+	VPEnableFormats_t m_VPFormats = {true, true, true, true};
 	bool m_bDeintDouble        = false;
 	bool m_bVPScaling          = true;
 	int  m_iUpscaling          = UPSCALE_CatmullRom; // interpolation
@@ -259,7 +256,7 @@ public:
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
 	void SetShowStats(bool value)   { m_bShowStats   = value; };
 	void SetTexFormat(int value);
-	void SetVPEnableFmts(bool bNV12, bool bP01x, bool bYUY2, bool bOther);
+	void SetVPEnableFmts(VPEnableFormats_t& VPFormats);
 	void SetVPScaling(bool value);
 	void SetUpscaling(int value);
 	void SetDownscaling(int value);

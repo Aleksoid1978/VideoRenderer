@@ -74,15 +74,15 @@ CVRMainPPage::~CVRMainPPage()
 
 void CVRMainPPage::SetControls()
 {
-	CheckDlgButton(IDC_CHECK1, m_SetsPP.bUseD3D11      ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK2, m_SetsPP.bShowStats     ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK1, m_SetsPP.bUseD3D11     ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK2, m_SetsPP.bShowStats    ? BST_CHECKED : BST_UNCHECKED);
 
-	CheckDlgButton(IDC_CHECK7, m_SetsPP.bVPEnableNV12  ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK8, m_SetsPP.bVPEnableP01x  ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK9, m_SetsPP.bVPEnableYUY2  ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK4, m_SetsPP.bVPEnableOther ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK3, m_SetsPP.bDeintDouble   ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling     ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK7, m_SetsPP.VPFmts.bNV12  ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK8, m_SetsPP.VPFmts.bP01x  ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK9, m_SetsPP.VPFmts.bYUY2  ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK4, m_SetsPP.VPFmts.bOther ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK3, m_SetsPP.bDeintDouble  ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling    ? BST_CHECKED : BST_UNCHECKED);
 
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
 
@@ -211,22 +211,22 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				return (LRESULT)1;
 			}
 			if (nID == IDC_CHECK7) {
-				m_SetsPP.bVPEnableNV12 = IsDlgButtonChecked(IDC_CHECK7) == BST_CHECKED;
+				m_SetsPP.VPFmts.bNV12 = IsDlgButtonChecked(IDC_CHECK7) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}
 			if (nID == IDC_CHECK8) {
-				m_SetsPP.bVPEnableP01x = IsDlgButtonChecked(IDC_CHECK8) == BST_CHECKED;
+				m_SetsPP.VPFmts.bP01x = IsDlgButtonChecked(IDC_CHECK8) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}
 			if (nID == IDC_CHECK9) {
-				m_SetsPP.bVPEnableYUY2 = IsDlgButtonChecked(IDC_CHECK9) == BST_CHECKED;
+				m_SetsPP.VPFmts.bYUY2 = IsDlgButtonChecked(IDC_CHECK9) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}
 			if (nID == IDC_CHECK4) {
-				m_SetsPP.bVPEnableOther = IsDlgButtonChecked(IDC_CHECK4) == BST_CHECKED;
+				m_SetsPP.VPFmts.bOther = IsDlgButtonChecked(IDC_CHECK4) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}
