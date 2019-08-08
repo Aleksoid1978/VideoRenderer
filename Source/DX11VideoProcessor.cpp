@@ -119,7 +119,7 @@ HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
 	D3D11_SUBRESOURCE_DATA InitData = { Vertices, 0, 0 };
 
 	HRESULT hr = pDevice->CreateBuffer(&BufferDesc, &InitData, ppVertexBuffer);
-	DLogIf(FAILED(hr), L"CreateVertexBuffer2() : CreateBuffer() failed with error %s", HR2Str(hr));
+	DLogIf(FAILED(hr), L"CreateVertexBuffer() : CreateBuffer() failed with error %s", HR2Str(hr));
 
 	return hr;
 }
@@ -1824,7 +1824,7 @@ HRESULT CDX11VideoProcessor::UpdateChromaScalingShader()
 	m_pPSConvertColor.Release();
 	ID3DBlob* pShaderCode = nullptr;
 
-	HRESULT hr = GetShaderConvertColor(true, m_srcParams, m_srcExFmt, &pShaderCode);
+	HRESULT hr = GetShaderConvertColor(true, m_srcParams, m_srcExFmt, m_iChromaScaling, &pShaderCode);
 	if (S_OK == hr) {
 		hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
 		pShaderCode->Release();

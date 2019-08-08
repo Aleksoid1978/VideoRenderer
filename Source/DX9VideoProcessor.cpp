@@ -1652,7 +1652,7 @@ HRESULT CDX9VideoProcessor::UpdateChromaScalingShader()
 	m_pPSConvertColor.Release();
 	ID3DBlob* pShaderCode = nullptr;
 
-	HRESULT hr = GetShaderConvertColor(false, m_srcParams, m_srcExFmt, &pShaderCode);
+	HRESULT hr = GetShaderConvertColor(false, m_srcParams, m_srcExFmt, m_iChromaScaling, &pShaderCode);
 	if (S_OK == hr) {
 		hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);
 		pShaderCode->Release();
@@ -1822,7 +1822,7 @@ HRESULT CDX9VideoProcessor::TextureConvertColor(Tex9Video_t& texVideo)
 	if (m_srcParams.cformat == CF_YUY2) {
 		w *= 2;
 	}
-	else if (m_srcParams.Subsampling == 420) {
+	else if (m_srcParams.Subsampling == 420 && m_iChromaScaling == CHROMA_Bilinear) {
 		switch (m_srcExFmt.VideoChromaSubsampling) {
 		case DXVA2_VideoChromaSubsampling_Cosited:
 			sx = 0.5f / w;

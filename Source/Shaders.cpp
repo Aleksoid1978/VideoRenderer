@@ -22,6 +22,7 @@
 #include <D3Dcompiler.h>
 #include "Helper.h"
 #include "resource.h"
+#include "IVideoRenderer.h"
 #include "Shaders.h"
 
 HRESULT CompileShader(const CStringA& srcCode, const D3D_SHADER_MACRO* pDefines, LPCSTR pTarget, ID3DBlob** ppShaderBlob)
@@ -120,7 +121,7 @@ const char correct_HLG[] =
 		"return pixel;\n"
 	"}\n";
 
-HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams, const DXVA2_ExtendedFormat exFmt, ID3DBlob** ppCode)
+HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams, const DXVA2_ExtendedFormat exFmt, const int chromaScaling, ID3DBlob** ppCode)
 {
 	CStringA code;
 
@@ -209,12 +210,19 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams
 			code.Append("float4 color = tex.Sample(samp, input.Tex);\n");
 			if (fmtParams.cformat == CF_YUY2) {
 				code.Append("if (fmod(input.Tex.x*width, 2) < 1.0) {\n"
-								"color = float4(color[0], color[1], color[3], 0);\n"
-							"} else {\n"
-								//"color = float4(color[2], color[1], color[3], 0);\n" // nearest neighbor
-								"float2 chroma = (color.yw + tex.Sample(samp, input.Tex + float2(dx, 0)).yw) * 0.5;\n"
-								"color = float4(color[2], chroma, 0);\n" // linear
-							"}\n");
+					"color = float4(color[0], color[1], color[3], 0);\n"
+					"} else {\n");
+				if (chromaScaling == CHROMA_CatmullRom) {
+					code.Append("float2 chroma0 = tex.Sample(samp, input.Tex + float2(-dx, 0)).yw;\n"
+						"float2 chroma1 = color.yw;\n"
+						"float2 chroma2 = tex.Sample(samp, input.Tex + float2(dx, 0)).yw;\n"
+						"float2 chroma3 = tex.Sample(samp, input.Tex + float2(2 * dx, 0)).yw;\n"
+						"float2 chroma = (9 * (chroma1 + chroma2) - (chroma0 + chroma3)) * 0.0625;\n");
+				} else { // linear
+					code.Append("float2 chroma = (color.yw + tex.Sample(samp, input.Tex + float2(dx, 0)).yw) * 0.5;\n");
+				}
+				code.Append("color = float4(color[2], chroma, 0);\n"
+					"}\n");
 			}
 			break;
 		case 2:
@@ -271,12 +279,19 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams
 			code.Append("float4 color = tex2D(s0, tex);\n");
 			if (fmtParams.cformat == CF_YUY2) {
 				code.Append("if (fmod(tex.x*width, 2) < 1.0) {\n"
-								"color = float4(color[2], color[1], color[3], 0);\n"
-							"} else {\n"
-								//"color = float4(color[0], color[1], color[3], 0);\n" // nearest neighbor
-								"float2 chroma = (color.yw + tex2D(s0, tex + float2(dx, 0)).yw) * 0.5;\n"
-								"color = float4(color[0], chroma, 0);\n" // linear
-							"}\n");
+					"color = float4(color[2], color[1], color[3], 0);\n"
+					"} else {\n");
+				if (chromaScaling == CHROMA_CatmullRom) {
+					code.Append("float2 chroma0 = tex2D(s0, tex + float2(-dx, 0)).yw;\n"
+						"float2 chroma1 = color.yw;\n"
+						"float2 chroma2 = tex2D(s0, tex + float2(dx, 0)).yw;\n"
+						"float2 chroma3 = tex2D(s0, tex + float2(2*dx, 0)).yw;\n"
+						"float2 chroma = (9 * (chroma1 + chroma2) - (chroma0 + chroma3)) * 0.0625;\n");
+				} else { // linear
+					code.Append("float2 chroma = (color.yw + tex2D(s0, tex + float2(dx, 0)).yw) * 0.5;\n");
+				}
+				code.Append("color = float4(color[0], chroma, 0);\n"
+					"}\n");
 			}
 			break;
 		case 2:
