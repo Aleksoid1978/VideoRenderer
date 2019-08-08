@@ -295,19 +295,38 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams
 			}
 			break;
 		case 2:
-			code.Append("float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n"
-				"{\n");
-			code.Append("float colorY = tex2D(sY, t0).r;\n"
-				"float3 colorUV = tex2D(sUV, t1).rga;\n"
-				"float4 color = float4(colorY, colorUV);\n");
+			code.Append("float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n{\n");
+			code.Append("float colorY = tex2D(sY, t0).r;\n");
+			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
+				for (int y = 0; y < 4; y++) {
+					for (int x = 0; x < 4; x++) {
+						code.AppendFormat("float3 c%d%d = tex2D(sUV, t0 + float2(%d*dx, %d*dy)).rga;\n", x, y, 2*(x-1), 2*(y-1));
+					}
+				}
+				code.Append("float3 colorUV = (81*(c11+c12+c21+c22) - 9*(c01+c02+c10+c13+c20+c23+c31+c32) + c00+c03+c30+c33)*0.00390625;\n");
+			} else {
+				code.Append("float3 colorUV = tex2D(sUV, t1).rga;\n");
+			}
+			code.Append("float4 color = float4(colorY, colorUV);\n");
 			break;
 		case 3:
 			code.Append("float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n"
 				"{\n");
-			code.AppendFormat("float colorY = tex2D(sY, t0).r;\n"
-				"float colorU = tex2D(sU, t1).r;\n"
-				"float colorV = tex2D(sV, t1).r;\n"
-				"float4 color = float4(colorY, colorU, colorV, 0);\n");
+			code.AppendFormat("float colorY = tex2D(sY, t0).r;\n");
+			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
+				for (int y = 0; y < 4; y++) {
+					for (int x = 0; x < 4; x++) {
+						code.AppendFormat("float cu%d%d = tex2D(sU, t0 + float2(%d*dx, %d*dy)).r;\n", x, y, 2*(x-1), 2*(y-1));
+						code.AppendFormat("float cv%d%d = tex2D(sV, t0 + float2(%d*dx, %d*dy)).r;\n", x, y, 2*(x-1), 2*(y-1));
+					}
+				}
+				code.Append("float colorU = (81*(cu11+cu12+cu21+cu22) - 9*(cu01+cu02+cu10+cu13+cu20+cu23+cu31+cu32) + cu00+cu03+cu30+cu33)*0.00390625;\n"
+					"float colorV = (81*(cv11+cv12+cv21+cv22) - 9*(cv01+cv02+cv10+cv13+cv20+cv23+cv31+cv32) + cv00+cv03+cv30+cv33)*0.00390625;\n");
+			} else {
+				code.Append("float colorU = tex2D(sU, t1).r;\n"
+					"float colorV = tex2D(sV, t1).r;\n");
+			}
+			code.Append("float4 color = float4(colorY, colorU, colorV, 0);\n");
 			break;
 		}
 
