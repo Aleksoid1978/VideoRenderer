@@ -24,15 +24,47 @@
 #include "Include/Version.h"
 #include "PropPage.h"
 
-void SetCursor(HWND m_hWnd, LPCWSTR lpCursorName)
+void SetCursor(HWND hWnd, LPCWSTR lpCursorName)
 {
-	SetClassLongPtrW(m_hWnd, GCLP_HCURSOR, (LONG_PTR)::LoadCursorW(nullptr, lpCursorName));
+	SetClassLongPtrW(hWnd, GCLP_HCURSOR, (LONG_PTR)::LoadCursorW(nullptr, lpCursorName));
 }
 
-void SetCursor(HWND m_hWnd, UINT nID, LPCWSTR lpCursorName)
+void SetCursor(HWND hWnd, UINT nID, LPCWSTR lpCursorName)
 {
-	SetCursor(::GetDlgItem(m_hWnd, nID), lpCursorName);
+	SetCursor(::GetDlgItem(hWnd, nID), lpCursorName);
 }
+
+inline void ComboBox_AddStringData(HWND hWnd, int nIDComboBox, LPCWSTR str, LONG_PTR data)
+{
+	LRESULT lValue = SendDlgItemMessageW(hWnd, nIDComboBox, CB_ADDSTRING, 0, (LPARAM)str);
+	if (lValue != CB_ERR) {
+		SendDlgItemMessageW(hWnd, nIDComboBox, CB_SETITEMDATA, lValue, data);
+	}
+}
+
+inline LONG_PTR ComboBox_GetCurItemData(HWND hWnd, int nIDComboBox)
+{
+	LRESULT lValue = SendDlgItemMessageW(hWnd, nIDComboBox, CB_GETCURSEL, 0, 0);
+	if (lValue != CB_ERR) {
+		lValue = SendDlgItemMessageW(hWnd, nIDComboBox, CB_GETITEMDATA, lValue, 0);
+	}
+	return lValue;
+}
+
+void ComboBox_SelectByItemData(HWND hWnd, int nIDComboBox, LONG_PTR data)
+{
+	LRESULT lCount = SendDlgItemMessageW(hWnd, nIDComboBox, CB_GETCOUNT, 0, 0);
+	if (lCount != CB_ERR) {
+		for (int idx = 0; idx < lCount; idx++) {
+			const LRESULT lValue = SendDlgItemMessageW(hWnd, nIDComboBox, CB_GETITEMDATA, idx, 0);
+			if (data == lValue) {
+				SendDlgItemMessageW(hWnd, nIDComboBox, CB_SETCURSEL, idx, 0);
+				break;
+			}
+		}
+	}
+}
+
 
 CStringW GetVersionStr()
 {
@@ -77,6 +109,8 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK1, m_SetsPP.bUseD3D11     ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK2, m_SetsPP.bShowStats    ? BST_CHECKED : BST_UNCHECKED);
 
+	ComboBox_SelectByItemData(m_hWnd, IDC_COMBO1, m_SetsPP.iTextureFmt);
+
 	CheckDlgButton(IDC_CHECK7, m_SetsPP.VPFmts.bNV12  ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK8, m_SetsPP.VPFmts.bP01x  ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK9, m_SetsPP.VPFmts.bYUY2  ? BST_CHECKED : BST_UNCHECKED);
@@ -85,15 +119,6 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling    ? BST_CHECKED : BST_UNCHECKED);
 
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
-
-	const int count = (int)SendDlgItemMessageW(IDC_COMBO1, CB_GETCOUNT, 0, 0);
-	for (int i = 0; i < count; i++) {
-		const LRESULT lValue = SendDlgItemMessageW(IDC_COMBO1, CB_GETITEMDATA, i, 0);
-		if (m_SetsPP.iTextureFmt == lValue) {
-			SendDlgItemMessageW(IDC_COMBO1, CB_SETCURSEL, i, 0);
-			break;
-		}
-	}
 
 	SendDlgItemMessageW(IDC_COMBO5, CB_SETCURSEL, m_SetsPP.iChromaScaling, 0);
 	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, m_SetsPP.iUpscaling, 0);
@@ -137,14 +162,10 @@ HRESULT CVRMainPPage::OnActivate()
 		m_SetsPP.bUseD3D11 = false;
 	}
 
-	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"Auto 8/10-bit Integer");
-	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"8-bit Integer");
-	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"10-bit Integer");
-	SendDlgItemMessageW(IDC_COMBO1, CB_ADDSTRING, 0, (LPARAM)L"16-bit Floating Point (DX9 only)");
-	SendDlgItemMessageW(IDC_COMBO1, CB_SETITEMDATA, 0, LPARAM(0));
-	SendDlgItemMessageW(IDC_COMBO1, CB_SETITEMDATA, 1, LPARAM(8));
-	SendDlgItemMessageW(IDC_COMBO1, CB_SETITEMDATA, 2, LPARAM(10));
-	SendDlgItemMessageW(IDC_COMBO1, CB_SETITEMDATA, 3, LPARAM(16));
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"Auto 8/10-bit Integer",             0);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"8-bit Integer",                     8);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"10-bit Integer",                   10);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"16-bit Floating Point (DX9 only)", 16);
 
 	SendDlgItemMessageW(IDC_COMBO5, CB_ADDSTRING, 0, (LPARAM)L"Bilinear");
 	SendDlgItemMessageW(IDC_COMBO5, CB_ADDSTRING, 0, (LPARAM)L"Catmull-Rom");
@@ -154,7 +175,7 @@ HRESULT CVRMainPPage::OnActivate()
 
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Nearest-neighbor");
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Mitchell-Netravali");
-	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Catmull-Rom");
+	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Catmull-Rom (unoptimized)");
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Lanczos2");
 	SendDlgItemMessageW(IDC_COMBO2, CB_ADDSTRING, 0, (LPARAM)L"Lanczos3");
 
@@ -241,8 +262,7 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 
 		if (HIWORD(wParam) == CBN_SELCHANGE) {
 			if (nID == IDC_COMBO1) {
-				lValue = SendDlgItemMessageW(IDC_COMBO1, CB_GETCURSEL, 0, 0);
-				lValue = SendDlgItemMessageW(IDC_COMBO1, CB_GETITEMDATA, lValue, 0);
+				lValue = ComboBox_GetCurItemData(m_hWnd, IDC_COMBO1);
 				if (lValue != m_SetsPP.iTextureFmt) {
 					m_SetsPP.iTextureFmt = lValue;
 					SetDirty();
