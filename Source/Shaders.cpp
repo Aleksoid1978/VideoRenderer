@@ -216,13 +216,13 @@ HRESULT GetShaderConvertColor(
 					"color = float4(color[0], color[1], color[3], 0);\n"
 					"} else {\n");
 				if (chromaScaling == CHROMA_CatmullRom) {
-					code.Append("float2 chroma0 = tex.Sample(samp, input.Tex + float2(-dx, 0)).yw;\n"
+					code.Append("float2 chroma0 = tex.Sample(samp, input.Tex, int2(-1, 0)).yw;\n"
 						"float2 chroma1 = color.yw;\n"
-						"float2 chroma2 = tex.Sample(samp, input.Tex + float2(dx, 0)).yw;\n"
-						"float2 chroma3 = tex.Sample(samp, input.Tex + float2(2 * dx, 0)).yw;\n"
+						"float2 chroma2 = tex.Sample(samp, input.Tex, int2(1, 0)).yw;\n"
+						"float2 chroma3 = tex.Sample(samp, input.Tex, int2(2, 0)).yw;\n"
 						"float2 chroma = (9 * (chroma1 + chroma2) - (chroma0 + chroma3)) * 0.0625;\n");
 				} else { // linear
-					code.Append("float2 chroma = (color.yw + tex.Sample(samp, input.Tex + float2(dx, 0)).yw) * 0.5;\n");
+					code.Append("float2 chroma = (color.yw + tex.Sample(samp, input.Tex, int2(1, 0)).yw) * 0.5;\n");
 				}
 				code.Append("color = float4(color[2], chroma, 0);\n"
 					"}\n");
@@ -233,7 +233,7 @@ HRESULT GetShaderConvertColor(
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
-						code.AppendFormat("float2 c%d%d = texUV.Sample(samp, input.Tex + float2(%d*dx, %d*dy)).rga;\n", x, y, 2*(x-1), 2*(y-1));
+						code.AppendFormat("float2 c%d%d = texUV.Sample(samp, input.Tex, int2(%d, %d)).rg;\n", x, y, x-1, y-1);
 					}
 				}
 				code.Append("float2 colorUV = (81*(c11+c12+c21+c22) - 9*(c01+c02+c10+c13+c20+c23+c31+c32) + c00+c03+c30+c33)*0.00390625;\n");
@@ -247,8 +247,8 @@ HRESULT GetShaderConvertColor(
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
-						code.AppendFormat("float cu%d%d = texU.Sample(samp, input.Tex + float2(%d*dx, %d*dy)).r;\n", x, y, 2*(x-1), 2*(y-1));
-						code.AppendFormat("float cv%d%d = texV.Sample(samp, input.Tex + float2(%d*dx, %d*dy)).r;\n", x, y, 2*(x-1), 2*(y-1));
+						code.AppendFormat("float cu%d%d = texU.Sample(samp, input.Tex, int2(%d, %d)).r;\n", x, y, x-1, y-1);
+						code.AppendFormat("float cv%d%d = texV.Sample(samp, input.Tex, int2(%d, %d)).r;\n", x, y, x-1, y-1);
 					}
 				}
 				code.Append("float colorU = (81*(cu11+cu12+cu21+cu22) - 9*(cu01+cu02+cu10+cu13+cu20+cu23+cu31+cu32) + cu00+cu03+cu30+cu33)*0.00390625;\n"
