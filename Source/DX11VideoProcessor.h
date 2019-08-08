@@ -97,7 +97,6 @@ private:
 	struct {
 		bool bEnable = false;
 		ID3D11Buffer* pConstants = nullptr;
-		ID3D11Buffer* pConstants4 = nullptr;
 	} m_PSConvColorData;
 	CComPtr<ID3D11PixelShader> m_pShaderUpscaleX;
 	CComPtr<ID3D11PixelShader> m_pShaderUpscaleY;

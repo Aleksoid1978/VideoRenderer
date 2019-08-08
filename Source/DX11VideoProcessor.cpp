@@ -289,7 +289,6 @@ HRESULT CDX11VideoProcessor::TextureConvertColor(Tex11Video_t& texVideo, ID3D11T
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
 	m_pDeviceContext->PSSetSamplers(1, 1, (m_srcParams.Subsampling == 444) ? &m_pSamplerPoint : &m_pSamplerLinear);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
-	m_pDeviceContext->PSSetConstantBuffers(4, 1, &m_PSConvColorData.pConstants4);
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
 
@@ -488,7 +487,6 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_TexResize.Release();
 
 	SAFE_RELEASE(m_PSConvColorData.pConstants);
-	SAFE_RELEASE(m_PSConvColorData.pConstants4);
 
 	m_pInputView.Release();
 	m_pVideoProcessor.Release();
@@ -614,7 +612,6 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 	}
 
 	SAFE_RELEASE(m_PSConvColorData.pConstants);
-	SAFE_RELEASE(m_PSConvColorData.pConstants4);
 
 	D3D11_BUFFER_DESC BufferDesc = {};
 	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -623,13 +620,6 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 	BufferDesc.CPUAccessFlags = 0;
 	D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants));
-
-	if (m_srcParams.cformat == CF_YUY2 || m_srcParams.Subsampling == 420) {
-		DirectX::XMFLOAT4 cbuffer4 = { (float)m_srcWidth, (float)m_srcHeight, 1.0f / m_srcWidth, 1.0f / m_srcHeight };
-		BufferDesc.ByteWidth = sizeof(cbuffer4);
-		InitData = { &cbuffer4, 0, 0 };
-		EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants4));
-	}
 }
 
 HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
@@ -1824,7 +1814,7 @@ HRESULT CDX11VideoProcessor::UpdateChromaScalingShader()
 	m_pPSConvertColor.Release();
 	ID3DBlob* pShaderCode = nullptr;
 
-	HRESULT hr = GetShaderConvertColor(true, m_srcParams, m_srcExFmt, m_iChromaScaling, &pShaderCode);
+	HRESULT hr = GetShaderConvertColor(true, m_TexSrcVideo.desc.Width, m_TexSrcVideo.desc.Height, m_srcParams, m_srcExFmt, m_iChromaScaling, &pShaderCode);
 	if (S_OK == hr) {
 		hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
 		pShaderCode->Release();

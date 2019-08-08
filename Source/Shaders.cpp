@@ -121,7 +121,13 @@ const char correct_HLG[] =
 		"return pixel;\n"
 	"}\n";
 
-HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams, const DXVA2_ExtendedFormat exFmt, const int chromaScaling, ID3DBlob** ppCode)
+HRESULT GetShaderConvertColor(
+	const bool bDX11,
+	const UINT texW, UINT texH,
+	const FmtConvParams_t& fmtParams,
+	const DXVA2_ExtendedFormat exFmt,
+	const int chromaScaling,
+	ID3DBlob** ppCode)
 {
 	CStringA code;
 
@@ -147,6 +153,10 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams
 			}
 		}
 	}
+
+	code.AppendFormat("#define width %u\n", (fmtParams.cformat == CF_YUY2) ? texW*2 : texW);
+	code.AppendFormat("#define dx %.15f\n", 1.0 / texW);
+	code.AppendFormat("#define dy %.15f\n", 1.0 / texH);
 
 	if (bDX11) {
 		char* strChromaPos = "";
@@ -189,13 +199,6 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams
 						"float3 cm_g;"
 						"float3 cm_b;"
 						"float3 cm_c;"
-					"};\n");
-
-		code.Append("cbuffer PS_TEX_DIMENSIONS : register(b4) {\n"
-						"float width;\n"
-						"float height;\n"
-						"float dx;\n"
-						"float dy;\n"
 					"};\n");
 
 		code.Append("struct PS_INPUT {"
@@ -282,12 +285,6 @@ HRESULT GetShaderConvertColor(const bool bDX11, const FmtConvParams_t& fmtParams
 					"float4 cm_g : register(c1);\n"
 					"float4 cm_b : register(c2);\n"
 					"float3 cm_c : register(c3);\n");
-
-		code.Append("float4 p4 : register(c4);\n"
-					"#define width  (p4[0])\n"
-					"#define height (p4[1])\n"
-					"#define dx     (p4[2])\n"
-					"#define dy     (p4[3])\n");
 
 		switch (planes) {
 		case 1:

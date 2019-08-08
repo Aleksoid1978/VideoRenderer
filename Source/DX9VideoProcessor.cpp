@@ -1652,7 +1652,7 @@ HRESULT CDX9VideoProcessor::UpdateChromaScalingShader()
 	m_pPSConvertColor.Release();
 	ID3DBlob* pShaderCode = nullptr;
 
-	HRESULT hr = GetShaderConvertColor(false, m_srcParams, m_srcExFmt, m_iChromaScaling, &pShaderCode);
+	HRESULT hr = GetShaderConvertColor(false, m_TexSrcVideo.Width, m_TexSrcVideo.Height, m_srcParams, m_srcExFmt, m_iChromaScaling, &pShaderCode);
 	if (S_OK == hr) {
 		hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);
 		pShaderCode->Release();
@@ -1848,10 +1848,6 @@ HRESULT CDX9VideoProcessor::TextureConvertColor(Tex9Video_t& texVideo)
 	};
 
 	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_PSConvColorData.fConstants, std::size(m_PSConvColorData.fConstants));
-	if (m_srcParams.cformat == CF_YUY2 || m_srcParams.Subsampling == 420) {
-		float fConstData[][4] = { { m_srcWidth, m_srcHeight, 1.0f / m_srcWidth, 1.0f / m_srcHeight } };
-		hr = m_pD3DDevEx->SetPixelShaderConstantF(4, (float*)fConstData, std::size(fConstData));
-	}
 	hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColor);
 
 	hr = m_pD3DDevEx->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
