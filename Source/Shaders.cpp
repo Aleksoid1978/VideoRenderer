@@ -154,9 +154,20 @@ HRESULT GetShaderConvertColor(
 		}
 	}
 
+	const int planes = fmtParams.pDX9Planes ? (fmtParams.pDX9Planes->FmtPlane3 ? 3 : 2) : 1;
+	ASSERT(planes == (fmtParams.pDX11Planes ? (fmtParams.pDX11Planes->FmtPlane3 ? 3 : 2) : 1));
+
 	code.AppendFormat("#define width %u\n", (fmtParams.cformat == CF_YUY2) ? texW*2 : texW);
+	code.AppendFormat("#define height %u\n", texH);
 	code.AppendFormat("#define dx %.15f\n", 1.0 / texW);
 	code.AppendFormat("#define dy %.15f\n", 1.0 / texH);
+
+	if (chromaScaling == CHROMA_CatmullRom) {
+		code.Append("#define CATMULLROM_05(c0,c1,c2,c3) (9*(c1+c2)-(c0+c3))*0.0625\n");
+		if (fmtParams.Subsampling == 420) {
+			code.Append("#define BICATMULLROM_05(c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33) (81*(c11+c12+c21+c22) - 9*(c01+c02+c10+c13+c20+c23+c31+c32) + c00+c03+c30+c33)*0.00390625\n");
+		}
+	}
 
 	if (bDX11) {
 		char* strChromaPos = "";
@@ -173,8 +184,6 @@ HRESULT GetShaderConvertColor(
 				strChromaPos = "+float2(dx*0.5,0)";
 			}
 		}
-
-		const int planes = fmtParams.pDX11Planes ? (fmtParams.pDX11Planes->FmtPlane3 ? 3 : 2) : 1;
 
 		switch (planes) {
 		case 1:
@@ -231,41 +240,96 @@ HRESULT GetShaderConvertColor(
 		case 2:
 			code.Append("float colorY = texY.Sample(samp, input.Tex).r;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
+				code.Append("bool evenx = (fmod(input.Tex.x*width, 2) < 1.0);\n"
+					"bool eveny = (fmod(input.Tex.y*height, 2) < 1.0);\n"
+					"float2 colorUV;\n"
+					"if (eveny) {\n"
+					"if (evenx) {\n"
+					"colorUV = texUV.Sample(sampL, input.Tex).rg;\n"
+					"} else {\n"
+					"float2 c0 = texUV.Sample(samp, input.Tex, int2(-1, 0)).rg;\n"
+					"float2 c1 = texUV.Sample(samp, input.Tex).rg;\n"
+					"float2 c2 = texUV.Sample(samp, input.Tex, int2(1, 0)).rg;\n"
+					"float2 c3 = texUV.Sample(samp, input.Tex, int2(2, 0)).rg;\n"
+					"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
+					"}\n"
+					"} else {\n"
+					"if (evenx) {\n"
+					"float2 c0 = texUV.Sample(samp, input.Tex, int2(0, -1)).rg;\n"
+					"float2 c1 = texUV.Sample(samp, input.Tex).rg;\n"
+					"float2 c2 = texUV.Sample(samp, input.Tex, int2(0, 1)).rg;\n"
+					"float2 c3 = texUV.Sample(samp, input.Tex, int2(0, 2)).rg;\n"
+					"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
+					"} else {\n");
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
-						code.AppendFormat("float2 c%d%d = texUV.Sample(samp, input.Tex, int2(%d, %d)).rg;\n", x, y, x-1, y-1);
+						code.AppendFormat("float2 c%d%d = texUV.Sample(samp, input.Tex, int2(%d, %d)).rg;\n", x, y, x - 1, y - 1);
 					}
 				}
-				code.Append("float2 colorUV = (81*(c11+c12+c21+c22) - 9*(c01+c02+c10+c13+c20+c23+c31+c32) + c00+c03+c30+c33)*0.00390625;\n");
+				code.Append("colorUV = BICATMULLROM_05(c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33);\n"
+					"}\n"
+					"}\n");
 			} else {
 				code.AppendFormat("float2 colorUV = texUV.Sample(sampL, input.Tex%s).rg;\n", strChromaPos);
 			}
 			code.Append("float4 color = float4(colorY, colorUV, 0);\n");
 			break;
 		case 3:
-			code.Append("float colorY = texY.Sample(samp, input.Tex).r;\n");
+			code.Append("float colorY = texY.Sample(samp, input.Tex).r;\n"
+				"float2 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
+				code.Append("bool evenx = (fmod(input.Tex.x*width, 2) < 1.0);\n"
+					"bool eveny = (fmod(input.Tex.y*height, 2) < 1.0);\n"
+					"if (eveny) {\n"
+					"if (evenx) {\n"
+					"colorUV[0] = texU.Sample(sampL, input.Tex).r;\n"
+					"colorUV[1] = texV.Sample(sampL, input.Tex).r;\n"
+					"} else {\n"
+					"float2 c0,c1,c2,c3;\n"
+					"c0[0] = texU.Sample(samp, input.Tex, int2(-1, 0)).r;\n"
+					"c1[0] = texU.Sample(samp, input.Tex).r;\n"
+					"c2[0] = texU.Sample(samp, input.Tex, int2(1, 0)).r;\n"
+					"c3[0] = texU.Sample(samp, input.Tex, int2(2, 0)).r;\n"
+					"c0[1] = texV.Sample(samp, input.Tex, int2(-1, 0)).r;\n"
+					"c1[1] = texV.Sample(samp, input.Tex).r;\n"
+					"c2[1] = texV.Sample(samp, input.Tex, int2(1, 0)).r;\n"
+					"c3[1] = texV.Sample(samp, input.Tex, int2(2, 0)).r;\n"
+					"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
+					"}\n"
+					"} else {\n"
+					"if (evenx) {\n"
+					"float2 c0,c1,c2,c3;\n"
+					"c0[0] = texU.Sample(samp, input.Tex, int2(0, -1)).r;\n"
+					"c1[0] = texU.Sample(samp, input.Tex).r;\n"
+					"c2[0] = texU.Sample(samp, input.Tex, int2(0, 1)).r;\n"
+					"c3[0] = texU.Sample(samp, input.Tex, int2(0, 2)).r;\n"
+					"c0[1] = texV.Sample(samp, input.Tex, int2(0, -1)).r;\n"
+					"c1[1] = texV.Sample(samp, input.Tex).r;\n"
+					"c2[1] = texV.Sample(samp, input.Tex, int2(0, 1)).r;\n"
+					"c3[1] = texV.Sample(samp, input.Tex, int2(0, 2)).r;\n"
+					"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
+					"} else {\n"
+					"float2 c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33;\n");
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
-						code.AppendFormat("float cu%d%d = texU.Sample(samp, input.Tex, int2(%d, %d)).r;\n", x, y, x-1, y-1);
-						code.AppendFormat("float cv%d%d = texV.Sample(samp, input.Tex, int2(%d, %d)).r;\n", x, y, x-1, y-1);
+						code.AppendFormat("c%d%d[0] = texU.Sample(samp, input.Tex, int2(%d, %d)).r;\n", x, y, x - 1, y - 1);
+						code.AppendFormat("c%d%d[1] = texV.Sample(samp, input.Tex, int2(%d, %d)).r;\n", x, y, x - 1, y - 1);
 					}
 				}
-				code.Append("float colorU = (81*(cu11+cu12+cu21+cu22) - 9*(cu01+cu02+cu10+cu13+cu20+cu23+cu31+cu32) + cu00+cu03+cu30+cu33)*0.00390625;\n"
-					"float colorV = (81*(cv11+cv12+cv21+cv22) - 9*(cv01+cv02+cv10+cv13+cv20+cv23+cv31+cv32) + cv00+cv03+cv30+cv33)*0.00390625;\n");
+				code.Append("colorUV = BICATMULLROM_05(c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33);\n"
+					"}\n"
+					"}\n");
 			} else {
-				code.AppendFormat("float colorU = texU.Sample(sampL, input.Tex%s).r;\n"
-					"float colorV = texV.Sample(sampL, input.Tex%s).r;\n", strChromaPos, strChromaPos);
+				code.AppendFormat("colorUV[0] = texU.Sample(sampL, input.Tex%s).r;\n"
+					"colorUV[1] = texV.Sample(sampL, input.Tex%s).r;\n", strChromaPos, strChromaPos);
 			}
-			code.Append("float4 color = float4(colorY, colorU, colorV, 0);\n");
+			code.Append("float4 color = float4(colorY, colorUV, 0);\n");
 			break;
 		}
 
 		code.Append("color.rgb = float3(mul(cm_r, color.rgb), mul(cm_g, color.rgb), mul(cm_b, color.rgb)) + cm_c;\n");
 	}
 	else {
-		const int planes = fmtParams.pDX9Planes ? (fmtParams.pDX9Planes->FmtPlane3 ? 3 : 2) : 1;
-
 		switch (planes) {
 		case 1:
 			code.Append("sampler s0 : register(s0);\n");
