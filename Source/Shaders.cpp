@@ -157,8 +157,8 @@ HRESULT GetShaderConvertColor(
 	const int planes = fmtParams.pDX9Planes ? (fmtParams.pDX9Planes->FmtPlane3 ? 3 : 2) : 1;
 	ASSERT(planes == (fmtParams.pDX11Planes ? (fmtParams.pDX11Planes->FmtPlane3 ? 3 : 2) : 1));
 
-	code.AppendFormat("#define width %u\n", (fmtParams.cformat == CF_YUY2) ? texW*2 : texW);
-	code.AppendFormat("#define height %u\n", texH);
+	code.AppendFormat("#define w %u\n", (fmtParams.cformat == CF_YUY2) ? texW*2 : texW);
+	code.AppendFormat("#define h %u\n", texH);
 	code.AppendFormat("#define dx %.15f\n", 1.0 / texW);
 	code.AppendFormat("#define dy %.15f\n", 1.0 / texH);
 
@@ -221,7 +221,7 @@ HRESULT GetShaderConvertColor(
 		case 1:
 			code.Append("float4 color = tex.Sample(samp, input.Tex);\n");
 			if (fmtParams.cformat == CF_YUY2) {
-				code.Append("if (fmod(input.Tex.x*width, 2) < 1.0) {\n"
+				code.Append("if (fmod(input.Tex.x*w, 2) < 1.0) {\n"
 					"color = float4(color[0], color[1], color[3], 0);\n"
 					"} else {\n");
 				if (chromaScaling == CHROMA_CatmullRom) {
@@ -241,8 +241,8 @@ HRESULT GetShaderConvertColor(
 			code.Append("float colorY = texY.Sample(samp, input.Tex).r;\n"
 				"float2 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
-				code.Append("bool evenx = (fmod(input.Tex.x*width, 2) < 1.0);\n"
-					"bool eveny = (fmod(input.Tex.y*height, 2) < 1.0);\n"
+				code.Append("bool evenx = (fmod(input.Tex.x*w, 2) < 1.0);\n"
+					"bool eveny = (fmod(input.Tex.y*h, 2) < 1.0);\n"
 					"if (eveny) {\n"
 					"if (evenx) {\n"
 					"colorUV = texUV.Sample(sampL, input.Tex).rg;\n"
@@ -278,8 +278,8 @@ HRESULT GetShaderConvertColor(
 			code.Append("float colorY = texY.Sample(samp, input.Tex).r;\n"
 				"float2 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
-				code.Append("bool evenx = (fmod(input.Tex.x*width, 2) < 1.0);\n"
-					"bool eveny = (fmod(input.Tex.y*height, 2) < 1.0);\n"
+				code.Append("bool evenx = (fmod(input.Tex.x*w, 2) < 1.0);\n"
+					"bool eveny = (fmod(input.Tex.y*h, 2) < 1.0);\n"
 					"if (eveny) {\n"
 					"if (evenx) {\n"
 					"colorUV[0] = texU.Sample(sampL, input.Tex).r;\n"
@@ -356,7 +356,7 @@ HRESULT GetShaderConvertColor(
 				"{\n");
 			code.Append("float4 color = tex2D(s0, tex);\n");
 			if (fmtParams.cformat == CF_YUY2) {
-				code.Append("if (fmod(tex.x*width, 2) < 1.0) {\n"
+				code.Append("if (fmod(tex.x*w, 2) < 1.0) {\n"
 					"color = float4(color[2], color[1], color[3], 0);\n"
 					"} else {\n");
 				if (chromaScaling == CHROMA_CatmullRom) {
@@ -377,8 +377,8 @@ HRESULT GetShaderConvertColor(
 			code.Append("float colorY = tex2D(sY, t0).r;\n"
 				"float3 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
-				code.Append("bool evenx = (fmod(t0.x*width, 2) < 1.0);\n"
-					"bool eveny = (fmod(t0.y*height, 2) < 1.0);\n"
+				code.Append("bool evenx = (fmod(t0.x*w, 2) < 1.0);\n"
+					"bool eveny = (fmod(t0.y*h, 2) < 1.0);\n"
 					"if (eveny) {\n"
 					"if (evenx) {\n"
 					"colorUV = tex2D(sUV, t0).rga;\n"
@@ -416,8 +416,8 @@ HRESULT GetShaderConvertColor(
 			code.AppendFormat("float colorY = tex2D(sY, t0).r;\n"
 				"float2 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
-				code.Append("bool evenx = (fmod(t0.x*width, 2) < 1.0);\n"
-				"bool eveny = (fmod(t0.y*height, 2) < 1.0);\n"
+				code.Append("bool evenx = (fmod(t0.x*w, 2) < 1.0);\n"
+				"bool eveny = (fmod(t0.y*h, 2) < 1.0);\n"
 					"if (eveny) {\n"
 					"if (evenx) {\n"
 					"colorUV[0] = tex2D(sU, t0).r;\n"
