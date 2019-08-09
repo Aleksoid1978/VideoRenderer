@@ -225,11 +225,11 @@ HRESULT GetShaderConvertColor(
 					"color = float4(color[0], color[1], color[3], 0);\n"
 					"} else {\n");
 				if (chromaScaling == CHROMA_CatmullRom) {
-					code.Append("float2 chroma0 = tex.Sample(samp, input.Tex, int2(-1, 0)).yw;\n"
-						"float2 chroma1 = color.yw;\n"
-						"float2 chroma2 = tex.Sample(samp, input.Tex, int2(1, 0)).yw;\n"
-						"float2 chroma3 = tex.Sample(samp, input.Tex, int2(2, 0)).yw;\n"
-						"float2 chroma = (9 * (chroma1 + chroma2) - (chroma0 + chroma3)) * 0.0625;\n");
+					code.Append("float2 c0 = tex.Sample(samp, input.Tex, int2(-1, 0)).yw;\n"
+						"float2 c1 = color.yw;\n"
+						"float2 c2 = tex.Sample(samp, input.Tex, int2(1, 0)).yw;\n"
+						"float2 c3 = tex.Sample(samp, input.Tex, int2(2, 0)).yw;\n"
+						"float2 chroma = CATMULLROM_05(c0,c1,c2,c3);\n");
 				} else { // linear
 					code.Append("float2 chroma = (color.yw + tex.Sample(samp, input.Tex, int2(1, 0)).yw) * 0.5;\n");
 				}
@@ -238,11 +238,11 @@ HRESULT GetShaderConvertColor(
 			}
 			break;
 		case 2:
-			code.Append("float colorY = texY.Sample(samp, input.Tex).r;\n");
+			code.Append("float colorY = texY.Sample(samp, input.Tex).r;\n"
+				"float2 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
 				code.Append("bool evenx = (fmod(input.Tex.x*width, 2) < 1.0);\n"
 					"bool eveny = (fmod(input.Tex.y*height, 2) < 1.0);\n"
-					"float2 colorUV;\n"
 					"if (eveny) {\n"
 					"if (evenx) {\n"
 					"colorUV = texUV.Sample(sampL, input.Tex).rg;\n"
@@ -270,7 +270,7 @@ HRESULT GetShaderConvertColor(
 					"}\n"
 					"}\n");
 			} else {
-				code.AppendFormat("float2 colorUV = texUV.Sample(sampL, input.Tex%s).rg;\n", strChromaPos);
+				code.AppendFormat("colorUV = texUV.Sample(sampL, input.Tex%s).rg;\n", strChromaPos);
 			}
 			code.Append("float4 color = float4(colorY, colorUV, 0);\n");
 			break;
@@ -360,11 +360,11 @@ HRESULT GetShaderConvertColor(
 					"color = float4(color[2], color[1], color[3], 0);\n"
 					"} else {\n");
 				if (chromaScaling == CHROMA_CatmullRom) {
-					code.Append("float2 chroma0 = tex2D(s0, tex + float2(-dx, 0)).yw;\n"
-						"float2 chroma1 = color.yw;\n"
-						"float2 chroma2 = tex2D(s0, tex + float2(dx, 0)).yw;\n"
-						"float2 chroma3 = tex2D(s0, tex + float2(2*dx, 0)).yw;\n"
-						"float2 chroma = (9 * (chroma1 + chroma2) - (chroma0 + chroma3)) * 0.0625;\n");
+					code.Append("float2 c0 = tex2D(s0, tex + float2(-dx, 0)).yw;\n"
+						"float2 c1 = color.yw;\n"
+						"float2 c2 = tex2D(s0, tex + float2(dx, 0)).yw;\n"
+						"float2 c3 = tex2D(s0, tex + float2(2*dx, 0)).yw;\n"
+						"float2 chroma = CATMULLROM_05(c0,c1,c2,c3);\n");
 				} else { // linear
 					code.Append("float2 chroma = (color.yw + tex2D(s0, tex + float2(dx, 0)).yw) * 0.5;\n");
 				}
@@ -374,37 +374,94 @@ HRESULT GetShaderConvertColor(
 			break;
 		case 2:
 			code.Append("float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n{\n");
-			code.Append("float colorY = tex2D(sY, t0).r;\n");
+			code.Append("float colorY = tex2D(sY, t0).r;\n"
+				"float3 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
+				code.Append("bool evenx = (fmod(t0.x*width, 2) < 1.0);\n"
+					"bool eveny = (fmod(t0.y*height, 2) < 1.0);\n"
+					"if (eveny) {\n"
+					"if (evenx) {\n"
+					"colorUV = tex2D(sUV, t0).rga;\n"
+					"} else {\n"
+					"float3 c0 = tex2D(sUV, t0 + float2(-2*dx, 0)).rga;\n"
+					"float3 c1 = tex2D(sUV, t0).rga;\n"
+					"float3 c2 = tex2D(sUV, t0 + float2(2*dx, 0)).rga;\n"
+					"float3 c3 = tex2D(sUV, t0 + float2(4*dx, 0)).rga;\n"
+					"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
+					"}\n"
+					"} else {\n"
+					"if (evenx) {\n"
+					"float3 c0 = tex2D(sUV, t0 + float2(0, -2*dx)).rga;\n"
+					"float3 c1 = tex2D(sUV, t0).rga;\n"
+					"float3 c2 = tex2D(sUV, t0 + float2(0, 2*dx)).rga;\n"
+					"float3 c3 = tex2D(sUV, t0 + float2(0, 4*dx)).rga;\n"
+					"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
+					"} else {\n");
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
 						code.AppendFormat("float3 c%d%d = tex2D(sUV, t0 + float2(%d*dx, %d*dy)).rga;\n", x, y, 2*(x-1), 2*(y-1));
 					}
 				}
-				code.Append("float3 colorUV = (81*(c11+c12+c21+c22) - 9*(c01+c02+c10+c13+c20+c23+c31+c32) + c00+c03+c30+c33)*0.00390625;\n");
+				code.Append("colorUV = BICATMULLROM_05(c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33);\n"
+					"}\n"
+					"}\n");
 			} else {
-				code.Append("float3 colorUV = tex2D(sUV, t1).rga;\n");
+				code.Append("colorUV = tex2D(sUV, t1).rga;\n");
 			}
 			code.Append("float4 color = float4(colorY, colorUV);\n");
 			break;
 		case 3:
 			code.Append("float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n"
 				"{\n");
-			code.AppendFormat("float colorY = tex2D(sY, t0).r;\n");
+			code.AppendFormat("float colorY = tex2D(sY, t0).r;\n"
+				"float2 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
-				for (int y = 0; y < 4; y++) {
-					for (int x = 0; x < 4; x++) {
-						code.AppendFormat("float cu%d%d = tex2D(sU, t0 + float2(%d*dx, %d*dy)).r;\n", x, y, 2*(x-1), 2*(y-1));
-						code.AppendFormat("float cv%d%d = tex2D(sV, t0 + float2(%d*dx, %d*dy)).r;\n", x, y, 2*(x-1), 2*(y-1));
+				code.Append("bool evenx = (fmod(t0.x*width, 2) < 1.0);\n"
+				"bool eveny = (fmod(t0.y*height, 2) < 1.0);\n"
+					"if (eveny) {\n"
+					"if (evenx) {\n"
+					"colorUV[0] = tex2D(sU, t0).r;\n"
+					"colorUV[1] = tex2D(sV, t0).r;\n"
+					"} else {\n"
+					"float2 c0,c1,c2,c3;\n"
+					"c0[0] = tex2D(sU, t0 + float2(-2*dx, 0)).r;\n"
+					"c1[0] = tex2D(sU, t0).r;\n"
+					"c2[0] = tex2D(sU, t0 + float2(2*dx, 0)).r;\n"
+					"c3[0] = tex2D(sU, t0 + float2(4*dx, 0)).r;\n"
+					"c0[1] = tex2D(sV, t0 + float2(-2*dx, 0)).r;\n"
+					"c1[1] = tex2D(sV, t0).r;\n"
+					"c2[1] = tex2D(sV, t0 + float2(2*dx, 0)).r;\n"
+					"c3[1] = tex2D(sV, t0 + float2(4*dx, 0)).r;\n"
+					"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
+					"}\n"
+					"} else {\n"
+					"if (evenx) {\n"
+					"float2 c0,c1,c2,c3;\n"
+					"c0[0] = tex2D(sU, t0 + float2(0, -2*dx)).r;\n"
+					"c1[0] = tex2D(sU, t0).r;\n"
+					"c2[0] = tex2D(sU, t0 + float2(0, 2*dx)).r;\n"
+					"c3[0] = tex2D(sU, t0 + float2(0, 4*dx)).r;\n"
+					"c0[1] = tex2D(sV, t0 + float2(0, -2*dx)).r;\n"
+					"c1[1] = tex2D(sV, t0).r;\n"
+					"c2[1] = tex2D(sV, t0 + float2(0, 2*dx)).r;\n"
+					"c3[1] = tex2D(sV, t0 + float2(0, 4*dx)).r;\n"
+					"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
+					"} else {\n"
+					"float2 c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33;\n");
+					for (int y = 0; y < 4; y++) {
+						for (int x = 0; x < 4; x++) {
+							code.AppendFormat("c%d%d[0] = tex2D(sU, t0 + float2(%d*dx, %d*dy)).r;\n", x, y, 2*(x-1), 2*(y-1));
+							code.AppendFormat("c%d%d[1] = tex2D(sV, t0 + float2(%d*dx, %d*dy)).r;\n", x, y, 2*(x-1), 2*(y-1));
+						}
 					}
-				}
-				code.Append("float colorU = (81*(cu11+cu12+cu21+cu22) - 9*(cu01+cu02+cu10+cu13+cu20+cu23+cu31+cu32) + cu00+cu03+cu30+cu33)*0.00390625;\n"
-					"float colorV = (81*(cv11+cv12+cv21+cv22) - 9*(cv01+cv02+cv10+cv13+cv20+cv23+cv31+cv32) + cv00+cv03+cv30+cv33)*0.00390625;\n");
+					code.Append("colorUV = BICATMULLROM_05(c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33);\n"
+						"}\n"
+						"}\n");
 			} else {
-				code.Append("float colorU = tex2D(sU, t1).r;\n"
-					"float colorV = tex2D(sV, t1).r;\n");
+				code.Append("colorUV[0] = tex2D(sU, t1).r;\n"
+					"colorUV[1] = tex2D(sV, t1).r;\n");
 			}
-			code.Append("float4 color = float4(colorY, colorU, colorV, 0);\n");
+			code.Append("float4 color = float4(colorY, colorUV, 0);\n");
 			break;
 		}
 
