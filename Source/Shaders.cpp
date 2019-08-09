@@ -161,6 +161,8 @@ HRESULT GetShaderConvertColor(
 	code.AppendFormat("#define h %u\n", texH);
 	code.AppendFormat("#define dx %.15f\n", 1.0 / texW);
 	code.AppendFormat("#define dy %.15f\n", 1.0 / texH);
+	code.Append("static const float2 wh = {w, h};\n");
+	code.Append("static const float2 dxdy = {dx, dy};\n");
 
 	if (chromaScaling == CHROMA_CatmullRom) {
 		code.Append("#define CATMULLROM_05(c0,c1,c2,c3) (9*(c1+c2)-(c0+c3))*0.0625\n");
@@ -241,34 +243,24 @@ HRESULT GetShaderConvertColor(
 			code.Append("float colorY = texY.Sample(samp, input.Tex).r;\n"
 				"float2 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
-				code.Append("bool evenx = (fmod(input.Tex.x*w, 2) < 1.0);\n"
-					"bool eveny = (fmod(input.Tex.y*h, 2) < 1.0);\n"
-					"if (eveny) {\n"
-					"if (evenx) {\n"
-					"colorUV = texUV.Sample(sampL, input.Tex).rg;\n"
-					"} else {\n"
-					"float2 c0 = texUV.Sample(samp, input.Tex, int2(-1, 0)).rg;\n"
-					"float2 c1 = texUV.Sample(samp, input.Tex).rg;\n"
-					"float2 c2 = texUV.Sample(samp, input.Tex, int2(1, 0)).rg;\n"
-					"float2 c3 = texUV.Sample(samp, input.Tex, int2(2, 0)).rg;\n"
-					"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
-					"}\n"
-					"} else {\n"
-					"if (evenx) {\n"
-					"float2 c0 = texUV.Sample(samp, input.Tex, int2(0, -1)).rg;\n"
-					"float2 c1 = texUV.Sample(samp, input.Tex).rg;\n"
-					"float2 c2 = texUV.Sample(samp, input.Tex, int2(0, 1)).rg;\n"
-					"float2 c3 = texUV.Sample(samp, input.Tex, int2(0, 2)).rg;\n"
-					"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
-					"} else {\n");
+				code.Append("float2 t = frac(input.Tex * (wh*0.5)) - float2(0.25,0.5);\n" // I don’t know why, but it works.
+					"float2 t2 = t * t;\n"
+					"float2 t3 = t * t2;\n"
+					"float2 w0 = t2 - (t3 + t) / 2;\n"
+					"float2 w1 = t3 * 1.5 + 1 - t2 * 2.5;\n"
+					"float2 w2 = t2 * 2 + t / 2 - t3 * 1.5;\n"
+					"float2 w3 = (t3 - t2) / 2;\n");
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
 						code.AppendFormat("float2 c%d%d = texUV.Sample(samp, input.Tex, int2(%d, %d)).rg;\n", x, y, x - 1, y - 1);
 					}
 				}
-				code.Append("colorUV = BICATMULLROM_05(c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33);\n"
-					"}\n"
-					"}\n");
+				code.Append(
+					"float2 Q0 = c00 * w0.y + c01 * w1.y + c02 * w2.y + c03 * w3.y;\n"
+					"float2 Q1 = c10 * w0.y + c11 * w1.y + c12 * w2.y + c13 * w3.y;\n"
+					"float2 Q2 = c20 * w0.y + c21 * w1.y + c22 * w2.y + c23 * w3.y;\n"
+					"float2 Q3 = c30 * w0.y + c31 * w1.y + c32 * w2.y + c33 * w3.y;\n"
+					"colorUV = Q0 * w0.x + Q1 * w1.x + Q2 * w2.x + Q3 * w3.x;\n");
 			} else {
 				code.AppendFormat("colorUV = texUV.Sample(sampL, input.Tex%s).rg;\n", strChromaPos);
 			}
