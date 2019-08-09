@@ -761,8 +761,8 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc = { D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE, {}, 1920, 1080, {}, 1920, 1080, D3D11_VIDEO_USAGE_PLAYBACK_NORMAL };
 	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcEnum;
 	if (S_OK == m_pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pVideoProcEnum)) {
-		CString input = L"Supported input DXGI formats (for 1080p):";
-		CString output = L"Supported output DXGI formats (for 1080p):";
+		CStringW input = L"Supported input DXGI formats (for 1080p):";
+		CStringW output = L"Supported output DXGI formats (for 1080p):";
 		for (int fmt = DXGI_FORMAT_R32G32B32A32_TYPELESS; fmt <= DXGI_FORMAT_B4G4R4A4_UNORM; fmt++) {
 			UINT uiFlags;
 			if (S_OK == pVideoProcEnum->CheckVideoProcessorFormat((DXGI_FORMAT)fmt, &uiFlags)) {
@@ -2150,6 +2150,7 @@ void CDX11VideoProcessor::SetChromaScaling(int value)
 
 	if (m_pDevice) {
 		EXECUTE_ASSERT(S_OK == UpdateChromaScalingShader());
+		UpdateStatsStatic();
 	}
 }
 
@@ -2219,7 +2220,13 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 			}
 		}
 		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", DXGIFormatToString(m_InternalTexFmt));
-		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");
+		m_strStatsStatic2.Append(L"\nVideoProcessor: ");
+		if (m_pVideoProcessor) {
+			m_strStatsStatic2.Append(L"D3D11 VP");
+		} else {
+			m_strStatsStatic2.Append(L"Shaders");
+			m_strStatsStatic2.AppendFormat(L"\nChroma Scaling: %s", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom (in developing)" : L"Bilinear");
+		}
 
 		DXGI_SWAP_CHAIN_DESC1 swapchain_desc;
 		if (m_pDXGISwapChain1 && S_OK == m_pDXGISwapChain1->GetDesc1(&swapchain_desc)) {

@@ -1516,6 +1516,7 @@ void CDX9VideoProcessor::SetChromaScaling(int value)
 
 	if (m_pD3DDevEx) {
 		EXECUTE_ASSERT(S_OK == UpdateChromaScalingShader());
+		UpdateStatsStatic();
 	}
 }
 
@@ -2010,7 +2011,13 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 			}
 		}
 		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", D3DFormatToString(m_InternalTexFmt));
-		m_strStatsStatic2.AppendFormat(L"\nVideoProcessor: %s", m_pDXVA2_VP ? L"DXVA2" : L"Shaders");
+		m_strStatsStatic2.Append(L"\nVideoProcessor: ");
+		if (m_pDXVA2_VP) {
+			m_strStatsStatic2.Append(L"DXVA2 VP");
+		} else {
+			m_strStatsStatic2.Append(L"Shaders");
+			m_strStatsStatic2.AppendFormat(L"\nChroma Scaling: %s", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom (in developing)" : L"Bilinear");
+		}
 
 		if (m_d3dpp.SwapEffect) {
 			m_strStatsStatic2.Append(L"\nPresentation  : ");

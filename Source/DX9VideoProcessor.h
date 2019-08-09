@@ -102,9 +102,9 @@ private:
 	CComPtr<IDirect3D9Ex>            m_pD3DEx;
 	CComPtr<IDirect3DDevice9Ex>      m_pD3DDevEx;
 	CComPtr<IDirect3DDeviceManager9> m_pD3DDeviceManager;
-	UINT    m_nResetTocken = 0;
-	DWORD   m_VendorId = 0;
-	CString m_strAdapterDescription;
+	UINT     m_nResetTocken = 0;
+	DWORD    m_VendorId = 0;
+	CStringW m_strAdapterDescription;
 
 	HWND m_hWnd = nullptr;
 	UINT m_nCurrentAdapter = D3DADAPTER_DEFAULT;

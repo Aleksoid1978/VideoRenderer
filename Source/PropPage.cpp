@@ -168,7 +168,7 @@ HRESULT CVRMainPPage::OnActivate()
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"16-bit Floating Point (DX9 only)", 16);
 
 	SendDlgItemMessageW(IDC_COMBO5, CB_ADDSTRING, 0, (LPARAM)L"Bilinear");
-	SendDlgItemMessageW(IDC_COMBO5, CB_ADDSTRING, 0, (LPARAM)L"Catmull-Rom (unoptimized)");
+	SendDlgItemMessageW(IDC_COMBO5, CB_ADDSTRING, 0, (LPARAM)L"Catmull-Rom (dev)");
 #if !ENABLE_CHROMA_SCALING
 	GetDlgItem(IDC_COMBO5).EnableWindow(FALSE);
 #endif

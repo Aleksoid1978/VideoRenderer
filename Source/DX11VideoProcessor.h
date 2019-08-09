@@ -156,7 +156,7 @@ private:
 	UINT m_nCurrentAdapter = -1;
 
 	DWORD m_VendorId = 0;
-	CString m_strAdapterDescription;
+	CStringW m_strAdapterDescription;
 
 	Tex2D_t m_TexOSD;
 
