@@ -352,7 +352,10 @@ HRESULT GetShaderConvertColor(
 			code.Append("float colorY = tex2D(sY, t0).r;\n"
 				"float3 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
-				code.AppendFormat("float2 t = frac(t0 * (wh*0.5))%s;\n", strChromaPos2);
+				code.Append("float2 pos = t0 * (wh*0.5);"
+					"float2 t = frac(pos);\n"
+					"pos -= t;\n");
+				code.AppendFormat("t = t%s;\n", strChromaPos2);
 				code.Append("float2 t2 = t * t;\n"
 					"float2 t3 = t * t2;\n"
 					"float2 w0 = t2 - (t3 + t) / 2;\n"
@@ -361,7 +364,7 @@ HRESULT GetShaderConvertColor(
 					"float2 w3 = (t3 - t2) / 2;\n");
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
-						code.AppendFormat("float3 c%d%d = tex2D(sUV, t0 + float2(%d*dx, %d*dy)).rga;\n", x, y, 2*(x-1), 2*(y-1));
+						code.AppendFormat("float3 c%d%d = tex2D(sUV, (pos + float2(%d+0.5, %d+0.5))*dxdy*2).rga;\n", x, y, x-1, y-1);
 					}
 				}
 				code.Append(
@@ -381,7 +384,10 @@ HRESULT GetShaderConvertColor(
 			code.AppendFormat("float colorY = tex2D(sY, t0).r;\n"
 				"float2 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
-				code.AppendFormat("float2 t = frac(t0 * (wh*0.5))%s;\n", strChromaPos2);
+				code.Append("float2 pos = t0 * (wh*0.5);"
+					"float2 t = frac(pos);\n"
+					"pos -= t;\n");
+				code.AppendFormat("t = t%s;\n", strChromaPos2);
 				code.Append("float2 t2 = t * t;\n"
 					"float2 t3 = t * t2;\n"
 					"float2 w0 = t2 - (t3 + t) / 2;\n"
@@ -391,8 +397,8 @@ HRESULT GetShaderConvertColor(
 					"float2 c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33;\n");
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
-						code.AppendFormat("c%d%d[0] = tex2D(sU, t0 + float2(%d*dx, %d*dy)).r;\n", x, y, 2*(x-1), 2*(y-1));
-						code.AppendFormat("c%d%d[1] = tex2D(sV, t0 + float2(%d*dx, %d*dy)).r;\n", x, y, 2*(x-1), 2*(y-1));
+						code.AppendFormat("c%d%d[0] = tex2D(sU, (pos + float2(%d+0.5, %d+0.5))*dxdy*2).r;\n", x, y, x-1, y-1);
+						code.AppendFormat("c%d%d[1] = tex2D(sV, (pos + float2(%d+0.5, %d+0.5))*dxdy*2).r;\n", x, y, x-1, y-1);
 					}
 				}
 				code.Append(
