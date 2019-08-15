@@ -1823,17 +1823,22 @@ HRESULT CDX9VideoProcessor::TextureConvertColor(Tex9Video_t& texVideo)
 	if (m_srcParams.cformat == CF_YUY2) {
 		w *= 2;
 	}
-	else if (m_srcParams.Subsampling == 420 && m_iChromaScaling == CHROMA_Bilinear) {
-		switch (m_srcExFmt.VideoChromaSubsampling) {
-		case DXVA2_VideoChromaSubsampling_Cosited:
-			sx = 0.5f / w;
-			sy = 0.5f / h;
-			break;
-		case DXVA2_VideoChromaSubsampling_MPEG1:
-			//nothing;
-			break;
-		case DXVA2_VideoChromaSubsampling_MPEG2:
-		default:
+	else if (m_iChromaScaling == CHROMA_Bilinear) {
+		if (m_srcParams.Subsampling == 420) {
+			switch (m_srcExFmt.VideoChromaSubsampling) {
+			case DXVA2_VideoChromaSubsampling_Cosited:
+				sx = 0.5f / w;
+				sy = 0.5f / h;
+				break;
+			case DXVA2_VideoChromaSubsampling_MPEG1:
+				//nothing;
+				break;
+			case DXVA2_VideoChromaSubsampling_MPEG2:
+			default:
+				sx = 0.5f / w;
+			}
+		}
+		else if (m_srcParams.Subsampling == 422) {
 			sx = 0.5f / w;
 		}
 	}
