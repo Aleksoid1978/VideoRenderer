@@ -189,6 +189,9 @@ HRESULT GetShaderConvertColor(
 			strChromaPos2 = "+float2(-0.25,-0.5)";
 		}
 	}
+	else if (fmtParams.Subsampling == 422) {
+		strChromaPos = "+float2(dx*0.5,0)";
+	}
 
 	if (bDX11) {
 		switch (planes) {
