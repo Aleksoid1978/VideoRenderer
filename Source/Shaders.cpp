@@ -164,11 +164,8 @@ HRESULT GetShaderConvertColor(
 	code.Append("static const float2 wh = {w, h};\n");
 	code.Append("static const float2 dxdy = {dx, dy};\n");
 
-	if (chromaScaling == CHROMA_CatmullRom) {
+	if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 		code.Append("#define CATMULLROM_05(c0,c1,c2,c3) (9*(c1+c2)-(c0+c3))*0.0625\n");
-		if (fmtParams.Subsampling == 420) {
-			code.Append("#define BICATMULLROM_05(c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33) (81*(c11+c12+c21+c22) - 9*(c01+c02+c10+c13+c20+c23+c31+c32) + c00+c03+c30+c33)*0.00390625\n");
-		}
 	}
 
 	char* strChromaPos = "";
@@ -268,7 +265,21 @@ HRESULT GetShaderConvertColor(
 					"float2 Q2 = c20 * w0.y + c21 * w1.y + c22 * w2.y + c23 * w3.y;\n"
 					"float2 Q3 = c30 * w0.y + c31 * w1.y + c32 * w2.y + c33 * w3.y;\n"
 					"colorUV = Q0 * w0.x + Q1 * w1.x + Q2 * w2.x + Q3 * w3.x;\n");
-			} else {
+			}
+			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
+				code.Append(
+					"if (fmod(input.Tex.x*w, 2) < 1.0) {\n"
+						"colorUV = texUV.Sample(samp, input.Tex).rg;\n"
+					"} else {\n"
+						"input.Tex.x -= dx;\n"
+						"float2 c0 = texUV.Sample(samp, input.Tex + float2(-2*dx, 0)).rg;\n"
+						"float2 c1 = texUV.Sample(samp, input.Tex).rg;\n"
+						"float2 c2 = texUV.Sample(samp, input.Tex + float2(2*dx, 0)).rg;\n"
+						"float2 c3 = texUV.Sample(samp, input.Tex + float2(4*dx, 0)).rg;\n"
+						"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
+					"}\n");
+			}
+			else { // CHROMA_Bilinear or YUV 4:4:4
 				code.AppendFormat("colorUV = texUV.Sample(sampL, input.Tex%s).rg;\n", strChromaPos);
 			}
 			code.Append("float4 color = float4(colorY, colorUV, 0);\n");
@@ -297,7 +308,27 @@ HRESULT GetShaderConvertColor(
 					"float2 Q2 = c20 * w0.y + c21 * w1.y + c22 * w2.y + c23 * w3.y;\n"
 					"float2 Q3 = c30 * w0.y + c31 * w1.y + c32 * w2.y + c33 * w3.y;\n"
 					"colorUV = Q0 * w0.x + Q1 * w1.x + Q2 * w2.x + Q3 * w3.x;\n");
-			} else {
+			}
+			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
+				code.Append(
+					"if (fmod(input.Tex.x*w, 2) < 1.0) {\n"
+						"colorUV[0] = texU.Sample(samp, input.Tex).r;\n"
+						"colorUV[1] = texV.Sample(samp, input.Tex).r;\n"
+					"} else {\n"
+						"input.Tex.x -= dx;\n"
+						"float2 c0,c1,c2,c3;\n"
+						"c0[0] = texU.Sample(samp, input.Tex + float2(-2*dx, 0)).r;\n"
+						"c1[0] = texU.Sample(samp, input.Tex).r;\n"
+						"c2[0] = texU.Sample(samp, input.Tex + float2(2*dx, 0)).r;\n"
+						"c3[0] = texU.Sample(samp, input.Tex + float2(4*dx, 0)).r;\n"
+						"c0[1] = texV.Sample(samp, input.Tex + float2(-2*dx, 0)).r;\n"
+						"c1[1] = texV.Sample(samp, input.Tex).r;\n"
+						"c2[1] = texV.Sample(samp, input.Tex + float2(2*dx, 0)).r;\n"
+						"c3[1] = texV.Sample(samp, input.Tex + float2(4*dx, 0)).r;\n"
+						"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
+					"}\n");
+			}
+			else { // CHROMA_Bilinear or YUV 4:4:4
 				code.AppendFormat("colorUV[0] = texU.Sample(sampL, input.Tex%s).r;\n", strChromaPos);
 				code.AppendFormat("colorUV[1] = texV.Sample(sampL, input.Tex%s).r;\n", strChromaPos);
 			}
@@ -376,7 +407,21 @@ HRESULT GetShaderConvertColor(
 					"float3 Q2 = c20 * w0.y + c21 * w1.y + c22 * w2.y + c23 * w3.y;\n"
 					"float3 Q3 = c30 * w0.y + c31 * w1.y + c32 * w2.y + c33 * w3.y;\n"
 					"colorUV = Q0 * w0.x + Q1 * w1.x + Q2 * w2.x + Q3 * w3.x;\n");
-			} else {
+			}
+			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
+				code.Append(
+					"if (fmod(t0.x*w, 2) < 1.0) {\n"
+						"colorUV = tex2D(sUV, t0).rga;\n"
+					"} else {\n"
+						"t0.x -= dx;\n"
+						"float3 c0 = tex2D(sUV, t0 + float2(-2*dx, 0)).rga;\n"
+						"float3 c1 = tex2D(sUV, t0).rga;\n"
+						"float3 c2 = tex2D(sUV, t0 + float2(2*dx, 0)).rga;\n"
+						"float3 c3 = tex2D(sUV, t0 + float2(4*dx, 0)).rga;\n"
+						"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
+					"}\n");
+			}
+			else { // CHROMA_Bilinear or YUV 4:4:4
 				code.Append("colorUV = tex2D(sUV, t1).rga;\n");
 			}
 			code.Append("float4 color = float4(colorY, colorUV);\n");
@@ -410,7 +455,27 @@ HRESULT GetShaderConvertColor(
 					"float2 Q2 = c20 * w0.y + c21 * w1.y + c22 * w2.y + c23 * w3.y;\n"
 					"float2 Q3 = c30 * w0.y + c31 * w1.y + c32 * w2.y + c33 * w3.y;\n"
 					"colorUV = Q0 * w0.x + Q1 * w1.x + Q2 * w2.x + Q3 * w3.x;\n");
-			} else {
+			}
+			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
+				code.Append(
+					"if (fmod(t0.x*w, 2) < 1.0) {\n"
+						"colorUV[0] = tex2D(sU, t0).r;\n"
+						"colorUV[1] = tex2D(sV, t0).r;\n"
+					"} else {\n"
+						"t0.x -= dx;\n"
+						"float2 c0,c1,c2,c3;\n"
+						"c0[0] = tex2D(sU, t0 + float2(-2*dx, 0)).r;\n"
+						"c1[0] = tex2D(sU, t0).r;\n"
+						"c2[0] = tex2D(sU, t0 + float2(2*dx, 0)).r;\n"
+						"c3[0] = tex2D(sU, t0 + float2(4*dx, 0)).r;\n"
+						"c0[1] = tex2D(sV, t0 + float2(-2*dx, 0)).r;\n"
+						"c1[1] = tex2D(sV, t0).r;\n"
+						"c2[1] = tex2D(sV, t0 + float2(2*dx, 0)).r;\n"
+						"c3[1] = tex2D(sV, t0 + float2(4*dx, 0)).r;\n"
+						"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
+					"}\n");
+			}
+			else { // CHROMA_Bilinear or YUV 4:4:4
 				code.Append("colorUV[0] = tex2D(sU, t1).r;\n"
 					"colorUV[1] = tex2D(sV, t1).r;\n");
 			}
