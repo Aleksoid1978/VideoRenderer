@@ -411,9 +411,10 @@ HRESULT GetShaderConvertColor(
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 				code.Append(
 					"if (fmod(t0.x*w, 2) < 1.0) {\n"
+						"t0.x += 0.5*dx;\n"
 						"colorUV = tex2D(sUV, t0).rga;\n"
 					"} else {\n"
-						"t0.x -= dx;\n"
+						"t0.x -= 0.5*dx;\n"
 						"float3 c0 = tex2D(sUV, t0 + float2(-2*dx, 0)).rga;\n"
 						"float3 c1 = tex2D(sUV, t0).rga;\n"
 						"float3 c2 = tex2D(sUV, t0 + float2(2*dx, 0)).rga;\n"
@@ -459,10 +460,11 @@ HRESULT GetShaderConvertColor(
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 				code.Append(
 					"if (fmod(t0.x*w, 2) < 1.0) {\n"
+						"t0.x += 0.5*dx;\n"
 						"colorUV[0] = tex2D(sU, t0).r;\n"
 						"colorUV[1] = tex2D(sV, t0).r;\n"
 					"} else {\n"
-						"t0.x -= dx;\n"
+						"t0.x -= 0.5*dx;\n"
 						"float2 c0,c1,c2,c3;\n"
 						"c0[0] = tex2D(sU, t0 + float2(-2*dx, 0)).r;\n"
 						"c1[0] = tex2D(sU, t0).r;\n"
