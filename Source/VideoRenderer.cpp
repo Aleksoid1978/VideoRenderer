@@ -103,11 +103,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPScaling, dw)) {
 			m_Sets.bVPScaling = !!dw;
 		}
-#if ENABLE_CHROMA_SCALING
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ChromaScaling, dw)) {
 			m_Sets.iChromaScaling = discard((int)dw, (int)CHROMA_Bilinear, (int)CHROMA_Bilinear, (int)CHROMA_CatmullRom);
 		}
-#endif
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_Upscaling, dw)) {
 			m_Sets.iUpscaling = discard((int)dw, (int)UPSCALE_CatmullRom, (int)UPSCALE_Nearest, (int)UPSCALE_Lanczos3);
 		}
@@ -965,9 +963,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_VPEnableOther,      m_Sets.VPFmts.bOther);
 		key.SetDWORDValue(OPT_DoubleFrateDeint,   m_Sets.bDeintDouble);
 		key.SetDWORDValue(OPT_VPScaling,          m_Sets.bVPScaling);
-#if ENABLE_CHROMA_SCALING
 		key.SetDWORDValue(OPT_ChromaScaling,      m_Sets.iChromaScaling);
-#endif
 		key.SetDWORDValue(OPT_Upscaling,          m_Sets.iUpscaling);
 		key.SetDWORDValue(OPT_Downscaling,        m_Sets.iDownscaling);
 		key.SetDWORDValue(OPT_InterpolateAt50pct, m_Sets.bInterpolateAt50pct);

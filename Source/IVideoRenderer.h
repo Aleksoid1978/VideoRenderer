@@ -113,5 +113,3 @@ IVideoRenderer : public IUnknown {
 
 	STDMETHOD(SaveSettings()) PURE;
 };
-
-#define ENABLE_CHROMA_SCALING 1

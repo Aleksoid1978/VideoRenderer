@@ -2021,7 +2021,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 			m_strStatsStatic2.Append(L"DXVA2 VP");
 		} else {
 			m_strStatsStatic2.Append(L"Shaders");
-			m_strStatsStatic2.AppendFormat(L"\nChroma Scaling: %s", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom (in developing)" : L"Bilinear");
+			m_strStatsStatic2.AppendFormat(L"\nChroma Scaling: %s", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom" : L"Bilinear");
 		}
 
 		if (m_d3dpp.SwapEffect) {
