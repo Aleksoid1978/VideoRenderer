@@ -2025,28 +2025,29 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 		}
 
 		if (m_d3dpp.SwapEffect) {
-			m_strStatsStatic2.Append(L"\nPresentation  : ");
+			m_strStatsStatic3.SetString(L"\nPresentation  : ");
 			switch (m_d3dpp.SwapEffect) {
 			case D3DSWAPEFFECT_DISCARD:
-				m_strStatsStatic2.Append(L"Discard");
+				m_strStatsStatic3.Append(L"Discard");
 				break;
 			case D3DSWAPEFFECT_FLIP:
-				m_strStatsStatic2.Append(L"Flip");
+				m_strStatsStatic3.Append(L"Flip");
 				break;
 			case D3DSWAPEFFECT_COPY:
-				m_strStatsStatic2.Append(L"Copy");
+				m_strStatsStatic3.Append(L"Copy");
 				break;
 			case D3DSWAPEFFECT_OVERLAY:
-				m_strStatsStatic2.Append(L"Overlay");
+				m_strStatsStatic3.Append(L"Overlay");
 				break;
 			case D3DSWAPEFFECT_FLIPEX:
-				m_strStatsStatic2.Append(L"FlipEx");
+				m_strStatsStatic3.Append(L"FlipEx");
 				break;
 			}
 		}
 	} else {
 		m_strStatsStatic1 = L"Error";
 		m_strStatsStatic2.Empty();
+		m_strStatsStatic3.Empty();
 	}
 }
 
@@ -2087,6 +2088,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 			}
 		}
 	}
+	str.Append(m_strStatsStatic3);
 
 	str.AppendFormat(L"\nFrames: %5u, skipped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);

@@ -178,6 +178,7 @@ private:
 	CRenderStats m_RenderStats;
 	CStringW m_strStatsStatic1;
 	CStringW m_strStatsStatic2;
+	CStringW m_strStatsStatic3;
 	bool m_bSrcFromGPU = false;
 
 	Tex_t m_TexStats;

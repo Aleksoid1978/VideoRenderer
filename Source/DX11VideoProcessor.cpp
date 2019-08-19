@@ -2230,20 +2230,20 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 
 		DXGI_SWAP_CHAIN_DESC1 swapchain_desc;
 		if (m_pDXGISwapChain1 && S_OK == m_pDXGISwapChain1->GetDesc1(&swapchain_desc)) {
-			m_strStatsStatic2.Append(L"\nPresentation  : ");
+			m_strStatsStatic3.SetString(L"\nPresentation  : ");
 			switch (swapchain_desc.SwapEffect) {
 			case DXGI_SWAP_EFFECT_DISCARD:
-				m_strStatsStatic2.Append(L"Discard");
+				m_strStatsStatic3.Append(L"Discard");
 				break;
 			case DXGI_SWAP_EFFECT_SEQUENTIAL:
-				m_strStatsStatic2.Append(L"Sequential");
+				m_strStatsStatic3.Append(L"Sequential");
 				break;
 			case DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL:
-				m_strStatsStatic2.Append(L"Flip sequential");
+				m_strStatsStatic3.Append(L"Flip sequential");
 				break;
 #if VER_PRODUCTBUILD >= 10000
 			case DXGI_SWAP_EFFECT_FLIP_DISCARD:
-				m_strStatsStatic2.Append(L"Flip discard");
+				m_strStatsStatic3.Append(L"Flip discard");
 				break;
 #endif
 			}
@@ -2251,6 +2251,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 	} else {
 		m_strStatsStatic1 = L"Error";
 		m_strStatsStatic2.Empty();
+		m_strStatsStatic3.Empty();
 	}
 }
 
@@ -2290,6 +2291,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			}
 		}
 	}
+	str.Append(m_strStatsStatic3);
 
 	str.AppendFormat(L"\nFrames: %5u, skipped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);

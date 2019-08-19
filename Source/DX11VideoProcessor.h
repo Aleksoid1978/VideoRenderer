@@ -164,6 +164,7 @@ private:
 
 	CStringW m_strStatsStatic1;
 	CStringW m_strStatsStatic2;
+	CStringW m_strStatsStatic3;
 	bool m_bSrcFromGPU = false;
 
 	HMODULE m_hDXGILib = nullptr;
