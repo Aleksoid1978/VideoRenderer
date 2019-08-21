@@ -662,6 +662,8 @@ HRESULT CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const
 	// fill the surface in black, to avoid the "green screen"
 	m_pD3DDevEx->ColorFill(m_TexSrcVideo.pSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
 
+	m_SurfaceWidth   = width;
+	m_SurfaceHeight  = height;
 	m_srcParams      = params;
 	m_srcDXVA2Format = d3dformat;
 	m_pConvertFn     = GetCopyFunction(params);
