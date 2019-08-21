@@ -1379,9 +1379,9 @@ HRESULT CDX9VideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
 
 HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 {
-	if (m_SrcSamples.Empty()) {
-		return E_FAIL;
-	}
+	//if (m_SrcSamples.Empty()) {
+	//	return E_FAIL;
+	//}
 
 	CRect rSrcRect(m_srcRect);
 	int w = rSrcRect.Width();
