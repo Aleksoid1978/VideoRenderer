@@ -77,6 +77,7 @@ DEFINE_GUID(MEDIASUBTYPE_Y410,  0x30313459, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0x
 DEFINE_GUID(MEDIASUBTYPE_Y416,  0x36313459, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 DEFINE_GUID(MEDIASUBTYPE_RGB48, 0x30424752, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71); // RGB[48] (RGB0)
 DEFINE_GUID(MEDIASUBTYPE_b48r,  0x72383462, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
+DEFINE_GUID(MEDIASUBTYPE_b64a,  0x61343662, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 
 DEFINE_GUID(CLSID_XySubFilter,            0x2DFCB782, 0xEC20, 0x4A7C, 0xB5, 0x30, 0x45, 0x77, 0xAD, 0xB3, 0x3F, 0x21);
 DEFINE_GUID(CLSID_XySubFilter_AutoLoader, 0x6B237877, 0x902B, 0x4C6C, 0x92, 0xF6, 0xE6, 0x31, 0x69, 0xA5, 0x16, 0x6C);
@@ -168,6 +169,7 @@ enum ColorFormat_t {
 	CF_ARGB32,
 	CF_RGB48,
 	CF_B48R,
+	CF_B64A,
 	CF_Y8,
 	CF_Y800,
 	CF_Y116,
@@ -223,9 +225,11 @@ void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int 
 // RGB24 to D3DFMT_X8R8G8B8
 void CopyFrameRGB24(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 void CopyRGB24_SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch); // 30% faster than CopyFrameRGB24().
-// RGB48 to D3DFMT_A16B16G16R16
+// RGB48, b48r to D3DFMT_A16B16G16R16
 void CopyFrameRGB48(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 void CopyRGB48_SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch); // Not faster than CopyFrameRGB48().
+// b64a to D3DFMT_A16B16G16R16
+void CopyFrameB64A(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 // YV12
 void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch);
 // NV12, P010, P016

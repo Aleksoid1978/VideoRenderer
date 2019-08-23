@@ -204,6 +204,7 @@ static const FmtConvParams_t s_FmtConvMapping[] = {
 	{CF_ARGB32, MEDIASUBTYPE_ARGB32, "ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,       nullptr, DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM,        nullptr,       4, 2,        CS_RGB,  444,       8,     &CopyFrameAsIs,            nullptr},
 	{CF_RGB48,  MEDIASUBTYPE_RGB48,  "RGB48",  D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16,    &CopyFrameRGB48,           nullptr},
 	{CF_B48R,   MEDIASUBTYPE_b48r,   "b48r",   D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16,    &CopyFrameRGB48,           nullptr},
+	{CF_B64A,   MEDIASUBTYPE_b64a,   "b64a",   D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_RGB,  444,       16,    &CopyFrameB64A,            nullptr},
 	{CF_Y8,     MEDIASUBTYPE_Y8,     "Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R8_UNORM,              nullptr,       1, 2,        CS_GRAY, 400,       8,     &CopyFrameAsIs,            nullptr},
 	{CF_Y800,   MEDIASUBTYPE_Y800,   "Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R8_UNORM,              nullptr,       1, 2,        CS_GRAY, 400,       8,     &CopyFrameAsIs,            nullptr},
 	{CF_Y116,   MEDIASUBTYPE_Y116,   "Y116",   D3DFMT_UNKNOWN,  D3DFMT_L16,            nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16_UNORM,             nullptr,       2, 2,        CS_GRAY, 400,       16,    &CopyFrameAsIs,            nullptr},
@@ -359,6 +360,25 @@ void CopyRGB48_SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, in
 			dst128 += 4;
 		}
 
+		src += src_pitch;
+		dst += dst_pitch;
+	}
+}
+
+void CopyFrameB64A(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+{
+	UINT line_pixels = abs(src_pitch) / 8;
+
+	for (UINT y = 0; y < height; ++y) {
+		uint64_t* src64 = (uint64_t*)src;
+		uint64_t* dst64 = (uint64_t*)dst;
+		for (UINT i = 0; i < line_pixels; ++i) {
+			dst64[i] =
+				((src64[i] & 0xFF00FF00FF000000) >> 24) +
+				((src64[i] & 0x00FF00FF00FF0000) >>  8) +
+				((src64[i] & 0x000000000000FF00) << 40) +
+				((src64[i] & 0x00000000000000FF) << 56);
+		}
 		src += src_pitch;
 		dst += dst_pitch;
 	}

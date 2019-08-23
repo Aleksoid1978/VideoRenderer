@@ -954,6 +954,9 @@ BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 		else if (FmtParams.cformat == CF_RGB48 || FmtParams.cformat == CF_B48R) {
 			Size.cx = ALIGN(Size.cx, 2);
 		}
+		else if (FmtParams.cformat == CF_B64A) {
+			// nothing
+		}
 		else {
 			if (!m_TexSrcVideo.pTexture) {
 				return FALSE;
@@ -973,8 +976,8 @@ BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 			Size.cx = RowPitch / FmtParams.Packsize;
 		}
 
-		if (FmtParams.CSType == CS_RGB) {
-			Size.cy = -abs(Size.cy);
+		if (FmtParams.cformat == CF_RGB24 || FmtParams.cformat == CF_XRGB32 || FmtParams.cformat == CF_ARGB32) {
+			Size.cy = -abs(Size.cy); // only for biCompression == BI_RGB
 		} else {
 			Size.cy = abs(Size.cy);
 		}
