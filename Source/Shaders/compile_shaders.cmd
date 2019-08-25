@@ -18,13 +18,17 @@ REM along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 PUSHD %~dp0
 
-SET fxcexe="%ProgramFiles(x86)%\Windows Kits\10\bin\x64\fxc.exe"
+IF /I %PROCESSOR_ARCHITECTURE%==AMD64 (
+  SET fxcfolder=x64
+) ELSE (
+  SET fxcfolder=x86
+)
+
+SET fxcexe="%ProgramFiles(x86)%\Windows Kits\10\bin\%fxcfolder%\fxc.exe"
 IF EXIST %fxcexe% GOTO fxc_OK
-SET fxcexe="%ProgramFiles(x86)%\Windows Kits\10\bin\x86\fxc.exe"
+SET fxcexe="%ProgramFiles(x86)%\Windows Kits\8.1\bin\%fxcfolder%\fxc.exe"
 IF EXIST %fxcexe% GOTO fxc_OK
-SET fxcexe="%ProgramFiles(x86)%\Windows Kits\8.1\bin\x64\fxc.exe"
-IF EXIST %fxcexe% GOTO fxc_OK
-SET fxcexe="%ProgramFiles(x86)%\Windows Kits\8.1\bin\x86\fxc.exe"
+SET fxcexe="%ProgramFiles(x86)%\Windows Kits\10\bin\10.0.18362.0\%fxcfolder%\fxc.exe"
 IF EXIST %fxcexe% GOTO fxc_OK
 
 IF NOT DEFINED VS150COMNTOOLS (
