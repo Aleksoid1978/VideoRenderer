@@ -24,27 +24,14 @@ IF /I %PROCESSOR_ARCHITECTURE%==AMD64 (
   SET fxcfolder=x86
 )
 
+SET fxcexe="%ProgramFiles(x86)%\Windows Kits\10\bin\10.0.18362.0\%fxcfolder%\fxc.exe"
+IF EXIST %fxcexe% GOTO fxc_OK
+SET fxcexe="%ProgramFiles(x86)%\Windows Kits\10\bin\10.0.17763.0\%fxcfolder%\fxc.exe"
+IF EXIST %fxcexe% GOTO fxc_OK
 SET fxcexe="%ProgramFiles(x86)%\Windows Kits\10\bin\%fxcfolder%\fxc.exe"
 IF EXIST %fxcexe% GOTO fxc_OK
 SET fxcexe="%ProgramFiles(x86)%\Windows Kits\8.1\bin\%fxcfolder%\fxc.exe"
 IF EXIST %fxcexe% GOTO fxc_OK
-SET fxcexe="%ProgramFiles(x86)%\Windows Kits\10\bin\10.0.18362.0\%fxcfolder%\fxc.exe"
-IF EXIST %fxcexe% GOTO fxc_OK
-
-IF NOT DEFINED VS150COMNTOOLS (
-  FOR /F "tokens=2*" %%A IN (
-    'REG QUERY "HKLM\SOFTWARE\Microsoft\VisualStudio\SxS\VS7" /v "15.0" 2^>NUL ^| FIND "REG_SZ" ^|^|
-     REG QUERY "HKLM\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\SxS\VS7" /v "15.0" 2^>NUL ^| FIND "REG_SZ"') DO SET "VS150COMNTOOLS=%%BCommon7\Tools\"
-)
-
-IF DEFINED VS150COMNTOOLS (
-  SET "VCVARS=%VS150COMNTOOLS%..\..\VC\Auxiliary\Build\vcvarsall.bat"
-) ELSE (
-  ECHO ERROR: "Visual Studio environment variable(s) is missing - possible it's not installed on your PC"
-  EXIT /B
-)
-
-CALL "%VCVARS%" x86 > nul
 
 SET fxcexe="fxc.exe"
 where /q %fxcexe%
