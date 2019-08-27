@@ -1,3 +1,24 @@
+v0.x.x.xxx - 2019.xx.xx
+-----------------------
+Improved subtitle support in DX11 mode. Fixed work with XySubFilter.
+Type redefinition fixed for RGB24 and RGB48.
+Added method "Bicubic sharp" to reduce the frame.
+Fixed incompatibility with Microsoft DTV-DVD Decoder.
+The "SurfaceFormat" setting has been renamed to "TextureFormat." The format of the values is changed, the value "Auto 8/10-bit Integer" is added.
+Fixed color adjustment in DX11 mode.
+Now the empty DXVA2_ExtendedFormat fields in the input format are set according to the specifications.
+Added support for black and white video in DX11 mode.
+Optimized copying to video memory in DX9 mode.
+Added support for YV16, YV24, P210, P216, b48r, b64a formats.
+Added interpolation method "Nearest-neighbor".
+Fixed conversion of HDR to SDR for SMPTE ST 2084 in DX11 mode.
+The runtime compilation of the color conversion shader is now used. For full support on Window 7, the D3dcompiler_47.dll library is now required, which can be installed using the KB4019990 update.
+Added the ability to disable DXVA2 and D3D11 video processors for NV12, YUY2, P010/P016 and other formats.
+Added support for chroma sample location for YUV 4: 2: 0 formats.
+Added the standard "Quality" information panel.
+Added chroma scaling setting. The Bilinear or Catmull-Rom method is available.
+Added information in statistics.
+
 v0.2.0.658 - 2019.06.18
 -----------------------
 The first official release.
