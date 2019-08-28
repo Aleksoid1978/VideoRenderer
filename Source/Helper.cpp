@@ -422,8 +422,10 @@ void CopyBiPlanar420(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, in
 		return;
 	}
 
+	const UINT linesize = std::min((UINT)src_pitch, dst_pitch);
+
 	for (UINT y = 0; y < lines; ++y) {
-		memcpy(dst, src, src_pitch);
+		memcpy(dst, src, linesize);
 		src += src_pitch;
 		dst += dst_pitch;
 	}
