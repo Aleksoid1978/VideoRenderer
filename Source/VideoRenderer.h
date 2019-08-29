@@ -106,7 +106,7 @@ private:
 	std::thread m_DX9Thread;
 	void DX9Thread();
 
-	CRect m_windowRect;
+	CRect m_windowRect, m_videoRect;
 
 	bool m_bSubInvAlpha = false;
 

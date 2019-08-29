@@ -631,9 +631,11 @@ STDMETHODIMP CMpcVideoRenderer::GetSourcePosition(long *pLeft, long *pTop, long 
 STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long Width, long Height)
 {
 	const CRect videoRect(Left, Top, Left + Width, Top + Height);
-	if (videoRect.IsRectNull()) {
+	if (videoRect.IsRectNull() || videoRect == m_videoRect) {
 		return S_OK;
 	}
+
+	m_videoRect = videoRect;
 
 	CAutoLock cRendererLock(&m_RendererLock);
 	if (m_bUsedD3D11) {
@@ -642,7 +644,9 @@ STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long
 		m_DX9_VP.SetVideoRect(videoRect);
 	}
 
-	Redraw();
+	if (!m_pSubCallBack) {
+		Redraw();
+	}
 
 	return S_OK;
 }
@@ -795,7 +799,12 @@ STDMETHODIMP CMpcVideoRenderer::get_Owner(OAHWND *Owner)
 
 STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Width, long Height)
 {
-	m_windowRect = CRect(Left, Top, Left + Width, Top + Height);
+	const CRect windowRect(Left, Top, Left + Width, Top + Height);
+	if (windowRect == m_windowRect) {
+		return S_OK;
+	}
+
+	m_windowRect = windowRect;
 
 	CAutoLock cRendererLock(&m_RendererLock);
 	if (m_hWnd) {
@@ -809,7 +818,9 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 		WaitForSingleObject(m_evThreadFinishJob, INFINITE);
 	}
 
-	Redraw();
+	if (!m_pSubCallBack) {
+		Redraw();
+	}
 
 	return S_OK;
 }
