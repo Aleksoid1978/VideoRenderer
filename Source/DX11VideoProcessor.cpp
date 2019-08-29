@@ -1615,7 +1615,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	CheckPointer(m_TexSrcVideo.pTexture, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
 
-
 	if (field) {
 		m_FieldDrawn = field;
 	}
