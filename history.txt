@@ -1,4 +1,4 @@
-v0.3.0.830 - 2019.08.30
+v0.3.0.831 - 2019.08.30
 -----------------------
 Improved subtitle support in DX11 mode. Fixed work with XySubFilter.
 Type redefinition fixed for RGB24 and RGB48.
