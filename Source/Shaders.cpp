@@ -129,8 +129,9 @@ HRESULT GetShaderConvertColor(
 	const int chromaScaling,
 	ID3DBlob** ppCode)
 {
-	CStringA code;
+	DLog(L"GetShaderConvertColor() started for %S %ux%u extfmt:0x%08x chroma:%d", fmtParams.str, texW, texH, exFmt.value, chromaScaling);
 
+	CStringA code;
 	HRESULT hr = S_OK;
 	LPVOID data;
 	DWORD size;
@@ -147,15 +148,18 @@ HRESULT GetShaderConvertColor(
 					code.Append((LPCSTR)data, size);
 					code.AppendChar('\n');
 					code.Append(correct_ST2084);
+					DLog(L"GetShaderConvertColor() add code for HDR ST2084");
 				}
 			} else {
 				code.Append(correct_HLG);
+				DLog(L"GetShaderConvertColor() add code for HDR HLG");
 			}
 		}
 	}
 
 	const int planes = fmtParams.pDX9Planes ? (fmtParams.pDX9Planes->FmtPlane3 ? 3 : 2) : 1;
 	ASSERT(planes == (fmtParams.pDX11Planes ? (fmtParams.pDX11Planes->FmtPlane3 ? 3 : 2) : 1));
+	DLog(L"GetShaderConvertColor() frame consists of 3 planes");
 
 	code.AppendFormat("#define w %u\n", (fmtParams.cformat == CF_YUY2) ? texW*2 : texW);
 	code.AppendFormat("#define h %u\n", texH);
@@ -175,19 +179,23 @@ HRESULT GetShaderConvertColor(
 		case DXVA2_VideoChromaSubsampling_Cosited:
 			strChromaPos = "+float2(dx*0.5,dy*0.5)";
 			strChromaPos2 = "+float2(-0.25,-0.25)";
+			DLog(L"GetShaderConvertColor() set chroma location Co-sited");
 			break;
 		case DXVA2_VideoChromaSubsampling_MPEG1:
 			//strChromaPos = "";
 			strChromaPos2 = "+float2(-0.5,-0.5)";
+			DLog(L"GetShaderConvertColor() set chroma location MPEG-1");
 			break;
 		case DXVA2_VideoChromaSubsampling_MPEG2:
 		default:
 			strChromaPos = "+float2(dx*0.5,0)";
 			strChromaPos2 = "+float2(-0.25,-0.5)";
+			DLog(L"GetShaderConvertColor() set chroma location MPEG-2");
 		}
 	}
 	else if (fmtParams.Subsampling == 422) {
 		strChromaPos = "+float2(dx*0.5,0)";
+		DLog(L"GetShaderConvertColor() set chroma location for YUV 4:2:2");
 	}
 
 	if (bDX11) {
