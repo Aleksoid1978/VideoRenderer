@@ -1261,7 +1261,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 					m_VPCaps.FilterCaps = 0;
 					break;
 				}
-				DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : FilterRange(%u) : %4d, %3d, %3d, %f",
+				DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : FilterRange(%u) : %5d, %4d, %3d, %f",
 					i, m_VPFilterRange[i].Minimum, m_VPFilterRange[i].Maximum, m_VPFilterRange[i].Default, m_VPFilterRange[i].Multiplier);
 			}
 		}
