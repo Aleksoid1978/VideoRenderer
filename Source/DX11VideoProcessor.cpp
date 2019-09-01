@@ -436,18 +436,25 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd)
 	ID3D11Device *pDevice = nullptr;
 	ID3D11DeviceContext *pDeviceContext = nullptr;
 
+	UINT flags = 0;
+#ifdef _DEBUG
+	HMODULE hD3D11SDKLayers = LoadLibraryW(L"D3D11_1SDKLayers.dll");
+	if (hD3D11SDKLayers) {
+		flags |= D3D11_CREATE_DEVICE_DEBUG;
+		FreeLibrary(hD3D11SDKLayers);
+	} else {
+		DLog(L"D3D11_1SDKLayers.dll could not be loaded. D3D11 debugging messages will not be displayed");
+	}
+#endif
+#if DIRECTWRITE_ENABLE
+	flags |= D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+#endif
+
 	HRESULT hr = m_D3D11CreateDevice(
 		pDXGIAdapter,
 		D3D_DRIVER_TYPE_UNKNOWN,
 		nullptr,
-#if DIRECTWRITE_ENABLE
-		D3D11_CREATE_DEVICE_BGRA_SUPPORT |
-#endif
-#ifdef _DEBUG
-		D3D11_CREATE_DEVICE_DEBUG,
-#else
-		0,
-#endif
+		flags,
 		featureLevels,
 		std::size(featureLevels),
 		D3D11_SDK_VERSION,
