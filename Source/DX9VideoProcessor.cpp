@@ -441,28 +441,28 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 	}
 	UINT NumRefSamples = 1;
 	if (m_bInterlaced) {
-		UINT PreferredDeintTech = DXVA2_DeinterlaceTech_EdgeFiltering // Intel
+		UINT preferredDeintTech = DXVA2_DeinterlaceTech_EdgeFiltering // Intel
 			| DXVA2_DeinterlaceTech_FieldAdaptive
 			| DXVA2_DeinterlaceTech_PixelAdaptive // Nvidia, AMD
 			| DXVA2_DeinterlaceTech_MotionVectorSteered;
 
 		for (UINT i = 0; i < count; i++) {
 			auto& devguid = guids[i];
-			if (CreateDXVA2VPDevice(devguid, videodesc) && m_DXVA2VPcaps.DeinterlaceTechnology & PreferredDeintTech) {
+			if (CreateDXVA2VPDevice(devguid, videodesc, preferredDeintTech)) {
 				m_DXVA2VPGuid = devguid;
 				break; // found!
 			}
 			m_pDXVA2_VP.Release();
 		}
 
-		if (!m_pDXVA2_VP && CreateDXVA2VPDevice(DXVA2_VideoProcBobDevice, videodesc)) {
+		if (!m_pDXVA2_VP && CreateDXVA2VPDevice(DXVA2_VideoProcBobDevice, videodesc, 0)) {
 			m_DXVA2VPGuid = DXVA2_VideoProcBobDevice;
 		}
 	}
 
 	CoTaskMemFree(guids);
 
-	if (!m_pDXVA2_VP && CreateDXVA2VPDevice(DXVA2_VideoProcProgressiveDevice, videodesc)) { // Progressive or fall-back for interlaced
+	if (!m_pDXVA2_VP && CreateDXVA2VPDevice(DXVA2_VideoProcProgressiveDevice, videodesc, 0)) { // Progressive or fall-back for interlaced
 		m_DXVA2VPGuid = DXVA2_VideoProcProgressiveDevice;
 	}
 
@@ -532,12 +532,34 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 	return S_OK;
 }
 
-BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc)
+BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc, UINT preferredDeintTech)
 {
 	DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() started for device %s", DXVA2VPDeviceToString(devguid));
 	CheckPointer(m_pDXVA2_VPService, FALSE);
 
 	HRESULT hr = S_OK;
+	// Query video processor capabilities.
+	hr = m_pDXVA2_VPService->GetVideoProcessorCaps(devguid, &videodesc, m_InternalTexFmt, &m_DXVA2VPcaps);
+	if (FAILED(hr)) {
+		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : GetVideoProcessorCaps() failed with error %s", HR2Str(hr));
+		return FALSE;
+	}
+	if (preferredDeintTech && !(m_DXVA2VPcaps.DeinterlaceTechnology & preferredDeintTech)) {
+		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : skip this device, need improved deinterlacing");
+		return FALSE;
+	}
+	// Check to see if the device is hardware device.
+	if (!(m_DXVA2VPcaps.DeviceCaps & DXVA2_VPDev_HardwareDevice)) {
+		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : The DXVA2 device isn't a hardware device");
+		return FALSE;
+	}
+	// Check to see if the device supports all the VP operations we want.
+	const UINT VIDEO_REQUIED_OP = DXVA2_VideoProcess_YUV2RGB | DXVA2_VideoProcess_StretchX | DXVA2_VideoProcess_StretchY;
+	if ((m_DXVA2VPcaps.VideoProcessorOperations & VIDEO_REQUIED_OP) != VIDEO_REQUIED_OP) {
+		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : The DXVA2 device doesn't support the YUV2RGB & Stretch operations");
+		return FALSE;
+	}
+
 	// Query the supported render target format.
 	UINT i, count;
 	D3DFORMAT* formats = nullptr;
@@ -567,21 +589,10 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 		return FALSE;
 	}
 
-	// Query video processor capabilities.
-	hr = m_pDXVA2_VPService->GetVideoProcessorCaps(devguid, &videodesc, m_InternalTexFmt, &m_DXVA2VPcaps);
+	// Finally create a video processor device.
+	hr = m_pDXVA2_VPService->CreateVideoProcessor(devguid, &videodesc, m_InternalTexFmt, 0, &m_pDXVA2_VP);
 	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : GetVideoProcessorCaps() failed with error %s", HR2Str(hr));
-		return FALSE;
-	}
-	// Check to see if the device is hardware device.
-	if (!(m_DXVA2VPcaps.DeviceCaps & DXVA2_VPDev_HardwareDevice)) {
-		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : The DXVA2 device isn't a hardware device");
-		return FALSE;
-	}
-	// Check to see if the device supports all the VP operations we want.
-	const UINT VIDEO_REQUIED_OP = DXVA2_VideoProcess_YUV2RGB | DXVA2_VideoProcess_StretchX | DXVA2_VideoProcess_StretchY;
-	if ((m_DXVA2VPcaps.VideoProcessorOperations & VIDEO_REQUIED_OP) != VIDEO_REQUIED_OP) {
-		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : The DXVA2 device doesn't support the YUV2RGB & Stretch operations");
+		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : CreateVideoProcessor failed with error %s", HR2Str(hr));
 		return FALSE;
 	}
 
@@ -633,13 +644,6 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	m_BltParams.DetailFilterChroma.Level     = DFilterValues[3];
 	m_BltParams.DetailFilterChroma.Threshold = DFilterValues[4];
 	m_BltParams.DetailFilterChroma.Radius    = DFilterValues[5];
-
-	// Finally create a video processor device.
-	hr = m_pDXVA2_VPService->CreateVideoProcessor(devguid, &videodesc, m_InternalTexFmt, 0, &m_pDXVA2_VP);
-	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : CreateVideoProcessor failed with error %s", HR2Str(hr));
-		return FALSE;
-	}
 
 	DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : create %s processor ", CStringFromGUID(devguid));
 
