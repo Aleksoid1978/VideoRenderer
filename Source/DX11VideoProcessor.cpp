@@ -1127,6 +1127,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			}
 
 			m_inputMT = *pmt;
+			UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
 			UpdateStatsStatic();
 
 			if (m_pFilter->m_pSubCallBack) {
@@ -1166,8 +1167,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
 		}
 
-		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
 		m_inputMT = *pmt;
+		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
 		SetShaderConvertColorParams();
 		UpdateStatsStatic();
 
