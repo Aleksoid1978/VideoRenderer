@@ -717,7 +717,7 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 	csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
 	csp_params.gray       = m_srcParams.CSType == CS_GRAY;
 
-	m_PSConvColorData.bEnable = m_srcParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;;
+	m_PSConvColorData.bEnable = m_srcParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
 
 	mp_cmat cmatrix;
 	mp_get_csp_matrix(csp_params, cmatrix);

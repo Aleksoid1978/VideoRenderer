@@ -298,7 +298,7 @@ HRESULT CDX11VideoProcessor::TextureConvertColor(Tex11Video_t& texVideo, ID3D11T
 	ID3D11ShaderResourceView* views[3] = {};
 	m_pDeviceContext->PSSetShaderResources(0, 3, views);
 
-	return hr;;
+	return hr;
 }
 
 HRESULT CDX11VideoProcessor::TextureResizeShader(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, ID3D11PixelShader* pPixelShader)
@@ -594,7 +594,7 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 	csp_params.saturation = DXVA2FixedToFloat(m_DXVA2ProcAmpValues.Saturation);
 	csp_params.gray       = m_srcParams.CSType == CS_GRAY;
 
-	m_PSConvColorData.bEnable = m_srcParams.CSType == CS_YUV || csp_params.gray || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;;
+	m_PSConvColorData.bEnable = m_srcParams.CSType == CS_YUV || csp_params.gray || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
 
 	mp_cmat cmatrix;
 	mp_get_csp_matrix(csp_params, cmatrix);
@@ -2309,7 +2309,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.renderticks * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.substicks * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.statsticks * 1000 / GetPreciseTicksPerSecondI());;
+		m_RenderStats.statsticks * 1000 / GetPreciseTicksPerSecondI());
 #if 0
 	str.AppendFormat(L"\n1:%6.03f, 2:%6.03f, 3:%6.03f, 4:%6.03f, 5:%6.03f, 6:%6.03f ms",
 		m_RenderStats.t1 * 1000.0 / GetPreciseTicksPerSecondI(),

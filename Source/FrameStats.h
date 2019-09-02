@@ -120,7 +120,7 @@ public:
 
 	void Reset() {
 		CFrameTimestamps::Reset();
-		m_dropped = 0;;
+		m_dropped = 0;
 	};
 
 	double GetAverageFps() {
