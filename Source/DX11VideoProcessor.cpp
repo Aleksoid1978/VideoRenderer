@@ -2235,7 +2235,9 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 			m_strStatsStatic2.Append(L"D3D11 VP");
 		} else {
 			m_strStatsStatic2.Append(L"Shaders");
-			m_strStatsStatic2.AppendFormat(L"\nChroma Scaling: %s", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom" : L"Bilinear");
+			if (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422) {
+				m_strStatsStatic2.AppendFormat(L"\nChroma Scaling: %s", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom" : L"Bilinear");
+			}
 		}
 
 		DXGI_SWAP_CHAIN_DESC1 swapchain_desc;
