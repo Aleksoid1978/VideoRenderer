@@ -798,7 +798,7 @@ BOOL CDX9VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 
 			INT Pitch = 0;
 			D3DLOCKED_RECT lr;
-			if (SUCCEEDED(pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK))) {
+			if (SUCCEEDED(pSurface->LockRect(&lr, nullptr, D3DLOCK_NOSYSLOCK))) { // don't use D3DLOCK_DISCARD here on AMD card
 				Pitch = lr.Pitch;
 				pSurface->UnlockRect();
 			}
