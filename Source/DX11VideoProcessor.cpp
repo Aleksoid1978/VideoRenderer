@@ -1330,6 +1330,8 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 #ifdef _DEBUG
 	{
 		const DXGI_FORMAT output_formats[] = {
+			DXGI_FORMAT_NV12,
+			DXGI_FORMAT_YUY2,
 			DXGI_FORMAT_B8G8R8X8_UNORM,
 			DXGI_FORMAT_B8G8R8A8_UNORM,
 			DXGI_FORMAT_R8G8B8A8_UNORM,
