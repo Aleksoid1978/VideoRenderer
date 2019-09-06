@@ -140,8 +140,6 @@ STDMETHODIMP CVideoRendererInputPin::NewSegment(REFERENCE_TIME startTime, REFERE
 {
 	DLog(L"CVideoRendererInputPin::NewSegment()");
 
-	CAutoLock cObjectLock(m_pLock);
-
 	m_pBaseRenderer->NewSegment(startTime);
 	return CRendererInputPin::NewSegment(startTime, stopTime, rate);
 }
