@@ -540,7 +540,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	HRESULT hr = S_OK;
 
 	// Query the supported render target format.
-	UINT i, count;
+	UINT count;
 	D3DFORMAT* formats = nullptr;
 	hr = m_pDXVA2_VPService->GetVideoProcessorRenderTargets(devguid, &videodesc, &count, &formats);
 	if (FAILED(hr)) {
@@ -556,27 +556,28 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 		DLog(dbgstr);
 	}
 #endif
-	bool foundXRGB = false;
-	for (i = 0; i < count; i++) {
-		if (formats[i] == D3DFMT_X8R8G8B8) {
-			foundXRGB = true;
-			// Check only D3DFMT_X8R8G8B8. Other formats (D3DFMT_A2R10G10B10 and D3DFMT_A16B16G16R16F) are supported in spite of this list.
-		}
-		if (formats[i] == m_InternalTexFmt) {
+	m_DXVA2OutputFmt = D3DFMT_UNKNOWN;
+	for (UINT i = 0; i < count; i++) {
+		const auto& fmt = formats[i];
+
+		if (fmt == m_InternalTexFmt) {
 			m_DXVA2OutputFmt = m_InternalTexFmt;
 			break;
 		}
-	}
-	CoTaskMemFree(formats);
-	if (i >= count) {
-		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : GetVideoProcessorRenderTargets() doesn't support %s", D3DFormatToString(m_InternalTexFmt));
-		if (foundXRGB) {
+
+		if (fmt == D3DFMT_A2R10G10B10 && m_InternalTexFmt == D3DFMT_A16B16G16R16F) {
+			m_DXVA2OutputFmt = D3DFMT_A2R10G10B10;
+		}
+		else if (fmt == D3DFMT_X8R8G8B8 && m_DXVA2OutputFmt == D3DFMT_UNKNOWN) {
 			m_DXVA2OutputFmt = D3DFMT_X8R8G8B8;
-		} else {
-			DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : GetVideoProcessorRenderTargets() doesn't support D3DFMT_X8R8G8B8");
-			return FALSE;
 		}
 	}
+	CoTaskMemFree(formats);
+	if (m_DXVA2OutputFmt == D3DFMT_UNKNOWN) {
+		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : FAILED. Device doesn't support desired output format");
+		return FALSE;
+	}
+	DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : select %s for output", D3DFormatToString(m_DXVA2OutputFmt));
 
 	// Query video processor capabilities.
 	hr = m_pDXVA2_VPService->GetVideoProcessorCaps(devguid, &videodesc, m_DXVA2OutputFmt, &m_DXVA2VPcaps);
@@ -608,7 +609,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	}
 
 	// Query ProcAmp ranges.
-	for (i = 0; i < std::size(m_DXVA2ProcAmpRanges); i++) {
+	for (UINT i = 0; i < std::size(m_DXVA2ProcAmpRanges); i++) {
 		if (m_DXVA2VPcaps.ProcAmpControlCaps & (1 << i)) {
 			hr = m_pDXVA2_VPService->GetProcAmpRange(devguid, &videodesc, m_DXVA2OutputFmt, 1 << i, &m_DXVA2ProcAmpRanges[i]);
 			if (FAILED(hr)) {
@@ -625,7 +626,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	// Query Noise Filter ranges.
 	DXVA2_Fixed32 NFilterValues[6] = {};
 	if (m_DXVA2VPcaps.VideoProcessorOperations & DXVA2_VideoProcess_NoiseFilter) {
-		for (i = 0; i < 6u; i++) {
+		for (UINT i = 0; i < 6u; i++) {
 			if (S_OK == m_pDXVA2_VPService->GetFilterPropertyRange(devguid, &videodesc, m_DXVA2OutputFmt, DXVA2_NoiseFilterLumaLevel + i, &range)) {
 				NFilterValues[i] = range.DefaultValue;
 			}
@@ -634,7 +635,7 @@ BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_Vid
 	// Query Detail Filter ranges.
 	DXVA2_Fixed32 DFilterValues[6] = {};
 	if (m_DXVA2VPcaps.VideoProcessorOperations & DXVA2_VideoProcess_DetailFilter) {
-		for (i = 0; i < 6u; i++) {
+		for (UINT i = 0; i < 6u; i++) {
 			if (S_OK == m_pDXVA2_VPService->GetFilterPropertyRange(devguid, &videodesc, m_DXVA2OutputFmt, DXVA2_DetailFilterLumaLevel + i, &range)) {
 				DFilterValues[i] = range.DefaultValue;
 			}

@@ -138,7 +138,7 @@ private:
 	// DXVA2 decoder surface parameters
 	UINT      m_SurfaceWidth  = 0;
 	UINT      m_SurfaceHeight = 0;
-	D3DFORMAT m_DXVA2OutputFmt = D3DFMT_X8R8G8B8;
+	D3DFORMAT m_DXVA2OutputFmt = D3DFMT_UNKNOWN;
 
 	// intermediate texture format
 	D3DFORMAT m_InternalTexFmt = D3DFMT_X8R8G8B8;
