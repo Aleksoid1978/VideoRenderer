@@ -138,6 +138,7 @@ private:
 	// DXVA2 decoder surface parameters
 	UINT      m_SurfaceWidth  = 0;
 	UINT      m_SurfaceHeight = 0;
+	D3DFORMAT m_DXVA2OutputFmt = D3DFMT_X8R8G8B8;
 
 	// intermediate texture format
 	D3DFORMAT m_InternalTexFmt = D3DFMT_X8R8G8B8;
@@ -157,7 +158,7 @@ private:
 
 	// D3D9 Video Processor
 	Tex9Video_t m_TexSrcVideo; // for copy of frame
-	Tex_t m_TexConvert;    // for result of color conversion
+	Tex_t m_TexConvert;    // for result of color conversion with DXVA2 VP
 	Tex_t m_TexCorrection; // for result of correction after DXVA2 VP
 	Tex_t m_TexResize;     // for intermediate result of two-pass resize
 
