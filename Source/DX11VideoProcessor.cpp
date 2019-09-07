@@ -1232,19 +1232,22 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return MF_E_UNSUPPORTED_D3D_TYPE;
 	}
 
-	if (m_InternalTexFmt != DXGI_FORMAT_B8G8R8A8_UNORM) {
-		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(m_InternalTexFmt, &uiFlags);
+	m_D3D11OutputFmt = m_InternalTexFmt;
+	if (m_D3D11OutputFmt != DXGI_FORMAT_B8G8R8A8_UNORM) {
+		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(m_D3D11OutputFmt, &uiFlags);
 		if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
-			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() - %s is not supported for D3D11 VP output. DXGI_FORMAT_B8G8R8A8_UNORM will be used.", DXGIFormatToString(m_InternalTexFmt));
-			m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
+			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() - %s is not supported for D3D11 VP output.", DXGIFormatToString(m_D3D11OutputFmt));
+			m_D3D11OutputFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
 		}
 	}
-	if (m_InternalTexFmt == DXGI_FORMAT_B8G8R8A8_UNORM) {
-		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(m_InternalTexFmt, &uiFlags);
+	if (m_D3D11OutputFmt == DXGI_FORMAT_B8G8R8A8_UNORM) {
+		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(m_D3D11OutputFmt, &uiFlags);
 		if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
+			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() - DXGI_FORMAT_B8G8R8A8_UNORM is not supported for D3D11 VP output.");
 			return MF_E_UNSUPPORTED_D3D_TYPE;
 		}
 	}
+	DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : select %s for output", DXGIFormatToString(m_D3D11OutputFmt));
 
 	if (!only_update_texture) {
 		m_VPCaps = {};
@@ -1756,7 +1759,7 @@ void CDX11VideoProcessor::UpdateConvertTexD3D11VP()
 		if (m_bVPScaling) {
 			m_TexConvert.Release();
 		} else {
-			m_TexConvert.Create(m_pDevice, m_InternalTexFmt, m_TextureWidth, m_TextureHeight, Tex2D_DefaultShaderRTarget);
+			m_TexConvert.Create(m_pDevice, m_D3D11OutputFmt, m_TextureWidth, m_TextureHeight, Tex2D_DefaultShaderRTarget);
 		}
 	}
 }
@@ -1765,7 +1768,7 @@ void CDX11VideoProcessor::UpdateCorrectionTex(const int w, const int h)
 {
 	if (m_pPSCorrection) {
 		if (w != m_TexCorrection.desc.Width || h != m_TexCorrection.desc.Width) {
-			HRESULT hr = m_TexCorrection.Create(m_pDevice, m_InternalTexFmt, w, h, Tex2D_DefaultShaderRTarget);
+			HRESULT hr = m_TexCorrection.Create(m_pDevice, m_bVPScaling ? m_D3D11OutputFmt : m_InternalTexFmt, w, h, Tex2D_DefaultShaderRTarget);
 			DLogIf(FAILED(hr), "CDX11VideoProcessor::UpdateCorrectionTex() : m_TexCorrection.Create() failed with error %s", HR2Str(hr));
 		}
 		// else do nothing
@@ -2233,7 +2236,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		}
 		m_strStatsStatic2.Append(L"\nVideoProcessor: ");
 		if (m_pVideoProcessor) {
-			m_strStatsStatic2.AppendFormat(L"D3D11 VP, output to %s", DXGIFormatToString(m_InternalTexFmt));
+			m_strStatsStatic2.AppendFormat(L"D3D11 VP, output to %s", DXGIFormatToString(m_D3D11OutputFmt));
 		} else {
 			m_strStatsStatic2.Append(L"Shaders");
 			if (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422) {

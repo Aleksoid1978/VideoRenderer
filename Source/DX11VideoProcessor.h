@@ -131,6 +131,7 @@ private:
 	// D3D11 decoder texture parameters
 	UINT m_TextureWidth  = 0;
 	UINT m_TextureHeight = 0;
+	DXGI_FORMAT m_D3D11OutputFmt = DXGI_FORMAT_UNKNOWN;
 
 	// intermediate texture format
 	DXGI_FORMAT m_InternalTexFmt = DXGI_FORMAT_B8G8R8X8_UNORM;
