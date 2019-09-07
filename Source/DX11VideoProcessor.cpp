@@ -1102,9 +1102,9 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	case TEXFMT_AUTOINT:
 		m_InternalTexFmt = (FmtConvParams.CDepth > 8) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 		break;
-	case TEXFMT_8INT:    m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM; break;
-	case TEXFMT_10INT:
-	case TEXFMT_16FLOAT: m_InternalTexFmt = DXGI_FORMAT_R10G10B10A2_UNORM; break;
+	case TEXFMT_8INT:    m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM;     break;
+	case TEXFMT_10INT:   m_InternalTexFmt = DXGI_FORMAT_R10G10B10A2_UNORM;  break;
+	case TEXFMT_16FLOAT: m_InternalTexFmt = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
 	default:
 		ASSERT(FALSE);
 	}
@@ -1232,7 +1232,8 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return MF_E_UNSUPPORTED_D3D_TYPE;
 	}
 
-	m_D3D11OutputFmt = m_InternalTexFmt;
+	m_D3D11OutputFmt = (m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
+
 	if (m_D3D11OutputFmt != DXGI_FORMAT_B8G8R8A8_UNORM) {
 		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(m_D3D11OutputFmt, &uiFlags);
 		if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {

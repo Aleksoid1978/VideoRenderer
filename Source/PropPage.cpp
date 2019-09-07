@@ -162,10 +162,10 @@ HRESULT CVRMainPPage::OnActivate()
 		m_SetsPP.bUseD3D11 = false;
 	}
 
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"Auto 8/10-bit Integer",             0);
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"8-bit Integer",                     8);
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"10-bit Integer",                   10);
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"16-bit Floating Point (DX9 only)", 16);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"Auto 8/10-bit Integer",  0);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"8-bit Integer",          8);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"10-bit Integer",        10);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"16-bit Floating Point", 16);
 
 	SendDlgItemMessageW(IDC_COMBO5, CB_ADDSTRING, 0, (LPARAM)L"Bilinear");
 	SendDlgItemMessageW(IDC_COMBO5, CB_ADDSTRING, 0, (LPARAM)L"Catmull-Rom");
