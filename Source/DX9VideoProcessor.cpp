@@ -332,6 +332,8 @@ bool CDX9VideoProcessor::Initialized()
 
 void CDX9VideoProcessor::ReleaseVP()
 {
+	DLog(L"CDX9VideoProcessor::ReleaseVP()");
+
 	m_pFilter->ResetStreamingTimes2();
 	m_RenderStats.Reset();
 
@@ -355,6 +357,8 @@ void CDX9VideoProcessor::ReleaseVP()
 
 void CDX9VideoProcessor::ReleaseDevice()
 {
+	DLog(L"CDX9VideoProcessor::ReleaseDevice()");
+
 	ReleaseVP();
 
 	m_TexStats.Release();
@@ -959,6 +963,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_YCGCO));
 		}
+		DLogIf(m_pPSCorrection, L"CDX9VideoProcessor::InitMediaType() m_pPSCorrection created");
 
 		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
 		UpdateStatsStatic();

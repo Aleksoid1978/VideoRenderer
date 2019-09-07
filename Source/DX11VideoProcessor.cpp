@@ -484,6 +484,8 @@ bool CDX11VideoProcessor::Initialized()
 
 void CDX11VideoProcessor::ReleaseVP()
 {
+	DLog(L"CDX11VideoProcessor::ReleaseVP()");
+
 	m_pFilter->ResetStreamingTimes2();
 	m_RenderStats.Reset();
 
@@ -511,6 +513,8 @@ void CDX11VideoProcessor::ReleaseVP()
 
 void CDX11VideoProcessor::ReleaseDevice()
 {
+	DLog(L"CDX11VideoProcessor::ReleaseDevice()");
+
 	ReleaseVP();
 	m_pVideoDevice.Release();
 
@@ -1125,6 +1129,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_YCGCO));
 			}
+			DLogIf(m_pPSCorrection, L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection created");
 
 			m_inputMT = *pmt;
 			UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
