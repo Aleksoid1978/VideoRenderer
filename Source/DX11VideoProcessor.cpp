@@ -1237,7 +1237,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return MF_E_UNSUPPORTED_D3D_TYPE;
 	}
 
-	m_D3D11OutputFmt = (m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
+	m_D3D11OutputFmt = (m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT) ? DXGI_FORMAT_R10G10B10A2_UNORM : m_InternalTexFmt;
 
 	if (m_D3D11OutputFmt != DXGI_FORMAT_B8G8R8A8_UNORM) {
 		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(m_D3D11OutputFmt, &uiFlags);
