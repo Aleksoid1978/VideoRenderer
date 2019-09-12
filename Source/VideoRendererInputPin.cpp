@@ -140,8 +140,18 @@ STDMETHODIMP CVideoRendererInputPin::NewSegment(REFERENCE_TIME startTime, REFERE
 {
 	DLog(L"CVideoRendererInputPin::NewSegment()");
 
+	CAutoLock cReceiveLock(&m_csReceive);
+
 	m_pBaseRenderer->NewSegment(startTime);
 	return CRendererInputPin::NewSegment(startTime, stopTime, rate);
+}
+
+STDMETHODIMP CVideoRendererInputPin::BeginFlush()
+{
+	DLog(L"CVideoRendererInputPin::BeginFlush()");
+
+	CAutoLock cReceiveLock(&m_csReceive);
+	return CRendererInputPin::BeginFlush();
 }
 
 // IMFGetService
