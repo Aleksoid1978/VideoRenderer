@@ -25,9 +25,9 @@ interface __declspec(uuid("3F56FEBC-633C-4C76-8455-0787FC62C8F8")) IExFilterInfo
 	// The memory for strings and binary data is allocated by the callee
 	// by using LocalAlloc. It is the caller's responsibility to release the
 	// memory by calling LocalFree.
-	STDMETHOD(GetInt   )(LPCSTR field, int    *value) PURE;
-	STDMETHOD(GetString)(LPCSTR field, LPWSTR *value, unsigned *chars) PURE;
-	STDMETHOD(GetBin   )(LPCSTR field, LPVOID *value, unsigned *size ) PURE;
+	STDMETHOD(GetPropertyInt   )(LPCSTR field, int    *value) PURE;
+	STDMETHOD(GetPropertyString)(LPCSTR field, LPWSTR *value, unsigned *chars) PURE;
+	STDMETHOD(GetPropertyBin   )(LPCSTR field, LPVOID *value, unsigned *size ) PURE;
 };
 // return values:
 // E_NOTIMPL    - method not implemented, any parameters will be ignored.
@@ -37,8 +37,16 @@ interface __declspec(uuid("3F56FEBC-633C-4C76-8455-0787FC62C8F8")) IExFilterInfo
 // S_OK         - operation successful
 //
 // available info fields:
-// name                    type  valid values
-// playbackState           int
+// name                    type  filter                                         valid values
+// VIDEO_PROFILE           int   MatroskaSplitter
+// VIDEO_PIXEL_FORMAT      int   MatroskaSplitter
+// VIDEO_INTERLACED        int   MatroskaSplitter,MP4Splitter,RawVideoSplitter  0-progressive, 1-tff, 2-bff
+// VIDEO_FLAG_ONLY_DTS     int   MatroskaSplitter,MP4Splitter                   0-no, 1-yes
+// VIDEO_DELAY             int   MP4Splitter
+// PALETTE                 bin   MP4Splitter
+// VIDEO_COLOR_SPACE       bin   MatroskaSplitter
+// HDR_MASTERING_METADATA  bin   MatroskaSplitter
+// HDR_CONTENT_LIGHT_LEVEL bin   MatroskaSplitter
 
 interface __declspec(uuid("37CBDF10-D65E-4E5A-8F37-40E0C8EA1695")) IExFilterConfig : public IUnknown
 {
@@ -59,3 +67,12 @@ interface __declspec(uuid("37CBDF10-D65E-4E5A-8F37-40E0C8EA1695")) IExFilterConf
 	STDMETHOD(SetString)(LPCSTR field, LPWSTR  value, int chars) PURE;
 	STDMETHOD(SetBin   )(LPCSTR field, LPVOID  value, int size ) PURE;
 };
+// available settings:
+// name            type  filter            mode     valid values
+// stereodownmix   bool  MpaDecFilter      set      true/false
+// queueDuration   int   BaseSplitter      set/get   100...15000 milliseconds
+// networkTimeout  int   BaseSplitter      set/get  2000...20000 milliseconds
+// statsEnable     bool  MpcVideoRenderer  set/get  true/false
+// cmd_redraw      bool  MpcVideoRenderer  set      true
+// playbackState   int   MpcVideoRenderer  get      0-State_Stopped, 1-State_Paused, 2-State_Running
+// rotation        int   MpcVideoRenderer  get      0, 90, 180, 270
