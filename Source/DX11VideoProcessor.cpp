@@ -1666,7 +1666,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			if (pEventQuery) {
 				pEventQuery->Issue(D3DISSUE_END);
 				BOOL Data = FALSE;
-				pEventQuery->GetData(&Data, sizeof(Data), D3DGETDATA_FLUSH);
+				while (S_FALSE == pEventQuery->GetData(&Data, sizeof(Data), D3DGETDATA_FLUSH));
 			}
 		}
 	}
