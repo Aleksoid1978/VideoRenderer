@@ -694,6 +694,26 @@ HRESULT CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const
 	// set default ProcAmp ranges
 	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
 
+	HRESULT hr2 = UpdateChromaScalingShader();
+	if (FAILED(hr2)) {
+		ASSERT(0);
+		UINT resid = 0;
+		if (params.cformat == CF_YUY2) {
+			resid = IDF_SHADER_CONVERT_YUY2;
+		}
+		else if (params.pDX9Planes) {
+			if (params.pDX9Planes->FmtPlane3) {
+				resid = IDF_SHADER_CONVERT_PLANAR;
+			} else {
+				resid = IDF_SHADER_CONVERT_BIPLANAR;
+			}
+		}
+		else {
+			resid = IDF_SHADER_CONVERT_COLOR;
+		}
+		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
+	}
+
 	DLog(L"CDX9VideoProcessor::InitializeTexVP() completed successfully");
 
 	return S_OK;
@@ -975,31 +995,6 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// Tex Video Processor
 	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
-#if 1
-		HRESULT hr = UpdateChromaScalingShader();
-#else
-		HRESULT hr = E_ABORT;
-#endif
-
-		if (FAILED(hr)) {
-			ASSERT(0);
-			UINT resid = 0;
-			if (FmtConvParams.cformat == CF_YUY2) {
-				resid = IDF_SHADER_CONVERT_YUY2;
-			}
-			else if (FmtConvParams.pDX9Planes) {
-				if (FmtConvParams.pDX9Planes->FmtPlane3) {
-					resid = IDF_SHADER_CONVERT_PLANAR;
-				} else {
-					resid = IDF_SHADER_CONVERT_BIPLANAR;
-				}
-			}
-			else {
-				resid = IDF_SHADER_CONVERT_COLOR;
-			}
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
-		}
-
 		SetShaderConvertColorParams();
 		UpdateStatsStatic();
 		return TRUE;

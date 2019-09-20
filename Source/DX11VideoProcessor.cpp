@@ -1147,31 +1147,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// Tex Video Processor
 	if (FmtConvParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
-#if 1
-		HRESULT hr = UpdateChromaScalingShader();
-#else
-		HRESULT hr = E_ABORT;
-#endif
-
-		if (FAILED(hr)) {
-			ASSERT(0);
-			UINT resid = 0;
-			if (FmtConvParams.cformat == CF_YUY2) {
-				resid = IDF_PSH11_CONVERT_YUY2;
-			}
-			else if (FmtConvParams.pDX11Planes) {
-				if (FmtConvParams.pDX11Planes->FmtPlane3) {
-					resid = IDF_PSH11_CONVERT_PLANAR;
-				} else {
-					resid = IDF_PSH11_CONVERT_BIPLANAR;
-				}
-			}
-			else {
-				resid = IDF_PSH11_CONVERT_COLOR;
-			}
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
-		}
-
 		m_inputMT = *pmt;
 		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
 		SetShaderConvertColorParams();
@@ -1411,6 +1386,26 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 
 	// set default ProcAmp ranges
 	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
+
+	HRESULT hr2 = UpdateChromaScalingShader();
+	if (FAILED(hr2)) {
+		ASSERT(0);
+		UINT resid = 0;
+		if (params.cformat == CF_YUY2) {
+			resid = IDF_PSH11_CONVERT_YUY2;
+		}
+		else if (params.pDX11Planes) {
+			if (params.pDX11Planes->FmtPlane3) {
+				resid = IDF_PSH11_CONVERT_PLANAR;
+			} else {
+				resid = IDF_PSH11_CONVERT_BIPLANAR;
+			}
+		}
+		else {
+			resid = IDF_PSH11_CONVERT_COLOR;
+		}
+		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
+	}
 
 	DLog(L"CDX11VideoProcessor::InitializeTexVP() completed successfully");
 
