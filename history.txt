@@ -1,3 +1,14 @@
+v0.3.2.xxx - 2019.xx.xx
+-----------------------
+Fixed the debug version in DX11 mode on systems in which the D3D11 * SDKLayers.dll files are missing.
+Fixed HDR-SDR conversion in DX11 mode in some situations.
+Fixed DX9 mode on AMD graphics cards.
+Fixed freezes after frequent navigation on the timeline.
+The DXVA2 video processor now uses only permitted output formats. This fixes problems with AMD graphics cards.
+Allowed to use "16-bit Floating Point" textures for intermediate calculations in DX11 mode.
+Fixed subtitle blinking on some video cards in DX11 mode.
+Fixed Catmull-Rom shroma scaling when using decoder DXVA2 or D3D11.
+
 v0.3.0.831 - 2019.08.30
 -----------------------
 Improved subtitle support in DX11 mode. Fixed work with XySubFilter.
