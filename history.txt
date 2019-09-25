@@ -1,6 +1,6 @@
-v0.3.2.xxx - 2019.xx.xx
+v0.3.2.860 - 2019.09.25
 -----------------------
-Fixed the debug version in DX11 mode on systems in which the D3D11 * SDKLayers.dll files are missing.
+Fixed the debug version in DX11 mode on systems in which the D3D11*SDKLayers.dll files are missing.
 Fixed HDR-SDR conversion in DX11 mode in some situations.
 Fixed DX9 mode on AMD graphics cards.
 Fixed freezes after frequent navigation on the timeline.
