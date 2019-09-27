@@ -168,7 +168,7 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTex
 
 CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
 #if D3D9FONT_ENABLE
-	: m_Font3D(L"Consolas", 12)
+	: m_Font3D(L"Consolas", 13)
 #endif
 {
 	m_pFilter = pFilter;
