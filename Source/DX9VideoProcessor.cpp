@@ -168,7 +168,7 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTex
 
 CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
 #if D3D9FONT_ENABLE
-	: m_Font3D(L"Consolas", 13)
+	: m_Font3D(L"Consolas", 14)
 #endif
 {
 	m_pFilter = pFilter;
@@ -2141,7 +2141,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	hr = m_pD3DDevEx->SetRenderTarget(0, m_TexStats.pSurface);
 
 	hr = m_pD3DDevEx->ColorFill(m_TexStats.pSurface, nullptr, D3DCOLOR_ARGB(192, 0, 0, 0));
-	hr = m_Font3D.DrawText(STATS_X + 5, STATS_Y + 5, D3DCOLOR_XRGB(255, 255, 255), str);
+	hr = m_Font3D.Draw2DText(5, 5, D3DCOLOR_XRGB(255, 255, 255), str);
 	static int col = STATS_W;
 	if (--col < 0) {
 		col = STATS_W;

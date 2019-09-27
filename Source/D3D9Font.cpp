@@ -513,7 +513,7 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 // Name: DrawText()
 // Desc: Draws 2D text. Note that sx and sy are in pixels
 //-----------------------------------------------------------------------------
-HRESULT CD3D9Font::DrawText( FLOAT sx, FLOAT sy, D3DCOLOR color,
+HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 							const WCHAR* strText, DWORD dwFlags )
 {
 	if ( m_pd3dDevice == nullptr ) {

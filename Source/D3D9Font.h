@@ -30,8 +30,6 @@
 #define D3DFONT_CENTERED_Y  0x0002
 #define D3DFONT_FILTERED    0x0008
 
-#undef DrawText // disable conflicting define
-
 class CD3D9Font
 {
 	// Font properties
@@ -56,8 +54,8 @@ class CD3D9Font
 	HRESULT PaintAlphabet( HDC hDC, BOOL bMeasureOnly=FALSE );
 
 public:
-	// 2D and 3D text drawing functions
-	HRESULT DrawText( FLOAT sx, FLOAT sy, D3DCOLOR color,
+	// 2D text drawing function
+	HRESULT Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 					  const WCHAR* strText, DWORD dwFlags=0L );
 
 	// Function to get extent of text
