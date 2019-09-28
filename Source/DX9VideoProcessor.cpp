@@ -1118,33 +1118,10 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 
 			if (m_pDXVA2_VP) {
 				m_SrcSamples.Next();
-				IDirect3DSurface9* pDstSurface = m_SrcSamples.Get().pSrcSurface;
-				hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, pDstSurface, nullptr, D3DTEXF_NONE);
-				if (FAILED(hr)) {
-#ifdef _DEBUG
-					if (m_pFilter->m_FrameStats.GetFrames() < 2) {
-						CComPtr<IDirect3DDevice9> pD3DDev;
-						pSurface->GetDevice(&pD3DDev);
-						if (pD3DDev != m_pD3DDevEx) {
-							DLog(L"WARNING: Different adapters for decoding and processing! StretchRect fail.");
-						} else {
-							DLog(L"WARNING: StretchRect fail.");
-						}
-					}
-#endif
-					D3DLOCKED_RECT lr_src;
-					hr = pSurface->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
-					if (S_OK == hr) {
-						D3DLOCKED_RECT lr;
-						hr = pDstSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
-						if (S_OK == hr) {
-							m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, (BYTE*)lr_src.pBits, lr_src.Pitch);
-							hr = pDstSurface->UnlockRect();
-						}
-						hr = pSurface->UnlockRect();
-					}
-				}
-			} else if (m_TexSrcVideo.Plane2.pSurface) {
+				m_SrcSamples.Get().pSrcSurface.Release();
+				m_SrcSamples.Get().pSrcSurface = pSurface;
+			}
+			else if (m_TexSrcVideo.Plane2.pSurface) {
 				D3DLOCKED_RECT lr_src;
 				hr = pSurface->LockRect(&lr_src, nullptr, D3DLOCK_READONLY);
 				if (S_OK == hr) {
