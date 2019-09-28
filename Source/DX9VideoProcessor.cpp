@@ -338,7 +338,6 @@ void CDX9VideoProcessor::ReleaseVP()
 	m_RenderStats.Reset();
 
 	m_SrcSamples.Clear();
-	m_DXVA2Samples.clear();
 	m_pDXVA2_VP.Release();
 
 	m_TexSrcVideo.Release();
@@ -406,7 +405,6 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 			return E_FAIL;
 		}
 		m_SrcSamples.Clear();
-		m_DXVA2Samples.clear();
 		m_pDXVA2_VP.Release();
 
 		m_SurfaceWidth  = 0;
@@ -477,8 +475,7 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 	NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
 	ASSERT(NumRefSamples <= MAX_DEINTERLACE_SURFACES);
 
-	m_SrcSamples.Resize(NumRefSamples);
-	m_DXVA2Samples.resize(NumRefSamples);
+	m_SrcSamples.Resize(NumRefSamples, m_srcExFmt.value);
 
 	for (unsigned i = 0; i < NumRefSamples; ++i) {
 		auto& vsample = m_SrcSamples.GetAt(i);
@@ -496,20 +493,15 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 		);
 		if (FAILED(hr)) {
 			m_SrcSamples.Clear();
-			m_DXVA2Samples.clear();
+
 			return hr;
 		}
 
 		// fill the surface in black, to avoid the "green screen"
 		m_pD3DDevEx->ColorFill(vsample.pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
-
-		m_DXVA2Samples[i].SampleFormat.value = m_srcExFmt.value;
-		m_DXVA2Samples[i].SampleFormat.SampleFormat = DXVA2_SampleUnknown; // samples that are not used yet
-		m_DXVA2Samples[i].SrcRect = { 0, 0, (LONG)width, (LONG)height }; // will be rewritten in ProcessDXVA2()
-		m_DXVA2Samples[i].PlanarAlpha = DXVA2_Fixed32OpaqueAlpha();
-
-		m_DXVA2Samples[i].SrcSurface = vsample.pSrcSurface;
 	}
+
+	m_SrcSamples.UpdateVideoSamples();
 
 	// set output format parameters
 	m_BltParams.DestFormat.value            = 0; // output to RGB
@@ -1018,11 +1010,8 @@ void CDX9VideoProcessor::Stop()
 		SrcSample.SampleFormat = DXVA2_SampleUnknown;
 		// fill the surface in black, to avoid the "green screen"
 		m_pD3DDevEx->ColorFill(SrcSample.pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
-	}
-	for (auto& DXVA2Sample : m_DXVA2Samples) {
-		DXVA2Sample.Start = 0;
-		DXVA2Sample.End = 0;
-		DXVA2Sample.SampleFormat.SampleFormat = DXVA2_SampleUnknown;
+
+		m_SrcSamples.UpdateVideoSamples();
 	}
 }
 
@@ -1210,13 +1199,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		m_SrcSamples.Get().End   = end_100ns;
 		m_SrcSamples.Get().SampleFormat = m_CurrentSampleFmt;
 
-		for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
-			auto& SrcSample = m_SrcSamples.GetAt(i);
-			m_DXVA2Samples[i].Start = SrcSample.Start;
-			m_DXVA2Samples[i].End   = SrcSample.End;
-			m_DXVA2Samples[i].SampleFormat.SampleFormat = SrcSample.SampleFormat;
-			m_DXVA2Samples[i].SrcSurface = SrcSample.pSrcSurface;
-		}
+		m_SrcSamples.UpdateVideoSamples();
 	}
 
 	m_RenderStats.copyticks = GetPreciseTick() - tick;
@@ -1551,7 +1534,6 @@ void CDX9VideoProcessor::SetDownscaling(int value)
 HRESULT CDX9VideoProcessor::DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
 	// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx
-	ASSERT(m_SrcSamples.Size() == m_DXVA2Samples.size());
 
 	// Initialize VPBlt parameters
 	if (second) {
@@ -1564,13 +1546,9 @@ HRESULT CDX9VideoProcessor::DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const 
 	m_BltParams.ConstrictionSize.cy = rDstRect.Height();
 
 	// Initialize main stream video samples
-	for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
-		auto& SrcSample = m_SrcSamples.GetAt(i);
-		m_DXVA2Samples[i].SrcRect = rSrcRect;
-		m_DXVA2Samples[i].DstRect = rDstRect;
-	}
+	m_SrcSamples.SetRects(rSrcRect, rDstRect);
 
-	HRESULT hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &m_BltParams, m_DXVA2Samples.data(), m_DXVA2Samples.size(), nullptr);
+	HRESULT hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &m_BltParams, m_SrcSamples.GetVideoSamples(), m_SrcSamples.Size(), nullptr);
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::DXVA2VPPass() : VideoProcessBlt() failed with error %s", HR2Str(hr));
 
 	return hr;
