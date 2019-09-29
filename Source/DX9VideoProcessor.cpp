@@ -1107,7 +1107,6 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 
 			if (m_pDXVA2_VP) {
 				m_SrcSamples.Next();
-				m_SrcSamples.Get().pSrcSurface.Release();
 				m_SrcSamples.Get().pSrcSurface = pSurface;
 			}
 			else if (m_TexSrcVideo.Plane2.pSurface) {
