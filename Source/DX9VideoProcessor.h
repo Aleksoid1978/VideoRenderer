@@ -75,6 +75,16 @@ public:
 		}
 	}
 
+	void UpdateVideoSamples() {
+		for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
+			const auto& vsurface = GetAt(i);
+			m_DXVA2Samples[i].Start                     = vsurface.Start;
+			m_DXVA2Samples[i].End                       = vsurface.End;
+			m_DXVA2Samples[i].SampleFormat.SampleFormat = vsurface.SampleFormat;
+			m_DXVA2Samples[i].SrcSurface                = vsurface.pSrcSurface;
+		}
+	}
+
 	VideoSurface& Get() {
 		return m_Surfaces[m_LastPos];
 	}
