@@ -130,6 +130,8 @@ inline T round_pow2(T number, T pow2)
 	}
 }
 
+LPCWSTR GetNameAndVersion();
+
 inline CStringW CStringFromGUID(const GUID& guid)
 {
 	WCHAR buff[40] = {};

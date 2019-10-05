@@ -21,7 +21,33 @@
 #include "stdafx.h"
 #include <memory>
 #include "CPUInfo.h"
+#include "Include/Version.h"
 #include "Helper.h"
+
+CStringW GetVersionStr()
+{
+	CStringW version;
+#if MPCVR_RELEASE
+	version.Format(L"v%S", MPCVR_VERSION_STR);
+#else
+	version.Format(L"v%S (git-%s-%s)",
+		MPCVR_VERSION_STR,
+		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_DATE)),
+		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_HASH))
+	);
+#endif
+#ifdef _DEBUG
+	version.Append(L" DEBUG");
+#endif
+	return version;
+}
+
+LPCWSTR GetNameAndVersion()
+{
+	static CStringW version = L"MPC Video Renderer " + GetVersionStr();
+
+	return (LPCWSTR)version;
+}
 
 CStringW HR2Str(const HRESULT hr)
 {

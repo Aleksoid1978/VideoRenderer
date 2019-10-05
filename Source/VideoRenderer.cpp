@@ -58,6 +58,8 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	DbgSetModuleLevel(LOG_ERROR, DWORD_MAX);
 #endif
 
+	DLog(GetNameAndVersion());
+
 	ASSERT(S_OK == *phr);
 	m_pInputPin = new CVideoRendererInputPin(this, phr, L"In", this);
 	ASSERT(S_OK == *phr);
