@@ -1530,6 +1530,13 @@ void CDX9VideoProcessor::SetDownscaling(int value)
 	}
 };
 
+void CDX9VideoProcessor::Flush()
+{
+	if (m_bSrcFromGPU && m_pDXVA2_VP) {
+		m_SrcSamples.Resize(m_SrcSamples.Size(), m_srcExFmt.value);
+	}
+}
+
 HRESULT CDX9VideoProcessor::DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
 	// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx

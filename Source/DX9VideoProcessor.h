@@ -284,6 +284,8 @@ public:
 	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
 	void SetSwapEffect(int value) { m_iSwapEffect = value; }
 
+	void Flush();
+
 private:
 	HRESULT DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
 	void UpdateVideoTexDXVA2VP();

@@ -224,6 +224,10 @@ void CMpcVideoRenderer::DX9Thread()
 void CMpcVideoRenderer::NewSegment(REFERENCE_TIME startTime)
 {
 	m_rtStartTime = startTime;
+
+	if (!m_bUsedD3D11) {
+		m_DX9_VP.Flush();
+	}
 }
 
 long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_mt)
