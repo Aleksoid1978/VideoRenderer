@@ -68,18 +68,18 @@ void FilterRangeD3D11toDXVA2(DXVA2_ValueRange& _dxva2_, const D3D11_VIDEO_PROCES
 
 // D3D11VP
 
-HRESULT D3D11VP::InitVideDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
+HRESULT CD3D11VP::InitVideDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
 {
 	HRESULT hr = pDevice->QueryInterface(__uuidof(ID3D11VideoDevice), (void**)&m_pVideoDevice);
 	if (FAILED(hr)) {
-		DLog(L"D3D11VP::InitVideDevice() : QueryInterface(ID3D11VideoDevice) failed with error %s", HR2Str(hr));
+		DLog(L"CD3D11VP::InitVideDevice() : QueryInterface(ID3D11VideoDevice) failed with error %s", HR2Str(hr));
 		ReleaseVideoDevice();
 		return hr;
 	}
 
 	hr = pContext->QueryInterface(__uuidof(ID3D11VideoContext), (void**)&m_pVideoContext);
 	if (FAILED(hr)) {
-		DLog(L"D3D11VP::InitVideDevice() : QueryInterface(ID3D11VideoContext) failed with error %s", HR2Str(hr));
+		DLog(L"CD3D11VP::InitVideDevice() : QueryInterface(ID3D11VideoContext) failed with error %s", HR2Str(hr));
 		ReleaseVideoDevice();
 		return hr;
 	}
@@ -109,7 +109,7 @@ HRESULT D3D11VP::InitVideDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pCon
 	return hr;
 }
 
-void D3D11VP::ReleaseVideoDevice()
+void CD3D11VP::ReleaseVideoDevice()
 {
 	ReleaseVideoProcessor();
 
@@ -136,7 +136,7 @@ int GetBitDepth(const DXGI_FORMAT format)
 	}
 }
 
-HRESULT D3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, DXGI_FORMAT& outputFmt)
+HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, DXGI_FORMAT& outputFmt)
 {
 	ReleaseVideoProcessor();
 	HRESULT hr = S_OK;
@@ -291,7 +291,7 @@ HRESULT D3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT width
 	return hr;
 }
 
-void D3D11VP::ReleaseVideoProcessor()
+void CD3D11VP::ReleaseVideoProcessor()
 {
 	m_pInputView.Release();
 	m_pVideoProcessor.Release();
@@ -305,7 +305,7 @@ void D3D11VP::ReleaseVideoProcessor()
 	m_bInterlaced = false;
 }
 
-HRESULT D3D11VP::SetInputTexture(ID3D11Texture2D* pTexture2D)
+HRESULT CD3D11VP::SetInputTexture(ID3D11Texture2D* pTexture2D)
 {
 	CheckPointer(pTexture2D, E_POINTER);
 	CheckPointer(m_pVideoDevice, E_ABORT);
@@ -314,12 +314,12 @@ HRESULT D3D11VP::SetInputTexture(ID3D11Texture2D* pTexture2D)
 	D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputViewDesc = {};
 	inputViewDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
 	HRESULT hr = m_pVideoDevice->CreateVideoProcessorInputView(pTexture2D, m_pVideoProcessorEnum, &inputViewDesc, &m_pInputView);
-	DLogIf(FAILED(hr), L"D3D11VP::SetInputTexture : CreateVideoProcessorInputView() failed with error %s", HR2Str(hr));
+	DLogIf(FAILED(hr), L"CD3D11VP::SetInputTexture : CreateVideoProcessorInputView() failed with error %s", HR2Str(hr));
 
 	return hr;
 }
 
-HRESULT D3D11VP::SetProcessParams(const RECT* pSrcRect, const RECT* pDstRect, const DXVA2_ExtendedFormat exFmt)
+HRESULT CD3D11VP::SetProcessParams(const RECT* pSrcRect, const RECT* pDstRect, const DXVA2_ExtendedFormat exFmt)
 {
 	CheckPointer(m_pVideoContext, E_ABORT);
 
@@ -341,7 +341,7 @@ HRESULT D3D11VP::SetProcessParams(const RECT* pSrcRect, const RECT* pDstRect, co
 	return S_OK;
 }
 
-void D3D11VP::SetProcAmpValues(DXVA2_ProcAmpValues *pValues)
+void CD3D11VP::SetProcAmpValues(DXVA2_ProcAmpValues *pValues)
 {
 	m_VPFilterLevels[0] = ValueDXVA2toD3D11(pValues->Brightness, m_VPFilterRange[0]);
 	m_VPFilterLevels[1] = ValueDXVA2toD3D11(pValues->Contrast,   m_VPFilterRange[1]);
@@ -350,7 +350,7 @@ void D3D11VP::SetProcAmpValues(DXVA2_ProcAmpValues *pValues)
 	m_bUpdateFilters = true;
 }
 
-HRESULT D3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAME_FORMAT sampleFormat, const bool second)
+HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAME_FORMAT sampleFormat, const bool second)
 {
 	ASSERT(m_pVideoDevice);
 	ASSERT(m_pVideoContext);

@@ -22,7 +22,6 @@
 
 #include <d3d9.h>
 #include <vector>
-#include <DirectXMath.h>
 #include "Helper.h"
 
 struct POINTVERTEX {

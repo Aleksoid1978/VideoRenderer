@@ -22,7 +22,7 @@
 
 #include <d3d11.h>
 
-class D3D11VP
+class CD3D11VP
 {
 private:
 	// D3D11 Video Processor

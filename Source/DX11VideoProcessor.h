@@ -27,10 +27,7 @@
 #include <DXGI1_2.h>
 #include <dxva2api.h>
 #include <strmif.h>
-#include <d3d11.h>
-#include <d3d11_1.h>
 #include <evr9.h> // for IMFVideoProcessor
-#include <DirectXMath.h>
 #include "IVideoRenderer.h"
 #include "DX11Helper.h"
 #include "D3D11VP.h"
@@ -86,7 +83,7 @@ private:
 	Tex2D_t m_TexResize;      // for intermediate result of two-pass resize
 
 	// D3D11 Video Processor
-	D3D11VP m_D3D11VP;
+	CD3D11VP m_D3D11VP;
 	CComPtr<ID3D11PixelShader> m_pPSCorrection;
 
 	// D3D11 Shader Video Processor
