@@ -292,6 +292,7 @@ HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width,
 		if (S_OK == vsample.pSrcSurface->GetDevice(&pDevice)) {
 			// fill the surface in black, to avoid the "green screen"
 			pDevice->ColorFill(vsample.pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+			pDevice->Release();
 		}
 	}
 
