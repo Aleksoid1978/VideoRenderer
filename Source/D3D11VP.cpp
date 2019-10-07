@@ -319,12 +319,12 @@ HRESULT CD3D11VP::SetInputTexture(ID3D11Texture2D* pTexture2D)
 	return hr;
 }
 
-HRESULT CD3D11VP::SetProcessParams(const RECT* pSrcRect, const RECT* pDstRect, const DXVA2_ExtendedFormat exFmt)
+HRESULT CD3D11VP::SetProcessParams(const CRect& srcRect, const CRect& dstRect, const DXVA2_ExtendedFormat exFmt)
 {
 	CheckPointer(m_pVideoContext, E_ABORT);
 
-	m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, pSrcRect ? TRUE : FALSE, pSrcRect);
-	m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, pSrcRect ? TRUE : FALSE, pDstRect);
+	m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, srcRect ? TRUE : FALSE, srcRect);
+	m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, dstRect ? TRUE : FALSE, dstRect);
 	m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, FALSE, nullptr);
 
 	D3D11_VIDEO_PROCESSOR_COLOR_SPACE colorSpace = {};

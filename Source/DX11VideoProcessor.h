@@ -133,11 +133,6 @@ private:
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 	int m_FieldDrawn = 0;
 
-	D3D11_VIDEO_PROCESSOR_CAPS m_VPCaps = {};
-	D3D11_VIDEO_PROCESSOR_FILTER_RANGE m_VPFilterRange[4] = {};
-	int m_VPFilterLevels[4] = {};
-	bool m_bUpdateFilters = false;
-
 	DXVA2_ValueRange m_DXVA2ProcAmpRanges[4] = {};
 	DXVA2_ProcAmpValues m_DXVA2ProcAmpValues = {};
 

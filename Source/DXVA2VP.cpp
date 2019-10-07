@@ -142,18 +142,18 @@ BOOL CDXVA2VP::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& vi
 
 	m_BltParams.BackgroundColor = { 128 * 0x100, 128 * 0x100, 16 * 0x100, 0xFFFF }; // black
 	m_BltParams.Alpha = DXVA2_Fixed32OpaqueAlpha();
-	m_BltParams.NoiseFilterLuma.Level = NFilterValues[0];
-	m_BltParams.NoiseFilterLuma.Threshold = NFilterValues[1];
-	m_BltParams.NoiseFilterLuma.Radius = NFilterValues[2];
-	m_BltParams.NoiseFilterChroma.Level = NFilterValues[3];
-	m_BltParams.NoiseFilterChroma.Threshold = NFilterValues[4];
-	m_BltParams.NoiseFilterChroma.Radius = NFilterValues[5];
-	m_BltParams.DetailFilterLuma.Level = DFilterValues[0];
-	m_BltParams.DetailFilterLuma.Threshold = DFilterValues[1];
-	m_BltParams.DetailFilterLuma.Radius = DFilterValues[2];
-	m_BltParams.DetailFilterChroma.Level = DFilterValues[3];
+	m_BltParams.NoiseFilterLuma.Level        = NFilterValues[0];
+	m_BltParams.NoiseFilterLuma.Threshold    = NFilterValues[1];
+	m_BltParams.NoiseFilterLuma.Radius       = NFilterValues[2];
+	m_BltParams.NoiseFilterChroma.Level      = NFilterValues[3];
+	m_BltParams.NoiseFilterChroma.Threshold  = NFilterValues[4];
+	m_BltParams.NoiseFilterChroma.Radius     = NFilterValues[5];
+	m_BltParams.DetailFilterLuma.Level       = DFilterValues[0];
+	m_BltParams.DetailFilterLuma.Threshold   = DFilterValues[1];
+	m_BltParams.DetailFilterLuma.Radius      = DFilterValues[2];
+	m_BltParams.DetailFilterChroma.Level     = DFilterValues[3];
 	m_BltParams.DetailFilterChroma.Threshold = DFilterValues[4];
-	m_BltParams.DetailFilterChroma.Radius = DFilterValues[5];
+	m_BltParams.DetailFilterChroma.Radius    = DFilterValues[5];
 
 	DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : create %s processor ", CStringFromGUID(devguid));
 
@@ -316,10 +316,6 @@ void CDXVA2VP::ReleaseVideoProcessor()
 
 	m_DXVA2VPcaps = {};
 
-	// set default ProcAmp ranges and values
-	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
-	SetDefaultDXVA2ProcAmpValues(m_BltParams.ProcAmpValues);
-
 	m_srcFormat   = D3DFMT_UNKNOWN;
 	m_srcWidth    = 0;
 	m_srcHeight   = 0;
@@ -335,19 +331,38 @@ HRESULT CDXVA2VP::SetInputSurface(IDirect3DSurface9* pTexture2D)
 	return hr;
 }
 
-HRESULT CDXVA2VP::SetProcessParams(const RECT* pSrcRect, const RECT* pDstRect, const DXVA2_ExtendedFormat exFmt)
+HRESULT CDXVA2VP::SetProcessParams(const CRect& srcRect, const CRect& dstRect, const DXVA2_ExtendedFormat exFmt)
 {
+	m_BltParams.TargetRect = dstRect;
+	m_BltParams.ConstrictionSize.cx = dstRect.Width();
+	m_BltParams.ConstrictionSize.cy = dstRect.Height();
+
+	// Initialize main stream video samples
+	m_SrcSamples.SetRects(srcRect, dstRect);
+
 	return S_OK;
 }
 
 void CDXVA2VP::SetProcAmpValues(DXVA2_ProcAmpValues *pValues)
 {
+	m_BltParams.ProcAmpValues.Brightness.ll = std::clamp(pValues->Brightness.ll, m_DXVA2ProcAmpRanges[0].MinValue.ll, m_DXVA2ProcAmpRanges[0].MaxValue.ll);
+	m_BltParams.ProcAmpValues.Contrast.ll   = std::clamp(pValues->Contrast.ll,   m_DXVA2ProcAmpRanges[1].MinValue.ll, m_DXVA2ProcAmpRanges[1].MaxValue.ll);
+	m_BltParams.ProcAmpValues.Hue.ll        = std::clamp(pValues->Hue.ll,        m_DXVA2ProcAmpRanges[2].MinValue.ll, m_DXVA2ProcAmpRanges[2].MaxValue.ll);
+	m_BltParams.ProcAmpValues.Saturation.ll = std::clamp(pValues->Saturation.ll, m_DXVA2ProcAmpRanges[3].MinValue.ll, m_DXVA2ProcAmpRanges[3].MaxValue.ll);
 	m_bUpdateFilters = true;
 }
 
 HRESULT CDXVA2VP::Process(IDirect3DSurface9* pRenderTarget, const DXVA2_SampleFormat sampleFormat, const bool second)
 {
-	HRESULT hr = S_OK;
+	// Initialize VPBlt parameters
+	if (second) {
+		m_BltParams.TargetFrame = (m_SrcSamples.Get().Start + m_SrcSamples.Get().End) / 2;
+	} else {
+		m_BltParams.TargetFrame = m_SrcSamples.Get().Start;
+	}
+
+	HRESULT hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &m_BltParams, m_SrcSamples.GetVideoSamples(), m_SrcSamples.Size(), nullptr);
+	DLogIf(FAILED(hr), L"CDX9VideoProcessor::DXVA2VPPass() : VideoProcessBlt() failed with error %s", HR2Str(hr));
 
 	return hr;
 }

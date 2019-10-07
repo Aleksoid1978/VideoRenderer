@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <atltypes.h>
 #include <d3d11.h>
 
 // D3D11 Video Processor
@@ -54,7 +55,7 @@ public:
 	bool IsReady() { return (m_pVideoProcessor != nullptr); }
 
 	HRESULT SetInputTexture(ID3D11Texture2D* pTexture2D);
-	HRESULT SetProcessParams(const RECT* pSrcRect, const RECT* pDstRect, const DXVA2_ExtendedFormat exFmt);
+	HRESULT SetProcessParams(const CRect& srcRect, const CRect& dstRect, const DXVA2_ExtendedFormat exFmt);
 	void SetProcAmpValues(DXVA2_ProcAmpValues *pValues);
 
 	HRESULT Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAME_FORMAT sampleFormat, const bool second);

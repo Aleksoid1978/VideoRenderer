@@ -134,7 +134,7 @@ public:
 	bool IsReady() { return (m_pDXVA2_VP != nullptr); }
 
 	HRESULT SetInputSurface(IDirect3DSurface9* pTexture2D);
-	HRESULT SetProcessParams(const RECT* pSrcRect, const RECT* pDstRect, const DXVA2_ExtendedFormat exFmt);
+	HRESULT SetProcessParams(const CRect& srcRect, const CRect& dstRect, const DXVA2_ExtendedFormat exFmt);
 	void SetProcAmpValues(DXVA2_ProcAmpValues *pValues);
 
 	HRESULT Process(IDirect3DSurface9* pRenderTarget, const DXVA2_SampleFormat sampleFormat, const bool second);
