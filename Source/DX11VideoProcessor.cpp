@@ -49,45 +49,6 @@ struct PS_COLOR_TRANSFORM {
 
 // D3D11<->DXVA2
 
-void FilterRangeD3D11toDXVA2(DXVA2_ValueRange& _dxva2_, const D3D11_VIDEO_PROCESSOR_FILTER_RANGE& _d3d11_)
-{
-	float MinValue = _d3d11_.Multiplier * _d3d11_.Minimum;
-	float MaxValue = _d3d11_.Multiplier * _d3d11_.Maximum;
-	float DefValue = _d3d11_.Multiplier * _d3d11_.Default;
-	float StepSize = 1.0f;
-	if (DefValue >= 1.0f) { // capture 1.0f is important for changing StepSize
-		MinValue /= DefValue;
-		MaxValue /= DefValue;
-		DefValue /= DefValue;
-		StepSize = 0.01f;
-	}
-	_dxva2_.MinValue = DXVA2FloatToFixed(MinValue);
-	_dxva2_.MaxValue = DXVA2FloatToFixed(MaxValue);
-	_dxva2_.DefaultValue = DXVA2FloatToFixed(DefValue);
-	_dxva2_.StepSize = DXVA2FloatToFixed(StepSize);
-}
-
-void LevelD3D11toDXVA2(DXVA2_Fixed32& fixed, const int level, const D3D11_VIDEO_PROCESSOR_FILTER_RANGE& range)
-{
-	float value = range.Multiplier * level;
-	const float k = range.Multiplier * range.Default;
-	if (k > 1.0f) {
-		value /= k;
-	}
-	fixed = DXVA2FloatToFixed(value);
-}
-
-int ValueDXVA2toD3D11(const DXVA2_Fixed32 fixed, const D3D11_VIDEO_PROCESSOR_FILTER_RANGE& range)
-{
-	float value = DXVA2FixedToFloat(fixed) / range.Multiplier;
-	const float k = range.Multiplier * range.Default;
-	if (k > 1.0f) {
-		value *= range.Default;
-	}
-	const int level = (int)std::round(value);
-	return std::clamp(level, range.Minimum, range.Maximum);
-}
-
 HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer, const UINT srcW, const UINT srcH, const RECT& srcRect)
 {
 	ASSERT(ppVertexBuffer);
@@ -497,9 +458,7 @@ void CDX11VideoProcessor::ReleaseVP()
 
 	SAFE_RELEASE(m_PSConvColorData.pConstants);
 
-	m_pInputView.Release();
-	m_pVideoProcessor.Release();
-	m_pVideoProcessorEnum.Release();
+	m_D3D11VP.ReleaseVideoProcessor();
 
 	m_srcParams      = {};
 	m_srcDXGIFormat  = DXGI_FORMAT_UNKNOWN;
@@ -516,7 +475,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	DLog(L"CDX11VideoProcessor::ReleaseDevice()");
 
 	ReleaseVP();
-	m_pVideoDevice.Release();
+	m_D3D11VP.ReleaseVideoDevice();
 
 	m_TexOSD.Release();
 	m_pPSCorrection.Release();
@@ -528,8 +487,6 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pShaderDownscaleY.Release();
 	m_strShaderUpscale   = nullptr;
 	m_strShaderDownscale = nullptr;
-
-	m_pVideoContext.Release();
 
 	m_pInputLayout.Release();
 	m_pVS_Simple.Release();
@@ -647,16 +604,9 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	m_pDevice = pDevice;
 	m_pDeviceContext = pContext;
 
-	HRESULT hr = m_pDevice->QueryInterface(__uuidof(ID3D11VideoDevice), (void**)&m_pVideoDevice);
+	HRESULT hr = m_D3D11VP.InitVideDevice(m_pDevice, m_pDeviceContext);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::SetDevice() : QueryInterface(ID3D11VideoDevice) failed with error %s", HR2Str(hr));
-		ReleaseDevice();
-		return hr;
-	}
-
-	hr = m_pDeviceContext->QueryInterface(__uuidof(ID3D11VideoContext), (void**)&m_pVideoContext);
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::SetDevice() : QueryInterface(ID3D11VideoContext) failed with error %s", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::SetDevice() : InitVideDevice failed with error %s", HR2Str(hr));
 		ReleaseDevice();
 		return hr;
 	}
@@ -765,30 +715,8 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	if (SUCCEEDED(hr)) {
 		m_VendorId = dxgiAdapterDesc.VendorId;
 		m_strAdapterDescription.Format(L"%s (%04X:%04X)", dxgiAdapterDesc.Description, dxgiAdapterDesc.VendorId, dxgiAdapterDesc.DeviceId);
-		DLog(L"Graphics adapter: %s", m_strAdapterDescription.GetString());
+		DLog(L"Graphics adapter: %s", m_strAdapterDescription);
 	}
-
-#ifdef _DEBUG
-	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc = { D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE, {}, 1920, 1080, {}, 1920, 1080, D3D11_VIDEO_USAGE_PLAYBACK_NORMAL };
-	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcEnum;
-	if (S_OK == m_pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &pVideoProcEnum)) {
-		CStringW input = L"Supported input DXGI formats (for 1080p):";
-		CStringW output = L"Supported output DXGI formats (for 1080p):";
-		for (int fmt = DXGI_FORMAT_R32G32B32A32_TYPELESS; fmt <= DXGI_FORMAT_B4G4R4A4_UNORM; fmt++) {
-			UINT uiFlags;
-			if (S_OK == pVideoProcEnum->CheckVideoProcessorFormat((DXGI_FORMAT)fmt, &uiFlags)) {
-				if (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT) {
-					input.AppendFormat(L"\n  %s", DXGIFormatToString((DXGI_FORMAT)fmt));
-				}
-				if (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT) {
-					output.AppendFormat(L"\n  %s", DXGIFormatToString((DXGI_FORMAT)fmt));
-				}
-			}
-		}
-		DLog(input);
-		DLog(output);
-	}
-#endif
 
 #if DIRECTWRITE_ENABLE
 	HRESULT hr2 = m_TexOSD.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DefaultShaderRTarget);
@@ -1129,7 +1057,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_YCGCO));
 			}
-			DLogIf(m_pPSCorrection, L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection created");
+			DLog(L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection %s", m_pPSCorrection ? L"created" : L"creation failed");
 
 			m_inputMT = *pmt;
 			UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
@@ -1168,7 +1096,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 
 	DLog(L"CDX11VideoProcessor::InitializeD3D11VP() started with input surface: %s, %u x %u", DXGIFormatToString(dxgiFormat), width, height);
 
-	CheckPointer(m_pVideoDevice, E_FAIL);
+	//CheckPointer(m_pVideoDevice, E_FAIL);
 
 	if (only_update_texture) {
 		if (dxgiFormat != m_srcDXGIFormat) {
@@ -1181,113 +1109,18 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 			return E_FAIL;
 		}
 		m_TexSrcVideo.Release();
-		m_pInputView.Release();
 		m_pSrcTexture2D.Release();
-		m_pVideoProcessor.Release();
-		m_pVideoProcessorEnum.Release();
+
+		m_D3D11VP.ReleaseVideoProcessor();
 
 		m_TextureWidth = 0;
 		m_TextureHeight = 0;
 	}
 
-	HRESULT hr = S_OK;
-	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
-	ZeroMemory(&ContentDesc, sizeof(ContentDesc));
-	ContentDesc.InputFrameFormat = m_bInterlaced ? D3D11_VIDEO_FRAME_FORMAT_INTERLACED_TOP_FIELD_FIRST : D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
-	ContentDesc.InputWidth = width;
-	ContentDesc.InputHeight = height;
-	ContentDesc.OutputWidth = ContentDesc.InputWidth;
-	ContentDesc.OutputHeight = ContentDesc.InputHeight;
-	ContentDesc.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
-
-	hr = m_pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &m_pVideoProcessorEnum);
+	m_D3D11OutputFmt = m_InternalTexFmt;
+	HRESULT hr = m_D3D11VP.InitVideoProcessor(dxgiFormat, width, height, m_bInterlaced, m_D3D11OutputFmt);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateVideoProcessorEnumerator() failed with error %s", HR2Str(hr));
-		return hr;
-	}
-
-	UINT uiFlags;
-	hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(dxgiFormat, &uiFlags);
-	if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT)) {
-		return MF_E_UNSUPPORTED_D3D_TYPE;
-	}
-
-	m_D3D11OutputFmt = (m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT) ? DXGI_FORMAT_R10G10B10A2_UNORM : m_InternalTexFmt;
-
-	if (m_D3D11OutputFmt != DXGI_FORMAT_B8G8R8A8_UNORM) {
-		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(m_D3D11OutputFmt, &uiFlags);
-		if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
-			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() - %s is not supported for D3D11 VP output.", DXGIFormatToString(m_D3D11OutputFmt));
-			m_D3D11OutputFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
-		}
-	}
-	if (m_D3D11OutputFmt == DXGI_FORMAT_B8G8R8A8_UNORM) {
-		hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(m_D3D11OutputFmt, &uiFlags);
-		if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
-			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() - DXGI_FORMAT_B8G8R8A8_UNORM is not supported for D3D11 VP output.");
-			return MF_E_UNSUPPORTED_D3D_TYPE;
-		}
-	}
-	DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : select %s for output", DXGIFormatToString(m_D3D11OutputFmt));
-
-	if (!only_update_texture) {
-		m_VPCaps = {};
-		hr = m_pVideoProcessorEnum->GetVideoProcessorCaps(&m_VPCaps);
-		if (FAILED(hr)) {
-			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : GetVideoProcessorCaps() failed with error %s", HR2Str(hr));
-			return hr;
-		}
-
-		for (UINT i = 0; i < std::size(m_VPFilterRange); i++) {
-			if (m_VPCaps.FilterCaps & (1 << i)) {
-				hr = m_pVideoProcessorEnum->GetVideoProcessorFilterRange((D3D11_VIDEO_PROCESSOR_FILTER)i, &m_VPFilterRange[i]);
-				if (FAILED(hr)) {
-					DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : GetVideoProcessorFilterRange(%u) failed with error %s", i, HR2Str(hr));
-					m_VPCaps.FilterCaps = 0;
-					break;
-				}
-				DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : FilterRange(%u) : %5d, %4d, %3d, %f",
-					i, m_VPFilterRange[i].Minimum, m_VPFilterRange[i].Maximum, m_VPFilterRange[i].Default, m_VPFilterRange[i].Multiplier);
-			}
-		}
-
-		if (m_VPCaps.FilterCaps) {
-			m_VPFilterLevels[0] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Brightness, m_VPFilterRange[0]);
-			m_VPFilterLevels[1] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Contrast,   m_VPFilterRange[1]);
-			m_VPFilterLevels[2] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Hue,        m_VPFilterRange[2]);
-			m_VPFilterLevels[3] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Saturation, m_VPFilterRange[3]);
-
-			FilterRangeD3D11toDXVA2(m_DXVA2ProcAmpRanges[0], m_VPFilterRange[0]);
-			FilterRangeD3D11toDXVA2(m_DXVA2ProcAmpRanges[1], m_VPFilterRange[1]);
-			FilterRangeD3D11toDXVA2(m_DXVA2ProcAmpRanges[2], m_VPFilterRange[2]);
-			FilterRangeD3D11toDXVA2(m_DXVA2ProcAmpRanges[3], m_VPFilterRange[3]);
-
-			m_bUpdateFilters = true;
-		}
-	}
-
-	UINT index = 0;
-	if (m_bInterlaced) {
-		UINT proccaps = D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND + D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB + D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_ADAPTIVE + D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_MOTION_COMPENSATION;
-		D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS convCaps = {};
-		for (index = 0; index < m_VPCaps.RateConversionCapsCount; index++) {
-			hr = m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(index, &convCaps);
-			if (S_OK == hr) {
-				// Check the caps to see which deinterlacer is supported
-				if ((convCaps.ProcessorCaps & proccaps) != 0) {
-					break;
-				}
-			}
-		}
-		if (index >= m_VPCaps.RateConversionCapsCount) {
-			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : deinterlace caps don't support");
-			return E_FAIL;
-		}
-	}
-
-	hr = m_pVideoDevice->CreateVideoProcessor(m_pVideoProcessorEnum, index, &m_pVideoProcessor);
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateVideoProcessor() failed with error %s", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : InitVideoProcessor() failed with error %s", HR2Str(hr));
 		return hr;
 	}
 
@@ -1303,41 +1136,11 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return hr;
 	}
 
-	D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputViewDesc = {};
-	inputViewDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
-	hr = m_pVideoDevice->CreateVideoProcessorInputView(m_pSrcTexture2D, m_pVideoProcessorEnum, &inputViewDesc, &m_pInputView);
+	hr = m_D3D11VP.SetInputTexture(m_pSrcTexture2D);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateVideoProcessorInputView() failed with error %s", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : SetInputTexture() failed with error %s", HR2Str(hr));
 		return hr;
 	}
-
-#ifdef _DEBUG
-	{
-		const DXGI_FORMAT output_formats[] = {
-			DXGI_FORMAT_NV12,
-			DXGI_FORMAT_YUY2,
-			DXGI_FORMAT_B8G8R8X8_UNORM,
-			DXGI_FORMAT_B8G8R8A8_UNORM,
-			DXGI_FORMAT_R8G8B8A8_UNORM,
-			DXGI_FORMAT_R10G10B10A2_UNORM,
-			DXGI_FORMAT_R16G16B16A16_FLOAT,
-		};
-		HRESULT hr2 = S_OK;
-
-		for (const auto& fmt : output_formats) {
-			CComPtr<ID3D11Texture2D> pTestTexture2D;
-			hr2 = CreateTex2D(m_pDevice, fmt, width, height, Tex2D_DefaultRTarget, &pTestTexture2D);
-			if (S_OK == hr2) {
-				D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc = {};
-				OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
-				CComPtr<ID3D11VideoProcessorOutputView> pTestOutputView;
-				hr2 = m_pVideoDevice->CreateVideoProcessorOutputView(pTestTexture2D, m_pVideoProcessorEnum, &OutputViewDesc, &pTestOutputView);
-			}
-
-			DLog(L"VideoProcessorOutputView with %s format is %s", DXGIFormatToString(fmt), S_OK == hr2 ? L"OK" : L"FAILED");
-		}
-	}
-#endif
 
 	m_TextureWidth  = width;
 	m_TextureHeight = height;
@@ -1511,7 +1314,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 
 		if (desc.Width != m_TextureWidth || desc.Height != m_TextureHeight) {
-			if (m_pVideoProcessor) {
+			if (m_D3D11VP.IsReady()) {
 				hr = InitializeD3D11VP(m_srcParams, desc.Width, desc.Height, true);
 			} else {
 				hr = InitializeTexVP(m_srcParams, desc.Width, desc.Height);
@@ -1522,7 +1325,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 
 		// here should be used CopySubresourceRegion instead of CopyResource
-		if (m_pVideoProcessor) {
+		if (m_D3D11VP.IsReady()) {
 			m_pDeviceContext->CopySubresourceRegion(m_pSrcTexture2D, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
 		} else {
 			m_pDeviceContext->CopySubresourceRegion(m_TexSrcVideo.pTexture, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
@@ -1540,7 +1343,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 
 			if (desc.Width != m_TextureWidth || desc.Height != m_TextureHeight) {
-				if (m_pVideoProcessor) {
+				if (m_D3D11VP.IsReady()) {
 					hr = InitializeD3D11VP(m_srcParams, desc.Width, desc.Height, true);
 				} else {
 					hr = InitializeTexVP(m_srcParams, desc.Width, desc.Height);
@@ -1563,7 +1366,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				pSurface9->UnlockRect();
 			}
 
-			if (m_pVideoProcessor) {
+			if (m_D3D11VP.IsReady()) {
 				// ID3D11VideoProcessor does not use textures with D3D11_CPU_ACCESS_WRITE flag
 				m_pDeviceContext->CopyResource(m_pSrcTexture2D, m_TexSrcVideo.pTexture);
 			}
@@ -1610,7 +1413,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
 					m_pConvertFn(m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, src, m_srcPitch);
 					m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
-					if (m_pVideoProcessor) {
+					if (m_D3D11VP.IsReady()) {
 						// ID3D11VideoProcessor does not use textures with D3D11_CPU_ACCESS_WRITE flag
 						m_pDeviceContext->CopyResource(m_pSrcTexture2D, m_TexSrcVideo.pTexture);
 					}
@@ -1677,7 +1480,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			ClipToSurface(desc.Width, desc.Height, m_srcRenderRect, m_dstRenderRect);
 		}
 
-		if (!(m_pVideoProcessor && m_bVPScaling) || m_pPSCorrection) {
+		if (!(m_D3D11VP.IsReady() && m_bVPScaling) || m_pPSCorrection) {
 			// fill the BackBuffer with black only when necessary
 			ID3D11RenderTargetView* pRenderTargetView;
 			if (S_OK == m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView)) {
@@ -1687,7 +1490,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			}
 		}
 
-		if (m_pVideoProcessor) {
+		if (m_D3D11VP.IsReady()) {
 			hr = ProcessD3D11(pBackBuffer, m_srcRenderRect, m_dstRenderRect, m_FieldDrawn == 2);
 		} else {
 			hr = ProcessTex(pBackBuffer, m_srcRenderRect, m_dstRenderRect);
@@ -1756,7 +1559,7 @@ HRESULT CDX11VideoProcessor::FillBlack()
 
 void CDX11VideoProcessor::UpdateConvertTexD3D11VP()
 {
-	if (m_pVideoProcessor) {
+	if (m_D3D11VP.IsReady()) {
 		if (m_bVPScaling) {
 			m_TexConvert.Release();
 		} else {
@@ -1885,62 +1688,12 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 HRESULT CDX11VideoProcessor::D3D11VPPass(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
 	if (!second) {
-		// input format
-		m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, m_SampleFormat);
-		// Output rate (repeat frames)
-		m_pVideoContext->VideoProcessorSetStreamOutputRate(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_OUTPUT_RATE_NORMAL, TRUE, nullptr);
-		// disable automatic video quality by driver
-		m_pVideoContext->VideoProcessorSetStreamAutoProcessingMode(m_pVideoProcessor, 0, FALSE);
-
-		m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, TRUE, rSrcRect);
-		m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, rDstRect);
-		m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, FALSE, nullptr);
-
-		// filters
-		if (m_bUpdateFilters) {
-			BOOL bEnable0 = (m_VPFilterLevels[0] != m_VPFilterRange[0].Default);
-			BOOL bEnable1 = (m_VPFilterLevels[1] != m_VPFilterRange[1].Default);
-			BOOL bEnable2 = (m_VPFilterLevels[2] != m_VPFilterRange[2].Default);
-			BOOL bEnable3 = (m_VPFilterLevels[3] != m_VPFilterRange[3].Default);
-			m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_BRIGHTNESS, bEnable0, m_VPFilterLevels[0]);
-			m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_CONTRAST, bEnable1, m_VPFilterLevels[1]);
-			m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_HUE, bEnable2, m_VPFilterLevels[2]);
-			m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_SATURATION, bEnable3, m_VPFilterLevels[3]);
-			m_bUpdateFilters = false;
-		}
-
-		// Output background color (black)
-		static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-		m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, FALSE, &backgroundColor);
-
-		D3D11_VIDEO_PROCESSOR_COLOR_SPACE colorSpace = {};
-		if (m_srcExFmt.value) {
-			colorSpace.RGB_Range = 0; // output RGB always full range (0-255)
-			colorSpace.YCbCr_Matrix = (m_srcExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601) ? 0 : 1;
-			colorSpace.Nominal_Range = (m_srcExFmt.NominalRange == DXVA2_NominalRange_0_255)
-									 ? D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255
-									 : D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
-		}
-		m_pVideoContext->VideoProcessorSetStreamColorSpace(m_pVideoProcessor, 0, &colorSpace);
-		m_pVideoContext->VideoProcessorSetOutputColorSpace(m_pVideoProcessor, &colorSpace);
+		m_D3D11VP.SetProcessParams(rSrcRect, rDstRect, m_srcExFmt);
 	}
 
-	D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc = {};
-	OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
-	CComPtr<ID3D11VideoProcessorOutputView> pOutputView;
-	HRESULT hr = m_pVideoDevice->CreateVideoProcessorOutputView(pRenderTarget, m_pVideoProcessorEnum, &OutputViewDesc, &pOutputView);
+	HRESULT hr = m_D3D11VP.Process(pRenderTarget, m_SampleFormat, second);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::ProcessD3D11() : CreateVideoProcessorOutputView() failed with error %s", HR2Str(hr));
-		return hr;
-	}
-
-	D3D11_VIDEO_PROCESSOR_STREAM StreamData = {};
-	StreamData.Enable = TRUE;
-	StreamData.InputFrameOrField = second ? 1 : 0;
-	StreamData.pInputSurface = m_pInputView;
-	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, 0, 1, &StreamData);
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::ProcessD3D11() : VideoProcessorBlt() failed with error %s", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::ProcessD3D11() : m_D3D11VP.Process() failed with error %s", HR2Str(hr));
 	}
 
 	return hr;
@@ -2082,7 +1835,7 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 		return hr;
 	}
 
-	if (m_pVideoContext) {
+	if (m_D3D11VP.IsReady()) {
 		hr = ProcessD3D11(pRGB32Texture2D, rSrcRect, rDstRect, false);
 	} else {
 		hr = ProcessTex(pRGB32Texture2D, rSrcRect, rDstRect);
@@ -2113,7 +1866,7 @@ HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 {
 	str = L"DirectX 11";
 	str.AppendFormat(L"\nGraphics adapter: %s", m_strAdapterDescription);
-	str.AppendFormat(L"\nVideoProcessor  : %s", m_pVideoProcessor ? L"D3D11" : L"Shaders");
+	str.AppendFormat(L"\nVideoProcessor  : %s", m_D3D11VP.IsReady() ? L"D3D11" : L"Shaders");
 
 #ifdef _DEBUG
 	str.AppendFormat(L"\nSource rect   : %d,%d,%d,%d - %dx%d", m_srcRect.left, m_srcRect.top, m_srcRect.right, m_srcRect.bottom, m_srcRect.Width(), m_srcRect.Height());
@@ -2236,7 +1989,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 			}
 		}
 		m_strStatsStatic2.Append(L"\nVideoProcessor: ");
-		if (m_pVideoProcessor) {
+		if (m_D3D11VP.IsReady()) {
 			m_strStatsStatic2.AppendFormat(L"D3D11 VP, output to %s", DXGIFormatToString(m_D3D11OutputFmt));
 		} else {
 			m_strStatsStatic2.Append(L"Shaders");
@@ -2297,7 +2050,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	const int dstH = m_dstRenderRect.Height();
 	str.AppendFormat(L"\nScaling       : %dx%d -> %dx%d", srcW, srcH, dstW, dstH);
 	if (srcW != dstW || srcH != dstH) {
-		if (m_pVideoProcessor && m_bVPScaling) {
+		if (m_D3D11VP.IsReady() && m_bVPScaling) {
 			str.Append(L" D3D11");
 		} else {
 			const int k = m_bInterpolateAt50pct ? 2 : 1;
@@ -2477,13 +2230,9 @@ STDMETHODIMP CDX11VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpV
 	if (dwFlags&DXVA2_ProcAmp_Mask) {
 		CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
-		m_VPFilterLevels[0] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Brightness, m_VPFilterRange[0]);
-		m_VPFilterLevels[1] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Contrast,   m_VPFilterRange[1]);
-		m_VPFilterLevels[2] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Hue,        m_VPFilterRange[2]);
-		m_VPFilterLevels[3] = ValueDXVA2toD3D11(m_DXVA2ProcAmpValues.Saturation, m_VPFilterRange[3]);
-		m_bUpdateFilters = true;
+		m_D3D11VP.SetProcAmpValues(&m_DXVA2ProcAmpValues);
 
-		if (!m_pVideoProcessor) {
+		if (!m_D3D11VP.IsReady()) {
 			SetShaderConvertColorParams();
 		}
 	}
@@ -2493,7 +2242,6 @@ STDMETHODIMP CDX11VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpV
 
 STDMETHODIMP CDX11VideoProcessor::GetBackgroundColor(COLORREF *lpClrBkg)
 {
-	CheckPointer(m_pVideoProcessor, MF_E_INVALIDREQUEST);
 	CheckPointer(lpClrBkg, E_POINTER);
 	*lpClrBkg = RGB(0, 0, 0);
 	return S_OK;

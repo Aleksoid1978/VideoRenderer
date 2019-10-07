@@ -33,6 +33,7 @@
 #include <DirectXMath.h>
 #include "IVideoRenderer.h"
 #include "DX11Helper.h"
+#include "D3D11VP.h"
 #include "FrameStats.h"
 #include "DX9Device.h"
 
@@ -85,11 +86,7 @@ private:
 	Tex2D_t m_TexResize;      // for intermediate result of two-pass resize
 
 	// D3D11 Video Processor
-	CComPtr<ID3D11VideoContext> m_pVideoContext;
-	CComPtr<ID3D11VideoDevice> m_pVideoDevice;
-	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
-	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
-	CComPtr<ID3D11VideoProcessorInputView> m_pInputView;
+	D3D11VP m_D3D11VP;
 	CComPtr<ID3D11PixelShader> m_pPSCorrection;
 
 	// D3D11 Shader Video Processor
@@ -134,7 +131,7 @@ private:
 	DXGI_FORMAT m_D3D11OutputFmt = DXGI_FORMAT_UNKNOWN;
 
 	// intermediate texture format
-	DXGI_FORMAT m_InternalTexFmt = DXGI_FORMAT_B8G8R8X8_UNORM;
+	DXGI_FORMAT m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
 
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 	int m_FieldDrawn = 0;
