@@ -25,7 +25,6 @@
 #include <Mferror.h>
 #include <Mfidl.h>
 #include <dwmapi.h>
-#include <cmath>
 #include "Helper.h"
 #include "Time.h"
 #include "resource.h"

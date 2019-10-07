@@ -21,6 +21,7 @@
 #pragma once
 
 #include "stdafx.h"
+#include <cmath>
 #include "Helper.h"
 #include "DX11Helper.h"
 
@@ -33,7 +34,7 @@ int ValueDXVA2toD3D11(const DXVA2_Fixed32 fixed, const D3D11_VIDEO_PROCESSOR_FIL
 	if (k > 1.0f) {
 		value *= range.Default;
 	}
-	const int level = (int)std::round(value);
+	const int level = std::lround(value);
 	return std::clamp(level, range.Minimum, range.Maximum);
 }
 
