@@ -20,42 +20,40 @@
 
 #pragma once
 
-#include <d3d11.h>
+#include <dxva2api.h>
 
-// D3D11 Video Processor
-class CD3D11VP
+// TODO
+// DXVA2 Video Processor
+class CDXVA2VP
 {
 private:
-	CComPtr<ID3D11VideoContext> m_pVideoContext;
-	CComPtr<ID3D11VideoDevice> m_pVideoDevice;
-	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
-	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
-	CComPtr<ID3D11VideoProcessorInputView> m_pInputView;
+	CComPtr<IDirectXVideoProcessorService> m_pDXVA2_VPService;
+	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
+	GUID m_DXVA2VPGuid = GUID_NULL;
 
-	D3D11_VIDEO_PROCESSOR_CAPS m_VPCaps = {};
+	DXVA2_VideoProcessorCaps m_DXVA2VPcaps = {};
 
 	// ProcAmp
-	D3D11_VIDEO_PROCESSOR_FILTER_RANGE m_VPFilterRange[4] = {};
-	int m_VPFilterLevels[4] = {};
+	DXVA2_ValueRange m_DXVA2ProcAmpRanges[4] = {};
 	bool m_bUpdateFilters = false;
 
-	DXGI_FORMAT m_srcFormat = DXGI_FORMAT_UNKNOWN;
+	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
 	UINT m_srcWidth    = 0;
 	UINT m_srcHeight   = 0;
 	bool m_bInterlaced = false;
 
 public:
-	HRESULT InitVideDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
-	void ReleaseVideoDevice();
+	HRESULT InitVideoService(IDirect3DDevice9* pDevice);
+	void ReleaseVideoService();
 
-	HRESULT InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, DXGI_FORMAT& outputFmt);
+	HRESULT InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, D3DFORMAT& outputFmt);
 	void ReleaseVideoProcessor();
 
-	bool IsReady() { return (m_pVideoProcessor != nullptr); }
+	bool IsReady() { return (m_pDXVA2_VP != nullptr); }
 
-	HRESULT SetInputTexture(ID3D11Texture2D* pTexture2D);
+	HRESULT SetInputSurface(IDirect3DSurface9* pTexture2D);
 	HRESULT SetProcessParams(const RECT* pSrcRect, const RECT* pDstRect, const DXVA2_ExtendedFormat exFmt);
 	void SetProcAmpValues(DXVA2_ProcAmpValues *pValues);
 
-	HRESULT Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAME_FORMAT sampleFormat, const bool second);
+	HRESULT Process(IDirect3DSurface9* pRenderTarget, const DXVA2_SampleFormat sampleFormat, const bool second);
 };

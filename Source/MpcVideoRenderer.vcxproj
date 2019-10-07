@@ -69,6 +69,7 @@
     <ClCompile Include="DX9Device.cpp" />
     <ClCompile Include="DX9Helper.cpp" />
     <ClCompile Include="DX9VideoProcessor.cpp" />
+    <ClCompile Include="DXVA2VP.cpp" />
     <ClCompile Include="Helper.cpp" />
     <ClCompile Include="PropPage.cpp" />
     <ClCompile Include="renbase2.cpp" />
@@ -92,6 +93,7 @@
     <ClInclude Include="DX9Device.h" />
     <ClInclude Include="DX9Helper.h" />
     <ClInclude Include="DX9VideoProcessor.h" />
+    <ClInclude Include="DXVA2VP.h" />
     <ClInclude Include="FrameStats.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="IVideoRenderer.h" />

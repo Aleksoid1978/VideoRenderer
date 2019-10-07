@@ -66,7 +66,7 @@ void FilterRangeD3D11toDXVA2(DXVA2_ValueRange& _dxva2_, const D3D11_VIDEO_PROCES
 }
 
 
-// D3D11VP
+// CD3D11VP
 
 HRESULT CD3D11VP::InitVideDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
 {

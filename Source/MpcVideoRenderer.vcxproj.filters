@@ -72,6 +72,9 @@
     <ClCompile Include="D3D11VP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DXVA2VP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -141,6 +144,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="D3D11VP.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DXVA2VP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
