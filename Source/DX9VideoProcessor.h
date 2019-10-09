@@ -48,7 +48,7 @@ private:
 	bool m_bShowStats          = false;
 	int  m_iTexFormat          = TEXFMT_AUTOINT;
 	VPEnableFormats_t m_VPFormats = {true, true, true, true};
-	bool m_bDeintDouble        = false;
+	bool m_bDeintDouble        = true;
 	bool m_bVPScaling          = true;
 	int  m_iChromaScaling      = CHROMA_Bilinear;
 	int  m_iUpscaling          = UPSCALE_CatmullRom; // interpolation

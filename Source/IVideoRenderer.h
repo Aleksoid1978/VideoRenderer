@@ -93,7 +93,7 @@ struct Settings_t {
 		VPFmts.bP01x        = true;
 		VPFmts.bYUY2        = true;
 		VPFmts.bOther       = true;
-		bDeintDouble        = false;
+		bDeintDouble        = true;
 		bVPScaling          = true;
 		iChromaScaling      = CHROMA_Bilinear;
 		iUpscaling          = UPSCALE_CatmullRom;
