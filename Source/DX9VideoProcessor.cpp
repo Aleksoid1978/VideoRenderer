@@ -1631,12 +1631,15 @@ void CDX9VideoProcessor::UpdateDownscalingShaders()
 HRESULT CDX9VideoProcessor::UpdateChromaScalingShader()
 {
 	m_pPSConvertColor.Release();
-	ID3DBlob* pShaderCode = nullptr;
+	HRESULT hr = S_OK;
 
-	HRESULT hr = GetShaderConvertColor(false, m_TexSrcVideo.Width, m_TexSrcVideo.Height, m_srcParams, m_srcExFmt, m_iChromaScaling, &pShaderCode);
-	if (S_OK == hr) {
-		hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);
-		pShaderCode->Release();
+	if (m_TexSrcVideo.pTexture) {
+		ID3DBlob* pShaderCode = nullptr;
+		hr = GetShaderConvertColor(false, m_TexSrcVideo.Width, m_TexSrcVideo.Height, m_srcParams, m_srcExFmt, m_iChromaScaling, &pShaderCode);
+		if (S_OK == hr) {
+			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);
+			pShaderCode->Release();
+		}
 	}
 
 	return hr;
