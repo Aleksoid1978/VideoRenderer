@@ -290,7 +290,7 @@ HRESULT CVRMainPPage::OnApplyChanges()
 // CVRInfoPPage
 
 CVRInfoPPage::CVRInfoPPage(LPUNKNOWN lpunk, HRESULT* phr) :
-	CBasePropertyPage(L"StatsProp", lpunk, IDD_INFOPROPPAGE, IDS_INFOPROPPAGE_TITLE)
+	CBasePropertyPage(L"InfoProp", lpunk, IDD_INFOPROPPAGE, IDS_INFOPROPPAGE_TITLE)
 {
 }
 
@@ -333,7 +333,7 @@ HRESULT CVRInfoPPage::OnActivate()
 	// init monospace font
 	LOGFONTW lf = {};
 	HDC hdc = GetWindowDC();
-	lf.lfHeight = -MulDiv(10, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+	lf.lfHeight = -MulDiv(9, GetDeviceCaps(hdc, LOGPIXELSY), 72);
 	ReleaseDC(hdc);
 	lf.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
 	wcscpy_s(lf.lfFaceName, L"Consolas");

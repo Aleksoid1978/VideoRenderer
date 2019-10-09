@@ -1415,7 +1415,7 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 		str.AppendFormat(L"DXVA2 %s", DXVA2VPDeviceToString(m_DXVA2VPGuid));
 
 		UINT dt = m_DXVA2VPcaps.DeinterlaceTechnology;
-		str.Append(L"\nDeinterlaceTechnology:");
+		str.Append(L"\nDeinterlaceTech.:");
 		if (dt & DXVA2_DeinterlaceTech_Mask) {
 			if (dt & DXVA2_DeinterlaceTech_BOBLineReplicate)       str.Append(L" BOBLineReplicate,");
 			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch)     str.Append(L" BOBVerticalStretch,");
@@ -1427,15 +1427,11 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 			if (dt & DXVA2_DeinterlaceTech_MotionVectorSteered)    str.Append(L" MotionVectorSteered,");
 			if (dt & DXVA2_DeinterlaceTech_InverseTelecine)        str.Append(L" InverseTelecine");
 			str.TrimRight(',');
+				str.AppendFormat(L"\nReferenceSamples: Backward %u, Forward %u", m_DXVA2VPcaps.NumBackwardRefSamples, m_DXVA2VPcaps.NumForwardRefSamples);
 		} else {
 			str.Append(L" none");
 		}
-		if (m_DXVA2VPcaps.NumForwardRefSamples) {
-			str.AppendFormat(L"\nForwardRefSamples : %u", m_DXVA2VPcaps.NumForwardRefSamples);
-		}
-		if (m_DXVA2VPcaps.NumBackwardRefSamples) {
-			str.AppendFormat(L"\nBackwardRefSamples: %u", m_DXVA2VPcaps.NumBackwardRefSamples);
-		}
+
 	} else {
 		str.Append(L"Shaders");
 	}
@@ -1447,6 +1443,7 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 	str.Append(L" Hz");
 
 #ifdef _DEBUG
+	str.AppendFormat(L"\n\nDEBUG info:");
 	str.AppendFormat(L"\nSource rect   : %d,%d,%d,%d - %dx%d", m_srcRect.left, m_srcRect.top, m_srcRect.right, m_srcRect.bottom, m_srcRect.Width(), m_srcRect.Height());
 	str.AppendFormat(L"\nTarget rect   : %d,%d,%d,%d - %dx%d", m_trgRect.left, m_trgRect.top, m_trgRect.right, m_trgRect.bottom, m_trgRect.Width(), m_trgRect.Height());
 	str.AppendFormat(L"\nVideo rect    : %d,%d,%d,%d - %dx%d", m_videoRect.left, m_videoRect.top, m_videoRect.right, m_videoRect.bottom, m_videoRect.Width(), m_videoRect.Height());
