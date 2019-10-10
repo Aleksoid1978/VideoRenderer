@@ -87,7 +87,9 @@ HRESULT Dump4ByteTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D*
 				pDeviceContext->Unmap(pTexture2DShared, 0);
 			}
 		}
+
+		return hr;
 	}
 
-	return hr;
+	return E_FAIL;
 }
