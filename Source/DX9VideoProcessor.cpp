@@ -1107,7 +1107,11 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 
 			if (m_pDXVA2_VP) {
 				m_SrcSamples.Next();
-				m_SrcSamples.Get().pSrcSurface = pSurface;
+				if (m_SrcSamples.Size() > 1) {
+					hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, m_SrcSamples.Get().pSrcSurface, nullptr, D3DTEXF_NONE);
+				} else {
+					m_SrcSamples.Get().pSrcSurface = pSurface;
+				}
 			}
 			else if (m_TexSrcVideo.Plane2.pSurface) {
 				D3DLOCKED_RECT lr_src;
@@ -1529,7 +1533,7 @@ void CDX9VideoProcessor::SetDownscaling(int value)
 
 void CDX9VideoProcessor::Flush()
 {
-	if (m_bSrcFromGPU && m_pDXVA2_VP) {
+	if (m_bSrcFromGPU && m_pDXVA2_VP && m_SrcSamples.Size() == 1) {
 		m_SrcSamples.Resize(m_SrcSamples.Size(), m_srcExFmt.value);
 	}
 }
