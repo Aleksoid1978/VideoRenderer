@@ -1048,16 +1048,18 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		if (S_OK == InitializeD3D11VP(FmtConvParams, biWidth, biHeight, false)) {
 			UpdateConvertTexD3D11VP();
 
+			HRESULT hr2 = S_FALSE;
 			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_ST2084));
+				hr2 = CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_ST2084);
 			}
 			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_HLG));
+				hr2 = CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_HLG);
 			}
 			else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_YCGCO));
+				hr2 = CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_YCGCO);
 			}
-			DLog(L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection %s", m_pPSCorrection ? L"created" : L"creation failed");
+			DLogIf(FAILED(hr2), L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection creation failed with error %s", HR2Str(hr2));
+			DLogIf(S_OK == hr2, L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection created");
 
 			m_inputMT = *pmt;
 			UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
