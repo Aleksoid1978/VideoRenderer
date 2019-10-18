@@ -1268,6 +1268,25 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		m_RenderStats.statsticks  = GetPreciseTick() - tick3;
  	}
 
+#if 0
+	if (1) { // Tearing test
+		static int nTearingPos = 0;
+		RECT rcTearing;
+
+		rcTearing.left = nTearingPos;
+		rcTearing.top = 0;
+		rcTearing.right = rcTearing.left + 4;
+		rcTearing.bottom = m_windowRect.Height();
+		m_pD3DDevEx->ColorFill(pBackBuffer, &rcTearing, D3DCOLOR_ARGB(255, 255, 0, 0));
+
+		rcTearing.left = (rcTearing.right + 15) % m_windowRect.Width();
+		rcTearing.right = rcTearing.left + 4;
+		m_pD3DDevEx->ColorFill(pBackBuffer, &rcTearing, D3DCOLOR_ARGB(255, 255, 0, 0));
+
+		nTearingPos = (nTearingPos + 7) % m_windowRect.Width();
+	}
+#endif
+
 	if (m_d3dpp.SwapEffect == D3DSWAPEFFECT_DISCARD) {
 		hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
 	} else {
