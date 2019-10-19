@@ -24,6 +24,7 @@
 #include "Helper.h"
 #include "PropPage.h"
 #include "VideoRendererInputPin.h"
+#include "Include/Version.h"
 #include "VideoRenderer.h"
 
 #define OPT_REGKEY_VIDEORENDERER L"Software\\MPC-BE Filters\\MPC Video Renderer"
@@ -1014,6 +1015,21 @@ STDMETHODIMP CMpcVideoRenderer::GetInt(LPCSTR field, int* value)
 	}
 	if (!strcmp(field, "rotation")) {
 		*value = m_iRotation;
+		return S_OK;
+	}
+
+	return E_INVALIDARG;
+}
+
+STDMETHODIMP CMpcVideoRenderer::GetInt64(LPCSTR field, __int64 *value)
+{
+	CheckPointer(value, E_POINTER);
+
+	if (!strcmp(field, "version")) {
+		*value  = ((uint64_t)MPCVR_VERSION_MAJOR << 48)
+				| ((uint64_t)MPCVR_VERSION_MINOR << 32)
+				| ((uint64_t)MPCVR_VERSION_BUILD << 16)
+				| ((uint64_t)MPCVR_REV_NUM);
 		return S_OK;
 	}
 
