@@ -164,10 +164,7 @@ HRESULT CDXVA2VP::InitVideoService(IDirect3DDevice9* pDevice)
 {
 	// Create DXVA2 Video Processor Service.
 	HRESULT hr = DXVA2CreateVideoService(pDevice, IID_IDirectXVideoProcessorService, (VOID**)&m_pDXVA2_VPService);
-	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::Init() : DXVA2CreateVideoService() failed with error %s", HR2Str(hr));
-		return FALSE;
-	}
+	DLogIf(FAILED(hr), L"CDXVA2VP::InitVideoService() : DXVA2CreateVideoService() failed with error %s", HR2Str(hr));
 
 	return hr;
 }
@@ -201,7 +198,7 @@ int GetBitDepth(const D3DFORMAT format)
 	}
 }
 
-HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, D3DFORMAT& outputFmt)
+HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, D3DFORMAT& outputFmt, UINT& numRefSamples)
 {
 	CheckPointer(m_pDXVA2_VPService, E_FAIL);
 
@@ -213,7 +210,7 @@ HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width,
 	videodesc.SampleWidth = width;
 	videodesc.SampleHeight = height;
 	//videodesc.SampleFormat.value = m_srcExFmt.value; // do not need to fill it here
-	videodesc.SampleFormat.SampleFormat = m_bInterlaced ? DXVA2_SampleFieldInterleavedOddFirst : DXVA2_SampleProgressiveFrame;
+	videodesc.SampleFormat.SampleFormat = interlaced ? DXVA2_SampleFieldInterleavedOddFirst : DXVA2_SampleProgressiveFrame;
 	if (inputFmt == D3DFMT_X8R8G8B8 || inputFmt == D3DFMT_A8R8G8B8) {
 		videodesc.Format = D3DFMT_YUY2; // hack
 	} else {
@@ -232,8 +229,8 @@ HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width,
 		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : GetVideoProcessorDeviceGuids() failed with error %s", HR2Str(hr));
 		return hr;
 	}
-	UINT NumRefSamples = 1;
-	if (m_bInterlaced) {
+
+	if (interlaced) {
 		UINT preferredDeintTech = DXVA2_DeinterlaceTech_EdgeFiltering // Intel
 			| DXVA2_DeinterlaceTech_FieldAdaptive
 			| DXVA2_DeinterlaceTech_PixelAdaptive // Nvidia, AMD
@@ -263,40 +260,17 @@ HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width,
 		return E_FAIL;
 	}
 
-	NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
-	ASSERT(NumRefSamples <= MAX_DEINTERLACE_SURFACES);
+	if (m_DXVA2VPcaps.NumForwardRefSamples > 0) {
+		// we don't support this
+		ReleaseVideoProcessor();
 
-	m_SrcSamples.Resize(NumRefSamples, 0);
-
-	for (unsigned i = 0; i < NumRefSamples; ++i) {
-		auto& vsample = m_SrcSamples.GetAt(i);
-
-		hr = m_pDXVA2_VPService->CreateSurface(
-			width,
-			height,
-			0,
-			inputFmt,
-			m_DXVA2VPcaps.InputPool,
-			0,
-			DXVA2_VideoProcessorRenderTarget,
-			&vsample.pSrcSurface,
-			nullptr
-		);
-		if (FAILED(hr)) {
-			m_SrcSamples.Clear();
-
-			return hr;
-		}
-
-		IDirect3DDevice9* pDevice = nullptr;
-		if (S_OK == vsample.pSrcSurface->GetDevice(&pDevice)) {
-			// fill the surface in black, to avoid the "green screen"
-			pDevice->ColorFill(vsample.pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
-			pDevice->Release();
-		}
+		return E_ABORT;
 	}
 
-	m_SrcSamples.UpdateVideoSamples();
+	numRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
+	ASSERT(numRefSamples <= MAX_DEINTERLACE_SURFACES);
+
+	m_VideoSamples.Resize(numRefSamples);
 
 	m_BltParams.DestFormat.value = 0; // output to RGB
 	m_BltParams.DestFormat.SampleFormat = DXVA2_SampleProgressiveFrame; // output to progressive RGB
@@ -305,7 +279,7 @@ HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width,
 	m_srcFormat   = inputFmt;
 	m_srcWidth    = width;
 	m_srcHeight   = height;
-	m_bInterlaced = interlaced;
+	//m_bInterlaced = interlaced;
 
 	return hr;
 }
@@ -319,7 +293,7 @@ void CDXVA2VP::ReleaseVideoProcessor()
 	m_srcFormat   = D3DFMT_UNKNOWN;
 	m_srcWidth    = 0;
 	m_srcHeight   = 0;
-	m_bInterlaced = false;
+	//m_bInterlaced = false;
 }
 
 HRESULT CDXVA2VP::SetInputSurface(IDirect3DSurface9* pTexture2D)
@@ -338,7 +312,7 @@ HRESULT CDXVA2VP::SetProcessParams(const CRect& srcRect, const CRect& dstRect, c
 	m_BltParams.ConstrictionSize.cy = dstRect.Height();
 
 	// Initialize main stream video samples
-	m_SrcSamples.SetRects(srcRect, dstRect);
+	m_VideoSamples.SetRects(srcRect, dstRect);
 
 	return S_OK;
 }
@@ -356,12 +330,12 @@ HRESULT CDXVA2VP::Process(IDirect3DSurface9* pRenderTarget, const DXVA2_SampleFo
 {
 	// Initialize VPBlt parameters
 	if (second) {
-		m_BltParams.TargetFrame = (m_SrcSamples.Get().Start + m_SrcSamples.Get().End) / 2;
+		m_BltParams.TargetFrame = (m_VideoSamples.GetFrameStart() + m_VideoSamples.GetFrameEnd()) / 2;
 	} else {
-		m_BltParams.TargetFrame = m_SrcSamples.Get().Start;
+		m_BltParams.TargetFrame = m_VideoSamples.GetFrameStart();
 	}
 
-	HRESULT hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &m_BltParams, m_SrcSamples.GetVideoSamples(), m_SrcSamples.Size(), nullptr);
+	HRESULT hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &m_BltParams, m_VideoSamples.Data(), m_VideoSamples.Size(), nullptr);
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::DXVA2VPPass() : VideoProcessBlt() failed with error %s", HR2Str(hr));
 
 	return hr;

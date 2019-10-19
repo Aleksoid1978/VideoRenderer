@@ -106,6 +106,14 @@ private:
 	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
 
 public:
+	const DXVA2_VideoSample* Data() {
+		return m_DXVA2Samples.data();
+	}
+
+	const UINT Size() {
+		return m_DXVA2Samples.size();
+	}
+
 	void Resize(const unsigned len) {
 		for (auto& dxva2sample : m_DXVA2Samples) {
 			dxva2sample.SrcSurface->Release();
@@ -145,8 +153,12 @@ public:
 		m_DXVA2Samples.back().SrcSurface = pSurface;
 	}
 
-	const DXVA2_VideoSample* GetVideoSamples() {
-		return m_DXVA2Samples.data();
+	REFERENCE_TIME GetFrameStart() {
+		return m_DXVA2Samples.back().Start;
+	}
+
+	REFERENCE_TIME GetFrameEnd() {
+		return m_DXVA2Samples.back().End;
 	}
 };
 
@@ -159,7 +171,7 @@ private:
 	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
 	GUID m_DXVA2VPGuid = GUID_NULL;
 	DXVA2_VideoProcessBltParams m_BltParams = {};
-	VideoSurfaceBuffer m_SrcSamples;
+	VideoSampleBuffer m_VideoSamples;
 
 	DXVA2_VideoProcessorCaps m_DXVA2VPcaps = {};
 
@@ -170,7 +182,7 @@ private:
 	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
 	UINT m_srcWidth    = 0;
 	UINT m_srcHeight   = 0;
-	bool m_bInterlaced = false;
+	//bool m_bInterlaced = false;
 
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc, UINT preferredDeintTech, D3DFORMAT& outputFmt);
 
@@ -178,7 +190,7 @@ public:
 	HRESULT InitVideoService(IDirect3DDevice9* pDevice);
 	void ReleaseVideoService();
 
-	HRESULT InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, D3DFORMAT& outputFmt);
+	HRESULT InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, D3DFORMAT& outputFmt, UINT& numRefSamples);
 	void ReleaseVideoProcessor();
 
 	bool IsReady() { return (m_pDXVA2_VP != nullptr); }
