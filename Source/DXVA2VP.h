@@ -100,6 +100,56 @@ public:
 	}
 };
 
+class VideoSampleBuffer
+{
+private:
+	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
+
+public:
+	void Resize(const unsigned len) {
+		for (auto& dxva2sample : m_DXVA2Samples) {
+			dxva2sample.SrcSurface->Release();
+		}
+		m_DXVA2Samples.clear();
+		const DXVA2_VideoSample dxva2sample = { 0, 0, {}, nullptr, {}, {}, {}, DXVA2_Fixed32OpaqueAlpha(), 0 };
+		m_DXVA2Samples.resize(len, dxva2sample);
+	}
+
+	void SetRects(const CRect& SrcRect, const CRect& DstRect) {
+		for (auto& dxva2sample : m_DXVA2Samples) {
+			dxva2sample.SrcRect = SrcRect;
+			dxva2sample.DstRect = DstRect;
+		}
+	}
+
+	void Add(const REFERENCE_TIME start, const REFERENCE_TIME end, const UINT exFmtValue, IDirect3DSurface9* pSurface)
+	{
+		ASSERT(m_DXVA2Samples.size());
+		ASSERT(pSurface);
+
+		pSurface->AddRef();
+
+		m_DXVA2Samples.front().SrcSurface->Release();
+
+		for (size_t i = 1; i < m_DXVA2Samples.size(); i++) {
+			auto pre = i - 1;
+			m_DXVA2Samples[pre].Start              = m_DXVA2Samples[i].Start;
+			m_DXVA2Samples[pre].End                = m_DXVA2Samples[i].End;
+			m_DXVA2Samples[pre].SampleFormat.value = m_DXVA2Samples[i].SampleFormat.value;
+			m_DXVA2Samples[pre].SrcSurface         = m_DXVA2Samples[i].SrcSurface;
+		}
+
+		m_DXVA2Samples.back().Start = start;
+		m_DXVA2Samples.back().End = end;
+		m_DXVA2Samples.back().SampleFormat.value = exFmtValue;
+		m_DXVA2Samples.back().SrcSurface = pSurface;
+	}
+
+	const DXVA2_VideoSample* GetVideoSamples() {
+		return m_DXVA2Samples.data();
+	}
+};
+
 // TODO
 // DXVA2 Video Processor
 class CDXVA2VP
