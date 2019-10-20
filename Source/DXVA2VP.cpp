@@ -198,7 +198,7 @@ int GetBitDepth(const D3DFORMAT format)
 	}
 }
 
-HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, D3DFORMAT& outputFmt, UINT& numRefSamples)
+HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width, const UINT height, const DXVA2_ExtendedFormat exFmt, const bool interlaced, D3DFORMAT& outputFmt)
 {
 	CheckPointer(m_pDXVA2_VPService, E_FAIL);
 
@@ -267,7 +267,7 @@ HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width,
 		return E_ABORT;
 	}
 
-	numRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
+	UINT numRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
 	ASSERT(numRefSamples <= MAX_DEINTERLACE_SURFACES);
 
 	m_VideoSamples.Resize(numRefSamples);
@@ -275,6 +275,12 @@ HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width,
 	m_BltParams.DestFormat.value = 0; // output to RGB
 	m_BltParams.DestFormat.SampleFormat = DXVA2_SampleProgressiveFrame; // output to progressive RGB
 	m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_0_255; // output to full range RGB
+	//if (exFmt.NominalRange == DXVA2_NominalRange_0_255 && (m_VendorId == PCIV_NVIDIA || m_VendorId == PCIV_AMDATI)) {
+	//	// hack for Nvidia and AMD, nothing helps Intel
+	//	m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_16_235;
+	//} else {
+	//	m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_0_255; // output to full range RGB
+	//}
 
 	m_srcFormat   = inputFmt;
 	m_srcWidth    = width;
@@ -296,16 +302,42 @@ void CDXVA2VP::ReleaseVideoProcessor()
 	//m_bInterlaced = false;
 }
 
-HRESULT CDXVA2VP::SetInputSurface(IDirect3DSurface9* pTexture2D)
+HRESULT CDXVA2VP::SetInputSurface(IDirect3DSurface9* pSurface, const REFERENCE_TIME start, const REFERENCE_TIME end, const UINT exFmtValue)
 {
-	CheckPointer(pTexture2D, E_POINTER);
+	CheckPointer(pSurface, E_POINTER);
 
-	HRESULT hr = S_OK;
+	m_VideoSamples.Add(pSurface, start, end, exFmtValue);
 
-	return hr;
+	return S_OK;
 }
 
-HRESULT CDXVA2VP::SetProcessParams(const CRect& srcRect, const CRect& dstRect, const DXVA2_ExtendedFormat exFmt)
+IDirect3DSurface9* CDXVA2VP::GetInputSurface(const REFERENCE_TIME start, const REFERENCE_TIME end, const UINT exFmtValue)
+{
+	IDirect3DSurface9** ppSurface = m_VideoSamples.Rotate(start, end, exFmtValue);
+	if (*ppSurface == nullptr) {
+		HRESULT hr = m_pDXVA2_VPService->CreateSurface(
+			m_srcWidth,
+			m_srcHeight,
+			0,
+			m_srcFormat,
+			m_DXVA2VPcaps.InputPool,
+			0,
+			DXVA2_VideoProcessorRenderTarget,
+			ppSurface,
+			nullptr
+		);
+		DLogIf(FAILED(hr), L"CDXVA2VP::GetInputSurface() : CreateSurface failed with error %s", HR2Str(hr));
+		if (S_OK == hr) {
+			IDirect3DDevice9* pDevice;
+			(*ppSurface)->GetDevice(&pDevice);
+			hr = pDevice->ColorFill(*ppSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+		}
+	}
+
+	return *ppSurface;
+}
+
+HRESULT CDXVA2VP::SetProcessParams(const CRect& srcRect, const CRect& dstRect)
 {
 	m_BltParams.TargetRect = dstRect;
 	m_BltParams.ConstrictionSize.cx = dstRect.Width();

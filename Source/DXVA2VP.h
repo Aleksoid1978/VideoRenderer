@@ -130,13 +130,12 @@ public:
 		}
 	}
 
-	void Add(const REFERENCE_TIME start, const REFERENCE_TIME end, const UINT exFmtValue, IDirect3DSurface9* pSurface)
+	void Add(IDirect3DSurface9* pSurface, const REFERENCE_TIME start, const REFERENCE_TIME end, const UINT exFmtValue)
 	{
 		ASSERT(m_DXVA2Samples.size());
 		ASSERT(pSurface);
 
 		pSurface->AddRef();
-
 		m_DXVA2Samples.front().SrcSurface->Release();
 
 		for (size_t i = 1; i < m_DXVA2Samples.size(); i++) {
@@ -151,6 +150,28 @@ public:
 		m_DXVA2Samples.back().End = end;
 		m_DXVA2Samples.back().SampleFormat.value = exFmtValue;
 		m_DXVA2Samples.back().SrcSurface = pSurface;
+	}
+
+	IDirect3DSurface9** Rotate(const REFERENCE_TIME start, const REFERENCE_TIME end, const UINT exFmtValue)
+	{
+		ASSERT(m_DXVA2Samples.size());
+
+		IDirect3DSurface9* pSurface = m_DXVA2Samples.front().SrcSurface;
+
+		for (size_t i = 1; i < m_DXVA2Samples.size(); i++) {
+			auto pre = i - 1;
+			m_DXVA2Samples[pre].Start              = m_DXVA2Samples[i].Start;
+			m_DXVA2Samples[pre].End                = m_DXVA2Samples[i].End;
+			m_DXVA2Samples[pre].SampleFormat.value = m_DXVA2Samples[i].SampleFormat.value;
+			m_DXVA2Samples[pre].SrcSurface         = m_DXVA2Samples[i].SrcSurface;
+		}
+
+		m_DXVA2Samples.back().Start = start;
+		m_DXVA2Samples.back().End = end;
+		m_DXVA2Samples.back().SampleFormat.value = exFmtValue;
+		m_DXVA2Samples.back().SrcSurface = pSurface;
+
+		return &m_DXVA2Samples.back().SrcSurface;
 	}
 
 	REFERENCE_TIME GetFrameStart() {
@@ -190,13 +211,15 @@ public:
 	HRESULT InitVideoService(IDirect3DDevice9* pDevice);
 	void ReleaseVideoService();
 
-	HRESULT InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, D3DFORMAT& outputFmt, UINT& numRefSamples);
+	HRESULT InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width, const UINT height, const DXVA2_ExtendedFormat exFmt, const bool interlaced, D3DFORMAT& outputFmt);
 	void ReleaseVideoProcessor();
 
 	bool IsReady() { return (m_pDXVA2_VP != nullptr); }
 
-	HRESULT SetInputSurface(IDirect3DSurface9* pTexture2D);
-	HRESULT SetProcessParams(const CRect& srcRect, const CRect& dstRect, const DXVA2_ExtendedFormat exFmt);
+	HRESULT SetInputSurface(IDirect3DSurface9* pSurface, const REFERENCE_TIME start, const REFERENCE_TIME end, const UINT exFmtValue);
+	IDirect3DSurface9* GetInputSurface(const REFERENCE_TIME start, const REFERENCE_TIME end, const UINT exFmtValue);
+
+	HRESULT SetProcessParams(const CRect& srcRect, const CRect& dstRect);
 	void SetProcAmpValues(DXVA2_ProcAmpValues *pValues);
 
 	HRESULT Process(IDirect3DSurface9* pRenderTarget, const DXVA2_SampleFormat sampleFormat, const bool second);
