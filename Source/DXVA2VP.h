@@ -150,7 +150,7 @@ public:
 		ASSERT(pSurface);
 
 		pSurface->AddRef();
-		m_DXVA2Samples.front().SrcSurface->Release();
+		SAFE_RELEASE(m_DXVA2Samples.front().SrcSurface);
 
 		for (size_t i = 1; i < m_DXVA2Samples.size(); i++) {
 			auto pre = i - 1;
@@ -245,7 +245,8 @@ public:
 	void CleareInputSurfaces(const DXVA2_ExtendedFormat exFmt);
 
 	HRESULT SetProcessParams(const CRect& srcRect, const CRect& dstRect);
-	void SetProcAmpValues(DXVA2_ProcAmpValues *pValues);
+	void SetProcAmpValues(DXVA2_ProcAmpValues& PropValues);
+	void GetProcAmpRanges(DXVA2_ValueRange(&PropRanges)[4]);
 
 	HRESULT Process(IDirect3DSurface9* pRenderTarget, const DXVA2_SampleFormat sampleFormat, const bool second);
 };

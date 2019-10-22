@@ -141,6 +141,10 @@ BOOL CDXVA2VP::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& vi
 	}
 
 	m_BltParams.BackgroundColor = { 128 * 0x100, 128 * 0x100, 16 * 0x100, 0xFFFF }; // black
+	m_BltParams.ProcAmpValues.Brightness = m_DXVA2ProcAmpRanges[0].DefaultValue;
+	m_BltParams.ProcAmpValues.Contrast   = m_DXVA2ProcAmpRanges[1].DefaultValue;
+	m_BltParams.ProcAmpValues.Hue        = m_DXVA2ProcAmpRanges[2].DefaultValue;
+	m_BltParams.ProcAmpValues.Saturation = m_DXVA2ProcAmpRanges[3].DefaultValue;
 	m_BltParams.Alpha = DXVA2_Fixed32OpaqueAlpha();
 	m_BltParams.NoiseFilterLuma.Level        = NFilterValues[0];
 	m_BltParams.NoiseFilterLuma.Threshold    = NFilterValues[1];
@@ -366,13 +370,21 @@ HRESULT CDXVA2VP::SetProcessParams(const CRect& srcRect, const CRect& dstRect)
 	return S_OK;
 }
 
-void CDXVA2VP::SetProcAmpValues(DXVA2_ProcAmpValues *pValues)
+void CDXVA2VP::SetProcAmpValues(DXVA2_ProcAmpValues& PropValues)
 {
-	m_BltParams.ProcAmpValues.Brightness.ll = std::clamp(pValues->Brightness.ll, m_DXVA2ProcAmpRanges[0].MinValue.ll, m_DXVA2ProcAmpRanges[0].MaxValue.ll);
-	m_BltParams.ProcAmpValues.Contrast.ll   = std::clamp(pValues->Contrast.ll,   m_DXVA2ProcAmpRanges[1].MinValue.ll, m_DXVA2ProcAmpRanges[1].MaxValue.ll);
-	m_BltParams.ProcAmpValues.Hue.ll        = std::clamp(pValues->Hue.ll,        m_DXVA2ProcAmpRanges[2].MinValue.ll, m_DXVA2ProcAmpRanges[2].MaxValue.ll);
-	m_BltParams.ProcAmpValues.Saturation.ll = std::clamp(pValues->Saturation.ll, m_DXVA2ProcAmpRanges[3].MinValue.ll, m_DXVA2ProcAmpRanges[3].MaxValue.ll);
+	m_BltParams.ProcAmpValues.Brightness.ll = std::clamp(PropValues.Brightness.ll, m_DXVA2ProcAmpRanges[0].MinValue.ll, m_DXVA2ProcAmpRanges[0].MaxValue.ll);
+	m_BltParams.ProcAmpValues.Contrast.ll   = std::clamp(PropValues.Contrast.ll,   m_DXVA2ProcAmpRanges[1].MinValue.ll, m_DXVA2ProcAmpRanges[1].MaxValue.ll);
+	m_BltParams.ProcAmpValues.Hue.ll        = std::clamp(PropValues.Hue.ll,        m_DXVA2ProcAmpRanges[2].MinValue.ll, m_DXVA2ProcAmpRanges[2].MaxValue.ll);
+	m_BltParams.ProcAmpValues.Saturation.ll = std::clamp(PropValues.Saturation.ll, m_DXVA2ProcAmpRanges[3].MinValue.ll, m_DXVA2ProcAmpRanges[3].MaxValue.ll);
 	m_bUpdateFilters = true;
+}
+
+void CDXVA2VP::GetProcAmpRanges(DXVA2_ValueRange(&PropRanges)[4])
+{
+	PropRanges[0] = m_DXVA2ProcAmpRanges[0];
+	PropRanges[1] = m_DXVA2ProcAmpRanges[1];
+	PropRanges[2] = m_DXVA2ProcAmpRanges[2];
+	PropRanges[3] = m_DXVA2ProcAmpRanges[3];
 }
 
 HRESULT CDXVA2VP::Process(IDirect3DSurface9* pRenderTarget, const DXVA2_SampleFormat sampleFormat, const bool second)
