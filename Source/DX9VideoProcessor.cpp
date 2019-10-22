@@ -175,9 +175,6 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
 
 	HRESULT hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
 	if (!m_pD3DEx) {
-		hr = Direct3DCreate9Ex(D3D9b_SDK_VERSION, &m_pD3DEx);
-	}
-	if (!m_pD3DEx) {
 		return;
 	}
 

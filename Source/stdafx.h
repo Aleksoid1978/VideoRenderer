@@ -46,4 +46,3 @@ namespace Gdiplus
 #include <numeric>
 #include <vector>
 
-#define CHECK_HR(hr) { if (FAILED(hr)) return hr; }
