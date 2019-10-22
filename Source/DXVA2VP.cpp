@@ -162,6 +162,8 @@ BOOL CDXVA2VP::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& vi
 
 HRESULT CDXVA2VP::InitVideoService(IDirect3DDevice9* pDevice)
 {
+	ReleaseVideoService();
+
 	// Create DXVA2 Video Processor Service.
 	HRESULT hr = DXVA2CreateVideoService(pDevice, IID_IDirectXVideoProcessorService, (VOID**)&m_pDXVA2_VPService);
 	DLogIf(FAILED(hr), L"CDXVA2VP::InitVideoService() : DXVA2CreateVideoService() failed with error %s", HR2Str(hr));
@@ -267,10 +269,10 @@ HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width,
 		return E_ABORT;
 	}
 
-	UINT numRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
-	ASSERT(numRefSamples <= MAX_DEINTERLACE_SURFACES);
+	m_NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
+	ASSERT(m_NumRefSamples <= MAX_DEINTERLACE_SURFACES);
 
-	m_VideoSamples.Resize(numRefSamples);
+	m_VideoSamples.Resize(m_NumRefSamples, exFmt);
 
 	m_BltParams.DestFormat.value = 0; // output to RGB
 	m_BltParams.DestFormat.SampleFormat = DXVA2_SampleProgressiveFrame; // output to progressive RGB
@@ -295,6 +297,7 @@ void CDXVA2VP::ReleaseVideoProcessor()
 	m_pDXVA2_VP.Release();
 
 	m_DXVA2VPcaps = {};
+	m_NumRefSamples = 1;
 
 	m_srcFormat   = D3DFMT_UNKNOWN;
 	m_srcWidth    = 0;
@@ -302,18 +305,18 @@ void CDXVA2VP::ReleaseVideoProcessor()
 	//m_bInterlaced = false;
 }
 
-HRESULT CDXVA2VP::SetInputSurface(IDirect3DSurface9* pSurface, const REFERENCE_TIME start, const REFERENCE_TIME end, const UINT exFmtValue)
+HRESULT CDXVA2VP::SetInputSurface(IDirect3DSurface9* pSurface, const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt)
 {
 	CheckPointer(pSurface, E_POINTER);
 
-	m_VideoSamples.Add(pSurface, start, end, exFmtValue);
+	m_VideoSamples.Add(pSurface, start, end, sampleFmt);
 
 	return S_OK;
 }
 
-IDirect3DSurface9* CDXVA2VP::GetInputSurface(const REFERENCE_TIME start, const REFERENCE_TIME end, const UINT exFmtValue)
+IDirect3DSurface9* CDXVA2VP::GetInputSurface()
 {
-	IDirect3DSurface9** ppSurface = m_VideoSamples.Rotate(start, end, exFmtValue);
+	IDirect3DSurface9** ppSurface = m_VideoSamples.GetSurface();
 	if (*ppSurface == nullptr) {
 		HRESULT hr = m_pDXVA2_VPService->CreateSurface(
 			m_srcWidth,
@@ -335,6 +338,20 @@ IDirect3DSurface9* CDXVA2VP::GetInputSurface(const REFERENCE_TIME start, const R
 	}
 
 	return *ppSurface;
+}
+
+IDirect3DSurface9* CDXVA2VP::GetNextInputSurface(const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt)
+{
+	ASSERT(m_pDXVA2_VPService);
+	ASSERT(m_VideoSamples.Size());
+
+	m_VideoSamples.RotateAndSet(start, end, sampleFmt);
+	return GetInputSurface();
+}
+
+void CDXVA2VP::CleareInputSurfaces(const DXVA2_ExtendedFormat exFmt)
+{
+	m_VideoSamples.Resize(m_VideoSamples.Size(), exFmt);
 }
 
 HRESULT CDXVA2VP::SetProcessParams(const CRect& srcRect, const CRect& dstRect)
