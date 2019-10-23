@@ -1810,10 +1810,6 @@ HRESULT CDX11VideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
 
 HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 {
-	//if (m_SrcSamples.Empty()) {
-	//	return E_FAIL;
-	//}
-
 	CRect rSrcRect(m_srcRect);
 	int w = rSrcRect.Width();
 	int h = rSrcRect.Height();
