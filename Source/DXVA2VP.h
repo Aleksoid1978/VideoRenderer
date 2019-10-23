@@ -251,6 +251,7 @@ public:
 
 	bool IsReady() { return (m_pDXVA2_VP != nullptr); }
 	UINT GetNumRefSamples() { return m_NumRefSamples; }
+	void GetVPParams(GUID& guid, DXVA2_VideoProcessorCaps& caps) { guid = m_DXVA2VPGuid; caps = m_DXVA2VPcaps; }
 
 	HRESULT SetInputSurface(IDirect3DSurface9* pSurface, const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt);
 	IDirect3DSurface9* GetInputSurface();
