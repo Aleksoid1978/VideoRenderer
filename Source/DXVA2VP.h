@@ -124,6 +124,18 @@ public:
 		return m_DXVA2Samples.size();
 	}
 
+	void Clean() {
+		for (auto& dxva2sample : m_DXVA2Samples) {
+			dxva2sample.Start = 0;
+			dxva2sample.End = 0;
+			dxva2sample.SampleFormat.SampleFormat = DXVA2_SampleUnknown;
+			IDirect3DDevice9* pDevice;
+			if (dxva2sample.SrcSurface && S_OK == dxva2sample.SrcSurface->GetDevice(&pDevice)) {
+				pDevice->ColorFill(dxva2sample.SrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+			}
+		}
+	}
+
 	void Clear() {
 		ReleaseSurfaces();
 		m_DXVA2Samples.clear();
@@ -210,6 +222,7 @@ class CDXVA2VP
 {
 private:
 	CComPtr<IDirectXVideoProcessorService> m_pDXVA2_VPService;
+	DWORD m_VendorId = 0;
 	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
 	GUID m_DXVA2VPGuid = GUID_NULL;
 	DXVA2_VideoProcessBltParams m_BltParams = {};
@@ -230,7 +243,7 @@ private:
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc, UINT preferredDeintTech, D3DFORMAT& outputFmt);
 
 public:
-	HRESULT InitVideoService(IDirect3DDevice9* pDevice);
+	HRESULT InitVideoService(IDirect3DDevice9* pDevice, DWORD vendorId);
 	void ReleaseVideoService();
 
 	HRESULT InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width, const UINT height, const DXVA2_ExtendedFormat exFmt, const bool interlaced, D3DFORMAT& outputFmt);
@@ -242,7 +255,8 @@ public:
 	HRESULT SetInputSurface(IDirect3DSurface9* pSurface, const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt);
 	IDirect3DSurface9* GetInputSurface();
 	IDirect3DSurface9* GetNextInputSurface(const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt);
-	void CleareInputSurfaces(const DXVA2_ExtendedFormat exFmt);
+	void ClearInputSurfaces(const DXVA2_ExtendedFormat exFmt);
+	void CleanSamplesData();
 
 	HRESULT SetProcessParams(const CRect& srcRect, const CRect& dstRect);
 	void SetProcAmpValues(DXVA2_ProcAmpValues& PropValues);
