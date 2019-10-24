@@ -70,11 +70,9 @@ private:
 	D3DPRESENT_PARAMETERS m_d3dpp = {};
 
 	// DXVA2 Video Processor
-	CComPtr<IDirectXVideoProcessorService> m_pDXVA2_VPService;
-	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
-	GUID m_DXVA2VPGuid = GUID_NULL;
-	DXVA2_VideoProcessorCaps m_DXVA2VPcaps = {};
+	CDXVA2VP m_DXVA2VP;
 	DXVA2_ValueRange m_DXVA2ProcAmpRanges[4] = {};
+	DXVA2_ProcAmpValues m_DXVA2ProcAmpValues = {};
 
 	// Input parameters
 	FmtConvParams_t m_srcParams = {};
@@ -102,9 +100,7 @@ private:
 	D3DFORMAT m_InternalTexFmt = D3DFMT_X8R8G8B8;
 
 	// Processing parameters
-	VideoSurfaceBuffer m_SrcSamples;
 	DXVA2_SampleFormat m_CurrentSampleFmt = DXVA2_SampleProgressiveFrame;
-	DXVA2_VideoProcessBltParams m_BltParams = {};
 	int m_FieldDrawn = 0;
 
 	CRect m_videoRect;
@@ -162,7 +158,6 @@ private:
 	void ReleaseDevice();
 
 	HRESULT InitializeDXVA2VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_surface);
-	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc, UINT preferredDeintTech);
 
 	HRESULT InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height);
 	HRESULT CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);

@@ -185,7 +185,7 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
 
 	// set default ProcAmp ranges and values
 	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
-	SetDefaultDXVA2ProcAmpValues(m_BltParams.ProcAmpValues);
+	SetDefaultDXVA2ProcAmpValues(m_DXVA2ProcAmpValues);
 }
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
@@ -294,13 +294,10 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 		*pChangeDevice = !bTryToReset;
 	}
 
-	if (!m_pDXVA2_VPService) {
-		// Create DXVA2 Video Processor Service.
-		hr = DXVA2CreateVideoService(m_pD3DDevEx, IID_IDirectXVideoProcessorService, (VOID**)&m_pDXVA2_VPService);
-		if (FAILED(hr)) {
-			DLog(L"CDX9VideoProcessor::Init() : DXVA2CreateVideoService() failed with error %s", HR2Str(hr));
-			return FALSE;
-		}
+	hr = m_DXVA2VP.InitVideoService(m_pD3DDevEx, m_VendorId);
+	if (FAILED(hr)) {
+		DLog(L"CDX9VideoProcessor::Init() : m_DXVA2VP.InitVideoService() failed with error %s", HR2Str(hr));
+		return FALSE;
 	}
 
 	if (m_pFilter->m_pSubCallBack) {
@@ -334,8 +331,7 @@ void CDX9VideoProcessor::ReleaseVP()
 	m_pFilter->ResetStreamingTimes2();
 	m_RenderStats.Reset();
 
-	m_SrcSamples.Clear();
-	m_pDXVA2_VP.Release();
+	m_DXVA2VP.ReleaseVideoProcessor();
 
 	m_TexSrcVideo.Release();
 	m_TexConvert.Release();
@@ -362,7 +358,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 	m_pMemOSDSurface.Release();
 #endif
 
-	m_pDXVA2_VPService.Release();
+	m_DXVA2VP.ReleaseVideoService();
 
 	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
@@ -389,8 +385,6 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 
 	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() started with input surface: %s, %u x %u", D3DFormatToString(dxva2format), width, height);
 
-	CheckPointer(m_pDXVA2_VPService, E_FAIL);
-
 	if (only_update_surface) {
 		if (dxva2format != m_srcParams.DXVA2Format) {
 			DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : incorrect surface format!");
@@ -401,8 +395,7 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 			DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : surface size less than frame size!");
 			return E_FAIL;
 		}
-		m_SrcSamples.Clear();
-		m_pDXVA2_VP.Release();
+		m_DXVA2VP.ReleaseVideoProcessor();
 
 		m_SurfaceWidth  = 0;
 		m_SurfaceHeight = 0;
@@ -413,101 +406,10 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 		return E_FAIL;
 	}
 
-	// Initialize the video descriptor.
-	DXVA2_VideoDesc videodesc = {};
-	videodesc.SampleWidth = width;
-	videodesc.SampleHeight = height;
-	//videodesc.SampleFormat.value = m_srcExFmt.value; // do not need to fill it here
-	videodesc.SampleFormat.SampleFormat = m_bInterlaced ? DXVA2_SampleFieldInterleavedOddFirst : DXVA2_SampleProgressiveFrame;
-	if (dxva2format == D3DFMT_X8R8G8B8 || dxva2format == D3DFMT_A8R8G8B8) {
-		videodesc.Format = D3DFMT_YUY2; // hack
-	} else {
-		videodesc.Format = dxva2format;
-	}
-	videodesc.InputSampleFreq.Numerator = 60;
-	videodesc.InputSampleFreq.Denominator = 1;
-	videodesc.OutputFrameFreq.Numerator = 60;
-	videodesc.OutputFrameFreq.Denominator = 1;
-
-	HRESULT hr = S_OK;
-	// Query the video processor GUID.
-	UINT count;
-	GUID* guids = nullptr;
-	hr = m_pDXVA2_VPService->GetVideoProcessorDeviceGuids(&videodesc, &count, &guids);
+	m_DXVA2OutputFmt = m_InternalTexFmt;
+	HRESULT hr = m_DXVA2VP.InitVideoProcessor(dxva2format, width, height, m_srcExFmt, m_bInterlaced, m_DXVA2OutputFmt);
 	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : GetVideoProcessorDeviceGuids() failed with error %s", HR2Str(hr));
 		return hr;
-	}
-	UINT NumRefSamples = 1;
-	if (m_bInterlaced) {
-		UINT preferredDeintTech = DXVA2_DeinterlaceTech_EdgeFiltering // Intel
-			| DXVA2_DeinterlaceTech_FieldAdaptive
-			| DXVA2_DeinterlaceTech_PixelAdaptive // Nvidia, AMD
-			| DXVA2_DeinterlaceTech_MotionVectorSteered;
-
-		for (UINT i = 0; i < count; i++) {
-			auto& devguid = guids[i];
-			if (CreateDXVA2VPDevice(devguid, videodesc, preferredDeintTech)) {
-				m_DXVA2VPGuid = devguid;
-				break; // found!
-			}
-			m_pDXVA2_VP.Release();
-		}
-
-		if (!m_pDXVA2_VP && CreateDXVA2VPDevice(DXVA2_VideoProcBobDevice, videodesc, 0)) {
-			m_DXVA2VPGuid = DXVA2_VideoProcBobDevice;
-		}
-	}
-
-	CoTaskMemFree(guids);
-
-	if (!m_pDXVA2_VP && CreateDXVA2VPDevice(DXVA2_VideoProcProgressiveDevice, videodesc, 0)) { // Progressive or fall-back for interlaced
-		m_DXVA2VPGuid = DXVA2_VideoProcProgressiveDevice;
-	}
-
-	if (!m_pDXVA2_VP) {
-		return E_FAIL;
-	}
-
-	NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
-	ASSERT(NumRefSamples <= MAX_DEINTERLACE_SURFACES);
-
-	m_SrcSamples.Resize(NumRefSamples, m_srcExFmt.value);
-
-	for (unsigned i = 0; i < NumRefSamples; ++i) {
-		auto& vsample = m_SrcSamples.GetAt(i);
-
-		hr = m_pDXVA2_VPService->CreateSurface(
-			width,
-			height,
-			0,
-			dxva2format,
-			m_DXVA2VPcaps.InputPool,
-			0,
-			DXVA2_VideoProcessorRenderTarget,
-			&vsample.pSrcSurface,
-			nullptr
-		);
-		if (FAILED(hr)) {
-			m_SrcSamples.Clear();
-
-			return hr;
-		}
-
-		// fill the surface in black, to avoid the "green screen"
-		m_pD3DDevEx->ColorFill(vsample.pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
-	}
-
-	m_SrcSamples.UpdateVideoSamples();
-
-	// set output format parameters
-	m_BltParams.DestFormat.value            = 0; // output to RGB
-	m_BltParams.DestFormat.SampleFormat     = DXVA2_SampleProgressiveFrame; // output to progressive RGB
-	if (m_srcExFmt.NominalRange == DXVA2_NominalRange_0_255 && (m_VendorId == PCIV_NVIDIA || m_VendorId == PCIV_AMDATI)) {
-		// hack for Nvidia and AMD, nothing helps Intel
-		m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_16_235;
-	} else {
-		m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_0_255; // output to full range RGB
 	}
 
 	m_SurfaceWidth  = width;
@@ -520,139 +422,12 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 		m_srcHeight      = height;
 	}
 
+	m_DXVA2VP.GetProcAmpRanges(m_DXVA2ProcAmpRanges);
+	m_DXVA2VP.SetProcAmpValues(m_DXVA2ProcAmpValues);
+
 	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() completed successfully");
 
 	return S_OK;
-}
-
-BOOL CDX9VideoProcessor::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc, UINT preferredDeintTech)
-{
-	DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() started for device %s", DXVA2VPDeviceToString(devguid));
-	CheckPointer(m_pDXVA2_VPService, FALSE);
-
-	HRESULT hr = S_OK;
-
-	// Query the supported render target format.
-	UINT count;
-	D3DFORMAT* formats = nullptr;
-	hr = m_pDXVA2_VPService->GetVideoProcessorRenderTargets(devguid, &videodesc, &count, &formats);
-	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : GetVideoProcessorRenderTargets() failed with error %s", HR2Str(hr));
-		return FALSE;
-	}
-#ifdef _DEBUG
-	{
-		CStringW dbgstr = L"DXVA2-VP output formats:";
-		for (UINT j = 0; j < count; j++) {
-			dbgstr.AppendFormat(L"\n  %s", D3DFormatToString(formats[j]));
-		}
-		DLog(dbgstr);
-	}
-#endif
-	m_DXVA2OutputFmt = D3DFMT_UNKNOWN;
-	for (UINT i = 0; i < count; i++) {
-		const auto& fmt = formats[i];
-
-		if (fmt == m_InternalTexFmt) {
-			m_DXVA2OutputFmt = m_InternalTexFmt;
-			break;
-		}
-
-		if (fmt == D3DFMT_A2R10G10B10 && m_InternalTexFmt == D3DFMT_A16B16G16R16F) {
-			m_DXVA2OutputFmt = D3DFMT_A2R10G10B10;
-		}
-		else if (fmt == D3DFMT_X8R8G8B8 && m_DXVA2OutputFmt == D3DFMT_UNKNOWN) {
-			m_DXVA2OutputFmt = D3DFMT_X8R8G8B8;
-		}
-	}
-	CoTaskMemFree(formats);
-	if (m_DXVA2OutputFmt == D3DFMT_UNKNOWN) {
-		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : FAILED. Device doesn't support desired output format");
-		return FALSE;
-	}
-	DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : select %s for output", D3DFormatToString(m_DXVA2OutputFmt));
-
-	// Query video processor capabilities.
-	hr = m_pDXVA2_VPService->GetVideoProcessorCaps(devguid, &videodesc, m_DXVA2OutputFmt, &m_DXVA2VPcaps);
-	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : GetVideoProcessorCaps() failed with error %s", HR2Str(hr));
-		return FALSE;
-	}
-	if (preferredDeintTech && !(m_DXVA2VPcaps.DeinterlaceTechnology & preferredDeintTech)) {
-		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : skip this device, need improved deinterlacing");
-		return FALSE;
-	}
-	// Check to see if the device is hardware device.
-	if (!(m_DXVA2VPcaps.DeviceCaps & DXVA2_VPDev_HardwareDevice)) {
-		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : The DXVA2 device isn't a hardware device");
-		return FALSE;
-	}
-	// Check to see if the device supports all the VP operations we want.
-	const UINT VIDEO_REQUIED_OP = DXVA2_VideoProcess_YUV2RGB | DXVA2_VideoProcess_StretchX | DXVA2_VideoProcess_StretchY;
-	if ((m_DXVA2VPcaps.VideoProcessorOperations & VIDEO_REQUIED_OP) != VIDEO_REQUIED_OP) {
-		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : The DXVA2 device doesn't support the YUV2RGB & Stretch operations");
-		return FALSE;
-	}
-
-	// Finally create a video processor device.
-	hr = m_pDXVA2_VPService->CreateVideoProcessor(devguid, &videodesc, m_DXVA2OutputFmt, 0, &m_pDXVA2_VP);
-	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : CreateVideoProcessor failed with error %s", HR2Str(hr));
-		return FALSE;
-	}
-
-	// Query ProcAmp ranges.
-	for (UINT i = 0; i < std::size(m_DXVA2ProcAmpRanges); i++) {
-		if (m_DXVA2VPcaps.ProcAmpControlCaps & (1 << i)) {
-			hr = m_pDXVA2_VPService->GetProcAmpRange(devguid, &videodesc, m_DXVA2OutputFmt, 1 << i, &m_DXVA2ProcAmpRanges[i]);
-			if (FAILED(hr)) {
-				DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : GetProcAmpRange() failed with error %s", HR2Str(hr));
-				return FALSE;
-			}
-			DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : ProcAmpRange(%u) : %7.2f, %6.2f, %6.2f, %4.2f",
-				i, DXVA2FixedToFloat(m_DXVA2ProcAmpRanges[i].MinValue), DXVA2FixedToFloat(m_DXVA2ProcAmpRanges[i].MaxValue),
-				DXVA2FixedToFloat(m_DXVA2ProcAmpRanges[i].DefaultValue), DXVA2FixedToFloat(m_DXVA2ProcAmpRanges[i].StepSize));
-		}
-	}
-
-	DXVA2_ValueRange range;
-	// Query Noise Filter ranges.
-	DXVA2_Fixed32 NFilterValues[6] = {};
-	if (m_DXVA2VPcaps.VideoProcessorOperations & DXVA2_VideoProcess_NoiseFilter) {
-		for (UINT i = 0; i < 6u; i++) {
-			if (S_OK == m_pDXVA2_VPService->GetFilterPropertyRange(devguid, &videodesc, m_DXVA2OutputFmt, DXVA2_NoiseFilterLumaLevel + i, &range)) {
-				NFilterValues[i] = range.DefaultValue;
-			}
-		}
-	}
-	// Query Detail Filter ranges.
-	DXVA2_Fixed32 DFilterValues[6] = {};
-	if (m_DXVA2VPcaps.VideoProcessorOperations & DXVA2_VideoProcess_DetailFilter) {
-		for (UINT i = 0; i < 6u; i++) {
-			if (S_OK == m_pDXVA2_VPService->GetFilterPropertyRange(devguid, &videodesc, m_DXVA2OutputFmt, DXVA2_DetailFilterLumaLevel + i, &range)) {
-				DFilterValues[i] = range.DefaultValue;
-			}
-		}
-	}
-
-	m_BltParams.BackgroundColor              = { 128 * 0x100, 128 * 0x100, 16 * 0x100, 0xFFFF }; // black
-	m_BltParams.Alpha                        = DXVA2_Fixed32OpaqueAlpha();
-	m_BltParams.NoiseFilterLuma.Level        = NFilterValues[0];
-	m_BltParams.NoiseFilterLuma.Threshold    = NFilterValues[1];
-	m_BltParams.NoiseFilterLuma.Radius       = NFilterValues[2];
-	m_BltParams.NoiseFilterChroma.Level      = NFilterValues[3];
-	m_BltParams.NoiseFilterChroma.Threshold  = NFilterValues[4];
-	m_BltParams.NoiseFilterChroma.Radius     = NFilterValues[5];
-	m_BltParams.DetailFilterLuma.Level       = DFilterValues[0];
-	m_BltParams.DetailFilterLuma.Threshold   = DFilterValues[1];
-	m_BltParams.DetailFilterLuma.Radius      = DFilterValues[2];
-	m_BltParams.DetailFilterChroma.Level     = DFilterValues[3];
-	m_BltParams.DetailFilterChroma.Threshold = DFilterValues[4];
-	m_BltParams.DetailFilterChroma.Radius    = DFilterValues[5];
-
-	DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : create %s processor ", CStringFromGUID(devguid));
-
-	return TRUE;
 }
 
 HRESULT CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height)
@@ -736,10 +511,10 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 {
 	mp_csp_params csp_params;
 	set_colorspace(m_srcExFmt, csp_params.color);
-	csp_params.brightness = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Brightness) / 255;
-	csp_params.contrast   = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Contrast);
-	csp_params.hue        = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Hue) / 180 * acos(-1);
-	csp_params.saturation = DXVA2FixedToFloat(m_BltParams.ProcAmpValues.Saturation);
+	csp_params.brightness = DXVA2FixedToFloat(m_DXVA2ProcAmpValues.Brightness) / 255;
+	csp_params.contrast   = DXVA2FixedToFloat(m_DXVA2ProcAmpValues.Contrast);
+	csp_params.hue        = DXVA2FixedToFloat(m_DXVA2ProcAmpValues.Hue) / 180 * acos(-1);
+	csp_params.saturation = DXVA2FixedToFloat(m_DXVA2ProcAmpValues.Saturation);
 	csp_params.gray       = m_srcParams.CSType == CS_GRAY;
 
 	m_PSConvColorData.bEnable = m_srcParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
@@ -811,8 +586,8 @@ BOOL CDX9VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 		}
 		else {
 			CComPtr<IDirect3DSurface9> pSurface;
-			if (m_pDXVA2_VP && m_SrcSamples.Size()) {
-				pSurface = m_SrcSamples.Get().pSrcSurface;
+			if (m_DXVA2VP.IsReady()) {
+				pSurface = m_DXVA2VP.GetInputSurface();
 			} else {
 				pSurface = m_TexSrcVideo.pSurface;
 			}
@@ -999,17 +774,8 @@ void CDX9VideoProcessor::Start()
 
 void CDX9VideoProcessor::Stop()
 {
-	// reset input buffers
-	for (unsigned i = 0; i < m_SrcSamples.Size(); i++) {
-		auto& SrcSample = m_SrcSamples.GetAt(i);
-		SrcSample.Start = 0;
-		SrcSample.End = 0;
-		SrcSample.SampleFormat = DXVA2_SampleUnknown;
-		// fill the surface in black, to avoid the "green screen"
-		m_pD3DDevEx->ColorFill(SrcSample.pSrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
-
-		m_SrcSamples.UpdateVideoSamples();
-	}
+	//reset input buffers
+	m_DXVA2VP.CleanSamplesData();
 }
 
 HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
@@ -1092,7 +858,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				return E_FAIL;
 			}
 			if (desc.Width != m_SurfaceWidth || desc.Height != m_SurfaceHeight) {
-				if (m_pDXVA2_VP) {
+				if (m_DXVA2VP.IsReady()) {
 					hr = InitializeDXVA2VP(m_srcParams, desc.Width, desc.Height, true);
 				} else {
 					hr = InitializeTexVP(m_srcParams, desc.Width, desc.Height);
@@ -1102,12 +868,15 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				}
 			}
 
-			if (m_pDXVA2_VP) {
-				m_SrcSamples.Next();
-				if (m_SrcSamples.Size() > 1) {
-					hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, m_SrcSamples.Get().pSrcSurface, nullptr, D3DTEXF_NONE);
+			if (m_DXVA2VP.IsReady()) {
+				const REFERENCE_TIME start_100ns = m_pFilter->m_FrameStats.GetFrames() * 170000i64;
+				const REFERENCE_TIME end_100ns = start_100ns + 170000i64;
+
+				if (m_DXVA2VP.GetNumRefSamples() > 1) {
+					IDirect3DSurface9* pDXVA2VPSurface = m_DXVA2VP.GetNextInputSurface(start_100ns, end_100ns, m_CurrentSampleFmt);
+					hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, pDXVA2VPSurface, nullptr, D3DTEXF_NONE);
 				} else {
-					m_SrcSamples.Get().pSrcSurface = pSurface;
+					m_DXVA2VP.SetInputSurface(pSurface, start_100ns, end_100ns, m_CurrentSampleFmt);
 				}
 			}
 			else if (m_TexSrcVideo.Plane2.pSurface) {
@@ -1142,16 +911,18 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 
 			D3DLOCKED_RECT lr;
 
-			if (m_pDXVA2_VP) {
-				m_SrcSamples.Next();
-				IDirect3DSurface9* pSrcSurface = m_SrcSamples.Get().pSrcSurface;
+			if (m_DXVA2VP.IsReady()) {
+				const REFERENCE_TIME start_100ns = m_pFilter->m_FrameStats.GetFrames() * 170000i64;
+				const REFERENCE_TIME end_100ns = start_100ns + 170000i64;
 
-				hr = pSrcSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
+				IDirect3DSurface9* pDXVA2VPSurface = m_DXVA2VP.GetNextInputSurface(start_100ns, end_100ns, m_CurrentSampleFmt);
+
+				hr = pDXVA2VPSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 				if (S_OK == hr) {
 					ASSERT(m_pConvertFn);
 					BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
 					m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
-					hr = pSrcSurface->UnlockRect();
+					hr = pDXVA2VPSurface->UnlockRect();
 				}
 			} else {
 				if (m_TexSrcVideo.Plane2.pSurface) {
@@ -1192,16 +963,6 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 
-	if (m_pDXVA2_VP) {
-		const REFERENCE_TIME start_100ns = m_pFilter->m_FrameStats.GetFrames() * 170000i64;
-		const REFERENCE_TIME end_100ns = start_100ns + 170000i64;
-		m_SrcSamples.Get().Start = start_100ns;
-		m_SrcSamples.Get().End   = end_100ns;
-		m_SrcSamples.Get().SampleFormat = m_CurrentSampleFmt;
-
-		m_SrcSamples.UpdateVideoSamples();
-	}
-
 	m_RenderStats.copyticks = GetPreciseTick() - tick;
 
 	return hr;
@@ -1231,7 +992,7 @@ HRESULT CDX9VideoProcessor::Render(int field)
 			ClipToSurface(desc.Width, desc.Height, m_srcRenderRect, m_dstRenderRect);
 		}
 
-		if (m_pDXVA2_VP) {
+		if (m_DXVA2VP.IsReady()) {
 			hr = ProcessDXVA2(pBackBuffer, m_srcRenderRect, m_dstRenderRect, m_FieldDrawn == 2);
 		} else {
 			hr = ProcessTex(pBackBuffer, m_srcRenderRect, m_dstRenderRect);
@@ -1401,7 +1162,7 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 		return hr;
 	}
 
-	if (m_pDXVA2_VP) {
+	if (m_DXVA2VP.IsReady()) {
 		hr = ProcessDXVA2(pRGB32Surface, rSrcRect, rDstRect, 0);
 	} else {
 		hr = ProcessTex(pRGB32Surface, rSrcRect, rDstRect);
@@ -1427,10 +1188,14 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 	str.AppendFormat(L"\nGraphics adapter: %s", m_strAdapterDescription);
 
 	str.Append(L"\nVideoProcessor  : ");
-	if (m_pDXVA2_VP) {
-		str.AppendFormat(L"DXVA2 %s", DXVA2VPDeviceToString(m_DXVA2VPGuid));
+	if (m_DXVA2VP.IsReady()) {
+		GUID DXVA2VPGuid;
+		DXVA2_VideoProcessorCaps DXVA2VPcaps;
+		m_DXVA2VP.GetVPParams(DXVA2VPGuid, DXVA2VPcaps);
 
-		UINT dt = m_DXVA2VPcaps.DeinterlaceTechnology;
+		str.AppendFormat(L"DXVA2 %s", DXVA2VPDeviceToString(DXVA2VPGuid));
+
+		UINT dt = DXVA2VPcaps.DeinterlaceTechnology;
 		str.Append(L"\nDeinterlaceTech.:");
 		if (dt & DXVA2_DeinterlaceTech_Mask) {
 			if (dt & DXVA2_DeinterlaceTech_BOBLineReplicate)       str.Append(L" BOBLineReplicate,");
@@ -1443,11 +1208,10 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 			if (dt & DXVA2_DeinterlaceTech_MotionVectorSteered)    str.Append(L" MotionVectorSteered,");
 			if (dt & DXVA2_DeinterlaceTech_InverseTelecine)        str.Append(L" InverseTelecine");
 			str.TrimRight(',');
-				str.AppendFormat(L"\nReferenceSamples: Backward %u, Forward %u", m_DXVA2VPcaps.NumBackwardRefSamples, m_DXVA2VPcaps.NumForwardRefSamples);
+				str.AppendFormat(L"\nReferenceSamples: Backward %u, Forward %u", DXVA2VPcaps.NumBackwardRefSamples, DXVA2VPcaps.NumForwardRefSamples);
 		} else {
 			str.Append(L" none");
 		}
-
 	} else {
 		str.Append(L"Shaders");
 	}
@@ -1545,8 +1309,8 @@ void CDX9VideoProcessor::SetDownscaling(int value)
 
 void CDX9VideoProcessor::Flush()
 {
-	if (m_bSrcFromGPU && m_pDXVA2_VP && m_SrcSamples.Size() == 1) {
-		m_SrcSamples.Resize(m_SrcSamples.Size(), m_srcExFmt.value);
+	if (m_bSrcFromGPU && m_DXVA2VP.IsReady() && m_DXVA2VP.GetNumRefSamples() == 1) {
+		m_DXVA2VP.ClearInputSurfaces(m_srcExFmt);
 	}
 }
 
@@ -1554,20 +1318,9 @@ HRESULT CDX9VideoProcessor::DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const 
 {
 	// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx
 
-	// Initialize VPBlt parameters
-	if (second) {
-		m_BltParams.TargetFrame = (m_SrcSamples.Get().Start + m_SrcSamples.Get().End) / 2;
-	} else {
-		m_BltParams.TargetFrame = m_SrcSamples.Get().Start;
-	}
-	m_BltParams.TargetRect = rDstRect;
-	m_BltParams.ConstrictionSize.cx = rDstRect.Width();
-	m_BltParams.ConstrictionSize.cy = rDstRect.Height();
+	m_DXVA2VP.SetProcessParams(rSrcRect, rDstRect);
 
-	// Initialize main stream video samples
-	m_SrcSamples.SetRects(rSrcRect, rDstRect);
-
-	HRESULT hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &m_BltParams, m_SrcSamples.GetVideoSamples(), m_SrcSamples.Size(), nullptr);
+	HRESULT hr = m_DXVA2VP.Process(pRenderTarget, m_CurrentSampleFmt, second);
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::DXVA2VPPass() : VideoProcessBlt() failed with error %s", HR2Str(hr));
 
 	return hr;
@@ -1575,7 +1328,7 @@ HRESULT CDX9VideoProcessor::DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const 
 
 void CDX9VideoProcessor::UpdateVideoTexDXVA2VP()
 {
-	if (m_pDXVA2_VP) {
+	if (m_DXVA2VP.IsReady()) {
 		if (m_bVPScaling) {
 			m_TexConvert.Release();
 		} else {
@@ -2015,7 +1768,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 			}
 		}
 		m_strStatsStatic2.Append(L"\nVideoProcessor: ");
-		if (m_pDXVA2_VP) {
+		if (m_DXVA2VP.IsReady()) {
 			m_strStatsStatic2.AppendFormat(L"DXVA2 VP, output to %s", D3DFormatToString(m_DXVA2OutputFmt));
 		} else {
 			m_strStatsStatic2.Append(L"Shaders");
@@ -2076,7 +1829,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	const int dstH = m_dstRenderRect.Height();
 	str.AppendFormat(L"\nScaling       : %dx%d -> %dx%d", srcW, srcH, dstW, dstH);
 	if (srcW != dstW || srcH != dstH) {
-		if (m_pDXVA2_VP && m_bVPScaling) {
+		if (m_DXVA2VP.IsReady() && m_bVPScaling) {
 			str.Append(L" DXVA2");
 		}
 		else {
@@ -2212,10 +1965,10 @@ STDMETHODIMP CDX9VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 		return MF_E_TRANSFORM_TYPE_NOT_SET;
 	}
 
-	if (dwFlags&DXVA2_ProcAmp_Brightness) { Values->Brightness = m_BltParams.ProcAmpValues.Brightness; }
-	if (dwFlags&DXVA2_ProcAmp_Contrast)   { Values->Contrast   = m_BltParams.ProcAmpValues.Contrast; }
-	if (dwFlags&DXVA2_ProcAmp_Hue)        { Values->Hue        = m_BltParams.ProcAmpValues.Hue; }
-	if (dwFlags&DXVA2_ProcAmp_Saturation) { Values->Saturation = m_BltParams.ProcAmpValues.Saturation; }
+	if (dwFlags&DXVA2_ProcAmp_Brightness) { Values->Brightness = m_DXVA2ProcAmpValues.Brightness; }
+	if (dwFlags&DXVA2_ProcAmp_Contrast)   { Values->Contrast   = m_DXVA2ProcAmpValues.Contrast; }
+	if (dwFlags&DXVA2_ProcAmp_Hue)        { Values->Hue        = m_DXVA2ProcAmpValues.Hue; }
+	if (dwFlags&DXVA2_ProcAmp_Saturation) { Values->Saturation = m_DXVA2ProcAmpValues.Saturation; }
 
 	return S_OK;
 }
@@ -2231,19 +1984,20 @@ STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 		CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
 		if (dwFlags&DXVA2_ProcAmp_Brightness) {
-			m_BltParams.ProcAmpValues.Brightness.ll = std::clamp(pValues->Brightness.ll, m_DXVA2ProcAmpRanges[0].MinValue.ll, m_DXVA2ProcAmpRanges[0].MaxValue.ll);
+			m_DXVA2ProcAmpValues.Brightness.ll = std::clamp(pValues->Brightness.ll, m_DXVA2ProcAmpRanges[0].MinValue.ll, m_DXVA2ProcAmpRanges[0].MaxValue.ll);
 		}
 		if (dwFlags&DXVA2_ProcAmp_Contrast) {
-			m_BltParams.ProcAmpValues.Contrast.ll = std::clamp(pValues->Contrast.ll, m_DXVA2ProcAmpRanges[1].MinValue.ll, m_DXVA2ProcAmpRanges[1].MaxValue.ll);
+			m_DXVA2ProcAmpValues.Contrast.ll = std::clamp(pValues->Contrast.ll, m_DXVA2ProcAmpRanges[1].MinValue.ll, m_DXVA2ProcAmpRanges[1].MaxValue.ll);
 		}
 		if (dwFlags&DXVA2_ProcAmp_Hue) {
-			m_BltParams.ProcAmpValues.Hue.ll = std::clamp(pValues->Hue.ll, m_DXVA2ProcAmpRanges[2].MinValue.ll, m_DXVA2ProcAmpRanges[2].MaxValue.ll);
+			m_DXVA2ProcAmpValues.Hue.ll = std::clamp(pValues->Hue.ll, m_DXVA2ProcAmpRanges[2].MinValue.ll, m_DXVA2ProcAmpRanges[2].MaxValue.ll);
 		}
 		if (dwFlags&DXVA2_ProcAmp_Saturation) {
-			m_BltParams.ProcAmpValues.Saturation.ll = std::clamp(pValues->Saturation.ll, m_DXVA2ProcAmpRanges[3].MinValue.ll, m_DXVA2ProcAmpRanges[3].MaxValue.ll);
+			m_DXVA2ProcAmpValues.Saturation.ll = std::clamp(pValues->Saturation.ll, m_DXVA2ProcAmpRanges[3].MinValue.ll, m_DXVA2ProcAmpRanges[3].MaxValue.ll);
 		}
 
-		if (!m_pDXVA2_VP) {
+		m_DXVA2VP.SetProcAmpValues(m_DXVA2ProcAmpValues);
+		if (!m_DXVA2VP.IsReady()) {
 			SetShaderConvertColorParams();
 		}
 	}
