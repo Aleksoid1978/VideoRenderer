@@ -178,6 +178,8 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 CMpcVideoRenderer::~CMpcVideoRenderer()
 {
+	DLog(L"~CMpcVideoRenderer()");
+
 	if (m_DX9Thread.joinable()) {
 		m_evQuit.Set();
 		m_DX9Thread.join();
@@ -224,6 +226,8 @@ void CMpcVideoRenderer::DX9Thread()
 
 void CMpcVideoRenderer::NewSegment(REFERENCE_TIME startTime)
 {
+	DLog(L"CMpcVideoRenderer::NewSegment()");
+
 	m_rtStartTime = startTime;
 
 	if (!m_bUsedD3D11) {

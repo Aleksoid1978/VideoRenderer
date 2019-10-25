@@ -72,10 +72,12 @@ void ComboBox_SelectByItemData(HWND hWnd, int nIDComboBox, LONG_PTR data)
 CVRMainPPage::CVRMainPPage(LPUNKNOWN lpunk, HRESULT* phr) :
 	CBasePropertyPage(L"MainProp", lpunk, IDD_MAINPROPPAGE, IDS_MAINPROPPAGE_TITLE)
 {
+	DLog(L"CVRMainPPage()");
 }
 
 CVRMainPPage::~CVRMainPPage()
 {
+	DLog(L"~CVRMainPPage()");
 }
 
 void CVRMainPPage::SetControls()
@@ -292,10 +294,13 @@ HRESULT CVRMainPPage::OnApplyChanges()
 CVRInfoPPage::CVRInfoPPage(LPUNKNOWN lpunk, HRESULT* phr) :
 	CBasePropertyPage(L"InfoProp", lpunk, IDD_INFOPROPPAGE, IDS_INFOPROPPAGE_TITLE)
 {
+	DLog(L"CVRInfoPPage()");
 }
 
 CVRInfoPPage::~CVRInfoPPage()
 {
+	DLog(L"~CVRInfoPPage()");
+
 	if (m_hMonoFont) {
 		DeleteObject(m_hMonoFont);
 		m_hMonoFont = 0;
