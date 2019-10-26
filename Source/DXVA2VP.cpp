@@ -115,9 +115,15 @@ BOOL CDXVA2VP::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& vi
 		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : GetVideoProcessorCaps() failed with error %s", HR2Str(hr));
 		return FALSE;
 	}
-	if (preferredDeintTech && !(m_DXVA2VPcaps.DeinterlaceTechnology & preferredDeintTech)) {
-		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : skip this device, need improved deinterlacing");
-		return FALSE;
+	if (preferredDeintTech) {
+		if (!(m_DXVA2VPcaps.DeinterlaceTechnology & preferredDeintTech)) {
+			DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : skip this device, need improved deinterlacing");
+			return FALSE;
+		}
+		if (m_DXVA2VPcaps.NumForwardRefSamples > 0) {
+			DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : skip this device, ForwardRefSamples are not supported");
+			return FALSE;
+		}
 	}
 	// Check to see if the device is hardware device.
 	if (!(m_DXVA2VPcaps.DeviceCaps & DXVA2_VPDev_HardwareDevice)) {
@@ -277,17 +283,11 @@ HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width,
 	}
 
 	if (!m_pDXVA2_VP) {
+		m_DXVA2VPcaps = {};
 		return E_FAIL;
 	}
 
 	outputFmt = TestOutputFmt;
-
-	if (m_DXVA2VPcaps.NumForwardRefSamples > 0) {
-		// we don't support this
-		ReleaseVideoProcessor();
-
-		return E_ABORT;
-	}
 
 	m_NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
 	ASSERT(m_NumRefSamples <= MAX_DEINTERLACE_SURFACES);
