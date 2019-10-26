@@ -247,22 +247,21 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 			//UINT max_back_refs = 0;
 			//UINT max_fwd_refs = 0;
 
-			D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS rateCaps = {};
-			if (S_OK == m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(procIndex, &rateCaps)) {
+			if (S_OK == m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(procIndex, &m_RateConvCaps)) {
 				//max_back_refs = rateCaps.PastFrames;
 				//max_fwd_refs = rateCaps.FutureFrames;
 #ifdef _DEBUG
 				dbgstr = L"VideoProcessorRateConversionCapsCaps:";
 				dbgstr.Append(L"\n  ProcessorCaps:");
-				if (rateCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND)               { dbgstr.Append(L" Blend,"); }
-				if (rateCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB)                 { dbgstr.Append(L" Bob,"); }
-				if (rateCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_ADAPTIVE)            { dbgstr.Append(L" Adaptive,"); }
-				if (rateCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_MOTION_COMPENSATION) { dbgstr.Append(L" Motion Compensation,"); }
-				if (rateCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_INVERSE_TELECINE)                { dbgstr.Append(L" Inverse Telecine,"); }
-				if (rateCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_FRAME_RATE_CONVERSION)           { dbgstr.Append(L" Frame Rate Conversion"); }
+				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND)               { dbgstr.Append(L" Blend,"); }
+				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB)                 { dbgstr.Append(L" Bob,"); }
+				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_ADAPTIVE)            { dbgstr.Append(L" Adaptive,"); }
+				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_MOTION_COMPENSATION) { dbgstr.Append(L" Motion Compensation,"); }
+				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_INVERSE_TELECINE)                { dbgstr.Append(L" Inverse Telecine,"); }
+				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_FRAME_RATE_CONVERSION)           { dbgstr.Append(L" Frame Rate Conversion"); }
 				dbgstr.TrimRight(',');
-				dbgstr.AppendFormat(L"\n  PastFrames   : %u", rateCaps.PastFrames);
-				dbgstr.AppendFormat(L"\n  FutureFrames : %u", rateCaps.FutureFrames);
+				dbgstr.AppendFormat(L"\n  PastFrames   : %u", m_RateConvCaps.PastFrames);
+				dbgstr.AppendFormat(L"\n  FutureFrames : %u", m_RateConvCaps.FutureFrames);
 				DLog(dbgstr);
 #endif
 			}
@@ -320,11 +319,18 @@ void CD3D11VP::ReleaseVideoProcessor()
 	m_pVideoProcessorEnum.Release();
 
 	m_VPCaps = {};
+	m_RateConvCaps = {};
 
 	m_srcFormat   = DXGI_FORMAT_UNKNOWN;
 	m_srcWidth    = 0;
 	m_srcHeight   = 0;
 	//m_bInterlaced = false;
+}
+
+void CD3D11VP::GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS& rateConvCaps)
+{
+	caps = m_VPCaps;
+	rateConvCaps = m_RateConvCaps;
 }
 
 HRESULT CD3D11VP::SetInputTexture(ID3D11Texture2D* pTexture2D)

@@ -1208,7 +1208,7 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 			if (dt & DXVA2_DeinterlaceTech_MotionVectorSteered)    str.Append(L" MotionVectorSteered,");
 			if (dt & DXVA2_DeinterlaceTech_InverseTelecine)        str.Append(L" InverseTelecine");
 			str.TrimRight(',');
-				str.AppendFormat(L"\nReferenceSamples: Backward %u, Forward %u", DXVA2VPcaps.NumBackwardRefSamples, DXVA2VPcaps.NumForwardRefSamples);
+			str.AppendFormat(L"\nReferenceSamples: Backward %u, Forward %u", DXVA2VPcaps.NumBackwardRefSamples, DXVA2VPcaps.NumForwardRefSamples);
 		} else {
 			str.Append(L" none");
 		}

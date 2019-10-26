@@ -1864,7 +1864,24 @@ HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 {
 	str = L"DirectX 11";
 	str.AppendFormat(L"\nGraphics adapter: %s", m_strAdapterDescription);
-	str.AppendFormat(L"\nVideoProcessor  : %s", m_D3D11VP.IsReady() ? L"D3D11" : L"Shaders");
+	str.Append(L"\nVideoProcessor  : ");
+	if (m_D3D11VP.IsReady()) {
+		D3D11_VIDEO_PROCESSOR_CAPS caps;
+		D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS rateConvCaps;
+		m_D3D11VP.GetVPParams(caps, rateConvCaps);
+
+		str.Append(L"\nDeinterlaceTech.:");
+		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND)               str.Append(L" Blend,");
+		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB)                 str.Append(L" Bob,");
+		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_ADAPTIVE)            str.Append(L" Adaptive,");
+		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_MOTION_COMPENSATION) str.Append(L" Motion Compensation,");
+		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_INVERSE_TELECINE)                str.Append(L" Inverse Telecine,");
+		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_FRAME_RATE_CONVERSION)           str.Append(L" Frame Rate Conversion");
+		str.TrimRight(',');
+		str.AppendFormat(L"\nReference Frames: Past %u, Future %u", rateConvCaps.PastFrames, rateConvCaps.FutureFrames);
+	} else {
+		str.Append(L"Shaders");
+	}
 
 #ifdef _DEBUG
 	str.AppendFormat(L"\nSource rect   : %d,%d,%d,%d - %dx%d", m_srcRect.left, m_srcRect.top, m_srcRect.right, m_srcRect.bottom, m_srcRect.Width(), m_srcRect.Height());
