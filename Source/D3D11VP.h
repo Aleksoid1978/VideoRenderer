@@ -43,7 +43,7 @@ private:
 	DXGI_FORMAT m_srcFormat = DXGI_FORMAT_UNKNOWN;
 	UINT m_srcWidth    = 0;
 	UINT m_srcHeight   = 0;
-	bool m_bInterlaced = false;
+	//bool m_bInterlaced = false;
 
 public:
 	HRESULT InitVideDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);

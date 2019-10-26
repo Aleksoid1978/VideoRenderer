@@ -251,7 +251,7 @@ HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width,
 	D3DFORMAT TestOutputFmt = outputFmt;
 
 	if (interlaced) {
-		UINT preferredDeintTech = DXVA2_DeinterlaceTech_EdgeFiltering // Intel
+		const UINT preferredDeintTech = DXVA2_DeinterlaceTech_EdgeFiltering // Intel
 			| DXVA2_DeinterlaceTech_FieldAdaptive
 			| DXVA2_DeinterlaceTech_PixelAdaptive // Nvidia, AMD
 			| DXVA2_DeinterlaceTech_MotionVectorSteered;

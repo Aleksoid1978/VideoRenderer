@@ -222,33 +222,54 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 		}
 	}
 
+	UINT procIndex = 0;
+	if (interlaced) {
+		// try to find best processor
+		const UINT preferredDeintCaps = D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND
+			| D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB
+			| D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_ADAPTIVE
+			| D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_MOTION_COMPENSATION;
+		UINT maxProcCaps = 0;
 
-	UINT index = 0;
-	if (m_bInterlaced) {
-		std::vector<D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS> convCapsArray;
-		convCapsArray.resize(m_VPCaps.RateConversionCapsCount);
-		for (UINT i = 0; i < m_VPCaps.RateConversionCapsCount; i++) {
-			hr = m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(i, &convCapsArray[i]);
-		}
-
-		UINT proccaps = D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND + D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB + D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_ADAPTIVE + D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_MOTION_COMPENSATION;
 		D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS convCaps = {};
-		for (index = 0; index < m_VPCaps.RateConversionCapsCount; index++) {
-			hr = m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(index, &convCaps);
-			if (S_OK == hr) {
-				// Check the caps to see which deinterlacer is supported
-				if ((convCaps.ProcessorCaps & proccaps) != 0) {
-					break;
+		for (UINT i = 0; i < m_VPCaps.RateConversionCapsCount; i++) {
+			if (S_OK == m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(i, &convCaps)) {
+				// check only deinterlace caps
+				if ((convCaps.ProcessorCaps & preferredDeintCaps) > maxProcCaps) {
+					procIndex = i;
+					maxProcCaps = convCaps.ProcessorCaps & preferredDeintCaps;
 				}
 			}
 		}
-		if (index >= m_VPCaps.RateConversionCapsCount) {
-			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : deinterlace caps don't support");
-			return E_FAIL;
+
+		DLogIf(!maxProcCaps, L"CDX11VideoProcessor::InitializeD3D11VP() : deinterlace caps don't support");
+		if (maxProcCaps) {
+			//UINT max_back_refs = 0;
+			//UINT max_fwd_refs = 0;
+
+			D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS rateCaps = {};
+			if (S_OK == m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(procIndex, &rateCaps)) {
+				//max_back_refs = rateCaps.PastFrames;
+				//max_fwd_refs = rateCaps.FutureFrames;
+#ifdef _DEBUG
+				dbgstr = L"VideoProcessorRateConversionCapsCaps:";
+				dbgstr.Append(L"\n  ProcessorCaps:");
+				if (rateCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND)               { dbgstr.Append(L" Blend,"); }
+				if (rateCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB)                 { dbgstr.Append(L" Bob,"); }
+				if (rateCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_ADAPTIVE)            { dbgstr.Append(L" Adaptive,"); }
+				if (rateCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_MOTION_COMPENSATION) { dbgstr.Append(L" Motion Compensation,"); }
+				if (rateCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_INVERSE_TELECINE)                { dbgstr.Append(L" Inverse Telecine,"); }
+				if (rateCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_FRAME_RATE_CONVERSION)           { dbgstr.Append(L" Frame Rate Conversion"); }
+				dbgstr.TrimRight(',');
+				dbgstr.AppendFormat(L"\n  PastFrames   : %u", rateCaps.PastFrames);
+				dbgstr.AppendFormat(L"\n  FutureFrames : %u", rateCaps.FutureFrames);
+				DLog(dbgstr);
+#endif
+			}
 		}
 	}
 
-	hr = m_pVideoDevice->CreateVideoProcessor(m_pVideoProcessorEnum, index, &m_pVideoProcessor);
+	hr = m_pVideoDevice->CreateVideoProcessor(m_pVideoProcessorEnum, procIndex, &m_pVideoProcessor);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateVideoProcessor() failed with error %s", HR2Str(hr));
 		return hr;
@@ -287,7 +308,7 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 	m_srcFormat   = inputFmt;
 	m_srcWidth    = width;
 	m_srcHeight   = height;
-	m_bInterlaced = interlaced;
+	//m_bInterlaced = interlaced;
 
 	return hr;
 }
@@ -303,7 +324,7 @@ void CD3D11VP::ReleaseVideoProcessor()
 	m_srcFormat   = DXGI_FORMAT_UNKNOWN;
 	m_srcWidth    = 0;
 	m_srcHeight   = 0;
-	m_bInterlaced = false;
+	//m_bInterlaced = false;
 }
 
 HRESULT CD3D11VP::SetInputTexture(ID3D11Texture2D* pTexture2D)
