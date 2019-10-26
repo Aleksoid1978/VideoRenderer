@@ -186,7 +186,8 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 	}
 
 	if (m_hWnd) {
-		DestroyWindow(m_hWnd);
+		BOOL ret = DestroyWindow(m_hWnd);
+		DLogIf(!ret, L"Window destruction failed with error %s", HR2Str(HRESULT_FROM_WIN32(GetLastError())));
 	}
 
 	UnregisterClassW(g_szClassName, g_hInst);
