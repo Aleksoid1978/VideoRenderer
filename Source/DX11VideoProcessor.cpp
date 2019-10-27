@@ -1866,6 +1866,8 @@ HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 	str.AppendFormat(L"\nGraphics adapter: %s", m_strAdapterDescription);
 	str.Append(L"\nVideoProcessor  : ");
 	if (m_D3D11VP.IsReady()) {
+		str.Append(L"D3D11");
+
 		D3D11_VIDEO_PROCESSOR_CAPS caps;
 		D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS rateConvCaps;
 		m_D3D11VP.GetVPParams(caps, rateConvCaps);
