@@ -23,83 +23,6 @@
 #include <atltypes.h>
 #include <dxva2api.h>
 
-struct VideoSurface {
-	REFERENCE_TIME Start = 0;
-	REFERENCE_TIME End = 0;
-	CComPtr<IDirect3DSurface9> pSrcSurface;
-	DXVA2_SampleFormat SampleFormat = DXVA2_SampleUnknown;
-};
-
-class VideoSurfaceBuffer
-{
-	std::vector<VideoSurface> m_Surfaces;
-	unsigned m_LastPos = 0;
-	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
-
-public:
-	unsigned Size() const {
-		return (unsigned)m_Surfaces.size();
-	}
-
-	bool Empty() const {
-		return m_Surfaces.empty();
-	}
-
-	void Clear() {
-		m_Surfaces.clear();
-		m_DXVA2Samples.clear();
-	}
-
-	void Resize(const unsigned size, const UINT exFmtValue) {
-		Clear();
-		m_Surfaces.resize(size);
-		m_LastPos = Size() - 1;
-		m_DXVA2Samples.resize(size);
-
-		for (auto& dxva2sample : m_DXVA2Samples) {
-			dxva2sample.SampleFormat.value = exFmtValue;
-			dxva2sample.PlanarAlpha = DXVA2_Fixed32OpaqueAlpha();
-		}
-	}
-
-	void UpdateVideoSamples() {
-		for (unsigned i = 0; i < m_DXVA2Samples.size(); i++) {
-			const auto& vsurface = GetAt(i);
-			m_DXVA2Samples[i].Start = vsurface.Start;
-			m_DXVA2Samples[i].End = vsurface.End;
-			m_DXVA2Samples[i].SampleFormat.SampleFormat = vsurface.SampleFormat;
-			m_DXVA2Samples[i].SrcSurface = vsurface.pSrcSurface;
-		}
-	}
-
-	VideoSurface& Get() {
-		return m_Surfaces[m_LastPos];
-	}
-
-	VideoSurface& GetAt(const unsigned pos) {
-		unsigned InternalPos = (m_LastPos + 1 + pos) % Size();
-		return m_Surfaces[InternalPos];
-	}
-
-	void Next() {
-		m_LastPos++;
-		if (m_LastPos >= Size()) {
-			m_LastPos = 0;
-		}
-	}
-
-	void SetRects(const CRect& SrcRect, const CRect& DstRect) {
-		for (auto& dxva2sample : m_DXVA2Samples) {
-			dxva2sample.SrcRect = SrcRect;
-			dxva2sample.DstRect = DstRect;
-		}
-	}
-
-	const DXVA2_VideoSample* GetVideoSamples() {
-		return m_DXVA2Samples.data();
-	}
-};
-
 class VideoSampleBuffer
 {
 private:
@@ -180,7 +103,9 @@ public:
 
 	void RotateAndSet(const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt)
 	{
-		if (m_DXVA2Samples.size()) {
+		ASSERT(m_DXVA2Samples.size());
+
+		if (m_DXVA2Samples.size() > 1) {
 			IDirect3DSurface9* pSurface = m_DXVA2Samples.front().SrcSurface;
 
 			for (size_t i = 1; i < m_DXVA2Samples.size(); i++) {
@@ -191,11 +116,12 @@ public:
 				m_DXVA2Samples[pre].SrcSurface                = m_DXVA2Samples[i].SrcSurface;
 			}
 
-			m_DXVA2Samples.back().Start = start;
-			m_DXVA2Samples.back().End = end;
-			m_DXVA2Samples.back().SampleFormat.SampleFormat = sampleFmt;
 			m_DXVA2Samples.back().SrcSurface = pSurface;
 		}
+
+		m_DXVA2Samples.back().Start = start;
+		m_DXVA2Samples.back().End = end;
+		m_DXVA2Samples.back().SampleFormat.SampleFormat = sampleFmt;
 	}
 
 	IDirect3DSurface9** GetSurface()
