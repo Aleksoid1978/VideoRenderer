@@ -142,7 +142,6 @@ public:
 	}
 };
 
-// TODO
 // DXVA2 Video Processor
 class CDXVA2VP
 {

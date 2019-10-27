@@ -23,6 +23,82 @@
 #include <atltypes.h>
 #include <d3d11.h>
 
+class VideoTextureBuffer // TODO
+{
+private:
+	std::vector<ID3D11Texture2D*> m_Textures;
+
+	void ReleaseTextures() {
+		for (auto& texture : m_Textures) {
+			SAFE_RELEASE(texture);
+		}
+	}
+
+public:
+	~VideoTextureBuffer() {
+		ReleaseTextures();
+	}
+
+	//const ID3D11Texture2D** Data() {
+	//	return m_Textures.data();
+	//}
+
+	const UINT Size() {
+		return m_Textures.size();
+	}
+
+	void Clean(ID3D11DeviceContext* pDeviceContext) {
+		for (auto& texture : m_Textures) {
+			ID3D11Device* pDevice;
+			texture->GetDevice(&pDevice);
+
+			ID3D11RenderTargetView* pRenderTargetView;
+			if (S_OK == pDevice->CreateRenderTargetView(texture, nullptr, &pRenderTargetView)) {
+				const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+				pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
+				pRenderTargetView->Release();
+			}
+		}
+	}
+
+	void Clear() {
+		ReleaseTextures();
+		m_Textures.clear();
+	}
+
+	void Resize(const unsigned len) {
+		Clear();
+		if (len) {
+			m_Textures.resize(len);
+		}
+	}
+
+	void RotateAndSet(const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt)
+	{
+		ASSERT(m_Textures.size());
+
+		if (m_Textures.size() > 1) {
+			ID3D11Texture2D* pSurface = m_Textures.front();
+
+			for (size_t i = 1; i < m_Textures.size(); i++) {
+				auto pre = i - 1;
+				m_Textures[pre] = m_Textures[i];
+			}
+
+			m_Textures.back() = pSurface;
+		}
+	}
+
+	ID3D11Texture2D** GetSurface()
+	{
+		if (m_Textures.size()) {
+			return &m_Textures.back();
+		} else {
+			return nullptr;
+		}
+	}
+};
+
 // D3D11 Video Processor
 class CD3D11VP
 {

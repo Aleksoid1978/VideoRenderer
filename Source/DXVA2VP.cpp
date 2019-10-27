@@ -26,7 +26,6 @@
 
 #include "DXVA2VP.h"
 
-// TODO
 // CDXVA2VP
 
 int GetBitDepth(const D3DFORMAT format)
