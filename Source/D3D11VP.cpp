@@ -222,7 +222,7 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 		}
 	}
 
-	UINT procIndex = 0;
+	m_RateConvIndex = 0;
 	if (interlaced) {
 		// try to find best processor
 		const UINT preferredDeintCaps = D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND
@@ -236,7 +236,7 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 			if (S_OK == m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(i, &convCaps)) {
 				// check only deinterlace caps
 				if ((convCaps.ProcessorCaps & preferredDeintCaps) > maxProcCaps) {
-					procIndex = i;
+					m_RateConvIndex = i;
 					maxProcCaps = convCaps.ProcessorCaps & preferredDeintCaps;
 				}
 			}
@@ -247,11 +247,11 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 			//UINT max_back_refs = 0;
 			//UINT max_fwd_refs = 0;
 
-			if (S_OK == m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(procIndex, &m_RateConvCaps)) {
+			if (S_OK == m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(m_RateConvIndex, &m_RateConvCaps)) {
 				//max_back_refs = rateCaps.PastFrames;
 				//max_fwd_refs = rateCaps.FutureFrames;
 #ifdef _DEBUG
-				dbgstr = L"VideoProcessorRateConversionCapsCaps:";
+				dbgstr.Format(L"RateConversionCaps[%u]:", m_RateConvIndex);
 				dbgstr.Append(L"\n  ProcessorCaps:");
 				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND)               { dbgstr.Append(L" Blend,"); }
 				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB)                 { dbgstr.Append(L" Bob,"); }
@@ -268,7 +268,7 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 		}
 	}
 
-	hr = m_pVideoDevice->CreateVideoProcessor(m_pVideoProcessorEnum, procIndex, &m_pVideoProcessor);
+	hr = m_pVideoDevice->CreateVideoProcessor(m_pVideoProcessorEnum, m_RateConvIndex, &m_pVideoProcessor);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateVideoProcessor() failed with error %s", HR2Str(hr));
 		return hr;
@@ -319,6 +319,7 @@ void CD3D11VP::ReleaseVideoProcessor()
 	m_pVideoProcessorEnum.Release();
 
 	m_VPCaps = {};
+	m_RateConvIndex = 0;
 	m_RateConvCaps = {};
 
 	m_srcFormat   = DXGI_FORMAT_UNKNOWN;
@@ -327,9 +328,10 @@ void CD3D11VP::ReleaseVideoProcessor()
 	//m_bInterlaced = false;
 }
 
-void CD3D11VP::GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS& rateConvCaps)
+void CD3D11VP::GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, UINT& rateConvIndex, D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS& rateConvCaps)
 {
 	caps = m_VPCaps;
+	rateConvIndex = m_RateConvIndex;
 	rateConvCaps = m_RateConvCaps;
 }
 

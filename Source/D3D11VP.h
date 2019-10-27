@@ -110,6 +110,7 @@ private:
 	CComPtr<ID3D11VideoProcessorInputView> m_pInputView;
 
 	D3D11_VIDEO_PROCESSOR_CAPS m_VPCaps = {};
+	UINT m_RateConvIndex = 0;
 	D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS m_RateConvCaps = {};
 
 	// ProcAmp
@@ -130,7 +131,7 @@ public:
 	void ReleaseVideoProcessor();
 
 	bool IsReady() { return (m_pVideoProcessor != nullptr); }
-	void GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS& rateConvCaps);
+	void GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, UINT& rateConvIndex, D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS& rateConvCaps);
 
 	HRESULT SetInputTexture(ID3D11Texture2D* pTexture2D);
 	HRESULT SetProcessParams(const CRect& srcRect, const CRect& dstRect, const DXVA2_ExtendedFormat exFmt);

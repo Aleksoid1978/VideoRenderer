@@ -1866,11 +1866,12 @@ HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 	str.AppendFormat(L"\nGraphics adapter: %s", m_strAdapterDescription);
 	str.Append(L"\nVideoProcessor  : ");
 	if (m_D3D11VP.IsReady()) {
-		str.Append(L"D3D11");
-
 		D3D11_VIDEO_PROCESSOR_CAPS caps;
+		UINT rateConvIndex;
 		D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS rateConvCaps;
-		m_D3D11VP.GetVPParams(caps, rateConvCaps);
+		m_D3D11VP.GetVPParams(caps, rateConvIndex, rateConvCaps);
+
+		str.AppendFormat(L"D3D11, RateConversion_%u", rateConvIndex);
 
 		str.Append(L"\nDeinterlaceTech.:");
 		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND)               str.Append(L" Blend,");
