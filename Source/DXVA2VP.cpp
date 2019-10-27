@@ -358,6 +358,7 @@ IDirect3DSurface9* CDXVA2VP::GetInputSurface()
 			IDirect3DDevice9* pDevice;
 			if (S_OK == (*ppSurface)->GetDevice(&pDevice)) {
 				hr = pDevice->ColorFill(*ppSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+				pDevice->Release();
 			}
 		}
 	}

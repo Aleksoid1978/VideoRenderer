@@ -58,6 +58,7 @@ public:
 				pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
 				pRenderTargetView->Release();
 			}
+			pDevice->Release();
 		}
 	}
 

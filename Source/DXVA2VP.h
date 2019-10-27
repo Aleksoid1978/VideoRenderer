@@ -55,6 +55,7 @@ public:
 			IDirect3DDevice9* pDevice;
 			if (dxva2sample.SrcSurface && S_OK == dxva2sample.SrcSurface->GetDevice(&pDevice)) {
 				pDevice->ColorFill(dxva2sample.SrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+				pDevice->Release();
 			}
 		}
 	}
