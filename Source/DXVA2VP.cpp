@@ -331,9 +331,12 @@ HRESULT CDXVA2VP::SetInputSurface(IDirect3DSurface9* pSurface, const REFERENCE_T
 {
 	CheckPointer(pSurface, E_POINTER);
 
-	m_VideoSamples.Add(pSurface, start, end, sampleFmt);
+	if (m_VideoSamples.Size()) {
+		m_VideoSamples.Add(pSurface, start, end, sampleFmt);
+		return S_OK;
+	}
 
-	return S_OK;
+	return E_ABORT;
 }
 
 IDirect3DSurface9* CDXVA2VP::GetInputSurface()
@@ -366,9 +369,10 @@ IDirect3DSurface9* CDXVA2VP::GetInputSurface()
 IDirect3DSurface9* CDXVA2VP::GetNextInputSurface(const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt)
 {
 	ASSERT(m_pDXVA2_VPService);
-	ASSERT(m_VideoSamples.Size());
 
-	m_VideoSamples.RotateAndSet(start, end, sampleFmt);
+	if (m_VideoSamples.Size()) {
+		m_VideoSamples.RotateAndSet(start, end, sampleFmt);
+	}
 	return GetInputSurface();
 }
 
