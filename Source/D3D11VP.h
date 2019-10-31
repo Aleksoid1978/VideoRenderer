@@ -27,8 +27,12 @@ class VideoTextureBuffer // TODO
 {
 private:
 	std::vector<ID3D11Texture2D*> m_Textures;
+	std::vector<ID3D11VideoProcessorInputView*> m_InputViews;
 
 	void ReleaseTextures() {
+		for (auto& inputview : m_InputViews) {
+			SAFE_RELEASE(inputview);
+		}
 		for (auto& texture : m_Textures) {
 			SAFE_RELEASE(texture);
 		}
@@ -39,31 +43,13 @@ public:
 		ReleaseTextures();
 	}
 
-	//const ID3D11Texture2D** Data() {
-	//	return m_Textures.data();
-	//}
-
 	const UINT Size() {
 		return m_Textures.size();
 	}
 
-	void Clean(ID3D11DeviceContext* pDeviceContext) {
-		for (auto& texture : m_Textures) {
-			ID3D11Device* pDevice;
-			texture->GetDevice(&pDevice);
-
-			ID3D11RenderTargetView* pRenderTargetView;
-			if (S_OK == pDevice->CreateRenderTargetView(texture, nullptr, &pRenderTargetView)) {
-				const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-				pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
-				pRenderTargetView->Release();
-			}
-			pDevice->Release();
-		}
-	}
-
 	void Clear() {
 		ReleaseTextures();
+		m_InputViews.clear();
 		m_Textures.clear();
 	}
 
@@ -71,29 +57,50 @@ public:
 		Clear();
 		if (len) {
 			m_Textures.resize(len);
+			m_InputViews.resize(len);
 		}
 	}
 
-	void RotateAndSet(const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt)
-	{
+	void Rotate() {
 		ASSERT(m_Textures.size());
 
 		if (m_Textures.size() > 1) {
 			ID3D11Texture2D* pSurface = m_Textures.front();
+			ID3D11VideoProcessorInputView* pInputView = m_InputViews.front();
 
 			for (size_t i = 1; i < m_Textures.size(); i++) {
 				auto pre = i - 1;
 				m_Textures[pre] = m_Textures[i];
+				m_InputViews[pre] = m_InputViews[i];
 			}
 
 			m_Textures.back() = pSurface;
+			m_InputViews.back() = pInputView;
 		}
 	}
 
-	ID3D11Texture2D** GetSurface()
+	ID3D11Texture2D** GetTexture()
 	{
 		if (m_Textures.size()) {
 			return &m_Textures.back();
+		} else {
+			return nullptr;
+		}
+	}
+
+	ID3D11Texture2D** GetTexture(UINT num)
+	{
+		if (num < m_Textures.size()) {
+			return &m_Textures[num];
+		} else {
+			return nullptr;
+		}
+	}
+
+	ID3D11VideoProcessorInputView** GetInputView(UINT num)
+	{
+		if (num < m_InputViews.size()) {
+			return &m_InputViews[num];
 		} else {
 			return nullptr;
 		}
@@ -113,6 +120,10 @@ private:
 	D3D11_VIDEO_PROCESSOR_CAPS m_VPCaps = {};
 	UINT m_RateConvIndex = 0;
 	D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS m_RateConvCaps = {};
+
+	bool m_bPresentFrame = false;
+	UINT m_nPastFrames = 0;
+	UINT m_nFutureFrames = 0;
 
 	// ProcAmp
 	D3D11_VIDEO_PROCESSOR_FILTER_RANGE m_VPFilterRange[4] = {};
@@ -135,6 +146,8 @@ public:
 	void GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, UINT& rateConvIndex, D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS& rateConvCaps);
 
 	HRESULT SetInputTexture(ID3D11Texture2D* pTexture2D);
+	void ResetFrameOrder();
+
 	HRESULT SetProcessParams(const CRect& srcRect, const CRect& dstRect, const DXVA2_ExtendedFormat exFmt);
 	void SetProcAmpValues(DXVA2_ProcAmpValues *pValues);
 

@@ -255,6 +255,8 @@ public:
 	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
 	void SetSwapEffect(int value) { m_iSwapEffect = value; }
 
+	void Flush();
+
 private:
 	void UpdateConvertTexD3D11VP();
 	void UpdateCorrectionTex(const int w, const int h);

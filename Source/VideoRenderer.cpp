@@ -231,7 +231,9 @@ void CMpcVideoRenderer::NewSegment(REFERENCE_TIME startTime)
 
 	m_rtStartTime = startTime;
 
-	if (!m_bUsedD3D11) {
+	if (m_bUsedD3D11) {
+		m_DX11_VP.Flush();
+	} else {
 		m_DX9_VP.Flush();
 	}
 }

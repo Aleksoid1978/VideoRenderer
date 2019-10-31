@@ -244,12 +244,7 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 
 		DLogIf(!maxProcCaps, L"CDX11VideoProcessor::InitializeD3D11VP() : deinterlace caps don't support");
 		if (maxProcCaps) {
-			//UINT max_back_refs = 0;
-			//UINT max_fwd_refs = 0;
-
 			if (S_OK == m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(m_RateConvIndex, &m_RateConvCaps)) {
-				//max_back_refs = rateCaps.PastFrames;
-				//max_fwd_refs = rateCaps.FutureFrames;
 #ifdef _DEBUG
 				dbgstr.Format(L"RateConversionCaps[%u]:", m_RateConvIndex);
 				dbgstr.Append(L"\n  ProcessorCaps:");
@@ -347,6 +342,13 @@ HRESULT CD3D11VP::SetInputTexture(ID3D11Texture2D* pTexture2D)
 	DLogIf(FAILED(hr), L"CD3D11VP::SetInputTexture : CreateVideoProcessorInputView() failed with error %s", HR2Str(hr));
 
 	return hr;
+}
+
+void CD3D11VP::ResetFrameOrder()
+{
+	m_bPresentFrame = false;
+	m_nPastFrames = 0;
+	m_nFutureFrames = 0;
 }
 
 HRESULT CD3D11VP::SetProcessParams(const CRect& srcRect, const CRect& dstRect, const DXVA2_ExtendedFormat exFmt)

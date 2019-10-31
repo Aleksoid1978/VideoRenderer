@@ -368,11 +368,10 @@ IDirect3DSurface9* CDXVA2VP::GetInputSurface()
 
 IDirect3DSurface9* CDXVA2VP::GetNextInputSurface(const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt)
 {
-	ASSERT(m_pDXVA2_VPService);
-
 	if (m_VideoSamples.Size()) {
 		m_VideoSamples.RotateAndSet(start, end, sampleFmt);
 	}
+
 	return GetInputSurface();
 }
 

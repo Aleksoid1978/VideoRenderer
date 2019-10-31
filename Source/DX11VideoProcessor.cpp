@@ -1970,6 +1970,13 @@ void CDX11VideoProcessor::SetDownscaling(int value)
 	}
 };
 
+void CDX11VideoProcessor::Flush()
+{
+	if (m_D3D11VP.IsReady()) {
+		m_D3D11VP.ResetFrameOrder();
+	}
+}
+
 void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
