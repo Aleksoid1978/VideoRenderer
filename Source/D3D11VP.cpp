@@ -414,9 +414,10 @@ HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAM
 
 	D3D11_VIDEO_PROCESSOR_STREAM StreamData = {};
 	StreamData.Enable = TRUE;
-	StreamData.InputFrameOrField = second ? 1 : 0;
+	StreamData.InputFrameOrField = 0;
+	StreamData.OutputIndex = second ? 1 : 0;
 	StreamData.pInputSurface = m_pInputView;
-	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, 0, 1, &StreamData);
+	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, StreamData.OutputIndex, 1, &StreamData);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::ProcessD3D11() : VideoProcessorBlt() failed with error %s", HR2Str(hr));
 	}
