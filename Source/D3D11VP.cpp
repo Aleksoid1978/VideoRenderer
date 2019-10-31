@@ -27,6 +27,8 @@
 
 #include "D3D11VP.h"
 
+#define ENABLE_FUTUREFRAMES 0
+
 int ValueDXVA2toD3D11(const DXVA2_Fixed32 fixed, const D3D11_VIDEO_PROCESSOR_FILTER_RANGE& range)
 {
 	float value = DXVA2FixedToFloat(fixed) / range.Multiplier;
@@ -309,7 +311,8 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 
 void CD3D11VP::ReleaseVideoProcessor()
 {
-	m_pInputView.Release();
+	m_VideoTextures.Clear();
+
 	m_pVideoProcessor.Release();
 	m_pVideoProcessorEnum.Release();
 
@@ -323,25 +326,49 @@ void CD3D11VP::ReleaseVideoProcessor()
 	//m_bInterlaced = false;
 }
 
-void CD3D11VP::GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, UINT& rateConvIndex, D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS& rateConvCaps)
+HRESULT CD3D11VP::InitInputTextures(ID3D11Device* pDevice)
 {
-	caps = m_VPCaps;
-	rateConvIndex = m_RateConvIndex;
-	rateConvCaps = m_RateConvCaps;
-}
+#if ENABLE_FUTUREFRAMES
+	m_VideoTextures.Resize(1 + m_RateConvCaps.PastFrames + m_RateConvCaps.FutureFrames);
+#else
+	m_VideoTextures.Resize(1 + m_RateConvCaps.PastFrames);
+#endif
 
-HRESULT CD3D11VP::SetInputTexture(ID3D11Texture2D* pTexture2D)
-{
-	CheckPointer(pTexture2D, E_POINTER);
-	CheckPointer(m_pVideoDevice, E_ABORT);
+	HRESULT hr = E_NOT_VALID_STATE;
 
-	m_pInputView.Release();
-	D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputViewDesc = {};
-	inputViewDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
-	HRESULT hr = m_pVideoDevice->CreateVideoProcessorInputView(pTexture2D, m_pVideoProcessorEnum, &inputViewDesc, &m_pInputView);
-	DLogIf(FAILED(hr), L"CD3D11VP::SetInputTexture : CreateVideoProcessorInputView() failed with error %s", HR2Str(hr));
+	for (UINT i = 0; i < m_VideoTextures.Size(); i++) {
+		ID3D11Texture2D** ppTexture = m_VideoTextures.GetTexture(i);
+		hr = CreateTex2D(pDevice, m_srcFormat, m_srcWidth, m_srcHeight, Tex2D_Default, ppTexture);
+
+		if (S_OK == hr) {
+			D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputViewDesc = {};
+			inputViewDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
+			hr = m_pVideoDevice->CreateVideoProcessorInputView(*ppTexture, m_pVideoProcessorEnum, &inputViewDesc, m_VideoTextures.GetInputView(i));
+		}
+	}
 
 	return hr;
+}
+
+ID3D11Texture2D* CD3D11VP::GetNextInputTexture(const D3D11_VIDEO_FRAME_FORMAT vframeFormat)
+{
+	if (m_VideoTextures.Size()) {
+		if (!m_bPresentFrame) {
+			m_bPresentFrame = true;
+		}
+#if ENABLE_FUTUREFRAMES
+		else if (m_nFutureFrames < m_RateConvCaps.FutureFrames) {
+			m_nFutureFrames++;
+		}
+#endif
+		else if (m_nPastFrames < m_RateConvCaps.PastFrames) {
+			m_nPastFrames++;
+		}
+
+		m_VideoTextures.Rotate();
+	}
+
+	return *m_VideoTextures.GetTexture();
 }
 
 void CD3D11VP::ResetFrameOrder()
@@ -349,6 +376,13 @@ void CD3D11VP::ResetFrameOrder()
 	m_bPresentFrame = false;
 	m_nPastFrames = 0;
 	m_nFutureFrames = 0;
+}
+
+void CD3D11VP::GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, UINT& rateConvIndex, D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS& rateConvCaps)
+{
+	caps = m_VPCaps;
+	rateConvIndex = m_RateConvIndex;
+	rateConvCaps = m_RateConvCaps;
 }
 
 HRESULT CD3D11VP::SetProcessParams(const CRect& srcRect, const CRect& dstRect, const DXVA2_ExtendedFormat exFmt)
@@ -416,7 +450,21 @@ HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAM
 	StreamData.Enable = TRUE;
 	StreamData.InputFrameOrField = 0;
 	StreamData.OutputIndex = second ? 1 : 0;
-	StreamData.pInputSurface = m_pInputView;
+	if (m_VideoTextures.Size()) {
+		UINT idx = m_VideoTextures.Size();
+		if (m_nFutureFrames) {
+			idx -= m_nFutureFrames;
+			StreamData.FutureFrames = m_nFutureFrames;
+			StreamData.ppFutureSurfaces = m_VideoTextures.GetInputView(idx);
+		}
+		idx--;
+		StreamData.pInputSurface = *m_VideoTextures.GetInputView(idx);
+		if (m_nPastFrames) {
+			idx -= m_nPastFrames;
+			StreamData.PastFrames = m_nPastFrames;
+			StreamData.ppPastSurfaces = m_VideoTextures.GetInputView(idx);
+		}
+	}
 	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, StreamData.OutputIndex, 1, &StreamData);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::ProcessD3D11() : VideoProcessorBlt() failed with error %s", HR2Str(hr));
@@ -424,4 +472,3 @@ HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAM
 
 	return hr;
 }
-

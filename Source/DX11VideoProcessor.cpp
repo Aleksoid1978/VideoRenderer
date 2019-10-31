@@ -450,7 +450,6 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_pFilter->ResetStreamingTimes2();
 	m_RenderStats.Reset();
 
-	m_pSrcTexture2D.Release();
 	m_TexSrcVideo.Release();
 	m_TexCorrection.Release();
 	m_TexConvert.Release();
@@ -1111,7 +1110,6 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 			return E_FAIL;
 		}
 		m_TexSrcVideo.Release();
-		m_pSrcTexture2D.Release();
 
 		m_D3D11VP.ReleaseVideoProcessor();
 
@@ -1126,21 +1124,15 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return hr;
 	}
 
+	hr = m_D3D11VP.InitInputTextures(m_pDevice);
+	if (FAILED(hr)) {
+		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : InitInputTextures() failed with error %s", HR2Str(hr));
+		return hr;
+	}
+
 	hr = m_TexSrcVideo.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWriteNoSRV);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : m_TexSrcVideo.Create() failed with error %s", HR2Str(hr));
-		return hr;
-	}
-
-	hr = CreateTex2D(m_pDevice, dxgiFormat, width, height, Tex2D_Default, &m_pSrcTexture2D);
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateTex2D(m_pSrcTexture2D) failed with error %s", HR2Str(hr));
-		return hr;
-	}
-
-	hr = m_D3D11VP.SetInputTexture(m_pSrcTexture2D);
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : SetInputTexture() failed with error %s", HR2Str(hr));
 		return hr;
 	}
 
@@ -1328,7 +1320,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 		// here should be used CopySubresourceRegion instead of CopyResource
 		if (m_D3D11VP.IsReady()) {
-			m_pDeviceContext->CopySubresourceRegion(m_pSrcTexture2D, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
+			m_pDeviceContext->CopySubresourceRegion(m_D3D11VP.GetNextInputTexture(m_SampleFormat), 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
 		} else {
 			m_pDeviceContext->CopySubresourceRegion(m_TexSrcVideo.pTexture, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
 		}
@@ -1370,7 +1362,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 			if (m_D3D11VP.IsReady()) {
 				// ID3D11VideoProcessor does not use textures with D3D11_CPU_ACCESS_WRITE flag
-				m_pDeviceContext->CopyResource(m_pSrcTexture2D, m_TexSrcVideo.pTexture);
+				m_pDeviceContext->CopyResource(m_D3D11VP.GetNextInputTexture(m_SampleFormat), m_TexSrcVideo.pTexture);
 			}
 		}
 	}
@@ -1417,7 +1409,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
 					if (m_D3D11VP.IsReady()) {
 						// ID3D11VideoProcessor does not use textures with D3D11_CPU_ACCESS_WRITE flag
-						m_pDeviceContext->CopyResource(m_pSrcTexture2D, m_TexSrcVideo.pTexture);
+						m_pDeviceContext->CopyResource(m_D3D11VP.GetNextInputTexture(m_SampleFormat), m_TexSrcVideo.pTexture);
 					}
 				}
 			}

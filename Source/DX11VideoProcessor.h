@@ -76,7 +76,6 @@ private:
 	CComPtr<ID3D11PixelShader>   m_pPS_Simple;
 	CComPtr<ID3D11InputLayout>   m_pInputLayout;
 
-	CComPtr<ID3D11Texture2D> m_pSrcTexture2D; // Used if D3D11 VP is active
 	Tex11Video_t m_TexSrcVideo; // for copy of frame
 	Tex2D_t m_TexConvert;     // for result of color conversion
 	Tex2D_t m_TexCorrection;  // for result of correction after D3D11 VP

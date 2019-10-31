@@ -115,12 +115,12 @@ private:
 	CComPtr<ID3D11VideoDevice> m_pVideoDevice;
 	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
 	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
-	CComPtr<ID3D11VideoProcessorInputView> m_pInputView;
 
 	D3D11_VIDEO_PROCESSOR_CAPS m_VPCaps = {};
 	UINT m_RateConvIndex = 0;
 	D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS m_RateConvCaps = {};
 
+	VideoTextureBuffer m_VideoTextures;
 	bool m_bPresentFrame = false;
 	UINT m_nPastFrames = 0;
 	UINT m_nFutureFrames = 0;
@@ -142,10 +142,12 @@ public:
 	HRESULT InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, DXGI_FORMAT& outputFmt);
 	void ReleaseVideoProcessor();
 
+	HRESULT InitInputTextures(ID3D11Device* pDevice);
+
 	bool IsReady() { return (m_pVideoProcessor != nullptr); }
 	void GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, UINT& rateConvIndex, D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS& rateConvCaps);
 
-	HRESULT SetInputTexture(ID3D11Texture2D* pTexture2D);
+	ID3D11Texture2D* GetNextInputTexture(const D3D11_VIDEO_FRAME_FORMAT vframeFormat);
 	void ResetFrameOrder();
 
 	HRESULT SetProcessParams(const CRect& srcRect, const CRect& dstRect, const DXVA2_ExtendedFormat exFmt);
