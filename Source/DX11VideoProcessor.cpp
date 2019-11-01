@@ -1130,6 +1130,8 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return hr;
 	}
 
+	hr = m_D3D11VP.SetColorSpace(m_srcExFmt);
+
 	hr = m_TexSrcVideo.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWriteNoSRV);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : m_TexSrcVideo.Create() failed with error %s", HR2Str(hr));
@@ -1682,7 +1684,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 HRESULT CDX11VideoProcessor::D3D11VPPass(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
 	if (!second) {
-		m_D3D11VP.SetProcessParams(rSrcRect, rDstRect, m_srcExFmt);
+		m_D3D11VP.SetRectangles(rSrcRect, rDstRect);
 	}
 
 	HRESULT hr = m_D3D11VP.Process(pRenderTarget, m_SampleFormat, second);
@@ -1783,8 +1785,13 @@ HRESULT CDX11VideoProcessor::GetVideoSize(long *pWidth, long *pHeight)
 	CheckPointer(pWidth, E_POINTER);
 	CheckPointer(pHeight, E_POINTER);
 
-	*pWidth  = m_srcRectWidth;
-	*pHeight = m_srcRectHeight;
+	if (m_iRotation == 90 || m_iRotation == 270) {
+		*pWidth  = m_srcRectHeight;
+		*pHeight = m_srcRectWidth;
+	} else {
+		*pWidth  = m_srcRectWidth;
+		*pHeight = m_srcRectHeight;
+	}
 
 	return S_OK;
 }
@@ -1794,8 +1801,13 @@ HRESULT CDX11VideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
 	CheckPointer(plAspectX, E_POINTER);
 	CheckPointer(plAspectY, E_POINTER);
 
-	*plAspectX = m_srcAspectRatioX;
-	*plAspectY = m_srcAspectRatioY;
+	if (m_iRotation == 90 || m_iRotation == 270) {
+		*plAspectX = m_srcAspectRatioY;
+		*plAspectY = m_srcAspectRatioX;
+	} else {
+		*plAspectX = m_srcAspectRatioX;
+		*plAspectY = m_srcAspectRatioY;
+	}
 
 	return S_OK;
 }
@@ -1961,6 +1973,14 @@ void CDX11VideoProcessor::SetDownscaling(int value)
 		UpdateDownscalingShaders();
 	}
 };
+
+void CDX11VideoProcessor::SetRotation(int value)
+{
+	if (m_D3D11VP.IsReady()) {
+		m_iRotation = value;
+		m_D3D11VP.SetRotation(static_cast<D3D11_VIDEO_PROCESSOR_ROTATION>(value / 90));
+	}
+}
 
 void CDX11VideoProcessor::Flush()
 {

@@ -300,6 +300,8 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 	// Output background color (black)
 	static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 	m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, FALSE, &backgroundColor);
+	// Rotation angle
+	m_pVideoContext->VideoProcessorSetStreamRotation(m_pVideoProcessor, 0, m_Rotation ? TRUE : FALSE, m_Rotation);
 
 	m_srcFormat   = inputFmt;
 	m_srcWidth    = width;
@@ -385,13 +387,20 @@ void CD3D11VP::GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, UINT& rateConvIndex
 	rateConvCaps = m_RateConvCaps;
 }
 
-HRESULT CD3D11VP::SetProcessParams(const CRect& srcRect, const CRect& dstRect, const DXVA2_ExtendedFormat exFmt)
+HRESULT CD3D11VP::SetRectangles(const CRect& srcRect, const CRect& dstRect)
 {
 	CheckPointer(m_pVideoContext, E_ABORT);
 
-	m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, srcRect ? TRUE : FALSE, srcRect);
-	m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, dstRect ? TRUE : FALSE, dstRect);
+	m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, TRUE, srcRect);
+	m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, dstRect);
 	m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, FALSE, nullptr);
+
+	return S_OK;
+}
+
+HRESULT CD3D11VP::SetColorSpace(const DXVA2_ExtendedFormat exFmt)
+{
+	CheckPointer(m_pVideoContext, E_ABORT);
 
 	D3D11_VIDEO_PROCESSOR_COLOR_SPACE colorSpace = {};
 	if (exFmt.value) {
@@ -405,6 +414,15 @@ HRESULT CD3D11VP::SetProcessParams(const CRect& srcRect, const CRect& dstRect, c
 	m_pVideoContext->VideoProcessorSetOutputColorSpace(m_pVideoProcessor, &colorSpace);
 
 	return S_OK;
+}
+
+void CD3D11VP::SetRotation(D3D11_VIDEO_PROCESSOR_ROTATION rotation)
+{
+	m_Rotation = rotation;
+
+	if (m_pVideoContext) {
+		m_pVideoContext->VideoProcessorSetStreamRotation(m_pVideoProcessor, 0, m_Rotation ? TRUE : FALSE, m_Rotation);
+	}
 }
 
 void CD3D11VP::SetProcAmpValues(DXVA2_ProcAmpValues *pValues)

@@ -141,6 +141,8 @@ private:
 	CRect m_srcRenderRect;
 	CRect m_dstRenderRect;
 
+	int m_iRotation = 0;
+
 	HWND m_hWnd = nullptr;
 	UINT m_nCurrentAdapter = -1;
 
@@ -253,6 +255,9 @@ public:
 	void SetDownscaling(int value);
 	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
 	void SetSwapEffect(int value) { m_iSwapEffect = value; }
+
+	void SetRotation(int value);
+	int GetRotation() { return m_iRotation; }
 
 	void Flush();
 

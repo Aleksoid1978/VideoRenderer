@@ -1021,7 +1021,11 @@ STDMETHODIMP CMpcVideoRenderer::GetInt(LPCSTR field, int* value)
 		return S_OK;
 	}
 	if (!strcmp(field, "rotation")) {
-		*value = m_iRotation;
+		if (m_bUsedD3D11) {
+			*value = m_DX11_VP.GetRotation();
+		} else {
+			*value = 0;
+		}
 		return S_OK;
 	}
 
@@ -1070,7 +1074,6 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 
 STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
 {
-	/*
 	if (!strcmp(field, "rotation")) {
 		// Allowed angles are multiples of 90.
 		if (value % 90 == 0) {
@@ -1079,15 +1082,18 @@ STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
 			if (value < 0) {
 				value += 360;
 			}
-			m_iRotation = value;
+
+			if (m_bUsedD3D11) {
+				m_DX11_VP.SetRotation(value);
+			} else {
+				return E_NOT_SET;
+			}
 
 			return S_OK;
 		}
 	}
 
 	return E_INVALIDARG;
-	*/
-	return E_NOTIMPL;
 }
 
 HRESULT CMpcVideoRenderer::Redraw()

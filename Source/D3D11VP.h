@@ -130,6 +130,8 @@ private:
 	int m_VPFilterLevels[4] = {};
 	bool m_bUpdateFilters = false;
 
+	D3D11_VIDEO_PROCESSOR_ROTATION m_Rotation = D3D11_VIDEO_PROCESSOR_ROTATION_IDENTITY;
+
 	DXGI_FORMAT m_srcFormat = DXGI_FORMAT_UNKNOWN;
 	UINT m_srcWidth    = 0;
 	UINT m_srcHeight   = 0;
@@ -150,7 +152,9 @@ public:
 	ID3D11Texture2D* GetNextInputTexture(const D3D11_VIDEO_FRAME_FORMAT vframeFormat);
 	void ResetFrameOrder();
 
-	HRESULT SetProcessParams(const CRect& srcRect, const CRect& dstRect, const DXVA2_ExtendedFormat exFmt);
+	HRESULT SetRectangles(const CRect& srcRect, const CRect& dstRect);
+	HRESULT SetColorSpace(const DXVA2_ExtendedFormat exFmt);
+	void SetRotation(D3D11_VIDEO_PROCESSOR_ROTATION rotation);
 	void SetProcAmpValues(DXVA2_ProcAmpValues *pValues);
 
 	HRESULT Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAME_FORMAT sampleFormat, const bool second);
