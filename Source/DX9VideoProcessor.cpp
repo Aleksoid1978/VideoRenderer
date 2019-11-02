@@ -1318,6 +1318,7 @@ void CDX9VideoProcessor::SetDownscaling(int value)
 void CDX9VideoProcessor::SetRotation(int value)
 {
 	m_iRotation = value;
+	UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
 }
 
 void CDX9VideoProcessor::Flush()
@@ -1352,7 +1353,7 @@ void CDX9VideoProcessor::UpdateVideoTexDXVA2VP()
 
 void CDX9VideoProcessor::UpdateCorrectionTex(const int w, const int h)
 {
-	if (m_pPSCorrection) {
+	if (m_pPSCorrection || (m_DXVA2VP.IsReady() && m_bVPScaling && m_iRotation)) {
 		if (w != m_TexCorrection.Width || h != m_TexCorrection.Width) {
 			HRESULT hr = m_TexCorrection.Create(m_pD3DDevEx, m_bVPScaling ? m_DXVA2OutputFmt : m_InternalTexFmt, w, h, D3DUSAGE_RENDERTARGET);
 			DLogIf(FAILED(hr), "CDX9VideoProcessor::UpdateCorrectionTex() : m_TexCorrection.Create() failed with error %s", HR2Str(hr));
@@ -1446,7 +1447,13 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 	}
 	else {
 		if (m_bVPScaling) {
-			hr = DXVA2VPPass(pRenderTarget, rSrcRect, rDstRect, second);
+			if (m_iRotation && m_TexCorrection.pTexture) {
+				CRect rCorrection(0, 0, m_TexCorrection.Width, m_TexCorrection.Height);
+				hr = DXVA2VPPass(m_TexCorrection.pSurface, rSrcRect, rCorrection, second);
+				hr = TextureCopyRect(m_TexCorrection.pTexture, rCorrection, rDstRect, D3DTEXF_POINT, m_iRotation);
+			} else {
+				hr = DXVA2VPPass(pRenderTarget, rSrcRect, rDstRect, second);
+			}
 		} else {
 			hr = DXVA2VPPass(m_TexConvert.pSurface, rSrcRect, rSrcRect, second);
 			hr = ResizeShader2Pass(m_TexConvert.pTexture, pRenderTarget, rSrcRect, rDstRect, m_iRotation);

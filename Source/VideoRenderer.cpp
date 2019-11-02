@@ -1083,6 +1083,7 @@ STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
 				value += 360;
 			}
 
+			CAutoLock cRendererLock(&m_RendererLock);
 			if (m_bUsedD3D11) {
 				m_DX11_VP.SetRotation(value);
 			} else {
