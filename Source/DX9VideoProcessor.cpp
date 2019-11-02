@@ -82,9 +82,7 @@ static HRESULT TextureBlt(IDirect3DDevice9* pD3DDev, MYD3DVERTEX<texcoords> v[4]
 	}
 
 	hr = pD3DDev->SetFVF(D3DFVF_XYZRHW | FVF);
-	//hr = pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(v[0]));
-	std::swap(v[2], v[3]);
-	hr = pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, v, sizeof(v[0]));
+	hr = pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(v[0]));
 
 	for (unsigned i = 0; i < texcoords; i++) {
 		pD3DDev->SetTexture(i, nullptr);
@@ -1648,9 +1646,7 @@ HRESULT CDX9VideoProcessor::TextureConvertColor(Tex9Video_t& texVideo)
 	}
 
 	hr = m_pD3DDevEx->SetFVF(D3DFVF_XYZRHW | FVF);
-	//hr = pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(v[0]));
-	std::swap(v[2], v[3]);
-	hr = m_pD3DDevEx->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, v, sizeof(v[0]));
+	hr = m_pD3DDevEx->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(v[0]));
 
 	m_pD3DDevEx->SetPixelShader(nullptr);
 
