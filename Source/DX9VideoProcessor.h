@@ -109,6 +109,8 @@ private:
 	CRect m_srcRenderRect;
 	CRect m_dstRenderRect;
 
+	int m_iRotation = 0;
+
 	// D3D9 Video Processor
 	Tex9Video_t m_TexSrcVideo; // for copy of frame
 	Tex_t m_TexConvert;    // for result of color conversion with DXVA2 VP
@@ -202,6 +204,9 @@ public:
 	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
 	void SetSwapEffect(int value) { m_iSwapEffect = value; }
 
+	void SetRotation(int value);
+	int GetRotation() { return m_iRotation; }
+
 	void Flush();
 
 private:
@@ -215,12 +220,12 @@ private:
 	HRESULT ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
 	HRESULT ProcessTex(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
 
-	HRESULT ResizeShader2Pass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
+	HRESULT ResizeShader2Pass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const int iRotation);
 
 	HRESULT TextureCopy(IDirect3DTexture9* pTexture);
 	HRESULT TextureConvertColor(Tex9Video_t& texVideo);
-	HRESULT TextureCopyRect(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, D3DTEXTUREFILTERTYPE filter);
-	HRESULT TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, IDirect3DPixelShader9* pShader);
+	HRESULT TextureCopyRect(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, D3DTEXTUREFILTERTYPE filter, const int iRotation);
+	HRESULT TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, IDirect3DPixelShader9* pShader, const int iRotation);
 
 	void UpdateStatsStatic();
 	HRESULT DrawStats();

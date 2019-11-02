@@ -1024,7 +1024,7 @@ STDMETHODIMP CMpcVideoRenderer::GetInt(LPCSTR field, int* value)
 		if (m_bUsedD3D11) {
 			*value = m_DX11_VP.GetRotation();
 		} else {
-			*value = 0;
+			*value = m_DX9_VP.GetRotation();
 		}
 		return S_OK;
 	}
@@ -1086,7 +1086,7 @@ STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
 			if (m_bUsedD3D11) {
 				m_DX11_VP.SetRotation(value);
 			} else {
-				return E_NOT_SET;
+				m_DX9_VP.SetRotation(value);
 			}
 
 			return S_OK;

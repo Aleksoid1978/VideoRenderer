@@ -1118,8 +1118,13 @@ HRESULT CDX9VideoProcessor::GetVideoSize(long *pWidth, long *pHeight)
 	CheckPointer(pWidth, E_POINTER);
 	CheckPointer(pHeight, E_POINTER);
 
-	*pWidth  = m_srcRectWidth;
-	*pHeight = m_srcRectHeight;
+	if (m_iRotation == 90 || m_iRotation == 270) {
+		*pWidth  = m_srcRectHeight;
+		*pHeight = m_srcRectWidth;
+	} else {
+		*pWidth  = m_srcRectWidth;
+		*pHeight = m_srcRectHeight;
+	}
 
 	return S_OK;
 }
@@ -1129,8 +1134,13 @@ HRESULT CDX9VideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
 	CheckPointer(plAspectX, E_POINTER);
 	CheckPointer(plAspectY, E_POINTER);
 
-	*plAspectX = m_srcAspectRatioX;
-	*plAspectY = m_srcAspectRatioY;
+	if (m_iRotation == 90 || m_iRotation == 270) {
+		*plAspectX = m_srcAspectRatioY;
+		*plAspectY = m_srcAspectRatioX;
+	} else {
+		*plAspectX = m_srcAspectRatioX;
+		*plAspectY = m_srcAspectRatioY;
+	}
 
 	return S_OK;
 }
@@ -1305,6 +1315,11 @@ void CDX9VideoProcessor::SetDownscaling(int value)
 	}
 };
 
+void CDX9VideoProcessor::SetRotation(int value)
+{
+	m_iRotation = value;
+}
+
 void CDX9VideoProcessor::Flush()
 {
 	if (m_bSrcFromGPU && m_DXVA2VP.IsReady() && m_DXVA2VP.GetNumRefSamples() == 1) {
@@ -1422,11 +1437,11 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 			hr = DXVA2VPPass(m_TexCorrection.pSurface, rSrcRect, rCorrection, second);
 		} else {
 			hr = DXVA2VPPass(m_TexConvert.pSurface, rSrcRect, rSrcRect, second);
-			hr = ResizeShader2Pass(m_TexConvert.pTexture, m_TexCorrection.pSurface, rSrcRect, rCorrection);
+			hr = ResizeShader2Pass(m_TexConvert.pTexture, m_TexCorrection.pSurface, rSrcRect, rCorrection, m_iRotation);
 		}
 		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 		hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
-		hr = TextureCopyRect(m_TexCorrection.pTexture, rCorrection, rDstRect, D3DTEXF_POINT);
+		hr = TextureCopyRect(m_TexCorrection.pTexture, rCorrection, rDstRect, D3DTEXF_POINT, 0);
 		m_pD3DDevEx->SetPixelShader(nullptr);
 	}
 	else {
@@ -1434,7 +1449,7 @@ HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const
 			hr = DXVA2VPPass(pRenderTarget, rSrcRect, rDstRect, second);
 		} else {
 			hr = DXVA2VPPass(m_TexConvert.pSurface, rSrcRect, rSrcRect, second);
-			hr = ResizeShader2Pass(m_TexConvert.pTexture, pRenderTarget, rSrcRect, rDstRect);
+			hr = ResizeShader2Pass(m_TexConvert.pTexture, pRenderTarget, rSrcRect, rDstRect, m_iRotation);
 		}
 	}
 
@@ -1463,18 +1478,24 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 	}
 
 	// Resize
-	hr = ResizeShader2Pass(pTexture, pRenderTarget, rSrcRect, rDstRect);
+	hr = ResizeShader2Pass(pTexture, pRenderTarget, rSrcRect, rDstRect, m_iRotation);
 
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::ProcessTex() : failed with error %s", HR2Str(hr));
 
 	return hr;
 }
 
-HRESULT CDX9VideoProcessor::ResizeShader2Pass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
+HRESULT CDX9VideoProcessor::ResizeShader2Pass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const int iRotation)
 {
 	HRESULT hr = S_OK;
-	const int w1 = rSrcRect.Width();
-	const int h1 = rSrcRect.Height();
+	int w1, h1;
+	if (iRotation == 90 || iRotation == 270) {
+		w1 = rSrcRect.Height();
+		h1 = rSrcRect.Width();
+	} else {
+		w1 = rSrcRect.Width();
+		h1 = rSrcRect.Height();
+	}
 	const int w2 = rDstRect.Width();
 	const int h2 = rDstRect.Height();
 	const int k = m_bInterpolateAt50pct ? 2 : 1;
@@ -1500,7 +1521,7 @@ HRESULT CDX9VideoProcessor::ResizeShader2Pass(IDirect3DTexture9* pTexture, IDire
 			hr = m_TexResize.Create(m_pD3DDevEx, D3DFMT_A16B16G16R16F,texWidth, texHeight, D3DUSAGE_RENDERTARGET);
 			if (FAILED(hr)) {
 				DLog(L"CDX9VideoProcessor::ProcessTex() : m_TexResize.Create() failed with error %s", HR2Str(hr));
-				return TextureCopyRect(pTexture, rSrcRect, rDstRect, D3DTEXF_LINEAR);
+				return TextureCopyRect(pTexture, rSrcRect, rDstRect, D3DTEXF_LINEAR, iRotation);
 			}
 		}
 
@@ -1508,27 +1529,27 @@ HRESULT CDX9VideoProcessor::ResizeShader2Pass(IDirect3DTexture9* pTexture, IDire
 
 		// resize width
 		hr = m_pD3DDevEx->SetRenderTarget(0, m_TexResize.pSurface);
-		hr = TextureResizeShader(pTexture, rSrcRect, resizeRect, resizerX);
+		hr = TextureResizeShader(pTexture, rSrcRect, resizeRect, resizerX, iRotation);
 
 		// resize height
 		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-		hr = TextureResizeShader(m_TexResize.pTexture, resizeRect, rDstRect, resizerY);
+		hr = TextureResizeShader(m_TexResize.pTexture, resizeRect, rDstRect, resizerY, 0);
 	}
 	else {
 		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
 		if (resizerX) {
 			// one pass resize for width
-			hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, resizerX);
+			hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, resizerX, iRotation);
 		}
 		else if (resizerY) {
 			// one pass resize for height
-			hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, resizerY);
+			hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, resizerY, iRotation);
 		}
 		else {
 			// no resize
 			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-			hr = TextureCopyRect(pTexture, rSrcRect, rDstRect, D3DTEXF_POINT);
+			hr = TextureCopyRect(pTexture, rSrcRect, rDstRect, D3DTEXF_POINT, iRotation);
 		}
 	}
 
@@ -1658,7 +1679,7 @@ HRESULT CDX9VideoProcessor::TextureConvertColor(Tex9Video_t& texVideo)
 
 }
 
-HRESULT CDX9VideoProcessor::TextureCopyRect(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, D3DTEXTUREFILTERTYPE filter)
+HRESULT CDX9VideoProcessor::TextureCopyRect(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, D3DTEXTUREFILTERTYPE filter, const int iRotation)
 {
 	HRESULT hr;
 
@@ -1670,11 +1691,39 @@ HRESULT CDX9VideoProcessor::TextureCopyRect(IDirect3DTexture9* pTexture, const C
 	const float dx = 1.0f / desc.Width;
 	const float dy = 1.0f / desc.Height;
 
+	POINT points[4];
+	switch (iRotation) {
+	case 90:
+		points[0] = { destRect.right, destRect.top    };
+		points[1] = { destRect.right, destRect.bottom };
+		points[2] = { destRect.left,  destRect.top    };
+		points[3] = { destRect.left,  destRect.bottom };
+		break;
+	case 180:
+		points[0] = { destRect.right, destRect.bottom };
+		points[1] = { destRect.left,  destRect.bottom };
+		points[2] = { destRect.right, destRect.top    };
+		points[3] = { destRect.left,  destRect.top    };
+		break;
+	case 270:
+		points[0] = { destRect.left,  destRect.bottom };
+		points[1] = { destRect.left,  destRect.top    };
+		points[2] = { destRect.right, destRect.bottom };
+		points[3] = { destRect.right, destRect.top    };
+		break;
+	default:
+		points[0] = { destRect.left,  destRect.top    };
+		points[1] = { destRect.right, destRect.top    };
+		points[2] = { destRect.left,  destRect.bottom };
+		points[3] = { destRect.right, destRect.bottom };
+		break;
+	}
+
 	MYD3DVERTEX<1> v[] = {
-		{(float)destRect.left - 0.5f,  (float)destRect.top - 0.5f,    0.5f, 2.0f, {srcRect.left  * dx, srcRect.top    * dy} },
-		{(float)destRect.right - 0.5f, (float)destRect.top - 0.5f,    0.5f, 2.0f, {srcRect.right * dx, srcRect.top    * dy} },
-		{(float)destRect.left - 0.5f,  (float)destRect.bottom - 0.5f, 0.5f, 2.0f, {srcRect.left  * dx, srcRect.bottom * dy} },
-		{(float)destRect.right - 0.5f, (float)destRect.bottom - 0.5f, 0.5f, 2.0f, {srcRect.right * dx, srcRect.bottom * dy} },
+		{(float)points[0].x - 0.5f, (float)points[0].y - 0.5f, 0.5f, 2.0f, {srcRect.left  * dx, srcRect.top    * dy} },
+		{(float)points[1].x - 0.5f, (float)points[1].y - 0.5f, 0.5f, 2.0f, {srcRect.right * dx, srcRect.top    * dy} },
+		{(float)points[2].x - 0.5f, (float)points[2].y - 0.5f, 0.5f, 2.0f, {srcRect.left  * dx, srcRect.bottom * dy} },
+		{(float)points[3].x - 0.5f, (float)points[3].y - 0.5f, 0.5f, 2.0f, {srcRect.right * dx, srcRect.bottom * dy} },
 	};
 
 	hr = m_pD3DDevEx->SetTexture(0, pTexture);
@@ -1683,7 +1732,7 @@ HRESULT CDX9VideoProcessor::TextureCopyRect(IDirect3DTexture9* pTexture, const C
 	return hr;
 }
 
-HRESULT CDX9VideoProcessor::TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, IDirect3DPixelShader9* pShader)
+HRESULT CDX9VideoProcessor::TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, IDirect3DPixelShader9* pShader, const int iRotation)
 {
 	HRESULT hr = S_OK;
 
@@ -1695,8 +1744,17 @@ HRESULT CDX9VideoProcessor::TextureResizeShader(IDirect3DTexture9* pTexture, con
 	const float dx = 1.0f / desc.Width;
 	const float dy = 1.0f / desc.Height;
 
-	const float scale_x = (float)srcRect.Width() / destRect.Width();
-	const float scale_y = (float)srcRect.Height() / destRect.Height();
+	int w1, h1;
+	if (iRotation == 90 || iRotation == 270) {
+		w1 = srcRect.Height();
+		h1 = srcRect.Width();
+	} else {
+		w1 = srcRect.Width();
+		h1 = srcRect.Height();
+	}
+
+	const float scale_x = (float)w1 / destRect.Width();
+	const float scale_y = (float)h1 / destRect.Height();
 	const float steps_x = floor(scale_x + 0.5f);
 	const float steps_y = floor(scale_y + 0.5f);
 
@@ -1705,11 +1763,39 @@ HRESULT CDX9VideoProcessor::TextureResizeShader(IDirect3DTexture9* pTexture, con
 	const float tx1 = (float)srcRect.right - 0.5f;
 	const float ty1 = (float)srcRect.bottom - 0.5f;
 
+	POINT points[4];
+	switch (iRotation) {
+	case 90:
+		points[0] = { destRect.right, destRect.top };
+		points[1] = { destRect.right, destRect.bottom };
+		points[2] = { destRect.left,  destRect.top };
+		points[3] = { destRect.left,  destRect.bottom };
+		break;
+	case 180:
+		points[0] = { destRect.right, destRect.bottom };
+		points[1] = { destRect.left,  destRect.bottom };
+		points[2] = { destRect.right, destRect.top    };
+		points[3] = { destRect.left,  destRect.top };
+		break;
+	case 270:
+		points[0] = { destRect.left,  destRect.bottom };
+		points[1] = { destRect.left,  destRect.top    };
+		points[2] = { destRect.right, destRect.bottom };
+		points[3] = { destRect.right, destRect.top    };
+		break;
+	default:
+		points[0] = { destRect.left,  destRect.top    };
+		points[1] = { destRect.right, destRect.top    };
+		points[2] = { destRect.left,  destRect.bottom };
+		points[3] = { destRect.right, destRect.bottom };
+		break;
+	}
+
 	MYD3DVERTEX<1> v[] = {
-		{(float)destRect.left - 0.5f,  (float)destRect.top - 0.5f,    0.5f, 2.0f, { tx0, ty0 } },
-		{(float)destRect.right - 0.5f, (float)destRect.top - 0.5f,    0.5f, 2.0f, { tx1, ty0 } },
-		{(float)destRect.left - 0.5f,  (float)destRect.bottom - 0.5f, 0.5f, 2.0f, { tx0, ty1 } },
-		{(float)destRect.right - 0.5f, (float)destRect.bottom - 0.5f, 0.5f, 2.0f, { tx1, ty1 } },
+		{(float)points[0].x - 0.5f, (float)points[0].y - 0.5f, 0.5f, 2.0f, { tx0, ty0 } },
+		{(float)points[1].x - 0.5f, (float)points[1].y - 0.5f, 0.5f, 2.0f, { tx1, ty0 } },
+		{(float)points[2].x - 0.5f, (float)points[2].y - 0.5f, 0.5f, 2.0f, { tx0, ty1 } },
+		{(float)points[3].x - 0.5f, (float)points[3].y - 0.5f, 0.5f, 2.0f, { tx1, ty1 } },
 	};
 
 	float fConstData[][4] = {
