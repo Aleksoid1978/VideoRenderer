@@ -47,8 +47,6 @@ struct PS_COLOR_TRANSFORM {
 	DirectX::XMFLOAT4 cm_c;
 };
 
-// D3D11<->DXVA2
-
 HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer, const UINT srcW, const UINT srcH, const RECT& srcRect)
 {
 	ASSERT(ppVertexBuffer);
@@ -61,18 +59,14 @@ HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
 	const float src_t = src_dy * srcRect.top;
 	const float src_b = src_dy * srcRect.bottom;
 
-	VERTEX Vertices[6] = {
+	VERTEX Vertices[4] = {
 		// Vertices for drawing whole texture
-		// |\
-		// |_\ lower left triangle
+		// 2 ___4
+		//  |\ |
+		// 1|_\|3
 		{ DirectX::XMFLOAT3(-1, -1, 0), DirectX::XMFLOAT2(src_l, src_b) },
 		{ DirectX::XMFLOAT3(-1, +1, 0), DirectX::XMFLOAT2(src_l, src_t) },
 		{ DirectX::XMFLOAT3(+1, -1, 0), DirectX::XMFLOAT2(src_r, src_b) },
-		// ___
-		// \ |
-		//  \| upper right triangle
-		{ DirectX::XMFLOAT3(+1, -1, 0), DirectX::XMFLOAT2(src_r, src_b) },
-		{ DirectX::XMFLOAT3(-1, +1, 0), DirectX::XMFLOAT2(src_l, src_t) },
 		{ DirectX::XMFLOAT3(+1, +1, 0), DirectX::XMFLOAT2(src_r, src_t) },
 	};
 
@@ -111,11 +105,11 @@ void TextureBlt11(
 	pDeviceContext->PSSetShaderResources(0, 1, &pShaderResourceViews);
 	pDeviceContext->PSSetSamplers(0, 1, &pSampler);
 	pDeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
-	pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	pDeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &Stride, &Offset);
 
 	// Draw textured quad onto render target
-	pDeviceContext->Draw(6, 0);
+	pDeviceContext->Draw(4, 0);
 
 	ID3D11ShaderResourceView* views[1] = {};
 	pDeviceContext->PSSetShaderResources(0, 1, views);
@@ -138,11 +132,11 @@ HRESULT CDX11VideoProcessor::AlphaBlt(ID3D11ShaderResourceView* pShaderResource,
 		m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
 		m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
 		m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
-		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
 
 		// Draw textured quad onto render target
-		m_pDeviceContext->Draw(6, 0);
+		m_pDeviceContext->Draw(4, 0);
 
 		pRenderTargetView->Release();
 	}
@@ -171,11 +165,11 @@ HRESULT CDX11VideoProcessor::AlphaBltSub(ID3D11ShaderResourceView* pShaderResour
 			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
 			m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
 			m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
-			m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 			m_pDeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &Stride, &Offset);
 
 			// Draw textured quad onto render target
-			m_pDeviceContext->Draw(6, 0);
+			m_pDeviceContext->Draw(4, 0);
 
 			pVertexBuffer->Release();
 		}
@@ -250,11 +244,11 @@ HRESULT CDX11VideoProcessor::TextureConvertColor(Tex11Video_t& texVideo, ID3D11T
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
 	m_pDeviceContext->PSSetSamplers(1, 1, (m_srcParams.Subsampling == 444) ? &m_pSamplerPoint : &m_pSamplerLinear);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
-	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
 
 	// Draw textured quad onto render target
-	m_pDeviceContext->Draw(6, 0);
+	m_pDeviceContext->Draw(4, 0);
 
 	ID3D11ShaderResourceView* views[3] = {};
 	m_pDeviceContext->PSSetShaderResources(0, 3, views);
