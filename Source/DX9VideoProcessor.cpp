@@ -1269,6 +1269,7 @@ void CDX9VideoProcessor::SetVPScaling(bool value)
 	m_bVPScaling = value;
 
 	UpdateVideoTexDXVA2VP();
+	UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height()); // may be needed when frame rotation is active
 }
 
 void CDX9VideoProcessor::SetChromaScaling(int value)
