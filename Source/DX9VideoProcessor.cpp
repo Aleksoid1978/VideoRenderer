@@ -1352,9 +1352,12 @@ void CDX9VideoProcessor::UpdateVideoTexDXVA2VP()
 	}
 }
 
-void CDX9VideoProcessor::UpdateCorrectionTex(const int w, const int h)
+void CDX9VideoProcessor::UpdateCorrectionTex(int w, int h)
 {
 	if (m_pPSCorrection || (m_DXVA2VP.IsReady() && m_bVPScaling && m_iRotation)) {
+		if (m_iRotation == 90 || m_iRotation == 270) {
+			std::swap(w, h);
+		}
 		if (w != m_TexCorrection.Width || h != m_TexCorrection.Width) {
 			HRESULT hr = m_TexCorrection.Create(m_pD3DDevEx, m_bVPScaling ? m_DXVA2OutputFmt : m_InternalTexFmt, w, h, D3DUSAGE_RENDERTARGET);
 			DLogIf(FAILED(hr), "CDX9VideoProcessor::UpdateCorrectionTex() : m_TexCorrection.Create() failed with error %s", HR2Str(hr));

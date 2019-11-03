@@ -212,7 +212,7 @@ public:
 private:
 	HRESULT DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
 	void UpdateVideoTexDXVA2VP();
-	void UpdateCorrectionTex(const int w, const int h);
+	void UpdateCorrectionTex(int w, int h);
 	void UpdateUpscalingShaders();
 	void UpdateDownscalingShaders();
 	HRESULT UpdateChromaScalingShader();
