@@ -47,7 +47,7 @@ struct PS_COLOR_TRANSFORM {
 	DirectX::XMFLOAT4 cm_c;
 };
 
-HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer, const UINT srcW, const UINT srcH, const RECT& srcRect)
+HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer, const UINT srcW, const UINT srcH, const RECT& srcRect, const int iRotation)
 {
 	ASSERT(ppVertexBuffer);
 	ASSERT(*ppVertexBuffer == nullptr);
@@ -59,15 +59,43 @@ HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
 	const float src_t = src_dy * srcRect.top;
 	const float src_b = src_dy * srcRect.bottom;
 
+	POINT points[4];
+	switch (iRotation) {
+	case 90:
+		points[0] = { -1, +1 };
+		points[1] = { +1, +1 };
+		points[2] = { -1, -1 };
+		points[3] = { +1, -1 };
+		break;
+	case 180:
+		points[0] = { +1, +1 };
+		points[1] = { +1, -1 };
+		points[2] = { -1, +1 };
+		points[3] = { -1, -1 };
+		break;
+	case 270:
+		points[0] = { +1, -1 };
+		points[1] = { -1, -1 };
+		points[2] = { +1, +1 };
+		points[3] = { -1, +1 };
+		break;
+	default:
+		points[0] = { -1, -1 };
+		points[1] = { -1, +1 };
+		points[2] = { +1, -1 };
+		points[3] = { +1, +1 };
+		break;
+	}
+
 	VERTEX Vertices[4] = {
 		// Vertices for drawing whole texture
 		// 2 ___4
 		//  |\ |
 		// 1|_\|3
-		{ DirectX::XMFLOAT3(-1, -1, 0), DirectX::XMFLOAT2(src_l, src_b) },
-		{ DirectX::XMFLOAT3(-1, +1, 0), DirectX::XMFLOAT2(src_l, src_t) },
-		{ DirectX::XMFLOAT3(+1, -1, 0), DirectX::XMFLOAT2(src_r, src_b) },
-		{ DirectX::XMFLOAT3(+1, +1, 0), DirectX::XMFLOAT2(src_r, src_t) },
+		{ DirectX::XMFLOAT3(points[0].x, points[0].y, 0), DirectX::XMFLOAT2(src_l, src_b) },
+		{ DirectX::XMFLOAT3(points[1].x, points[1].y, 0), DirectX::XMFLOAT2(src_l, src_t) },
+		{ DirectX::XMFLOAT3(points[2].x, points[2].y, 0), DirectX::XMFLOAT2(src_r, src_b) },
+		{ DirectX::XMFLOAT3(points[3].x, points[3].y, 0), DirectX::XMFLOAT2(src_r, src_t) },
 	};
 
 	D3D11_BUFFER_DESC BufferDesc = { sizeof(Vertices), D3D11_USAGE_DEFAULT, D3D11_BIND_VERTEX_BUFFER, 0, 0, 0 };
@@ -154,7 +182,7 @@ HRESULT CDX11VideoProcessor::AlphaBltSub(ID3D11ShaderResourceView* pShaderResour
 		UINT Stride = sizeof(VERTEX);
 		UINT Offset = 0;
 		ID3D11Buffer* pVertexBuffer = nullptr;
-		hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, m_d3dpp.BackBufferWidth, m_d3dpp.BackBufferHeight, srcRect);
+		hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, m_d3dpp.BackBufferWidth, m_d3dpp.BackBufferHeight, srcRect, 0);
 
 		if (S_OK == hr) {
 			// Set resources
@@ -180,7 +208,7 @@ HRESULT CDX11VideoProcessor::AlphaBltSub(ID3D11ShaderResourceView* pShaderResour
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& destRect, ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer)
+HRESULT CDX11VideoProcessor::TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& destRect, ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer, const int iRotation)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
 	CComPtr<ID3D11Buffer> pVertexBuffer;
@@ -191,7 +219,7 @@ HRESULT CDX11VideoProcessor::TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRen
 		return hr;
 	}
 
-	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect);
+	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, iRotation);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -256,7 +284,7 @@ HRESULT CDX11VideoProcessor::TextureConvertColor(Tex11Video_t& texVideo, ID3D11T
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::TextureResizeShader(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, ID3D11PixelShader* pPixelShader)
+HRESULT CDX11VideoProcessor::TextureResizeShader(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, ID3D11PixelShader* pPixelShader, const int iRotation)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
 	CComPtr<ID3D11Buffer> pVertexBuffer;
@@ -268,12 +296,12 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(Tex2D_t& Tex, ID3D11Texture2D* 
 		return hr;
 	}
 
-	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect);
+	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, iRotation);
 	if (FAILED(hr)) {
 		return hr;
 	}
 
-	const FLOAT constants[][4] = {
+	const FLOAT constants[][4] = { // TODO: check for rotation
 		{(float)Tex.desc.Width, (float)Tex.desc.Height, 1.0f / Tex.desc.Width, 1.0f / Tex.desc.Height},
 		{(float)srcRect.Width() / dstRect.Width(), (float)srcRect.Height() / dstRect.Height(), 0, 0}
 	};
@@ -630,7 +658,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	bdesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBlendState(&bdesc, &m_pAlphaBlendStateInv));
 
-	EXECUTE_ASSERT(S_OK == CreateVertexBuffer(m_pDevice, &m_pFullFrameVertexBuffer, 1, 1, CRect(0, 0, 1, 1)));
+	EXECUTE_ASSERT(S_OK == CreateVertexBuffer(m_pDevice, &m_pFullFrameVertexBuffer, 1, 1, CRect(0, 0, 1, 1), 0));
 
 	LPVOID data;
 	DWORD size;
@@ -1644,7 +1672,7 @@ HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const 
 			hr = D3D11VPPass(m_TexConvert.pTexture, rSrcRect, rSrcRect, second);
 			hr = ResizeShader2Pass(m_TexConvert, m_TexCorrection.pTexture, rSrcRect, rCorrection);
 		}
-		hr = TextureCopyRect(m_TexCorrection, pRenderTarget, rCorrection, rDstRect, m_pPSCorrection, nullptr);
+		hr = TextureCopyRect(m_TexCorrection, pRenderTarget, rCorrection, rDstRect, m_pPSCorrection, nullptr, 0);
 	}
 	else {
 		if (m_bVPScaling) {
@@ -1696,8 +1724,14 @@ HRESULT CDX11VideoProcessor::ResizeShader2Pass(Tex2D_t& Tex, ID3D11Texture2D* pR
 	D3D11_TEXTURE2D_DESC RTDesc;
 	pRenderTarget->GetDesc(&RTDesc);
 
-	const int w1 = rSrcRect.Width();
-	const int h1 = rSrcRect.Height();
+	int w1, h1;
+	if (m_iRotation == 90 || m_iRotation == 270) {
+		w1 = rSrcRect.Height();
+		h1 = rSrcRect.Width();
+	} else {
+		w1 = rSrcRect.Width();
+		h1 = rSrcRect.Height();
+	}
 	const int w2 = rDstRect.Width();
 	const int h2 = rDstRect.Height();
 	const int k = m_bInterpolateAt50pct ? 2 : 1;
@@ -1729,22 +1763,22 @@ HRESULT CDX11VideoProcessor::ResizeShader2Pass(Tex2D_t& Tex, ID3D11Texture2D* pR
 		CRect resizeRect(0, 0, texWidth, texHeight);
 
 		// First resize pass
-		hr = TextureResizeShader(Tex, m_TexResize.pTexture, rSrcRect, resizeRect, resizerX);
+		hr = TextureResizeShader(Tex, m_TexResize.pTexture, rSrcRect, resizeRect, resizerX, m_iRotation);
 		// Second resize pass
-		hr = TextureResizeShader(m_TexResize, pRenderTarget, resizeRect, rDstRect, resizerY);
+		hr = TextureResizeShader(m_TexResize, pRenderTarget, resizeRect, rDstRect, resizerY, 0);
 	}
 	else {
 		if (resizerX) {
 			// one pass resize for width
-			hr = TextureResizeShader(Tex, pRenderTarget, rSrcRect, rDstRect, resizerX);
+			hr = TextureResizeShader(Tex, pRenderTarget, rSrcRect, rDstRect, resizerX, m_iRotation);
 		}
 		else if (resizerY) {
 			// one pass resize for height
-			hr = TextureResizeShader(Tex, pRenderTarget, rSrcRect, rDstRect, resizerY);
+			hr = TextureResizeShader(Tex, pRenderTarget, rSrcRect, rDstRect, resizerY, m_iRotation);
 		}
 		else {
 			// no resize
-			hr = TextureCopyRect(Tex, pRenderTarget, rSrcRect, rDstRect, m_pPS_Simple, nullptr);
+			hr = TextureCopyRect(Tex, pRenderTarget, rSrcRect, rDstRect, m_pPS_Simple, nullptr, m_iRotation);
 		}
 	}
 
@@ -1970,9 +2004,9 @@ void CDX11VideoProcessor::SetDownscaling(int value)
 
 void CDX11VideoProcessor::SetRotation(int value)
 {
+	m_iRotation = value;
 	if (m_D3D11VP.IsReady()) {
-		m_iRotation = value;
-		m_D3D11VP.SetRotation(static_cast<D3D11_VIDEO_PROCESSOR_ROTATION>(value / 90));
+		m_D3D11VP.SetRotation(m_bVPScaling ? static_cast<D3D11_VIDEO_PROCESSOR_ROTATION>(value / 90) : D3D11_VIDEO_PROCESSOR_ROTATION_IDENTITY);
 	}
 }
 
