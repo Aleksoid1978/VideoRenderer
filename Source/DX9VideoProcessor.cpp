@@ -1499,20 +1499,28 @@ HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const C
 HRESULT CDX9VideoProcessor::ResizeShader2Pass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
 	HRESULT hr = S_OK;
-	int w1, h1;
-	if (m_iRotation == 90 || m_iRotation == 270) {
-		w1 = rSrcRect.Height();
-		h1 = rSrcRect.Width();
-	} else {
-		w1 = rSrcRect.Width();
-		h1 = rSrcRect.Height();
-	}
 	const int w2 = rDstRect.Width();
 	const int h2 = rDstRect.Height();
 	const int k = m_bInterpolateAt50pct ? 2 : 1;
 
-	IDirect3DPixelShader9* resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleX : m_pShaderUpscaleX;
-	IDirect3DPixelShader9* resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
+	int w1, h1;
+	IDirect3DPixelShader9* resizerX;
+	IDirect3DPixelShader9* resizerY;
+	if (m_iRotation == 90 || m_iRotation == 270) {
+		w1 = rSrcRect.Height();
+		h1 = rSrcRect.Width();
+		resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleY : m_pShaderUpscaleY; // use Y scaling here
+		if (resizerX) {
+			resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
+		} else {
+			resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleX : m_pShaderUpscaleX; // use X scaling here
+		}
+	} else {
+		w1 = rSrcRect.Width();
+		h1 = rSrcRect.Height();
+		resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleX : m_pShaderUpscaleX;
+		resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
+	}
 
 	if (resizerX && resizerY) {
 		// two pass resize
