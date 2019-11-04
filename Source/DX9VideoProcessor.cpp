@@ -1690,7 +1690,7 @@ HRESULT CDX9VideoProcessor::TextureConvertColor(Tex9Video_t& texVideo)
 
 }
 
-HRESULT CDX9VideoProcessor::TextureCopyRect(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, D3DTEXTUREFILTERTYPE filter, const int iRotation)
+HRESULT CDX9VideoProcessor::TextureCopyRect(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& dstRect, D3DTEXTUREFILTERTYPE filter, const int iRotation)
 {
 	HRESULT hr;
 
@@ -1705,28 +1705,28 @@ HRESULT CDX9VideoProcessor::TextureCopyRect(IDirect3DTexture9* pTexture, const C
 	POINT points[4];
 	switch (iRotation) {
 	case 90:
-		points[0] = { destRect.right, destRect.top    };
-		points[1] = { destRect.right, destRect.bottom };
-		points[2] = { destRect.left,  destRect.top    };
-		points[3] = { destRect.left,  destRect.bottom };
+		points[0] = { dstRect.right, dstRect.top    };
+		points[1] = { dstRect.right, dstRect.bottom };
+		points[2] = { dstRect.left,  dstRect.top    };
+		points[3] = { dstRect.left,  dstRect.bottom };
 		break;
 	case 180:
-		points[0] = { destRect.right, destRect.bottom };
-		points[1] = { destRect.left,  destRect.bottom };
-		points[2] = { destRect.right, destRect.top    };
-		points[3] = { destRect.left,  destRect.top    };
+		points[0] = { dstRect.right, dstRect.bottom };
+		points[1] = { dstRect.left,  dstRect.bottom };
+		points[2] = { dstRect.right, dstRect.top    };
+		points[3] = { dstRect.left,  dstRect.top    };
 		break;
 	case 270:
-		points[0] = { destRect.left,  destRect.bottom };
-		points[1] = { destRect.left,  destRect.top    };
-		points[2] = { destRect.right, destRect.bottom };
-		points[3] = { destRect.right, destRect.top    };
+		points[0] = { dstRect.left,  dstRect.bottom };
+		points[1] = { dstRect.left,  dstRect.top    };
+		points[2] = { dstRect.right, dstRect.bottom };
+		points[3] = { dstRect.right, dstRect.top    };
 		break;
 	default:
-		points[0] = { destRect.left,  destRect.top    };
-		points[1] = { destRect.right, destRect.top    };
-		points[2] = { destRect.left,  destRect.bottom };
-		points[3] = { destRect.right, destRect.bottom };
+		points[0] = { dstRect.left,  dstRect.top    };
+		points[1] = { dstRect.right, dstRect.top    };
+		points[2] = { dstRect.left,  dstRect.bottom };
+		points[3] = { dstRect.right, dstRect.bottom };
 		break;
 	}
 
@@ -1743,7 +1743,7 @@ HRESULT CDX9VideoProcessor::TextureCopyRect(IDirect3DTexture9* pTexture, const C
 	return hr;
 }
 
-HRESULT CDX9VideoProcessor::TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, IDirect3DPixelShader9* pShader, const int iRotation)
+HRESULT CDX9VideoProcessor::TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& dstRect, IDirect3DPixelShader9* pShader, const int iRotation)
 {
 	HRESULT hr = S_OK;
 
@@ -1755,19 +1755,18 @@ HRESULT CDX9VideoProcessor::TextureResizeShader(IDirect3DTexture9* pTexture, con
 	const float dx = 1.0f / desc.Width;
 	const float dy = 1.0f / desc.Height;
 
-	int w1, h1;
+	float scale_x = (float)srcRect.Width();
+	float scale_y = (float)srcRect.Height();
 	if (iRotation == 90 || iRotation == 270) {
-		w1 = srcRect.Height();
-		h1 = srcRect.Width();
+		scale_x /= dstRect.Height();
+		scale_y /= dstRect.Width();
 	} else {
-		w1 = srcRect.Width();
-		h1 = srcRect.Height();
+		scale_x /= dstRect.Width();
+		scale_y /= dstRect.Height();
 	}
 
-	const float scale_x = (float)w1 / destRect.Width();
-	const float scale_y = (float)h1 / destRect.Height();
-	const float steps_x = floor(scale_x + 0.5f);
-	const float steps_y = floor(scale_y + 0.5f);
+	//const float steps_x = floor(scale_x + 0.5f);
+	//const float steps_y = floor(scale_y + 0.5f);
 
 	const float tx0 = (float)srcRect.left - 0.5f;
 	const float ty0 = (float)srcRect.top - 0.5f;
@@ -1777,28 +1776,28 @@ HRESULT CDX9VideoProcessor::TextureResizeShader(IDirect3DTexture9* pTexture, con
 	POINT points[4];
 	switch (iRotation) {
 	case 90:
-		points[0] = { destRect.right, destRect.top };
-		points[1] = { destRect.right, destRect.bottom };
-		points[2] = { destRect.left,  destRect.top };
-		points[3] = { destRect.left,  destRect.bottom };
+		points[0] = { dstRect.right, dstRect.top };
+		points[1] = { dstRect.right, dstRect.bottom };
+		points[2] = { dstRect.left,  dstRect.top };
+		points[3] = { dstRect.left,  dstRect.bottom };
 		break;
 	case 180:
-		points[0] = { destRect.right, destRect.bottom };
-		points[1] = { destRect.left,  destRect.bottom };
-		points[2] = { destRect.right, destRect.top    };
-		points[3] = { destRect.left,  destRect.top };
+		points[0] = { dstRect.right, dstRect.bottom };
+		points[1] = { dstRect.left,  dstRect.bottom };
+		points[2] = { dstRect.right, dstRect.top    };
+		points[3] = { dstRect.left,  dstRect.top };
 		break;
 	case 270:
-		points[0] = { destRect.left,  destRect.bottom };
-		points[1] = { destRect.left,  destRect.top    };
-		points[2] = { destRect.right, destRect.bottom };
-		points[3] = { destRect.right, destRect.top    };
+		points[0] = { dstRect.left,  dstRect.bottom };
+		points[1] = { dstRect.left,  dstRect.top    };
+		points[2] = { dstRect.right, dstRect.bottom };
+		points[3] = { dstRect.right, dstRect.top    };
 		break;
 	default:
-		points[0] = { destRect.left,  destRect.top    };
-		points[1] = { destRect.right, destRect.top    };
-		points[2] = { destRect.left,  destRect.bottom };
-		points[3] = { destRect.right, destRect.bottom };
+		points[0] = { dstRect.left,  dstRect.top    };
+		points[1] = { dstRect.right, dstRect.top    };
+		points[2] = { dstRect.left,  dstRect.bottom };
+		points[3] = { dstRect.right, dstRect.bottom };
 		break;
 	}
 

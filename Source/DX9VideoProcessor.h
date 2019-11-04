@@ -224,8 +224,8 @@ private:
 
 	HRESULT TextureCopy(IDirect3DTexture9* pTexture);
 	HRESULT TextureConvertColor(Tex9Video_t& texVideo);
-	HRESULT TextureCopyRect(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, D3DTEXTUREFILTERTYPE filter, const int iRotation);
-	HRESULT TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& destRect, IDirect3DPixelShader9* pShader, const int iRotation);
+	HRESULT TextureCopyRect(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& dstRect, D3DTEXTUREFILTERTYPE filter, const int iRotation);
+	HRESULT TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& dstRect, IDirect3DPixelShader9* pShader, const int iRotation);
 
 	void UpdateStatsStatic();
 	HRESULT DrawStats();
