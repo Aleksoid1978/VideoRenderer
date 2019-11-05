@@ -162,6 +162,31 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTex
 	return S_OK;
 }
 
+struct {
+	UINT shaderX;
+	UINT shaderY;
+	wchar_t* const description;
+} static const s_UpscalingResIDs[UPSCALE_COUNT] = {
+	{0,                             0,                             L"Nearest-neighbor"  },
+	{IDF_SHADER_INTERP_MITCHELL4_X, IDF_SHADER_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
+	{IDF_SHADER_INTERP_CATMULL4_X,  IDF_SHADER_INTERP_CATMULL4_Y , L"Catmull-Rom"       },
+	{IDF_SHADER_INTERP_LANCZOS2_X,  IDF_SHADER_INTERP_LANCZOS2_Y , L"Lanczos2"          },
+	{IDF_SHADER_INTERP_LANCZOS3_X,  IDF_SHADER_INTERP_LANCZOS3_Y , L"Lanczos3"          },
+};
+
+struct {
+	UINT shaderX;
+	UINT shaderY;
+	wchar_t* const description;
+} static const s_DownscalingResIDs[DOWNSCALE_COUNT] = {
+	{IDF_SHADER_CONVOL_BOX_X,       IDF_SHADER_CONVOL_BOX_Y,       L"Box"          },
+	{IDF_SHADER_CONVOL_BILINEAR_X,  IDF_SHADER_CONVOL_BILINEAR_Y,  L"Bilinear"     },
+	{IDF_SHADER_CONVOL_HAMMING_X,   IDF_SHADER_CONVOL_HAMMING_Y,   L"Hamming"      },
+	{IDF_SHADER_CONVOL_BICUBIC05_X, IDF_SHADER_CONVOL_BICUBIC05_Y, L"Bicubic"      },
+	{IDF_SHADER_CONVOL_BICUBIC15_X, IDF_SHADER_CONVOL_BICUBIC15_Y, L"Bicubic sharp"},
+	{IDF_SHADER_CONVOL_LANCZOS_X,   IDF_SHADER_CONVOL_LANCZOS_Y,   L"Lanczos"      }
+};
+
 // CDX9VideoProcessor
 
 CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
@@ -365,8 +390,8 @@ void CDX9VideoProcessor::ReleaseDevice()
 	m_pShaderUpscaleY.Release();
 	m_pShaderDownscaleX.Release();
 	m_pShaderDownscaleY.Release();
-	m_strShaderUpscale   = nullptr;
-	m_strShaderDownscale = nullptr;
+	m_strShaderX = nullptr;
+	m_strShaderY = nullptr;
 
 #if D3D9FONT_ENABLE
 	m_Font3D.InvalidateDeviceObjects();
@@ -539,6 +564,35 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 		for (int i = 0; i < 3; i++) {
 			std::swap(m_PSConvColorData.fConstants[i][2], m_PSConvColorData.fConstants[i][3]);
 		}
+	}
+}
+
+void CDX9VideoProcessor::UpdateRenderRects()
+{
+	m_srcRenderRect = m_srcRect;
+	m_dstRenderRect = m_videoRect;
+	ClipToSurface(m_windowRect.Width(), m_windowRect.Height(), m_srcRenderRect, m_dstRenderRect);
+
+	{
+		const int w2 = m_dstRenderRect.Width();
+		const int h2 = m_dstRenderRect.Height();
+		const int k = m_bInterpolateAt50pct ? 2 : 1;
+		int w1, h1;
+		if (m_iRotation == 90 || m_iRotation == 270) {
+			w1 = m_srcRenderRect.Height();
+			h1 = m_srcRenderRect.Width();
+		} else {
+			w1 = m_srcRenderRect.Width();
+			h1 = m_srcRenderRect.Height();
+		}
+		m_strShaderX = (w1 == w2) ? nullptr
+			: (w1 > k * w2) 
+			? s_DownscalingResIDs[m_iDownscaling].description
+			: s_UpscalingResIDs[m_iUpscaling].description;
+		m_strShaderY = (h1 == h2) ? nullptr
+			: (h1 > k * h2)
+			? s_DownscalingResIDs[m_iDownscaling].description
+			: s_UpscalingResIDs[m_iUpscaling].description;
 	}
 }
 
@@ -983,13 +1037,6 @@ HRESULT CDX9VideoProcessor::Render(int field)
 	m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
 
 	if (!m_videoRect.IsRectEmpty()) {
-		m_srcRenderRect = m_srcRect;
-		m_dstRenderRect = m_videoRect;
-		D3DSURFACE_DESC desc = {};
-		if (S_OK == pBackBuffer->GetDesc(&desc)) {
-			ClipToSurface(desc.Width, desc.Height, m_srcRenderRect, m_dstRenderRect);
-		}
-
 		if (m_DXVA2VP.IsReady()) {
 			hr = ProcessDXVA2(pBackBuffer, m_srcRenderRect, m_dstRenderRect, m_FieldDrawn == 2);
 		} else {
@@ -1080,11 +1127,13 @@ void CDX9VideoProcessor::SetVideoRect(const CRect& videoRect)
 {
 	UpdateCorrectionTex(videoRect.Width(), videoRect.Height());
 	m_videoRect = videoRect;
+	UpdateRenderRects();
 }
 
 HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 {
 	m_windowRect = windowRect;
+	UpdateRenderRects();
 
 	if (m_pD3DDevEx) {
 		HRESULT hr = S_OK;
@@ -1370,49 +1419,22 @@ void CDX9VideoProcessor::UpdateCorrectionTex(int w, int h)
 
 void CDX9VideoProcessor::UpdateUpscalingShaders()
 {
-	struct {
-		UINT shaderX;
-		UINT shaderY;
-		wchar_t* const description;
-	} static const resIDs[UPSCALE_COUNT] = {
-		{0,                             0,                             L"Nearest-neighbor"  },
-		{IDF_SHADER_INTERP_MITCHELL4_X, IDF_SHADER_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
-		{IDF_SHADER_INTERP_CATMULL4_X,  IDF_SHADER_INTERP_CATMULL4_Y , L"Catmull-Rom"       },
-		{IDF_SHADER_INTERP_LANCZOS2_X,  IDF_SHADER_INTERP_LANCZOS2_Y , L"Lanczos2"          },
-		{IDF_SHADER_INTERP_LANCZOS3_X,  IDF_SHADER_INTERP_LANCZOS3_Y , L"Lanczos3"          },
-	};
-
 	m_pShaderUpscaleX.Release();
 	m_pShaderUpscaleY.Release();
 
 	if (m_iUpscaling != UPSCALE_Nearest) {
-		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, resIDs[m_iUpscaling].shaderX));
-		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, resIDs[m_iUpscaling].shaderY));
+		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, s_UpscalingResIDs[m_iUpscaling].shaderX));
+		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, s_UpscalingResIDs[m_iUpscaling].shaderY));
 	}
-	m_strShaderUpscale = resIDs[m_iUpscaling].description;
 }
 
 void CDX9VideoProcessor::UpdateDownscalingShaders()
 {
-	struct {
-		UINT shaderX;
-		UINT shaderY;
-		wchar_t* const description;
-	} static const resIDs[DOWNSCALE_COUNT] = {
-		{IDF_SHADER_CONVOL_BOX_X,       IDF_SHADER_CONVOL_BOX_Y,       L"Box"          },
-		{IDF_SHADER_CONVOL_BILINEAR_X,  IDF_SHADER_CONVOL_BILINEAR_Y,  L"Bilinear"     },
-		{IDF_SHADER_CONVOL_HAMMING_X,   IDF_SHADER_CONVOL_HAMMING_Y,   L"Hamming"      },
-		{IDF_SHADER_CONVOL_BICUBIC05_X, IDF_SHADER_CONVOL_BICUBIC05_Y, L"Bicubic"      },
-		{IDF_SHADER_CONVOL_BICUBIC15_X, IDF_SHADER_CONVOL_BICUBIC15_Y, L"Bicubic sharp"},
-		{IDF_SHADER_CONVOL_LANCZOS_X,   IDF_SHADER_CONVOL_LANCZOS_Y,   L"Lanczos"      }
-	};
-
 	m_pShaderDownscaleX.Release();
 	m_pShaderDownscaleY.Release();
 
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleX, resIDs[m_iDownscaling].shaderX));
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, resIDs[m_iDownscaling].shaderY));
-	m_strShaderDownscale = resIDs[m_iDownscaling].description;
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleX, s_DownscalingResIDs[m_iDownscaling].shaderX));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, s_DownscalingResIDs[m_iDownscaling].shaderY));
 }
 
 HRESULT CDX9VideoProcessor::UpdateChromaScalingShader()
@@ -1927,18 +1949,23 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	const int srcH = m_srcRenderRect.Height();
 	const int dstW = m_dstRenderRect.Width();
 	const int dstH = m_dstRenderRect.Height();
-	str.AppendFormat(L"\nScaling       : %dx%d -> %dx%d", srcW, srcH, dstW, dstH);
+	if (m_iRotation) {
+		str.AppendFormat(L"\nScaling       : %dx%d r%d°> %dx%d", srcW, srcH, m_iRotation, dstW, dstH);
+	} else {
+		str.AppendFormat(L"\nScaling       : %dx%d -> %dx%d", srcW, srcH, dstW, dstH);
+	}
 	if (srcW != dstW || srcH != dstH) {
 		if (m_DXVA2VP.IsReady() && m_bVPScaling) {
 			str.Append(L" DXVA2");
 		}
 		else {
-			const int k = m_bInterpolateAt50pct ? 2 : 1;
-			const wchar_t* strX = (srcW > k * dstW) ? m_strShaderDownscale : m_strShaderUpscale;
-			const wchar_t* strY = (srcH > k * dstH) ? m_strShaderDownscale : m_strShaderUpscale;
-			str.AppendFormat(L" %s", strX);
-			if (strY != strX) {
-				str.AppendFormat(L"/%s", strY);
+			if (m_strShaderX) {
+				str.AppendFormat(L" %s", m_strShaderX);
+				if (m_strShaderY && m_strShaderY != m_strShaderX) {
+					str.AppendFormat(L"/%s", m_strShaderY);
+				}
+			} else if (m_strShaderY) {
+				str.AppendFormat(L" %s", m_strShaderY);
 			}
 		}
 	}

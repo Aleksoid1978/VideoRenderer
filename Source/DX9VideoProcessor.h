@@ -128,8 +128,8 @@ private:
 	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleY;
 	CComPtr<IDirect3DPixelShader9> m_pShaderDownscaleX;
 	CComPtr<IDirect3DPixelShader9> m_pShaderDownscaleY;
-	const wchar_t* m_strShaderUpscale   = nullptr;
-	const wchar_t* m_strShaderDownscale = nullptr;
+	const wchar_t* m_strShaderX = nullptr;
+	const wchar_t* m_strShaderY = nullptr;
 
 	CRenderStats m_RenderStats;
 	CStringW m_strStatsStatic1;
@@ -164,6 +164,8 @@ private:
 	HRESULT InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height);
 	HRESULT CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
+
+	void UpdateRenderRects();
 
 public:
 	BOOL VerifyMediaType(const CMediaType* pmt);

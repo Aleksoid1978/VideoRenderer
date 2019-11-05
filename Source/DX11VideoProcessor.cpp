@@ -2114,7 +2114,11 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	const int srcH = m_srcRenderRect.Height();
 	const int dstW = m_dstRenderRect.Width();
 	const int dstH = m_dstRenderRect.Height();
-	str.AppendFormat(L"\nScaling       : %dx%d -> %dx%d", srcW, srcH, dstW, dstH);
+	if (m_iRotation) {
+		str.AppendFormat(L"\nScaling       : %dx%d r%d°> %dx%d", srcW, srcH, m_iRotation, dstW, dstH);
+	} else {
+		str.AppendFormat(L"\nScaling       : %dx%d -> %dx%d", srcW, srcH, dstW, dstH);
+	}
 	if (srcW != dstW || srcH != dstH) {
 		if (m_D3D11VP.IsReady() && m_bVPScaling) {
 			str.Append(L" D3D11");
