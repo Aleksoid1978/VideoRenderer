@@ -95,8 +95,8 @@ private:
 	CComPtr<ID3D11PixelShader> m_pShaderUpscaleY;
 	CComPtr<ID3D11PixelShader> m_pShaderDownscaleX;
 	CComPtr<ID3D11PixelShader> m_pShaderDownscaleY;
-	const wchar_t* m_strShaderUpscale   = nullptr;
-	const wchar_t* m_strShaderDownscale = nullptr;
+	const wchar_t* m_strShaderX = nullptr;
+	const wchar_t* m_strShaderY = nullptr;
 
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
@@ -211,6 +211,8 @@ private:
 
 	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
+
+	void UpdateRenderRects();
 
 public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);

@@ -31,6 +31,23 @@
 #include "DX9VideoProcessor.h"
 #include "Shaders.h"
 
+static const ScalingShaderResId s_Upscaling9ResIDs[UPSCALE_COUNT] = {
+	{0,                             0,                             L"Nearest-neighbor"  },
+	{IDF_SHADER_INTERP_MITCHELL4_X, IDF_SHADER_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
+	{IDF_SHADER_INTERP_CATMULL4_X,  IDF_SHADER_INTERP_CATMULL4_Y , L"Catmull-Rom"       },
+	{IDF_SHADER_INTERP_LANCZOS2_X,  IDF_SHADER_INTERP_LANCZOS2_Y , L"Lanczos2"          },
+	{IDF_SHADER_INTERP_LANCZOS3_X,  IDF_SHADER_INTERP_LANCZOS3_Y , L"Lanczos3"          },
+};
+
+static const ScalingShaderResId s_Downscaling9ResIDs[DOWNSCALE_COUNT] = {
+	{IDF_SHADER_CONVOL_BOX_X,       IDF_SHADER_CONVOL_BOX_Y,       L"Box"          },
+	{IDF_SHADER_CONVOL_BILINEAR_X,  IDF_SHADER_CONVOL_BILINEAR_Y,  L"Bilinear"     },
+	{IDF_SHADER_CONVOL_HAMMING_X,   IDF_SHADER_CONVOL_HAMMING_Y,   L"Hamming"      },
+	{IDF_SHADER_CONVOL_BICUBIC05_X, IDF_SHADER_CONVOL_BICUBIC05_Y, L"Bicubic"      },
+	{IDF_SHADER_CONVOL_BICUBIC15_X, IDF_SHADER_CONVOL_BICUBIC15_Y, L"Bicubic sharp"},
+	{IDF_SHADER_CONVOL_LANCZOS_X,   IDF_SHADER_CONVOL_LANCZOS_Y,   L"Lanczos"      }
+};
+
 #pragma pack(push, 1)
 template<unsigned texcoords>
 struct MYD3DVERTEX {
@@ -161,31 +178,6 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTex
 
 	return S_OK;
 }
-
-struct {
-	UINT shaderX;
-	UINT shaderY;
-	wchar_t* const description;
-} static const s_UpscalingResIDs[UPSCALE_COUNT] = {
-	{0,                             0,                             L"Nearest-neighbor"  },
-	{IDF_SHADER_INTERP_MITCHELL4_X, IDF_SHADER_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
-	{IDF_SHADER_INTERP_CATMULL4_X,  IDF_SHADER_INTERP_CATMULL4_Y , L"Catmull-Rom"       },
-	{IDF_SHADER_INTERP_LANCZOS2_X,  IDF_SHADER_INTERP_LANCZOS2_Y , L"Lanczos2"          },
-	{IDF_SHADER_INTERP_LANCZOS3_X,  IDF_SHADER_INTERP_LANCZOS3_Y , L"Lanczos3"          },
-};
-
-struct {
-	UINT shaderX;
-	UINT shaderY;
-	wchar_t* const description;
-} static const s_DownscalingResIDs[DOWNSCALE_COUNT] = {
-	{IDF_SHADER_CONVOL_BOX_X,       IDF_SHADER_CONVOL_BOX_Y,       L"Box"          },
-	{IDF_SHADER_CONVOL_BILINEAR_X,  IDF_SHADER_CONVOL_BILINEAR_Y,  L"Bilinear"     },
-	{IDF_SHADER_CONVOL_HAMMING_X,   IDF_SHADER_CONVOL_HAMMING_Y,   L"Hamming"      },
-	{IDF_SHADER_CONVOL_BICUBIC05_X, IDF_SHADER_CONVOL_BICUBIC05_Y, L"Bicubic"      },
-	{IDF_SHADER_CONVOL_BICUBIC15_X, IDF_SHADER_CONVOL_BICUBIC15_Y, L"Bicubic sharp"},
-	{IDF_SHADER_CONVOL_LANCZOS_X,   IDF_SHADER_CONVOL_LANCZOS_Y,   L"Lanczos"      }
-};
 
 // CDX9VideoProcessor
 
@@ -586,13 +578,13 @@ void CDX9VideoProcessor::UpdateRenderRects()
 			h1 = m_srcRenderRect.Height();
 		}
 		m_strShaderX = (w1 == w2) ? nullptr
-			: (w1 > k * w2) 
-			? s_DownscalingResIDs[m_iDownscaling].description
-			: s_UpscalingResIDs[m_iUpscaling].description;
+			: (w1 > k * w2)
+			? s_Downscaling9ResIDs[m_iDownscaling].description
+			: s_Upscaling9ResIDs[m_iUpscaling].description;
 		m_strShaderY = (h1 == h2) ? nullptr
 			: (h1 > k * h2)
-			? s_DownscalingResIDs[m_iDownscaling].description
-			: s_UpscalingResIDs[m_iUpscaling].description;
+			? s_Downscaling9ResIDs[m_iDownscaling].description
+			: s_Upscaling9ResIDs[m_iUpscaling].description;
 	}
 }
 
@@ -1414,8 +1406,8 @@ void CDX9VideoProcessor::UpdateUpscalingShaders()
 	m_pShaderUpscaleY.Release();
 
 	if (m_iUpscaling != UPSCALE_Nearest) {
-		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, s_UpscalingResIDs[m_iUpscaling].shaderX));
-		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, s_UpscalingResIDs[m_iUpscaling].shaderY));
+		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, s_Upscaling9ResIDs[m_iUpscaling].shaderX));
+		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, s_Upscaling9ResIDs[m_iUpscaling].shaderY));
 	}
 }
 
@@ -1424,8 +1416,8 @@ void CDX9VideoProcessor::UpdateDownscalingShaders()
 	m_pShaderDownscaleX.Release();
 	m_pShaderDownscaleY.Release();
 
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleX, s_DownscalingResIDs[m_iDownscaling].shaderX));
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, s_DownscalingResIDs[m_iDownscaling].shaderY));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleX, s_Downscaling9ResIDs[m_iDownscaling].shaderX));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, s_Downscaling9ResIDs[m_iDownscaling].shaderY));
 }
 
 HRESULT CDX9VideoProcessor::UpdateChromaScalingShader()

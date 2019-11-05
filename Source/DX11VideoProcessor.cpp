@@ -35,6 +35,23 @@
 #include "./Include/ID3DVideoMemoryConfiguration.h"
 #include "Shaders.h"
 
+static const ScalingShaderResId s_Upscaling11ResIDs[UPSCALE_COUNT] = {
+	{0,                            0,                            L"Nearest-neighbor"  },
+	{IDF_PSH11_INTERP_MITCHELL4_X, IDF_PSH11_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
+	{IDF_PSH11_INTERP_CATMULL4_X,  IDF_PSH11_INTERP_CATMULL4_Y , L"Catmull-Rom"       },
+	{IDF_PSH11_INTERP_LANCZOS2_X,  IDF_PSH11_INTERP_LANCZOS2_Y , L"Lanczos2"          },
+	{IDF_PSH11_INTERP_LANCZOS3_X,  IDF_PSH11_INTERP_LANCZOS3_Y , L"Lanczos3"          },
+};
+
+static const ScalingShaderResId s_Downscaling11ResIDs[DOWNSCALE_COUNT] = {
+	{IDF_PSH11_CONVOL_BOX_X,       IDF_PSH11_CONVOL_BOX_Y,       L"Box"          },
+	{IDF_PSH11_CONVOL_BILINEAR_X,  IDF_PSH11_CONVOL_BILINEAR_Y,  L"Bilinear"     },
+	{IDF_PSH11_CONVOL_HAMMING_X,   IDF_PSH11_CONVOL_HAMMING_Y,   L"Hamming"      },
+	{IDF_PSH11_CONVOL_BICUBIC05_X, IDF_PSH11_CONVOL_BICUBIC05_Y, L"Bicubic"      },
+	{IDF_PSH11_CONVOL_BICUBIC15_X, IDF_PSH11_CONVOL_BICUBIC15_Y, L"Bicubic sharp"},
+	{IDF_PSH11_CONVOL_LANCZOS_X,   IDF_PSH11_CONVOL_LANCZOS_Y,   L"Lanczos"      }
+};
+
 struct VERTEX {
 	DirectX::XMFLOAT3 Pos;
 	DirectX::XMFLOAT2 TexCoord;
@@ -506,8 +523,8 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pShaderUpscaleY.Release();
 	m_pShaderDownscaleX.Release();
 	m_pShaderDownscaleY.Release();
-	m_strShaderUpscale   = nullptr;
-	m_strShaderDownscale = nullptr;
+	m_strShaderX = nullptr;
+	m_strShaderY = nullptr;
 
 	m_pInputLayout.Release();
 	m_pVS_Simple.Release();
@@ -609,6 +626,36 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 	BufferDesc.CPUAccessFlags = 0;
 	D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants));
+}
+
+void CDX11VideoProcessor::UpdateRenderRects()
+{
+	m_srcRenderRect = m_srcRect;
+	m_dstRenderRect = m_videoRect;
+	ClipToSurface(m_windowRect.Width(), m_windowRect.Height(), m_srcRenderRect, m_dstRenderRect);
+
+	{
+		const int w2 = m_dstRenderRect.Width();
+		const int h2 = m_dstRenderRect.Height();
+		const int k = m_bInterpolateAt50pct ? 2 : 1;
+		int w1, h1;
+		if (m_iRotation == 90 || m_iRotation == 270) {
+			w1 = m_srcRenderRect.Height();
+			h1 = m_srcRenderRect.Width();
+		}
+		else {
+			w1 = m_srcRenderRect.Width();
+			h1 = m_srcRenderRect.Height();
+		}
+		m_strShaderX = (w1 == w2) ? nullptr
+			: (w1 > k * w2)
+			? s_Downscaling11ResIDs[m_iDownscaling].description
+			: s_Upscaling11ResIDs[m_iUpscaling].description;
+		m_strShaderY = (h1 == h2) ? nullptr
+			: (h1 > k * h2)
+			? s_Downscaling11ResIDs[m_iDownscaling].description
+			: s_Upscaling11ResIDs[m_iUpscaling].description;
+	}
 }
 
 HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
@@ -1490,13 +1537,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	uint64_t tick1 = GetPreciseTick();
 
 	if (!m_videoRect.IsRectEmpty() && !m_windowRect.IsRectEmpty()) {
-		m_srcRenderRect = m_srcRect;
-		m_dstRenderRect = m_videoRect;
-		D3D11_TEXTURE2D_DESC desc = {};
-		pBackBuffer->GetDesc(&desc);
-		if (desc.Width && desc.Height) {
-			ClipToSurface(desc.Width, desc.Height, m_srcRenderRect, m_dstRenderRect);
-		}
 
 		if (!(m_D3D11VP.IsReady() && m_bVPScaling) || m_pPSCorrection) {
 			// fill the BackBuffer with black only when necessary
@@ -1601,49 +1641,22 @@ void CDX11VideoProcessor::UpdateCorrectionTex(const int w, const int h)
 
 void CDX11VideoProcessor::UpdateUpscalingShaders()
 {
-	struct {
-		UINT shaderX;
-		UINT shaderY;
-		wchar_t* const description;
-	} static const resIDs[UPSCALE_COUNT] = {
-		{0,                            0,                            L"Nearest-neighbor"  },
-		{IDF_PSH11_INTERP_MITCHELL4_X, IDF_PSH11_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
-		{IDF_PSH11_INTERP_CATMULL4_X,  IDF_PSH11_INTERP_CATMULL4_Y , L"Catmull-Rom"       },
-		{IDF_PSH11_INTERP_LANCZOS2_X,  IDF_PSH11_INTERP_LANCZOS2_Y , L"Lanczos2"          },
-		{IDF_PSH11_INTERP_LANCZOS3_X,  IDF_PSH11_INTERP_LANCZOS3_Y , L"Lanczos3"          },
-	};
-
 	m_pShaderUpscaleX.Release();
 	m_pShaderUpscaleY.Release();
 
 	if (m_iUpscaling != UPSCALE_Nearest) {
-		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, resIDs[m_iUpscaling].shaderX));
-		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, resIDs[m_iUpscaling].shaderY));
+		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, s_Upscaling11ResIDs[m_iUpscaling].shaderX));
+		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, s_Upscaling11ResIDs[m_iUpscaling].shaderY));
 	}
-	m_strShaderUpscale = resIDs[m_iUpscaling].description;
 }
 
 void CDX11VideoProcessor::UpdateDownscalingShaders()
 {
-	struct {
-		UINT shaderX;
-		UINT shaderY;
-		wchar_t* const description;
-	} static const resIDs[DOWNSCALE_COUNT] = {
-		{IDF_PSH11_CONVOL_BOX_X,       IDF_PSH11_CONVOL_BOX_Y,       L"Box"          },
-		{IDF_PSH11_CONVOL_BILINEAR_X,  IDF_PSH11_CONVOL_BILINEAR_Y,  L"Bilinear"     },
-		{IDF_PSH11_CONVOL_HAMMING_X,   IDF_PSH11_CONVOL_HAMMING_Y,   L"Hamming"      },
-		{IDF_PSH11_CONVOL_BICUBIC05_X, IDF_PSH11_CONVOL_BICUBIC05_Y, L"Bicubic"      },
-		{IDF_PSH11_CONVOL_BICUBIC15_X, IDF_PSH11_CONVOL_BICUBIC15_Y, L"Bicubic sharp"},
-		{IDF_PSH11_CONVOL_LANCZOS_X,   IDF_PSH11_CONVOL_LANCZOS_Y,   L"Lanczos"      }
-	};
-
 	m_pShaderDownscaleX.Release();
 	m_pShaderDownscaleY.Release();
 
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleX, resIDs[m_iDownscaling].shaderX));
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, resIDs[m_iDownscaling].shaderY));
-	m_strShaderDownscale = resIDs[m_iDownscaling].description;
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleX, s_Downscaling11ResIDs[m_iDownscaling].shaderX));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, s_Downscaling11ResIDs[m_iDownscaling].shaderY));
 }
 
 HRESULT CDX11VideoProcessor::UpdateChromaScalingShader()
@@ -1791,11 +1804,13 @@ void CDX11VideoProcessor::SetVideoRect(const CRect& videoRect)
 {
 	UpdateCorrectionTex(videoRect.Width(), videoRect.Height());
 	m_videoRect = videoRect;
+	UpdateRenderRects();
 }
 
 HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 {
 	m_windowRect = windowRect;
+	UpdateRenderRects();
 
 	HRESULT hr = S_OK;
 	const UINT w = m_windowRect.Width();
@@ -2123,12 +2138,13 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		if (m_D3D11VP.IsReady() && m_bVPScaling) {
 			str.Append(L" D3D11");
 		} else {
-			const int k = m_bInterpolateAt50pct ? 2 : 1;
-			const wchar_t* strX = (srcW > k * dstW) ? m_strShaderDownscale : m_strShaderUpscale;
-			const wchar_t* strY = (srcH > k * dstH) ? m_strShaderDownscale : m_strShaderUpscale;
-			str.AppendFormat(L" %s", strX);
-			if (strY != strX) {
-				str.AppendFormat(L"/%s", strY);
+			if (m_strShaderX) {
+				str.AppendFormat(L" %s", m_strShaderX);
+				if (m_strShaderY && m_strShaderY != m_strShaderX) {
+					str.AppendFormat(L"/%s", m_strShaderY);
+				}
+			} else if (m_strShaderY) {
+				str.AppendFormat(L" %s", m_strShaderY);
 			}
 		}
 	}

@@ -110,6 +110,12 @@ struct VR_Extradata {
 	DWORD Compression;
 };
 
+struct ScalingShaderResId {
+	UINT shaderX;
+	UINT shaderY;
+	wchar_t* const description;
+};
+
 template <typename T>
 // If the specified value is out of range, set to default values.
 inline T discard(T const& val, T const& def, T const& lo, T const& hi)
