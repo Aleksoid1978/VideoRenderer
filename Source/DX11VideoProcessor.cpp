@@ -1738,27 +1738,35 @@ HRESULT CDX11VideoProcessor::D3D11VPPass(ID3D11Texture2D* pRenderTarget, const C
 HRESULT CDX11VideoProcessor::ResizeShader2Pass(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
 	HRESULT hr = S_OK;
+	const int w2 = rDstRect.Width();
+	const int h2 = rDstRect.Height();
+	const int k = m_bInterpolateAt50pct ? 2 : 1;
 
 	D3D11_TEXTURE2D_DESC RTDesc;
 	pRenderTarget->GetDesc(&RTDesc);
 
 	int w1, h1;
+	ID3D11PixelShader* resizerX;
+	ID3D11PixelShader* resizerY;
 	if (m_iRotation == 90 || m_iRotation == 270) {
 		w1 = rSrcRect.Height();
 		h1 = rSrcRect.Width();
+		resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleY : m_pShaderUpscaleY; // use Y scaling here
+		if (resizerX) {
+			resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
+		} else {
+			resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleX : m_pShaderUpscaleX; // use X scaling here
+		}
 	} else {
 		w1 = rSrcRect.Width();
 		h1 = rSrcRect.Height();
+		resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleX : m_pShaderUpscaleX;
+		resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
 	}
-	const int w2 = rDstRect.Width();
-	const int h2 = rDstRect.Height();
-	const int k = m_bInterpolateAt50pct ? 2 : 1;
 
-	ID3D11PixelShader* resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleX : m_pShaderUpscaleX;
-	ID3D11PixelShader* resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY : m_pShaderUpscaleY;
-
-	// two pass resize
 	if (resizerX && resizerY) {
+		// two pass resize
+
 		// check intermediate texture
 		const UINT texWidth = w2;
 		const UINT texHeight = h1;
