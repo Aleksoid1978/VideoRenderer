@@ -139,7 +139,7 @@ private:
 	//bool m_bInterlaced = false;
 
 public:
-	HRESULT InitVideDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
+	HRESULT InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
 	void ReleaseVideoDevice();
 
 	HRESULT InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, DXGI_FORMAT& outputFmt);

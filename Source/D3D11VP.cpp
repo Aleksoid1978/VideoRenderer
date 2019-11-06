@@ -71,18 +71,18 @@ void FilterRangeD3D11toDXVA2(DXVA2_ValueRange& _dxva2_, const D3D11_VIDEO_PROCES
 
 // CD3D11VP
 
-HRESULT CD3D11VP::InitVideDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
+HRESULT CD3D11VP::InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
 {
 	HRESULT hr = pDevice->QueryInterface(__uuidof(ID3D11VideoDevice), (void**)&m_pVideoDevice);
 	if (FAILED(hr)) {
-		DLog(L"CD3D11VP::InitVideDevice() : QueryInterface(ID3D11VideoDevice) failed with error %s", HR2Str(hr));
+		DLog(L"CD3D11VP::InitVideoDevice() : QueryInterface(ID3D11VideoDevice) failed with error %s", HR2Str(hr));
 		ReleaseVideoDevice();
 		return hr;
 	}
 
 	hr = pContext->QueryInterface(__uuidof(ID3D11VideoContext), (void**)&m_pVideoContext);
 	if (FAILED(hr)) {
-		DLog(L"CD3D11VP::InitVideDevice() : QueryInterface(ID3D11VideoContext) failed with error %s", HR2Str(hr));
+		DLog(L"CD3D11VP::InitVideoDevice() : QueryInterface(ID3D11VideoContext) failed with error %s", HR2Str(hr));
 		ReleaseVideoDevice();
 		return hr;
 	}
@@ -300,7 +300,8 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 	// Output background color (black)
 	static const D3D11_VIDEO_COLOR backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 	m_pVideoContext->VideoProcessorSetOutputBackgroundColor(m_pVideoProcessor, FALSE, &backgroundColor);
-	// Rotation angle
+	// other
+	m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, FALSE, nullptr);
 	m_pVideoContext->VideoProcessorSetStreamRotation(m_pVideoProcessor, 0, m_Rotation ? TRUE : FALSE, m_Rotation);
 
 	m_srcFormat   = inputFmt;
@@ -399,7 +400,6 @@ HRESULT CD3D11VP::SetRectangles(const CRect& srcRect, const CRect& dstRect)
 
 	m_pVideoContext->VideoProcessorSetStreamSourceRect(m_pVideoProcessor, 0, TRUE, srcRect);
 	m_pVideoContext->VideoProcessorSetStreamDestRect(m_pVideoProcessor, 0, TRUE, dstRect);
-	m_pVideoContext->VideoProcessorSetOutputTargetRect(m_pVideoProcessor, FALSE, nullptr);
 
 	return S_OK;
 }

@@ -672,9 +672,9 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	m_pDevice = pDevice;
 	m_pDeviceContext = pContext;
 
-	HRESULT hr = m_D3D11VP.InitVideDevice(m_pDevice, m_pDeviceContext);
+	HRESULT hr = m_D3D11VP.InitVideoDevice(m_pDevice, m_pDeviceContext);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::SetDevice() : InitVideDevice failed with error %s", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::SetDevice() : InitVideoDevice failed with error %s", HR2Str(hr));
 		ReleaseDevice();
 		return hr;
 	}
@@ -1718,9 +1718,7 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 
 HRESULT CDX11VideoProcessor::D3D11VPPass(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
-	if (!second) {
-		m_D3D11VP.SetRectangles(rSrcRect, rDstRect);
-	}
+	m_D3D11VP.SetRectangles(rSrcRect, rDstRect);
 
 	HRESULT hr = m_D3D11VP.Process(pRenderTarget, m_SampleFormat, second);
 	if (FAILED(hr)) {
