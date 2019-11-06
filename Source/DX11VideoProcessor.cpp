@@ -634,6 +634,10 @@ void CDX11VideoProcessor::UpdateRenderRects()
 	m_dstRenderRect = m_videoRect;
 	ClipToSurface(m_windowRect.Width(), m_windowRect.Height(), m_srcRenderRect, m_dstRenderRect);
 
+	if (m_D3D11VP.IsReady() && m_bVPScaling) {
+		m_D3D11VP.SetRectangles(m_srcRenderRect, m_dstRenderRect);
+	}
+
 	{
 		const int w2 = m_dstRenderRect.Width();
 		const int h2 = m_dstRenderRect.Height();
@@ -1718,8 +1722,6 @@ HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CR
 
 HRESULT CDX11VideoProcessor::D3D11VPPass(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
-	m_D3D11VP.SetRectangles(rSrcRect, rDstRect);
-
 	HRESULT hr = m_D3D11VP.Process(pRenderTarget, m_SampleFormat, second);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::ProcessD3D11() : m_D3D11VP.Process() failed with error %s", HR2Str(hr));
