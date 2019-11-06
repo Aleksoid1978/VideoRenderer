@@ -1742,9 +1742,6 @@ HRESULT CDX11VideoProcessor::ResizeShader2Pass(Tex2D_t& Tex, ID3D11Texture2D* pR
 	const int h2 = rDstRect.Height();
 	const int k = m_bInterpolateAt50pct ? 2 : 1;
 
-	D3D11_TEXTURE2D_DESC RTDesc;
-	pRenderTarget->GetDesc(&RTDesc);
-
 	int w1, h1;
 	ID3D11PixelShader* resizerX;
 	ID3D11PixelShader* resizerY;
@@ -1987,8 +1984,10 @@ void CDX11VideoProcessor::SetVPScaling(bool value)
 	if (m_D3D11VP.IsReady()) {
 		if (m_bVPScaling) {
 			m_D3D11VP.SetRectangles(m_srcRenderRect, m_dstRenderRect);
+			m_D3D11VP.SetRotation(static_cast<D3D11_VIDEO_PROCESSOR_ROTATION>(value / 90));
 		} else {
 			m_D3D11VP.SetRectangles(nullptr, nullptr);
+			m_D3D11VP.SetRotation(D3D11_VIDEO_PROCESSOR_ROTATION_IDENTITY);
 		}
 	}
 
