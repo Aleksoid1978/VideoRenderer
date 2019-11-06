@@ -121,9 +121,10 @@ private:
 	D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS m_RateConvCaps = {};
 
 	VideoTextureBuffer m_VideoTextures;
-	bool m_bPresentFrame = false;
-	UINT m_nPastFrames = 0;
-	UINT m_nFutureFrames = 0;
+	UINT m_nInputFrameOrField = 0;
+	bool m_bPresentFrame      = false;
+	UINT m_nPastFrames        = 0;
+	UINT m_nFutureFrames      = 0;
 
 	// ProcAmp
 	D3D11_VIDEO_PROCESSOR_FILTER_RANGE m_VPFilterRange[4] = {};

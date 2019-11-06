@@ -355,6 +355,11 @@ HRESULT CD3D11VP::InitInputTextures(ID3D11Device* pDevice)
 ID3D11Texture2D* CD3D11VP::GetNextInputTexture(const D3D11_VIDEO_FRAME_FORMAT vframeFormat)
 {
 	if (m_VideoTextures.Size()) {
+		if (vframeFormat == D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
+			m_nInputFrameOrField++;
+		} else {
+			m_nInputFrameOrField += 2;
+		}
 		if (!m_bPresentFrame) {
 			m_bPresentFrame = true;
 		}
@@ -375,9 +380,10 @@ ID3D11Texture2D* CD3D11VP::GetNextInputTexture(const D3D11_VIDEO_FRAME_FORMAT vf
 
 void CD3D11VP::ResetFrameOrder()
 {
-	m_bPresentFrame = false;
-	m_nPastFrames = 0;
-	m_nFutureFrames = 0;
+	m_nInputFrameOrField = 0;
+	m_bPresentFrame      = false;
+	m_nPastFrames        = 0;
+	m_nFutureFrames      = 0;
 }
 
 void CD3D11VP::GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, UINT& rateConvIndex, D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS& rateConvCaps)
@@ -466,8 +472,12 @@ HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAM
 
 	D3D11_VIDEO_PROCESSOR_STREAM StreamData = {};
 	StreamData.Enable = TRUE;
-	StreamData.InputFrameOrField = 0;
-	StreamData.OutputIndex = second ? 1 : 0;
+	StreamData.InputFrameOrField = m_nInputFrameOrField;
+	if (second) {
+		StreamData.OutputIndex = 1;
+	} else {
+		StreamData.InputFrameOrField--;
+	}
 	if (m_VideoTextures.Size()) {
 		UINT idx = m_VideoTextures.Size();
 		if (m_nFutureFrames) {
@@ -483,7 +493,7 @@ HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAM
 			StreamData.ppPastSurfaces = m_VideoTextures.GetInputView(idx);
 		}
 	}
-	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, StreamData.OutputIndex, 1, &StreamData);
+	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, StreamData.InputFrameOrField, 1, &StreamData);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::ProcessD3D11() : VideoProcessorBlt() failed with error %s", HR2Str(hr));
 	}
