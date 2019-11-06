@@ -1971,6 +1971,14 @@ void CDX11VideoProcessor::SetVPScaling(bool value)
 {
 	m_bVPScaling = value;
 
+	if (m_D3D11VP.IsReady()) {
+		if (m_bVPScaling) {
+			m_D3D11VP.SetRectangles(m_srcRenderRect, m_dstRenderRect);
+		} else {
+			m_D3D11VP.SetRectangles(nullptr, nullptr);
+		}
+	}
+
 	UpdateConvertTexD3D11VP();
 }
 

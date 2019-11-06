@@ -153,7 +153,7 @@ public:
 	ID3D11Texture2D* GetNextInputTexture(const D3D11_VIDEO_FRAME_FORMAT vframeFormat);
 	void ResetFrameOrder();
 
-	HRESULT SetRectangles(const CRect& srcRect, const CRect& dstRect);
+	HRESULT SetRectangles(const RECT * pSrcRect, const RECT* pDstRect);
 	HRESULT SetColorSpace(const DXVA2_ExtendedFormat exFmt);
 	void SetRotation(D3D11_VIDEO_PROCESSOR_ROTATION rotation);
 	void SetProcAmpValues(DXVA2_ProcAmpValues *pValues);
