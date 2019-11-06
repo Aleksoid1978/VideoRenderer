@@ -1984,7 +1984,7 @@ void CDX11VideoProcessor::SetVPScaling(bool value)
 	if (m_D3D11VP.IsReady()) {
 		if (m_bVPScaling) {
 			m_D3D11VP.SetRectangles(m_srcRenderRect, m_dstRenderRect);
-			m_D3D11VP.SetRotation(static_cast<D3D11_VIDEO_PROCESSOR_ROTATION>(value / 90));
+			m_D3D11VP.SetRotation(static_cast<D3D11_VIDEO_PROCESSOR_ROTATION>(m_iRotation / 90));
 		} else {
 			m_D3D11VP.SetRectangles(nullptr, nullptr);
 			m_D3D11VP.SetRotation(D3D11_VIDEO_PROCESSOR_ROTATION_IDENTITY);
