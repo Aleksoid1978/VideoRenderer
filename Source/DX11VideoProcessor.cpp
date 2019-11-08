@@ -635,7 +635,11 @@ void CDX11VideoProcessor::UpdateRenderRects()
 	ClipToSurface(m_windowRect.Width(), m_windowRect.Height(), m_srcRenderRect, m_dstRenderRect);
 
 	if (m_D3D11VP.IsReady() && m_bVPScaling) {
-		m_D3D11VP.SetRectangles(m_srcRenderRect, m_dstRenderRect);
+		if (m_pPSCorrection && m_TexCorrection.pTexture) {
+			m_D3D11VP.SetRectangles(m_srcRenderRect, CRect(0, 0, m_TexCorrection.desc.Width, m_TexCorrection.desc.Height));
+		} else {
+			m_D3D11VP.SetRectangles(m_srcRenderRect, m_dstRenderRect);
+		}
 	}
 
 	{
@@ -1204,7 +1208,11 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 	}
 
 	if (m_bVPScaling) {
-		hr = m_D3D11VP.SetRectangles(m_srcRenderRect, m_dstRenderRect);
+		if (m_pPSCorrection && m_TexCorrection.pTexture) {
+			m_D3D11VP.SetRectangles(m_srcRenderRect, CRect(0, 0, m_TexCorrection.desc.Width, m_TexCorrection.desc.Height));
+		} else {
+			m_D3D11VP.SetRectangles(m_srcRenderRect, m_dstRenderRect);
+		}
 	} else {
 		hr = m_D3D11VP.SetRectangles(nullptr, nullptr);
 	}
@@ -1983,7 +1991,11 @@ void CDX11VideoProcessor::SetVPScaling(bool value)
 
 	if (m_D3D11VP.IsReady()) {
 		if (m_bVPScaling) {
-			m_D3D11VP.SetRectangles(m_srcRenderRect, m_dstRenderRect);
+			if (m_pPSCorrection && m_TexCorrection.pTexture) {
+				m_D3D11VP.SetRectangles(m_srcRenderRect, CRect(0, 0, m_TexCorrection.desc.Width, m_TexCorrection.desc.Height));
+			} else {
+				m_D3D11VP.SetRectangles(m_srcRenderRect, m_dstRenderRect);
+			}
 			m_D3D11VP.SetRotation(static_cast<D3D11_VIDEO_PROCESSOR_ROTATION>(m_iRotation / 90));
 		} else {
 			m_D3D11VP.SetRectangles(nullptr, nullptr);
