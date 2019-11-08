@@ -1590,7 +1590,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		m_RenderStats.statsticks = GetPreciseTick() - tick3;
 	}
 
-	hr = m_pDXGISwapChain1->Present(0, 0);
+	hr = m_pDXGISwapChain1->Present(1, 0);
 
 	return hr;
 }
@@ -1617,7 +1617,7 @@ HRESULT CDX11VideoProcessor::FillBlack()
 	float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
 
-	hr = m_pDXGISwapChain1->Present(0, 0);
+	hr = m_pDXGISwapChain1->Present(1, 0);
 
 	pRenderTargetView->Release();
 
