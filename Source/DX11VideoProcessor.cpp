@@ -1302,10 +1302,6 @@ void CDX11VideoProcessor::Start()
 	m_rtStart = 0;
 }
 
-void CDX11VideoProcessor::Stop()
-{
-}
-
 HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 {
 	REFERENCE_TIME rtStart, rtEnd;

@@ -174,7 +174,6 @@ public:
 	BOOL GetAlignmentSize(const CMediaType& mt, SIZE& Size);
 
 	void Start();
-	void Stop();
 
 	HRESULT ProcessSample(IMediaSample* pSample);
 	HRESULT CopySample(IMediaSample* pSample);

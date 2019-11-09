@@ -816,12 +816,6 @@ void CDX9VideoProcessor::Start()
 	m_rtStart = 0;
 }
 
-void CDX9VideoProcessor::Stop()
-{
-	//reset input buffers
-	m_DXVA2VP.CleanSamplesData();
-}
-
 HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 {
 	REFERENCE_TIME rtStart, rtEnd;
@@ -1356,8 +1350,12 @@ void CDX9VideoProcessor::SetRotation(int value)
 
 void CDX9VideoProcessor::Flush()
 {
-	if (m_bSrcFromGPU && m_DXVA2VP.IsReady() && m_DXVA2VP.GetNumRefSamples() == 1) {
-		m_DXVA2VP.ClearInputSurfaces(m_srcExFmt);
+	if (m_DXVA2VP.IsReady()) {
+		if (m_bSrcFromGPU && m_DXVA2VP.GetNumRefSamples() == 1) {
+			m_DXVA2VP.ClearInputSurfaces(m_srcExFmt);
+		} else {
+			m_DXVA2VP.CleanSamplesData();
+		}
 	}
 }
 
