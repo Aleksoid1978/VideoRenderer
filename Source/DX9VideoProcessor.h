@@ -91,6 +91,8 @@ private:
 	DXVA2_ExtendedFormat m_srcExFmt = {};
 	bool m_bInterlaced = false;
 
+	CMediaType m_inputMT;
+
 	// DXVA2 decoder surface parameters
 	UINT      m_SurfaceWidth  = 0;
 	UINT      m_SurfaceHeight = 0;
