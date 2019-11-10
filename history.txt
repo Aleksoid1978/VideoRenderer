@@ -1,3 +1,16 @@
+-----------------------
+Used the surface of the DXVA2 decoder directly (without copying) if the DXVA2 video processor does not require additional frames.
+"Double the frame rate when deinterlace" setting is now enabled by default.
+Added the ability to get the filter version using the IExFilterConfig interface.
+Fixed deinterlacing in DX11 mode. Used past frames. Fixed output when doubling frames.
+Added information about the D3D11 video processor in the "Information" window.
+Added support for frame rotation.
+Optimized Discard swap effect in DX9 mode.
+Improved compatibility with some players.
+Recommended version of MPC-BE v1.5.4.4876 or later.
+Optimized some operations.
+Added more debugging information.
+
 v0.3.2.860 - 2019.09.25
 -----------------------
 Fixed the debug version in DX11 mode on systems in which the D3D11*SDKLayers.dll files are missing.
