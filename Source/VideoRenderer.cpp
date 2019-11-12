@@ -230,12 +230,31 @@ void CMpcVideoRenderer::NewSegment(REFERENCE_TIME startTime)
 	DLog(L"CMpcVideoRenderer::NewSegment()");
 
 	m_rtStartTime = startTime;
+}
+
+HRESULT CMpcVideoRenderer::BeginFlush()
+{
+	DLog(L"CMpcVideoRenderer::BeginFlush()");
+
+	m_bFlushing = true;
+	return __super::BeginFlush();
+}
+
+HRESULT CMpcVideoRenderer::EndFlush()
+{
+	DLog(L"CMpcVideoRenderer::EndFlush()");
 
 	if (m_bUsedD3D11) {
 		m_DX11_VP.Flush();
 	} else {
 		m_DX9_VP.Flush();
 	}
+
+	HRESULT hr = __super::EndFlush();
+
+	m_bFlushing = false;
+
+	return hr;
 }
 
 long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_mt)
@@ -377,6 +396,11 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 
 HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 {
+	if (m_bFlushing) {
+		DLog(L"CMpcVideoRenderer::Receive() - flushing, skip sample");
+		return S_OK;
+	}
+
 	ASSERT(pSample);
 
 	// It may return VFW_E_SAMPLE_REJECTED code to say don't bother

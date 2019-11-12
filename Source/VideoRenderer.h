@@ -109,6 +109,8 @@ private:
 
 	bool m_bSubInvAlpha = false;
 
+	bool m_bFlushing = false;
+
 public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
 	~CMpcVideoRenderer();
@@ -121,6 +123,9 @@ public:
 	HRESULT SetMediaType(const CMediaType *pmt) override;
 	HRESULT DoRenderSample(IMediaSample* pSample) override;
 	HRESULT Receive(IMediaSample* pMediaSample) override;
+
+	HRESULT BeginFlush() override;
+	HRESULT EndFlush() override;
 
 	DECLARE_IUNKNOWN
 	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv);
