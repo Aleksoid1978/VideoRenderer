@@ -371,6 +371,18 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 		}
 	}
 
+	if (!m_videoRect.IsRectNull()) {
+		if (m_bUsedD3D11) {
+			m_DX11_VP.SetVideoRect(m_videoRect);
+		} else {
+			m_DX9_VP.SetVideoRect(m_videoRect);
+		}
+
+		if (!m_pSubCallBack) {
+			Redraw();
+		}
+	}
+
 	return S_OK;
 }
 
