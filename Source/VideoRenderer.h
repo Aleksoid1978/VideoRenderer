@@ -123,6 +123,7 @@ public:
 	HRESULT SetMediaType(const CMediaType *pmt) override;
 	HRESULT DoRenderSample(IMediaSample* pSample) override;
 	HRESULT Receive(IMediaSample* pMediaSample) override;
+	HRESULT CompleteConnect(IPin* pReceivePin) override;
 
 	HRESULT BeginFlush() override;
 	HRESULT EndFlush() override;
