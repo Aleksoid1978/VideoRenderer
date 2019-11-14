@@ -1154,7 +1154,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	// Tex Video Processor
 	if (FmtConvParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
 		m_inputMT = *pmt;
-		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
 		SetShaderConvertColorParams();
 		UpdateStatsStatic();
 
@@ -1895,7 +1894,21 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	}
 
 	if (m_D3D11VP.IsReady()) {
+		UpdateCorrectionTex(rDstRect.Width(), rDstRect.Height());
+		if (m_bVPScaling) {
+			m_D3D11VP.SetRectangles(rSrcRect, rDstRect);
+		}
+
 		hr = ProcessD3D11(pRGB32Texture2D, rSrcRect, rDstRect, false);
+
+		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
+		if (m_bVPScaling) {
+			if (m_pPSCorrection && m_TexCorrection.pTexture) {
+				m_D3D11VP.SetRectangles(m_srcRenderRect, CRect(0, 0, m_TexCorrection.desc.Width, m_TexCorrection.desc.Height));
+			} else {
+				m_D3D11VP.SetRectangles(m_srcRenderRect, m_dstRenderRect);
+			}
+		}
 	} else {
 		hr = ProcessTex(pRGB32Texture2D, rSrcRect, rDstRect);
 	}

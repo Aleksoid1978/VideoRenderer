@@ -1209,7 +1209,18 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 	}
 
 	if (m_DXVA2VP.IsReady()) {
+		const auto iRotation = m_iRotation;
+		if (m_pPSCorrection) {
+			m_iRotation = 0;
+			UpdateCorrectionTex(rDstRect.Width(), rDstRect.Height());
+		}
+
 		hr = ProcessDXVA2(pRGB32Surface, rSrcRect, rDstRect, 0);
+
+		if (m_pPSCorrection) {
+			m_iRotation = iRotation;
+			UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
+		}
 	} else {
 		hr = ProcessTex(pRGB32Surface, rSrcRect, rDstRect);
 	}

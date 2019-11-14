@@ -394,7 +394,7 @@ void CD3D11VP::GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, UINT& rateConvIndex
 	rateConvCaps = m_RateConvCaps;
 }
 
-HRESULT CD3D11VP::SetRectangles(const RECT * pSrcRect, const RECT* pDstRect)
+HRESULT CD3D11VP::SetRectangles(const RECT* pSrcRect, const RECT* pDstRect)
 {
 	CheckPointer(m_pVideoContext, E_ABORT);
 
