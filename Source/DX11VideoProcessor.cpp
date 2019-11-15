@@ -1641,8 +1641,9 @@ void CDX11VideoProcessor::UpdateConvertTexD3D11VP()
 void CDX11VideoProcessor::UpdateCorrectionTex(const int w, const int h)
 {
 	if (m_pPSCorrection) {
-		if (w != m_TexCorrection.desc.Width || h != m_TexCorrection.desc.Width) {
-			HRESULT hr = m_TexCorrection.Create(m_pDevice, m_bVPScaling ? m_D3D11OutputFmt : m_InternalTexFmt, w, h, Tex2D_DefaultShaderRTarget);
+		if (w != m_TexCorrection.desc.Width || h != m_TexCorrection.desc.Height) {
+			const DXGI_FORMAT format = m_bVPScaling ? m_D3D11OutputFmt : m_InternalTexFmt;
+			HRESULT hr = m_TexCorrection.Create(m_pDevice, format, w, h, Tex2D_DefaultShaderRTarget);
 			DLogIf(FAILED(hr), "CDX11VideoProcessor::UpdateCorrectionTex() : m_TexCorrection.Create() failed with error %s", HR2Str(hr));
 		}
 		// else do nothing
