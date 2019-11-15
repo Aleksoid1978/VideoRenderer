@@ -1872,8 +1872,14 @@ HRESULT CDX11VideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
 HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 {
 	CRect rSrcRect(m_srcRect);
-	int w = rSrcRect.Width();
-	int h = rSrcRect.Height();
+	int w, h;
+	if (m_iRotation == 90 || m_iRotation == 270) {
+		w = rSrcRect.Height();
+		h = rSrcRect.Width();
+	} else {
+		w = rSrcRect.Width();
+		h = rSrcRect.Height();
+	}
 	CRect rDstRect(0, 0, w, h);
 
 	BITMAPINFOHEADER* pBIH = (BITMAPINFOHEADER*)pDIBImage;
