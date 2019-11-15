@@ -1186,8 +1186,14 @@ HRESULT CDX9VideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
 HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 {
 	CRect rSrcRect(m_srcRect);
-	int w = rSrcRect.Width();
-	int h = rSrcRect.Height();
+	int w, h;
+	if (m_iRotation == 90 || m_iRotation == 270) {
+		w = rSrcRect.Height();
+		h = rSrcRect.Width();
+	} else {
+		w = rSrcRect.Width();
+		h = rSrcRect.Height();
+	}
 	CRect rDstRect(0, 0, w, h);
 
 	BITMAPINFOHEADER* pBIH = (BITMAPINFOHEADER*)pDIBImage;
@@ -1209,16 +1215,13 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 	}
 
 	if (m_DXVA2VP.IsReady()) {
-		const auto iRotation = m_iRotation;
-		if (m_pPSCorrection) {
-			m_iRotation = 0;
-			UpdateCorrectionTex(rDstRect.Width(), rDstRect.Height());
+		if (m_pPSCorrection || m_bVPScaling) {
+			UpdateCorrectionTex(w, h);
 		}
 
 		hr = ProcessDXVA2(pRGB32Surface, rSrcRect, rDstRect, 0);
 
-		if (m_pPSCorrection) {
-			m_iRotation = iRotation;
+		if (m_pPSCorrection || m_bVPScaling) {
 			UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
 		}
 	} else {
