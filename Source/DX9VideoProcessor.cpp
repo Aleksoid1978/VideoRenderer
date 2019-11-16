@@ -1232,14 +1232,13 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 	}
 
 	D3DLOCKED_RECT lr;
-	if (S_OK == (hr = pRGB32Surface->LockRect(&lr, nullptr, D3DLOCK_READONLY))) {
+	hr = pRGB32Surface->LockRect(&lr, nullptr, D3DLOCK_READONLY);
+	if (S_OK == hr) {
 		CopyFrameAsIs(h, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)lr.pBits + lr.Pitch * (h - 1), -lr.Pitch);
 		hr = pRGB32Surface->UnlockRect();
-	} else {
-		return E_FAIL;
 	}
 
-	return S_OK;
+	return hr;
 }
 
 HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
