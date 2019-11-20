@@ -116,7 +116,7 @@ HRESULT CCustomAllocator::Alloc(void)
     for (; m_lAllocated < m_lCount; m_lAllocated++, pNext += lAlignedSize) {
 
 
-        pSample = new CCustomMediaSample(
+        pSample = new(std::nothrow) CCustomMediaSample(
                             L"Custom media sample",
                             this,
                             &hr,

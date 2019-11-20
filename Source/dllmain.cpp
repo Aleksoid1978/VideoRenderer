@@ -27,7 +27,7 @@ template <class T>
 static CUnknown* WINAPI CreateInstance(LPUNKNOWN lpunk, HRESULT* phr)
 {
 	*phr = S_OK;
-	CUnknown* punk = new T(lpunk, phr);
+	CUnknown* punk = new(std::nothrow) T(lpunk, phr);
 	if (punk == nullptr) {
 		*phr = E_OUTOFMEMORY;
 	}
