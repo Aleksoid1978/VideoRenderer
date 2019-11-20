@@ -199,7 +199,7 @@ public:
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; }
 	void SetShowStats(bool value)   { m_bShowStats   = value; }
 	void SetTexFormat(int value);
-	void SetVPEnableFmts(VPEnableFormats_t& VPFormats);
+	void SetVPEnableFmts(const VPEnableFormats_t& VPFormats);
 	void SetVPScaling(bool value);
 	void SetChromaScaling(int value);
 	void SetUpscaling(int value);

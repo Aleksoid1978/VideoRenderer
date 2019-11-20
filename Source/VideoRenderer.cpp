@@ -280,7 +280,7 @@ long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_mt)
 				// update pointer after realoc
 				pBIH = GetBIHfromVIHs(&mt);
 				// copy data to VR_Extradata
-				VR_Extradata* vrextra = (VR_Extradata*)(pbFormat + 112);
+				VR_Extradata* vrextra = reinterpret_cast<VR_Extradata*>(pbFormat + 112);
 				vrextra->QueryWidth  = Size.cx;
 				vrextra->QueryHeight = Size.cy;
 				vrextra->FrameWidth  = pBIH->biWidth;

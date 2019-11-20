@@ -225,7 +225,7 @@ HRESULT CDX11VideoProcessor::AlphaBltSub(ID3D11ShaderResourceView* pShaderResour
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& destRect, ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer, const int iRotation)
+HRESULT CDX11VideoProcessor::TextureCopyRect(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& destRect, ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer, const int iRotation)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
 	CComPtr<ID3D11Buffer> pVertexBuffer;
@@ -254,7 +254,7 @@ HRESULT CDX11VideoProcessor::TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRen
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::TextureConvertColor(Tex11Video_t& texVideo, ID3D11Texture2D* pRenderTarget)
+HRESULT CDX11VideoProcessor::TextureConvertColor(const Tex11Video_t& texVideo, ID3D11Texture2D* pRenderTarget)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
 
@@ -301,7 +301,7 @@ HRESULT CDX11VideoProcessor::TextureConvertColor(Tex11Video_t& texVideo, ID3D11T
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::TextureResizeShader(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, ID3D11PixelShader* pPixelShader, const int iRotation)
+HRESULT CDX11VideoProcessor::TextureResizeShader(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, ID3D11PixelShader* pPixelShader, const int iRotation)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
 	CComPtr<ID3D11Buffer> pVertexBuffer;
@@ -851,27 +851,27 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 
 	m_pDXGISwapChain1.Release();
 
-	DXGI_SWAP_CHAIN_DESC1 desc = {};
-	desc.Width  = m_windowRect.Width();
-	desc.Height = m_windowRect.Height();
-	desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // the most common swap chain format
-	desc.SampleDesc.Count = 1;
-	desc.SampleDesc.Quality = 0;
-	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	DXGI_SWAP_CHAIN_DESC1 desc1 = {};
+	desc1.Width  = m_windowRect.Width();
+	desc1.Height = m_windowRect.Height();
+	desc1.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // the most common swap chain format
+	desc1.SampleDesc.Count = 1;
+	desc1.SampleDesc.Quality = 0;
+	desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	if (m_iSwapEffect == SWAPEFFECT_Flip) {
-		desc.BufferCount = 2;
-		desc.Scaling = DXGI_SCALING_NONE;
+		desc1.BufferCount = 2;
+		desc1.Scaling = DXGI_SCALING_NONE;
 #if VER_PRODUCTBUILD >= 10000
-		desc.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+		desc1.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 #else
-		desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+		desc1.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 #endif
 	} else { // default SWAPEFFECT_Discard
-		desc.BufferCount = 1;
-		desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+		desc1.BufferCount = 1;
+		desc1.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	}
-	desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-	HRESULT hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc, nullptr, nullptr, &m_pDXGISwapChain1);
+	desc1.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+	HRESULT hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc1, nullptr, nullptr, &m_pDXGISwapChain1);
 
 	DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd() failed with error %s", HR2Str(hr));
 
@@ -907,11 +907,11 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 					pRenderTargetView->Release();
 				}
 
-				D3D11_TEXTURE2D_DESC desc = {};
-				m_pTextureSubPic->GetDesc(&desc);
-				if (desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) {
+				D3D11_TEXTURE2D_DESC texdesc = {};
+				m_pTextureSubPic->GetDesc(&texdesc);
+				if (texdesc.BindFlags & D3D11_BIND_SHADER_RESOURCE) {
 					D3D11_SHADER_RESOURCE_VIEW_DESC shaderDesc;
-					shaderDesc.Format = desc.Format;
+					shaderDesc.Format = texdesc.Format;
 					shaderDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 					shaderDesc.Texture2D.MostDetailedMip = 0; // = Texture2D desc.MipLevels - 1
 					shaderDesc.Texture2D.MipLevels = 1;       // = Texture2D desc.MipLevels
@@ -1060,7 +1060,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	UINT biWidth  = pBIH->biWidth;
 	UINT biHeight = labs(pBIH->biHeight);
 	if (pmt->FormatLength() == 112 + sizeof(VR_Extradata)) {
-		const VR_Extradata* vrextra = (VR_Extradata*)(pmt->pbFormat + 112);
+		const VR_Extradata* vrextra = reinterpret_cast<VR_Extradata*>(pmt->pbFormat + 112);
 		if (vrextra->QueryWidth == pBIH->biWidth && vrextra->QueryHeight == pBIH->biHeight && vrextra->Compression == pBIH->biCompression) {
 			biWidth  = vrextra->FrameWidth;
 			biHeight = abs(vrextra->FrameHeight);
@@ -1169,7 +1169,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_texture)
 {
-	auto& dxgiFormat = params.VP11Format;
+	const auto& dxgiFormat = params.VP11Format;
 
 	DLog(L"CDX11VideoProcessor::InitializeD3D11VP() started with input surface: %s, %u x %u", DXGIFormatToString(dxgiFormat), width, height);
 
@@ -1241,7 +1241,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 
 HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height)
 {
-	auto& srcDXGIFormat = params.DX11Format;
+	const auto& srcDXGIFormat = params.DX11Format;
 
 	DLog(L"CDX11VideoProcessor::InitializeTexVP() started with input surface: %s, %u x %u", DXGIFormatToString(srcDXGIFormat), width, height);
 
@@ -1739,7 +1739,7 @@ HRESULT CDX11VideoProcessor::D3D11VPPass(ID3D11Texture2D* pRenderTarget, const C
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::ResizeShader2Pass(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
+HRESULT CDX11VideoProcessor::ResizeShader2Pass(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
 {
 	HRESULT hr = S_OK;
 	const int w2 = rDstRect.Width();
@@ -1996,7 +1996,7 @@ void CDX11VideoProcessor::SetTexFormat(int value)
 	}
 }
 
-void CDX11VideoProcessor::SetVPEnableFmts(VPEnableFormats_t& VPFormats)
+void CDX11VideoProcessor::SetVPEnableFmts(const VPEnableFormats_t& VPFormats)
 {
 	m_VPFormats = VPFormats;
 }

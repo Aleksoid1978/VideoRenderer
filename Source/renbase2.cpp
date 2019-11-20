@@ -881,8 +881,8 @@ int isqrt_(int x)
                  // accuracy was perfect!
         } else {
             s = (s*s+x)/(2*s);
-            if (s>=0) s = (s*s+x)/(2*s);
-            if (s>=0) s = (s*s+x)/(2*s);
+            if (s>0) s = (s*s+x)/(2*s);
+            if (s>0) s = (s*s+x)/(2*s);
         }
     }
     return s;

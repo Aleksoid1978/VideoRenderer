@@ -126,11 +126,7 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTex
 	const float dx = 1.0f / desc.Width;
 	const float dy = 1.0f / desc.Height;
 
-	struct {
-		float x, y, z, rhw;
-		float tu, tv;
-	}
-	pVertices[] = {
+	MYD3DVERTEX<1> Vertices[] = {
 		{ (float)dst.left  - 0.5f, (float)dst.top    - 0.5f, 0.5f, 2.0f, (float)src.left  * dx, (float)src.top    * dy },
 		{ (float)dst.right - 0.5f, (float)dst.top    - 0.5f, 0.5f, 2.0f, (float)src.right * dx, (float)src.top    * dy },
 		{ (float)dst.left  - 0.5f, (float)dst.bottom - 0.5f, 0.5f, 2.0f, (float)src.left  * dx, (float)src.bottom * dy },
@@ -168,7 +164,7 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTex
 	hr = pD3DDev->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
 
 	hr = pD3DDev->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX1);
-	hr = pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, pVertices, sizeof(pVertices[0]));
+	hr = pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, Vertices, sizeof(Vertices[0]));
 
 	pD3DDev->SetTexture(0, nullptr);
 
@@ -403,7 +399,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 
 HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_surface)
 {
-	auto& dxva2format = params.DXVA2Format;
+	const auto& dxva2format = params.DXVA2Format;
 
 	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() started with input surface: %s, %u x %u", D3DFormatToString(dxva2format), width, height);
 
@@ -454,7 +450,7 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 
 HRESULT CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height)
 {
-	auto& d3dformat = params.D3DFormat;
+	const auto& d3dformat = params.D3DFormat;
 
 	DLog(L"CDX9VideoProcessor::InitializeTexVP() started with input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
 
@@ -728,7 +724,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	UINT biWidth  = pBIH->biWidth;
 	UINT biHeight = labs(pBIH->biHeight);
 	if (pmt->FormatLength() == 112 + sizeof(VR_Extradata)) {
-		const VR_Extradata* vrextra = (VR_Extradata*)(pmt->pbFormat + 112);
+		const VR_Extradata* vrextra = reinterpret_cast<VR_Extradata*>(pmt->pbFormat + 112);
 		if (vrextra->QueryWidth == pBIH->biWidth && vrextra->QueryHeight == pBIH->biHeight && vrextra->Compression == pBIH->biCompression) {
 			biWidth  = vrextra->FrameWidth;
 			biHeight = abs(vrextra->FrameHeight);
@@ -1310,7 +1306,7 @@ void CDX9VideoProcessor::SetTexFormat(int value)
 	}
 }
 
-void CDX9VideoProcessor::SetVPEnableFmts(VPEnableFormats_t& VPFormats)
+void CDX9VideoProcessor::SetVPEnableFmts(const VPEnableFormats_t& VPFormats)
 {
 	m_VPFormats = VPFormats;
 }

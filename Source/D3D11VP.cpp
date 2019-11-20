@@ -59,7 +59,7 @@ void FilterRangeD3D11toDXVA2(DXVA2_ValueRange& _dxva2_, const D3D11_VIDEO_PROCES
 	if (DefValue >= 1.0f) { // capture 1.0f is important for changing StepSize
 		MinValue /= DefValue;
 		MaxValue /= DefValue;
-		DefValue /= DefValue;
+		DefValue = 1.0f;
 		StepSize = 0.01f;
 	}
 	_dxva2_.MinValue = DXVA2FloatToFixed(MinValue);

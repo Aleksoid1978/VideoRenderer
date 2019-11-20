@@ -249,7 +249,7 @@ public:
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
 	void SetShowStats(bool value)   { m_bShowStats   = value; };
 	void SetTexFormat(int value);
-	void SetVPEnableFmts(VPEnableFormats_t& VPFormats);
+	void SetVPEnableFmts(const VPEnableFormats_t& VPFormats);
 	void SetVPScaling(bool value);
 	void SetChromaScaling(int value);
 	void SetUpscaling(int value);
@@ -271,11 +271,11 @@ private:
 
 	HRESULT AlphaBlt(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget, D3D11_VIEWPORT& viewport);
 	HRESULT AlphaBltSub(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, D3D11_VIEWPORT& viewport);
-	HRESULT TextureCopyRect(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
+	HRESULT TextureCopyRect(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
 							const CRect& srcRect, const CRect& destRect,
 							ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer, const int iRotation);
-	HRESULT TextureConvertColor(Tex11Video_t& texVideo, ID3D11Texture2D* pRenderTarget);
-	HRESULT TextureResizeShader(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
+	HRESULT TextureConvertColor(const Tex11Video_t& texVideo, ID3D11Texture2D* pRenderTarget);
+	HRESULT TextureResizeShader(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
 							const CRect& srcRect, const CRect& destRect,
 							ID3D11PixelShader* pPixelShader, const int iRotation);
 
@@ -283,7 +283,7 @@ private:
 	HRESULT ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
 
 	HRESULT D3D11VPPass(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
-	HRESULT ResizeShader2Pass(Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
+	HRESULT ResizeShader2Pass(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
 
 	void UpdateStatsStatic();
 	HRESULT DrawStats(ID3D11Texture2D* pRenderTarget);
