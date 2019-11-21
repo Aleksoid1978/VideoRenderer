@@ -603,10 +603,11 @@ HRESULT SaveARGB32toBMP(BYTE* src, const UINT src_pitch, const UINT width, const
 	}
 
 	const UINT bitdepth = 32;
+	const UINT tablecolors = /*(bitdepth == 8) ? 256 :*/ 0; // not used yet
 	const UINT dst_pitch = width * bitdepth / 8;
 	const UINT len = dst_pitch * height;
 
-	std::unique_ptr<BYTE[]> dib(new(std::nothrow) BYTE[sizeof(BITMAPINFOHEADER) + len]);
+	std::unique_ptr<BYTE[]> dib(new(std::nothrow) BYTE[sizeof(BITMAPINFOHEADER) + tablecolors * 4 + len]);
 
 	if (dib) {
 		BITMAPINFOHEADER* bih = (BITMAPINFOHEADER*)dib.get();
@@ -617,21 +618,28 @@ HRESULT SaveARGB32toBMP(BYTE* src, const UINT src_pitch, const UINT width, const
 		bih->biBitCount = bitdepth;
 		bih->biPlanes = 1;
 		bih->biSizeImage = DIBSIZE(*bih);
+		bih->biClrUsed = tablecolors;
 
 		BYTE* p = (BYTE*)(bih + 1);
+		for (unsigned i = 0; i < tablecolors; i++) {
+			*p++ = (BYTE)i;
+			*p++ = (BYTE)i;
+			*p++ = (BYTE)i;
+			*p++ = 0;
+		}
 
 		CopyFrameAsIs(height, p, dst_pitch, src, src_pitch);
 
 		BITMAPFILEHEADER bfh;
 		bfh.bfType = 0x4d42;
-		bfh.bfOffBits = sizeof(bfh) + sizeof(BITMAPINFOHEADER);
+		bfh.bfOffBits = sizeof(bfh) + sizeof(BITMAPINFOHEADER) + tablecolors * 4;
 		bfh.bfSize = bfh.bfOffBits + len;
 		bfh.bfReserved1 = bfh.bfReserved2 = 0;
 
 		FILE* fp;
 		if (_wfopen_s(&fp, filename, L"wb") == 0) {
 			fwrite(&bfh, sizeof(bfh), 1, fp);
-			fwrite(dib.get(), sizeof(BITMAPINFOHEADER) + len, 1, fp);
+			fwrite(dib.get(), sizeof(BITMAPINFOHEADER) + tablecolors * 4 + len, 1, fp);
 			fclose(fp);
 
 			return S_OK;
