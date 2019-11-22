@@ -487,7 +487,7 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 			fHeight  += fRowHeight;
 		}
 
-		if ( (c-32) < 0 || (c-32) >= 128-32 ) {
+		if ( c < 32 || c >= 128 ) {
 			continue;
 		}
 
@@ -546,7 +546,7 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 			if ( c == '\n' ) {
 				break;    // Isn't supported.
 			}
-			if ( (c-32) < 0 || (c-32) >= 128-32 ) {
+			if ( c < 32 || c >= 128 ) {
 				continue;
 			}
 
@@ -584,7 +584,7 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 			sy += (m_fTexCoords[0][3]-m_fTexCoords[0][1])*m_dwTexHeight;
 		}
 
-		if ( (c-32) < 0 || (c-32) >= 128-32 ) {
+		if ( c < 32 || c >= 128 ) {
 			continue;
 		}
 
