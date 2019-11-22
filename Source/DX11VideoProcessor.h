@@ -37,9 +37,8 @@
 #if DIRECTWRITE_ENABLE
 #include "dwrite.h"
 #include "d2d1.h"
-#else
-#include "StatsDrawing.h"
 #endif
+#include "StatsDrawing.h"
 
 class CMpcVideoRenderer;
 class CVideoRendererInputPin;

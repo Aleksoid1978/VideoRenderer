@@ -32,9 +32,8 @@
 #if D3D9FONT_ENABLE
 #include "D3D9Font.h"
 #include "D3D9Geometry.h"
-#else
-#include "StatsDrawing.h"
 #endif
+#include "StatsDrawing.h"
 
 class CMpcVideoRenderer;
 
