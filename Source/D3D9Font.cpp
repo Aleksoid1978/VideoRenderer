@@ -314,12 +314,15 @@ HRESULT CD3D9Font::InitDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice )
 			uint16_t* pDst16 = (uint16_t*)pDstRow;
 			for (DWORD x = 0; x < m_dwTexWidth; x++) {
 				// 4-bit measure of pixel intensity
-				BYTE bAlpha = (BYTE)(pBitmapBits[m_dwTexWidth*y + x] & 0xf0);
-				if (bAlpha) {
-					*pDst16++ = (uint16_t)((bAlpha << 8) | 0x0fff);
-				} else {
-					*pDst16++ = 0x0000;
-				}
+				DWORD pix = pBitmapBits[m_dwTexWidth*y + x];
+				DWORD r = (pix & 0x00ff0000) >> 16;
+				DWORD g = (pix & 0x0000ff00) >> 8;
+				DWORD b = (pix & 0x000000ff);
+				DWORD a = ((r * 1063 + g * 3576 + b * 361) / 5000) >> 4;
+				r >>= 4;
+				g >>= 4;
+				b >>= 4;
+				*pDst16++ = (uint16_t)((a << 12) + (r << 8) + (g << 4) + b);
 			}
 			pDstRow += d3dlr.Pitch;
 		}
