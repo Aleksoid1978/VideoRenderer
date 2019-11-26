@@ -95,7 +95,9 @@ private:
 	// D3D11 VideoProcessor
 	CDX11VideoProcessor m_DX11_VP;
 
+#if !(D3D9FONT_ENABLE && DIRECTWRITE_ENABLE)
 	CStatsDrawingGdiplus m_StatsDrawing;
+#endif
 
 	ISubRenderCallback* m_pSubCallBack = nullptr;
 
