@@ -38,7 +38,6 @@
 #include "dwrite.h"
 #include "d2d1.h"
 #endif
-#include "StatsDrawing.h"
 
 class CMpcVideoRenderer;
 class CVideoRendererInputPin;
@@ -193,8 +192,6 @@ private:
 	CComPtr<ID2D1Factory>         m_pD2D1Factory;
 	CComPtr<ID2D1RenderTarget>    m_pD2D1RenderTarget;
 	CComPtr<ID2D1SolidColorBrush> m_pD2D1Brush;
-#else
-	CStatsDrawing m_StatsDrawing;
 #endif
 
 public:

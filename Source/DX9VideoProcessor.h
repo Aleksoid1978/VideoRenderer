@@ -33,7 +33,6 @@
 #include "D3D9Font.h"
 #include "D3D9Geometry.h"
 #endif
-#include "StatsDrawing.h"
 
 class CMpcVideoRenderer;
 
@@ -144,7 +143,6 @@ private:
 	CD3D9Rectangle m_Rect3D;
 #else
 	CComPtr<IDirect3DSurface9> m_pMemOSDSurface;
-	CStatsDrawing m_StatsDrawing;
 #endif
 
 	REFERENCE_TIME m_rtStart = 0;

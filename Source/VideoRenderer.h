@@ -29,6 +29,7 @@
 #include "IVideoRenderer.h"
 #include "DX9VideoProcessor.h"
 #include "DX11VideoProcessor.h"
+#include "StatsDrawing.h"
 #include "./Include/ISubRender.h"
 #include "./Include/FilterInterfacesImpl.h"
 
@@ -93,6 +94,8 @@ private:
 
 	// D3D11 VideoProcessor
 	CDX11VideoProcessor m_DX11_VP;
+
+	CStatsDrawingGdiplus m_StatsDrawing;
 
 	ISubRenderCallback* m_pSubCallBack = nullptr;
 

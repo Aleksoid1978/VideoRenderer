@@ -27,7 +27,7 @@
 #define STATS_W 512
 #define STATS_H 256
 
-class CStatsDrawing
+class CStatsDrawingGdiplus
 {
 private:
 	// GDI+ handling
@@ -42,7 +42,7 @@ private:
 	Gdiplus::SolidBrush* m_solidBrush;
 
 public:
-	CStatsDrawing() {
+	CStatsDrawingGdiplus() {
 		using namespace Gdiplus;
 		// GDI+ handling
 		GdiplusStartup(&m_gdiplusToken, &m_gdiplusStartupInput, nullptr);
@@ -55,7 +55,7 @@ public:
 		m_solidBrushText = new SolidBrush(Color(255, 255, 255));
 		m_solidBrush = new SolidBrush(Color(128, 255, 128));
 	}
-	~CStatsDrawing() {
+	~CStatsDrawingGdiplus() {
 		SAFE_DELETE(m_solidBrushText);
 		SAFE_DELETE(m_solidBrush);
 		SAFE_DELETE(m_font);

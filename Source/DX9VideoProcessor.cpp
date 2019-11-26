@@ -2019,7 +2019,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	D3DLOCKED_RECT lockedRect;
 	hr = m_pMemOSDSurface->LockRect(&lockedRect, NULL, D3DLOCK_DISCARD);
 	if (S_OK == hr) {
-		m_StatsDrawing.DrawTextW((BYTE*)lockedRect.pBits, lockedRect.Pitch, str);
+		m_pFilter->m_StatsDrawing.DrawTextW((BYTE*)lockedRect.pBits, lockedRect.Pitch, str);
 		m_pMemOSDSurface->UnlockRect();
 
 		hr = m_pD3DDevEx->UpdateSurface(m_pMemOSDSurface, nullptr, m_TexStats.pSurface, nullptr);

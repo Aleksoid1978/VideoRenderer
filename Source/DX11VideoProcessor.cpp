@@ -2253,7 +2253,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 	HRESULT hr = m_pDeviceContext->Map(m_TexOSD.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (SUCCEEDED(hr)) {
-		m_StatsDrawing.DrawTextW((BYTE*)mappedResource.pData, mappedResource.RowPitch, str);
+		m_pFilter->m_StatsDrawing.DrawTextW((BYTE*)mappedResource.pData, mappedResource.RowPitch, str);
 		m_pDeviceContext->Unmap(m_TexOSD.pTexture, 0);
 
 		D3D11_VIEWPORT VP;
