@@ -108,6 +108,7 @@ private:
 	CRect m_windowRect, m_videoRect;
 
 	bool m_bSubInvAlpha = false;
+	bool m_bCheckSubInvAlpha = false;
 
 	bool m_bFlushing = false;
 
@@ -123,7 +124,6 @@ public:
 	HRESULT SetMediaType(const CMediaType *pmt) override;
 	HRESULT DoRenderSample(IMediaSample* pSample) override;
 	HRESULT Receive(IMediaSample* pMediaSample) override;
-	HRESULT CompleteConnect(IPin* pReceivePin) override;
 
 	HRESULT BeginFlush() override;
 	HRESULT EndFlush() override;
