@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "d3dcommon.h"
+#include <d3dcommon.h>
 
 HRESULT CompileShader(const CStringA& srcCode, const D3D_SHADER_MACRO* pDefines, LPCSTR pTarget, ID3DBlob** ppCode);
 
