@@ -155,8 +155,8 @@ HRESULT CD3D9Font::PaintAlphabet( HDC hDC, BOOL bMeasureOnly )
 	DWORD y = 0;
 
 	// For each character, draw text on the DC and advance the current position
-	for ( char c = 32; c < 127; c++ ) {
-		str[0] = c;
+	for ( WCHAR c = 32; c < 128; c++ ) {
+		str[0] = (c == 127) ? 0xFFFD : c;
 		if ( 0 == GetTextExtentPoint32W( hDC, str, 1, &size ) ) {
 			return E_FAIL;
 		}
@@ -488,10 +488,11 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 		if ( c == '\n' ) {
 			fRowWidth = 0.0f;
 			fHeight  += fRowHeight;
+			continue;
 		}
 
 		if ( c < 32 || c >= 128 ) {
-			continue;
+			c = 127;
 		}
 
 		FLOAT tx1 = m_fTexCoords[c-32][0];
@@ -550,7 +551,7 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 				break;    // Isn't supported.
 			}
 			if ( c < 32 || c >= 128 ) {
-				continue;
+				c = 127;
 			}
 
 			FLOAT tx1 = m_fTexCoords[c-32][0];
@@ -585,10 +586,11 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 		if ( c == '\n' ) {
 			sx = fStartX;
 			sy += (m_fTexCoords[0][3]-m_fTexCoords[0][1])*m_dwTexHeight;
+			continue;
 		}
 
 		if ( c < 32 || c >= 128 ) {
-			continue;
+			c = 127;
 		}
 
 		FLOAT tx1 = m_fTexCoords[c-32][0];
