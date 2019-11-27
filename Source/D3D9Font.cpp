@@ -66,7 +66,10 @@ inline FONT3DVERTEX InitFont3DVertex( const DirectX::XMFLOAT3& p, const DirectX:
 	return v;
 }
 
-
+inline auto Char2Index(WCHAR ch)
+{
+	return (ch >= 32 && ch < 128) ? ch - 32 : (127-32);
+}
 
 //-----------------------------------------------------------------------------
 // Name: CD3D9Font()
@@ -491,12 +494,10 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 			continue;
 		}
 
-		if ( c < 32 || c >= 128 ) {
-			c = 127;
-		}
+		auto idx = Char2Index(c);
 
-		FLOAT tx1 = m_fTexCoords[c-32][0];
-		FLOAT tx2 = m_fTexCoords[c-32][2];
+		FLOAT tx1 = m_fTexCoords[idx][0];
+		FLOAT tx2 = m_fTexCoords[idx][2];
 
 		fRowWidth += (tx2-tx1)*m_dwTexWidth - 2*m_dwSpacing;
 
@@ -550,12 +551,11 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 			if ( c == '\n' ) {
 				break;    // Isn't supported.
 			}
-			if ( c < 32 || c >= 128 ) {
-				c = 127;
-			}
 
-			FLOAT tx1 = m_fTexCoords[c-32][0];
-			FLOAT tx2 = m_fTexCoords[c-32][2];
+			auto idx = Char2Index(c);
+
+			FLOAT tx1 = m_fTexCoords[idx][0];
+			FLOAT tx2 = m_fTexCoords[idx][2];
 
 			FLOAT w = (tx2-tx1) *  m_dwTexWidth / m_fTextScale;
 
@@ -589,14 +589,12 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 			continue;
 		}
 
-		if ( c < 32 || c >= 128 ) {
-			c = 127;
-		}
+		auto idx = Char2Index(c);
 
-		FLOAT tx1 = m_fTexCoords[c-32][0];
-		FLOAT ty1 = m_fTexCoords[c-32][1];
-		FLOAT tx2 = m_fTexCoords[c-32][2];
-		FLOAT ty2 = m_fTexCoords[c-32][3];
+		FLOAT tx1 = m_fTexCoords[idx][0];
+		FLOAT ty1 = m_fTexCoords[idx][1];
+		FLOAT tx2 = m_fTexCoords[idx][2];
+		FLOAT ty2 = m_fTexCoords[idx][3];
 
 		FLOAT w = (tx2-tx1) *  m_dwTexWidth / m_fTextScale;
 		FLOAT h = (ty2-ty1) * m_dwTexHeight / m_fTextScale;
