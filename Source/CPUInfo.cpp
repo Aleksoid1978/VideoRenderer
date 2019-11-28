@@ -1,5 +1,5 @@
 /*
- * (C) 2016-2017 see Authors.txt
+ * (C) 2016-2019 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -22,87 +22,120 @@
 #include <intrin.h>
 #include "CPUInfo.h"
 
-#define CPUID_MMX      (1 << 23)
-#define CPUID_SSE      (1 << 25)
-#define CPUID_SSE2     (1 << 26)
-#define CPUID_SSE3     (1 <<  0)
-#define CPUID_SSSE3    (1 <<  9)
-#define CPUID_SSE41    (1 << 19)
-#define CPUID_SSE42    (1 << 20)
-#define CPUID_AVX     ((1 << 27) | (1 << 28))
-#define CPUID_AVX2    ((1 <<  5) | (1 <<  3) | (1 << 8))
 
-// AMD specifics
-#define CPUID_3DNOW    (1 << 31)
-#define CPUID_3DNOWEXT (1 << 30)
-#define CPUID_MMXEXT   (1 << 22)
 
 static int nCPUType = CPUInfo::PROCESSOR_UNKNOWN;
 
-static int GetCPUFeatures()
-{
-	unsigned nHighestFeature   = 0;
-	unsigned nHighestFeatureEx = 0;
-	int      nCPUFeatures      = 0;
-	int      nBuff[4]  = { 0 };
-	char     szMan[13] = { 0 };
-
-	__cpuid(nBuff, 0);
-	nHighestFeature   = (unsigned)nBuff[0];
-	nHighestFeatureEx = (unsigned)nBuff[0];
-	*(int*)&szMan[0]  = nBuff[1];
-	*(int*)&szMan[4]  = nBuff[3];
-	*(int*)&szMan[8]  = nBuff[2];
-	if (strcmp(szMan, "GenuineIntel") == 0) {
-		nCPUType = CPUInfo::PROCESSOR_INTEL;
-	} else if (strcmp(szMan, "AuthenticAMD") == 0) {
-		nCPUType = CPUInfo::PROCESSOR_AMD;
-	}
-
-	if (nHighestFeature >= 1) {
-		__cpuid(nBuff, 1);
-		if (nBuff[3] & CPUID_MMX)   nCPUFeatures |= CPUInfo::CPU_MMX;
-		if (nBuff[3] & CPUID_SSE)   nCPUFeatures |= CPUInfo::CPU_SSE;
-		if (nBuff[3] & CPUID_SSE2)  nCPUFeatures |= CPUInfo::CPU_SSE2;
-		if (nBuff[2] & CPUID_SSE3)  nCPUFeatures |= CPUInfo::CPU_SSE3;
-		if (nBuff[2] & CPUID_SSSE3) nCPUFeatures |= CPUInfo::CPU_SSSE3;
-		if (nBuff[2] & CPUID_SSE41) nCPUFeatures |= CPUInfo::CPU_SSE4;
-		if (nBuff[2] & CPUID_SSE42) nCPUFeatures |= CPUInfo::CPU_SSE42;
-
-		// Intel specific:
-		if (nCPUType == CPUInfo::PROCESSOR_INTEL) {
-			if ((nBuff[2] & CPUID_AVX) == CPUID_AVX) {
-				// Check for OS support
-				const unsigned long long xcrFeatureMask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
-				if ((xcrFeatureMask & 0x6) == 0x6) {
-					nCPUFeatures |= CPUInfo::CPU_AVX;
-
-					if (nHighestFeature >= 7) {
-						__cpuid(nBuff, 7);
-						if ((nBuff[1] & CPUID_AVX2) == CPUID_AVX2) {
-							nCPUFeatures |= CPUInfo::CPU_AVX2;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	if (nCPUType == CPUInfo::PROCESSOR_AMD) {
-		if (nHighestFeatureEx >= 0x80000001) {
-			__cpuid(nBuff, 0x80000000);
-			if (nBuff[3] & CPUID_3DNOW)    nCPUFeatures |= CPUInfo::CPU_3DNOW;
-			if (nBuff[3] & CPUID_3DNOWEXT) nCPUFeatures |= CPUInfo::CPU_3DNOWEXT;
-			if (nBuff[3] & CPUID_MMXEXT)   nCPUFeatures |= CPUInfo::CPU_MMXEXT;
-		}
-	}
-
-	return nCPUFeatures;
+#ifdef _WIN32
+//  Windows
+#define cpuid(info, x)    __cpuidex(info, x, 0)
+#else
+//  GCC Intrinsics
+#include <cpuid.h>
+void cpuid(int info[4], int InfoType) {
+	__cpuid_count(InfoType, 0, info[0], info[1], info[2], info[3]);
 }
-static const int  nCPUFeatures = GetCPUFeatures();
-static const bool bSSSE3       = !!(nCPUFeatures & CPUInfo::CPU_SSSE3);
-static const bool bSSE4        = !!(nCPUFeatures & CPUInfo::CPU_SSE4);
-static const bool bAVX2        = !!(nCPUFeatures & CPUInfo::CPU_AVX2);
+#endif
+
+static int GetCPUInfo()
+{
+	// based on
+	// https://stackoverflow.com/a/7495023
+	// https://gist.github.com/hi2p-perim/7855506
+	// https://github.com/FFmpeg/FFmpeg/blob/master/libavutil/x86/cpu.c
+
+	//  SIMD: 128-bit
+	bool HW_SSE   = false;
+	bool HW_SSE2  = false;
+	bool HW_SSE3  = false;
+	bool HW_SSSE3 = false;
+	bool HW_SSE41 = false;
+	bool HW_SSE42 = false;
+	bool HW_SSE4a = false;
+	bool HW_AES   = false;
+
+	//  SIMD: 256-bit
+	bool HW_AVX;
+	bool HW_XOP;
+	bool HW_FMA3;
+	bool HW_FMA4;
+	bool HW_AVX2;
+
+	int info[4];
+	cpuid(info, 0);
+	int nIds = info[0];
+
+	{
+		char vendor[0x20] = {};
+		*reinterpret_cast<int*>(vendor) = info[1];
+		*reinterpret_cast<int*>(vendor + 4) = info[3];
+		*reinterpret_cast<int*>(vendor + 8) = info[2];
+
+		if (strcmp(vendor, "GenuineIntel") == 0) {
+			nCPUType = CPUInfo::PROCESSOR_INTEL;
+		} else if (strcmp(vendor, "AuthenticAMD") == 0) {
+			nCPUType = CPUInfo::PROCESSOR_AMD;
+		}
+	}
+
+	cpuid(info, 0x80000000);
+	unsigned nExIds = info[0];
+
+	//  Detect Features
+	if (nIds >= 0x00000001) {
+		cpuid(info, 0x00000001);
+		HW_SSE  = (info[3] & ((int)1 << 25)) != 0;
+		HW_SSE2 = (info[3] & ((int)1 << 26)) != 0;
+		HW_SSE3 = (info[2] & ((int)1 <<  0)) != 0;
+
+		HW_SSSE3 = (info[2] & ((int)1 <<  9)) != 0;
+		HW_SSE41 = (info[2] & ((int)1 << 19)) != 0;
+		HW_SSE42 = (info[2] & ((int)1 << 20)) != 0;
+		HW_AES   = (info[2] & ((int)1 << 25)) != 0;
+
+		bool osUsesXSAVE_XRSTORE = (info[2] & ((int)1 << 27)) != 0;
+		bool cpuAVXSuport = (info[2] & ((int)1 << 28)) != 0;
+
+		if (osUsesXSAVE_XRSTORE && cpuAVXSuport) {
+			unsigned __int64 xcrFeatureMask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
+			HW_AVX  = (xcrFeatureMask & 0x6) == 0x6;
+			HW_FMA3 = (info[2] & ((int)1 << 12)) != 0;
+		}
+	}
+	if (nIds >= 0x00000007) {
+		cpuid(info, 0x00000007);
+		if (HW_AVX) {
+			HW_AVX2 = (info[1] & ((int)1 << 5)) != 0;
+		}
+	}
+	if (nExIds >= 0x80000001) {
+		cpuid(info, 0x80000001);
+		HW_SSE4a = (info[2] & ((int)1 << 6)) != 0;
+		if (HW_AVX) {
+			HW_FMA4 = (info[2] & ((int)1 << 16)) != 0;
+			HW_XOP  = (info[2] & ((int)1 << 11)) != 0;
+		}
+	}
+
+	int features = 0;
+	if (HW_SSE)   {features |= CPUInfo::CPU_SSE;  }
+	if (HW_SSE2)  {features |= CPUInfo::CPU_SSE2; }
+	if (HW_SSE3)  {features |= CPUInfo::CPU_SSE3; }
+	if (HW_SSSE3) {features |= CPUInfo::CPU_SSSE3;}
+	if (HW_SSE41) {features |= CPUInfo::CPU_SSE41;}
+	if (HW_SSE42) {features |= CPUInfo::CPU_SSE42;}
+	if (HW_AVX)   {features |= CPUInfo::CPU_AVX;  }
+	if (HW_AVX2)  {features |= CPUInfo::CPU_AVX2; }
+
+	return features;
+}
+
+static const int nCPUFeatures = GetCPUInfo();
+static const bool bSSSE3 = !!(nCPUFeatures & CPUInfo::CPU_SSSE3);
+static const bool bSSE41 = !!(nCPUFeatures & CPUInfo::CPU_SSE41);
+static const bool bSSE42 = !!(nCPUFeatures & CPUInfo::CPU_SSE42);
+static const bool bAVX   = !!(nCPUFeatures & CPUInfo::CPU_AVX2);
+static const bool bAVX2  = !!(nCPUFeatures & CPUInfo::CPU_AVX2);
 
 static DWORD GetProcessorNumber()
 {
@@ -119,6 +152,8 @@ namespace CPUInfo {
 	const DWORD GetProcessorNumber() { return dwNumberOfProcessors; }
 
 	const bool HaveSSSE3()           { return bSSSE3; }
-	const bool HaveSSE4()            { return bSSE4; }
-	const bool HaveAVX2()            { return bAVX2; }
+	const bool HaveSSE41()           { return bSSE41; }
+	const bool HaveSSE42()           { return bSSE42; }
+	const bool HaveAVX()             { return bAVX;   }
+	const bool HaveAVX2()            { return bAVX2;  }
 } // namespace CPUInfo
