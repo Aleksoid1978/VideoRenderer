@@ -55,11 +55,11 @@ static int GetCPUInfo()
 	bool HW_AES   = false;
 
 	//  SIMD: 256-bit
-	bool HW_AVX;
-	bool HW_XOP;
-	bool HW_FMA3;
-	bool HW_FMA4;
-	bool HW_AVX2;
+	bool HW_AVX   = false;
+	bool HW_XOP   = false;
+	bool HW_FMA3  = false;
+	bool HW_FMA4  = false;
+	bool HW_AVX2  = false;
 
 	int info[4];
 	cpuid(info, 0);
