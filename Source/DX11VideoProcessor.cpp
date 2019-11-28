@@ -549,6 +549,10 @@ void CDX11VideoProcessor::ReleaseDevice()
 
 	m_pSurface9SubPic.Release();
 
+	if (m_pDeviceContext) {
+		m_pDeviceContext->ClearState();
+		m_pDeviceContext->Flush();
+	}
 	m_pDeviceContext.Release();
 	ReleaseDX9Device();
 
