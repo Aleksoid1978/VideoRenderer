@@ -550,6 +550,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pSurface9SubPic.Release();
 
 	if (m_pDeviceContext) {
+		// need ClearState() and Flush() for ID3D11DeviceContext when using DXGI_SWAP_EFFECT_DISCARD in Windows 8/8.1
 		m_pDeviceContext->ClearState();
 		m_pDeviceContext->Flush();
 	}
