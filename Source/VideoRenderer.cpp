@@ -516,7 +516,7 @@ STDMETHODIMP CMpcVideoRenderer::Run(REFERENCE_TIME rtStart)
 
 	if (m_bUsedD3D11) {
 		if (!m_bCheckSubInvAlpha) {
-			// înly one check for XySubFilter in the graph after playback starts
+			// only one check for XySubFilter in the graph after playback starts
 			m_bCheckSubInvAlpha = true;
 			m_bSubInvAlpha = false;
 			IEnumFilters *pEnumFilters = nullptr;
