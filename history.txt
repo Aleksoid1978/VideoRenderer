@@ -1,4 +1,4 @@
-v0.3.x.xxx
+v0.3.6.970 - 2019.11.29
 -----------------------
 Fixed subtitle output using XySubFilter in some situations.
 Fixed crash when exiting the player or moving to the next file when using "Swap Effect Discard" in Windows 8/8.1.
