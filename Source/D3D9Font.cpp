@@ -27,22 +27,15 @@
 //-----------------------------------------------------------------------------
 // Custom vertex types for rendering text
 //-----------------------------------------------------------------------------
-#define MAX_NUM_VERTICES 50*6
+#define MAX_NUM_VERTICES 400*6
 
 struct FONT2DVERTEX {
 	DirectX::XMFLOAT4 p;
 	DWORD color;
 	FLOAT tu, tv;
 };
-struct FONT3DVERTEX {
-	DirectX::XMFLOAT3 p;
-	DirectX::XMFLOAT3 n;
-	FLOAT tu, tv;
-};
 
 #define D3DFVF_FONT2DVERTEX (D3DFVF_XYZRHW|D3DFVF_DIFFUSE|D3DFVF_TEX1)
-#define D3DFVF_FONT3DVERTEX (D3DFVF_XYZ|D3DFVF_NORMAL|D3DFVF_TEX1)
-
 
 inline FONT2DVERTEX InitFont2DVertex( const DirectX::XMFLOAT4& p, D3DCOLOR color,
 									  FLOAT tu, FLOAT tv )
@@ -50,17 +43,6 @@ inline FONT2DVERTEX InitFont2DVertex( const DirectX::XMFLOAT4& p, D3DCOLOR color
 	FONT2DVERTEX v;
 	v.p = p;
 	v.color = color;
-	v.tu = tu;
-	v.tv = tv;
-	return v;
-}
-
-inline FONT3DVERTEX InitFont3DVertex( const DirectX::XMFLOAT3& p, const DirectX::XMFLOAT3& n,
-									  FLOAT tu, FLOAT tv )
-{
-	FONT3DVERTEX v;
-	v.p = p;
-	v.n = n;
 	v.tu = tu;
 	v.tv = tv;
 	return v;
@@ -355,7 +337,7 @@ HRESULT CD3D9Font::RestoreDeviceObjects()
 	HRESULT hr;
 
 	// Create vertex buffer for the letters
-	int vertexSize = std::max( sizeof(FONT2DVERTEX), sizeof(FONT3DVERTEX) );
+	const int vertexSize = sizeof(FONT2DVERTEX);
 	if ( FAILED( hr = m_pd3dDevice->CreateVertexBuffer( MAX_NUM_VERTICES * vertexSize,
 					  D3DUSAGE_WRITEONLY | D3DUSAGE_DYNAMIC, 0,
 					  D3DPOOL_DEFAULT, &m_pVB, nullptr ) ) ) {
