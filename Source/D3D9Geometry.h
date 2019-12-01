@@ -208,7 +208,7 @@ public:
 		UINT vertexSize = m_Vertices.size() * sizeof(POINTVERTEX);
 
 		if (!m_pVertexBuffer) {
-			HRESULT hr = m_pD3DDev->CreateVertexBuffer(vertexSize, 0, D3DFVF_XYZRHW | D3DFVF_DIFFUSE, D3DPOOL_DEFAULT, &m_pVertexBuffer, nullptr);
+			hr = m_pD3DDev->CreateVertexBuffer(vertexSize, 0, D3DFVF_XYZRHW | D3DFVF_DIFFUSE, D3DPOOL_DEFAULT, &m_pVertexBuffer, nullptr);
 		}
 
 		if (m_pVertexBuffer) {
