@@ -35,8 +35,8 @@
 #include "DX9Device.h"
 
 #if DIRECTWRITE_ENABLE
-#include "dwrite.h"
-#include "d2d1.h"
+#include <dwrite.h>
+#include <d2d1.h>
 #endif
 
 class CMpcVideoRenderer;

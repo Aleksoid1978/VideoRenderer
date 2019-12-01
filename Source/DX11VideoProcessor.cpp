@@ -825,15 +825,10 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		CComPtr<IDXGISurface> pDxgiSurface;
 		hr2 = m_TexOSD.pTexture->QueryInterface(IID_IDXGISurface, (void**)&pDxgiSurface);
 		if (S_OK == hr2) {
-			FLOAT dpiX;
-			FLOAT dpiY;
-			m_pD2D1Factory->GetDesktopDpi(&dpiX, &dpiY);
-
 			D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
 				D2D1_RENDER_TARGET_TYPE_DEFAULT,
 				D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
-				dpiX,
-				dpiY);
+				96, 96);
 
 			hr2 = m_pD2D1Factory->CreateDxgiSurfaceRenderTarget(pDxgiSurface, &props, &m_pD2D1RenderTarget);
 			if (S_OK == hr2) {
