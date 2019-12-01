@@ -150,7 +150,7 @@ HRESULT CD3D9Font::PaintAlphabet( HDC hDC, BOOL bMeasureOnly )
 	if ( 0 == GetTextExtentPoint32W( hDC, str, 1, &size ) ) {
 		return E_FAIL;
 	}
-	m_dwSpacing = (DWORD) ceil(size.cy * 0.3f);
+	m_dwSpacing = 2; // old value = (DWORD)ceil(size.cy * 0.3f);
 
 	// Set the starting point for the drawing
 	DWORD x = m_dwSpacing;
