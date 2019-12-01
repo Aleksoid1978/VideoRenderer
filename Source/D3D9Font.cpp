@@ -104,6 +104,7 @@ HRESULT CD3D9Font::CreateGDIFont( HDC hDC, HFONT* pFont )
 	int nHeight    = -(int)(m_dwFontHeight * m_fTextScale);
 	DWORD dwBold   = (m_dwFontFlags & D3DFONT_BOLD)   ? FW_BOLD : FW_NORMAL;
 	DWORD dwItalic = (m_dwFontFlags & D3DFONT_ITALIC) ? TRUE    : FALSE;
+
 	*pFont         = CreateFontW( nHeight, 0, 0, 0, dwBold, dwItalic,
 								 FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
 								 CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
@@ -334,30 +335,30 @@ LCleanReturn:
 //-----------------------------------------------------------------------------
 HRESULT CD3D9Font::RestoreDeviceObjects()
 {
-	HRESULT hr;
-
 	// Create vertex buffer for the letters
-	const int vertexSize = sizeof(FONT2DVERTEX);
-	if ( FAILED( hr = m_pd3dDevice->CreateVertexBuffer( MAX_NUM_VERTICES * vertexSize,
-					  D3DUSAGE_WRITEONLY | D3DUSAGE_DYNAMIC, 0,
-					  D3DPOOL_DEFAULT, &m_pVB, nullptr ) ) ) {
+	const UINT vertexBufferSize = sizeof(FONT2DVERTEX) * MAX_NUM_VERTICES;
+	HRESULT hr = m_pd3dDevice->CreateVertexBuffer(vertexBufferSize, D3DUSAGE_WRITEONLY | D3DUSAGE_DYNAMIC, 0, D3DPOOL_DEFAULT, &m_pVB, nullptr);
+	if ( FAILED(hr) ) {
 		return hr;
 	}
 
 	bool bSupportsAlphaBlend = true;
 	LPDIRECT3D9 pd3d9 = nullptr;
-	if ( SUCCEEDED( m_pd3dDevice->GetDirect3D( &pd3d9 ) ) ) {
+	hr = m_pd3dDevice->GetDirect3D(&pd3d9);
+	if ( SUCCEEDED(hr) ) {
 		D3DCAPS9 Caps;
 		D3DDISPLAYMODE Mode;
 		LPDIRECT3DSURFACE9 pSurf = nullptr;
 		D3DSURFACE_DESC Desc;
 		m_pd3dDevice->GetDeviceCaps( &Caps );
 		m_pd3dDevice->GetDisplayMode( 0, &Mode );
-		if ( SUCCEEDED( m_pd3dDevice->GetRenderTarget( 0, &pSurf ) ) ) {
+		hr = m_pd3dDevice->GetRenderTarget(0, &pSurf);
+		if ( SUCCEEDED(hr) ) {
 			pSurf->GetDesc( &Desc );
-			if ( FAILED( pd3d9->CheckDeviceFormat( Caps.AdapterOrdinal, Caps.DeviceType, Mode.Format,
-												   D3DUSAGE_RENDERTARGET | D3DUSAGE_QUERY_POSTPIXELSHADER_BLENDING, D3DRTYPE_SURFACE,
-												   Desc.Format ) ) ) {
+			hr = pd3d9->CheckDeviceFormat(Caps.AdapterOrdinal, Caps.DeviceType, Mode.Format,
+				D3DUSAGE_RENDERTARGET | D3DUSAGE_QUERY_POSTPIXELSHADER_BLENDING, D3DRTYPE_SURFACE,
+				Desc.Format);
+			if ( FAILED(hr) ) {
 				bSupportsAlphaBlend = false;
 			}
 			SAFE_RELEASE( pSurf );
@@ -488,8 +489,8 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 		}
 	}
 
-	pSize->cx = (int)fWidth;
-	pSize->cy = (int)fHeight;
+	pSize->cx = (LONG)fWidth;
+	pSize->cy = (LONG)fHeight;
 
 	return S_OK;
 }
