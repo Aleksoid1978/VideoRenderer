@@ -50,7 +50,13 @@ inline FONT2DVERTEX InitFont2DVertex( const DirectX::XMFLOAT4& p, D3DCOLOR color
 
 inline auto Char2Index(WCHAR ch)
 {
-	return (ch >= 32 && ch < 128) ? ch - 32 : (127-32);
+	if (ch >= 0x0020 && ch <= 0x007F) {
+		return ch - 32;
+	}
+	if (ch >= 0x00A0 && ch <= 0x00BF) {
+		return ch - 64;
+	}
+	return 0x007F - 32;
 }
 
 //-----------------------------------------------------------------------------
@@ -76,6 +82,16 @@ CD3D9Font::CD3D9Font( const WCHAR* strFontName, DWORD dwHeight, DWORD dwFlags )
 
 	m_pStateBlockSaved     = nullptr;
 	m_pStateBlockDrawText  = nullptr;
+
+	UINT idx = 0;
+	for (WCHAR ch = 0x0020; ch < 0x007F; ch++) {
+		m_Characters[idx++] = ch;
+	}
+	m_Characters[idx++] = 0xFFFD; // U+FFFD Replacement Character
+	for (WCHAR ch = 0x00A0; ch <= 0x00BF; ch++) {
+		m_Characters[idx++] = ch;
+	}
+	ASSERT(idx == std::size(m_Characters));
 }
 
 
@@ -141,8 +157,8 @@ HRESULT CD3D9Font::PaintAlphabet( HDC hDC, BOOL bMeasureOnly )
 	DWORD y = 0;
 
 	// For each character, draw text on the DC and advance the current position
-	for ( WCHAR c = 32; c < 128; c++ ) {
-		str[0] = (c == 127) ? 0xFFFD : c;
+	for (size_t i = 0; i < std::size(m_Characters); i++) {
+		str[0] = m_Characters[i];
 		if ( 0 == GetTextExtentPoint32W( hDC, str, 1, &size ) ) {
 			return E_FAIL;
 		}
@@ -163,10 +179,10 @@ HRESULT CD3D9Font::PaintAlphabet( HDC hDC, BOOL bMeasureOnly )
 				return E_FAIL;
 			}
 
-			m_fTexCoords[c-32][0] = ((FLOAT)(x + 0       - m_dwSpacing))/m_dwTexWidth;
-			m_fTexCoords[c-32][1] = ((FLOAT)(y + 0       + 0          ))/m_dwTexHeight;
-			m_fTexCoords[c-32][2] = ((FLOAT)(x + size.cx + m_dwSpacing))/m_dwTexWidth;
-			m_fTexCoords[c-32][3] = ((FLOAT)(y + size.cy + 0          ))/m_dwTexHeight;
+			m_fTexCoords[i][0] = ((FLOAT)(x + 0       - m_dwSpacing))/m_dwTexWidth;
+			m_fTexCoords[i][1] = ((FLOAT)(y + 0       + 0          ))/m_dwTexHeight;
+			m_fTexCoords[i][2] = ((FLOAT)(x + size.cx + m_dwSpacing))/m_dwTexWidth;
+			m_fTexCoords[i][3] = ((FLOAT)(y + size.cy + 0          ))/m_dwTexHeight;
 		}
 
 		x += size.cx + (2 * m_dwSpacing);
@@ -582,7 +598,7 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 		FLOAT w = (tx2-tx1) *  m_dwTexWidth / m_fTextScale;
 		FLOAT h = (ty2-ty1) * m_dwTexHeight / m_fTextScale;
 
-		if ( c != ' ' ) {
+		if ( c != 0x0020 && c != 0x00A0) { // Space and No-Break Space
 			*pVertices++ = InitFont2DVertex( DirectX::XMFLOAT4(sx+0-0.5f,sy+h-0.5f,0.9f,1.0f), color, tx1, ty2 );
 			*pVertices++ = InitFont2DVertex( DirectX::XMFLOAT4(sx+0-0.5f,sy+0-0.5f,0.9f,1.0f), color, tx1, ty1 );
 			*pVertices++ = InitFont2DVertex( DirectX::XMFLOAT4(sx+w-0.5f,sy+h-0.5f,0.9f,1.0f), color, tx2, ty2 );

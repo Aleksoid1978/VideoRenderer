@@ -43,7 +43,8 @@ class CD3D9Font
 	DWORD m_dwTexWidth;                   // Texture dimensions
 	DWORD m_dwTexHeight;
 	FLOAT m_fTextScale;
-	FLOAT m_fTexCoords[128-32][4];
+	WCHAR m_Characters[128];
+	FLOAT m_fTexCoords[128][4];
 	DWORD m_dwSpacing;                    // Character pixel spacing per side
 
 	// Stateblocks for setting and restoring render states
