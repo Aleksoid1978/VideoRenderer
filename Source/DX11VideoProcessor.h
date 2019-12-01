@@ -35,8 +35,7 @@
 #include "DX9Device.h"
 
 #if DIRECTWRITE_ENABLE
-#include <dwrite.h>
-#include <d2d1.h>
+#include "StatsDrawing.h"
 #endif
 
 class CMpcVideoRenderer;
@@ -186,12 +185,7 @@ private:
 	REFERENCE_TIME m_rtStart = 0;
 
 #if DIRECTWRITE_ENABLE
-	CComPtr<IDWriteFactory>    m_pDWriteFactory;
-	CComPtr<IDWriteTextFormat> m_pTextFormat;
-
-	CComPtr<ID2D1Factory>         m_pD2D1Factory;
-	CComPtr<ID2D1RenderTarget>    m_pD2D1RenderTarget;
-	CComPtr<ID2D1SolidColorBrush> m_pD2D1Brush;
+	CStatsDrawingDWrite m_StatsDrawingDWrite;
 #endif
 
 public:

@@ -21,11 +21,15 @@
 #pragma once
 
 #include <gdiplus.h>
+#include <dwrite.h>
+#include <d2d1.h>
 
 #define STATS_X  10
 #define STATS_Y  10
 #define STATS_W 512
 #define STATS_H 256
+
+// CStatsDrawingGdiplus
 
 class CStatsDrawingGdiplus
 {
@@ -88,5 +92,105 @@ public:
 			CopyFrameAsIs(bitmapData.Height, dst, dst_pitch, (BYTE*)bitmapData.Scan0, bitmapData.Stride);
 			m_bitmap->UnlockBits(&bitmapData);
 		}
+	}
+};
+
+// CStatsDrawingDWrite
+
+class CStatsDrawingDWrite
+{
+private:
+	CComPtr<IDWriteFactory>    m_pDWriteFactory;
+	CComPtr<IDWriteTextFormat> m_pTextFormat;
+
+	CComPtr<ID2D1Factory>         m_pD2D1Factory;
+	CComPtr<ID2D1RenderTarget>    m_pD2D1RenderTarget;
+	CComPtr<ID2D1SolidColorBrush> m_pD2D1Brush;
+
+public:
+	CStatsDrawingDWrite()
+	{
+		D2D1_FACTORY_OPTIONS options = {};
+#ifdef _DEBUG
+		options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+#endif
+		HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, &m_pD2D1Factory);
+
+		hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(m_pDWriteFactory), reinterpret_cast<IUnknown**>(&m_pDWriteFactory));
+		if (S_OK == hr) {
+			hr = m_pDWriteFactory->CreateTextFormat(
+				L"Consolas",
+				nullptr,
+				DWRITE_FONT_WEIGHT_NORMAL,
+				DWRITE_FONT_STYLE_NORMAL,
+				DWRITE_FONT_STRETCH_NORMAL,
+				14,
+				L"", //locale
+				&m_pTextFormat);
+		}
+	}
+
+	~CStatsDrawingDWrite()
+	{
+		m_pTextFormat.Release();
+		m_pDWriteFactory.Release();
+
+		ReleaseRenderTarget();
+		m_pD2D1Factory.Release();
+	}
+
+	HRESULT SetRenderTarget(IDXGISurface* pDxgiSurface)
+	{
+		ReleaseRenderTarget();
+		HRESULT hr = E_ABORT;
+
+		if (m_pD2D1Factory) {
+			D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
+				D2D1_RENDER_TARGET_TYPE_DEFAULT,
+				D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
+				96, 96);
+
+			hr = m_pD2D1Factory->CreateDxgiSurfaceRenderTarget(pDxgiSurface, &props, &m_pD2D1RenderTarget);
+			if (S_OK == hr) {
+				hr = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &m_pD2D1Brush);
+			}
+		}
+
+		return hr;
+	}
+
+	void ReleaseRenderTarget()
+	{
+		m_pD2D1Brush.Release();
+		m_pD2D1RenderTarget.Release();
+	}
+
+	void DrawTextW(const CStringW& str)
+	{
+		if (!m_pD2D1RenderTarget) {
+			return;
+		}
+
+		CComPtr<IDWriteTextLayout> pTextLayout;
+		if (S_OK == m_pDWriteFactory->CreateTextLayout(str, str.GetLength(), m_pTextFormat, STATS_W - 5, STATS_H - 5, &pTextLayout)) {
+			m_pD2D1RenderTarget->BeginDraw();
+			m_pD2D1RenderTarget->DrawTextLayout(D2D1::Point2F(5.0f, 5.0f), pTextLayout, m_pD2D1Brush);
+			static int col = STATS_W;
+			if (--col < 0) {
+				col = STATS_W;
+			}
+			D2D1_RECT_F rect = { col, STATS_H - 11, col + 5, STATS_H - 1 };
+			m_pD2D1RenderTarget->FillRectangle(rect, m_pD2D1Brush);
+			m_pD2D1RenderTarget->EndDraw();
+		}
+
+
+
+		//BitmapData bitmapData;
+		//Rect rc(0, 0, STATS_W, STATS_H);
+		//if (Ok == m_bitmap->LockBits(&rc, ImageLockModeRead, PixelFormat32bppARGB, &bitmapData)) {
+		//	CopyFrameAsIs(bitmapData.Height, dst, dst_pitch, (BYTE*)bitmapData.Scan0, bitmapData.Stride);
+		//	m_bitmap->UnlockBits(&bitmapData);
+		//}
 	}
 };

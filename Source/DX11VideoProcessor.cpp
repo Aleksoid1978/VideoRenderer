@@ -515,6 +515,9 @@ void CDX11VideoProcessor::ReleaseDevice()
 	ReleaseVP();
 	m_D3D11VP.ReleaseVideoDevice();
 
+#if DIRECTWRITE_ENABLE
+	m_StatsDrawingDWrite.ReleaseRenderTarget();
+#endif
 	m_TexOSD.Release();
 	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
@@ -534,15 +537,6 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pAlphaBlendState.Release();
 	m_pAlphaBlendStateInv.Release();
 	SAFE_RELEASE(m_pFullFrameVertexBuffer);
-
-#if DIRECTWRITE_ENABLE
-	m_pTextFormat.Release();
-	m_pDWriteFactory.Release();
-
-	m_pD2D1Brush.Release();
-	m_pD2D1RenderTarget.Release();
-	m_pD2D1Factory.Release();
-#endif
 
 	m_pShaderResourceSubPic.Release();
 	m_pTextureSubPic.Release();
@@ -801,41 +795,14 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 #if DIRECTWRITE_ENABLE
 	HRESULT hr2 = m_TexOSD.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DefaultShaderRTarget);
-	ASSERT(S_OK == hr2);
-
-	hr2 = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(m_pDWriteFactory), reinterpret_cast<IUnknown**>(&m_pDWriteFactory));
-	if (S_OK == hr2) {
-		hr2 = m_pDWriteFactory->CreateTextFormat(
-			L"Consolas",
-			nullptr,
-			DWRITE_FONT_WEIGHT_NORMAL,
-			DWRITE_FONT_STYLE_NORMAL,
-			DWRITE_FONT_STRETCH_NORMAL,
-			14,
-			L"", //locale
-			&m_pTextFormat);
-	}
-
-	D2D1_FACTORY_OPTIONS options = {};
-#ifdef _DEBUG
-	options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
-#endif
-	hr2 = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, &m_pD2D1Factory);
 	if (S_OK == hr2) {
 		CComPtr<IDXGISurface> pDxgiSurface;
 		hr2 = m_TexOSD.pTexture->QueryInterface(IID_IDXGISurface, (void**)&pDxgiSurface);
 		if (S_OK == hr2) {
-			D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
-				D2D1_RENDER_TARGET_TYPE_DEFAULT,
-				D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
-				96, 96);
-
-			hr2 = m_pD2D1Factory->CreateDxgiSurfaceRenderTarget(pDxgiSurface, &props, &m_pD2D1RenderTarget);
-			if (S_OK == hr2) {
-				hr2 = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &m_pD2D1Brush);
-			}
+			hr2 = m_StatsDrawingDWrite.SetRenderTarget(pDxgiSurface);
 		}
 	}
+	ASSERT(S_OK == hr2);
 #else
 	HRESULT hr2 = m_TexOSD.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DynamicShaderWrite);
 	ASSERT(S_OK == hr2);
@@ -2223,20 +2190,8 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	if (S_OK == hr) {
 		const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.75f };
 		m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
-		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 
-		CComPtr<IDWriteTextLayout> pTextLayout;
-		if (S_OK == m_pDWriteFactory->CreateTextLayout(str, str.GetLength(), m_pTextFormat, m_windowRect.right - 10, m_windowRect.bottom - 10, &pTextLayout)) {
-			m_pD2D1RenderTarget->BeginDraw();
-			m_pD2D1RenderTarget->DrawTextLayout(D2D1::Point2F(5.0f, 5.0f), pTextLayout, m_pD2D1Brush);
-			static int col = STATS_W;
-			if (--col < 0) {
-				col = STATS_W;
-			}
-			D2D1_RECT_F rect = { col, STATS_H - 11, col + 5, STATS_H - 1 };
-			m_pD2D1RenderTarget->FillRectangle(rect, m_pD2D1Brush);
-			m_pD2D1RenderTarget->EndDraw();
-		}
+		m_StatsDrawingDWrite.DrawTextW(str);
 
 		D3D11_VIEWPORT VP;
 		VP.TopLeftX = STATS_X;
@@ -2263,7 +2218,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		VP.Height = STATS_H;
 		VP.MinDepth = 0.0f;
 		VP.MaxDepth = 1.0f;
-		AlphaBlt(m_TexOSD.pShaderResource, pRenderTarget, VP);
+		hr = AlphaBlt(m_TexOSD.pShaderResource, pRenderTarget, VP);
 	}
 #endif
 
