@@ -240,14 +240,21 @@ private:
 		Gdiplus::RectF rect;
 		float maxWidth = 0;
 		float maxHeight = 0;
+
+		SIZE HACK_monosize;
+		if (pGraphics->MeasureString(L"X", 1, m_pFont, Gdiplus::PointF(0, 0), &rect) == Gdiplus::Ok) {
+			HACK_monosize = { (LONG)ceil(rect.Width), (LONG)ceil(rect.Height) };
+		}
+
 		for (UINT i = 0; i < lenght; i++) {
 			if (pGraphics->MeasureString(&chars[i], 1, m_pFont, Gdiplus::PointF(0, 0), &rect) != Gdiplus::Ok) {
 				ASSERT(0);
 				return E_FAIL;
 			}
 			if (bSetCharSizes) {
-				SIZE size = { (LONG)ceil(rect.Width), (LONG)ceil(rect.Height) };
-				m_charSizes.emplace_back(size);
+				//SIZE size = { (LONG)ceil(rect.Width), (LONG)ceil(rect.Height) };
+				//m_charSizes.emplace_back(size);
+				m_charSizes.emplace_back(HACK_monosize);
 			}
 			if (rect.Width > maxWidth) {
 				maxWidth = rect.Width;
@@ -258,7 +265,7 @@ private:
 			ASSERT(rect.X == 0 && rect.Y == 0);
 		}
 
-		grid.stepX = (int)ceil(maxWidth) + 2;
+		grid.stepX = (int)ceil(maxWidth);
 		grid.stepY = (int)ceil(maxHeight);
 
 		grid.columns = bmWidth / grid.stepX;
@@ -332,13 +339,14 @@ public:
 				if (idx >= lenght) {
 					break;
 				}
-				PointF point(x*grid.stepX + 1, y*grid.stepY);
+				PointF point(x*grid.stepX, y*grid.stepY);
 				status = pGraphics->DrawString(&chars[idx], 1, m_pFont, point, m_pBrushWhite);
 
-				*fTexCoords++ = point.X / bmWidth;
-				*fTexCoords++ = point.Y / bmHeight;
-				*fTexCoords++ = (point.X + m_charSizes[idx].cx) / bmWidth;
-				*fTexCoords++ = (point.Y + m_charSizes[idx].cy) / bmHeight;
+				// HACK_monosize
+				*fTexCoords++ = (point.X + 2) / bmWidth;
+				*fTexCoords++ = (point.Y + 1) / bmHeight;
+				*fTexCoords++ = (point.X + m_charSizes[idx].cx - 2) / bmWidth;
+				*fTexCoords++ = (point.Y + m_charSizes[idx].cy - 1) / bmHeight;
 
 				ASSERT(Gdiplus::Ok == status);
 				idx++;
