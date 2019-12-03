@@ -71,7 +71,7 @@ private:
 			}
 		}
 
-		grid.stepX = (int)ceil(maxWidth);
+		grid.stepX = (int)ceil(maxWidth) + 2;
 		grid.stepY = (int)ceil(maxHeight);
 
 		grid.columns = bmWidth / grid.stepX;
@@ -161,7 +161,7 @@ public:
 				if (idx >= lenght) {
 					break;
 				}
-				POINT point = { x*grid.stepX, y*grid.stepY };
+				POINT point = { x*grid.stepX + 1, y*grid.stepY };
 				BOOL ret = ExtTextOutW(m_hDC, point.x, point.y, ETO_OPAQUE, nullptr, &chars[idx], 1, nullptr);
 
 				*fTexCoords++ = (float)point.x / bmWidth;
