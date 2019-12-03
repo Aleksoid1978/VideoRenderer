@@ -393,29 +393,152 @@ public:
 class CFontBitmapDWrite // TODO
 {
 private:
+	CComPtr<IDWriteFactory>    m_pDWriteFactory;
+	CComPtr<IDWriteTextFormat> m_pTextFormat;
+
+	CComPtr<ID2D1Factory>         m_pD2D1Factory;
+	CComPtr<ID2D1RenderTarget>    m_pD2D1RenderTarget;
+	CComPtr<ID2D1SolidColorBrush> m_pD2D1Brush;
+
+	std::vector<SIZE> m_charSizes;
 
 	HRESULT CalcGrid(Grid_t& grid, const WCHAR* chars, UINT lenght, UINT bmWidth, UINT bmHeight, bool bSetCharSizes)
 	{
-		return E_NOTIMPL;
+		if (bSetCharSizes) {
+			m_charSizes.reserve(lenght);
+		}
+
+		DWRITE_TEXT_METRICS textMetrics;
+		float maxWidth = 0;
+		float maxHeight = 0;
+		for (UINT i = 0; i < lenght; i++) {
+			IDWriteTextLayout* pTextLayout;
+			HRESULT hr = m_pDWriteFactory->CreateTextLayout(&chars[i], 1, m_pTextFormat, 0, 0, &pTextLayout);
+			if (S_OK == hr) {
+				hr = pTextLayout->GetMetrics(&textMetrics);
+				pTextLayout->Release();
+			}
+			if (FAILED(hr)) {
+				return hr;
+			}
+
+			if (bSetCharSizes) {
+				SIZE size = { (LONG)ceil(textMetrics.width), (LONG)ceil(textMetrics.height) };
+				m_charSizes.emplace_back(size);
+			}
+			if (textMetrics.width > maxWidth) {
+				maxWidth = textMetrics.width;
+			}
+			if (textMetrics.height > maxHeight) {
+				maxHeight = textMetrics.height;
+			}
+			ASSERT(textMetrics.left == 0 && textMetrics.top == 0);
+		}
+
+		grid.stepX = (int)ceil(maxWidth) + 2;
+		grid.stepY = (int)ceil(maxHeight);
+
+		grid.columns = bmWidth / grid.stepX;
+		grid.lines = bmHeight / grid.stepY;
+
+		return S_OK;
 	}
 
 public:
 	CFontBitmapDWrite(const WCHAR* fontName, const int fontHeight)
 	{
+		D2D1_FACTORY_OPTIONS options = {};
+#ifdef _DEBUG
+		options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+#endif
+		HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, &m_pD2D1Factory);
+
+		hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(m_pDWriteFactory), reinterpret_cast<IUnknown**>(&m_pDWriteFactory));
+		if (S_OK == hr) {
+			hr = m_pDWriteFactory->CreateTextFormat(
+				fontName,
+				nullptr,
+				DWRITE_FONT_WEIGHT_NORMAL,
+				DWRITE_FONT_STYLE_NORMAL,
+				DWRITE_FONT_STRETCH_NORMAL,
+				fontHeight,
+				L"", //locale
+				&m_pTextFormat);
+		}
 	}
 
 	~CFontBitmapDWrite()
 	{
+		m_pTextFormat.Release();
+		m_pDWriteFactory.Release();
+
+		m_pD2D1Brush.Release();
+		m_pD2D1RenderTarget.Release();
+		m_pD2D1Factory.Release();
 	}
 
 	HRESULT CheckBitmapDimensions(const WCHAR* chars, const UINT lenght, const UINT bmWidth, const UINT bmHeight)
 	{
-		return E_NOTIMPL;
+		Grid_t grid;
+		HRESULT hr = CalcGrid(grid, chars, lenght, bmWidth, bmHeight, false);
+		if (FAILED(hr)) {
+			return hr;
+		}
+
+		return (lenght <= grid.lines * grid.columns) ? S_OK : D3DERR_MOREDATA;
 	}
 
 	HRESULT DrawCharacters(const WCHAR* chars, FLOAT* fTexCoords, const UINT lenght, const UINT bmWidth, const UINT bmHeight)
 	{
-		return E_NOTIMPL;
+		Grid_t grid;
+		HRESULT hr = CalcGrid(grid, chars, lenght, bmWidth, bmHeight, true);
+		if (FAILED(hr)) {
+			return hr;
+		}
+
+		D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
+			D2D1_RENDER_TARGET_TYPE_DEFAULT,
+			D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
+			96, 96);
+
+		// TODO
+		hr = m_pD2D1Factory->Create...RenderTarget(..., &props, &m_pD2D1RenderTarget);
+		if (S_OK == hr) {
+			hr = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &m_pD2D1Brush);
+		}
+
+		m_pD2D1RenderTarget->BeginDraw();
+		UINT idx = 0;
+		for (UINT y = 0; y < grid.lines; y++) {
+			for (UINT x = 0; x < grid.columns; x++) {
+				if (idx >= lenght) {
+					break;
+				}
+				D2D1_POINT_2F point = { x*grid.stepX + 1, y*grid.stepY };
+				IDWriteTextLayout* pTextLayout;
+				hr = m_pDWriteFactory->CreateTextLayout(&chars[idx], 1, m_pTextFormat, 0, 0, &pTextLayout);
+				if (S_OK == hr) {
+					m_pD2D1RenderTarget->DrawTextLayout(point, pTextLayout, m_pD2D1Brush);
+					pTextLayout->Release();
+				}
+
+				*fTexCoords++ = point.x / bmWidth;
+				*fTexCoords++ = point.y / bmHeight;
+				*fTexCoords++ = (point.x + m_charSizes[idx].cx) / bmWidth;
+				*fTexCoords++ = (point.y + m_charSizes[idx].cy) / bmHeight;
+
+				ASSERT(hr == S_OK);
+				idx++;
+			}
+		}
+		m_pD2D1RenderTarget->EndDraw();
+
+
+		if (S_OK == hr) {
+			return (idx == lenght) ? S_OK : S_FALSE;
+		} else {
+			return hr;
+		}
 	}
 
 	bool CopyBitmapToA8L8(BYTE* pDst, int dst_pitch)
