@@ -87,7 +87,7 @@ CD3D9Font::CD3D9Font( const WCHAR* strFontName, DWORD dwHeight, DWORD dwFlags )
 	for (WCHAR ch = 0x0020; ch < 0x007F; ch++) {
 		m_Characters[idx++] = ch;
 	}
-	m_Characters[idx++] = 0xFFFD; // U+FFFD Replacement Character
+	m_Characters[idx++] = 0x25CA; // U+25CA Lozenge
 	for (WCHAR ch = 0x00A0; ch <= 0x00BF; ch++) {
 		m_Characters[idx++] = ch;
 	}
