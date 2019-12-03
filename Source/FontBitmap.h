@@ -218,7 +218,7 @@ private:
 
 	Gdiplus::FontFamily* m_pFontFamily;
 	Gdiplus::Font*       m_pFont;
-	Gdiplus::SolidBrush* m_pSolidBrush;
+	Gdiplus::SolidBrush* m_pBrushWhite;
 
 	Gdiplus::Bitmap*     m_pBitmap = nullptr;
 	std::vector<SIZE> m_charSizes;
@@ -268,14 +268,14 @@ public:
 
 		m_pFontFamily = new FontFamily(fontName);
 		m_pFont = new Font(m_pFontFamily, fontHeight, FontStyleRegular, UnitPixel);
-		m_pSolidBrush = new SolidBrush(Color::White);
+		m_pBrushWhite = new SolidBrush(Color::White);
 	}
 
 	~CFontBitmapGDIPlus()
 	{
 		SAFE_DELETE(m_pBitmap);
 
-		SAFE_DELETE(m_pSolidBrush);
+		SAFE_DELETE(m_pBrushWhite);
 		SAFE_DELETE(m_pFont);
 		SAFE_DELETE(m_pFontFamily);
 
@@ -323,7 +323,7 @@ public:
 					break;
 				}
 				PointF point(x*grid.stepX + 1, y*grid.stepY);
-				status = pGraphics->DrawString(&chars[idx], 1, m_pFont, point, m_pSolidBrush);
+				status = pGraphics->DrawString(&chars[idx], 1, m_pFont, point, m_pBrushWhite);
 
 				*fTexCoords++ = point.X / bmWidth;
 				*fTexCoords++ = point.Y / bmHeight;
