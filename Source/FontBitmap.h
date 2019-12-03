@@ -23,6 +23,8 @@
 #define FONTBITMAP_MODE 0
 // 0 - GDI, 1 - GDI+, 2 - DirectWrite (not done yet)
 
+#define DUMP_BITMAP 0
+
 struct Grid_t {
 	UINT stepX = 0;
 	UINT stepY = 0;
@@ -184,6 +186,10 @@ public:
 		ASSERT(pDst && dst_pitch);
 
 		if (m_hBitmap && m_pBitmapBits) {
+#if _DEBUG && DUMP_BITMAP
+			SaveARGB32toBMP((BYTE*)m_pBitmapBits, m_bmWidth*4, m_bmWidth, m_bmHeight, L"c:\\temp\\font_gdi_bitmap.bmp");
+#endif
+
 			for (UINT y = 0; y < m_bmHeight; y++) {
 				uint16_t* pDst16 = (uint16_t*)pDst;
 
@@ -220,6 +226,7 @@ private:
 	Gdiplus::FontFamily* m_pFontFamily;
 	Gdiplus::Font*       m_pFont;
 	Gdiplus::SolidBrush* m_pBrushWhite;
+	const Gdiplus::TextRenderingHint m_TextRenderingHint = Gdiplus::TextRenderingHintAntiAlias;
 
 	Gdiplus::Bitmap*     m_pBitmap = nullptr;
 	std::vector<SIZE> m_charSizes;
@@ -290,6 +297,7 @@ public:
 
 		Bitmap* pTestBitmap = new Bitmap(32, 32, PixelFormat32bppARGB); // bitmap dimensions are not important here
 		Graphics* pGraphics = new Graphics(pTestBitmap);
+		pGraphics->SetTextRenderingHint(m_TextRenderingHint);
 
 		Grid_t grid;
 		HRESULT hr = CalcGrid(pGraphics, grid, chars, lenght, bmWidth, bmHeight, false);
@@ -313,6 +321,7 @@ public:
 		SAFE_DELETE(m_pBitmap);
 		m_pBitmap = new Bitmap(bmWidth, bmHeight, PixelFormat32bppARGB);
 		Graphics* pGraphics = new Graphics(m_pBitmap);
+		pGraphics->SetTextRenderingHint(m_TextRenderingHint);
 
 		Grid_t grid;
 		CalcGrid(pGraphics, grid, chars, lenght, bmWidth, bmHeight, true);
@@ -357,6 +366,9 @@ public:
 			Gdiplus::Rect rect(0, 0, w, h);
 
 			if (Gdiplus::Ok == m_pBitmap->LockBits(&rect, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData)) {
+#if _DEBUG && DUMP_BITMAP
+				SaveARGB32toBMP((BYTE*)bitmapData.Scan0, bitmapData.Stride, w, h, L"c:\\temp\\font_gdiplus_bitmap.bmp");
+#endif
 				BYTE* pSrc = (BYTE*)bitmapData.Scan0;
 
 				for (UINT y = 0; y < h; y++) {
