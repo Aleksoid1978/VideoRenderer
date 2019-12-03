@@ -94,6 +94,7 @@
     <ClInclude Include="DX9Helper.h" />
     <ClInclude Include="DX9VideoProcessor.h" />
     <ClInclude Include="DXVA2VP.h" />
+    <ClInclude Include="FontBitmap.h" />
     <ClInclude Include="FrameStats.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="IVideoRenderer.h" />

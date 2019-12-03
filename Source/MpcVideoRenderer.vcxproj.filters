@@ -149,6 +149,9 @@
     <ClInclude Include="DXVA2VP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FontBitmap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MpcVideoRenderer.rc">
