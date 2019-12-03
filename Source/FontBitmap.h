@@ -21,6 +21,7 @@
 #pragma once
 
 #define FONTBITMAP_MODE 0
+// 0 - GDI, 1 - GDI+, 2 - DirectWrite (not done yet)
 
 struct Grid_t {
 	UINT stepX = 0;
