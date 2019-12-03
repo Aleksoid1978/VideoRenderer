@@ -22,6 +22,7 @@
 #include <d3d9.h>
 #include <DirectXMath.h>
 #include "Helper.h"
+#include "FontBitmap.h"
 #include "D3D9Font.h"
 
 //-----------------------------------------------------------------------------
@@ -109,91 +110,6 @@ CD3D9Font::~CD3D9Font()
 
 
 //-----------------------------------------------------------------------------
-// Name: CreateGDIFont
-// Desc: Create a font based on the current state of related member variables
-//       and return the handle (or null on error)
-//-----------------------------------------------------------------------------
-HRESULT CD3D9Font::CreateGDIFont( HDC hDC, HFONT* pFont )
-{
-	// Create a font.  By specifying ANTIALIASED_QUALITY, we might get an
-	// antialiased font, but this is not guaranteed.
-	int nHeight    = -(int)(m_dwFontHeight * m_fTextScale);
-	DWORD dwBold   = (m_dwFontFlags & D3DFONT_BOLD)   ? FW_BOLD : FW_NORMAL;
-	DWORD dwItalic = (m_dwFontFlags & D3DFONT_ITALIC) ? TRUE    : FALSE;
-
-	*pFont         = CreateFontW( nHeight, 0, 0, 0, dwBold, dwItalic,
-								 FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
-								 CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
-								 VARIABLE_PITCH, m_strFontName );
-
-	if ( *pFont == nullptr ) {
-		return E_FAIL;
-	}
-
-	return S_OK;
-}
-
-
-
-//-----------------------------------------------------------------------------
-// Name: PaintAlphabet
-// Desc: Paint the printable characters for the given GDI font onto the
-//       provided device context. If the bMeasureOnly flag is set, no drawing
-//       will occur.
-//-----------------------------------------------------------------------------
-HRESULT CD3D9Font::PaintAlphabet( HDC hDC, BOOL bMeasureOnly )
-{
-	SIZE size;
-	WCHAR str[2] = L"x"; // One-character, null-terminated string
-
-	// Calculate the spacing between characters based on line height
-	if ( 0 == GetTextExtentPoint32W( hDC, str, 1, &size ) ) {
-		return E_FAIL;
-	}
-	m_dwSpacing = 2; // old value = (DWORD)ceil(size.cy * 0.3f);
-
-	// Set the starting point for the drawing
-	DWORD x = m_dwSpacing;
-	DWORD y = 0;
-
-	// For each character, draw text on the DC and advance the current position
-	for (size_t i = 0; i < std::size(m_Characters); i++) {
-		str[0] = m_Characters[i];
-		if ( 0 == GetTextExtentPoint32W( hDC, str, 1, &size ) ) {
-			return E_FAIL;
-		}
-
-		if ( (DWORD)(x + size.cx + m_dwSpacing) > m_dwTexWidth ) {
-			x  = m_dwSpacing;
-			y += size.cy + 1;
-		}
-
-		// Check to see if there's room to write the character here
-		if ( y + size.cy > m_dwTexHeight ) {
-			return D3DERR_MOREDATA;
-		}
-
-		if ( !bMeasureOnly ) {
-			// Perform the actual drawing
-			if ( 0 == ExtTextOutW( hDC, x+0, y+0, ETO_OPAQUE, nullptr, str, 1, nullptr ) ) {
-				return E_FAIL;
-			}
-
-			m_fTexCoords[i][0] = ((FLOAT)(x + 0       - m_dwSpacing))/m_dwTexWidth;
-			m_fTexCoords[i][1] = ((FLOAT)(y + 0       + 0          ))/m_dwTexHeight;
-			m_fTexCoords[i][2] = ((FLOAT)(x + size.cx + m_dwSpacing))/m_dwTexWidth;
-			m_fTexCoords[i][3] = ((FLOAT)(y + size.cy + 0          ))/m_dwTexHeight;
-		}
-
-		x += size.cx + (2 * m_dwSpacing);
-	}
-
-	return S_OK;
-}
-
-
-
-//-----------------------------------------------------------------------------
 // Name: InitDeviceObjects()
 // Desc: Initializes device-dependent objects, including the vertex buffer used
 //       for rendering text and the texture map which stores the font image.
@@ -201,144 +117,62 @@ HRESULT CD3D9Font::PaintAlphabet( HDC hDC, BOOL bMeasureOnly )
 HRESULT CD3D9Font::InitDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice )
 {
 	HRESULT hr = S_OK;
-	HFONT hFont = nullptr;
-	HFONT hFontOld = nullptr;
-	HDC hDC = nullptr;
-	HBITMAP hbmBitmap = nullptr;
-	HGDIOBJ hbmOld = nullptr;
 
 	// Keep a local copy of the device
 	m_pd3dDevice = pd3dDevice;
+	D3DCAPS9 d3dCaps;
+	m_pd3dDevice->GetDeviceCaps(&d3dCaps);
 
 	// Assume we will draw fonts into texture without scaling unless the
 	// required texture size is found to be larger than the device max
 	m_fTextScale  = 1.0f;
 
-	hDC = CreateCompatibleDC( nullptr );
-	SetMapMode( hDC, MM_TEXT );
-
-	hr = CreateGDIFont( hDC, &hFont );
-	if ( FAILED(hr) ) {
-		goto LCleanReturn;
-	}
-
-	hFontOld = (HFONT) SelectObject( hDC, hFont );
+#if FONTBITMAP_MODE == 0
+	CFontBitmapGDI fontBitmap(m_strFontName, m_dwFontHeight);
+#elif FONTBITMAP_MODE == 1
+	CFontBitmapGDIPlus fontBitmap(m_strFontName, m_dwFontHeight);
+#elif FONTBITMAP_MODE == 2
+	CFontBitmapDWrite fontBitmap(m_strFontName, m_dwFontHeight);
+#endif
 
 	// Calculate the dimensions for the smallest power-of-two texture which
 	// can hold all the printable characters
 	m_dwTexWidth = m_dwTexHeight = 128;
-	while ( D3DERR_MOREDATA == ( hr = PaintAlphabet( hDC, true ) ) ) {
-		m_dwTexWidth *= 2;
-		m_dwTexHeight *= 2;
+	do {
+		hr = fontBitmap.CheckBitmapDimensions(m_Characters, std::size(m_Characters), m_dwTexWidth, m_dwTexHeight);
+		if (D3DERR_MOREDATA == hr) {
+			m_dwTexWidth *= 2;
+			m_dwTexHeight *= 2;
+		} else {
+			break;
+		}
+	} while (m_dwTexWidth <= d3dCaps.MaxTextureWidth);
+
+	if (FAILED(hr)) {
+		return hr;
 	}
 
-	if ( FAILED(hr) ) {
-		goto LCleanReturn;
+	// Paint the alphabet onto the selected bitmap
+	hr = fontBitmap.DrawCharacters(m_Characters, (float*)&m_fTexCoords, std::size(m_Characters), m_dwTexWidth, m_dwTexHeight);
+	if (FAILED(hr)) {
+		return hr;
 	}
-
-	// If requested texture is too big, use a smaller texture and smaller font,
-	// and scale up when rendering.
-	D3DCAPS9 d3dCaps;
-	m_pd3dDevice->GetDeviceCaps( &d3dCaps );
-
-	if ( m_dwTexWidth > d3dCaps.MaxTextureWidth ) {
-		m_fTextScale = (FLOAT)d3dCaps.MaxTextureWidth / (FLOAT)m_dwTexWidth;
-		m_dwTexWidth = m_dwTexHeight = d3dCaps.MaxTextureWidth;
-
-		bool bFirstRun = true; // Flag clear after first run
-
-		do {
-			// If we've already tried fitting the new text, the scale is still
-			// too large. Reduce and try again.
-			if ( !bFirstRun) {
-				m_fTextScale *= 0.9f;
-			}
-
-			// The font has to be scaled to fit on the maximum texture size; our
-			// current font is too big and needs to be recreated to scale.
-			DeleteObject( SelectObject( hDC, hFontOld ) );
-
-			hr = CreateGDIFont( hDC, &hFont );
-			if ( FAILED(hr) ) {
-				goto LCleanReturn;
-			}
-
-			hFontOld = (HFONT) SelectObject( hDC, hFont );
-
-			bFirstRun = false;
-		} while ( D3DERR_MOREDATA == ( hr = PaintAlphabet( hDC, true ) ) );
-	}
-
 
 	// Create a new texture for the font
 	hr = m_pd3dDevice->CreateTexture( m_dwTexWidth, m_dwTexHeight, 1,
-									  D3DUSAGE_DYNAMIC, D3DFMT_A4R4G4B4,
+									  D3DUSAGE_DYNAMIC, D3DFMT_A8L8,
 									  D3DPOOL_DEFAULT, &m_pTexture, nullptr );
-	if ( FAILED(hr) ) {
-		goto LCleanReturn;
-	}
-
-	// Prepare to create a bitmap
-	DWORD* pBitmapBits;
-	BITMAPINFO bmi;
-	ZeroMemory( &bmi.bmiHeader, sizeof(BITMAPINFOHEADER) );
-	bmi.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
-	bmi.bmiHeader.biWidth       =  (LONG)m_dwTexWidth;
-	bmi.bmiHeader.biHeight      = -(LONG)m_dwTexHeight;
-	bmi.bmiHeader.biPlanes      = 1;
-	bmi.bmiHeader.biCompression = BI_RGB;
-	bmi.bmiHeader.biBitCount    = 32;
-
-	// Create a bitmap for the font
-	hbmBitmap = CreateDIBSection( hDC, &bmi, DIB_RGB_COLORS,
-								  (void**)&pBitmapBits, nullptr, 0 );
-
-	hbmOld = SelectObject( hDC, hbmBitmap );
-
-	// Set text properties
-	SetTextColor( hDC, RGB(255,255,255) );
-	SetBkColor(   hDC, 0x00000000 );
-	SetTextAlign( hDC, TA_TOP );
-
-	// Paint the alphabet onto the selected bitmap
-	hr = PaintAlphabet( hDC, false );
-	if ( FAILED(hr) ) {
-		goto LCleanReturn;
+	if (FAILED(hr)) {
+		return hr;
 	}
 
 	// Lock the surface and write the alpha values for the set pixels
 	D3DLOCKED_RECT d3dlr;
 	hr = m_pTexture->LockRect(0, &d3dlr, nullptr, D3DLOCK_DISCARD);
 	if (S_OK == hr) {
-		BYTE* pDstRow = (BYTE*)d3dlr.pBits;
-
-		for (DWORD y = 0; y < m_dwTexHeight; y++) {
-			uint16_t* pDst16 = (uint16_t*)pDstRow;
-			for (DWORD x = 0; x < m_dwTexWidth; x++) {
-				// 4-bit measure of pixel intensity
-				DWORD pix = pBitmapBits[m_dwTexWidth*y + x];
-				DWORD r = (pix & 0x00ff0000) >> 16;
-				DWORD g = (pix & 0x0000ff00) >> 8;
-				DWORD b = (pix & 0x000000ff);
-				DWORD a = ((r * 1063 + g * 3576 + b * 361) / 5000) >> 4;
-				r >>= 4;
-				g >>= 4;
-				b >>= 4;
-				*pDst16++ = (uint16_t)((a << 12) + (r << 8) + (g << 4) + b);
-			}
-			pDstRow += d3dlr.Pitch;
-		}
-
+		bool ret = fontBitmap.CopyBitmapToA8L8((BYTE*)d3dlr.pBits, d3dlr.Pitch);
 		m_pTexture->UnlockRect(0);
 	}
-
-	// Done updating texture, so clean up used objects
-LCleanReturn:
-	SelectObject( hDC, hbmOld );
-	SelectObject( hDC, hFontOld );
-	DeleteObject( hbmBitmap );
-	DeleteObject( hFont );
-	DeleteDC( hDC );
 
 	return hr;
 }

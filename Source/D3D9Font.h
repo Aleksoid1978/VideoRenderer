@@ -51,9 +51,6 @@ class CD3D9Font
 	LPDIRECT3DSTATEBLOCK9 m_pStateBlockSaved;
 	LPDIRECT3DSTATEBLOCK9 m_pStateBlockDrawText;
 
-	HRESULT CreateGDIFont( HDC hDC, HFONT* pFont );
-	HRESULT PaintAlphabet( HDC hDC, BOOL bMeasureOnly=FALSE );
-
 public:
 	// 2D text drawing function
 	HRESULT Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
