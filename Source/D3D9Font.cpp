@@ -141,8 +141,12 @@ HRESULT CD3D9Font::InitDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice )
 	do {
 		hr = fontBitmap.CheckBitmapDimensions(m_Characters, std::size(m_Characters), m_dwTexWidth, m_dwTexHeight);
 		if (D3DERR_MOREDATA == hr) {
-			m_dwTexWidth *= 2;
-			m_dwTexHeight *= 2;
+			// check 128x128, 256x128, 256x256, 512x256, ...
+			if (m_dwTexWidth > m_dwTexHeight) {
+				m_dwTexHeight *= 2;
+			} else {
+				m_dwTexWidth *= 2;
+			}
 		} else {
 			break;
 		}
