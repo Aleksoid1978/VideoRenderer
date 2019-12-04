@@ -413,7 +413,7 @@ private:
 			return E_POINTER;
 		}
 
-		CLSID pngClsid;
+		CLSID pngClsid = CLSID_NULL;
 
 		UINT num = 0;  // number of image encoders
 		UINT size = 0; // size of the image encoder array in bytes
@@ -437,6 +437,9 @@ private:
 			}
 		}
 		free(pImageCodecInfo);
+		if (pngClsid == CLSID_NULL) {
+			return E_FAIL;
+		}
 
 		Gdiplus::Status status = m_pBitmap->Save(filename, &pngClsid, nullptr);
 
