@@ -227,7 +227,9 @@ private:
 	Gdiplus::Font*         m_pFont;
 	Gdiplus::SolidBrush*   m_pBrushWhite;
 	Gdiplus::StringFormat* m_pStringFormat;
-	const Gdiplus::TextRenderingHint m_TextRenderingHint = Gdiplus::TextRenderingHintAntiAliasGridFit;
+	const Gdiplus::TextRenderingHint m_TextRenderingHint = Gdiplus::TextRenderingHintClearTypeGridFit;
+	// TextRenderingHintClearTypeGridFit gives a better result than TextRenderingHintAntiAliasGridFit
+	// Perhaps this is only for normal thickness. Because subpixel anti-aliasing we lose after copying to the texture.
 
 	Gdiplus::Bitmap*     m_pBitmap = nullptr;
 	std::vector<SIZE> m_charSizes;
