@@ -227,7 +227,7 @@ private:
 	Gdiplus::Font*         m_pFont;
 	Gdiplus::SolidBrush*   m_pBrushWhite;
 	Gdiplus::StringFormat* m_pStringFormat;
-	const Gdiplus::TextRenderingHint m_TextRenderingHint = Gdiplus::TextRenderingHintAntiAlias;
+	const Gdiplus::TextRenderingHint m_TextRenderingHint = Gdiplus::TextRenderingHintAntiAliasGridFit;
 
 	Gdiplus::Bitmap*     m_pBitmap = nullptr;
 	std::vector<SIZE> m_charSizes;
