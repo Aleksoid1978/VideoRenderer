@@ -376,6 +376,7 @@ public:
 			if (Gdiplus::Ok == m_pBitmap->LockBits(&rect, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData)) {
 #if _DEBUG && DUMP_BITMAP
 				SaveARGB32toBMP((BYTE*)bitmapData.Scan0, bitmapData.Stride, w, h, L"c:\\temp\\font_gdiplus_bitmap.bmp");
+				SaveBitmapToPNG(L"C:\\TEMP\\font_gdiplus_bitmap.png");
 #endif
 				BYTE* pSrc = (BYTE*)bitmapData.Scan0;
 
@@ -403,6 +404,43 @@ public:
 		}
 
 		return false;
+	}
+
+private:
+	HRESULT SaveBitmapToPNG(const wchar_t* filename)
+	{
+		if (!m_pBitmap) {
+			return E_POINTER;
+		}
+
+		CLSID pngClsid;
+
+		UINT num = 0;  // number of image encoders
+		UINT size = 0; // size of the image encoder array in bytes
+		Gdiplus::GetImageEncodersSize(&num, &size);
+		if (size == 0) {
+			return E_FAIL;  // Failure
+		}
+
+		Gdiplus::ImageCodecInfo* pImageCodecInfo = nullptr;
+		pImageCodecInfo = (Gdiplus::ImageCodecInfo*)(malloc(size));
+		if (pImageCodecInfo == nullptr) {
+			return E_FAIL;
+		}
+
+		Gdiplus::GetImageEncoders(num, size, pImageCodecInfo);
+
+		for (UINT j = 0; j < num; ++j) {
+			if (wcscmp(pImageCodecInfo[j].MimeType, L"image/png") == 0) {
+				pngClsid = pImageCodecInfo[j].Clsid;
+				break;
+			}
+		}
+		free(pImageCodecInfo);
+
+		Gdiplus::Status status = m_pBitmap->Save(filename, &pngClsid, nullptr);
+
+		return (Gdiplus::Ok == status) ? S_OK : E_FAIL;
 	}
 };
 
