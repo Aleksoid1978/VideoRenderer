@@ -223,9 +223,10 @@ private:
 	ULONG_PTR m_gdiplusToken;
 	Gdiplus::GdiplusStartupInput m_gdiplusStartupInput;
 
-	Gdiplus::FontFamily* m_pFontFamily;
-	Gdiplus::Font*       m_pFont;
-	Gdiplus::SolidBrush* m_pBrushWhite;
+	Gdiplus::FontFamily*   m_pFontFamily;
+	Gdiplus::Font*         m_pFont;
+	Gdiplus::SolidBrush*   m_pBrushWhite;
+	Gdiplus::StringFormat* m_pStringFormat;
 	const Gdiplus::TextRenderingHint m_TextRenderingHint = Gdiplus::TextRenderingHintAntiAlias;
 
 	Gdiplus::Bitmap*     m_pBitmap = nullptr;
@@ -237,15 +238,11 @@ private:
 			m_charSizes.reserve(lenght);
 		}
 
-		auto pStringFormat = Gdiplus::StringFormat::GenericTypographic()->Clone();
-		auto flags = pStringFormat->GetFormatFlags() | Gdiplus::StringFormatFlags::StringFormatFlagsMeasureTrailingSpaces;
-		pStringFormat->SetFormatFlags(flags);
-
 		Gdiplus::RectF rect;
 		float maxWidth = 0;
 		float maxHeight = 0;
 		for (UINT i = 0; i < lenght; i++) {
-			if (pGraphics->MeasureString(&chars[i], 1, m_pFont, Gdiplus::PointF(0, 0), pStringFormat, &rect) != Gdiplus::Ok) {
+			if (pGraphics->MeasureString(&chars[i], 1, m_pFont, Gdiplus::PointF(0, 0), m_pStringFormat, &rect) != Gdiplus::Ok) {
 				ASSERT(0);
 				return E_FAIL;
 			}
@@ -261,7 +258,6 @@ private:
 			}
 			ASSERT(rect.X == 0 && rect.Y == 0);
 		}
-		SAFE_DELETE(pStringFormat);
 
 		grid.stepX = (int)ceil(maxWidth) + 2;
 		grid.stepY = (int)ceil(maxHeight);
@@ -282,12 +278,17 @@ public:
 		m_pFontFamily = new FontFamily(fontName);
 		m_pFont = new Font(m_pFontFamily, fontHeight, FontStyleRegular, UnitPixel);
 		m_pBrushWhite = new SolidBrush(Color::White);
+
+		m_pStringFormat = Gdiplus::StringFormat::GenericTypographic()->Clone();
+		auto flags = m_pStringFormat->GetFormatFlags() | Gdiplus::StringFormatFlags::StringFormatFlagsMeasureTrailingSpaces;
+		m_pStringFormat->SetFormatFlags(flags);
 	}
 
 	~CFontBitmapGDIPlus()
 	{
 		SAFE_DELETE(m_pBitmap);
 
+		SAFE_DELETE(m_pStringFormat);
 		SAFE_DELETE(m_pBrushWhite);
 		SAFE_DELETE(m_pFont);
 		SAFE_DELETE(m_pFontFamily);
@@ -331,10 +332,6 @@ public:
 		Grid_t grid;
 		CalcGrid(pGraphics, grid, chars, lenght, bmWidth, bmHeight, true);
 
-		auto pStringFormat = Gdiplus::StringFormat::GenericTypographic()->Clone();
-		auto flags = pStringFormat->GetFormatFlags() | Gdiplus::StringFormatFlags::StringFormatFlagsMeasureTrailingSpaces;
-		pStringFormat->SetFormatFlags(flags);
-
 		UINT idx = 0;
 		for (UINT y = 0; y < grid.lines; y++) {
 			for (UINT x = 0; x < grid.columns; x++) {
@@ -342,7 +339,7 @@ public:
 					break;
 				}
 				PointF point(x*grid.stepX + 1, y*grid.stepY);
-				status = pGraphics->DrawString(&chars[idx], 1, m_pFont, point, pStringFormat, m_pBrushWhite);
+				status = pGraphics->DrawString(&chars[idx], 1, m_pFont, point, m_pStringFormat, m_pBrushWhite);
 
 				*fTexCoords++ = point.X / bmWidth;
 				*fTexCoords++ = point.Y / bmHeight;
@@ -355,7 +352,6 @@ public:
 		}
 		pGraphics->Flush();
 
-		SAFE_DELETE(pStringFormat);
 		SAFE_DELETE(pGraphics);
 
 		if (Gdiplus::Ok == status) {
