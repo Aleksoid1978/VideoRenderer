@@ -237,24 +237,21 @@ private:
 			m_charSizes.reserve(lenght);
 		}
 
+		auto stringFormat = Gdiplus::StringFormat::GenericTypographic()->Clone();
+		auto flags = stringFormat->GetFormatFlags() | Gdiplus::StringFormatFlags::StringFormatFlagsMeasureTrailingSpaces;
+		stringFormat->SetFormatFlags(flags);
+
 		Gdiplus::RectF rect;
 		float maxWidth = 0;
 		float maxHeight = 0;
-
-		SIZE HACK_monosize;
-		if (pGraphics->MeasureString(L"X", 1, m_pFont, Gdiplus::PointF(0, 0), &rect) == Gdiplus::Ok) {
-			HACK_monosize = { (LONG)ceil(rect.Width), (LONG)ceil(rect.Height) };
-		}
-
 		for (UINT i = 0; i < lenght; i++) {
-			if (pGraphics->MeasureString(&chars[i], 1, m_pFont, Gdiplus::PointF(0, 0), &rect) != Gdiplus::Ok) {
+			if (pGraphics->MeasureString(&chars[i], 1, m_pFont, Gdiplus::PointF(0, 0), stringFormat, &rect) != Gdiplus::Ok) {
 				ASSERT(0);
 				return E_FAIL;
 			}
 			if (bSetCharSizes) {
-				//SIZE size = { (LONG)ceil(rect.Width), (LONG)ceil(rect.Height) };
-				//m_charSizes.emplace_back(size);
-				m_charSizes.emplace_back(HACK_monosize);
+				SIZE size = { (LONG)ceil(rect.Width), (LONG)ceil(rect.Height) };
+				m_charSizes.emplace_back(size);
 			}
 			if (rect.Width > maxWidth) {
 				maxWidth = rect.Width;
@@ -265,7 +262,7 @@ private:
 			ASSERT(rect.X == 0 && rect.Y == 0);
 		}
 
-		grid.stepX = (int)ceil(maxWidth);
+		grid.stepX = (int)ceil(maxWidth) + 2;
 		grid.stepY = (int)ceil(maxHeight);
 
 		grid.columns = bmWidth / grid.stepX;
@@ -333,20 +330,23 @@ public:
 		Grid_t grid;
 		CalcGrid(pGraphics, grid, chars, lenght, bmWidth, bmHeight, true);
 
+		auto stringFormat = Gdiplus::StringFormat::GenericTypographic()->Clone();
+		auto flags = stringFormat->GetFormatFlags() | Gdiplus::StringFormatFlags::StringFormatFlagsMeasureTrailingSpaces;
+		stringFormat->SetFormatFlags(flags);
+
 		UINT idx = 0;
 		for (UINT y = 0; y < grid.lines; y++) {
 			for (UINT x = 0; x < grid.columns; x++) {
 				if (idx >= lenght) {
 					break;
 				}
-				PointF point(x*grid.stepX, y*grid.stepY);
-				status = pGraphics->DrawString(&chars[idx], 1, m_pFont, point, m_pBrushWhite);
+				PointF point(x*grid.stepX + 1, y*grid.stepY);
+				status = pGraphics->DrawString(&chars[idx], 1, m_pFont, point, stringFormat, m_pBrushWhite);
 
-				// HACK_monosize
-				*fTexCoords++ = (point.X + 2) / bmWidth;
-				*fTexCoords++ = (point.Y + 1) / bmHeight;
-				*fTexCoords++ = (point.X + m_charSizes[idx].cx - 2) / bmWidth;
-				*fTexCoords++ = (point.Y + m_charSizes[idx].cy - 1) / bmHeight;
+				*fTexCoords++ = point.X / bmWidth;
+				*fTexCoords++ = point.Y / bmHeight;
+				*fTexCoords++ = (point.X + m_charSizes[idx].cx) / bmWidth;
+				*fTexCoords++ = (point.Y + m_charSizes[idx].cy) / bmHeight;
 
 				ASSERT(Gdiplus::Ok == status);
 				idx++;
