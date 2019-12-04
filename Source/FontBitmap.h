@@ -237,15 +237,15 @@ private:
 			m_charSizes.reserve(lenght);
 		}
 
-		auto stringFormat = Gdiplus::StringFormat::GenericTypographic()->Clone();
-		auto flags = stringFormat->GetFormatFlags() | Gdiplus::StringFormatFlags::StringFormatFlagsMeasureTrailingSpaces;
-		stringFormat->SetFormatFlags(flags);
+		auto pStringFormat = Gdiplus::StringFormat::GenericTypographic()->Clone();
+		auto flags = pStringFormat->GetFormatFlags() | Gdiplus::StringFormatFlags::StringFormatFlagsMeasureTrailingSpaces;
+		pStringFormat->SetFormatFlags(flags);
 
 		Gdiplus::RectF rect;
 		float maxWidth = 0;
 		float maxHeight = 0;
 		for (UINT i = 0; i < lenght; i++) {
-			if (pGraphics->MeasureString(&chars[i], 1, m_pFont, Gdiplus::PointF(0, 0), stringFormat, &rect) != Gdiplus::Ok) {
+			if (pGraphics->MeasureString(&chars[i], 1, m_pFont, Gdiplus::PointF(0, 0), pStringFormat, &rect) != Gdiplus::Ok) {
 				ASSERT(0);
 				return E_FAIL;
 			}
@@ -261,6 +261,7 @@ private:
 			}
 			ASSERT(rect.X == 0 && rect.Y == 0);
 		}
+		SAFE_DELETE(pStringFormat);
 
 		grid.stepX = (int)ceil(maxWidth) + 2;
 		grid.stepY = (int)ceil(maxHeight);
@@ -330,9 +331,9 @@ public:
 		Grid_t grid;
 		CalcGrid(pGraphics, grid, chars, lenght, bmWidth, bmHeight, true);
 
-		auto stringFormat = Gdiplus::StringFormat::GenericTypographic()->Clone();
-		auto flags = stringFormat->GetFormatFlags() | Gdiplus::StringFormatFlags::StringFormatFlagsMeasureTrailingSpaces;
-		stringFormat->SetFormatFlags(flags);
+		auto pStringFormat = Gdiplus::StringFormat::GenericTypographic()->Clone();
+		auto flags = pStringFormat->GetFormatFlags() | Gdiplus::StringFormatFlags::StringFormatFlagsMeasureTrailingSpaces;
+		pStringFormat->SetFormatFlags(flags);
 
 		UINT idx = 0;
 		for (UINT y = 0; y < grid.lines; y++) {
@@ -341,7 +342,7 @@ public:
 					break;
 				}
 				PointF point(x*grid.stepX + 1, y*grid.stepY);
-				status = pGraphics->DrawString(&chars[idx], 1, m_pFont, point, stringFormat, m_pBrushWhite);
+				status = pGraphics->DrawString(&chars[idx], 1, m_pFont, point, pStringFormat, m_pBrushWhite);
 
 				*fTexCoords++ = point.X / bmWidth;
 				*fTexCoords++ = point.Y / bmHeight;
@@ -354,6 +355,7 @@ public:
 		}
 		pGraphics->Flush();
 
+		SAFE_DELETE(pStringFormat);
 		SAFE_DELETE(pGraphics);
 
 		if (Gdiplus::Ok == status) {
