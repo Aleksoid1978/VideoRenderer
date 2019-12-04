@@ -20,7 +20,7 @@
 
 #pragma once
 
-#define D3D9FONT_ENABLE 1
+#define D3D9FONT_ENABLE 0
 
 #include <evr9.h> // for IMFVideoProcessor
 #include "IVideoRenderer.h"
