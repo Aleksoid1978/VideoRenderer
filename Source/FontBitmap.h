@@ -20,8 +20,8 @@
 
 #pragma once
 
-#define FONTBITMAP_MODE 0
-// 0 - GDI, 1 - GDI+, 2 - DirectWrite (not done yet)
+#define FONTBITMAP_MODE 1
+// 0 - GDI (will be remake), 1 - GDI+, 2 - DirectWrite (not done yet)
 
 #define DUMP_BITMAP 0
 
@@ -31,6 +31,27 @@ struct Grid_t {
 	UINT columns = 0;
 	UINT lines = 0;
 };
+
+inline uint16_t A8R8G8B8toA8L8(uint32_t pix)
+{
+	uint32_t a = (pix & 0xff000000) >> 24;
+	uint32_t r = (pix & 0x00ff0000) >> 16;
+	uint32_t g = (pix & 0x0000ff00) >> 8;
+	uint32_t b = (pix & 0x000000ff);
+	uint32_t l = ((r * 1063 + g * 3576 + b * 361) / 5000);
+
+	return (uint16_t)((a << 8) + l);
+}
+
+inline uint16_t X8R8G8B8toA8L8(uint32_t pix)
+{
+	uint32_t r = (pix & 0x00ff0000) >> 16;
+	uint32_t g = (pix & 0x0000ff00) >> 8;
+	uint32_t b = (pix & 0x000000ff);
+	uint32_t l = ((r * 1063 + g * 3576 + b * 361) / 5000);
+
+	return (uint16_t)((l << 8) + l); // the darker the more transparent
+}
 
 #if FONTBITMAP_MODE == 0
 
@@ -223,35 +244,60 @@ private:
 	ULONG_PTR m_gdiplusToken;
 	Gdiplus::GdiplusStartupInput m_gdiplusStartupInput;
 
-	Gdiplus::FontFamily*   m_pFontFamily;
-	Gdiplus::Font*         m_pFont;
-	Gdiplus::SolidBrush*   m_pBrushWhite;
-	Gdiplus::StringFormat* m_pStringFormat;
 	const Gdiplus::TextRenderingHint m_TextRenderingHint = Gdiplus::TextRenderingHintClearTypeGridFit;
 	// TextRenderingHintClearTypeGridFit gives a better result than TextRenderingHintAntiAliasGridFit
 	// Perhaps this is only for normal thickness. Because subpixel anti-aliasing we lose after copying to the texture.
 
-	Gdiplus::Bitmap*     m_pBitmap = nullptr;
-	std::vector<SIZE> m_charSizes;
+	Gdiplus::Bitmap* m_pBitmap = nullptr;
+	std::vector<RECT> m_charCoords;
 
-	HRESULT CalcGrid(Gdiplus::Graphics* pGraphics, Grid_t& grid, const WCHAR* chars, UINT lenght, UINT bmWidth, UINT bmHeight, bool bSetCharSizes)
+public:
+	CFontBitmapGDIPlus()
 	{
-		if (bSetCharSizes) {
-			m_charSizes.reserve(lenght);
-		}
+		// GDI+ handling
+		GdiplusStartup(&m_gdiplusToken, &m_gdiplusStartupInput, nullptr);
+	}
 
+	~CFontBitmapGDIPlus()
+	{
+		SAFE_DELETE(m_pBitmap);
+
+		// GDI+ handling
+		Gdiplus::GdiplusShutdown(m_gdiplusToken);
+	}
+
+	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, const WCHAR* chars, UINT lenght)
+	{
+		SAFE_DELETE(m_pBitmap);
+		m_charCoords.clear();
+
+		auto status = Gdiplus::Ok;
+
+		auto pFontFamily = new Gdiplus::FontFamily(fontName);
+		auto pFont = new Gdiplus::Font(pFontFamily, fontHeight, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
+
+		auto pStringFormat = Gdiplus::StringFormat::GenericTypographic()->Clone();
+		auto flags = pStringFormat->GetFormatFlags() | Gdiplus::StringFormatFlags::StringFormatFlagsMeasureTrailingSpaces;
+		pStringFormat->SetFormatFlags(flags);
+
+		auto pTestBitmap = new Gdiplus::Bitmap(32, 32, PixelFormat32bppARGB); // bitmap dimensions are not important here
+		auto pTestGraphics = new Gdiplus::Graphics(pTestBitmap);
+		pTestGraphics->SetTextRenderingHint(m_TextRenderingHint);
+
+		std::vector<SIZE> charSizes;
+		charSizes.reserve(lenght);
 		Gdiplus::RectF rect;
 		float maxWidth = 0;
 		float maxHeight = 0;
+
 		for (UINT i = 0; i < lenght; i++) {
-			if (pGraphics->MeasureString(&chars[i], 1, m_pFont, Gdiplus::PointF(0, 0), m_pStringFormat, &rect) != Gdiplus::Ok) {
-				ASSERT(0);
-				return E_FAIL;
+			status = pTestGraphics->MeasureString(&chars[i], 1, pFont, Gdiplus::PointF(0, 0), pStringFormat, &rect);
+			if (Gdiplus::Ok != status) {
+				break;
 			}
-			if (bSetCharSizes) {
-				SIZE size = { (LONG)ceil(rect.Width), (LONG)ceil(rect.Height) };
-				m_charSizes.emplace_back(size);
-			}
+			SIZE size = { (LONG)ceil(rect.Width), (LONG)ceil(rect.Height) };
+			charSizes.emplace_back(size);
+
 			if (rect.Width > maxWidth) {
 				maxWidth = rect.Width;
 			}
@@ -260,150 +306,142 @@ private:
 			}
 			ASSERT(rect.X == 0 && rect.Y == 0);
 		}
+		SAFE_DELETE(pTestGraphics);
+		SAFE_DELETE(pTestBitmap);
 
-		grid.stepX = (int)ceil(maxWidth) + 2;
-		grid.stepY = (int)ceil(maxHeight);
+		if (Gdiplus::Ok == status) {
+			UINT stepX = (UINT)ceil(maxWidth) + 2;
+			UINT stepY = (UINT)ceil(maxHeight);
+			UINT bmWidth = 128;
+			UINT bmHeight = 128;
+			UINT columns = bmWidth / stepX;
+			UINT lines = bmHeight / stepY;
 
-		grid.columns = bmWidth / grid.stepX;
-		grid.lines = bmHeight / grid.stepY;
+			while (lenght > lines * columns) {
+				if (bmWidth <= bmHeight) {
+					bmWidth *= 2;
+				} else {
+					bmHeight += 128;
+				}
+				columns = bmWidth / stepX;
+				lines = bmHeight / stepY;
+			};
+
+			m_pBitmap = new Gdiplus::Bitmap(bmWidth, bmHeight, PixelFormat32bppARGB);
+			auto pGraphics = new Gdiplus::Graphics(m_pBitmap);
+			pGraphics->SetTextRenderingHint(m_TextRenderingHint);
+			auto pBrushWhite = new Gdiplus::SolidBrush(Gdiplus::Color::White);
+
+			m_charCoords.reserve(lenght);
+
+			UINT idx = 0;
+			for (UINT y = 0; y < lines; y++) {
+				for (UINT x = 0; x < columns; x++) {
+					if (idx >= lenght) {
+						break;
+					}
+					UINT X = x * stepX + 1;
+					UINT Y = y * stepY;
+					status = pGraphics->DrawString(&chars[idx], 1, pFont, Gdiplus::PointF(X, Y), pStringFormat, pBrushWhite);
+					if (Gdiplus::Ok != status) {
+						break;
+					}
+					RECT rect = {
+						X,
+						Y,
+						X + charSizes[idx].cx,
+						Y + charSizes[idx].cy
+					};
+					m_charCoords.emplace_back(rect);
+					idx++;
+				}
+			}
+			pGraphics->Flush();
+
+			SAFE_DELETE(pGraphics);
+			SAFE_DELETE(pBrushWhite);
+
+			if (Gdiplus::Ok == status) {
+
+			}
+		}
+
+		SAFE_DELETE(pStringFormat);
+		SAFE_DELETE(pFont);
+		SAFE_DELETE(pFontFamily);
+
+		if (Gdiplus::Ok == status) {
+			ASSERT(m_charCoords.size() == lenght);
+			return S_OK;
+		}
+		return E_FAIL;
+	}
+
+	UINT GetWidth()
+	{
+		return m_pBitmap ? m_pBitmap->GetWidth() : 0;
+	}
+
+	UINT GetHeight()
+	{
+		return m_pBitmap ? m_pBitmap->GetHeight() : 0;
+	}
+
+	HRESULT GetFloatCoords(float* pTexCoords, const UINT lenght)
+	{
+		ASSERT(pTexCoords);
+
+		if (!m_pBitmap || lenght != m_charCoords.size()) {
+			return E_ABORT;
+		}
+
+		auto w = m_pBitmap->GetWidth();
+		auto h = m_pBitmap->GetHeight();
+
+		for (const auto coord : m_charCoords) {
+			*pTexCoords++ = (float)coord.left   / w;
+			*pTexCoords++ = (float)coord.top    / h;
+			*pTexCoords++ = (float)coord.right  / w;
+			*pTexCoords++ = (float)coord.bottom / h;
+		}
 
 		return S_OK;
 	}
 
-public:
-	CFontBitmapGDIPlus(const WCHAR* fontName, const int fontHeight)
-	{
-		using namespace Gdiplus;
-		// GDI+ handling
-		GdiplusStartup(&m_gdiplusToken, &m_gdiplusStartupInput, nullptr);
-
-		m_pFontFamily = new FontFamily(fontName);
-		m_pFont = new Font(m_pFontFamily, fontHeight, FontStyleRegular, UnitPixel);
-		m_pBrushWhite = new SolidBrush(Color::White);
-
-		m_pStringFormat = Gdiplus::StringFormat::GenericTypographic()->Clone();
-		auto flags = m_pStringFormat->GetFormatFlags() | Gdiplus::StringFormatFlags::StringFormatFlagsMeasureTrailingSpaces;
-		m_pStringFormat->SetFormatFlags(flags);
-	}
-
-	~CFontBitmapGDIPlus()
-	{
-		SAFE_DELETE(m_pBitmap);
-
-		SAFE_DELETE(m_pStringFormat);
-		SAFE_DELETE(m_pBrushWhite);
-		SAFE_DELETE(m_pFont);
-		SAFE_DELETE(m_pFontFamily);
-
-		// GDI+ handling
-		Gdiplus::GdiplusShutdown(m_gdiplusToken);
-	}
-
-	HRESULT CheckBitmapDimensions(const WCHAR* chars, UINT lenght, UINT bmWidth, UINT bmHeight)
-	{
-		using namespace Gdiplus;
-
-		Bitmap* pTestBitmap = new Bitmap(32, 32, PixelFormat32bppARGB); // bitmap dimensions are not important here
-		Graphics* pGraphics = new Graphics(pTestBitmap);
-		pGraphics->SetTextRenderingHint(m_TextRenderingHint);
-
-		Grid_t grid;
-		HRESULT hr = CalcGrid(pGraphics, grid, chars, lenght, bmWidth, bmHeight, false);
-
-		SAFE_DELETE(pGraphics);
-		SAFE_DELETE(pTestBitmap);
-
-		if (FAILED(hr)) {
-			return hr;
-		}
-
-		return (lenght <= grid.lines * grid.columns) ? S_OK : D3DERR_MOREDATA;
-	}
-
-	HRESULT DrawCharacters(const WCHAR* chars, FLOAT* fTexCoords, const UINT lenght, const UINT bmWidth, const UINT bmHeight)
-	{
-		using namespace Gdiplus;
-
-		Status status = Gdiplus::Ok;
-
-		SAFE_DELETE(m_pBitmap);
-		m_pBitmap = new Bitmap(bmWidth, bmHeight, PixelFormat32bppARGB);
-		Graphics* pGraphics = new Graphics(m_pBitmap);
-		pGraphics->SetTextRenderingHint(m_TextRenderingHint);
-
-		Grid_t grid;
-		CalcGrid(pGraphics, grid, chars, lenght, bmWidth, bmHeight, true);
-
-		UINT idx = 0;
-		for (UINT y = 0; y < grid.lines; y++) {
-			for (UINT x = 0; x < grid.columns; x++) {
-				if (idx >= lenght) {
-					break;
-				}
-				PointF point(x*grid.stepX + 1, y*grid.stepY);
-				status = pGraphics->DrawString(&chars[idx], 1, m_pFont, point, m_pStringFormat, m_pBrushWhite);
-
-				*fTexCoords++ = point.X / bmWidth;
-				*fTexCoords++ = point.Y / bmHeight;
-				*fTexCoords++ = (point.X + m_charSizes[idx].cx) / bmWidth;
-				*fTexCoords++ = (point.Y + m_charSizes[idx].cy) / bmHeight;
-
-				ASSERT(Gdiplus::Ok == status);
-				idx++;
-			}
-		}
-		pGraphics->Flush();
-
-		SAFE_DELETE(pGraphics);
-
-		if (Gdiplus::Ok == status) {
-			return (idx == lenght) ? S_OK : S_FALSE;
-		} else {
-			return E_FAIL;
-		}
-	}
-
-	bool CopyBitmapToA8L8(BYTE* pDst, int dst_pitch)
+	HRESULT CopyBitmapToA8L8(BYTE* pDst, int dst_pitch)
 	{
 		ASSERT(pDst && dst_pitch);
 
-		if (m_pBitmap) {
-			Gdiplus::BitmapData bitmapData;
-			const UINT w = m_pBitmap->GetWidth();
-			const UINT h = m_pBitmap->GetHeight();
-			Gdiplus::Rect rect(0, 0, w, h);
-
-			if (Gdiplus::Ok == m_pBitmap->LockBits(&rect, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData)) {
-#if _DEBUG && DUMP_BITMAP
-				SaveARGB32toBMP((BYTE*)bitmapData.Scan0, bitmapData.Stride, w, h, L"c:\\temp\\font_gdiplus_bitmap.bmp");
-				SaveBitmapToPNG(L"C:\\TEMP\\font_gdiplus_bitmap.png");
-#endif
-				BYTE* pSrc = (BYTE*)bitmapData.Scan0;
-
-				for (UINT y = 0; y < h; y++) {
-					uint32_t* pSrc32 = (uint32_t*)pSrc;
-					uint16_t* pDst16 = (uint16_t*)pDst;
-
-					for (UINT x = 0; x < w; x++) {
-						// 4-bit measure of pixel intensity
-						uint32_t pix = *pSrc32++;
-						uint32_t a = (pix & 0xff000000) >> 24;
-						uint32_t r = (pix & 0x00ff0000) >> 16;
-						uint32_t g = (pix & 0x0000ff00) >> 8;
-						uint32_t b = (pix & 0x000000ff);
-						uint32_t l = ((r * 1063 + g * 3576 + b * 361) / 5000);
-						*pDst16++ = (uint16_t)((a << 8) + l);
-					}
-					pSrc += bitmapData.Stride;
-					pDst += dst_pitch;
-				}
-				m_pBitmap->UnlockBits(&bitmapData);
-
-				return true;
-			}
+		if (!m_pBitmap) {
+			return E_ABORT;
 		}
 
-		return false;
+		Gdiplus::BitmapData bitmapData;
+		const UINT w = m_pBitmap->GetWidth();
+		const UINT h = m_pBitmap->GetHeight();
+		Gdiplus::Rect rect(0, 0, w, h);
+
+		if (Gdiplus::Ok == m_pBitmap->LockBits(&rect, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData)) {
+#if _DEBUG && DUMP_BITMAP
+			SaveARGB32toBMP((BYTE*)bitmapData.Scan0, bitmapData.Stride, w, h, L"c:\\temp\\font_gdiplus_bitmap.bmp");
+			SaveBitmapToPNG(L"C:\\TEMP\\font_gdiplus_bitmap.png");
+#endif
+			BYTE* pSrc = (BYTE*)bitmapData.Scan0;
+
+			for (UINT y = 0; y < h; y++) {
+				uint32_t* pSrc32 = (uint32_t*)pSrc;
+				uint16_t* pDst16 = (uint16_t*)pDst;
+
+				for (UINT x = 0; x < w; x++) {
+					*pDst16++ = A8R8G8B8toA8L8(*pSrc32++);
+				}
+				pSrc += bitmapData.Stride;
+				pDst += dst_pitch;
+			}
+			m_pBitmap->UnlockBits(&bitmapData);
+		}
+
+		return S_OK;;
 	}
 
 private:

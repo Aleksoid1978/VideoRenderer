@@ -130,34 +130,23 @@ HRESULT CD3D9Font::InitDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice )
 #if FONTBITMAP_MODE == 0
 	CFontBitmapGDI fontBitmap(m_strFontName, m_dwFontHeight);
 #elif FONTBITMAP_MODE == 1
-	CFontBitmapGDIPlus fontBitmap(m_strFontName, m_dwFontHeight);
+	CFontBitmapGDIPlus fontBitmap;
 #elif FONTBITMAP_MODE == 2
 	CFontBitmapDWrite fontBitmap(m_strFontName, m_dwFontHeight);
 #endif
 
-	// Calculate the dimensions for the smallest power-of-two texture which
-	// can hold all the printable characters
-	m_dwTexWidth = m_dwTexHeight = 128;
-	do {
-		hr = fontBitmap.CheckBitmapDimensions(m_Characters, std::size(m_Characters), m_dwTexWidth, m_dwTexHeight);
-		if (D3DERR_MOREDATA == hr) {
-			// check 128x128, 256x128, 256x256, 512x256, ...
-			if (m_dwTexWidth > m_dwTexHeight) {
-				m_dwTexHeight *= 2;
-			} else {
-				m_dwTexWidth *= 2;
-			}
-		} else {
-			break;
-		}
-	} while (m_dwTexWidth <= d3dCaps.MaxTextureWidth);
-
+	hr = fontBitmap.Initialize(m_strFontName, m_dwFontHeight, m_Characters, std::size(m_Characters));
 	if (FAILED(hr)) {
 		return hr;
 	}
 
-	// Paint the alphabet onto the selected bitmap
-	hr = fontBitmap.DrawCharacters(m_Characters, (float*)&m_fTexCoords, std::size(m_Characters), m_dwTexWidth, m_dwTexHeight);
+	m_dwTexWidth = fontBitmap.GetWidth();
+	m_dwTexHeight = fontBitmap.GetHeight();
+	if (m_dwTexWidth > d3dCaps.MaxTextureWidth || m_dwTexHeight > d3dCaps.MaxTextureHeight) {
+		return E_FAIL;
+	}
+
+	hr = fontBitmap.GetFloatCoords((float*)&m_fTexCoords, std::size(m_Characters));
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -174,7 +163,7 @@ HRESULT CD3D9Font::InitDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice )
 	D3DLOCKED_RECT d3dlr;
 	hr = m_pTexture->LockRect(0, &d3dlr, nullptr, D3DLOCK_DISCARD);
 	if (S_OK == hr) {
-		bool ret = fontBitmap.CopyBitmapToA8L8((BYTE*)d3dlr.pBits, d3dlr.Pitch);
+		hr = fontBitmap.CopyBitmapToA8L8((BYTE*)d3dlr.pBits, d3dlr.Pitch);
 		m_pTexture->UnlockRect(0);
 	}
 
