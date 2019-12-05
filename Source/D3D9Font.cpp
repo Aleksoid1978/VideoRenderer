@@ -128,7 +128,7 @@ HRESULT CD3D9Font::InitDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice )
 	m_fTextScale  = 1.0f;
 
 #if FONTBITMAP_MODE == 0
-	CFontBitmapGDI fontBitmap(m_strFontName, m_dwFontHeight);
+	CFontBitmapGDI fontBitmap;
 #elif FONTBITMAP_MODE == 1
 	CFontBitmapGDIPlus fontBitmap;
 #elif FONTBITMAP_MODE == 2

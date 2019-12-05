@@ -21,7 +21,7 @@
 #pragma once
 
 #define FONTBITMAP_MODE 1
-// 0 - GDI (will be remake), 1 - GDI+, 2 - DirectWrite (not done yet)
+// 0 - GDI, 1 - GDI+, 2 - DirectWrite (not done yet)
 
 #define DUMP_BITMAP 0
 
@@ -59,31 +59,60 @@ class CFontBitmapGDI
 {
 private:
 	HDC     m_hDC     = nullptr;
-	HFONT   m_hFont   = nullptr;
 
 	HBITMAP m_hBitmap = nullptr;
 	DWORD* m_pBitmapBits = nullptr;
 	UINT m_bmWidth = 0;
 	UINT m_bmHeight = 0;
-	std::vector<SIZE> m_charSizes;
+	std::vector<RECT> m_charCoords;
 
-	HRESULT CalcGrid(Grid_t& grid, const WCHAR* chars, UINT lenght, UINT bmWidth, UINT bmHeight, bool bSetCharSizes)
+public:
+	CFontBitmapGDI()
 	{
-		if (bSetCharSizes) {
-			m_charSizes.reserve(lenght);
-		}
+		m_hDC = CreateCompatibleDC(nullptr);
+		SetMapMode(m_hDC, MM_TEXT);
+	}
 
+	~CFontBitmapGDI()
+	{
+		DeleteObject(m_hBitmap);
+
+		DeleteDC(m_hDC);
+	}
+
+	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, const WCHAR* chars, UINT lenght)
+	{
+		DeleteObject(m_hBitmap);
+		m_pBitmapBits = nullptr;
+		m_charCoords.clear();
+		
+		HRESULT hr = S_OK;
+
+		// Create a font.  By specifying ANTIALIASED_QUALITY, we might get an
+		// antialiased font, but this is not guaranteed.
+		int nHeight    = -(int)(fontHeight);
+		DWORD dwBold   = /*(m_dwFontFlags & D3DFONT_BOLD)   ? FW_BOLD :*/ FW_NORMAL;
+		DWORD dwItalic = /*(m_dwFontFlags & D3DFONT_ITALIC) ? TRUE    :*/ FALSE;
+
+		HFONT hFont = CreateFontW(nHeight, 0, 0, 0, dwBold, dwItalic,
+			FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+			CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
+			VARIABLE_PITCH, fontName);
+
+		HFONT hFontOld = (HFONT)SelectObject(m_hDC, hFont);
+
+		std::vector<SIZE> charSizes;
+		charSizes.reserve(lenght);
 		SIZE size;
 		LONG maxWidth = 0;
 		LONG maxHeight = 0;
 		for (UINT i = 0; i < lenght; i++) {
-			if (GetTextExtentPoint32W(m_hDC, &chars[i], 1, &size) == 0) {
-				ASSERT(0);
-				return E_FAIL;
+			if (GetTextExtentPoint32W(m_hDC, &chars[i], 1, &size) == FALSE) {
+				hr = E_FAIL;
+				break;
 			}
-			if (bSetCharSizes) {
-				m_charSizes.emplace_back(size);
-			}
+			charSizes.emplace_back(size);
+
 			if (size.cx > maxWidth) {
 				maxWidth = size.cx;
 			}
@@ -92,144 +121,130 @@ private:
 			}
 		}
 
-		grid.stepX = (int)ceil(maxWidth) + 2;
-		grid.stepY = (int)ceil(maxHeight);
+		if (S_OK == hr) {
+			UINT stepX = maxWidth + 2;
+			UINT stepY = maxHeight;
+			UINT bmWidth = 128;
+			UINT bmHeight = 128;
+			UINT columns = bmWidth / stepX;
+			UINT lines = bmHeight / stepY;
 
-		grid.columns = bmWidth / grid.stepX;
-		grid.lines = bmHeight / grid.stepY;
-
-		return S_OK;
-	}
-
-public:
-	CFontBitmapGDI(const WCHAR* fontName, const int fontHeight)
-	{
-		m_hDC = CreateCompatibleDC(nullptr);
-		SetMapMode(m_hDC, MM_TEXT);
-
-		// Create a font.  By specifying ANTIALIASED_QUALITY, we might get an
-		// antialiased font, but this is not guaranteed.
-		int nHeight    = -(int)(fontHeight);
-		DWORD dwBold   = /*(m_dwFontFlags & D3DFONT_BOLD)   ? FW_BOLD :*/ FW_NORMAL;
-		DWORD dwItalic = /*(m_dwFontFlags & D3DFONT_ITALIC) ? TRUE    :*/ FALSE;
-
-		m_hFont = CreateFontW(nHeight, 0, 0, 0, dwBold, dwItalic,
-			FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
-			CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
-			VARIABLE_PITCH, fontName);
-	}
-
-	~CFontBitmapGDI()
-	{
-		DeleteObject(m_hBitmap);
-		DeleteObject(m_hFont);
-		DeleteDC(m_hDC);
-	}
-
-	HRESULT CheckBitmapDimensions(const WCHAR* chars, const UINT lenght, const UINT bmWidth, const UINT bmHeight)
-	{
-		HFONT hFontOld = (HFONT)SelectObject(m_hDC, m_hFont);
-
-		Grid_t grid;
-		HRESULT hr = CalcGrid(grid, chars, lenght, bmWidth, bmHeight, false);
-
-		SelectObject(m_hDC, hFontOld);
-
-		if (FAILED(hr)) {
-			return hr;
-		}
-
-		return (lenght <= grid.lines * grid.columns) ? S_OK : D3DERR_MOREDATA;
-	}
-
-	HRESULT DrawCharacters(const WCHAR* chars, FLOAT* fTexCoords, const UINT lenght, const UINT bmWidth, const UINT bmHeight)
-	{
-		HFONT hFontOld = (HFONT)SelectObject(m_hDC, m_hFont);
-
-		Grid_t grid;
-		HRESULT hr = CalcGrid(grid, chars, lenght, bmWidth, bmHeight, true);
-
-		if (FAILED(hr)) {
-			SelectObject(m_hDC, hFontOld);
-			return hr;
-		}
-
-		// Prepare to create a bitmap
-		BITMAPINFO bmi = {};
-		bmi.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
-		bmi.bmiHeader.biWidth       =  (LONG)bmWidth;
-		bmi.bmiHeader.biHeight      = -(LONG)bmHeight;
-		bmi.bmiHeader.biPlanes      = 1;
-		bmi.bmiHeader.biCompression = BI_RGB;
-		bmi.bmiHeader.biBitCount    = 32;
-
-		// Create a bitmap for the font
-		m_pBitmapBits = nullptr;
-		DeleteObject(m_hBitmap);
-		m_hBitmap = CreateDIBSection(m_hDC, &bmi, DIB_RGB_COLORS, (void**)&m_pBitmapBits, nullptr, 0);
-		m_bmWidth = bmWidth;
-		m_bmHeight = bmHeight;
-
-		HGDIOBJ m_hBitmapOld = SelectObject(m_hDC, m_hBitmap);
-
-		SetTextColor(m_hDC, RGB(255, 255, 255));
-		SetBkColor(m_hDC, 0x00000000);
-		SetTextAlign(m_hDC, TA_TOP);
-
-		UINT idx = 0;
-		for (UINT y = 0; y < grid.lines; y++) {
-			for (UINT x = 0; x < grid.columns; x++) {
-				if (idx >= lenght) {
-					break;
+			while (lenght > lines * columns) {
+				if (bmWidth <= bmHeight) {
+					bmWidth *= 2;
+				} else {
+					bmHeight += 128;
 				}
-				POINT point = { x*grid.stepX + 1, y*grid.stepY };
-				BOOL ret = ExtTextOutW(m_hDC, point.x, point.y, ETO_OPAQUE, nullptr, &chars[idx], 1, nullptr);
+				columns = bmWidth / stepX;
+				lines = bmHeight / stepY;
+			};
 
-				*fTexCoords++ = (float)point.x / bmWidth;
-				*fTexCoords++ = (float)point.y / bmHeight;
-				*fTexCoords++ = (float)(point.x + m_charSizes[idx].cx) / bmWidth;
-				*fTexCoords++ = (float)(point.y + m_charSizes[idx].cy) / bmHeight;
+			// Prepare to create a bitmap
+			BITMAPINFO bmi = {};
+			bmi.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
+			bmi.bmiHeader.biWidth       =  (LONG)bmWidth;
+			bmi.bmiHeader.biHeight      = -(LONG)bmHeight;
+			bmi.bmiHeader.biPlanes      = 1;
+			bmi.bmiHeader.biCompression = BI_RGB;
+			bmi.bmiHeader.biBitCount    = 32;
 
-				ASSERT(ret == TRUE);
-				idx++;
+			// Create a bitmap for the font
+			m_hBitmap = CreateDIBSection(m_hDC, &bmi, DIB_RGB_COLORS, (void**)&m_pBitmapBits, nullptr, 0);
+			m_bmWidth = bmWidth;
+			m_bmHeight = bmHeight;
+
+			HGDIOBJ m_hBitmapOld = SelectObject(m_hDC, m_hBitmap);
+
+			SetTextColor(m_hDC, RGB(255, 255, 255));
+			SetBkColor(m_hDC, 0x00000000);
+			SetTextAlign(m_hDC, TA_TOP);
+
+			UINT idx = 0;
+			for (UINT y = 0; y < lines; y++) {
+				for (UINT x = 0; x < columns; x++) {
+					if (idx >= lenght) {
+						break;
+					}
+					UINT X = x * stepX + 1;
+					UINT Y = y * stepY;
+					if (ExtTextOutW(m_hDC, X, Y, ETO_OPAQUE, nullptr, &chars[idx], 1, nullptr) == FALSE) {
+						hr = E_FAIL;
+						break;
+					}
+					RECT rect = {
+						X,
+						Y,
+						X + charSizes[idx].cx,
+						Y + charSizes[idx].cy
+					};
+					m_charCoords.emplace_back(rect);
+					idx++;
+				}
 			}
-		}
-		GdiFlush();
+			GdiFlush();
 
-		SelectObject(m_hDC, m_hBitmapOld);
+			SelectObject(m_hDC, m_hBitmapOld);
+		}
+
 		SelectObject(m_hDC, hFontOld);
+		DeleteObject(hFont);
+
+		return hr;
+	}
+
+	UINT GetWidth()
+	{
+		return m_bmWidth;
+	}
+
+	UINT GetHeight()
+	{
+		return m_bmHeight;
+	}
+
+	HRESULT GetFloatCoords(float* pTexCoords, const UINT lenght)
+	{
+		ASSERT(pTexCoords);
+
+		if (!m_hBitmap || !m_pBitmapBits || lenght != m_charCoords.size()) {
+			return E_ABORT;
+		}
+
+		for (const auto coord : m_charCoords) {
+			*pTexCoords++ = (float)coord.left   / m_bmWidth;
+			*pTexCoords++ = (float)coord.top    / m_bmHeight;
+			*pTexCoords++ = (float)coord.right  / m_bmWidth;
+			*pTexCoords++ = (float)coord.bottom / m_bmHeight;
+		}
 
 		return S_OK;
 	}
 
-	bool CopyBitmapToA8L8(BYTE* pDst, int dst_pitch)
+	HRESULT CopyBitmapToA8L8(BYTE* pDst, int dst_pitch)
 	{
 		ASSERT(pDst && dst_pitch);
 
-		if (m_hBitmap && m_pBitmapBits) {
+		if (!m_hBitmap || !m_pBitmapBits) {
+			return E_ABORT;
+		}
 #if _DEBUG && DUMP_BITMAP
-			SaveARGB32toBMP((BYTE*)m_pBitmapBits, m_bmWidth*4, m_bmWidth, m_bmHeight, L"c:\\temp\\font_gdi_bitmap.bmp");
+		SaveARGB32toBMP((BYTE*)m_pBitmapBits, m_bmWidth*4, m_bmWidth, m_bmHeight, L"c:\\temp\\font_gdi_bitmap.bmp");
 #endif
+		BYTE* pSrc = (BYTE*)m_pBitmapBits;
+		UINT src_pitch = m_bmWidth * 4;
 
-			for (UINT y = 0; y < m_bmHeight; y++) {
-				uint16_t* pDst16 = (uint16_t*)pDst;
+		for (UINT y = 0; y < m_bmHeight; y++) {
+			uint32_t* pSrc32 = (uint32_t*)pSrc;
+			uint16_t* pDst16 = (uint16_t*)pDst;
 
-				for (UINT x = 0; x < m_bmWidth; x++) {
-					// 4-bit measure of pixel intensity
-					DWORD pix = m_pBitmapBits[m_bmWidth*y + x];
-					DWORD r = (pix & 0x00ff0000) >> 16;
-					DWORD g = (pix & 0x0000ff00) >> 8;
-					DWORD b = (pix & 0x000000ff);
-					DWORD l = ((r * 1063 + g * 3576 + b * 361) / 5000);
-					*pDst16++ = (uint16_t)((l << 8) + l);
-				}
-				pDst += dst_pitch;
+			for (UINT x = 0; x < m_bmWidth; x++) {
+				*pDst16++ = X8R8G8B8toA8L8(*pSrc32++);
 			}
-
-			return true;
+			pSrc += src_pitch;
+			pDst += dst_pitch;
 		}
 
-		return false;
+		return S_OK;
 	}
 };
 
