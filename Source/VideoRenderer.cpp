@@ -820,6 +820,10 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 			return E_FAIL;
 		}
 
+		if (!m_windowRect.IsRectNull()) {
+			SetWindowPos(m_hWnd, nullptr, m_windowRect.left, m_windowRect.top, m_windowRect.Width(), m_windowRect.Height(), SWP_NOZORDER | SWP_NOACTIVATE);
+		}
+
 		HRESULT hr;
 		if (m_bUsedD3D11) {
 			hr = m_DX11_VP.Init(m_hWnd);
