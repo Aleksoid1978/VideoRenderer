@@ -44,6 +44,11 @@ static int GetCPUInfo()
 	// https://gist.github.com/hi2p-perim/7855506
 	// https://github.com/FFmpeg/FFmpeg/blob/master/libavutil/x86/cpu.c
 
+	// SSE2 is a basic instruction set for modern compilers and Windows.
+	// MMX is no longer relevant.
+	// 3DNow! is not relevant and is not supported by modern processors.
+	// XOP is not supported by modern processors.
+
 	//  SIMD: 128-bit
 	bool HW_SSE   = false;
 	bool HW_SSE2  = false;
