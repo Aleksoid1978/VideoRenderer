@@ -991,19 +991,16 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 		m_Sets.iTextureFmt = setings.iTextureFmt;
 		m_Sets.VPFmts      = setings.VPFmts;
 
-		AM_MEDIA_TYPE mt;
-		if (m_pInputPin && SUCCEEDED(m_pInputPin->ConnectionMediaType(&mt))) {
-			CMediaType mtype(mt);
-			FreeMediaType(mt);
+		if (m_inputMT.IsValid()) {
 			BOOL ret;
 			if (m_bUsedD3D11) {
 				m_DX11_VP.SetTexFormat(m_Sets.iTextureFmt);
 				m_DX11_VP.SetVPEnableFmts(m_Sets.VPFmts);
-				ret = m_DX11_VP.InitMediaType(&mtype);
+				ret = m_DX11_VP.InitMediaType(&m_inputMT);
 			} else {
 				m_DX9_VP.SetTexFormat(m_Sets.iTextureFmt);
 				m_DX9_VP.SetVPEnableFmts(m_Sets.VPFmts);
-				ret = m_DX9_VP.InitMediaType(&mtype);
+				ret = m_DX9_VP.InitMediaType(&m_inputMT);
 			}
 		}
 	}

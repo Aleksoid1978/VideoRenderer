@@ -95,6 +95,8 @@ private:
 	// D3D11 VideoProcessor
 	CDX11VideoProcessor m_DX11_VP;
 
+	CMediaType m_inputMT;
+
 #if !(D3D9FONT_ENABLE && DIRECTWRITE_ENABLE)
 	CStatsDrawingGdiplus m_StatsDrawing;
 #endif

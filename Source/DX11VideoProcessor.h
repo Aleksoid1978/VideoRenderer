@@ -115,9 +115,6 @@ private:
 	DXVA2_ExtendedFormat m_srcExFmt = {};
 	bool m_bInterlaced = false;
 
-	// Input MediaType. Used in SetDevice() that is called from CVideoRendererInputPin::ActivateD3D11Decoding()
-	CMediaType m_inputMT;
-
 	// D3D11 decoder texture parameters
 	UINT m_TextureWidth  = 0;
 	UINT m_TextureHeight = 0;

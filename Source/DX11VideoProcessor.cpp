@@ -759,8 +759,8 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		return hr;
 	}
 
-	if (m_inputMT.IsValid()) {
-		if (!InitMediaType(&m_inputMT)) {
+	if (m_pFilter->m_inputMT.IsValid()) {
+		if (!InitMediaType(&m_pFilter->m_inputMT)) {
 			ReleaseDevice();
 			return E_FAIL;
 		}
@@ -1104,7 +1104,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			DLogIf(FAILED(hr2), L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection creation failed with error %s", HR2Str(hr2));
 			DLogIf(S_OK == hr2, L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection created");
 
-			m_inputMT = *pmt;
+			m_pFilter->m_inputMT = *pmt;
 			UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
 			UpdateStatsStatic();
 
@@ -1120,7 +1120,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// Tex Video Processor
 	if (FmtConvParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
-		m_inputMT = *pmt;
+		m_pFilter->m_inputMT = *pmt;
 		SetShaderConvertColorParams();
 		UpdateStatsStatic();
 

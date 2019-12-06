@@ -311,8 +311,8 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 		return FALSE;
 	}
 
-	if (m_inputMT.IsValid()) {
-		if (!InitMediaType(&m_inputMT)) { // restore DXVA2VideoProcessor after m_DXVA2VP.InitVideoService()
+	if (m_pFilter->m_inputMT.IsValid()) {
+		if (!InitMediaType(&m_pFilter->m_inputMT)) { // restore DXVA2VideoProcessor after m_DXVA2VP.InitVideoService()
 			ReleaseDevice();
 			return E_FAIL;
 		}
@@ -799,7 +799,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
 		UpdateStatsStatic();
 
-		m_inputMT = *pmt;
+		m_pFilter->m_inputMT = *pmt;
 
 		return TRUE;
 	}
@@ -811,7 +811,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		SetShaderConvertColorParams();
 		UpdateStatsStatic();
 
-		m_inputMT = *pmt;
+		m_pFilter->m_inputMT = *pmt;
 
 		return TRUE;
 	}
