@@ -59,6 +59,10 @@
       <ShaderModel>4.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
+    <FxCompile Include="d3d11\ps_geometry.hlsl">
+      <ShaderModel>4.0</ShaderModel>
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="d3d11\ps_interpolation_lanczos2.hlsl">
       <ShaderModel>4.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
@@ -74,6 +78,10 @@
     <FxCompile Include="d3d11\ps_simple.hlsl">
       <ShaderModel>4.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="d3d11\vs_geometry.hlsl">
+      <ShaderModel>4.0</ShaderModel>
+      <ShaderType>Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="d3d11\vs_simple.hlsl">
       <ShaderModel>4.0</ShaderModel>

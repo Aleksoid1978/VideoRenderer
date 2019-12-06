@@ -53,6 +53,8 @@ IDF_SHADER_CONVOL_LANCZOS_Y     FILE                    "..\\bin\\shaders\\downs
 
 IDF_VSH11_SIMPLE                FILE                    "..\\bin\\shaders\\vs_simple.cso"
 IDF_PSH11_SIMPLE                FILE                    "..\\bin\\shaders\\ps_simple.cso"
+IDF_VSH11_GEOMETRY              FILE                    "..\\bin\\shaders\\vs_geometry.cso"
+IDF_PSH11_GEOMETRY              FILE                    "..\\bin\\shaders\\ps_geometry.cso"
 IDF_PSH11_CONVERT_COLOR         FILE                    "..\\bin\\shaders\\ps_convert_color.cso"
 IDF_PSH11_CONVERT_YUY2          FILE                    "..\\bin\\shaders\\ps_convert_yuy2.cso"
 IDF_PSH11_CONVERT_BIPLANAR      FILE                    "..\\bin\\shaders\\ps_convert_biplanar.cso"

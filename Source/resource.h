@@ -37,6 +37,8 @@
 #define IDF_SHADER_CONVOL_LANCZOS_Y     661
 #define IDF_VSH11_SIMPLE                800
 #define IDF_PSH11_SIMPLE                801
+#define IDF_VSH11_GEOMETRY              802
+#define IDF_PSH11_GEOMETRY              803
 #define IDF_PSH11_CONVERT_COLOR         810
 #define IDF_PSH11_CONVERT_YUY2          813
 #define IDF_PSH11_CONVERT_BIPLANAR      816
