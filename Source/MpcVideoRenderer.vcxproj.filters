@@ -13,6 +13,9 @@
       <UniqueIdentifier>{addff0d6-0d94-4e4c-b5ea-b7d5b330fd45}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
     </Filter>
+    <Filter Include="D3DUtil">
+      <UniqueIdentifier>{0aaf154f-df6e-43da-b8e2-ef67cfea1a2e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -63,9 +66,6 @@
     <ClCompile Include="DX11Helper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D3DUtil\D3D9Font.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="CPUInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -74,6 +74,12 @@
     </ClCompile>
     <ClCompile Include="DXVA2VP.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D3DUtil\D3D9Font.cpp">
+      <Filter>D3DUtil</Filter>
+    </ClCompile>
+    <ClCompile Include="D3DUtil\D3D11Geometry.cpp">
+      <Filter>D3DUtil</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -134,12 +140,6 @@
     <ClInclude Include="DX9Device.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="D3DUtil\D3D9Font.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="D3DUtil\D3D9Geometry.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="CPUInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -149,8 +149,17 @@
     <ClInclude Include="DXVA2VP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="D3DUtil\D3D9Font.h">
+      <Filter>D3DUtil</Filter>
+    </ClInclude>
+    <ClInclude Include="D3DUtil\D3D9Geometry.h">
+      <Filter>D3DUtil</Filter>
+    </ClInclude>
     <ClInclude Include="D3DUtil\FontBitmap.h">
-      <Filter>Header Files</Filter>
+      <Filter>D3DUtil</Filter>
+    </ClInclude>
+    <ClInclude Include="D3DUtil\D3D11Geometry.h">
+      <Filter>D3DUtil</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -74,6 +74,7 @@
     <ClCompile Include="csputils.cpp" />
     <ClCompile Include="CustomAllocator.cpp" />
     <ClCompile Include="D3D11VP.cpp" />
+    <ClCompile Include="D3DUtil\D3D11Geometry.cpp" />
     <ClCompile Include="D3DUtil\D3D9Font.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="DX11Helper.cpp" />
@@ -98,6 +99,7 @@
     <ClInclude Include="csputils.h" />
     <ClInclude Include="CustomAllocator.h" />
     <ClInclude Include="D3D11VP.h" />
+    <ClInclude Include="D3DUtil\D3D11Geometry.h" />
     <ClInclude Include="D3DUtil\D3D9Font.h" />
     <ClInclude Include="D3DUtil\D3D9Geometry.h" />
     <ClInclude Include="DX11Helper.h" />
