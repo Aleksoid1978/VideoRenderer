@@ -30,7 +30,7 @@
 #include "FrameStats.h"
 
 #if D3D9FONT_ENABLE
-#include "D3D9Font.h"
+#include "D3DFont/D3D9Font.h"
 #include "D3D9Geometry.h"
 #endif
 

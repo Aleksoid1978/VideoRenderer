@@ -63,7 +63,7 @@
     <ClCompile Include="DX11Helper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D3D9Font.cpp">
+    <ClCompile Include="D3DFont\D3D9Font.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CPUInfo.cpp">
@@ -134,7 +134,7 @@
     <ClInclude Include="DX9Device.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="D3D9Font.h">
+    <ClInclude Include="D3DFont\D3D9Font.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="D3D9Geometry.h">
@@ -149,7 +149,7 @@
     <ClInclude Include="DXVA2VP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FontBitmap.h">
+    <ClInclude Include="D3DFont\FontBitmap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
