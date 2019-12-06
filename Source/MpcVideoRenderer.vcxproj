@@ -74,7 +74,7 @@
     <ClCompile Include="csputils.cpp" />
     <ClCompile Include="CustomAllocator.cpp" />
     <ClCompile Include="D3D11VP.cpp" />
-    <ClCompile Include="D3DFont\D3D9Font.cpp" />
+    <ClCompile Include="D3DUtil\D3D9Font.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="DX11Helper.cpp" />
     <ClCompile Include="DX11VideoProcessor.cpp" />
@@ -98,15 +98,15 @@
     <ClInclude Include="csputils.h" />
     <ClInclude Include="CustomAllocator.h" />
     <ClInclude Include="D3D11VP.h" />
-    <ClInclude Include="D3DFont\D3D9Font.h" />
-    <ClInclude Include="D3D9Geometry.h" />
+    <ClInclude Include="D3DUtil\D3D9Font.h" />
+    <ClInclude Include="D3DUtil\D3D9Geometry.h" />
     <ClInclude Include="DX11Helper.h" />
     <ClInclude Include="DX11VideoProcessor.h" />
     <ClInclude Include="DX9Device.h" />
     <ClInclude Include="DX9Helper.h" />
     <ClInclude Include="DX9VideoProcessor.h" />
     <ClInclude Include="DXVA2VP.h" />
-    <ClInclude Include="D3DFont\FontBitmap.h" />
+    <ClInclude Include="D3DUtil\FontBitmap.h" />
     <ClInclude Include="FrameStats.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="IVideoRenderer.h" />
