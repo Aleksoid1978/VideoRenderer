@@ -21,7 +21,7 @@
 #pragma once
 
 #define FONTBITMAP_MODE 1
-// 0 - GDI, 1 - GDI+, 2 - DirectWrite (not done yet)
+// 0 - GDI, 1 - GDI+, 2 - DirectWrite
 
 #define DUMP_BITMAP 0
 
@@ -76,7 +76,6 @@ public:
 	~CFontBitmapGDI()
 	{
 		DeleteObject(m_hBitmap);
-
 		DeleteDC(m_hDC);
 	}
 
@@ -456,7 +455,7 @@ public:
 			m_pBitmap->UnlockBits(&bitmapData);
 		}
 
-		return S_OK;;
+		return S_OK;
 	}
 
 private:
@@ -504,43 +503,85 @@ private:
 
 #include <dwrite.h>
 #include <d2d1.h>
+#include <wincodec.h>
 
 class CFontBitmapDWrite // TODO
 {
 private:
-	CComPtr<IDWriteFactory>    m_pDWriteFactory;
-	CComPtr<IDWriteTextFormat> m_pTextFormat;
+	CComPtr<ID2D1Factory>       m_pD2D1Factory;
+	CComPtr<IDWriteFactory>     m_pDWriteFactory;
+	CComPtr<IWICImagingFactory> m_pWICFactory;
 
-	CComPtr<ID2D1Factory>         m_pD2D1Factory;
-	CComPtr<ID2D1RenderTarget>    m_pD2D1RenderTarget;
-	CComPtr<ID2D1SolidColorBrush> m_pD2D1Brush;
+	CComPtr<IWICBitmap> m_pWICBitmap;
+	std::vector<RECT> m_charCoords;
 
-	std::vector<SIZE> m_charSizes;
-
-	HRESULT CalcGrid(Grid_t& grid, const WCHAR* chars, UINT lenght, UINT bmWidth, UINT bmHeight, bool bSetCharSizes)
+public:
+	CFontBitmapDWrite()
 	{
-		if (bSetCharSizes) {
-			m_charSizes.reserve(lenght);
+		HRESULT hr = D2D1CreateFactory(
+			D2D1_FACTORY_TYPE_SINGLE_THREADED,
+#ifdef _DEBUG
+			{ D2D1_DEBUG_LEVEL_INFORMATION },
+#endif
+			&m_pD2D1Factory);
+
+		hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(m_pDWriteFactory), reinterpret_cast<IUnknown**>(&m_pDWriteFactory));
+
+		hr = CoCreateInstance(
+			CLSID_WICImagingFactory,
+			NULL,
+			CLSCTX_INPROC_SERVER,
+			IID_IWICImagingFactory,
+			(LPVOID*)&m_pWICFactory
+		);
+	}
+
+	~CFontBitmapDWrite()
+	{
+		m_pWICFactory.Release();
+		m_pDWriteFactory.Release();
+		m_pD2D1Factory.Release();
+	}
+
+	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, const WCHAR* chars, UINT lenght)
+	{
+		m_pWICBitmap.Release();
+		m_charCoords.clear();
+
+		CComPtr<IDWriteTextFormat> pTextFormat;
+		HRESULT hr = m_pDWriteFactory->CreateTextFormat(
+			fontName,
+			nullptr,
+			DWRITE_FONT_WEIGHT_NORMAL,
+			DWRITE_FONT_STYLE_NORMAL,
+			DWRITE_FONT_STRETCH_NORMAL,
+			fontHeight,
+			L"", //locale
+			&pTextFormat);
+		if (FAILED(hr)) {
+			return hr;
 		}
 
+		std::vector<SIZE> charSizes;
+		charSizes.reserve(lenght);
 		DWRITE_TEXT_METRICS textMetrics;
 		float maxWidth = 0;
 		float maxHeight = 0;
+
 		for (UINT i = 0; i < lenght; i++) {
 			IDWriteTextLayout* pTextLayout;
-			HRESULT hr = m_pDWriteFactory->CreateTextLayout(&chars[i], 1, m_pTextFormat, 0, 0, &pTextLayout);
+			HRESULT hr = m_pDWriteFactory->CreateTextLayout(&chars[i], 1, pTextFormat, 0, 0, &pTextLayout);
 			if (S_OK == hr) {
 				hr = pTextLayout->GetMetrics(&textMetrics);
 				pTextLayout->Release();
 			}
 			if (FAILED(hr)) {
-				return hr;
+				break;
 			}
 
-			if (bSetCharSizes) {
-				SIZE size = { (LONG)ceil(textMetrics.width), (LONG)ceil(textMetrics.height) };
-				m_charSizes.emplace_back(size);
-			}
+			SIZE size = { (LONG)ceil(textMetrics.widthIncludingTrailingWhitespace), (LONG)ceil(textMetrics.height) };
+			charSizes.emplace_back(size);
+
 			if (textMetrics.width > maxWidth) {
 				maxWidth = textMetrics.width;
 			}
@@ -550,115 +591,169 @@ private:
 			ASSERT(textMetrics.left == 0 && textMetrics.top == 0);
 		}
 
-		grid.stepX = (int)ceil(maxWidth) + 2;
-		grid.stepY = (int)ceil(maxHeight);
+		if (S_OK == hr) {
+			UINT stepX = (UINT)ceil(maxWidth) + 2;
+			UINT stepY = (UINT)ceil(maxHeight);
+			UINT bmWidth = 128;
+			UINT bmHeight = 128;
+			UINT columns = bmWidth / stepX;
+			UINT lines = bmHeight / stepY;
 
-		grid.columns = bmWidth / grid.stepX;
-		grid.lines = bmHeight / grid.stepY;
+			while (lenght > lines * columns) {
+				if (bmWidth <= bmHeight) {
+					bmWidth *= 2;
+				} else {
+					bmHeight += 128;
+				}
+				columns = bmWidth / stepX;
+				lines = bmHeight / stepY;
+			};
+
+			hr = m_pWICFactory->CreateBitmap(bmWidth, bmHeight, GUID_WICPixelFormat32bppPBGRA, WICBitmapCacheOnDemand, &m_pWICBitmap);
+
+			CComPtr<ID2D1RenderTarget>    pD2D1RenderTarget;
+			CComPtr<ID2D1SolidColorBrush> pD2D1Brush;
+
+			D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
+				D2D1_RENDER_TARGET_TYPE_DEFAULT,
+				D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_UNKNOWN),
+				96, 96);
+
+			hr = m_pD2D1Factory->CreateWicBitmapRenderTarget(m_pWICBitmap, &props, &pD2D1RenderTarget);
+			if (S_OK == hr) {
+				hr = pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &pD2D1Brush);
+			}
+
+			m_charCoords.reserve(lenght);
+			pD2D1RenderTarget->BeginDraw();
+			UINT idx = 0;
+			for (UINT y = 0; y < lines; y++) {
+				for (UINT x = 0; x < columns; x++) {
+					if (idx >= lenght) {
+						break;
+					}
+					UINT X = x * stepX + 1;
+					UINT Y = y * stepY;
+					IDWriteTextLayout* pTextLayout;
+					hr = m_pDWriteFactory->CreateTextLayout(&chars[idx], 1, pTextFormat, 0, 0, &pTextLayout);
+					if (S_OK == hr) {
+						pD2D1RenderTarget->DrawTextLayout({ (FLOAT)X, (FLOAT)Y }, pTextLayout, pD2D1Brush);
+						pTextLayout->Release();
+					}
+					if (FAILED(hr)) {
+						break;
+					}
+					RECT rect = {
+						X,
+						Y,
+						X + charSizes[idx].cx,
+						Y + charSizes[idx].cy
+					};
+					m_charCoords.emplace_back(rect);
+					idx++;
+				}
+			}
+			pD2D1RenderTarget->EndDraw();
+
+			pD2D1Brush.Release();
+			pD2D1RenderTarget.Release();
+		}
+
+		pTextFormat.Release();
+
+		return hr;
+	}
+
+	UINT GetWidth()
+	{
+		if (m_pWICBitmap) {
+			UINT w, h;
+			if (S_OK == m_pWICBitmap->GetSize(&w, &h)) {
+				return w;
+			}
+		}
+
+		return 0;
+	}
+
+	UINT GetHeight()
+	{
+		if (m_pWICBitmap) {
+			UINT w, h;
+			if (S_OK == m_pWICBitmap->GetSize(&w, &h)) {
+				return h;
+			}
+		}
+
+		return 0;
+	}
+
+	HRESULT GetFloatCoords(float* pTexCoords, const UINT lenght)
+	{
+		ASSERT(pTexCoords);
+
+		if (!m_pWICBitmap || lenght != m_charCoords.size()) {
+			return E_ABORT;
+		}
+
+		UINT w, h;
+		HRESULT hr = m_pWICBitmap->GetSize(&w, &h);
+		if (FAILED(hr)) {
+			return hr;
+		}
+
+		for (const auto coord : m_charCoords) {
+			*pTexCoords++ = (float)coord.left   / w;
+			*pTexCoords++ = (float)coord.top    / h;
+			*pTexCoords++ = (float)coord.right  / w;
+			*pTexCoords++ = (float)coord.bottom / h;
+		}
 
 		return S_OK;
 	}
 
-public:
-	CFontBitmapDWrite(const WCHAR* fontName, const int fontHeight)
+	HRESULT CopyBitmapToA8L8(BYTE* pDst, int dst_pitch)
 	{
-		D2D1_FACTORY_OPTIONS options = {};
-#ifdef _DEBUG
-		options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
-#endif
-		HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, &m_pD2D1Factory);
+		ASSERT(pDst && dst_pitch);
 
-		hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(m_pDWriteFactory), reinterpret_cast<IUnknown**>(&m_pDWriteFactory));
-		if (S_OK == hr) {
-			hr = m_pDWriteFactory->CreateTextFormat(
-				fontName,
-				nullptr,
-				DWRITE_FONT_WEIGHT_NORMAL,
-				DWRITE_FONT_STYLE_NORMAL,
-				DWRITE_FONT_STRETCH_NORMAL,
-				fontHeight,
-				L"", //locale
-				&m_pTextFormat);
+		if (!m_pWICBitmap) {
+			return E_ABORT;
 		}
-	}
 
-	~CFontBitmapDWrite()
-	{
-		m_pTextFormat.Release();
-		m_pDWriteFactory.Release();
-
-		m_pD2D1Brush.Release();
-		m_pD2D1RenderTarget.Release();
-		m_pD2D1Factory.Release();
-	}
-
-	HRESULT CheckBitmapDimensions(const WCHAR* chars, const UINT lenght, const UINT bmWidth, const UINT bmHeight)
-	{
-		Grid_t grid;
-		HRESULT hr = CalcGrid(grid, chars, lenght, bmWidth, bmHeight, false);
+		UINT w, h;
+		HRESULT hr = m_pWICBitmap->GetSize(&w, &h);
 		if (FAILED(hr)) {
 			return hr;
 		}
 
-		return (lenght <= grid.lines * grid.columns) ? S_OK : D3DERR_MOREDATA;
-	}
-
-	HRESULT DrawCharacters(const WCHAR* chars, FLOAT* fTexCoords, const UINT lenght, const UINT bmWidth, const UINT bmHeight)
-	{
-		Grid_t grid;
-		HRESULT hr = CalcGrid(grid, chars, lenght, bmWidth, bmHeight, true);
-		if (FAILED(hr)) {
-			return hr;
-		}
-
-		D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
-			D2D1_RENDER_TARGET_TYPE_DEFAULT,
-			D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
-			96, 96);
-
-		// TODO
-		hr = m_pD2D1Factory->Create...RenderTarget(..., &props, &m_pD2D1RenderTarget);
+		WICRect rcLock = { 0, 0, w, h };
+		IWICBitmapLock *pLock = nullptr;
+		hr = m_pWICBitmap->Lock(&rcLock, WICBitmapLockRead, &pLock);
 		if (S_OK == hr) {
-			hr = m_pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &m_pD2D1Brush);
-		}
-
-		m_pD2D1RenderTarget->BeginDraw();
-		UINT idx = 0;
-		for (UINT y = 0; y < grid.lines; y++) {
-			for (UINT x = 0; x < grid.columns; x++) {
-				if (idx >= lenght) {
-					break;
-				}
-				D2D1_POINT_2F point = { x*grid.stepX + 1, y*grid.stepY };
-				IDWriteTextLayout* pTextLayout;
-				hr = m_pDWriteFactory->CreateTextLayout(&chars[idx], 1, m_pTextFormat, 0, 0, &pTextLayout);
-				if (S_OK == hr) {
-					m_pD2D1RenderTarget->DrawTextLayout(point, pTextLayout, m_pD2D1Brush);
-					pTextLayout->Release();
-				}
-
-				*fTexCoords++ = point.x / bmWidth;
-				*fTexCoords++ = point.y / bmHeight;
-				*fTexCoords++ = (point.x + m_charSizes[idx].cx) / bmWidth;
-				*fTexCoords++ = (point.y + m_charSizes[idx].cy) / bmHeight;
-
-				ASSERT(hr == S_OK);
-				idx++;
+			UINT cbStride = 0;
+			UINT cbBufferSize = 0;
+			BYTE* pSrc = nullptr;
+			hr = pLock->GetStride(&cbStride);
+			if (S_OK == hr) {
+				hr = pLock->GetDataPointer(&cbBufferSize, &pSrc);
 			}
+
+			if (S_OK == hr) {
+				for (UINT y = 0; y < h; y++) {
+					uint32_t* pSrc32 = (uint32_t*)pSrc;
+					uint16_t* pDst16 = (uint16_t*)pDst;
+
+					for (UINT x = 0; x < w; x++) {
+						*pDst16++ = A8R8G8B8toA8L8(*pSrc32++);
+					}
+					pSrc += cbStride;
+					pDst += dst_pitch;
+				}
+			}
+			pLock->Release();
 		}
-		m_pD2D1RenderTarget->EndDraw();
 
-
-		if (S_OK == hr) {
-			return (idx == lenght) ? S_OK : S_FALSE;
-		} else {
-			return hr;
-		}
-	}
-
-	bool CopyBitmapToA8L8(BYTE* pDst, int dst_pitch)
-	{
-		return false;
+		return hr;
 	}
 };
 

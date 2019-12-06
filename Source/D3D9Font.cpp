@@ -132,7 +132,7 @@ HRESULT CD3D9Font::InitDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice )
 #elif FONTBITMAP_MODE == 1
 	CFontBitmapGDIPlus fontBitmap;
 #elif FONTBITMAP_MODE == 2
-	CFontBitmapDWrite fontBitmap(m_strFontName, m_dwFontHeight);
+	CFontBitmapDWrite fontBitmap;
 #endif
 
 	hr = fontBitmap.Initialize(m_strFontName, m_dwFontHeight, m_Characters, std::size(m_Characters));
