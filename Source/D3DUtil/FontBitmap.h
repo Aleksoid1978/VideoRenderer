@@ -421,7 +421,7 @@ public:
 		}
 
 #if _DEBUG && DUMP_BITMAP
-		SaveBitmapToPNG(L"C:\\TEMP\\font_gdiplus_bitmap.png");
+		SaveBitmap(L"C:\\TEMP\\font_gdiplus_bitmap.png");
 #endif
 
 		Gdiplus::BitmapData bitmapData;
@@ -451,13 +451,27 @@ public:
 	}
 
 private:
-	HRESULT SaveBitmapToPNG(const wchar_t* filename)
+	HRESULT SaveBitmap(const WCHAR* filename)
 	{
 		if (!m_pBitmap) {
 			return E_ABORT;
 		}
 
-		CLSID pngClsid = CLSID_NULL;
+		const WCHAR* mimetype = nullptr;
+
+		if (auto ext = wcsrchr(filename, '.')) {
+			// the "count" parameter for "_wcsnicmp" function must be greater than the length of the short string to be compared
+			if (_wcsnicmp(ext, L".bmp", 8) == 0) {
+				mimetype = L"image/bmp";
+			}
+			else if (_wcsnicmp(ext, L".png", 8) == 0) {
+				mimetype = L"image/png";
+			}
+		}
+
+		if (!mimetype) {
+			return E_INVALIDARG;
+		}
 
 		UINT num = 0;  // number of image encoders
 		UINT size = 0; // size of the image encoder array in bytes
@@ -473,19 +487,20 @@ private:
 		}
 
 		Gdiplus::GetImageEncoders(num, size, pImageCodecInfo);
+		CLSID clsidEncoder = CLSID_NULL;
 
 		for (UINT j = 0; j < num; ++j) {
-			if (wcscmp(pImageCodecInfo[j].MimeType, L"image/png") == 0) {
-				pngClsid = pImageCodecInfo[j].Clsid;
+			if (wcscmp(pImageCodecInfo[j].MimeType, mimetype) == 0) {
+				clsidEncoder = pImageCodecInfo[j].Clsid;
 				break;
 			}
 		}
 		free(pImageCodecInfo);
-		if (pngClsid == CLSID_NULL) {
+		if (clsidEncoder == CLSID_NULL) {
 			return E_FAIL;
 		}
 
-		Gdiplus::Status status = m_pBitmap->Save(filename, &pngClsid, nullptr);
+		Gdiplus::Status status = m_pBitmap->Save(filename, &clsidEncoder, nullptr);
 
 		return (Gdiplus::Ok == status) ? S_OK : E_FAIL;
 	}
@@ -719,7 +734,7 @@ public:
 		}
 
 #if _DEBUG && DUMP_BITMAP
-		SaveBitmapToPNG(L"C:\\TEMP\\font_directwrite_bitmap.png");
+		SaveBitmap(L"C:\\TEMP\\font_directwrite_bitmap.png");
 #endif
 
 		WICRect rcLock = { 0, 0, w, h };
@@ -753,7 +768,7 @@ public:
 	}
 
 private:
-	HRESULT SaveBitmapToPNG(const wchar_t* filename)
+	HRESULT SaveBitmap(const WCHAR* filename)
 	{
 		if (!m_pWICBitmap) {
 			return E_ABORT;
@@ -763,6 +778,22 @@ private:
 		HRESULT hr = m_pWICBitmap->GetSize(&w, &h);
 		if (FAILED(hr)) {
 			return hr;
+		}
+
+		GUID guidContainerFormat = GUID_NULL;
+
+		if (auto ext = wcsrchr(filename, '.')) {
+			// the "count" parameter for "_wcsnicmp" function must be greater than the length of the short string to be compared
+			if (_wcsnicmp(ext, L".bmp", 8) == 0) {
+				guidContainerFormat = GUID_ContainerFormatBmp;
+			}
+			else if (_wcsnicmp(ext, L".png", 8) == 0) {
+				guidContainerFormat = GUID_ContainerFormatPng;
+			}
+		}
+
+		if (guidContainerFormat == GUID_NULL) {
+			return E_INVALIDARG;
 		}
 
 		CComPtr<IWICStream> pStream;
@@ -775,7 +806,7 @@ private:
 			hr = pStream->InitializeFromFilename(filename, GENERIC_WRITE);
 		}
 		if (SUCCEEDED(hr)) {
-			hr = m_pWICFactory->CreateEncoder(GUID_ContainerFormatPng, NULL, &pEncoder);
+			hr = m_pWICFactory->CreateEncoder(guidContainerFormat, NULL, &pEncoder);
 		}
 		if (SUCCEEDED(hr)) {
 			hr = pEncoder->Initialize(pStream, WICBitmapEncoderNoCache);
