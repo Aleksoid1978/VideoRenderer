@@ -84,7 +84,7 @@ public:
 		DeleteObject(m_hBitmap);
 		m_pBitmapBits = nullptr;
 		m_charCoords.clear();
-		
+
 		HRESULT hr = S_OK;
 
 		// Create a font.  By specifying ANTIALIASED_QUALITY, we might get an
@@ -287,16 +287,17 @@ public:
 
 		auto status = Gdiplus::Ok;
 
-		auto pFontFamily = new Gdiplus::FontFamily(fontName);
-		auto pFont = new Gdiplus::Font(pFontFamily, fontHeight, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
+		Gdiplus::FontFamily fontFamily(fontName);
+		Gdiplus::Font font(&fontFamily, fontHeight, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
 
-		auto pStringFormat = Gdiplus::StringFormat::GenericTypographic()->Clone();
-		auto flags = pStringFormat->GetFormatFlags() | Gdiplus::StringFormatFlags::StringFormatFlagsMeasureTrailingSpaces;
-		pStringFormat->SetFormatFlags(flags);
+		auto pStringFormat = Gdiplus::StringFormat::GenericTypographic();
+		Gdiplus::StringFormat stringFormat(pStringFormat);
+		auto flags = stringFormat.GetFormatFlags() | Gdiplus::StringFormatFlags::StringFormatFlagsMeasureTrailingSpaces;
+		stringFormat.SetFormatFlags(flags);
 
-		auto pTestBitmap = new Gdiplus::Bitmap(32, 32, PixelFormat32bppARGB); // bitmap dimensions are not important here
-		auto pTestGraphics = new Gdiplus::Graphics(pTestBitmap);
-		pTestGraphics->SetTextRenderingHint(m_TextRenderingHint);
+		Gdiplus::Bitmap testBitmap(32, 32, PixelFormat32bppARGB); // bitmap dimensions are not important here
+		Gdiplus::Graphics testGraphics(&testBitmap);
+		testGraphics.SetTextRenderingHint(m_TextRenderingHint);
 
 		std::vector<SIZE> charSizes;
 		charSizes.reserve(lenght);
@@ -304,8 +305,10 @@ public:
 		float maxWidth = 0;
 		float maxHeight = 0;
 
+		Gdiplus::PointF origin;
+
 		for (UINT i = 0; i < lenght; i++) {
-			status = pTestGraphics->MeasureString(&chars[i], 1, pFont, Gdiplus::PointF(0, 0), pStringFormat, &rect);
+			status = testGraphics.MeasureString(&chars[i], 1, &font, origin, &stringFormat, &rect);
 			if (Gdiplus::Ok != status) {
 				break;
 			}
@@ -320,8 +323,6 @@ public:
 			}
 			ASSERT(rect.X == 0 && rect.Y == 0);
 		}
-		SAFE_DELETE(pTestGraphics);
-		SAFE_DELETE(pTestBitmap);
 
 		if (Gdiplus::Ok == status) {
 			UINT stepX = (UINT)ceil(maxWidth) + 2;
@@ -342,9 +343,9 @@ public:
 			};
 
 			m_pBitmap = new Gdiplus::Bitmap(bmWidth, bmHeight, PixelFormat32bppARGB);
-			auto pGraphics = new Gdiplus::Graphics(m_pBitmap);
-			pGraphics->SetTextRenderingHint(m_TextRenderingHint);
-			auto pBrushWhite = new Gdiplus::SolidBrush(Gdiplus::Color::White);
+			Gdiplus::Graphics graphics(m_pBitmap);
+			graphics.SetTextRenderingHint(m_TextRenderingHint);
+			Gdiplus::SolidBrush brushWhite(Gdiplus::Color::White);
 
 			m_charCoords.reserve(lenght);
 
@@ -356,7 +357,7 @@ public:
 					}
 					UINT X = x * stepX + 1;
 					UINT Y = y * stepY;
-					status = pGraphics->DrawString(&chars[idx], 1, pFont, Gdiplus::PointF(X, Y), pStringFormat, pBrushWhite);
+					status = graphics.DrawString(&chars[idx], 1, &font, Gdiplus::PointF(X, Y), &stringFormat, &brushWhite);
 					if (Gdiplus::Ok != status) {
 						break;
 					}
@@ -370,19 +371,8 @@ public:
 					idx++;
 				}
 			}
-			pGraphics->Flush();
-
-			SAFE_DELETE(pGraphics);
-			SAFE_DELETE(pBrushWhite);
-
-			if (Gdiplus::Ok == status) {
-
-			}
+			graphics.Flush();
 		}
-
-		SAFE_DELETE(pStringFormat);
-		SAFE_DELETE(pFont);
-		SAFE_DELETE(pFontFamily);
 
 		if (Gdiplus::Ok == status) {
 			ASSERT(m_charCoords.size() == lenght);
