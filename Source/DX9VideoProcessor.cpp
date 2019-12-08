@@ -2000,6 +2000,8 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	hr = m_pD3DDevEx->SetRenderTarget(0, m_TexStats.pSurface);
 
 	hr = m_pD3DDevEx->ColorFill(m_TexStats.pSurface, nullptr, D3DCOLOR_ARGB(192, 0, 0, 0));
+
+	hr = m_pD3DDevEx->BeginScene();
 	hr = m_Font3D.Draw2DText(5, 5, D3DCOLOR_XRGB(255, 255, 255), str);
 	static int col = STATS_W;
 	if (--col < 0) {
@@ -2010,7 +2012,6 @@ HRESULT CDX9VideoProcessor::DrawStats()
 
 	hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
-	hr = m_pD3DDevEx->BeginScene();
 	hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H), m_TexStats.pTexture);
 	m_pD3DDevEx->EndScene();
 #else
