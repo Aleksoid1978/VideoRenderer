@@ -185,7 +185,7 @@ public:
 	void ClearInputSurfaces(const DXVA2_ExtendedFormat exFmt);
 	void CleanSamplesData();
 
-	HRESULT SetProcessParams(const CRect& srcRect, const CRect& dstRect);
+	HRESULT SetRectangles(const CRect& srcRect, const CRect& dstRect);
 	void SetProcAmpValues(DXVA2_ProcAmpValues& PropValues);
 	void GetProcAmpRanges(DXVA2_ValueRange(&PropRanges)[4]);
 

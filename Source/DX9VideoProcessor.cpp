@@ -1382,9 +1382,7 @@ void CDX9VideoProcessor::Flush()
 
 HRESULT CDX9VideoProcessor::DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
-	// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx
-
-	m_DXVA2VP.SetProcessParams(rSrcRect, rDstRect);
+	m_DXVA2VP.SetRectangles(rSrcRect, rDstRect);
 
 	HRESULT hr = m_DXVA2VP.Process(pRenderTarget, m_CurrentSampleFmt, second);
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::DXVA2VPPass() : VideoProcessBlt() failed with error %s", HR2Str(hr));

@@ -28,6 +28,8 @@
 
 // CDXVA2VP
 
+// https://msdn.microsoft.com/en-us/library/cc307964(v=vs.85).aspx
+
 int GetBitDepth(const D3DFORMAT format)
 {
 	switch (format) {
@@ -385,7 +387,7 @@ void CDXVA2VP::CleanSamplesData()
 	m_VideoSamples.Clean();
 }
 
-HRESULT CDXVA2VP::SetProcessParams(const CRect& srcRect, const CRect& dstRect)
+HRESULT CDXVA2VP::SetRectangles(const CRect& srcRect, const CRect& dstRect)
 {
 	m_BltParams.TargetRect = dstRect;
 	m_BltParams.ConstrictionSize.cx = dstRect.Width();
