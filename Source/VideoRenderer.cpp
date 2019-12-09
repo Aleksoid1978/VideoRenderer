@@ -856,7 +856,13 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 
 	CAutoLock cRendererLock(&m_RendererLock);
 	if (m_hWnd) {
-		SetWindowPos(m_hWnd, nullptr, Left, Top, Width, Height, SWP_NOZORDER | SWP_NOACTIVATE);
+		SetWindowPos(m_hWnd, nullptr, Left, Top, Width, Height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOREDRAW);
+		if (Left < 0) {
+			m_windowRect.OffsetRect(-Left, 0);
+		}
+		if (Top < 0) {
+			m_windowRect.OffsetRect(0, -Top);
+		}
 	}
 
 	if (m_bUsedD3D11) {
@@ -865,6 +871,8 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 		m_evDX9Resize.Set();
 		WaitForSingleObject(m_evThreadFinishJob, INFINITE);
 	}
+
+	m_windowRect = windowRect;
 
 	if (!m_pSubCallBack) {
 		Redraw();
