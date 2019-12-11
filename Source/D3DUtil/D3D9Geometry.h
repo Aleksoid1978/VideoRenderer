@@ -112,13 +112,9 @@ private:
 	using CD3D9Quadrilateral::Set;
 
 public:
-	HRESULT Set(const int left, const int top, const int right, const int bottom, const D3DCOLOR color)
-	{
-		return CD3D9Quadrilateral::Set(left, top, right, top,  right, bottom, left, bottom, color);
-	}
 	HRESULT Set(const RECT& rect, const D3DCOLOR color)
 	{
-		return CD3D9Quadrilateral::Set(rect.left, rect.top, rect.right, rect.top,  rect.right, rect.bottom, rect.left, rect.bottom, color);
+		return CD3D9Quadrilateral::Set(rect.left, rect.top, rect.right, rect.top, rect.right, rect.bottom, rect.left, rect.bottom, color);
 	}
 };
 

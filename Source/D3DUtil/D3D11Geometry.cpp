@@ -98,12 +98,17 @@ HRESULT CD3D11Quadrilateral::Set(const float x1, const float y1, const float x2,
 		}
 	}
 
-	m_Vertices[0] = { DirectX::XMFLOAT3(x1, y1, 0.5f), DirectX::XMFLOAT4(0, 1, 1, 0) };
-	m_Vertices[1] = { DirectX::XMFLOAT3(x2, y2, 0.5f), DirectX::XMFLOAT4(0, 1, 1, 0) };
-	m_Vertices[2] = { DirectX::XMFLOAT3(x3, y3, 0.5f), DirectX::XMFLOAT4(0, 1, 1, 0) };
-	m_Vertices[3] = { DirectX::XMFLOAT3(x1, y1, 0.5f), DirectX::XMFLOAT4(0, 1, 1, 0) };
-	m_Vertices[4] = { DirectX::XMFLOAT3(x3, y3, 0.5f), DirectX::XMFLOAT4(0, 1, 1, 0) };
-	m_Vertices[5] = { DirectX::XMFLOAT3(x4, y4, 0.5f), DirectX::XMFLOAT4(0, 1, 1, 0) };
+	DirectX::XMFLOAT4 colorRGBAf = {
+		(float)((color & 0x00FF0000) >> 16) / 255,
+		(float)((color & 0x0000FF00) >>  8) / 255,
+		(float) (color & 0x000000FF)        / 255,
+		(float)((color & 0xFF000000) >> 24) / 255,
+	};
+
+	m_Vertices[0] = { DirectX::XMFLOAT3(x1, y1, 0.5f), colorRGBAf };
+	m_Vertices[1] = { DirectX::XMFLOAT3(x4, y4, 0.5f), colorRGBAf };
+	m_Vertices[2] = { DirectX::XMFLOAT3(x2, y2, 0.5f), colorRGBAf };
+	m_Vertices[3] = { DirectX::XMFLOAT3(x3, y3, 0.5f), colorRGBAf };
 
 	if (m_pVertexBuffer) {
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -135,20 +140,19 @@ HRESULT CD3D11Quadrilateral::Draw(ID3D11RenderTargetView* pRenderTargetView, UIN
 	VP.MaxDepth = 1.0f;
 	m_pDeviceContext->RSSetViewports(1, &VP);
 
+	m_pDeviceContext->PSSetShaderResources(0, 1, views);
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 
 	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &Stride, &Offset);
 
-	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
 	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
 
-	//m_pDeviceContext->OMSetBlendState(m_pBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-	m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-	m_pDeviceContext->PSSetShaderResources(0, 1, views);
+	m_pDeviceContext->OMSetBlendState(m_pBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 
-	m_pDeviceContext->Draw(6, 0);
+	m_pDeviceContext->Draw(std::size(m_Vertices), 0);
 
 	return hr;
 }

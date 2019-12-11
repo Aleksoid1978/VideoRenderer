@@ -35,7 +35,7 @@ protected:
 		DirectX::XMFLOAT3 Pos;
 		DirectX::XMFLOAT4 Color;
 	};
-	VERTEX m_Vertices[6] = {};
+	VERTEX m_Vertices[4] = {};
 	ID3D11Buffer* m_pVertexBuffer = nullptr;
 	ID3D11InputLayout* m_pInputLayout = nullptr;
 
@@ -59,13 +59,14 @@ private:
 	using CD3D11Quadrilateral::Set;
 
 public:
-	HRESULT Set(const int left, const int top, const int right, const int bottom, const D3DCOLOR color)
+	HRESULT Set(const RECT& rect, const SIZE& size, const D3DCOLOR color)
 	{
+		const float left   = (float)(rect.left*2) / size.cx - 1;
+		const float top    = (float)(rect.top*2) / size.cy - 1;
+		const float right  = (float)(rect.right*2) / size.cx - 1;
+		const float bottom = (float)(rect.bottom*2) / size.cy - 1;
+
 		return CD3D11Quadrilateral::Set(left, top, right, top,  right, bottom, left, bottom, color);
-	}
-	HRESULT Set(const RECT& rect, const D3DCOLOR color)
-	{
-		return CD3D11Quadrilateral::Set(rect.left, rect.top, rect.right, rect.top,  rect.right, rect.bottom, rect.left, rect.bottom, color);
 	}
 };
 
