@@ -1066,21 +1066,23 @@ HRESULT CDX9VideoProcessor::Render(int field)
  	}
 
 #if 0
-	if (1) { // Tearing test
+	{ // Tearing test
 		static int nTearingPos = 0;
+
+		const SIZE szWindow = m_windowRect.Size();
 		RECT rcTearing;
 
 		rcTearing.left = nTearingPos;
 		rcTearing.top = 0;
 		rcTearing.right = rcTearing.left + 4;
-		rcTearing.bottom = m_windowRect.Height();
-		m_pD3DDevEx->ColorFill(pBackBuffer, &rcTearing, D3DCOLOR_ARGB(255, 255, 0, 0));
+		rcTearing.bottom = szWindow.cy;
+		m_pD3DDevEx->ColorFill(pBackBuffer, &rcTearing, D3DCOLOR_XRGB(255, 0, 0));
 
-		rcTearing.left = (rcTearing.right + 15) % m_windowRect.Width();
+		rcTearing.left = (rcTearing.right + 15) % szWindow.cx;
 		rcTearing.right = rcTearing.left + 4;
-		m_pD3DDevEx->ColorFill(pBackBuffer, &rcTearing, D3DCOLOR_ARGB(255, 255, 0, 0));
+		m_pD3DDevEx->ColorFill(pBackBuffer, &rcTearing, D3DCOLOR_XRGB(255, 0, 0));
 
-		nTearingPos = (nTearingPos + 7) % m_windowRect.Width();
+		nTearingPos = (nTearingPos + 7) % szWindow.cx;
 	}
 #endif
 

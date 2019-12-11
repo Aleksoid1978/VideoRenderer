@@ -34,6 +34,7 @@
 #include "DX11VideoProcessor.h"
 #include "./Include/ID3DVideoMemoryConfiguration.h"
 #include "Shaders.h"
+#include "D3DUtil/D3D11Geometry.h"
 
 static const ScalingShaderResId s_Upscaling11ResIDs[UPSCALE_COUNT] = {
 	{0,                            0,                            L"Nearest-neighbor"  },
@@ -1563,6 +1564,38 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hr = DrawStats(pBackBuffer);
 		m_RenderStats.statsticks = GetPreciseTick() - tick3;
 	}
+
+#if 0
+	{ // Tearing test (very non-optimal implementation, use only for tests)
+		static int nTearingPos = 0;
+
+		ID3D11RenderTargetView* pRenderTargetView;
+		if (S_OK == m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView)) {
+			CD3D11Rectangle d3d11rect;
+			HRESULT hr2 = d3d11rect.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+
+			const SIZE szWindow = m_windowRect.Size();
+			RECT rcTearing;
+
+			rcTearing.left = nTearingPos;
+			rcTearing.top = 0;
+			rcTearing.right = rcTearing.left + 4;
+			rcTearing.bottom = szWindow.cy;
+			hr2 = d3d11rect.Set(rcTearing, szWindow, D3DCOLOR_XRGB(255, 0, 0));
+			hr2 = d3d11rect.Draw(pRenderTargetView, szWindow.cx, szWindow.cy);
+
+			rcTearing.left = (rcTearing.right + 15) % szWindow.cx;
+			rcTearing.right = rcTearing.left + 4;
+			hr2 = d3d11rect.Set(rcTearing, szWindow, D3DCOLOR_XRGB(255, 0, 0));
+			hr2 = d3d11rect.Draw(pRenderTargetView, szWindow.cx, szWindow.cy);
+
+			pRenderTargetView->Release();
+			d3d11rect.InvalidateDeviceObjects();
+
+			nTearingPos = (nTearingPos + 7) % szWindow.cx;
+		}
+	}
+#endif
 
 	hr = m_pDXGISwapChain1->Present(1, 0);
 
