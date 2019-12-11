@@ -71,7 +71,7 @@ public:
 };
 
 
-class CD3D11Line : public CD3D11Quadrilateral
+class CD3D11Stripe : public CD3D11Quadrilateral
 {
 private:
 	using CD3D11Quadrilateral::Set;
@@ -79,9 +79,12 @@ private:
 public:
 	HRESULT Set(const int x1, const int y1, const int x2, const int y2, const int thickness, const D3DCOLOR color)
 	{
-		const float a = atan2f(y1 - y2, x2 - x1);
-		const float xt = thickness * sinf(a);
-		const float yt = thickness * cosf(a);
+		const float a = x2 - x1;
+		const float b = y1 - y2;
+		const float c = sqrtf(a*a + b * b);
+		const float xt = thickness * b / c;
+		const float yt = thickness * a / c;
+
 		const float x3 = x2 + xt;
 		const float y3 = y2 + yt;
 		const float x4 = x1 + xt;
