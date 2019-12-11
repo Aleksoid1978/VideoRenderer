@@ -2007,7 +2007,7 @@ HRESULT CDX9VideoProcessor::DrawStats()
 	if (--col < 0) {
 		col = STATS_W;
 	}
-	m_Rect3D.Set(col, STATS_H - 11, col + 5, STATS_H - 1, D3DCOLOR_XRGB(128, 255, 128));
+	m_Rect3D.Set({ col, STATS_H - 11, col + 5, STATS_H - 1 }, D3DCOLOR_XRGB(128, 255, 128));
 	m_Rect3D.Draw(m_pD3DDevEx);
 
 	hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
