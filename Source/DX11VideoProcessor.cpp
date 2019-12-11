@@ -127,6 +127,7 @@ HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
 void TextureBlt11(
 	ID3D11DeviceContext* pDeviceContext,
 	ID3D11RenderTargetView* pRenderTargetView, D3D11_VIEWPORT& viewport,
+	ID3D11InputLayout* pInputLayout,
 	ID3D11VertexShader* pVertexShader,
 	ID3D11PixelShader* pPixelShader,
 	ID3D11ShaderResourceView* pShaderResourceViews,
@@ -142,6 +143,7 @@ void TextureBlt11(
 	const UINT Offset = 0;
 
 	// Set resources
+	pDeviceContext->IASetInputLayout(pInputLayout);
 	pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 	pDeviceContext->RSSetViewports(1, &viewport);
 	pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
@@ -170,6 +172,7 @@ HRESULT CDX11VideoProcessor::AlphaBlt(ID3D11ShaderResourceView* pShaderResource,
 		UINT Offset = 0;
 
 		// Set resources
+		m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
 		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 		m_pDeviceContext->RSSetViewports(1, &viewport);
 		m_pDeviceContext->OMSetBlendState(m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
@@ -203,6 +206,7 @@ HRESULT CDX11VideoProcessor::AlphaBltSub(ID3D11ShaderResourceView* pShaderResour
 
 		if (S_OK == hr) {
 			// Set resources
+			m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
 			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 			m_pDeviceContext->RSSetViewports(1, &viewport);
 			m_pDeviceContext->OMSetBlendState(m_pFilter->m_bSubInvAlpha ? m_pAlphaBlendStateInv : m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
@@ -249,7 +253,7 @@ HRESULT CDX11VideoProcessor::TextureCopyRect(const Tex2D_t& Tex, ID3D11Texture2D
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
 
-	TextureBlt11(m_pDeviceContext, pRenderTargetView, VP, m_pVS_Simple, pPixelShader, Tex.pShaderResource, m_pSamplerPoint, pConstantBuffer, pVertexBuffer);
+	TextureBlt11(m_pDeviceContext, pRenderTargetView, VP, m_pVSimpleInputLayout, m_pVS_Simple, pPixelShader, Tex.pShaderResource, m_pSamplerPoint, pConstantBuffer, pVertexBuffer);
 
 	return hr;
 }
@@ -278,6 +282,7 @@ HRESULT CDX11VideoProcessor::TextureConvertColor(const Tex11Video_t& texVideo, I
 	const UINT Offset = 0;
 
 	// Set resources
+	m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
 	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView.p, nullptr);
 	m_pDeviceContext->RSSetViewports(1, &VP);
 	m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
@@ -343,7 +348,7 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(const Tex2D_t& Tex, ID3D11Textu
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
 
-	TextureBlt11(m_pDeviceContext, pRenderTargetView, VP, m_pVS_Simple, pPixelShader, Tex.pShaderResource, m_pSamplerPoint, pConstantBuffer, pVertexBuffer);
+	TextureBlt11(m_pDeviceContext, pRenderTargetView, VP, m_pVSimpleInputLayout, m_pVS_Simple, pPixelShader, Tex.pShaderResource, m_pSamplerPoint, pConstantBuffer, pVertexBuffer);
 
 	return hr;
 }
@@ -529,7 +534,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_strShaderX = nullptr;
 	m_strShaderY = nullptr;
 
-	m_pInputLayout.Release();
+	m_pVSimpleInputLayout.Release();
 	m_pVS_Simple.Release();
 	m_pPS_Simple.Release();
 	SAFE_RELEASE(m_pSamplerPoint);
@@ -723,8 +728,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
 	};
-	EXECUTE_ASSERT(S_OK == m_pDevice->CreateInputLayout(Layout, std::size(Layout), data, size, &m_pInputLayout));
-	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateInputLayout(Layout, std::size(Layout), data, size, &m_pVSimpleInputLayout));
 
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_Simple, IDF_PSH11_SIMPLE));
 

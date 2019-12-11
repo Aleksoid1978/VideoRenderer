@@ -71,7 +71,7 @@ private:
 	ID3D11Buffer*                m_pFullFrameVertexBuffer = nullptr;
 	CComPtr<ID3D11VertexShader>  m_pVS_Simple;
 	CComPtr<ID3D11PixelShader>   m_pPS_Simple;
-	CComPtr<ID3D11InputLayout>   m_pInputLayout;
+	CComPtr<ID3D11InputLayout>   m_pVSimpleInputLayout;
 
 	Tex11Video_t m_TexSrcVideo; // for copy of frame
 	Tex2D_t m_TexConvert;     // for result of color conversion
