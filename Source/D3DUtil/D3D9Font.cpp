@@ -308,7 +308,7 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 		FLOAT tx1 = m_fTexCoords[idx][0];
 		FLOAT tx2 = m_fTexCoords[idx][2];
 
-		fRowWidth += (tx2-tx1)*m_uTexWidth - 2*m_uSpacing;
+		fRowWidth += (tx2-tx1)*m_uTexWidth;
 
 		if ( fRowWidth > fWidth ) {
 			fWidth = fRowWidth;
@@ -368,7 +368,7 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 
 			FLOAT w = (tx2-tx1) *  m_uTexWidth / m_fTextScale;
 
-			xFinal += w - (2 * m_uSpacing);
+			xFinal += w;
 		}
 
 		sx = (vp.Width-xFinal)/2.0f;
@@ -381,7 +381,6 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 	}
 
 	// Adjust for character spacing
-	sx -= m_uSpacing;
 	FLOAT fStartX = sx;
 
 	// Fill vertex buffer
@@ -427,7 +426,7 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 			}
 		}
 
-		sx += w - (2 * m_uSpacing);
+		sx += w;
 	}
 
 	// Unlock and render the vertex buffer

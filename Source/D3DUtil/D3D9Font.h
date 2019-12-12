@@ -39,7 +39,6 @@ class CD3D9Font
 
 	WCHAR m_Characters[128];
 	FLOAT m_fTexCoords[128][4] = {};
-	DWORD m_uSpacing = 0;                // Character pixel spacing per side
 
 	IDirect3DDevice9*       m_pd3dDevice = nullptr; // A D3DDevice used for rendering
 	IDirect3DTexture9*      m_pTexture   = nullptr; // The d3d texture for this font
