@@ -290,7 +290,7 @@ public:
 		auto status = Gdiplus::Ok;
 
 		Gdiplus::FontStyle fontstyle =
-			(fontFlags & (D3DFONT_BOLD | D3DFONT_ITALIC)) ? Gdiplus::FontStyleBoldItalic :
+			((fontFlags & (D3DFONT_BOLD | D3DFONT_ITALIC)) == (D3DFONT_BOLD | D3DFONT_ITALIC)) ? Gdiplus::FontStyleBoldItalic :
 			(fontFlags & D3DFONT_BOLD) ? Gdiplus::FontStyleBold :
 			(fontFlags & D3DFONT_ITALIC) ? Gdiplus::FontStyleItalic :
 			Gdiplus::FontStyleRegular;
