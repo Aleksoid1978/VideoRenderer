@@ -173,12 +173,12 @@ HRESULT CD3D9Font::RestoreDeviceObjects()
 	}
 
 	bool bSupportsAlphaBlend = true;
-	LPDIRECT3D9 pd3d9 = nullptr;
+	IDirect3D9* pd3d9 = nullptr;
 	hr = m_pd3dDevice->GetDirect3D(&pd3d9);
 	if ( SUCCEEDED(hr) ) {
 		D3DCAPS9 Caps;
 		D3DDISPLAYMODE Mode;
-		LPDIRECT3DSURFACE9 pSurf = nullptr;
+		IDirect3DSurface9* pSurf = nullptr;
 		D3DSURFACE_DESC Desc;
 		m_pd3dDevice->GetDeviceCaps( &Caps );
 		m_pd3dDevice->GetDisplayMode( 0, &Mode );
