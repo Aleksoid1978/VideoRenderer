@@ -161,6 +161,9 @@
     <ClInclude Include="D3DUtil\D3D11Geometry.h">
       <Filter>D3DUtil</Filter>
     </ClInclude>
+    <ClInclude Include="D3DUtil\D3DCommon.h">
+      <Filter>D3DUtil</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MpcVideoRenderer.rc">

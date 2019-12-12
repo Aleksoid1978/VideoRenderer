@@ -20,9 +20,9 @@
 
 #pragma once
 
+#include "D3DCommon.h"
+
 // Font creation flags
-#define D3DFONT_BOLD        0x0001
-#define D3DFONT_ITALIC      0x0002
 #define D3DFONT_ZENABLE     0x0004
 
 // Font rendering flags
@@ -37,21 +37,26 @@ class CD3D9Font
 	DWORD m_dwFontHeight;
 	DWORD m_dwFontFlags;
 
-	LPDIRECT3DDEVICE9       m_pd3dDevice; // A D3DDevice used for rendering
-	LPDIRECT3DTEXTURE9      m_pTexture;   // The d3d texture for this font
-	LPDIRECT3DVERTEXBUFFER9 m_pVB;        // VertexBuffer for rendering text
-	DWORD m_dwTexWidth;                   // Texture dimensions
-	DWORD m_dwTexHeight;
-	FLOAT m_fTextScale;
 	WCHAR m_Characters[128];
-	FLOAT m_fTexCoords[128][4];
-	DWORD m_dwSpacing;                    // Character pixel spacing per side
+	FLOAT m_fTexCoords[128][4] = {};
+	DWORD m_uSpacing = 0;                // Character pixel spacing per side
+
+	IDirect3DDevice9*       m_pd3dDevice = nullptr; // A D3DDevice used for rendering
+	IDirect3DTexture9*      m_pTexture   = nullptr; // The d3d texture for this font
+	IDirect3DVertexBuffer9* m_pVB        = nullptr; // VertexBuffer for rendering text
+	UINT  m_uTexWidth  = 0;                   // Texture dimensions
+	UINT  m_uTexHeight = 0;
+	FLOAT m_fTextScale = 1.0f;
 
 	// Stateblocks for setting and restoring render states
-	LPDIRECT3DSTATEBLOCK9 m_pStateBlockSaved;
-	LPDIRECT3DSTATEBLOCK9 m_pStateBlockDrawText;
+	IDirect3DStateBlock9* m_pStateBlockSaved    = nullptr;
+	IDirect3DStateBlock9* m_pStateBlockDrawText = nullptr;
 
 public:
+	// Constructor / destructor
+	CD3D9Font( const WCHAR* strFontName, DWORD dwHeight, DWORD dwFlags=0L );
+	~CD3D9Font();
+
 	// 2D text drawing function
 	HRESULT Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 					  const WCHAR* strText, DWORD dwFlags=0L );
@@ -60,12 +65,8 @@ public:
 	HRESULT GetTextExtent( const WCHAR* strText, SIZE* pSize );
 
 	// Initializing and destroying device-dependent objects
-	HRESULT InitDeviceObjects(LPDIRECT3DDEVICE9 pd3dDevice);
+	HRESULT InitDeviceObjects(IDirect3DDevice9* pd3dDevice);
 	HRESULT RestoreDeviceObjects();
-	HRESULT InvalidateDeviceObjects();
-	HRESULT DeleteDeviceObjects();
-
-	// Constructor / destructor
-	CD3D9Font( const WCHAR* strFontName, DWORD dwHeight, DWORD dwFlags=0L );
-	~CD3D9Font();
+	void InvalidateDeviceObjects();
+	void DeleteDeviceObjects();
 };

@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "D3DCommon.h"
+
 #define FONTBITMAP_MODE 1
 // 0 - GDI, 1 - GDI+, 2 - DirectWrite
 
@@ -79,7 +81,7 @@ public:
 		DeleteDC(m_hDC);
 	}
 
-	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, const WCHAR* chars, UINT lenght)
+	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, DWORD fontFlags, const WCHAR* chars, UINT lenght)
 	{
 		DeleteObject(m_hBitmap);
 		m_pBitmapBits = nullptr;
@@ -90,8 +92,8 @@ public:
 		// Create a font.  By specifying ANTIALIASED_QUALITY, we might get an
 		// antialiased font, but this is not guaranteed.
 		int nHeight    = -(int)(fontHeight);
-		DWORD dwBold   = /*(m_dwFontFlags & D3DFONT_BOLD)   ? FW_BOLD :*/ FW_NORMAL;
-		DWORD dwItalic = /*(m_dwFontFlags & D3DFONT_ITALIC) ? TRUE    :*/ FALSE;
+		DWORD dwBold   = (fontFlags & D3DFONT_BOLD)   ? FW_BOLD : FW_NORMAL;
+		DWORD dwItalic = (fontFlags & D3DFONT_ITALIC) ? TRUE    : FALSE;
 
 		HFONT hFont = CreateFontW(nHeight, 0, 0, 0, dwBold, dwItalic,
 			FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
@@ -280,15 +282,21 @@ public:
 		Gdiplus::GdiplusShutdown(m_gdiplusToken);
 	}
 
-	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, const WCHAR* chars, UINT lenght)
+	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, DWORD fontFlags, const WCHAR* chars, UINT lenght)
 	{
 		SAFE_DELETE(m_pBitmap);
 		m_charCoords.clear();
 
 		auto status = Gdiplus::Ok;
 
+		Gdiplus::FontStyle fontstyle =
+			(fontFlags & (D3DFONT_BOLD | D3DFONT_ITALIC)) ? Gdiplus::FontStyleBoldItalic :
+			(fontFlags & D3DFONT_BOLD) ? Gdiplus::FontStyleBold :
+			(fontFlags & D3DFONT_ITALIC) ? Gdiplus::FontStyleItalic :
+			Gdiplus::FontStyleRegular;
+
 		Gdiplus::FontFamily fontFamily(fontName);
-		Gdiplus::Font font(&fontFamily, fontHeight, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
+		Gdiplus::Font font(&fontFamily, fontHeight, fontstyle, Gdiplus::UnitPixel);
 
 		auto pStringFormat = Gdiplus::StringFormat::GenericTypographic();
 		Gdiplus::StringFormat stringFormat(pStringFormat);
@@ -512,7 +520,7 @@ private:
 #include <d2d1.h>
 #include <wincodec.h>
 
-class CFontBitmapDWrite // TODO
+class CFontBitmapDWrite
 {
 private:
 	CComPtr<ID2D1Factory>       m_pD2D1Factory;
@@ -550,7 +558,7 @@ public:
 		m_pD2D1Factory.Release();
 	}
 
-	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, const WCHAR* chars, UINT lenght)
+	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, DWORD fontFlags, const WCHAR* chars, UINT lenght)
 	{
 		m_pWICBitmap.Release();
 		m_charCoords.clear();
@@ -559,8 +567,8 @@ public:
 		HRESULT hr = m_pDWriteFactory->CreateTextFormat(
 			fontName,
 			nullptr,
-			DWRITE_FONT_WEIGHT_NORMAL,
-			DWRITE_FONT_STYLE_NORMAL,
+			(fontFlags & D3DFONT_BOLD)   ? DWRITE_FONT_WEIGHT_BOLD  : DWRITE_FONT_WEIGHT_NORMAL,
+			(fontFlags & D3DFONT_ITALIC) ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL,
 			DWRITE_FONT_STRETCH_NORMAL,
 			fontHeight,
 			L"", //locale

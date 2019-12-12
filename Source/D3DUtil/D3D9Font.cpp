@@ -65,24 +65,11 @@ inline auto Char2Index(WCHAR ch)
 // Desc: Font class constructor
 //-----------------------------------------------------------------------------
 CD3D9Font::CD3D9Font( const WCHAR* strFontName, DWORD dwHeight, DWORD dwFlags )
+	: m_dwFontHeight(dwHeight)
+	, m_dwFontFlags(dwFlags)
 {
-	wcsncpy_s( m_strFontName, strFontName, _countof(m_strFontName) );
-	m_strFontName[_countof(m_strFontName) - 1] = '\0';
-	m_dwFontHeight         = dwHeight;
-	m_dwFontFlags          = dwFlags;
-
-	m_dwTexWidth           = 0;
-	m_dwTexHeight          = 0;
-	m_fTextScale           = 0;
-	ZeroMemory(m_fTexCoords, sizeof(m_fTexCoords));
-	m_dwSpacing            = 0;
-
-	m_pd3dDevice           = nullptr;
-	m_pTexture             = nullptr;
-	m_pVB                  = nullptr;
-
-	m_pStateBlockSaved     = nullptr;
-	m_pStateBlockDrawText  = nullptr;
+	wcsncpy_s( m_strFontName, strFontName, std::size(m_strFontName) );
+	m_strFontName[std::size(m_strFontName) - 1] = '\0';
 
 	UINT idx = 0;
 	for (WCHAR ch = 0x0020; ch < 0x007F; ch++) {
@@ -114,7 +101,7 @@ CD3D9Font::~CD3D9Font()
 // Desc: Initializes device-dependent objects, including the vertex buffer used
 //       for rendering text and the texture map which stores the font image.
 //-----------------------------------------------------------------------------
-HRESULT CD3D9Font::InitDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice )
+HRESULT CD3D9Font::InitDeviceObjects( IDirect3DDevice9* pd3dDevice )
 {
 	HRESULT hr = S_OK;
 
@@ -135,14 +122,14 @@ HRESULT CD3D9Font::InitDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice )
 	CFontBitmapDWrite fontBitmap;
 #endif
 
-	hr = fontBitmap.Initialize(m_strFontName, m_dwFontHeight, m_Characters, std::size(m_Characters));
+	hr = fontBitmap.Initialize(m_strFontName, m_dwFontHeight, m_dwFontFlags, m_Characters, std::size(m_Characters));
 	if (FAILED(hr)) {
 		return hr;
 	}
 
-	m_dwTexWidth = fontBitmap.GetWidth();
-	m_dwTexHeight = fontBitmap.GetHeight();
-	if (m_dwTexWidth > d3dCaps.MaxTextureWidth || m_dwTexHeight > d3dCaps.MaxTextureHeight) {
+	m_uTexWidth  = fontBitmap.GetWidth();
+	m_uTexHeight = fontBitmap.GetHeight();
+	if (m_uTexWidth > d3dCaps.MaxTextureWidth || m_uTexHeight > d3dCaps.MaxTextureHeight) {
 		return E_FAIL;
 	}
 
@@ -152,7 +139,7 @@ HRESULT CD3D9Font::InitDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice )
 	}
 
 	// Create a new texture for the font
-	hr = m_pd3dDevice->CreateTexture( m_dwTexWidth, m_dwTexHeight, 1,
+	hr = m_pd3dDevice->CreateTexture( m_uTexWidth, m_uTexHeight, 1,
 									  D3DUSAGE_DYNAMIC, D3DFMT_A8L8,
 									  D3DPOOL_DEFAULT, &m_pTexture, nullptr );
 	if (FAILED(hr)) {
@@ -271,13 +258,11 @@ HRESULT CD3D9Font::RestoreDeviceObjects()
 // Name: InvalidateDeviceObjects()
 // Desc: Destroys all device-dependent objects
 //-----------------------------------------------------------------------------
-HRESULT CD3D9Font::InvalidateDeviceObjects()
+void CD3D9Font::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE( m_pVB );
 	SAFE_RELEASE( m_pStateBlockSaved );
 	SAFE_RELEASE( m_pStateBlockDrawText );
-
-	return S_OK;
 }
 
 
@@ -286,12 +271,10 @@ HRESULT CD3D9Font::InvalidateDeviceObjects()
 // Name: DeleteDeviceObjects()
 // Desc: Destroys all device-dependent objects
 //-----------------------------------------------------------------------------
-HRESULT CD3D9Font::DeleteDeviceObjects()
+void CD3D9Font::DeleteDeviceObjects()
 {
 	SAFE_RELEASE( m_pTexture );
 	m_pd3dDevice = nullptr;
-
-	return S_OK;
 }
 
 
@@ -307,7 +290,7 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 	}
 
 	FLOAT fRowWidth  = 0.0f;
-	FLOAT fRowHeight = (m_fTexCoords[0][3]-m_fTexCoords[0][1])*m_dwTexHeight;
+	FLOAT fRowHeight = (m_fTexCoords[0][3]-m_fTexCoords[0][1])*m_uTexHeight;
 	FLOAT fWidth     = 0.0f;
 	FLOAT fHeight    = fRowHeight;
 
@@ -325,7 +308,7 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 		FLOAT tx1 = m_fTexCoords[idx][0];
 		FLOAT tx2 = m_fTexCoords[idx][2];
 
-		fRowWidth += (tx2-tx1)*m_dwTexWidth - 2*m_dwSpacing;
+		fRowWidth += (tx2-tx1)*m_uTexWidth - 2*m_uSpacing;
 
 		if ( fRowWidth > fWidth ) {
 			fWidth = fRowWidth;
@@ -383,9 +366,9 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 			FLOAT tx1 = m_fTexCoords[idx][0];
 			FLOAT tx2 = m_fTexCoords[idx][2];
 
-			FLOAT w = (tx2-tx1) *  m_dwTexWidth / m_fTextScale;
+			FLOAT w = (tx2-tx1) *  m_uTexWidth / m_fTextScale;
 
-			xFinal += w - (2 * m_dwSpacing);
+			xFinal += w - (2 * m_uSpacing);
 		}
 
 		sx = (vp.Width-xFinal)/2.0f;
@@ -393,12 +376,12 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 	if ( dwFlags & D3DFONT_CENTERED_Y ) {
 		D3DVIEWPORT9 vp;
 		m_pd3dDevice->GetViewport( &vp );
-		float fLineHeight = ((m_fTexCoords[0][3]-m_fTexCoords[0][1])*m_dwTexHeight);
+		float fLineHeight = ((m_fTexCoords[0][3]-m_fTexCoords[0][1])*m_uTexHeight);
 		sy = (vp.Height-fLineHeight)/2;
 	}
 
 	// Adjust for character spacing
-	sx -= m_dwSpacing;
+	sx -= m_uSpacing;
 	FLOAT fStartX = sx;
 
 	// Fill vertex buffer
@@ -411,7 +394,7 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 
 		if ( c == '\n' ) {
 			sx = fStartX;
-			sy += (m_fTexCoords[0][3]-m_fTexCoords[0][1])*m_dwTexHeight;
+			sy += (m_fTexCoords[0][3]-m_fTexCoords[0][1])*m_uTexHeight;
 			continue;
 		}
 
@@ -422,8 +405,8 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 		FLOAT tx2 = m_fTexCoords[idx][2];
 		FLOAT ty2 = m_fTexCoords[idx][3];
 
-		FLOAT w = (tx2-tx1) *  m_dwTexWidth / m_fTextScale;
-		FLOAT h = (ty2-ty1) * m_dwTexHeight / m_fTextScale;
+		FLOAT w = (tx2-tx1) *  m_uTexWidth / m_fTextScale;
+		FLOAT h = (ty2-ty1) * m_uTexHeight / m_fTextScale;
 
 		if ( c != 0x0020 && c != 0x00A0) { // Space and No-Break Space
 			*pVertices++ = InitFont2DVertex( DirectX::XMFLOAT4(sx+0-0.5f,sy+h-0.5f,0.9f,1.0f), color, tx1, ty2 );
@@ -444,7 +427,7 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 			}
 		}
 
-		sx += w - (2 * m_dwSpacing);
+		sx += w - (2 * m_uSpacing);
 	}
 
 	// Unlock and render the vertex buffer

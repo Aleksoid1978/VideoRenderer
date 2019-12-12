@@ -102,6 +102,7 @@
     <ClInclude Include="D3DUtil\D3D11Geometry.h" />
     <ClInclude Include="D3DUtil\D3D9Font.h" />
     <ClInclude Include="D3DUtil\D3D9Geometry.h" />
+    <ClInclude Include="D3DUtil\D3DCommon.h" />
     <ClInclude Include="DX11Helper.h" />
     <ClInclude Include="DX11VideoProcessor.h" />
     <ClInclude Include="DX9Device.h" />
