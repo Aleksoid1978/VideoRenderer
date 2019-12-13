@@ -81,6 +81,9 @@
     <ClCompile Include="D3DUtil\D3D11Geometry.cpp">
       <Filter>D3DUtil</Filter>
     </ClCompile>
+    <ClCompile Include="D3DUtil\D3D11Font.cpp">
+      <Filter>D3DUtil</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -162,6 +165,9 @@
       <Filter>D3DUtil</Filter>
     </ClInclude>
     <ClInclude Include="D3DUtil\D3DCommon.h">
+      <Filter>D3DUtil</Filter>
+    </ClInclude>
+    <ClInclude Include="D3DUtil\D3D11Font.h">
       <Filter>D3DUtil</Filter>
     </ClInclude>
   </ItemGroup>

@@ -20,17 +20,10 @@
 
 #pragma once
 
+#include <d3d11.h>
 #include "D3DCommon.h"
 
-// Font creation flags
-#define D3DFONT_ZENABLE     0x0004
-
-// Font rendering flags
-#define D3DFONT_CENTERED_X  0x0001
-#define D3DFONT_CENTERED_Y  0x0002
-#define D3DFONT_FILTERED    0x0008
-
-class CD3D9Font
+class CD3D11Font
 {
 	// Font properties
 	WCHAR m_strFontName[80];
@@ -40,24 +33,19 @@ class CD3D9Font
 	WCHAR m_Characters[128];
 	FLOAT m_fTexCoords[128][4] = {};
 
-	IDirect3DDevice9*       m_pd3dDevice = nullptr; // A D3DDevice used for rendering
-	IDirect3DTexture9*      m_pTexture   = nullptr; // The d3d texture for this font
-	IDirect3DVertexBuffer9* m_pVB        = nullptr; // VertexBuffer for rendering text
-	UINT  m_uTexWidth  = 0;                   // Texture dimensions
+	ID3D11Device* m_pDevice = nullptr;
+	ID3D11DeviceContext* m_pDeviceContext = nullptr;
+	UINT  m_uTexWidth = 0;                   // Texture dimensions
 	UINT  m_uTexHeight = 0;
 	FLOAT m_fTextScale = 1.0f;
 
-	// Stateblocks for setting and restoring render states
-	IDirect3DStateBlock9* m_pStateBlockSaved    = nullptr;
-	IDirect3DStateBlock9* m_pStateBlockDrawText = nullptr;
-
 public:
 	// Constructor / destructor
-	CD3D9Font( const WCHAR* strFontName, DWORD dwHeight, DWORD dwFlags=0L );
-	~CD3D9Font();
+	CD3D11Font(const WCHAR* strFontName, DWORD dwHeight, DWORD dwFlags = 0L);
+	~CD3D11Font();
 
 	// Initializing and destroying device-dependent objects
-	HRESULT InitDeviceObjects(IDirect3DDevice9* pd3dDevice);
+	HRESULT InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 	HRESULT RestoreDeviceObjects();
 	void InvalidateDeviceObjects();
 	void DeleteDeviceObjects();
@@ -66,5 +54,5 @@ public:
 	HRESULT GetTextExtent(const WCHAR* strText, SIZE* pSize);
 
 	// 2D text drawing function
-	HRESULT Draw2DText(FLOAT sx, FLOAT sy, D3DCOLOR color, const WCHAR* strText, DWORD dwFlags=0L);
+	HRESULT Draw2DText(FLOAT sx, FLOAT sy, D3DCOLOR color, const WCHAR* strText, DWORD dwFlags = 0L);
 };
