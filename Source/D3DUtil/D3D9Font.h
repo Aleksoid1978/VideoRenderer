@@ -38,7 +38,7 @@ class CD3D9Font
 	DWORD m_dwFontFlags;
 
 	WCHAR m_Characters[128];
-	FLOAT m_fTexCoords[128][4] = {};
+	FloatRect m_fTexCoords[128] = {};
 
 	IDirect3DDevice9*       m_pd3dDevice = nullptr; // A D3DDevice used for rendering
 	IDirect3DTexture9*      m_pTexture   = nullptr; // The d3d texture for this font

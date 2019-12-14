@@ -133,7 +133,7 @@ HRESULT CD3D9Font::InitDeviceObjects( IDirect3DDevice9* pd3dDevice )
 		return E_FAIL;
 	}
 
-	hr = fontBitmap.GetFloatCoords((float*)&m_fTexCoords, std::size(m_Characters));
+	hr = fontBitmap.GetFloatCoords((FloatRect*)&m_fTexCoords, std::size(m_Characters));
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -290,7 +290,7 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 	}
 
 	FLOAT fRowWidth  = 0.0f;
-	FLOAT fRowHeight = (m_fTexCoords[0][3]-m_fTexCoords[0][1])*m_uTexHeight;
+	FLOAT fRowHeight = (m_fTexCoords[0].bottom - m_fTexCoords[0].top)*m_uTexHeight;
 	FLOAT fWidth     = 0.0f;
 	FLOAT fHeight    = fRowHeight;
 
@@ -305,8 +305,8 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 
 		auto idx = Char2Index(c);
 
-		FLOAT tx1 = m_fTexCoords[idx][0];
-		FLOAT tx2 = m_fTexCoords[idx][2];
+		FLOAT tx1 = m_fTexCoords[idx].left;
+		FLOAT tx2 = m_fTexCoords[idx].right;
 
 		fRowWidth += (tx2-tx1)*m_uTexWidth;
 
@@ -363,8 +363,8 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 
 			auto idx = Char2Index(c);
 
-			FLOAT tx1 = m_fTexCoords[idx][0];
-			FLOAT tx2 = m_fTexCoords[idx][2];
+			FLOAT tx1 = m_fTexCoords[idx].left;
+			FLOAT tx2 = m_fTexCoords[idx].right;
 
 			FLOAT w = (tx2-tx1) *  m_uTexWidth / m_fTextScale;
 
@@ -376,7 +376,7 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 	if ( dwFlags & D3DFONT_CENTERED_Y ) {
 		D3DVIEWPORT9 vp;
 		m_pd3dDevice->GetViewport( &vp );
-		float fLineHeight = ((m_fTexCoords[0][3]-m_fTexCoords[0][1])*m_uTexHeight);
+		float fLineHeight = ((m_fTexCoords[0].bottom - m_fTexCoords[0].top)*m_uTexHeight);
 		sy = (vp.Height-fLineHeight)/2;
 	}
 
@@ -393,16 +393,16 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 
 		if ( c == '\n' ) {
 			sx = fStartX;
-			sy += (m_fTexCoords[0][3]-m_fTexCoords[0][1])*m_uTexHeight;
+			sy += (m_fTexCoords[0].bottom - m_fTexCoords[0].top)*m_uTexHeight;
 			continue;
 		}
 
 		auto idx = Char2Index(c);
 
-		FLOAT tx1 = m_fTexCoords[idx][0];
-		FLOAT ty1 = m_fTexCoords[idx][1];
-		FLOAT tx2 = m_fTexCoords[idx][2];
-		FLOAT ty2 = m_fTexCoords[idx][3];
+		FLOAT tx1 = m_fTexCoords[idx].left;
+		FLOAT ty1 = m_fTexCoords[idx].top;
+		FLOAT tx2 = m_fTexCoords[idx].right;
+		FLOAT ty2 = m_fTexCoords[idx].bottom;
 
 		FLOAT w = (tx2-tx1) *  m_uTexWidth / m_fTextScale;
 		FLOAT h = (ty2-ty1) * m_uTexHeight / m_fTextScale;

@@ -203,7 +203,7 @@ public:
 		return m_bmHeight;
 	}
 
-	HRESULT GetFloatCoords(float* pTexCoords, const UINT lenght)
+	HRESULT GetFloatCoords(FloatRect* pTexCoords, const UINT lenght)
 	{
 		ASSERT(pTexCoords);
 
@@ -212,10 +212,12 @@ public:
 		}
 
 		for (const auto coord : m_charCoords) {
-			*pTexCoords++ = (float)coord.left   / m_bmWidth;
-			*pTexCoords++ = (float)coord.top    / m_bmHeight;
-			*pTexCoords++ = (float)coord.right  / m_bmWidth;
-			*pTexCoords++ = (float)coord.bottom / m_bmHeight;
+			*pTexCoords++ = {
+				(float)coord.left   / m_bmWidth,
+				(float)coord.top    / m_bmHeight,
+				(float)coord.right  / m_bmWidth,
+				(float)coord.bottom / m_bmHeight,
+			};
 		}
 
 		return S_OK;
@@ -399,7 +401,7 @@ public:
 		return m_pBitmap ? m_pBitmap->GetHeight() : 0;
 	}
 
-	HRESULT GetFloatCoords(float* pTexCoords, const UINT lenght)
+	HRESULT GetFloatCoords(FloatRect* pTexCoords, const UINT lenght)
 	{
 		ASSERT(pTexCoords);
 
@@ -411,10 +413,12 @@ public:
 		auto h = m_pBitmap->GetHeight();
 
 		for (const auto coord : m_charCoords) {
-			*pTexCoords++ = (float)coord.left   / w;
-			*pTexCoords++ = (float)coord.top    / h;
-			*pTexCoords++ = (float)coord.right  / w;
-			*pTexCoords++ = (float)coord.bottom / h;
+			*pTexCoords++ = {
+				(float)coord.left   / w,
+				(float)coord.top    / h,
+				(float)coord.right  / w,
+				(float)coord.bottom / h,
+			};
 		}
 
 		return S_OK;
@@ -703,7 +707,7 @@ public:
 		return 0;
 	}
 
-	HRESULT GetFloatCoords(float* pTexCoords, const UINT lenght)
+	HRESULT GetFloatCoords(FloatRect* pTexCoords, const UINT lenght)
 	{
 		ASSERT(pTexCoords);
 
@@ -718,10 +722,12 @@ public:
 		}
 
 		for (const auto coord : m_charCoords) {
-			*pTexCoords++ = (float)coord.left   / w;
-			*pTexCoords++ = (float)coord.top    / h;
-			*pTexCoords++ = (float)coord.right  / w;
-			*pTexCoords++ = (float)coord.bottom / h;
+			*pTexCoords++ = {
+				(float)coord.left   / w,
+				(float)coord.top    / h,
+				(float)coord.right  / w,
+				(float)coord.bottom / h,
+			};
 		}
 
 		return S_OK;

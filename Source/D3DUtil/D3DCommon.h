@@ -23,3 +23,11 @@
 // Font creation flags
 #define D3DFONT_BOLD        0x0001
 #define D3DFONT_ITALIC      0x0002
+
+struct FloatRect
+{
+	float left;
+	float top;
+	float right;
+	float bottom;
+};
