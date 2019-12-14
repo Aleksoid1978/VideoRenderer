@@ -114,13 +114,7 @@ HRESULT CD3D9Font::InitDeviceObjects( IDirect3DDevice9* pd3dDevice )
 	// required texture size is found to be larger than the device max
 	m_fTextScale  = 1.0f;
 
-#if FONTBITMAP_MODE == 0
-	CFontBitmapGDI fontBitmap;
-#elif FONTBITMAP_MODE == 1
-	CFontBitmapGDIPlus fontBitmap;
-#elif FONTBITMAP_MODE == 2
-	CFontBitmapDWrite fontBitmap;
-#endif
+	CFontBitmap fontBitmap;
 
 	hr = fontBitmap.Initialize(m_strFontName, m_dwFontHeight, m_dwFontFlags, m_Characters, std::size(m_Characters));
 	if (FAILED(hr)) {

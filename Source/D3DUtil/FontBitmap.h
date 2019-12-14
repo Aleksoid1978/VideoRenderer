@@ -22,8 +22,10 @@
 
 #include "D3DCommon.h"
 
+#ifndef FONTBITMAP_MODE
 #define FONTBITMAP_MODE 1
 // 0 - GDI, 1 - GDI+, 2 - DirectWrite
+#endif
 
 #define DUMP_BITMAP 0
 
@@ -250,6 +252,8 @@ public:
 		return S_OK;
 	}
 };
+
+typedef CFontBitmapGDI CFontBitmap;
 
 #elif FONTBITMAP_MODE == 1
 
@@ -517,6 +521,8 @@ private:
 		return (Gdiplus::Ok == status) ? S_OK : E_FAIL;
 	}
 };
+
+typedef CFontBitmapGDIPlus CFontBitmap;
 
 #elif FONTBITMAP_MODE == 2
 
@@ -850,5 +856,7 @@ private:
 		return hr;
 	}
 };
+
+typedef CFontBitmapDWrite CFontBitmap;
 
 #endif
