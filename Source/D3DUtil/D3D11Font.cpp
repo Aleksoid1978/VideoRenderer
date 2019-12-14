@@ -29,9 +29,8 @@
 
 #define MAX_NUM_VERTICES 400*6
 
-struct FONT2DVERTEX {
+struct VertexFont {
 	DirectX::XMFLOAT3 Pos;
-	DirectX::XMFLOAT4 Color;
 	DirectX::XMFLOAT2 Tex;
 };
 
@@ -75,13 +74,7 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 
 	// Keep a local copy of the device
 
-#if FONTBITMAP_MODE == 0
-	CFontBitmapGDI fontBitmap;
-#elif FONTBITMAP_MODE == 1
-	CFontBitmapGDIPlus fontBitmap;
-#elif FONTBITMAP_MODE == 2
-	CFontBitmapDWrite fontBitmap;
-#endif
+	CFontBitmap fontBitmap;
 
 	hr = fontBitmap.Initialize(m_strFontName, m_dwFontHeight, 0, m_Characters, std::size(m_Characters));
 	if (FAILED(hr)) {
@@ -90,6 +83,21 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 
 	m_uTexWidth = fontBitmap.GetWidth();
 	m_uTexHeight = fontBitmap.GetHeight();
+
+	LPVOID data;
+	DWORD size;
+	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VSH11_GEOMETRY));
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateVertexShader(data, size, nullptr, &m_pVertexShader));
+
+	static const D3D11_INPUT_ELEMENT_DESC vertexLayout[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateInputLayout(vertexLayout, std::size(vertexLayout), data, size, &m_pInputLayout));
+
+	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PSH11_GEOMETRY));
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPixelShader));
+
 
 	return hr;
 }
@@ -101,6 +109,10 @@ HRESULT CD3D11Font::RestoreDeviceObjects()
 
 void CD3D11Font::InvalidateDeviceObjects()
 {
+	SAFE_RELEASE(m_pVertexShader);
+	SAFE_RELEASE(m_pPixelShader);
+	SAFE_RELEASE(m_pInputLayout);
+
 	SAFE_RELEASE(m_pDeviceContext);
 	SAFE_RELEASE(m_pDevice);
 }

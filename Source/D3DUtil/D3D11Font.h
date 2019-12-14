@@ -35,6 +35,11 @@ class CD3D11Font
 
 	ID3D11Device* m_pDevice = nullptr;
 	ID3D11DeviceContext* m_pDeviceContext = nullptr;
+
+	ID3D11InputLayout*  m_pInputLayout  = nullptr;
+	ID3D11VertexShader* m_pVertexShader = nullptr;
+	ID3D11PixelShader*  m_pPixelShader  = nullptr;
+
 	UINT  m_uTexWidth = 0;                   // Texture dimensions
 	UINT  m_uTexHeight = 0;
 	FLOAT m_fTextScale = 1.0f;
