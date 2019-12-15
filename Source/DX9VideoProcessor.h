@@ -20,19 +20,14 @@
 
 #pragma once
 
-#define D3D9FONT_ENABLE 1
-
 #include <evr9.h> // for IMFVideoProcessor
 #include "IVideoRenderer.h"
 #include "Helper.h"
 #include "DX9Helper.h"
 #include "DXVA2VP.h"
 #include "FrameStats.h"
-
-#if D3D9FONT_ENABLE
 #include "D3DUtil/D3D9Font.h"
 #include "D3DUtil/D3D9Geometry.h"
-#endif
 
 class CMpcVideoRenderer;
 
@@ -136,12 +131,8 @@ private:
 	bool m_bSrcFromGPU = false;
 
 	Tex_t m_TexStats;
-#if D3D9FONT_ENABLE
 	CD3D9Font m_Font3D;
 	CD3D9Rectangle m_Rect3D;
-#else
-	CComPtr<IDirect3DSurface9> m_pMemOSDSurface;
-#endif
 
 	REFERENCE_TIME m_rtStart = 0;
 

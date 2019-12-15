@@ -178,9 +178,7 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTex
 // CDX9VideoProcessor
 
 CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
-#if D3D9FONT_ENABLE
 	: m_Font3D(L"Consolas", 14)
-#endif
 {
 	m_pFilter = pFilter;
 
@@ -323,16 +321,11 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 	}
 
 	HRESULT hr2 = m_TexStats.Create(m_pD3DDevEx, D3DFMT_A8R8G8B8, STATS_W, STATS_H, D3DUSAGE_RENDERTARGET);
-#if D3D9FONT_ENABLE
 	hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
 	if (S_OK == hr2) {
 		hr2 = m_Font3D.RestoreDeviceObjects();
 	}
 	hr2 = m_Rect3D.InitDeviceObjects(m_pD3DDevEx);
-#else
-	m_pMemOSDSurface.Release();
-	hr2 = m_pD3DDevEx->CreateOffscreenPlainSurface(STATS_W, STATS_H, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &m_pMemOSDSurface, nullptr);
-#endif
 
 	return hr;
 }
@@ -372,9 +365,6 @@ void CDX9VideoProcessor::ReleaseDevice()
 	ReleaseVP();
 
 	m_TexStats.Release();
-#if !D3D9FONT_ENABLE
-	m_pMemOSDSurface.Release();
-#endif
 
 	m_DXVA2VP.ReleaseVideoService();
 
@@ -388,11 +378,9 @@ void CDX9VideoProcessor::ReleaseDevice()
 	m_strShaderX = nullptr;
 	m_strShaderY = nullptr;
 
-#if D3D9FONT_ENABLE
 	m_Font3D.InvalidateDeviceObjects();
 	m_Font3D.DeleteDeviceObjects();
 	m_Rect3D.InvalidateDeviceObjects();
-#endif
 
 	m_pD3DDevEx.Release();
 }
@@ -1995,8 +1983,6 @@ HRESULT CDX9VideoProcessor::DrawStats()
 #endif
 
 	HRESULT hr = S_OK;
-
-#if D3D9FONT_ENABLE
 	CComPtr<IDirect3DSurface9> pRenderTarget;
 	hr = m_pD3DDevEx->GetRenderTarget(0, &pRenderTarget);
 	hr = m_pD3DDevEx->SetRenderTarget(0, m_TexStats.pSurface);
@@ -2016,20 +2002,6 @@ HRESULT CDX9VideoProcessor::DrawStats()
 
 	hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H), m_TexStats.pTexture);
 	m_pD3DDevEx->EndScene();
-#else
-	D3DLOCKED_RECT lockedRect;
-	hr = m_pMemOSDSurface->LockRect(&lockedRect, NULL, D3DLOCK_DISCARD);
-	if (S_OK == hr) {
-		m_pFilter->m_StatsDrawing.DrawTextW((BYTE*)lockedRect.pBits, lockedRect.Pitch, str);
-		m_pMemOSDSurface->UnlockRect();
-
-		hr = m_pD3DDevEx->UpdateSurface(m_pMemOSDSurface, nullptr, m_TexStats.pSurface, nullptr);
-
-		hr = m_pD3DDevEx->BeginScene();
-		hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H), m_TexStats.pTexture);
-		hr = m_pD3DDevEx->EndScene();
-	}
-#endif
 
 	return hr;
 }

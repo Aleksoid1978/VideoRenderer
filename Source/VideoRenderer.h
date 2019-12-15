@@ -97,7 +97,7 @@ private:
 
 	CMediaType m_inputMT;
 
-#if !(D3D9FONT_ENABLE && DIRECTWRITE_ENABLE)
+#if !DIRECTWRITE_ENABLE
 	CStatsDrawingGdiplus m_StatsDrawing;
 #endif
 
