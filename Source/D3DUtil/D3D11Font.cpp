@@ -55,7 +55,6 @@ CD3D11Font::CD3D11Font(const WCHAR* strFontName, DWORD dwHeight, DWORD dwFlags)
 CD3D11Font::~CD3D11Font()
 {
 	InvalidateDeviceObjects();
-	DeleteDeviceObjects();
 }
 
 HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
@@ -65,15 +64,13 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 		return E_POINTER;
 	}
 
+	// Keep a local copy of the device
 	m_pDevice = pDevice;
 	m_pDevice->AddRef();
 	m_pDeviceContext = pDeviceContext;
 	m_pDeviceContext->AddRef();
 
 	HRESULT hr = S_OK;
-
-	// Keep a local copy of the device
-
 	CFontBitmap fontBitmap;
 
 	hr = fontBitmap.Initialize(m_strFontName, m_dwFontHeight, 0, m_Characters, std::size(m_Characters));
@@ -98,13 +95,33 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PSH11_GEOMETRY));
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPixelShader));
 
+	D3D11_TEXTURE2D_DESC texDesc;
+	texDesc.Width = m_uTexWidth;
+	texDesc.Height = m_uTexHeight;
+	texDesc.MipLevels = 1;
+	texDesc.ArraySize = 1;
+	texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.SampleDesc.Quality = 0;
+	texDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	texDesc.CPUAccessFlags = 0;
+	texDesc.MiscFlags = 0;
+
+
+	void* pData = nullptr;
+	UINT uPitch = 0;
+	hr = fontBitmap.Lock(&pData, uPitch);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	D3D11_SUBRESOURCE_DATA subresData = { pData, uPitch, 0 };
+	hr = pDevice->CreateTexture2D(&texDesc, &subresData, &m_pTexture);
+
+	fontBitmap.Unlock();
 
 	return hr;
-}
-
-HRESULT CD3D11Font::RestoreDeviceObjects()
-{
-	return E_NOTIMPL;
 }
 
 void CD3D11Font::InvalidateDeviceObjects()
@@ -115,10 +132,6 @@ void CD3D11Font::InvalidateDeviceObjects()
 
 	SAFE_RELEASE(m_pDeviceContext);
 	SAFE_RELEASE(m_pDevice);
-}
-
-void CD3D11Font::DeleteDeviceObjects()
-{
 }
 
 HRESULT CD3D11Font::GetTextExtent(const WCHAR* strText, SIZE* pSize)

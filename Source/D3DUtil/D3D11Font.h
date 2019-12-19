@@ -39,6 +39,7 @@ class CD3D11Font
 	ID3D11InputLayout*  m_pInputLayout  = nullptr;
 	ID3D11VertexShader* m_pVertexShader = nullptr;
 	ID3D11PixelShader*  m_pPixelShader  = nullptr;
+	ID3D11Texture2D*    m_pTexture = nullptr;
 
 	UINT  m_uTexWidth = 0;                   // Texture dimensions
 	UINT  m_uTexHeight = 0;
@@ -51,9 +52,7 @@ public:
 
 	// Initializing and destroying device-dependent objects
 	HRESULT InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
-	HRESULT RestoreDeviceObjects();
 	void InvalidateDeviceObjects();
-	void DeleteDeviceObjects();
 
 	// Function to get extent of text
 	HRESULT GetTextExtent(const WCHAR* strText, SIZE* pSize);

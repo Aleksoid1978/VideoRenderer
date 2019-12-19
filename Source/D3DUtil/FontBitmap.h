@@ -251,6 +251,23 @@ public:
 
 		return S_OK;
 	}
+
+	HRESULT Lock(void** ppData, UINT& uStride)
+	{
+		if (!m_hBitmap || !m_pBitmapBits) {
+			return E_ABORT;
+		}
+
+		*ppData = m_pBitmapBits;
+		uStride = m_bmWidth * 4;
+
+		return S_OK;
+	}
+
+	void Unlock()
+	{
+		// nothing
+	}
 };
 
 typedef CFontBitmapGDI CFontBitmap;
@@ -272,6 +289,8 @@ private:
 
 	Gdiplus::Bitmap* m_pBitmap = nullptr;
 	std::vector<RECT> m_charCoords;
+
+	Gdiplus::BitmapData m_bitmapData;
 
 public:
 	CFontBitmapGDIPlus()
@@ -466,6 +485,35 @@ public:
 		return E_FAIL;
 	}
 
+	HRESULT Lock(void** ppData, UINT& uStride)
+	{
+		if (!m_pBitmap) {
+			return E_ABORT;
+		}
+
+		const UINT w = m_pBitmap->GetWidth();
+		const UINT h = m_pBitmap->GetHeight();
+		Gdiplus::Rect rect(0, 0, w, h);
+
+		Gdiplus::Status status = m_pBitmap->LockBits(&rect, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &m_bitmapData);
+
+		if (Gdiplus::Ok == status) {
+			*ppData = m_bitmapData.Scan0;
+			uStride = m_bitmapData.Stride;
+
+			return S_OK;
+		}
+
+		return E_FAIL;
+	}
+
+	void Unlock()
+	{
+		if (m_pBitmap) {
+			m_pBitmap->UnlockBits(&m_bitmapData);
+		}
+	}
+
 private:
 	HRESULT SaveBitmap(const WCHAR* filename)
 	{
@@ -537,7 +585,8 @@ private:
 	CComPtr<IDWriteFactory>     m_pDWriteFactory;
 	CComPtr<IWICImagingFactory> m_pWICFactory;
 
-	CComPtr<IWICBitmap> m_pWICBitmap;
+	CComPtr<IWICBitmap>     m_pWICBitmap;
+	CComPtr<IWICBitmapLock> m_pWICBitmapLock;
 	std::vector<RECT> m_charCoords;
 
 public:
@@ -563,6 +612,9 @@ public:
 
 	~CFontBitmapDWrite()
 	{
+		m_pWICBitmapLock.Release();
+		m_pWICBitmap.Release();
+
 		m_pWICFactory.Release();
 		m_pDWriteFactory.Release();
 		m_pD2D1Factory.Release();
@@ -570,6 +622,7 @@ public:
 
 	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, DWORD fontFlags, const WCHAR* chars, UINT lenght)
 	{
+		m_pWICBitmapLock.Release();
 		m_pWICBitmap.Release();
 		m_charCoords.clear();
 
@@ -785,6 +838,40 @@ public:
 		}
 
 		return hr;
+	}
+
+	HRESULT Lock(void** ppData, UINT& uStride)
+	{
+		if (!m_pWICBitmap || m_pWICBitmapLock) {
+			return E_ABORT;
+		}
+
+		UINT w, h;
+		HRESULT hr = m_pWICBitmap->GetSize(&w, &h);
+		if (FAILED(hr)) {
+			return hr;
+		}
+
+		WICRect rcLock = { 0, 0, w, h };
+		hr = m_pWICBitmap->Lock(&rcLock, WICBitmapLockRead, &m_pWICBitmapLock);
+		if (S_OK == hr) {
+			hr = m_pWICBitmapLock->GetStride(&uStride);
+			if (S_OK == hr) {
+				UINT cbBufferSize = 0;
+				WICInProcPointer* pbData = nullptr;
+				hr = m_pWICBitmapLock->GetDataPointer(&cbBufferSize, pbData);
+				if (S_OK == hr) {
+					*ppData = pbData;
+				}
+			}
+		}
+
+		return hr;
+	}
+
+	void Unlock()
+	{
+		m_pWICBitmapLock.Release();
 	}
 
 private:
