@@ -108,8 +108,7 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 	texDesc.CPUAccessFlags = 0;
 	texDesc.MiscFlags = 0;
 
-
-	void* pData = nullptr;
+	BYTE* pData = nullptr;
 	UINT uPitch = 0;
 	hr = fontBitmap.Lock(&pData, uPitch);
 	if (FAILED(hr)) {

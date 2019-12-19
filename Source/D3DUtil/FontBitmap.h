@@ -192,6 +192,23 @@ public:
 		SelectObject(m_hDC, hFontOld);
 		DeleteObject(hFont);
 
+		// set transparency
+		const UINT nPixels = m_bmWidth * m_bmHeight;
+		for (UINT i = 0; i < nPixels; i++) {
+			uint32_t pix = m_pBitmapBits[i];
+			uint32_t r = (pix & 0x00ff0000) >> 16;
+			uint32_t g = (pix & 0x0000ff00) >> 8;
+			uint32_t b = (pix & 0x000000ff);
+			uint32_t l = ((r * 1063 + g * 3576 + b * 361) / 5000);
+			m_pBitmapBits[i] = (l << 24) | (pix & 0x00ffffff); // the darker the more transparent
+		}
+
+#if _DEBUG && DUMP_BITMAP
+		if (S_OK == hr) {
+			SaveARGB32toBMP((BYTE*)m_pBitmapBits, m_bmWidth * 4, m_bmWidth, m_bmHeight, L"c:\\temp\\font_gdi_bitmap.bmp");
+		}
+#endif
+
 		return hr;
 	}
 
@@ -225,40 +242,13 @@ public:
 		return S_OK;
 	}
 
-	HRESULT CopyBitmapToA8L8(BYTE* pDst, int dst_pitch)
-	{
-		ASSERT(pDst && dst_pitch);
-
-		if (!m_hBitmap || !m_pBitmapBits) {
-			return E_ABORT;
-		}
-#if _DEBUG && DUMP_BITMAP
-		SaveARGB32toBMP((BYTE*)m_pBitmapBits, m_bmWidth*4, m_bmWidth, m_bmHeight, L"c:\\temp\\font_gdi_bitmap.bmp");
-#endif
-		BYTE* pSrc = (BYTE*)m_pBitmapBits;
-		UINT src_pitch = m_bmWidth * 4;
-
-		for (UINT y = 0; y < m_bmHeight; y++) {
-			uint32_t* pSrc32 = (uint32_t*)pSrc;
-			uint16_t* pDst16 = (uint16_t*)pDst;
-
-			for (UINT x = 0; x < m_bmWidth; x++) {
-				*pDst16++ = X8R8G8B8toA8L8(*pSrc32++);
-			}
-			pSrc += src_pitch;
-			pDst += dst_pitch;
-		}
-
-		return S_OK;
-	}
-
-	HRESULT Lock(void** ppData, UINT& uStride)
+	HRESULT Lock(BYTE** ppData, UINT& uStride)
 	{
 		if (!m_hBitmap || !m_pBitmapBits) {
 			return E_ABORT;
 		}
 
-		*ppData = m_pBitmapBits;
+		*ppData = (BYTE*)m_pBitmapBits;
 		uStride = m_bmWidth * 4;
 
 		return S_OK;
@@ -409,6 +399,9 @@ public:
 
 		if (Gdiplus::Ok == status) {
 			ASSERT(m_charCoords.size() == lenght);
+#if _DEBUG && DUMP_BITMAP
+			SaveBitmap(L"C:\\TEMP\\font_gdiplus_bitmap.png");
+#endif
 			return S_OK;
 		}
 		return E_FAIL;
@@ -447,45 +440,7 @@ public:
 		return S_OK;
 	}
 
-	HRESULT CopyBitmapToA8L8(BYTE* pDst, int dst_pitch)
-	{
-		ASSERT(pDst && dst_pitch);
-
-		if (!m_pBitmap) {
-			return E_ABORT;
-		}
-
-#if _DEBUG && DUMP_BITMAP
-		SaveBitmap(L"C:\\TEMP\\font_gdiplus_bitmap.png");
-#endif
-
-		Gdiplus::BitmapData bitmapData;
-		const UINT w = m_pBitmap->GetWidth();
-		const UINT h = m_pBitmap->GetHeight();
-		Gdiplus::Rect rect(0, 0, w, h);
-
-		if (Gdiplus::Ok == m_pBitmap->LockBits(&rect, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData)) {
-			BYTE* pSrc = (BYTE*)bitmapData.Scan0;
-
-			for (UINT y = 0; y < h; y++) {
-				uint32_t* pSrc32 = (uint32_t*)pSrc;
-				uint16_t* pDst16 = (uint16_t*)pDst;
-
-				for (UINT x = 0; x < w; x++) {
-					*pDst16++ = A8R8G8B8toA8L8(*pSrc32++);
-				}
-				pSrc += bitmapData.Stride;
-				pDst += dst_pitch;
-			}
-			m_pBitmap->UnlockBits(&bitmapData);
-
-			return S_OK;
-		}
-
-		return E_FAIL;
-	}
-
-	HRESULT Lock(void** ppData, UINT& uStride)
+	HRESULT Lock(BYTE** ppData, UINT& uStride)
 	{
 		if (!m_pBitmap) {
 			return E_ABORT;
@@ -498,7 +453,7 @@ public:
 		Gdiplus::Status status = m_pBitmap->LockBits(&rect, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &m_bitmapData);
 
 		if (Gdiplus::Ok == status) {
-			*ppData = m_bitmapData.Scan0;
+			*ppData = (BYTE*)m_bitmapData.Scan0;
 			uStride = m_bitmapData.Stride;
 
 			return S_OK;
@@ -739,6 +694,12 @@ public:
 
 		pTextFormat.Release();
 
+#if _DEBUG && DUMP_BITMAP
+		if (S_OK == hr) {
+			SaveBitmap(L"C:\\TEMP\\font_directwrite_bitmap.png");
+		}
+#endif
+
 		return hr;
 	}
 
@@ -792,55 +753,7 @@ public:
 		return S_OK;
 	}
 
-	HRESULT CopyBitmapToA8L8(BYTE* pDst, int dst_pitch)
-	{
-		ASSERT(pDst && dst_pitch);
-
-		if (!m_pWICBitmap) {
-			return E_ABORT;
-		}
-
-		UINT w, h;
-		HRESULT hr = m_pWICBitmap->GetSize(&w, &h);
-		if (FAILED(hr)) {
-			return hr;
-		}
-
-#if _DEBUG && DUMP_BITMAP
-		SaveBitmap(L"C:\\TEMP\\font_directwrite_bitmap.png");
-#endif
-
-		WICRect rcLock = { 0, 0, w, h };
-		IWICBitmapLock *pLock = nullptr;
-		hr = m_pWICBitmap->Lock(&rcLock, WICBitmapLockRead, &pLock);
-		if (S_OK == hr) {
-			UINT cbStride = 0;
-			UINT cbBufferSize = 0;
-			BYTE* pSrc = nullptr;
-			hr = pLock->GetStride(&cbStride);
-			if (S_OK == hr) {
-				hr = pLock->GetDataPointer(&cbBufferSize, &pSrc);
-			}
-
-			if (S_OK == hr) {
-				for (UINT y = 0; y < h; y++) {
-					uint32_t* pSrc32 = (uint32_t*)pSrc;
-					uint16_t* pDst16 = (uint16_t*)pDst;
-
-					for (UINT x = 0; x < w; x++) {
-						*pDst16++ = A8R8G8B8toA8L8(*pSrc32++);
-					}
-					pSrc += cbStride;
-					pDst += dst_pitch;
-				}
-			}
-			pLock->Release();
-		}
-
-		return hr;
-	}
-
-	HRESULT Lock(void** ppData, UINT& uStride)
+	HRESULT Lock(BYTE** ppData, UINT& uStride)
 	{
 		if (!m_pWICBitmap || m_pWICBitmapLock) {
 			return E_ABORT;
@@ -858,11 +771,7 @@ public:
 			hr = m_pWICBitmapLock->GetStride(&uStride);
 			if (S_OK == hr) {
 				UINT cbBufferSize = 0;
-				WICInProcPointer* pbData = nullptr;
-				hr = m_pWICBitmapLock->GetDataPointer(&cbBufferSize, pbData);
-				if (S_OK == hr) {
-					*ppData = pbData;
-				}
+				hr = m_pWICBitmapLock->GetDataPointer(&cbBufferSize, ppData);
 			}
 		}
 

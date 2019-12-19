@@ -144,7 +144,22 @@ HRESULT CD3D9Font::InitDeviceObjects( IDirect3DDevice9* pd3dDevice )
 	D3DLOCKED_RECT d3dlr;
 	hr = m_pTexture->LockRect(0, &d3dlr, nullptr, D3DLOCK_DISCARD);
 	if (S_OK == hr) {
-		hr = fontBitmap.CopyBitmapToA8L8((BYTE*)d3dlr.pBits, d3dlr.Pitch);
+		BYTE* pSrc = nullptr;
+		UINT uStride = 0;
+		hr = fontBitmap.Lock(&pSrc, uStride);
+		if (S_OK == hr) {
+			BYTE* pDst = (BYTE*)d3dlr.pBits;
+			for (UINT y = 0; y < m_uTexHeight; y++) {
+				uint32_t* pSrc32 = (uint32_t*)pSrc;
+				uint16_t* pDst16 = (uint16_t*)pDst;
+
+				for (UINT x = 0; x < m_uTexWidth; x++) {
+					*pDst16++ = A8R8G8B8toA8L8(*pSrc32++);
+				}
+				pSrc += uStride;
+				pDst += d3dlr.Pitch;
+			}
+		}
 		m_pTexture->UnlockRect(0);
 	}
 
