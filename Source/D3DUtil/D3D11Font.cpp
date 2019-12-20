@@ -34,6 +34,17 @@ struct VertexFont {
 	DirectX::XMFLOAT2 Tex;
 };
 
+inline auto Char2Index(WCHAR ch)
+{
+	if (ch >= 0x0020 && ch <= 0x007F) {
+		return ch - 32;
+	}
+	if (ch >= 0x00A0 && ch <= 0x00BF) {
+		return ch - 64;
+	}
+	return 0x007F - 32;
+}
+
 CD3D11Font::CD3D11Font(const WCHAR* strFontName, DWORD dwHeight, DWORD dwFlags)
 	: m_dwFontHeight(dwHeight)
 	, m_dwFontFlags(dwFlags)
@@ -117,17 +128,69 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 
 	D3D11_SUBRESOURCE_DATA subresData = { pData, uPitch, 0 };
 	hr = pDevice->CreateTexture2D(&texDesc, &subresData, &m_pTexture);
-
 	fontBitmap.Unlock();
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateShaderResourceView(m_pTexture, &srvDesc, &m_pShaderResource));
+
+	// create the vertex array
+	std::vector<VertexFont> vertices;
+	vertices.resize(MAX_NUM_VERTICES);
+
+	D3D11_BUFFER_DESC vertexBufferDesc;
+	vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	vertexBufferDesc.ByteWidth = sizeof(VertexFont) * MAX_NUM_VERTICES;
+	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	vertexBufferDesc.MiscFlags = 0;
+	vertexBufferDesc.StructureByteStride = 0;
+	D3D11_SUBRESOURCE_DATA vertexData = { vertices.data(), 0, 0 };
+
+	hr = m_pDevice->CreateBuffer(&vertexBufferDesc, &vertexData, &m_pVertexBuffer);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	// create the index array
+	std::vector<uint32_t> indices;
+	indices.reserve(MAX_NUM_VERTICES);
+	for (uint32_t i = 0; i < indices.size(); i++) {
+		indices.emplace_back(i);
+	}
+
+	D3D11_BUFFER_DESC indexBufferDesc;
+	indexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	indexBufferDesc.ByteWidth = sizeof(uint32_t) * MAX_NUM_VERTICES;
+	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBufferDesc.CPUAccessFlags = 0;
+	indexBufferDesc.MiscFlags = 0;
+	indexBufferDesc.StructureByteStride = 0;
+
+	D3D11_SUBRESOURCE_DATA indexData = { indices.data(), 0, 0 };
+
+	hr = m_pDevice->CreateBuffer(&indexBufferDesc, &indexData, &m_pIndexBuffer);
 
 	return hr;
 }
 
 void CD3D11Font::InvalidateDeviceObjects()
 {
+
+	SAFE_RELEASE(m_pTexture);
+	SAFE_RELEASE(m_pShaderResource);
+
 	SAFE_RELEASE(m_pVertexShader);
 	SAFE_RELEASE(m_pPixelShader);
 	SAFE_RELEASE(m_pInputLayout);
+	SAFE_RELEASE(m_pVertexBuffer);
+	SAFE_RELEASE(m_pIndexBuffer);
 
 	SAFE_RELEASE(m_pDeviceContext);
 	SAFE_RELEASE(m_pDevice);
@@ -135,10 +198,44 @@ void CD3D11Font::InvalidateDeviceObjects()
 
 HRESULT CD3D11Font::GetTextExtent(const WCHAR* strText, SIZE* pSize)
 {
-	return E_NOTIMPL;
+	if (nullptr == strText || nullptr == pSize) {
+		return E_FAIL;
+	}
+
+	FLOAT fRowWidth = 0.0f;
+	FLOAT fRowHeight = (m_fTexCoords[0].bottom - m_fTexCoords[0].top)*m_uTexHeight;
+	FLOAT fWidth = 0.0f;
+	FLOAT fHeight = fRowHeight;
+
+	while (*strText) {
+		WCHAR c = *strText++;
+
+		if (c == '\n') {
+			fRowWidth = 0.0f;
+			fHeight += fRowHeight;
+			continue;
+		}
+
+		auto idx = Char2Index(c);
+
+		FLOAT tx1 = m_fTexCoords[idx].left;
+		FLOAT tx2 = m_fTexCoords[idx].right;
+
+		fRowWidth += (tx2 - tx1)*m_uTexWidth;
+
+		if (fRowWidth > fWidth) {
+			fWidth = fRowWidth;
+		}
+	}
+
+	pSize->cx = (LONG)fWidth;
+	pSize->cy = (LONG)fHeight;
+
+	return S_OK;
 }
 
 HRESULT CD3D11Font::Draw2DText(FLOAT sx, FLOAT sy, D3DCOLOR color, const WCHAR* strText, DWORD dwFlags)
 {
+	// TODO
 	return E_NOTIMPL;
 }

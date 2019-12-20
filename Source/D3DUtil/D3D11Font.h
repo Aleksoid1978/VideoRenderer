@@ -31,15 +31,18 @@ class CD3D11Font
 	DWORD m_dwFontFlags;
 
 	WCHAR m_Characters[128];
-	FLOAT m_fTexCoords[128][4] = {};
+	FloatRect m_fTexCoords[128] = {};
 
 	ID3D11Device* m_pDevice = nullptr;
 	ID3D11DeviceContext* m_pDeviceContext = nullptr;
 
-	ID3D11InputLayout*  m_pInputLayout  = nullptr;
-	ID3D11VertexShader* m_pVertexShader = nullptr;
-	ID3D11PixelShader*  m_pPixelShader  = nullptr;
-	ID3D11Texture2D*    m_pTexture = nullptr;
+	ID3D11InputLayout*        m_pInputLayout    = nullptr;
+	ID3D11VertexShader*       m_pVertexShader   = nullptr;
+	ID3D11PixelShader*        m_pPixelShader    = nullptr;
+	ID3D11Texture2D*          m_pTexture        = nullptr;
+	ID3D11ShaderResourceView* m_pShaderResource = nullptr;
+	ID3D11Buffer*             m_pVertexBuffer   = nullptr;
+	ID3D11Buffer*             m_pIndexBuffer    = nullptr;
 
 	UINT  m_uTexWidth = 0;                   // Texture dimensions
 	UINT  m_uTexHeight = 0;
