@@ -159,6 +159,7 @@ HRESULT CD3D9Font::InitDeviceObjects( IDirect3DDevice9* pd3dDevice )
 				pSrc += uStride;
 				pDst += d3dlr.Pitch;
 			}
+			fontBitmap.Unlock();
 		}
 		m_pTexture->UnlockRect(0);
 	}
