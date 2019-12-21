@@ -94,16 +94,16 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 
 	LPVOID data;
 	DWORD size;
-	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VSH11_GEOMETRY));
+	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VSH11_FONT));
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateVertexShader(data, size, nullptr, &m_pVertexShader));
 
 	static const D3D11_INPUT_ELEMENT_DESC vertexLayout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateInputLayout(vertexLayout, std::size(vertexLayout), data, size, &m_pInputLayout));
 
-	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PSH11_GEOMETRY));
+	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PSH11_FONT));
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPixelShader));
 
 	D3D11_TEXTURE2D_DESC texDesc;
@@ -234,7 +234,7 @@ HRESULT CD3D11Font::GetTextExtent(const WCHAR* strText, SIZE* pSize)
 	return S_OK;
 }
 
-HRESULT CD3D11Font::Draw2DText(FLOAT sx, FLOAT sy, D3DCOLOR color, const WCHAR* strText, DWORD dwFlags)
+HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, UINT w, UINT h, FLOAT sx, FLOAT sy, D3DCOLOR color, const WCHAR* strText)
 {
 	// TODO
 	return E_NOTIMPL;

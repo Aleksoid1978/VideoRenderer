@@ -55,6 +55,8 @@ IDF_VSH11_SIMPLE                FILE                    "..\\bin\\shaders\\vs_si
 IDF_PSH11_SIMPLE                FILE                    "..\\bin\\shaders\\ps_simple.cso"
 IDF_VSH11_GEOMETRY              FILE                    "..\\bin\\shaders\\vs_geometry.cso"
 IDF_PSH11_GEOMETRY              FILE                    "..\\bin\\shaders\\ps_geometry.cso"
+IDF_VSH11_FONT                  FILE                    "..\\bin\\shaders\\vs_font.cso"
+IDF_PSH11_FONT                  FILE                    "..\\bin\\shaders\\ps_font.cso"
 IDF_PSH11_CONVERT_COLOR         FILE                    "..\\bin\\shaders\\ps_convert_color.cso"
 IDF_PSH11_CONVERT_YUY2          FILE                    "..\\bin\\shaders\\ps_convert_yuy2.cso"
 IDF_PSH11_CONVERT_BIPLANAR      FILE                    "..\\bin\\shaders\\ps_convert_biplanar.cso"

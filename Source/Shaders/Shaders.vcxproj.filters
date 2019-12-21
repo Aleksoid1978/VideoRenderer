@@ -108,6 +108,12 @@
     <FxCompile Include="d3d11\vs_geometry.hlsl">
       <Filter>d3d11</Filter>
     </FxCompile>
+    <FxCompile Include="d3d11\ps_font.hlsl">
+      <Filter>d3d11</Filter>
+    </FxCompile>
+    <FxCompile Include="d3d11\vs_font.hlsl">
+      <Filter>d3d11</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="convert\hdr_tone_mapping.hlsl">
