@@ -45,7 +45,7 @@ class CD3D9Font
 	IDirect3DVertexBuffer9* m_pVB        = nullptr; // VertexBuffer for rendering text
 	UINT  m_uTexWidth  = 0;                   // Texture dimensions
 	UINT  m_uTexHeight = 0;
-	FLOAT m_fTextScale = 1.0f;
+	float m_fTextScale = 1.0f;
 
 	// Stateblocks for setting and restoring render states
 	IDirect3DStateBlock9* m_pStateBlockSaved    = nullptr;
@@ -53,7 +53,7 @@ class CD3D9Font
 
 public:
 	// Constructor / destructor
-	CD3D9Font( const WCHAR* strFontName, DWORD dwHeight, DWORD dwFlags=0L );
+	CD3D9Font( const WCHAR* strFontName, const DWORD dwHeight, const DWORD dwFlags=0L );
 	~CD3D9Font();
 
 	// Initializing and destroying device-dependent objects
@@ -66,5 +66,5 @@ public:
 	HRESULT GetTextExtent(const WCHAR* strText, SIZE* pSize);
 
 	// 2D text drawing function
-	HRESULT Draw2DText(FLOAT sx, FLOAT sy, D3DCOLOR color, const WCHAR* strText, DWORD dwFlags=0L);
+	HRESULT Draw2DText(float sx, float sy, const D3DCOLOR color, const WCHAR* strText, const DWORD dwFlags=0L);
 };

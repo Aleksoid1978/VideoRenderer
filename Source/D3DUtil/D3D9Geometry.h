@@ -21,11 +21,12 @@
 #pragma once
 
 #include <d3d9.h>
+#include <DirectXMath.h>
 #include <vector>
 #include "Helper.h"
 
 struct POINTVERTEX {
-	FLOAT x, y, z, rhw;
+	DirectX::XMFLOAT4 pos;
 	DWORD color;
 };
 
@@ -64,12 +65,12 @@ public:
 
 		m_bAlphaBlend = (color >> 24) < 0xFF;
 
-		m_Vertices[0] = { x1, y1, 0.5f, 1.0f, color };
-		m_Vertices[1] = { x2, y2, 0.5f, 1.0f, color };
-		m_Vertices[2] = { x3, y3, 0.5f, 1.0f, color };
-		m_Vertices[3] = { x1, y1, 0.5f, 1.0f, color };
-		m_Vertices[4] = { x3, y3, 0.5f, 1.0f, color };
-		m_Vertices[5] = { x4, y4, 0.5f, 1.0f, color };
+		m_Vertices[0] = { {x1, y1, 0.5f, 1.0f}, color };
+		m_Vertices[1] = { {x2, y2, 0.5f, 1.0f}, color };
+		m_Vertices[2] = { {x3, y3, 0.5f, 1.0f}, color };
+		m_Vertices[3] = { {x1, y1, 0.5f, 1.0f}, color };
+		m_Vertices[4] = { {x3, y3, 0.5f, 1.0f}, color };
+		m_Vertices[5] = { {x4, y4, 0.5f, 1.0f}, color };
 
 		if (m_pVertexBuffer) {
 			VOID* pVertices;
@@ -201,7 +202,7 @@ public:
 		m_Vertices.clear();
 		m_Vertices.reserve(poins.size());
 		for (const auto& point : poins) {
-			m_Vertices.emplace_back(POINTVERTEX{ (FLOAT)point.x, (FLOAT)point.y, 0.5f, 1.0f, color });
+			m_Vertices.emplace_back(POINTVERTEX{ {(float)point.x, (float)point.y, 0.5f, 1.0f}, color });
 		}
 
 		UINT vertexSize = m_Vertices.size() * sizeof(POINTVERTEX);

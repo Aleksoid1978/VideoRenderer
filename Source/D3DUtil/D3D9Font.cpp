@@ -31,23 +31,12 @@
 #define MAX_NUM_VERTICES 400*6
 
 struct FONT2DVERTEX {
-	DirectX::XMFLOAT4 p;
+	DirectX::XMFLOAT4 pos;
 	DWORD color;
-	FLOAT tu, tv;
+	DirectX::XMFLOAT2 tex;
 };
 
 #define D3DFVF_FONT2DVERTEX (D3DFVF_XYZRHW|D3DFVF_DIFFUSE|D3DFVF_TEX1)
-
-inline FONT2DVERTEX InitFont2DVertex( const DirectX::XMFLOAT4& p, D3DCOLOR color,
-									  FLOAT tu, FLOAT tv )
-{
-	FONT2DVERTEX v;
-	v.p = p;
-	v.color = color;
-	v.tu = tu;
-	v.tv = tv;
-	return v;
-}
 
 inline auto Char2Index(WCHAR ch)
 {
@@ -64,7 +53,7 @@ inline auto Char2Index(WCHAR ch)
 // Name: CD3D9Font()
 // Desc: Font class constructor
 //-----------------------------------------------------------------------------
-CD3D9Font::CD3D9Font( const WCHAR* strFontName, DWORD dwHeight, DWORD dwFlags )
+CD3D9Font::CD3D9Font( const WCHAR* strFontName, const DWORD dwHeight, const DWORD dwFlags )
 	: m_dwFontHeight(dwHeight)
 	, m_dwFontFlags(dwFlags)
 {
@@ -299,10 +288,10 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 		return E_FAIL;
 	}
 
-	FLOAT fRowWidth  = 0.0f;
-	FLOAT fRowHeight = (m_fTexCoords[0].bottom - m_fTexCoords[0].top)*m_uTexHeight;
-	FLOAT fWidth     = 0.0f;
-	FLOAT fHeight    = fRowHeight;
+	float fRowWidth  = 0.0f;
+	float fRowHeight = (m_fTexCoords[0].bottom - m_fTexCoords[0].top)*m_uTexHeight;
+	float fWidth     = 0.0f;
+	float fHeight    = fRowHeight;
 
 	while ( *strText ) {
 		WCHAR c = *strText++;
@@ -313,10 +302,10 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 			continue;
 		}
 
-		auto idx = Char2Index(c);
+		const auto idx = Char2Index(c);
 
-		FLOAT tx1 = m_fTexCoords[idx].left;
-		FLOAT tx2 = m_fTexCoords[idx].right;
+		const float tx1 = m_fTexCoords[idx].left;
+		const float tx2 = m_fTexCoords[idx].right;
 
 		fRowWidth += (tx2-tx1)*m_uTexWidth;
 
@@ -337,8 +326,8 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 // Name: DrawText()
 // Desc: Draws 2D text. Note that sx and sy are in pixels
 //-----------------------------------------------------------------------------
-HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
-							const WCHAR* strText, DWORD dwFlags )
+HRESULT CD3D9Font::Draw2DText( float sx, float sy, const D3DCOLOR color,
+							const WCHAR* strText, const DWORD dwFlags )
 {
 	if ( m_pd3dDevice == nullptr ) {
 		return E_FAIL;
@@ -357,6 +346,8 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 		m_pd3dDevice->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR );
 	}
 
+	const float fLineHeight = (m_fTexCoords[0].bottom - m_fTexCoords[0].top)*m_uTexHeight;
+
 	// Center the text block in the viewport
 	if ( dwFlags & D3DFONT_CENTERED_X ) {
 		D3DVIEWPORT9 vp;
@@ -371,12 +362,12 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 				break;    // Isn't supported.
 			}
 
-			auto idx = Char2Index(c);
+			const auto idx = Char2Index(c);
 
-			FLOAT tx1 = m_fTexCoords[idx].left;
-			FLOAT tx2 = m_fTexCoords[idx].right;
+			const float tx1 = m_fTexCoords[idx].left;
+			const float tx2 = m_fTexCoords[idx].right;
 
-			FLOAT w = (tx2-tx1) *  m_uTexWidth / m_fTextScale;
+			const float w = (tx2-tx1) *  m_uTexWidth / m_fTextScale;
 
 			xFinal += w;
 		}
@@ -386,16 +377,15 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 	if ( dwFlags & D3DFONT_CENTERED_Y ) {
 		D3DVIEWPORT9 vp;
 		m_pd3dDevice->GetViewport( &vp );
-		float fLineHeight = ((m_fTexCoords[0].bottom - m_fTexCoords[0].top)*m_uTexHeight);
 		sy = (vp.Height-fLineHeight)/2;
 	}
 
 	// Adjust for character spacing
-	FLOAT fStartX = sx;
+	const float fStartX = sx;
 
 	// Fill vertex buffer
 	FONT2DVERTEX* pVertices = nullptr;
-	DWORD         dwNumTriangles = 0;
+	UINT uNumTriangles = 0;
 	m_pVB->Lock( 0, 0, (void**)&pVertices, D3DLOCK_DISCARD );
 
 	while ( *strText ) {
@@ -403,36 +393,41 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 
 		if ( c == '\n' ) {
 			sx = fStartX;
-			sy += (m_fTexCoords[0].bottom - m_fTexCoords[0].top)*m_uTexHeight;
+			sy += fLineHeight;
 			continue;
 		}
 
-		auto idx = Char2Index(c);
+		const auto idx = Char2Index(c);
 
-		FLOAT tx1 = m_fTexCoords[idx].left;
-		FLOAT ty1 = m_fTexCoords[idx].top;
-		FLOAT tx2 = m_fTexCoords[idx].right;
-		FLOAT ty2 = m_fTexCoords[idx].bottom;
+		const float tx1 = m_fTexCoords[idx].left;
+		const float ty1 = m_fTexCoords[idx].top;
+		const float tx2 = m_fTexCoords[idx].right;
+		const float ty2 = m_fTexCoords[idx].bottom;
 
-		FLOAT w = (tx2-tx1) *  m_uTexWidth / m_fTextScale;
-		FLOAT h = (ty2-ty1) * m_uTexHeight / m_fTextScale;
+		const float w = (tx2-tx1) *  m_uTexWidth / m_fTextScale;
+		const float h = (ty2-ty1) * m_uTexHeight / m_fTextScale;
+
+		const float left   = sx - 0.5f;
+		const float right  = sx + w - 0.5f;
+		const float top    = sy - 0.5f;
+		const float bottom = sy + h - 0.5f;
 
 		if ( c != 0x0020 && c != 0x00A0) { // Space and No-Break Space
-			*pVertices++ = InitFont2DVertex( DirectX::XMFLOAT4(sx+0-0.5f,sy+h-0.5f,0.9f,1.0f), color, tx1, ty2 );
-			*pVertices++ = InitFont2DVertex( DirectX::XMFLOAT4(sx+0-0.5f,sy+0-0.5f,0.9f,1.0f), color, tx1, ty1 );
-			*pVertices++ = InitFont2DVertex( DirectX::XMFLOAT4(sx+w-0.5f,sy+h-0.5f,0.9f,1.0f), color, tx2, ty2 );
-			*pVertices++ = InitFont2DVertex( DirectX::XMFLOAT4(sx+w-0.5f,sy+0-0.5f,0.9f,1.0f), color, tx2, ty1 );
-			*pVertices++ = InitFont2DVertex( DirectX::XMFLOAT4(sx+w-0.5f,sy+h-0.5f,0.9f,1.0f), color, tx2, ty2 );
-			*pVertices++ = InitFont2DVertex( DirectX::XMFLOAT4(sx+0-0.5f,sy+0-0.5f,0.9f,1.0f), color, tx1, ty1 );
-			dwNumTriangles += 2;
+			*pVertices++ = { {left , bottom, 0.9f, 1.0f}, color, {tx1, ty2} };
+			*pVertices++ = { {left , top,    0.9f, 1.0f}, color, {tx1, ty1} };
+			*pVertices++ = { {right, bottom, 0.9f, 1.0f}, color, {tx2, ty2} };
+			*pVertices++ = { {right, top,    0.9f, 1.0f}, color, {tx2, ty1} };
+			*pVertices++ = { {right, bottom, 0.9f, 1.0f}, color, {tx2, ty2} };
+			*pVertices++ = { {left , top,    0.9f, 1.0f}, color, {tx1, ty1} };
+			uNumTriangles += 2;
 
-			if ( dwNumTriangles*3 > (MAX_NUM_VERTICES-6) ) {
+			if ( uNumTriangles*3 > (MAX_NUM_VERTICES-6) ) {
 				// Unlock, render, and relock the vertex buffer
 				m_pVB->Unlock();
-				m_pd3dDevice->DrawPrimitive( D3DPT_TRIANGLELIST, 0, dwNumTriangles );
+				m_pd3dDevice->DrawPrimitive( D3DPT_TRIANGLELIST, 0, uNumTriangles );
 				pVertices = nullptr;
 				m_pVB->Lock( 0, 0, (void**)&pVertices, D3DLOCK_DISCARD );
-				dwNumTriangles = 0L;
+				uNumTriangles = 0;
 			}
 		}
 
@@ -441,8 +436,8 @@ HRESULT CD3D9Font::Draw2DText( FLOAT sx, FLOAT sy, D3DCOLOR color,
 
 	// Unlock and render the vertex buffer
 	m_pVB->Unlock();
-	if ( dwNumTriangles > 0 ) {
-		m_pd3dDevice->DrawPrimitive( D3DPT_TRIANGLELIST, 0, dwNumTriangles );
+	if ( uNumTriangles > 0 ) {
+		m_pd3dDevice->DrawPrimitive( D3DPT_TRIANGLELIST, 0, uNumTriangles );
 	}
 
 	// Restore the modified renderstates
