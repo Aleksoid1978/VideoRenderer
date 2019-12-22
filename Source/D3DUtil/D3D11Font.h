@@ -61,5 +61,5 @@ public:
 	HRESULT GetTextExtent(const WCHAR* strText, SIZE* pSize);
 
 	// 2D text drawing function
-	HRESULT Draw2DText(ID3D11RenderTargetView* pRenderTargetView, UINT w, UINT h, FLOAT sx, FLOAT sy, D3DCOLOR color, const WCHAR* strText);
+	HRESULT Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const SIZE& rtSize, FLOAT sx, FLOAT sy, D3DCOLOR color, const WCHAR* strText);
 };

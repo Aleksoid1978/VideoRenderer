@@ -49,7 +49,7 @@ public:
 	void InvalidateDeviceObjects();
 
 	HRESULT Set(const float x1, const float y1, const float x2, const float y2, const float x3, const float y3, const float x4, const float y4, const D3DCOLOR color);
-	HRESULT Draw(ID3D11RenderTargetView* pRenderTargetView, UINT w, UINT h);
+	HRESULT Draw(ID3D11RenderTargetView* pRenderTargetView, const SIZE& rtSize);
 };
 
 
@@ -59,12 +59,12 @@ private:
 	using CD3D11Quadrilateral::Set;
 
 public:
-	HRESULT Set(const RECT& rect, const SIZE& size, const D3DCOLOR color)
+	HRESULT Set(const RECT& rect, const SIZE& rtSize, const D3DCOLOR color)
 	{
-		const float left   = (float)(rect.left*2) / size.cx - 1;
-		const float top    = (float)(rect.top*2) / size.cy - 1;
-		const float right  = (float)(rect.right*2) / size.cx - 1;
-		const float bottom = (float)(rect.bottom*2) / size.cy - 1;
+		const float left   = (float)(rect.left*2)   / rtSize.cx - 1;
+		const float top    = (float)(rect.top*2)    / rtSize.cy - 1;
+		const float right  = (float)(rect.right*2)  / rtSize.cx - 1;
+		const float bottom = (float)(rect.bottom*2) / rtSize.cy - 1;
 
 		return CD3D11Quadrilateral::Set(left, top, right, top,  right, bottom, left, bottom, color);
 	}

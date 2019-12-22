@@ -122,7 +122,7 @@ HRESULT CD3D11Quadrilateral::Set(const float x1, const float y1, const float x2,
 	return hr;
 }
 
-HRESULT CD3D11Quadrilateral::Draw(ID3D11RenderTargetView* pRenderTargetView, UINT w, UINT h)
+HRESULT CD3D11Quadrilateral::Draw(ID3D11RenderTargetView* pRenderTargetView, const SIZE& rtSize)
 {
 	HRESULT hr = S_OK;
 	UINT Stride = sizeof(VERTEX);
@@ -134,8 +134,8 @@ HRESULT CD3D11Quadrilateral::Draw(ID3D11RenderTargetView* pRenderTargetView, UIN
 	D3D11_VIEWPORT VP;
 	VP.TopLeftX = 0;
 	VP.TopLeftY = 0;
-	VP.Width = w;
-	VP.Height = h;
+	VP.Width    = rtSize.cx;
+	VP.Height   = rtSize.cy;
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
 	m_pDeviceContext->RSSetViewports(1, &VP);

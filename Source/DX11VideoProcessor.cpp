@@ -34,6 +34,7 @@
 #include "DX11VideoProcessor.h"
 #include "./Include/ID3DVideoMemoryConfiguration.h"
 #include "Shaders.h"
+#include "D3DUtil/D3D11Font.h"
 #include "D3DUtil/D3D11Geometry.h"
 
 static const ScalingShaderResId s_Upscaling11ResIDs[UPSCALE_COUNT] = {
@@ -1566,6 +1567,20 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	}
 
 #if 0
+	{
+		CD3D11Font d3d11font(L"Consolas", 14);
+		HRESULT hr2 = d3d11font.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+
+		ID3D11RenderTargetView* pRenderTargetView;
+		if (S_OK == m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView)) {
+			const SIZE szWindow = m_windowRect.Size();
+			hr2 = d3d11font.Draw2DText(pRenderTargetView, szWindow, 5, 5, D3DCOLOR_XRGB(255, 255, 255), L"A train is a form of rail transport consisting of a series of connected vehicles\nthat generally run along a railroad track to transport cargo or passengers.");
+
+			pRenderTargetView->Release();
+		}
+	}
+#endif
+#if 0
 	{ // Tearing test (very non-optimal implementation, use only for tests)
 		static int nTearingPos = 0;
 
@@ -1582,12 +1597,12 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			rcTearing.right = rcTearing.left + 4;
 			rcTearing.bottom = szWindow.cy;
 			hr2 = d3d11rect.Set(rcTearing, szWindow, D3DCOLOR_XRGB(255, 0, 0));
-			hr2 = d3d11rect.Draw(pRenderTargetView, szWindow.cx, szWindow.cy);
+			hr2 = d3d11rect.Draw(pRenderTargetView, szWindow);
 
 			rcTearing.left = (rcTearing.right + 15) % szWindow.cx;
 			rcTearing.right = rcTearing.left + 4;
 			hr2 = d3d11rect.Set(rcTearing, szWindow, D3DCOLOR_XRGB(255, 0, 0));
-			hr2 = d3d11rect.Draw(pRenderTargetView, szWindow.cx, szWindow.cy);
+			hr2 = d3d11rect.Draw(pRenderTargetView, szWindow);
 
 			pRenderTargetView->Release();
 			d3d11rect.InvalidateDeviceObjects();

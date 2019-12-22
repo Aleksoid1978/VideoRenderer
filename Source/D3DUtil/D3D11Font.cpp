@@ -89,8 +89,9 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 		return hr;
 	}
 
-	m_uTexWidth = fontBitmap.GetWidth();
+	m_uTexWidth  = fontBitmap.GetWidth();
 	m_uTexHeight = fontBitmap.GetHeight();
+	EXECUTE_ASSERT(S_OK == fontBitmap.GetFloatCoords((FloatRect*)&m_fTexCoords, std::size(m_Characters)));
 
 	LPVOID data;
 	DWORD size;
@@ -234,8 +235,103 @@ HRESULT CD3D11Font::GetTextExtent(const WCHAR* strText, SIZE* pSize)
 	return S_OK;
 }
 
-HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, UINT w, UINT h, FLOAT sx, FLOAT sy, D3DCOLOR color, const WCHAR* strText)
+HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const SIZE& rtSize, FLOAT sx, FLOAT sy, D3DCOLOR color, const WCHAR* strText)
 {
-	// TODO
-	return E_NOTIMPL;
+	if (!m_pDevice || !m_pDeviceContext) {
+		return E_ABORT;
+	}
+	ASSERT(pRenderTargetView);
+
+	HRESULT hr = S_OK;
+
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	hr = m_pDeviceContext->Map(m_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	// Adjust for character spacing
+	const FLOAT fStartX = (float)(sx * 2) / rtSize.cx - 1;
+	float drawX = fStartX;
+	float drawY = (float)(-sy * 2) / rtSize.cy + 1;
+
+	// Fill vertex buffer
+	VertexFont* pVertices = (VertexFont*)mappedResource.pData;
+	UINT nVertices = 0;
+
+
+
+	while (*strText) {
+		WCHAR c = *strText++;
+
+		if (c == '\n') {
+			drawX = fStartX;
+			drawY -= (m_fTexCoords[0].bottom - m_fTexCoords[0].top) * m_uTexHeight * 2 / rtSize.cy;
+			continue;
+		}
+
+		auto idx = Char2Index(c);
+
+		float Width  = (m_fTexCoords[idx].right - m_fTexCoords[idx].left) * m_uTexWidth * 2 / rtSize.cx;
+		float Height = (m_fTexCoords[idx].bottom - m_fTexCoords[idx].top) * m_uTexHeight * 2 / rtSize.cy;
+
+		float left   = drawX;
+		float right  = drawX + Width;
+		float top    = drawY;
+		float bottom = drawY - Height;
+
+		const float ltex = m_fTexCoords[idx].left;
+		const float ttex = m_fTexCoords[idx].top;
+		const float rtex = m_fTexCoords[idx].right;
+		const float btex = m_fTexCoords[idx].bottom;
+
+		if (c != 0x0020 && c != 0x00A0) { // Space and No-Break Space
+			*pVertices++ = {DirectX::XMFLOAT3(left,  top,    0.0f), DirectX::XMFLOAT2(ltex, ttex)};
+			*pVertices++ = {DirectX::XMFLOAT3(right, bottom, 0.0f), DirectX::XMFLOAT2(rtex, btex)};
+			*pVertices++ = {DirectX::XMFLOAT3(left,  bottom, 0.0f), DirectX::XMFLOAT2(ltex, btex)};
+			*pVertices++ = {DirectX::XMFLOAT3(left,  top,    0.0f), DirectX::XMFLOAT2(ltex, ttex)};
+			*pVertices++ = {DirectX::XMFLOAT3(right, top,    0.0f), DirectX::XMFLOAT2(rtex, ttex)};
+			*pVertices++ = {DirectX::XMFLOAT3(right, bottom, 0.0f), DirectX::XMFLOAT2(rtex, btex)};
+			nVertices += 6;
+
+			if (nVertices > (MAX_NUM_VERTICES - 6)) {
+				break;
+			}
+		}
+
+		drawX += Width;
+	}
+	m_pDeviceContext->Unmap(m_pVertexBuffer, 0);
+
+	UINT Stride = sizeof(VertexFont);
+	UINT Offset = 0;
+	ID3D11ShaderResourceView* views[1] = {};
+
+	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+
+	D3D11_VIEWPORT VP;
+	VP.TopLeftX = 0;
+	VP.TopLeftY = 0;
+	VP.Width    = rtSize.cx;
+	VP.Height   = rtSize.cy;
+	VP.MinDepth = 0.0f;
+	VP.MaxDepth = 1.0f;
+	m_pDeviceContext->RSSetViewports(1, &VP);
+
+	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pShaderResource);
+	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
+
+	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &Stride, &Offset);
+
+	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
+	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
+
+	//m_pDeviceContext->OMSetBlendState(m_pBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
+	m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
+
+	m_pDeviceContext->Draw(nVertices, 0);
+
+	return S_OK;
 }
