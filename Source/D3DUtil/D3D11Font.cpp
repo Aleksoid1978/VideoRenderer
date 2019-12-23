@@ -204,6 +204,17 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 	DirectX::XMFLOAT4 colorRGBAf = D3DCOLORtoXMFLOAT4(m_Color);
 	m_pDeviceContext->UpdateSubresource(m_pPixelBuffer, 0, nullptr, &colorRGBAf, 0, 0);
 
+	D3D11_BLEND_DESC blendDesc = {};
+	blendDesc.RenderTarget[0].BlendEnable = TRUE;
+	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	hr = m_pDevice->CreateBlendState(&blendDesc, &m_pBlendState);
+
 	return hr;
 }
 
@@ -214,6 +225,7 @@ void CD3D11Font::InvalidateDeviceObjects()
 
 	SAFE_RELEASE(m_pVertexShader);
 	SAFE_RELEASE(m_pPixelShader);
+	SAFE_RELEASE(m_pBlendState);
 	SAFE_RELEASE(m_pInputLayout);
 	SAFE_RELEASE(m_pPixelBuffer);
 	SAFE_RELEASE(m_pVertexBuffer);
@@ -284,8 +296,6 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 	// Fill vertex buffer
 	VertexFont* pVertices = (VertexFont*)mappedResource.pData;
 	UINT nVertices = 0;
-
-
 
 	while (*strText) {
 		WCHAR c = *strText++;
@@ -362,8 +372,7 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pPixelBuffer);
 
-	//m_pDeviceContext->OMSetBlendState(m_pBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-	m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
+	m_pDeviceContext->OMSetBlendState(m_pBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 
 	m_pDeviceContext->Draw(nVertices, 0);
 
