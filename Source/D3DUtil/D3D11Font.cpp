@@ -281,73 +281,14 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 	ASSERT(pRenderTargetView);
 
 	HRESULT hr = S_OK;
-
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	hr = m_pDeviceContext->Map(m_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	// Adjust for character spacing
-	const FLOAT fStartX = (float)(sx * 2) / rtSize.cx - 1;
-	float drawX = fStartX;
-	float drawY = (float)(-sy * 2) / rtSize.cy + 1;
-
-	// Fill vertex buffer
-	VertexFont* pVertices = (VertexFont*)mappedResource.pData;
-	UINT nVertices = 0;
-
-	while (*strText) {
-		WCHAR c = *strText++;
-
-		if (c == '\n') {
-			drawX = fStartX;
-			drawY -= (m_fTexCoords[0].bottom - m_fTexCoords[0].top) * m_uTexHeight * 2 / rtSize.cy;
-			continue;
-		}
-
-		auto idx = Char2Index(c);
-
-		float Width  = (m_fTexCoords[idx].right - m_fTexCoords[idx].left) * m_uTexWidth * 2 / rtSize.cx;
-		float Height = (m_fTexCoords[idx].bottom - m_fTexCoords[idx].top) * m_uTexHeight * 2 / rtSize.cy;
-
-		float left   = drawX;
-		float right  = drawX + Width;
-		float top    = drawY;
-		float bottom = drawY - Height;
-
-		const float ltex = m_fTexCoords[idx].left;
-		const float ttex = m_fTexCoords[idx].top;
-		const float rtex = m_fTexCoords[idx].right;
-		const float btex = m_fTexCoords[idx].bottom;
-
-		if (c != 0x0020 && c != 0x00A0) { // Space and No-Break Space
-			*pVertices++ = { {left,  top,    0.0f}, {ltex, ttex} };
-			*pVertices++ = { {right, bottom, 0.0f}, {rtex, btex} };
-			*pVertices++ = { {left,  bottom, 0.0f}, {ltex, btex} };
-			*pVertices++ = { {left,  top,    0.0f}, {ltex, ttex} };
-			*pVertices++ = { {right, top,    0.0f}, {rtex, ttex} };
-			*pVertices++ = { {right, bottom, 0.0f}, {rtex, btex} };
-			nVertices += 6;
-
-			if (nVertices > (MAX_NUM_VERTICES - 6)) {
-				break;
-			}
-		}
-
-		drawX += Width;
-	}
-	m_pDeviceContext->Unmap(m_pVertexBuffer, 0);
+	UINT Stride = sizeof(VertexFont);
+	UINT Offset = 0;
 
 	if (color != m_Color) {
 		m_Color = color;
 		DirectX::XMFLOAT4 colorRGBAf = D3DCOLORtoXMFLOAT4(m_Color);
 		m_pDeviceContext->UpdateSubresource(m_pPixelBuffer, 0, nullptr, &colorRGBAf, 0, 0);
 	}
-
-	UINT Stride = sizeof(VertexFont);
-	UINT Offset = 0;
-	ID3D11ShaderResourceView* views[1] = {};
 
 	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 
@@ -362,19 +303,74 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 
 	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pShaderResource);
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
-
-	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &Stride, &Offset);
-
-	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
 	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
-
+	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &Stride, &Offset);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pPixelBuffer);
-
 	m_pDeviceContext->OMSetBlendState(m_pBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
+	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	m_pDeviceContext->Draw(nVertices, 0);
+	// Adjust for character spacing
+	const float fStartX = (float)(sx * 2) / rtSize.cx - 1;
+	float drawX = fStartX;
+	float drawY = (float)(-sy * 2) / rtSize.cy + 1;
 
-	return S_OK;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	hr = m_pDeviceContext->Map(m_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (S_OK == hr) {
+		VertexFont* pVertices = (VertexFont*)mappedResource.pData;
+		UINT nVertices = 0;
+
+		while (*strText) {
+			WCHAR c = *strText++;
+
+			if (c == '\n') {
+				drawX = fStartX;
+				drawY -= (m_fTexCoords[0].bottom - m_fTexCoords[0].top) * m_uTexHeight * 2 / rtSize.cy;
+				continue;
+			}
+
+			auto idx = Char2Index(c);
+
+			float Width = (m_fTexCoords[idx].right - m_fTexCoords[idx].left) * m_uTexWidth * 2 / rtSize.cx;
+			float Height = (m_fTexCoords[idx].bottom - m_fTexCoords[idx].top) * m_uTexHeight * 2 / rtSize.cy;
+
+			float left = drawX;
+			float right = drawX + Width;
+			float top = drawY;
+			float bottom = drawY - Height;
+
+			const float ltex = m_fTexCoords[idx].left;
+			const float ttex = m_fTexCoords[idx].top;
+			const float rtex = m_fTexCoords[idx].right;
+			const float btex = m_fTexCoords[idx].bottom;
+
+			if (c != 0x0020 && c != 0x00A0) { // Space and No-Break Space
+				*pVertices++ = { {left,  top,    0.0f}, {ltex, ttex} };
+				*pVertices++ = { {right, bottom, 0.0f}, {rtex, btex} };
+				*pVertices++ = { {left,  bottom, 0.0f}, {ltex, btex} };
+				*pVertices++ = { {left,  top,    0.0f}, {ltex, ttex} };
+				*pVertices++ = { {right, top,    0.0f}, {rtex, ttex} };
+				*pVertices++ = { {right, bottom, 0.0f}, {rtex, btex} };
+				nVertices += 6;
+
+				if (nVertices > (MAX_NUM_VERTICES - 6)) {
+					// Unlock, render, and relock the vertex buffer
+					m_pDeviceContext->Unmap(m_pVertexBuffer, 0);
+					m_pDeviceContext->Draw(nVertices, 0);
+
+					hr = m_pDeviceContext->Map(m_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+					pVertices = (VertexFont*)mappedResource.pData;
+					nVertices = 0;
+				}
+			}
+
+			drawX += Width;
+		}
+		m_pDeviceContext->Unmap(m_pVertexBuffer, 0);
+
+		m_pDeviceContext->Draw(nVertices, 0);
+	}
+
+	return hr;
 }
