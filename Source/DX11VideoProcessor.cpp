@@ -560,7 +560,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 #if (0 && _DEBUG)
 	if (m_pDevice) {
 		ID3D11Debug* pDebugDevice = nullptr;
-		HRESULT hr2 = m_pDevice->QueryInterface(__uuidof(ID3D11Debug), (void**)(&pDebugDevice));
+		HRESULT hr2 = m_pDevice->QueryInterface(IID_PPV_ARGS(&pDebugDevice));
 		if (S_OK == hr2) {
 			hr2 = pDebugDevice->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 			ASSERT(S_OK == hr2);
@@ -734,7 +734,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_Simple, IDF_PSH11_SIMPLE));
 
 	CComPtr<IDXGIDevice> pDXGIDevice;
-	hr = m_pDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDXGIDevice);
+	hr = m_pDevice->QueryInterface(IID_PPV_ARGS(&pDXGIDevice));
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::SetDevice() : QueryInterface(IDXGIDevice) failed with error %s", HR2Str(hr));
 		ReleaseDevice();
@@ -750,14 +750,14 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	}
 
 	CComPtr<IDXGIFactory1> pDXGIFactory1;
-	hr = pDXGIAdapter->GetParent(__uuidof(IDXGIFactory1), (void**)&pDXGIFactory1);
+	hr = pDXGIAdapter->GetParent(IID_PPV_ARGS(&pDXGIFactory1));
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::SetDevice() : GetParent(IDXGIFactory1) failed with error %s", HR2Str(hr));
 		ReleaseDevice();
 		return hr;
 	}
 
-	hr = pDXGIFactory1->QueryInterface(__uuidof(IDXGIFactory2), (void**)&m_pDXGIFactory2);
+	hr = pDXGIFactory1->QueryInterface(IID_PPV_ARGS(&m_pDXGIFactory2));
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::SetDevice() : QueryInterface(IDXGIFactory2) failed with error %s", HR2Str(hr));
 		ReleaseDevice();
@@ -1485,7 +1485,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	}
 
 	CComPtr<ID3D11Texture2D> pBackBuffer;
-	HRESULT hr = m_pDXGISwapChain1->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
+	HRESULT hr = m_pDXGISwapChain1->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::Render() : GetBuffer() failed with error %s", HR2Str(hr));
 		return hr;
@@ -1620,7 +1620,7 @@ HRESULT CDX11VideoProcessor::FillBlack()
 	CheckPointer(m_pDXGISwapChain1, E_ABORT);
 
 	ID3D11Texture2D* pBackBuffer = nullptr;
-	HRESULT hr = m_pDXGISwapChain1->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
+	HRESULT hr = m_pDXGISwapChain1->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::FillBlack() : GetBuffer() failed with error %s", HR2Str(hr));
 		return hr;

@@ -73,14 +73,14 @@ void FilterRangeD3D11toDXVA2(DXVA2_ValueRange& _dxva2_, const D3D11_VIDEO_PROCES
 
 HRESULT CD3D11VP::InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
 {
-	HRESULT hr = pDevice->QueryInterface(__uuidof(ID3D11VideoDevice), (void**)&m_pVideoDevice);
+	HRESULT hr = pDevice->QueryInterface(IID_PPV_ARGS(&m_pVideoDevice));
 	if (FAILED(hr)) {
 		DLog(L"CD3D11VP::InitVideoDevice() : QueryInterface(ID3D11VideoDevice) failed with error %s", HR2Str(hr));
 		ReleaseVideoDevice();
 		return hr;
 	}
 
-	hr = pContext->QueryInterface(__uuidof(ID3D11VideoContext), (void**)&m_pVideoContext);
+	hr = pContext->QueryInterface(IID_PPV_ARGS(&m_pVideoContext));
 	if (FAILED(hr)) {
 		DLog(L"CD3D11VP::InitVideoDevice() : QueryInterface(ID3D11VideoContext) failed with error %s", HR2Str(hr));
 		ReleaseVideoDevice();
