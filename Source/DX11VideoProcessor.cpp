@@ -111,10 +111,10 @@ HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
 		// 2 ___4
 		//  |\ |
 		// 1|_\|3
-		{ DirectX::XMFLOAT3(points[0].x, points[0].y, 0), DirectX::XMFLOAT2(src_l, src_b) },
-		{ DirectX::XMFLOAT3(points[1].x, points[1].y, 0), DirectX::XMFLOAT2(src_l, src_t) },
-		{ DirectX::XMFLOAT3(points[2].x, points[2].y, 0), DirectX::XMFLOAT2(src_r, src_b) },
-		{ DirectX::XMFLOAT3(points[3].x, points[3].y, 0), DirectX::XMFLOAT2(src_r, src_t) },
+		{ {(float)points[0].x, (float)points[0].y, 0}, {src_l, src_b} },
+		{ {(float)points[1].x, (float)points[1].y, 0}, {src_l, src_t} },
+		{ {(float)points[2].x, (float)points[2].y, 0}, {src_r, src_b} },
+		{ {(float)points[3].x, (float)points[3].y, 0}, {src_r, src_t} },
 	};
 
 	D3D11_BUFFER_DESC BufferDesc = { sizeof(Vertices), D3D11_USAGE_DEFAULT, D3D11_BIND_VERTEX_BUFFER, 0, 0, 0 };

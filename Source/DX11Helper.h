@@ -21,6 +21,7 @@
 #pragma once
 
 #include <d3d11.h>
+#include <DirectXMath.h>
 
 enum Tex2DType {
 	Tex2D_Default,
@@ -200,6 +201,16 @@ struct Tex11Video_t : Tex2D_t
 		Tex2D_t::Release();
 	}
 };
+
+inline DirectX::XMFLOAT4 D3DCOLORtoXMFLOAT4(const D3DCOLOR color)
+{
+	return DirectX::XMFLOAT4{
+		(float)((color & 0x00FF0000) >> 16) / 255,
+		(float)((color & 0x0000FF00) >> 8) / 255,
+		(float)(color & 0x000000FF) / 255,
+		(float)((color & 0xFF000000) >> 24) / 255,
+	};
+}
 
 UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAdapter);
 

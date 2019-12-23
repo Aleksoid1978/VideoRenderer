@@ -33,6 +33,8 @@ class CD3D11Font
 	WCHAR m_Characters[128];
 	FloatRect m_fTexCoords[128] = {};
 
+	D3DCOLOR m_Color = D3DCOLOR_XRGB(255, 255, 255);
+
 	ID3D11Device* m_pDevice = nullptr;
 	ID3D11DeviceContext* m_pDeviceContext = nullptr;
 
@@ -43,6 +45,7 @@ class CD3D11Font
 	ID3D11ShaderResourceView* m_pShaderResource = nullptr;
 	ID3D11Buffer*             m_pVertexBuffer   = nullptr;
 	ID3D11Buffer*             m_pIndexBuffer    = nullptr;
+	ID3D11Buffer*             m_pPixelBuffer    = nullptr;
 
 	UINT  m_uTexWidth = 0;                   // Texture dimensions
 	UINT  m_uTexHeight = 0;

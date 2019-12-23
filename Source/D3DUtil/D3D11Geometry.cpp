@@ -21,8 +21,8 @@
 #pragma once
 
 #include "stdafx.h"
-#include <DirectXMath.h>
 #include "Helper.h"
+#include "DX11Helper.h"
 #include "resource.h"
 #include "D3D11Geometry.h"
 
@@ -98,17 +98,12 @@ HRESULT CD3D11Quadrilateral::Set(const float x1, const float y1, const float x2,
 		}
 	}
 
-	DirectX::XMFLOAT4 colorRGBAf = {
-		(float)((color & 0x00FF0000) >> 16) / 255,
-		(float)((color & 0x0000FF00) >>  8) / 255,
-		(float) (color & 0x000000FF)        / 255,
-		(float)((color & 0xFF000000) >> 24) / 255,
-	};
+	DirectX::XMFLOAT4 colorRGBAf = D3DCOLORtoXMFLOAT4(color);
 
-	m_Vertices[0] = { DirectX::XMFLOAT3(x1, y1, 0.5f), colorRGBAf };
-	m_Vertices[1] = { DirectX::XMFLOAT3(x4, y4, 0.5f), colorRGBAf };
-	m_Vertices[2] = { DirectX::XMFLOAT3(x2, y2, 0.5f), colorRGBAf };
-	m_Vertices[3] = { DirectX::XMFLOAT3(x3, y3, 0.5f), colorRGBAf };
+	m_Vertices[0] = { {x1, y1, 0.5f}, colorRGBAf };
+	m_Vertices[1] = { {x4, y4, 0.5f}, colorRGBAf };
+	m_Vertices[2] = { {x2, y2, 0.5f}, colorRGBAf };
+	m_Vertices[3] = { {x3, y3, 0.5f}, colorRGBAf };
 
 	if (m_pVertexBuffer) {
 		D3D11_MAPPED_SUBRESOURCE mappedResource;

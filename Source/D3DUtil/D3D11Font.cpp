@@ -21,8 +21,8 @@
 #pragma once
 
 #include "stdafx.h"
-#include <DirectXMath.h>
 #include "Helper.h"
+#include "DX11Helper.h"
 #include "resource.h"
 #include "FontBitmap.h"
 #include "D3D11Font.h"
@@ -32,6 +32,11 @@
 struct VertexFont {
 	DirectX::XMFLOAT3 Pos;
 	DirectX::XMFLOAT2 Tex;
+};
+
+struct PixelBufferType
+{
+	DirectX::XMFLOAT4 pixelColor;
 };
 
 inline auto Char2Index(WCHAR ch)
@@ -177,19 +182,40 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 	D3D11_SUBRESOURCE_DATA indexData = { indices.data(), 0, 0 };
 
 	hr = m_pDevice->CreateBuffer(&indexBufferDesc, &indexData, &m_pIndexBuffer);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	// Setup the description of the dynamic pixel constant buffer that is in the pixel shader.
+	D3D11_BUFFER_DESC pixelBufferDesc;
+	pixelBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	pixelBufferDesc.ByteWidth = sizeof(PixelBufferType);
+	pixelBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	pixelBufferDesc.CPUAccessFlags = 0;
+	pixelBufferDesc.MiscFlags = 0;
+	pixelBufferDesc.StructureByteStride = 0;
+
+	// Create the pixel constant buffer pointer so we can access the pixel shader constant buffer from within this class.
+	hr = m_pDevice->CreateBuffer(&pixelBufferDesc, nullptr, &m_pPixelBuffer);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	DirectX::XMFLOAT4 colorRGBAf = D3DCOLORtoXMFLOAT4(m_Color);
+	m_pDeviceContext->UpdateSubresource(m_pPixelBuffer, 0, nullptr, &colorRGBAf, 0, 0);
 
 	return hr;
 }
 
 void CD3D11Font::InvalidateDeviceObjects()
 {
-
 	SAFE_RELEASE(m_pTexture);
 	SAFE_RELEASE(m_pShaderResource);
 
 	SAFE_RELEASE(m_pVertexShader);
 	SAFE_RELEASE(m_pPixelShader);
 	SAFE_RELEASE(m_pInputLayout);
+	SAFE_RELEASE(m_pPixelBuffer);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pIndexBuffer);
 
@@ -286,12 +312,12 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 		const float btex = m_fTexCoords[idx].bottom;
 
 		if (c != 0x0020 && c != 0x00A0) { // Space and No-Break Space
-			*pVertices++ = {DirectX::XMFLOAT3(left,  top,    0.0f), DirectX::XMFLOAT2(ltex, ttex)};
-			*pVertices++ = {DirectX::XMFLOAT3(right, bottom, 0.0f), DirectX::XMFLOAT2(rtex, btex)};
-			*pVertices++ = {DirectX::XMFLOAT3(left,  bottom, 0.0f), DirectX::XMFLOAT2(ltex, btex)};
-			*pVertices++ = {DirectX::XMFLOAT3(left,  top,    0.0f), DirectX::XMFLOAT2(ltex, ttex)};
-			*pVertices++ = {DirectX::XMFLOAT3(right, top,    0.0f), DirectX::XMFLOAT2(rtex, ttex)};
-			*pVertices++ = {DirectX::XMFLOAT3(right, bottom, 0.0f), DirectX::XMFLOAT2(rtex, btex)};
+			*pVertices++ = { {left,  top,    0.0f}, {ltex, ttex} };
+			*pVertices++ = { {right, bottom, 0.0f}, {rtex, btex} };
+			*pVertices++ = { {left,  bottom, 0.0f}, {ltex, btex} };
+			*pVertices++ = { {left,  top,    0.0f}, {ltex, ttex} };
+			*pVertices++ = { {right, top,    0.0f}, {rtex, ttex} };
+			*pVertices++ = { {right, bottom, 0.0f}, {rtex, btex} };
 			nVertices += 6;
 
 			if (nVertices > (MAX_NUM_VERTICES - 6)) {
@@ -302,6 +328,12 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 		drawX += Width;
 	}
 	m_pDeviceContext->Unmap(m_pVertexBuffer, 0);
+
+	if (color != m_Color) {
+		m_Color = color;
+		DirectX::XMFLOAT4 colorRGBAf = D3DCOLORtoXMFLOAT4(m_Color);
+		m_pDeviceContext->UpdateSubresource(m_pPixelBuffer, 0, nullptr, &colorRGBAf, 0, 0);
+	}
 
 	UINT Stride = sizeof(VertexFont);
 	UINT Offset = 0;
@@ -327,6 +359,8 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
 	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
+
+	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pPixelBuffer);
 
 	//m_pDeviceContext->OMSetBlendState(m_pBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 	m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
