@@ -178,10 +178,9 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTex
 // CDX9VideoProcessor
 
 CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
-	: m_Font3D(L"Consolas", 14)
+	: m_pFilter(pFilter)
+	, m_Font3D(L"Consolas", 14)
 {
-	m_pFilter = pFilter;
-
 	HRESULT hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
 	if (!m_pD3DEx) {
 		return;
@@ -321,11 +320,15 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 	}
 
 	HRESULT hr2 = m_TexStats.Create(m_pD3DDevEx, D3DFMT_A8R8G8B8, STATS_W, STATS_H, D3DUSAGE_RENDERTARGET);
-	hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
 	if (S_OK == hr2) {
-		hr2 = m_Font3D.RestoreDeviceObjects();
+		hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
+		if (S_OK == hr2) {
+			hr2 = m_Font3D.RestoreDeviceObjects();
+		}
 	}
-	hr2 = m_Rect3D.InitDeviceObjects(m_pD3DDevEx);
+	if (S_OK == hr2) {
+		hr2 = m_Rect3D.InitDeviceObjects(m_pD3DDevEx);
+	}
 
 	return hr;
 }
