@@ -34,8 +34,6 @@
 #include "DX11VideoProcessor.h"
 #include "./Include/ID3DVideoMemoryConfiguration.h"
 #include "Shaders.h"
-#include "D3DUtil/D3D11Font.h"
-#include "D3DUtil/D3D11Geometry.h"
 
 static const ScalingShaderResId s_Upscaling11ResIDs[UPSCALE_COUNT] = {
 	{0,                            0,                            L"Nearest-neighbor"  },
@@ -359,6 +357,9 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(const Tex2D_t& Tex, ID3D11Textu
 
 CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter)
 	: m_pFilter(pFilter)
+#if D3D11FONT_ENABLE
+	, m_Font3D(L"Consolas", 14)
+#endif
 {
 	m_hDXGILib = LoadLibraryW(L"dxgi.dll");
 	if (!m_hDXGILib) {
@@ -453,9 +454,6 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd)
 		DLog(L"D3D11_1SDKLayers.dll could not be loaded. D3D11 debugging messages will not be displayed");
 	}
 #endif
-#if DIRECTWRITE_ENABLE
-	flags |= D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-#endif
 
 	HRESULT hr = m_D3D11CreateDevice(
 		pDXGIAdapter,
@@ -522,10 +520,11 @@ void CDX11VideoProcessor::ReleaseDevice()
 	ReleaseVP();
 	m_D3D11VP.ReleaseVideoDevice();
 
-#if DIRECTWRITE_ENABLE
-	m_StatsDrawingDWrite.ReleaseRenderTarget();
+#if D3D11FONT_ENABLE
+	m_Font3D.InvalidateDeviceObjects();
+	m_Rect3D.InvalidateDeviceObjects();
 #endif
-	m_TexOSD.Release();
+	m_TexStats.Release();
 	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
 
@@ -799,18 +798,17 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		DLog(L"Graphics adapter: %s", m_strAdapterDescription);
 	}
 
-#if DIRECTWRITE_ENABLE
-	HRESULT hr2 = m_TexOSD.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DefaultShaderRTarget);
+#if D3D11FONT_ENABLE
+	HRESULT hr2 = m_TexStats.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DefaultShaderRTarget);
 	if (S_OK == hr2) {
-		CComPtr<IDXGISurface> pDxgiSurface;
-		hr2 = m_TexOSD.pTexture->QueryInterface(IID_IDXGISurface, (void**)&pDxgiSurface);
-		if (S_OK == hr2) {
-			hr2 = m_StatsDrawingDWrite.SetRenderTarget(pDxgiSurface);
-		}
+		hr2 = m_Font3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+	}
+	if (S_OK == hr2) {
+		hr2 = m_Rect3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
 	}
 	ASSERT(S_OK == hr2);
 #else
-	HRESULT hr2 = m_TexOSD.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DynamicShaderWrite);
+	HRESULT hr2 = m_TexStats.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DynamicShaderWrite);
 	ASSERT(S_OK == hr2);
 #endif
 
@@ -2236,14 +2234,23 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	str.AppendFormat(L"\nSync offset   : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
 #endif
 
-#if DIRECTWRITE_ENABLE
+#if D3D11FONT_ENABLE
 	ID3D11RenderTargetView* pRenderTargetView = nullptr;
-	HRESULT hr = m_pDevice->CreateRenderTargetView(m_TexOSD.pTexture, nullptr, &pRenderTargetView);
+	HRESULT hr = m_pDevice->CreateRenderTargetView(m_TexStats.pTexture, nullptr, &pRenderTargetView);
 	if (S_OK == hr) {
 		const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.75f };
 		m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
 
-		m_StatsDrawingDWrite.DrawTextW(str);
+		const SIZE szWindow{ m_TexStats.desc.Width, m_TexStats.desc.Height };
+		hr = m_Font3D.Draw2DText(pRenderTargetView, szWindow, 5, 5, D3DCOLOR_XRGB(255, 255, 255), str);
+		static int col = STATS_W;
+		if (--col < 0) {
+			col = STATS_W;
+		}
+		m_Rect3D.Set({ col, STATS_H - 11, col + 5, STATS_H - 1 }, szWindow, D3DCOLOR_XRGB(128, 255, 128));
+		m_Rect3D.Draw(pRenderTargetView, szWindow);
+
+		pRenderTargetView->Release();
 
 		D3D11_VIEWPORT VP;
 		VP.TopLeftX = STATS_X;
@@ -2252,16 +2259,14 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		VP.Height = STATS_H;
 		VP.MinDepth = 0.0f;
 		VP.MaxDepth = 1.0f;
-		hr = AlphaBlt(m_TexOSD.pShaderResource, pRenderTarget, VP);
-
-		pRenderTargetView->Release();
+		hr = AlphaBlt(m_TexStats.pShaderResource, pRenderTarget, VP);
 	}
 #else
 	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-	HRESULT hr = m_pDeviceContext->Map(m_TexOSD.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	HRESULT hr = m_pDeviceContext->Map(m_TexStats.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (SUCCEEDED(hr)) {
 		m_pFilter->m_StatsDrawing.DrawTextW((BYTE*)mappedResource.pData, mappedResource.RowPitch, str);
-		m_pDeviceContext->Unmap(m_TexOSD.pTexture, 0);
+		m_pDeviceContext->Unmap(m_TexStats.pTexture, 0);
 
 		D3D11_VIEWPORT VP;
 		VP.TopLeftX = STATS_X;
@@ -2270,7 +2275,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		VP.Height = STATS_H;
 		VP.MinDepth = 0.0f;
 		VP.MaxDepth = 1.0f;
-		hr = AlphaBlt(m_TexOSD.pShaderResource, pRenderTarget, VP);
+		hr = AlphaBlt(m_TexStats.pShaderResource, pRenderTarget, VP);
 	}
 #endif
 

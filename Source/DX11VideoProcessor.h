@@ -20,7 +20,7 @@
 
 #pragma once
 
-#define DIRECTWRITE_ENABLE 0
+#define D3D11FONT_ENABLE 0
 
 #include <atltypes.h>
 #include <ntverp.h>
@@ -32,11 +32,12 @@
 #include "DX11Helper.h"
 #include "D3D11VP.h"
 #include "FrameStats.h"
+#if D3D11FONT_ENABLE
+#include "D3DUtil/D3D11Font.h"
+#include "D3DUtil/D3D11Geometry.h"
+#endif
 #include "DX9Device.h"
 
-#if DIRECTWRITE_ENABLE
-#include "StatsDrawing.h"
-#endif
 
 class CMpcVideoRenderer;
 class CVideoRendererInputPin;
@@ -143,14 +144,17 @@ private:
 	DWORD m_VendorId = 0;
 	CStringW m_strAdapterDescription;
 
-	Tex2D_t m_TexOSD;
-
 	CRenderStats m_RenderStats;
-
 	CStringW m_strStatsStatic1;
 	CStringW m_strStatsStatic2;
 	CStringW m_strStatsStatic3;
 	bool m_bSrcFromGPU = false;
+
+	Tex2D_t m_TexStats;
+#if D3D11FONT_ENABLE
+	CD3D11Font m_Font3D;
+	CD3D11Rectangle m_Rect3D;
+#endif
 
 	HMODULE m_hDXGILib = nullptr;
 	HMODULE m_hD3D11Lib = nullptr;
@@ -180,10 +184,6 @@ private:
 	CComPtr<ID3D11ShaderResourceView> m_pShaderResourceSubPic;
 
 	REFERENCE_TIME m_rtStart = 0;
-
-#if DIRECTWRITE_ENABLE
-	CStatsDrawingDWrite m_StatsDrawingDWrite;
-#endif
 
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter);
