@@ -62,6 +62,17 @@ HRESULT CD3D11Quadrilateral::InitDeviceObjects(ID3D11Device* pDevice, ID3D11Devi
 	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PSH11_GEOMETRY));
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPixelShader));
 
+	D3D11_BLEND_DESC bdesc = {};
+	bdesc.RenderTarget[0].BlendEnable = TRUE;
+	bdesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+	bdesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	bdesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	bdesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	bdesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	bdesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	bdesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	hr = m_pDevice->CreateBlendState(&bdesc, &m_pBlendState);
+
 	return hr;
 }
 
@@ -78,25 +89,7 @@ HRESULT CD3D11Quadrilateral::Set(const float x1, const float y1, const float x2,
 {
 	HRESULT hr = S_OK;
 
-	const bool bAlphaBlend = (color >> 24) < 0xFF;
-
-	if (bAlphaBlend != m_bAlphaBlend) {
-		SAFE_RELEASE(m_pBlendState);
-		m_bAlphaBlend = bAlphaBlend;
-
-		if (m_bAlphaBlend) {
-			D3D11_BLEND_DESC bdesc = {};
-			bdesc.RenderTarget[0].BlendEnable = TRUE;
-			bdesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
-			bdesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-			bdesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-			bdesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-			bdesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-			bdesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-			bdesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-			hr = m_pDevice->CreateBlendState(&bdesc, &m_pBlendState);
-		}
-	}
+	m_bAlphaBlend = (color >> 24) < 0xFF;
 
 	DirectX::XMFLOAT4 colorRGBAf = D3DCOLORtoXMFLOAT4(color);
 
@@ -145,7 +138,7 @@ HRESULT CD3D11Quadrilateral::Draw(ID3D11RenderTargetView* pRenderTargetView, con
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
 	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
 
-	m_pDeviceContext->OMSetBlendState(m_pBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
+	m_pDeviceContext->OMSetBlendState(m_bAlphaBlend ? m_pBlendState : nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 
 	m_pDeviceContext->Draw(std::size(m_Vertices), 0);
 
