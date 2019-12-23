@@ -312,6 +312,7 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 
 	// Adjust for character spacing
 	const float fStartX = (float)(sx * 2) / rtSize.cx - 1;
+	const float fLineHeight = (m_fTexCoords[0].bottom - m_fTexCoords[0].top) * m_uTexHeight * 2 / rtSize.cy;
 	float drawX = fStartX;
 	float drawY = (float)(-sy * 2) / rtSize.cy + 1;
 
@@ -326,7 +327,7 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 
 			if (c == '\n') {
 				drawX = fStartX;
-				drawY -= (m_fTexCoords[0].bottom - m_fTexCoords[0].top) * m_uTexHeight * 2 / rtSize.cy;
+				drawY -= fLineHeight;
 				continue;
 			}
 
