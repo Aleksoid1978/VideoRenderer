@@ -2241,22 +2241,22 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.75f };
 		m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
 
-		const SIZE szWindow{ m_TexStats.desc.Width, m_TexStats.desc.Height };
-		hr = m_Font3D.Draw2DText(pRenderTargetView, szWindow, 5, 5, D3DCOLOR_XRGB(255, 255, 255), str);
+		const SIZE rtSize{ m_TexStats.desc.Width, m_TexStats.desc.Height };
+		hr = m_Font3D.Draw2DText(pRenderTargetView, rtSize, 5, 5, D3DCOLOR_XRGB(255, 255, 255), str);
 		static int col = STATS_W;
 		if (--col < 0) {
 			col = STATS_W;
 		}
-		m_Rect3D.Set({ col, STATS_H - 11, col + 5, STATS_H - 1 }, szWindow, D3DCOLOR_XRGB(128, 255, 128));
-		m_Rect3D.Draw(pRenderTargetView, szWindow);
+		m_Rect3D.Set({ col, STATS_H - 11, col + 5, STATS_H - 1 }, rtSize, D3DCOLOR_XRGB(128, 255, 128));
+		m_Rect3D.Draw(pRenderTargetView, rtSize);
 
 		pRenderTargetView->Release();
 
 		D3D11_VIEWPORT VP;
 		VP.TopLeftX = STATS_X;
 		VP.TopLeftY = STATS_Y;
-		VP.Width = STATS_W;
-		VP.Height = STATS_H;
+		VP.Width    = STATS_W;
+		VP.Height   = STATS_H;
 		VP.MinDepth = 0.0f;
 		VP.MaxDepth = 1.0f;
 		hr = AlphaBlt(m_TexStats.pShaderResource, pRenderTarget, VP);
@@ -2271,8 +2271,8 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		D3D11_VIEWPORT VP;
 		VP.TopLeftX = STATS_X;
 		VP.TopLeftY = STATS_Y;
-		VP.Width = STATS_W;
-		VP.Height = STATS_H;
+		VP.Width    = STATS_W;
+		VP.Height   = STATS_H;
 		VP.MinDepth = 0.0f;
 		VP.MaxDepth = 1.0f;
 		hr = AlphaBlt(m_TexStats.pShaderResource, pRenderTarget, VP);

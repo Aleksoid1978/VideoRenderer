@@ -61,12 +61,12 @@ private:
 public:
 	HRESULT Set(const RECT& rect, const SIZE& rtSize, const D3DCOLOR color)
 	{
-		const float left   = (float)(rect.left*2)   / rtSize.cx - 1;
-		const float top    = (float)(rect.top*2)    / rtSize.cy - 1;
-		const float right  = (float)(rect.right*2)  / rtSize.cx - 1;
-		const float bottom = (float)(rect.bottom*2) / rtSize.cy - 1;
+		const float left   = (float)(rect.left*2)    / rtSize.cx - 1;
+		const float top    = (float)(-rect.top*2)    / rtSize.cy + 1;
+		const float right  = (float)(rect.right*2)   / rtSize.cx - 1;
+		const float bottom = (float)(-rect.bottom*2) / rtSize.cy + 1;
 
-		return CD3D11Quadrilateral::Set(left, top, right, top,  right, bottom, left, bottom, color);
+		return CD3D11Quadrilateral::Set(left, top, right, top, right, bottom, left, bottom, color);
 	}
 };
 
