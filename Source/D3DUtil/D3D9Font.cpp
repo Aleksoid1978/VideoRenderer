@@ -20,7 +20,6 @@
 
 #include "stdafx.h"
 #include <d3d9.h>
-#include <DirectXMath.h>
 #include "Helper.h"
 #include "FontBitmap.h"
 #include "D3D9Font.h"

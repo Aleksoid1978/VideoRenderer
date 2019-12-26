@@ -21,7 +21,6 @@
 #pragma once
 
 #include <d3d9.h>
-#include <DirectXMath.h>
 #include <vector>
 #include "Helper.h"
 

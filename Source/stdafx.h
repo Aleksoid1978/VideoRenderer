@@ -35,6 +35,7 @@
 #include <dvdmedia.h>
 #include "./BaseClasses/streams.h"
 #include <VersionHelpers.h>
+#include <DirectXMath.h>
 
 #include <algorithm>
 // Workaround compilation errors when including GDI+ with NOMINMAX defined

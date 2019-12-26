@@ -21,7 +21,6 @@
 #pragma once
 
 #include <d3d11.h>
-#include <DirectXMath.h>
 
 enum Tex2DType {
 	Tex2D_Default,
