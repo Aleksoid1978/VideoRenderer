@@ -46,6 +46,7 @@ class CD3D11Font
 	ID3D11Buffer*             m_pVertexBuffer   = nullptr;
 	ID3D11Buffer*             m_pIndexBuffer    = nullptr;
 	ID3D11Buffer*             m_pPixelBuffer    = nullptr;
+	ID3D11SamplerState*       m_pSamplerState   = nullptr;
 	ID3D11BlendState*         m_pBlendState     = nullptr;
 
 	UINT  m_uTexWidth = 0;                   // Texture dimensions

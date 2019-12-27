@@ -204,6 +204,16 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 	DirectX::XMFLOAT4 colorRGBAf = D3DCOLORtoXMFLOAT4(m_Color);
 	m_pDeviceContext->UpdateSubresource(m_pPixelBuffer, 0, nullptr, &colorRGBAf, 0, 0);
 
+	D3D11_SAMPLER_DESC SampDesc = {};
+	SampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	SampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	SampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	SampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	SampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	SampDesc.MinLOD = 0;
+	SampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateSamplerState(&SampDesc, &m_pSamplerState));
+
 	D3D11_BLEND_DESC blendDesc = {};
 	blendDesc.RenderTarget[0].BlendEnable = TRUE;
 	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
@@ -225,6 +235,7 @@ void CD3D11Font::InvalidateDeviceObjects()
 
 	SAFE_RELEASE(m_pVertexShader);
 	SAFE_RELEASE(m_pPixelShader);
+	SAFE_RELEASE(m_pSamplerState);
 	SAFE_RELEASE(m_pBlendState);
 	SAFE_RELEASE(m_pInputLayout);
 	SAFE_RELEASE(m_pPixelBuffer);
@@ -290,8 +301,6 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 		m_pDeviceContext->UpdateSubresource(m_pPixelBuffer, 0, nullptr, &colorRGBAf, 0, 0);
 	}
 
-	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
-
 	D3D11_VIEWPORT VP;
 	VP.TopLeftX = 0;
 	VP.TopLeftY = 0;
@@ -307,8 +316,11 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
 	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &Stride, &Offset);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pPixelBuffer);
+	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerState);
 	m_pDeviceContext->OMSetBlendState(m_pBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 
 	// Adjust for character spacing
 	const float fStartX = (float)(sx * 2) / rtSize.cx - 1;
