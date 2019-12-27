@@ -20,7 +20,7 @@
 
 #pragma once
 
-#define D3D11FONT_ENABLE 0
+#define D3D11FONT_ENABLE 1
 
 #include <atltypes.h>
 #include <ntverp.h>

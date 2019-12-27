@@ -1564,20 +1564,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	}
 
 #if 0
-	{
-		CD3D11Font d3d11font(L"Consolas", 14);
-		HRESULT hr2 = d3d11font.InitDeviceObjects(m_pDevice, m_pDeviceContext);
-
-		ID3D11RenderTargetView* pRenderTargetView;
-		if (S_OK == m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView)) {
-			const SIZE szWindow = m_windowRect.Size();
-			hr2 = d3d11font.Draw2DText(pRenderTargetView, szWindow, 5, 5, D3DCOLOR_XRGB(255, 255, 255), L"A train is a form of rail transport consisting of a series of connected vehicles\nthat generally run along a railroad track to transport cargo or passengers.");
-
-			pRenderTargetView->Release();
-		}
-	}
-#endif
-#if 0
 	{ // Tearing test (very non-optimal implementation, use only for tests)
 		static int nTearingPos = 0;
 
