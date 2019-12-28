@@ -44,14 +44,14 @@ class CD3D11Font
 	ID3D11Texture2D*          m_pTexture        = nullptr;
 	ID3D11ShaderResourceView* m_pShaderResource = nullptr;
 	ID3D11Buffer*             m_pVertexBuffer   = nullptr;
-	ID3D11Buffer*             m_pIndexBuffer    = nullptr;
+	//ID3D11Buffer*             m_pIndexBuffer    = nullptr;
 	ID3D11Buffer*             m_pPixelBuffer    = nullptr;
 	ID3D11SamplerState*       m_pSamplerState   = nullptr;
 	ID3D11BlendState*         m_pBlendState     = nullptr;
 
 	UINT  m_uTexWidth = 0;                   // Texture dimensions
 	UINT  m_uTexHeight = 0;
-	FLOAT m_fTextScale = 1.0f;
+	float m_fTextScale = 1.0f;
 
 public:
 	// Constructor / destructor
@@ -66,5 +66,5 @@ public:
 	HRESULT GetTextExtent(const WCHAR* strText, SIZE* pSize);
 
 	// 2D text drawing function
-	HRESULT Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const SIZE& rtSize, FLOAT sx, FLOAT sy, D3DCOLOR color, const WCHAR* strText);
+	HRESULT Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const SIZE& rtSize, float sx, float sy, D3DCOLOR color, const WCHAR* strText);
 };

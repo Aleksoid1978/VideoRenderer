@@ -29,7 +29,7 @@
 
 #define MAX_NUM_VERTICES 400*6
 
-struct VertexFont {
+struct Font11Vertex {
 	DirectX::XMFLOAT3 Pos;
 	DirectX::XMFLOAT2 Tex;
 };
@@ -147,12 +147,12 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateShaderResourceView(m_pTexture, &srvDesc, &m_pShaderResource));
 
 	// create the vertex array
-	std::vector<VertexFont> vertices;
+	std::vector<Font11Vertex> vertices;
 	vertices.resize(MAX_NUM_VERTICES);
 
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	vertexBufferDesc.ByteWidth = sizeof(VertexFont) * MAX_NUM_VERTICES;
+	vertexBufferDesc.ByteWidth = sizeof(Font11Vertex) * MAX_NUM_VERTICES;
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	vertexBufferDesc.MiscFlags = 0;
@@ -181,10 +181,10 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 
 	D3D11_SUBRESOURCE_DATA indexData = { indices.data(), 0, 0 };
 
-	hr = m_pDevice->CreateBuffer(&indexBufferDesc, &indexData, &m_pIndexBuffer);
-	if (FAILED(hr)) {
-		return hr;
-	}
+	//hr = m_pDevice->CreateBuffer(&indexBufferDesc, &indexData, &m_pIndexBuffer);
+	//if (FAILED(hr)) {
+	//	return hr;
+	//}
 
 	// Setup the description of the dynamic pixel constant buffer that is in the pixel shader.
 	D3D11_BUFFER_DESC pixelBufferDesc;
@@ -240,7 +240,7 @@ void CD3D11Font::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pInputLayout);
 	SAFE_RELEASE(m_pPixelBuffer);
 	SAFE_RELEASE(m_pVertexBuffer);
-	SAFE_RELEASE(m_pIndexBuffer);
+	//SAFE_RELEASE(m_pIndexBuffer);
 
 	SAFE_RELEASE(m_pDeviceContext);
 	SAFE_RELEASE(m_pDevice);
@@ -252,24 +252,24 @@ HRESULT CD3D11Font::GetTextExtent(const WCHAR* strText, SIZE* pSize)
 		return E_FAIL;
 	}
 
-	FLOAT fRowWidth = 0.0f;
-	FLOAT fRowHeight = (m_fTexCoords[0].bottom - m_fTexCoords[0].top)*m_uTexHeight;
-	FLOAT fWidth = 0.0f;
-	FLOAT fHeight = fRowHeight;
+	float fRowWidth  = 0.0f;
+	float fRowHeight = (m_fTexCoords[0].bottom - m_fTexCoords[0].top)*m_uTexHeight;
+	float fWidth     = 0.0f;
+	float fHeight    = fRowHeight;
 
 	while (*strText) {
 		WCHAR c = *strText++;
 
 		if (c == '\n') {
 			fRowWidth = 0.0f;
-			fHeight += fRowHeight;
+			fHeight  += fRowHeight;
 			continue;
 		}
 
-		auto idx = Char2Index(c);
+		const auto idx = Char2Index(c);
 
-		FLOAT tx1 = m_fTexCoords[idx].left;
-		FLOAT tx2 = m_fTexCoords[idx].right;
+		const float tx1 = m_fTexCoords[idx].left;
+		const float tx2 = m_fTexCoords[idx].right;
 
 		fRowWidth += (tx2 - tx1)*m_uTexWidth;
 
@@ -284,7 +284,7 @@ HRESULT CD3D11Font::GetTextExtent(const WCHAR* strText, SIZE* pSize)
 	return S_OK;
 }
 
-HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const SIZE& rtSize, FLOAT sx, FLOAT sy, D3DCOLOR color, const WCHAR* strText)
+HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const SIZE& rtSize, float sx, float sy, D3DCOLOR color, const WCHAR* strText)
 {
 	if (!m_pDevice || !m_pDeviceContext) {
 		return E_ABORT;
@@ -292,7 +292,7 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 	ASSERT(pRenderTargetView);
 
 	HRESULT hr = S_OK;
-	UINT Stride = sizeof(VertexFont);
+	UINT Stride = sizeof(Font11Vertex);
 	UINT Offset = 0;
 
 	if (color != m_Color) {
@@ -331,7 +331,7 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	hr = m_pDeviceContext->Map(m_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (S_OK == hr) {
-		VertexFont* pVertices = (VertexFont*)mappedResource.pData;
+		Font11Vertex* pVertices = (Font11Vertex*)mappedResource.pData;
 		UINT nVertices = 0;
 
 		while (*strText) {
@@ -373,7 +373,7 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 					m_pDeviceContext->Draw(nVertices, 0);
 
 					hr = m_pDeviceContext->Map(m_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-					pVertices = (VertexFont*)mappedResource.pData;
+					pVertices = (Font11Vertex*)mappedResource.pData;
 					nVertices = 0;
 				}
 			}

@@ -24,18 +24,13 @@
 #include "FontBitmap.h"
 #include "D3D9Font.h"
 
-//-----------------------------------------------------------------------------
-// Custom vertex types for rendering text
-//-----------------------------------------------------------------------------
 #define MAX_NUM_VERTICES 400*6
 
-struct FONT2DVERTEX {
+struct Font9Vertex {
 	DirectX::XMFLOAT4 pos;
 	DWORD color;
 	DirectX::XMFLOAT2 tex;
 };
-
-#define D3DFVF_FONT2DVERTEX (D3DFVF_XYZRHW|D3DFVF_DIFFUSE|D3DFVF_TEX1)
 
 inline auto Char2Index(WCHAR ch)
 {
@@ -48,10 +43,9 @@ inline auto Char2Index(WCHAR ch)
 	return 0x007F - 32;
 }
 
-//-----------------------------------------------------------------------------
-// Name: CD3D9Font()
-// Desc: Font class constructor
-//-----------------------------------------------------------------------------
+// CD3D9Font
+
+// Font class constructor
 CD3D9Font::CD3D9Font( const WCHAR* strFontName, const DWORD dwHeight, const DWORD dwFlags )
 	: m_dwFontHeight(dwHeight)
 	, m_dwFontFlags(dwFlags)
@@ -70,25 +64,15 @@ CD3D9Font::CD3D9Font( const WCHAR* strFontName, const DWORD dwHeight, const DWOR
 	ASSERT(idx == std::size(m_Characters));
 }
 
-
-
-//-----------------------------------------------------------------------------
-// Name: ~CD3D9Font()
-// Desc: Font class destructor
-//-----------------------------------------------------------------------------
+// Font class destructor
 CD3D9Font::~CD3D9Font()
 {
 	InvalidateDeviceObjects();
 	DeleteDeviceObjects();
 }
 
-
-
-//-----------------------------------------------------------------------------
-// Name: InitDeviceObjects()
-// Desc: Initializes device-dependent objects, including the vertex buffer used
-//       for rendering text and the texture map which stores the font image.
-//-----------------------------------------------------------------------------
+// Initializes device-dependent objects, including the vertex buffer used
+// for rendering text and the texture map which stores the font image.
 HRESULT CD3D9Font::InitDeviceObjects( IDirect3DDevice9* pd3dDevice )
 {
 	HRESULT hr = S_OK;
@@ -155,16 +139,11 @@ HRESULT CD3D9Font::InitDeviceObjects( IDirect3DDevice9* pd3dDevice )
 	return hr;
 }
 
-
-
-//-----------------------------------------------------------------------------
-// Name: RestoreDeviceObjects()
-// Desc:
-//-----------------------------------------------------------------------------
+// TODO: need a description
 HRESULT CD3D9Font::RestoreDeviceObjects()
 {
 	// Create vertex buffer for the letters
-	const UINT vertexBufferSize = sizeof(FONT2DVERTEX) * MAX_NUM_VERTICES;
+	const UINT vertexBufferSize = sizeof(Font9Vertex) * MAX_NUM_VERTICES;
 	HRESULT hr = m_pd3dDevice->CreateVertexBuffer(vertexBufferSize, D3DUSAGE_WRITEONLY | D3DUSAGE_DYNAMIC, 0, D3DPOOL_DEFAULT, &m_pVB, nullptr);
 	if ( FAILED(hr) ) {
 		return hr;
@@ -250,40 +229,25 @@ HRESULT CD3D9Font::RestoreDeviceObjects()
 	return S_OK;
 }
 
-
-
-//-----------------------------------------------------------------------------
-// Name: InvalidateDeviceObjects()
-// Desc: Destroys all device-dependent objects
-//-----------------------------------------------------------------------------
+// Destroys all device-dependent objects
 void CD3D9Font::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE( m_pVB );
-	SAFE_RELEASE( m_pStateBlockSaved );
-	SAFE_RELEASE( m_pStateBlockDrawText );
+	SAFE_RELEASE(m_pVB);
+	SAFE_RELEASE(m_pStateBlockSaved);
+	SAFE_RELEASE(m_pStateBlockDrawText);
 }
 
-
-
-//-----------------------------------------------------------------------------
-// Name: DeleteDeviceObjects()
-// Desc: Destroys all device-dependent objects
-//-----------------------------------------------------------------------------
+// Destroys all device-dependent objects
 void CD3D9Font::DeleteDeviceObjects()
 {
-	SAFE_RELEASE( m_pTexture );
+	SAFE_RELEASE(m_pTexture);
 	m_pd3dDevice = nullptr;
 }
 
-
-
-//-----------------------------------------------------------------------------
-// Name: GetTextExtent()
-// Desc: Get the dimensions of a text string
-//-----------------------------------------------------------------------------
+// Get the dimensions of a text string
 HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 {
-	if ( nullptr==strText || nullptr==pSize ) {
+	if (nullptr == strText || nullptr == pSize) {
 		return E_FAIL;
 	}
 
@@ -292,10 +256,10 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 	float fWidth     = 0.0f;
 	float fHeight    = fRowHeight;
 
-	while ( *strText ) {
+	while (*strText) {
 		WCHAR c = *strText++;
 
-		if ( c == '\n' ) {
+		if (c == '\n') {
 			fRowWidth = 0.0f;
 			fHeight  += fRowHeight;
 			continue;
@@ -306,9 +270,9 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 		const float tx1 = m_fTexCoords[idx].left;
 		const float tx2 = m_fTexCoords[idx].right;
 
-		fRowWidth += (tx2-tx1)*m_uTexWidth;
+		fRowWidth += (tx2 - tx1)*m_uTexWidth;
 
-		if ( fRowWidth > fWidth ) {
+		if (fRowWidth > fWidth) {
 			fWidth = fRowWidth;
 		}
 	}
@@ -319,45 +283,40 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 	return S_OK;
 }
 
-
-
-//-----------------------------------------------------------------------------
-// Name: DrawText()
-// Desc: Draws 2D text. Note that sx and sy are in pixels
-//-----------------------------------------------------------------------------
+// Draws 2D text. Note that sx and sy are in pixels
 HRESULT CD3D9Font::Draw2DText( float sx, float sy, const D3DCOLOR color,
 							const WCHAR* strText, const DWORD dwFlags )
 {
-	if ( m_pd3dDevice == nullptr ) {
+	if (m_pd3dDevice == nullptr) {
 		return E_FAIL;
 	}
 
 	// Setup renderstate
 	m_pStateBlockSaved->Capture();
 	m_pStateBlockDrawText->Apply();
-	m_pd3dDevice->SetFVF( D3DFVF_FONT2DVERTEX );
-	m_pd3dDevice->SetPixelShader( nullptr );
-	m_pd3dDevice->SetStreamSource( 0, m_pVB, 0, sizeof(FONT2DVERTEX) );
+	m_pd3dDevice->SetFVF(D3DFVF_XYZRHW|D3DFVF_DIFFUSE|D3DFVF_TEX1);
+	m_pd3dDevice->SetPixelShader(nullptr);
+	m_pd3dDevice->SetStreamSource(0, m_pVB, 0, sizeof(Font9Vertex));
 
 	// Set filter states
-	if ( dwFlags & D3DFONT_FILTERED ) {
-		m_pd3dDevice->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
-		m_pd3dDevice->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR );
+	if (dwFlags & D3DFONT_FILTERED) {
+		m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+		m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 	}
 
 	const float fLineHeight = (m_fTexCoords[0].bottom - m_fTexCoords[0].top)*m_uTexHeight;
 
 	// Center the text block in the viewport
-	if ( dwFlags & D3DFONT_CENTERED_X ) {
+	if (dwFlags & D3DFONT_CENTERED_X) {
 		D3DVIEWPORT9 vp;
-		m_pd3dDevice->GetViewport( &vp );
+		m_pd3dDevice->GetViewport(&vp);
 		const WCHAR* strTextTmp = strText;
 		float xFinal = 0.0f;
 
-		while ( *strTextTmp ) {
+		while (*strTextTmp) {
 			WCHAR c = *strTextTmp++;
 
-			if ( c == '\n' ) {
+			if (c == '\n') {
 				break;    // Isn't supported.
 			}
 
@@ -366,26 +325,26 @@ HRESULT CD3D9Font::Draw2DText( float sx, float sy, const D3DCOLOR color,
 			const float tx1 = m_fTexCoords[idx].left;
 			const float tx2 = m_fTexCoords[idx].right;
 
-			const float w = (tx2-tx1) *  m_uTexWidth / m_fTextScale;
+			const float w = (tx2 - tx1) *  m_uTexWidth / m_fTextScale;
 
 			xFinal += w;
 		}
 
-		sx = (vp.Width-xFinal)/2.0f;
+		sx = (vp.Width - xFinal) / 2.0f;
 	}
-	if ( dwFlags & D3DFONT_CENTERED_Y ) {
+	if (dwFlags & D3DFONT_CENTERED_Y) {
 		D3DVIEWPORT9 vp;
-		m_pd3dDevice->GetViewport( &vp );
-		sy = (vp.Height-fLineHeight)/2;
+		m_pd3dDevice->GetViewport(&vp);
+		sy = (vp.Height - fLineHeight) / 2;
 	}
 
 	// Adjust for character spacing
 	const float fStartX = sx;
 
 	// Fill vertex buffer
-	FONT2DVERTEX* pVertices = nullptr;
+	Font9Vertex* pVertices = nullptr;
 	UINT uNumTriangles = 0;
-	m_pVB->Lock( 0, 0, (void**)&pVertices, D3DLOCK_DISCARD );
+	m_pVB->Lock(0, 0, (void**)&pVertices, D3DLOCK_DISCARD);
 
 	while ( *strText ) {
 		WCHAR c = *strText++;

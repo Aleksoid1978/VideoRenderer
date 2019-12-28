@@ -53,7 +53,7 @@ class CD3D9Font
 
 public:
 	// Constructor / destructor
-	CD3D9Font( const WCHAR* strFontName, const DWORD dwHeight, const DWORD dwFlags=0L );
+	CD3D9Font(const WCHAR* strFontName, const DWORD dwHeight, const DWORD dwFlags=0L);
 	~CD3D9Font();
 
 	// Initializing and destroying device-dependent objects
