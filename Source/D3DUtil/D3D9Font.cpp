@@ -46,11 +46,11 @@ inline auto Char2Index(WCHAR ch)
 // CD3D9Font
 
 // Font class constructor
-CD3D9Font::CD3D9Font( const WCHAR* strFontName, const DWORD dwHeight, const DWORD dwFlags )
+CD3D9Font::CD3D9Font(const WCHAR* strFontName, const DWORD dwHeight, const DWORD dwFlags)
 	: m_dwFontHeight(dwHeight)
 	, m_dwFontFlags(dwFlags)
 {
-	wcsncpy_s( m_strFontName, strFontName, std::size(m_strFontName) );
+	wcsncpy_s(m_strFontName, strFontName, std::size(m_strFontName));
 	m_strFontName[std::size(m_strFontName) - 1] = '\0';
 
 	UINT idx = 0;
@@ -73,7 +73,7 @@ CD3D9Font::~CD3D9Font()
 
 // Initializes device-dependent objects, including the vertex buffer used
 // for rendering text and the texture map which stores the font image.
-HRESULT CD3D9Font::InitDeviceObjects( IDirect3DDevice9* pd3dDevice )
+HRESULT CD3D9Font::InitDeviceObjects(IDirect3DDevice9* pd3dDevice)
 {
 	HRESULT hr = S_OK;
 
@@ -105,9 +105,9 @@ HRESULT CD3D9Font::InitDeviceObjects( IDirect3DDevice9* pd3dDevice )
 	}
 
 	// Create a new texture for the font
-	hr = m_pd3dDevice->CreateTexture( m_uTexWidth, m_uTexHeight, 1,
-									  D3DUSAGE_DYNAMIC, D3DFMT_A8L8,
-									  D3DPOOL_DEFAULT, &m_pTexture, nullptr );
+	hr = m_pd3dDevice->CreateTexture(m_uTexWidth, m_uTexHeight, 1,
+									 D3DUSAGE_DYNAMIC, D3DFMT_A8L8,
+									 D3DPOOL_DEFAULT, &m_pTexture, nullptr);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -245,7 +245,7 @@ void CD3D9Font::DeleteDeviceObjects()
 }
 
 // Get the dimensions of a text string
-HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
+HRESULT CD3D9Font::GetTextExtent(const WCHAR* strText, SIZE* pSize)
 {
 	if (nullptr == strText || nullptr == pSize) {
 		return E_FAIL;
@@ -284,8 +284,7 @@ HRESULT CD3D9Font::GetTextExtent( const WCHAR* strText, SIZE* pSize )
 }
 
 // Draws 2D text. Note that sx and sy are in pixels
-HRESULT CD3D9Font::Draw2DText( float sx, float sy, const D3DCOLOR color,
-							const WCHAR* strText, const DWORD dwFlags )
+HRESULT CD3D9Font::Draw2DText(float sx, float sy, const D3DCOLOR color, const WCHAR* strText, const DWORD dwFlags)
 {
 	if (m_pd3dDevice == nullptr) {
 		return E_FAIL;
@@ -346,10 +345,10 @@ HRESULT CD3D9Font::Draw2DText( float sx, float sy, const D3DCOLOR color,
 	UINT uNumTriangles = 0;
 	m_pVB->Lock(0, 0, (void**)&pVertices, D3DLOCK_DISCARD);
 
-	while ( *strText ) {
+	while (*strText) {
 		WCHAR c = *strText++;
 
-		if ( c == '\n' ) {
+		if (c == '\n') {
 			sx = fStartX;
 			sy += fLineHeight;
 			continue;
@@ -370,7 +369,7 @@ HRESULT CD3D9Font::Draw2DText( float sx, float sy, const D3DCOLOR color,
 		const float top    = sy - 0.5f;
 		const float bottom = sy + h - 0.5f;
 
-		if ( c != 0x0020 && c != 0x00A0) { // Space and No-Break Space
+		if (c != 0x0020 && c != 0x00A0) { // Space and No-Break Space
 			*pVertices++ = { {left , bottom, 0.9f, 1.0f}, color, {tx1, ty2} };
 			*pVertices++ = { {left , top,    0.9f, 1.0f}, color, {tx1, ty1} };
 			*pVertices++ = { {right, bottom, 0.9f, 1.0f}, color, {tx2, ty2} };
@@ -379,12 +378,12 @@ HRESULT CD3D9Font::Draw2DText( float sx, float sy, const D3DCOLOR color,
 			*pVertices++ = { {left , top,    0.9f, 1.0f}, color, {tx1, ty1} };
 			uNumTriangles += 2;
 
-			if ( uNumTriangles*3 > (MAX_NUM_VERTICES-6) ) {
+			if (uNumTriangles*3 > (MAX_NUM_VERTICES-6)) {
 				// Unlock, render, and relock the vertex buffer
 				m_pVB->Unlock();
-				m_pd3dDevice->DrawPrimitive( D3DPT_TRIANGLELIST, 0, uNumTriangles );
+				m_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLELIST, 0, uNumTriangles);
 				pVertices = nullptr;
-				m_pVB->Lock( 0, 0, (void**)&pVertices, D3DLOCK_DISCARD );
+				m_pVB->Lock(0, 0, (void**)&pVertices, D3DLOCK_DISCARD);
 				uNumTriangles = 0;
 			}
 		}
@@ -394,8 +393,8 @@ HRESULT CD3D9Font::Draw2DText( float sx, float sy, const D3DCOLOR color,
 
 	// Unlock and render the vertex buffer
 	m_pVB->Unlock();
-	if ( uNumTriangles > 0 ) {
-		m_pd3dDevice->DrawPrimitive( D3DPT_TRIANGLELIST, 0, uNumTriangles );
+	if (uNumTriangles > 0) {
+		m_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLELIST, 0, uNumTriangles);
 	}
 
 	// Restore the modified renderstates

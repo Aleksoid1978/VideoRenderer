@@ -164,6 +164,7 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 		return hr;
 	}
 
+	/*
 	// create the index array
 	std::vector<uint32_t> indices;
 	indices.reserve(MAX_NUM_VERTICES);
@@ -181,10 +182,11 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 
 	D3D11_SUBRESOURCE_DATA indexData = { indices.data(), 0, 0 };
 
-	//hr = m_pDevice->CreateBuffer(&indexBufferDesc, &indexData, &m_pIndexBuffer);
-	//if (FAILED(hr)) {
-	//	return hr;
-	//}
+	hr = m_pDevice->CreateBuffer(&indexBufferDesc, &indexData, &m_pIndexBuffer);
+	if (FAILED(hr)) {
+		return hr;
+	}
+	*/
 
 	// Setup the description of the dynamic pixel constant buffer that is in the pixel shader.
 	D3D11_BUFFER_DESC pixelBufferDesc;
@@ -381,8 +383,9 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 			drawX += Width;
 		}
 		m_pDeviceContext->Unmap(m_pVertexBuffer, 0);
-
-		m_pDeviceContext->Draw(nVertices, 0);
+		if (nVertices > 0) {
+			m_pDeviceContext->Draw(nVertices, 0);
+		}
 	}
 
 	return hr;
