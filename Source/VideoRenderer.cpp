@@ -53,6 +53,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	: CBaseVideoRenderer2(__uuidof(this), L"MPC Video Renderer", pUnk, phr)
 	, m_DX9_VP(this)
 	, m_DX11_VP(this)
+#if !D3D11FONT_ENABLE
+	, m_StatsDrawing(STATS_W, STATS_H)
+#endif
 {
 #ifdef _DEBUG
 	DbgSetModuleLevel(LOG_TRACE, DWORD_MAX);
