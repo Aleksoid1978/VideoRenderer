@@ -40,9 +40,9 @@ class CD3D9Font
 	WCHAR m_Characters[128];
 	FloatRect m_fTexCoords[128] = {};
 
-	IDirect3DDevice9*       m_pd3dDevice = nullptr; // A D3DDevice used for rendering
-	IDirect3DTexture9*      m_pTexture   = nullptr; // The d3d texture for this font
-	IDirect3DVertexBuffer9* m_pVB        = nullptr; // VertexBuffer for rendering text
+	IDirect3DDevice9*       m_pd3dDevice    = nullptr; // A D3DDevice used for rendering
+	IDirect3DTexture9*      m_pTexture      = nullptr; // The d3d texture for this font
+	IDirect3DVertexBuffer9* m_pVertexBuffer = nullptr; // VertexBuffer for rendering text
 	UINT  m_uTexWidth  = 0;                   // Texture dimensions
 	UINT  m_uTexHeight = 0;
 	float m_fTextScale = 1.0f;
@@ -50,6 +50,7 @@ class CD3D9Font
 	// Stateblocks for setting and restoring render states
 	IDirect3DStateBlock9* m_pStateBlockSaved    = nullptr;
 	IDirect3DStateBlock9* m_pStateBlockDrawText = nullptr;
+	HRESULT CreateStateBlocks();
 
 public:
 	// Constructor / destructor
@@ -58,9 +59,7 @@ public:
 
 	// Initializing and destroying device-dependent objects
 	HRESULT InitDeviceObjects(IDirect3DDevice9* pd3dDevice);
-	HRESULT RestoreDeviceObjects();
 	void InvalidateDeviceObjects();
-	void DeleteDeviceObjects();
 
 	// Function to get extent of text
 	HRESULT GetTextExtent(const WCHAR* strText, SIZE* pSize);

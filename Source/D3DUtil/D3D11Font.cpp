@@ -251,7 +251,7 @@ void CD3D11Font::InvalidateDeviceObjects()
 HRESULT CD3D11Font::GetTextExtent(const WCHAR* strText, SIZE* pSize)
 {
 	if (nullptr == strText || nullptr == pSize) {
-		return E_FAIL;
+		return E_POINTER;
 	}
 
 	float fRowWidth  = 0.0f;
@@ -337,7 +337,7 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 		UINT nVertices = 0;
 
 		while (*strText) {
-			WCHAR c = *strText++;
+			const WCHAR c = *strText++;
 
 			if (c == '\n') {
 				drawX = fStartX;
@@ -345,28 +345,23 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 				continue;
 			}
 
-			auto idx = Char2Index(c);
+			const auto tex = m_fTexCoords[Char2Index(c)];
 
-			float Width = (m_fTexCoords[idx].right - m_fTexCoords[idx].left) * m_uTexWidth * 2 / rtSize.cx;
-			float Height = (m_fTexCoords[idx].bottom - m_fTexCoords[idx].top) * m_uTexHeight * 2 / rtSize.cy;
-
-			float left = drawX;
-			float right = drawX + Width;
-			float top = drawY;
-			float bottom = drawY - Height;
-
-			const float ltex = m_fTexCoords[idx].left;
-			const float ttex = m_fTexCoords[idx].top;
-			const float rtex = m_fTexCoords[idx].right;
-			const float btex = m_fTexCoords[idx].bottom;
+			const float Width = (tex.right - tex.left) * m_uTexWidth * 2 / rtSize.cx;
+			const float Height = (tex.bottom - tex.top) * m_uTexHeight * 2 / rtSize.cy;
 
 			if (c != 0x0020 && c != 0x00A0) { // Space and No-Break Space
-				*pVertices++ = { {left,  top,    0.0f}, {ltex, ttex} };
-				*pVertices++ = { {right, bottom, 0.0f}, {rtex, btex} };
-				*pVertices++ = { {left,  bottom, 0.0f}, {ltex, btex} };
-				*pVertices++ = { {left,  top,    0.0f}, {ltex, ttex} };
-				*pVertices++ = { {right, top,    0.0f}, {rtex, ttex} };
-				*pVertices++ = { {right, bottom, 0.0f}, {rtex, btex} };
+				const float left = drawX;
+				const float right = drawX + Width;
+				const float top = drawY;
+				const float bottom = drawY - Height;
+
+				*pVertices++ = { {left,  top,    0.0f}, {tex.left,  tex.top}    };
+				*pVertices++ = { {right, bottom, 0.0f}, {tex.right, tex.bottom} };
+				*pVertices++ = { {left,  bottom, 0.0f}, {tex.left,  tex.bottom} };
+				*pVertices++ = { {left,  top,    0.0f}, {tex.left,  tex.top}    };
+				*pVertices++ = { {right, top,    0.0f}, {tex.right, tex.top}    };
+				*pVertices++ = { {right, bottom, 0.0f}, {tex.right, tex.bottom} };
 				nVertices += 6;
 
 				if (nVertices > (MAX_NUM_VERTICES - 6)) {

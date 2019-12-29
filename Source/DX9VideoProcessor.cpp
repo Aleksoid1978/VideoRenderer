@@ -322,9 +322,6 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 	HRESULT hr2 = m_TexStats.Create(m_pD3DDevEx, D3DFMT_A8R8G8B8, STATS_W, STATS_H, D3DUSAGE_RENDERTARGET);
 	if (S_OK == hr2) {
 		hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
-		if (S_OK == hr2) {
-			hr2 = m_Font3D.RestoreDeviceObjects();
-		}
 	}
 	if (S_OK == hr2) {
 		hr2 = m_Rect3D.InitDeviceObjects(m_pD3DDevEx);
@@ -382,7 +379,6 @@ void CDX9VideoProcessor::ReleaseDevice()
 	m_strShaderY = nullptr;
 
 	m_Font3D.InvalidateDeviceObjects();
-	m_Font3D.DeleteDeviceObjects();
 	m_Rect3D.InvalidateDeviceObjects();
 
 	m_pD3DDevEx.Release();
