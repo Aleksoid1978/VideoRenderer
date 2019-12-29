@@ -39,7 +39,6 @@
 #define IDF_PSH11_SIMPLE                801
 #define IDF_VSH11_GEOMETRY              802
 #define IDF_PSH11_GEOMETRY              803
-#define IDF_VSH11_FONT                  804
 #define IDF_PSH11_FONT                  805
 #define IDF_PSH11_CONVERT_COLOR         810
 #define IDF_PSH11_CONVERT_YUY2          813

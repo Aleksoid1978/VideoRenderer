@@ -100,7 +100,7 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 
 	LPVOID data;
 	DWORD size;
-	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VSH11_FONT));
+	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VSH11_SIMPLE));
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateVertexShader(data, size, nullptr, &m_pVertexShader));
 
 	static const D3D11_INPUT_ELEMENT_DESC vertexLayout[] = {
