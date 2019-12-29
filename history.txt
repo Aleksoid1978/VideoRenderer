@@ -1,3 +1,9 @@
+v0.3.?.??? - ????.??.??
+-----------------------
+Improved compatibility with third-party players.
+Fixed switching supported formats for DXVA2 and D3D11 video processors during playback.
+Faster statistics rendering. A pre-prepared texture with symbols is used.
+
 v0.3.6.970 - 2019.11.29
 -----------------------
 Fixed subtitle output using XySubFilter in some situations.
