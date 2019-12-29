@@ -29,7 +29,6 @@
 #include "IVideoRenderer.h"
 #include "DX9VideoProcessor.h"
 #include "DX11VideoProcessor.h"
-#include "StatsDrawing.h"
 #include "./Include/ISubRender.h"
 #include "./Include/FilterInterfacesImpl.h"
 
@@ -100,10 +99,6 @@ private:
 	CDX11VideoProcessor m_DX11_VP;
 
 	CMediaType m_inputMT;
-
-#if !D3D11FONT_ENABLE
-	CStatsDrawingGdiplus m_StatsDrawing;
-#endif
 
 	ISubRenderCallback* m_pSubCallBack = nullptr;
 

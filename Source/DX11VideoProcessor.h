@@ -20,8 +20,6 @@
 
 #pragma once
 
-#define D3D11FONT_ENABLE 1
-
 #include <atltypes.h>
 #include <ntverp.h>
 #include <DXGI1_2.h>
@@ -32,10 +30,8 @@
 #include "DX11Helper.h"
 #include "D3D11VP.h"
 #include "FrameStats.h"
-#if D3D11FONT_ENABLE
 #include "D3DUtil/D3D11Font.h"
 #include "D3DUtil/D3D11Geometry.h"
-#endif
 #include "DX9Device.h"
 
 
@@ -151,10 +147,8 @@ private:
 	bool m_bSrcFromGPU = false;
 
 	Tex2D_t m_TexStats;
-#if D3D11FONT_ENABLE
 	CD3D11Font m_Font3D;
 	CD3D11Rectangle m_Rect3D;
-#endif
 
 	HMODULE m_hDXGILib = nullptr;
 	HMODULE m_hD3D11Lib = nullptr;

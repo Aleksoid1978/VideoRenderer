@@ -356,9 +356,7 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(const Tex2D_t& Tex, ID3D11Textu
 
 CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter)
 	: m_pFilter(pFilter)
-#if D3D11FONT_ENABLE
 	, m_Font3D(L"Consolas", 14)
-#endif
 {
 	m_hDXGILib = LoadLibraryW(L"dxgi.dll");
 	if (!m_hDXGILib) {
@@ -519,10 +517,9 @@ void CDX11VideoProcessor::ReleaseDevice()
 	ReleaseVP();
 	m_D3D11VP.ReleaseVideoDevice();
 
-#if D3D11FONT_ENABLE
 	m_Font3D.InvalidateDeviceObjects();
 	m_Rect3D.InvalidateDeviceObjects();
-#endif
+
 	m_TexStats.Release();
 	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
@@ -797,7 +794,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		DLog(L"Graphics adapter: %s", m_strAdapterDescription);
 	}
 
-#if D3D11FONT_ENABLE
 	HRESULT hr2 = m_TexStats.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DefaultShaderRTarget);
 	if (S_OK == hr2) {
 		hr2 = m_Font3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
@@ -806,10 +802,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		hr2 = m_Rect3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
 	}
 	ASSERT(S_OK == hr2);
-#else
-	HRESULT hr2 = m_TexStats.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DynamicShaderWrite);
-	ASSERT(S_OK == hr2);
-#endif
 
 	return hr;
 }
@@ -2219,7 +2211,6 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	str.AppendFormat(L"\nSync offset   : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
 #endif
 
-#if D3D11FONT_ENABLE
 	ID3D11RenderTargetView* pRenderTargetView = nullptr;
 	HRESULT hr = m_pDevice->CreateRenderTargetView(m_TexStats.pTexture, nullptr, &pRenderTargetView);
 	if (S_OK == hr) {
@@ -2246,23 +2237,6 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		VP.MaxDepth = 1.0f;
 		hr = AlphaBlt(m_TexStats.pShaderResource, pRenderTarget, VP);
 	}
-#else
-	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-	HRESULT hr = m_pDeviceContext->Map(m_TexStats.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (SUCCEEDED(hr)) {
-		m_pFilter->m_StatsDrawing.DrawTextW((BYTE*)mappedResource.pData, mappedResource.RowPitch, str);
-		m_pDeviceContext->Unmap(m_TexStats.pTexture, 0);
-
-		D3D11_VIEWPORT VP;
-		VP.TopLeftX = STATS_X;
-		VP.TopLeftY = STATS_Y;
-		VP.Width    = STATS_W;
-		VP.Height   = STATS_H;
-		VP.MinDepth = 0.0f;
-		VP.MaxDepth = 1.0f;
-		hr = AlphaBlt(m_TexStats.pShaderResource, pRenderTarget, VP);
-	}
-#endif
 
 	return hr;
 }
