@@ -42,7 +42,7 @@ EXIT /B
 
 :fxc_OK
 
-SET workdir=..\..\_bin\shaders
+SET workdir=..\_bin\shaders
 IF NOT EXIST "%workdir%\" MKDIR "%workdir%"
 
 CALL :SubColorText "0A" "=== Compiling D3D9 shaders ===" & ECHO.
