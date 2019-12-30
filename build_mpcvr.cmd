@@ -45,7 +45,7 @@ IF /I "%SIGN%" == "True" (
 CALL :SubVSPath
 SET "TOOLSET=%VS_PATH%\Common7\Tools\vsdevcmd"
 
-SET "LOG_DIR=bin\logs"
+SET "LOG_DIR=_bin\logs"
 IF NOT EXIST "%LOG_DIR%" MD "%LOG_DIR%"
 
 CALL "%TOOLSET%" -no_logo -arch=x86
@@ -59,7 +59,7 @@ CD /D %~dp0
 CALL :SubMPCVR x64
 
 IF /I "%SIGN%" == "True" (
-  SET FILES="%~dp0bin\Filters_x86%SUFFIX%\MpcVideoRenderer.ax" "%~dp0bin\Filters_x64%SUFFIX%\MpcVideoRenderer64.ax"
+  SET FILES="%~dp0_bin\Filters_x86%SUFFIX%\MpcVideoRenderer.ax" "%~dp0_bin\Filters_x64%SUFFIX%\MpcVideoRenderer64.ax"
   CALL "%~dp0\sign.cmd" !FILES! || (CALL :SubMsg "ERROR" "Problem signing !FILES!" & EXIT /B)
   CALL :SubMsg "INFO" "!FILES! signed successfully."
 )
@@ -87,12 +87,12 @@ IF /I "%RELEASE%" == "1" (
 
 CALL :SubDetectSevenzipPath
 IF DEFINED SEVENZIP (
-    IF EXIST "bin\%PCKG_NAME%.zip" DEL "bin\%PCKG_NAME%.zip"
+    IF EXIST "_bin\%PCKG_NAME%.zip" DEL "_bin\%PCKG_NAME%.zip"
 
     TITLE Creating archive %PCKG_NAME%.zip...
-    START "7z" /B /WAIT "%SEVENZIP%" a -tzip -mx9 "bin\%PCKG_NAME%.zip" ^
-.\bin\Filters_x86%SUFFIX%\MpcVideoRenderer.ax ^
-.\bin\Filters_x64%SUFFIX%\MpcVideoRenderer64.ax ^
+    START "7z" /B /WAIT "%SEVENZIP%" a -tzip -mx9 "_bin\%PCKG_NAME%.zip" ^
+.\_bin\Filters_x86%SUFFIX%\MpcVideoRenderer.ax ^
+.\_bin\Filters_x64%SUFFIX%\MpcVideoRenderer64.ax ^
 .\distrib\Install_MPCVR_32.cmd ^
 .\distrib\Install_MPCVR_64.cmd ^
 .\distrib\Uninstall_MPCVR_32.cmd ^
