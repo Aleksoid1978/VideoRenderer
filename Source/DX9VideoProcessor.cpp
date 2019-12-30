@@ -1018,11 +1018,7 @@ HRESULT CDX9VideoProcessor::Render(int field)
 	m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
 
 	if (!m_videoRect.IsRectEmpty()) {
-		if (m_DXVA2VP.IsReady()) {
-			hr = ProcessDXVA2(pBackBuffer, m_srcRenderRect, m_dstRenderRect, m_FieldDrawn == 2);
-		} else {
-			hr = ProcessTex(pBackBuffer, m_srcRenderRect, m_dstRenderRect);
-		}
+		hr = Process(pBackBuffer, m_srcRenderRect, m_dstRenderRect, m_FieldDrawn == 2);
 	}
 
 	hr = m_pD3DDevEx->EndScene();
@@ -1199,19 +1195,16 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 		return hr;
 	}
 
-	if (m_DXVA2VP.IsReady()) {
-		if (m_pPSCorrection || m_bVPScaling) {
-			UpdateCorrectionTex(w, h);
-		}
-
-		hr = ProcessDXVA2(pRGB32Surface, rSrcRect, rDstRect, 0);
-
-		if (m_pPSCorrection || m_bVPScaling) {
-			UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
-		}
-	} else {
-		hr = ProcessTex(pRGB32Surface, rSrcRect, rDstRect);
+	if (m_DXVA2VP.IsReady() && (m_pPSCorrection || m_bVPScaling)) {
+		UpdateCorrectionTex(w, h);
 	}
+
+	hr = Process(pRGB32Surface, rSrcRect, rDstRect, 0);
+
+	if (m_DXVA2VP.IsReady() && (m_pPSCorrection || m_bVPScaling)) {
+		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
+	}
+
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -1444,67 +1437,66 @@ HRESULT CDX9VideoProcessor::UpdateChromaScalingShader()
 	return hr;
 }
 
-HRESULT CDX9VideoProcessor::ProcessDXVA2(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
+HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
 	HRESULT hr = S_OK;
 
-	if (m_pPSCorrection && m_TexCorrection.pTexture) {
-		CRect rCorrection(0, 0, m_TexCorrection.Width, m_TexCorrection.Height);
-		if (m_bVPScaling) {
-			hr = DXVA2VPPass(m_TexCorrection.pSurface, rSrcRect, rCorrection, second);
-		} else {
-			hr = DXVA2VPPass(m_TexConvert.pSurface, rSrcRect, rSrcRect, second);
-			hr = ResizeShader2Pass(m_TexConvert.pTexture, m_TexCorrection.pSurface, rSrcRect, rCorrection);
+	if (m_DXVA2VP.IsReady()) {
+		if (m_pPSCorrection && m_TexCorrection.pTexture) {
+			CRect rCorrection(0, 0, m_TexCorrection.Width, m_TexCorrection.Height);
+			if (m_bVPScaling) {
+				hr = DXVA2VPPass(m_TexCorrection.pSurface, rSrcRect, rCorrection, second);
+			}
+			else {
+				hr = DXVA2VPPass(m_TexConvert.pSurface, rSrcRect, rSrcRect, second);
+				hr = ResizeShader2Pass(m_TexConvert.pTexture, m_TexCorrection.pSurface, rSrcRect, rCorrection);
+			}
+			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
+			hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
+			hr = TextureCopyRect(m_TexCorrection.pTexture, rCorrection, rDstRect, D3DTEXF_POINT, 0);
+			m_pD3DDevEx->SetPixelShader(nullptr);
 		}
-		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-		hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
-		hr = TextureCopyRect(m_TexCorrection.pTexture, rCorrection, rDstRect, D3DTEXF_POINT, 0);
-		m_pD3DDevEx->SetPixelShader(nullptr);
+		else {
+			if (m_bVPScaling) {
+				if (m_iRotation && m_TexCorrection.pTexture) {
+					CRect rCorrection(0, 0, m_TexCorrection.Width, m_TexCorrection.Height);
+					hr = DXVA2VPPass(m_TexCorrection.pSurface, rSrcRect, rCorrection, second);
+					hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
+					hr = TextureCopyRect(m_TexCorrection.pTexture, rCorrection, rDstRect, D3DTEXF_POINT, m_iRotation);
+				}
+				else {
+					hr = DXVA2VPPass(pRenderTarget, rSrcRect, rDstRect, second);
+				}
+			}
+			else {
+				hr = DXVA2VPPass(m_TexConvert.pSurface, rSrcRect, rSrcRect, second);
+				hr = ResizeShader2Pass(m_TexConvert.pTexture, pRenderTarget, rSrcRect, rDstRect);
+			}
+		}
 	}
 	else {
-		if (m_bVPScaling) {
-			if (m_iRotation && m_TexCorrection.pTexture) {
-				CRect rCorrection(0, 0, m_TexCorrection.Width, m_TexCorrection.Height);
-				hr = DXVA2VPPass(m_TexCorrection.pSurface, rSrcRect, rCorrection, second);
-				hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-				hr = TextureCopyRect(m_TexCorrection.pTexture, rCorrection, rDstRect, D3DTEXF_POINT, m_iRotation);
-			} else {
-				hr = DXVA2VPPass(pRenderTarget, rSrcRect, rDstRect, second);
+		IDirect3DTexture9* pTexture = m_TexSrcVideo.pTexture;
+
+		// Convert color pass
+		if (m_pPSConvertColor && m_PSConvColorData.bEnable) {
+
+			if (!m_TexConvert.pTexture) {
+				hr = m_TexConvert.Create(m_pD3DDevEx, m_InternalTexFmt, m_srcWidth, m_srcHeight, D3DUSAGE_RENDERTARGET);
+				DLogIf(FAILED(hr), "CDX9VideoProcessor::ProcessTex() : m_TexConvert.Create() failed with error %s", HR2Str(hr));
 			}
-		} else {
-			hr = DXVA2VPPass(m_TexConvert.pSurface, rSrcRect, rSrcRect, second);
-			hr = ResizeShader2Pass(m_TexConvert.pTexture, pRenderTarget, rSrcRect, rDstRect);
+
+			if (m_TexConvert.pTexture) {
+				hr = m_pD3DDevEx->SetRenderTarget(0, m_TexConvert.pSurface);
+				TextureConvertColor(m_TexSrcVideo);
+				pTexture = m_TexConvert.pTexture;
+			}
 		}
+
+		// Resize
+		hr = ResizeShader2Pass(pTexture, pRenderTarget, rSrcRect, rDstRect);
 	}
 
-	return hr;
-}
-
-HRESULT CDX9VideoProcessor::ProcessTex(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
-{
-	HRESULT hr = S_OK;
-	IDirect3DTexture9* pTexture = m_TexSrcVideo.pTexture;
-
-	// Convert color pass
-
-	if (m_pPSConvertColor && m_PSConvColorData.bEnable) {
-
-		if (!m_TexConvert.pTexture) {
-			hr = m_TexConvert.Create(m_pD3DDevEx, m_InternalTexFmt, m_srcWidth, m_srcHeight, D3DUSAGE_RENDERTARGET);
-			DLogIf(FAILED(hr), "CDX9VideoProcessor::ProcessTex() : m_TexConvert.Create() failed with error %s", HR2Str(hr));
-		}
-
-		if (m_TexConvert.pTexture) {
-			hr = m_pD3DDevEx->SetRenderTarget(0, m_TexConvert.pSurface);
-			TextureConvertColor(m_TexSrcVideo);
-			pTexture = m_TexConvert.pTexture;
-		}
-	}
-
-	// Resize
-	hr = ResizeShader2Pass(pTexture, pRenderTarget, rSrcRect, rDstRect);
-
-	DLogIf(FAILED(hr), L"CDX9VideoProcessor::ProcessTex() : failed with error %s", HR2Str(hr));
+	DLogIf(FAILED(hr), L"CDX9VideoProcessor::Process() : failed with error %s", HR2Str(hr));
 
 	return hr;
 }
