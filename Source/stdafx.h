@@ -33,7 +33,7 @@
 
 #include <dmodshow.h>
 #include <dvdmedia.h>
-#include "./BaseClasses/streams.h"
+#include "../BaseClasses/streams.h"
 #include <VersionHelpers.h>
 #include <DirectXMath.h>
 

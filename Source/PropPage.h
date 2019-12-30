@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "BaseClasses\streams.h"
+#include "../BaseClasses/streams.h"
 #include "IVideoRenderer.h"
 
 // CVRMainPPage
