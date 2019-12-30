@@ -65,13 +65,13 @@ IF /I "%SIGN%" == "True" (
 )
 
 FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_VERSION_MAJOR" "Source\Include\Version.h"') DO (SET "VERMAJOR=%%A")
+  'FINDSTR /I /L /C:"define MPCVR_VERSION_MAJOR" "Include\Version.h"') DO (SET "VERMAJOR=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_VERSION_MINOR" "Source\Include\Version.h"') DO (SET "VERMINOR=%%A")
+  'FINDSTR /I /L /C:"define MPCVR_VERSION_MINOR" "Include\Version.h"') DO (SET "VERMINOR=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_VERSION_BUILD" "Source\Include\Version.h"') DO (SET "VERBUILD=%%A")
+  'FINDSTR /I /L /C:"define MPCVR_VERSION_BUILD" "Include\Version.h"') DO (SET "VERBUILD=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_RELEASE" "Source\Include\Version.h"') DO (SET "RELEASE=%%A")
+  'FINDSTR /I /L /C:"define MPCVR_RELEASE" "Include\Version.h"') DO (SET "RELEASE=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
   'FINDSTR /I /L /C:"define MPCVR_REV_DATE" "revision.h"') DO (SET "REVDATE=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (

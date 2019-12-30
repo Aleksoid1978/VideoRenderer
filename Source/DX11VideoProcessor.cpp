@@ -29,9 +29,9 @@
 #include "Time.h"
 #include "resource.h"
 #include "VideoRenderer.h"
-#include "Include/Version.h"
+#include "../Include/Version.h"
 #include "DX11VideoProcessor.h"
-#include "./Include/ID3DVideoMemoryConfiguration.h"
+#include "../Include/ID3DVideoMemoryConfiguration.h"
 #include "Shaders.h"
 
 static const ScalingShaderResId s_Upscaling11ResIDs[UPSCALE_COUNT] = {

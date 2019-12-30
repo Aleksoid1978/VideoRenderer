@@ -27,7 +27,7 @@
 #include "Time.h"
 #include "resource.h"
 #include "VideoRenderer.h"
-#include "Include/Version.h"
+#include "../Include/Version.h"
 #include "DX9VideoProcessor.h"
 #include "Shaders.h"
 

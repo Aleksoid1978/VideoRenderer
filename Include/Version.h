@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../revision.h"
+#include "../revision.h"
 
 #ifndef MPCVR_REV_DATE
 #define MPCVR_REV_DATE      0

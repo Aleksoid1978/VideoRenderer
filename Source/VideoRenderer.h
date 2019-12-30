@@ -29,8 +29,8 @@
 #include "IVideoRenderer.h"
 #include "DX9VideoProcessor.h"
 #include "DX11VideoProcessor.h"
-#include "./Include/ISubRender.h"
-#include "./Include/FilterInterfacesImpl.h"
+#include "../Include/ISubRender.h"
+#include "../Include/FilterInterfacesImpl.h"
 
 #define STATS_X  10
 #define STATS_Y  10

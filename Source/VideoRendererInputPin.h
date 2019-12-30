@@ -21,7 +21,7 @@
 #pragma once
 
 #include <d3d11.h>
-#include "./Include/ID3DVideoMemoryConfiguration.h"
+#include "../Include/ID3DVideoMemoryConfiguration.h"
 
 class CMpcVideoRenderer;
 

@@ -21,7 +21,7 @@
 #include "stdafx.h"
 #include <memory>
 #include "CPUInfo.h"
-#include "Include/Version.h"
+#include "../Include/Version.h"
 #include "Helper.h"
 
 CStringW GetVersionStr()

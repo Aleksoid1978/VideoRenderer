@@ -24,7 +24,7 @@
 #include "Helper.h"
 #include "PropPage.h"
 #include "VideoRendererInputPin.h"
-#include "Include/Version.h"
+#include "../Include/Version.h"
 #include "VideoRenderer.h"
 
 #define OPT_REGKEY_VIDEORENDERER L"Software\\MPC-BE Filters\\MPC Video Renderer"
