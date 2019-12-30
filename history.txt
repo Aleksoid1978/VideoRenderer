@@ -1,4 +1,4 @@
-v0.3.?.??? - ????.??.??
+v0.3.8.1060 - 2019.12.30
 -----------------------
 Improved compatibility with third-party players.
 Fixed switching supported formats for DXVA2 and D3D11 video processors during playback.
