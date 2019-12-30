@@ -128,9 +128,6 @@
     <ClInclude Include="renbase2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StatsDrawing.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DX11Helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
