@@ -1522,11 +1522,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			}
 		}
 
-		if (m_D3D11VP.IsReady()) {
-			hr = ProcessD3D11(pBackBuffer, m_srcRenderRect, m_dstRenderRect, m_FieldDrawn == 2);
-		} else {
-			hr = ProcessTex(pBackBuffer, m_srcRenderRect, m_dstRenderRect);
-		}
+		hr = Process(pBackBuffer, m_srcRenderRect, m_dstRenderRect, m_FieldDrawn == 2);
 	}
 
 	uint64_t tick2 = GetPreciseTick();
@@ -1680,44 +1676,41 @@ HRESULT CDX11VideoProcessor::UpdateChromaScalingShader()
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::ProcessD3D11(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
+HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
 {
 	HRESULT hr = S_OK;
 
-	if (m_pPSCorrection && m_TexCorrection.pTexture) {
-		CRect rCorrection(0, 0, m_TexCorrection.desc.Width, m_TexCorrection.desc.Height);
-		if (m_bVPScaling) {
-			hr = D3D11VPPass(m_TexCorrection.pTexture, rSrcRect, rCorrection, second);
-		} else {
-			hr = D3D11VPPass(m_TexConvert.pTexture, rSrcRect, rSrcRect, second);
-			hr = ResizeShader2Pass(m_TexConvert, m_TexCorrection.pTexture, rSrcRect, rCorrection);
+	if (m_D3D11VP.IsReady()) {
+		if (m_pPSCorrection && m_TexCorrection.pTexture) {
+			CRect rCorrection(0, 0, m_TexCorrection.desc.Width, m_TexCorrection.desc.Height);
+			if (m_bVPScaling) {
+				hr = D3D11VPPass(m_TexCorrection.pTexture, rSrcRect, rCorrection, second);
+			} else {
+				hr = D3D11VPPass(m_TexConvert.pTexture, rSrcRect, rSrcRect, second);
+				hr = ResizeShader2Pass(m_TexConvert, m_TexCorrection.pTexture, rSrcRect, rCorrection);
+			}
+			hr = TextureCopyRect(m_TexCorrection, pRenderTarget, rCorrection, rDstRect, m_pPSCorrection, nullptr, 0);
 		}
-		hr = TextureCopyRect(m_TexCorrection, pRenderTarget, rCorrection, rDstRect, m_pPSCorrection, nullptr, 0);
+		else {
+			if (m_bVPScaling) {
+				hr = D3D11VPPass(pRenderTarget, rSrcRect, rDstRect, second);
+			} else {
+				hr = D3D11VPPass(m_TexConvert.pTexture, rSrcRect, rSrcRect, second);
+				hr = ResizeShader2Pass(m_TexConvert, pRenderTarget, rSrcRect, rDstRect);
+			}
+		}
 	}
 	else {
-		if (m_bVPScaling) {
-			hr = D3D11VPPass(pRenderTarget, rSrcRect, rDstRect, second);
-		} else {
-			hr = D3D11VPPass(m_TexConvert.pTexture, rSrcRect, rSrcRect, second);
+		if (m_PSConvColorData.bEnable) {
+			// Convert color pass
+			hr = TextureConvertColor(m_TexSrcVideo, m_TexConvert.pTexture);
+			// Resize
 			hr = ResizeShader2Pass(m_TexConvert, pRenderTarget, rSrcRect, rDstRect);
 		}
-	}
-
-	return hr;
-}
-
-HRESULT CDX11VideoProcessor::ProcessTex(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
-{
-	HRESULT hr = S_OK;
-
-	if (m_PSConvColorData.bEnable) {
-		// Convert color pass
-		hr = TextureConvertColor(m_TexSrcVideo, m_TexConvert.pTexture);
-		// Resize
-		hr = ResizeShader2Pass(m_TexConvert, pRenderTarget, rSrcRect, rDstRect);
-	} else {
-		// Resize
-		hr = ResizeShader2Pass(m_TexSrcVideo, pRenderTarget, rSrcRect, rDstRect);
+		else {
+			// Resize
+			hr = ResizeShader2Pass(m_TexSrcVideo, pRenderTarget, rSrcRect, rDstRect);
+		}
 	}
 
 	return hr;
@@ -1899,9 +1892,11 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 		if (m_bVPScaling) {
 			m_D3D11VP.SetRectangles(rSrcRect, rDstRect);
 		}
+	}
 
-		hr = ProcessD3D11(pRGB32Texture2D, rSrcRect, rDstRect, false);
+	hr = Process(pRGB32Texture2D, rSrcRect, rDstRect, false);
 
+	if (m_D3D11VP.IsReady()) {
 		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
 		if (m_bVPScaling) {
 			if (m_pPSCorrection && m_TexCorrection.pTexture) {
@@ -1910,9 +1905,8 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 				m_D3D11VP.SetRectangles(m_srcRenderRect, m_dstRenderRect);
 			}
 		}
-	} else {
-		hr = ProcessTex(pRGB32Texture2D, rSrcRect, rDstRect);
 	}
+
 	if (FAILED(hr)) {
 		return hr;
 	}
