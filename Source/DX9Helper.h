@@ -89,6 +89,41 @@ struct Tex9Video_t : Tex_t
 	}
 };
 
+class CTexRing
+{
+	Tex_t Texs[2];
+	int index = 0;
+
+public:
+	HRESULT Create(IDirect3DDevice9Ex* pDevice, const D3DFORMAT format, const UINT width, const UINT height, const UINT num) {
+		Release();
+		HRESULT hr = S_FALSE;
+		if (num >= 1) {
+			hr = Texs[0].Create(pDevice, format, width, height, D3DUSAGE_RENDERTARGET);
+			if (S_OK == hr && num >= 2) {
+				hr = Texs[1].Create(pDevice, format, width, height, D3DUSAGE_RENDERTARGET);
+			}
+		}
+		return hr;
+	}
+
+	void Release() {
+		index = 0;
+		Texs[0].Release();
+		Texs[1].Release();
+	}
+
+	Tex_t& GetFirstTex() {
+		index = 0;
+		return Texs[0];
+	}
+
+	Tex_t& GetNextTex() {
+		index = (index + 1) & 1;
+		return Texs[index];
+	}
+};
+
 UINT GetAdapter(HWND hWnd, IDirect3D9Ex* pD3D);
 
 HRESULT Dump4ByteSurface(IDirect3DSurface9* pSurface, const wchar_t* filename);
