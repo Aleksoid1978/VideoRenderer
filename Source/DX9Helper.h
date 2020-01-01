@@ -47,8 +47,17 @@ struct Tex_t
 	virtual void Release() {
 		pSurface.Release();
 		pTexture.Release();
+		Format = D3DFMT_UNKNOWN;
 		Width  = 0;
 		Height = 0;
+	}
+
+	bool Equal(const D3DFORMAT fmt, const UINT w, const UINT h) {
+		return (fmt == Format && w == Width && h == Height);
+	}
+
+	bool EqualDimensions(const UINT w, const UINT h) {
+		return (w == Width && h == Height);
 	}
 };
 
