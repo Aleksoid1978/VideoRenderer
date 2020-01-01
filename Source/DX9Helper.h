@@ -24,6 +24,7 @@ struct Tex_t
 {
 	CComPtr<IDirect3DTexture9> pTexture;
 	CComPtr<IDirect3DSurface9> pSurface;
+	D3DFORMAT Format = D3DFMT_UNKNOWN;
 	UINT Width  = 0;
 	UINT Height = 0;
 
@@ -35,6 +36,7 @@ struct Tex_t
 			EXECUTE_ASSERT(S_OK == pTexture->GetSurfaceLevel(0, &pSurface));
 			D3DSURFACE_DESC desc = {};
 			EXECUTE_ASSERT(S_OK == pSurface->GetDesc(&desc));
+			Format = desc.Format;
 			Width  = desc.Width;
 			Height = desc.Height;
 		}
