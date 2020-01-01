@@ -324,27 +324,27 @@ public:
 
 		std::vector<SIZE> charSizes;
 		charSizes.reserve(lenght);
-		Gdiplus::RectF rect;
+		Gdiplus::RectF rectf;
 		float maxWidth = 0;
 		float maxHeight = 0;
 
 		Gdiplus::PointF origin;
 
 		for (UINT i = 0; i < lenght; i++) {
-			status = testGraphics.MeasureString(&chars[i], 1, &font, origin, &stringFormat, &rect);
+			status = testGraphics.MeasureString(&chars[i], 1, &font, origin, &stringFormat, &rectf);
 			if (Gdiplus::Ok != status) {
 				break;
 			}
-			SIZE size = { (LONG)ceil(rect.Width), (LONG)ceil(rect.Height) };
+			SIZE size = { (LONG)ceil(rectf.Width), (LONG)ceil(rectf.Height) };
 			charSizes.emplace_back(size);
 
-			if (rect.Width > maxWidth) {
-				maxWidth = rect.Width;
+			if (rectf.Width > maxWidth) {
+				maxWidth = rectf.Width;
 			}
-			if (rect.Height > maxHeight) {
-				maxHeight = rect.Height;
+			if (rectf.Height > maxHeight) {
+				maxHeight = rectf.Height;
 			}
-			ASSERT(rect.X == 0 && rect.Y == 0);
+			ASSERT(rectf.X == 0 && rectf.Y == 0);
 		}
 
 		if (Gdiplus::Ok == status) {
@@ -603,7 +603,7 @@ public:
 
 		for (UINT i = 0; i < lenght; i++) {
 			IDWriteTextLayout* pTextLayout;
-			HRESULT hr = m_pDWriteFactory->CreateTextLayout(&chars[i], 1, pTextFormat, 0, 0, &pTextLayout);
+			hr = m_pDWriteFactory->CreateTextLayout(&chars[i], 1, pTextFormat, 0, 0, &pTextLayout);
 			if (S_OK == hr) {
 				hr = pTextLayout->GetMetrics(&textMetrics);
 				pTextLayout->Release();

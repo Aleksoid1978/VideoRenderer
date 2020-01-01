@@ -333,7 +333,7 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	hr = m_pDeviceContext->Map(m_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (S_OK == hr) {
-		Font11Vertex* pVertices = (Font11Vertex*)mappedResource.pData;
+		Font11Vertex* pVertices = static_cast<Font11Vertex*>(mappedResource.pData);
 		UINT nVertices = 0;
 
 		while (*strText) {
@@ -370,7 +370,7 @@ HRESULT CD3D11Font::Draw2DText(ID3D11RenderTargetView* pRenderTargetView, const 
 					m_pDeviceContext->Draw(nVertices, 0);
 
 					hr = m_pDeviceContext->Map(m_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-					pVertices = (Font11Vertex*)mappedResource.pData;
+					pVertices = static_cast<Font11Vertex*>(mappedResource.pData);
 					nVertices = 0;
 				}
 			}

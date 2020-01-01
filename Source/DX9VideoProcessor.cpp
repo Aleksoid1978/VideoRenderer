@@ -51,10 +51,8 @@ static const ScalingShaderResId s_Downscaling9ResIDs[DOWNSCALE_COUNT] = {
 #pragma pack(push, 1)
 template<unsigned texcoords>
 struct MYD3DVERTEX {
-	float x, y, z, rhw;
-	struct {
-		float u, v;
-	} t[texcoords];
+	DirectX::XMFLOAT4 Pos;
+	DirectX::XMFLOAT2 Tex[texcoords];
 };
 #pragma pack(pop)
 
@@ -127,10 +125,10 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTex
 	const float dy = 1.0f / desc.Height;
 
 	MYD3DVERTEX<1> Vertices[] = {
-		{ (float)dst.left  - 0.5f, (float)dst.top    - 0.5f, 0.5f, 2.0f, (float)src.left  * dx, (float)src.top    * dy },
-		{ (float)dst.right - 0.5f, (float)dst.top    - 0.5f, 0.5f, 2.0f, (float)src.right * dx, (float)src.top    * dy },
-		{ (float)dst.left  - 0.5f, (float)dst.bottom - 0.5f, 0.5f, 2.0f, (float)src.left  * dx, (float)src.bottom * dy },
-		{ (float)dst.right - 0.5f, (float)dst.bottom - 0.5f, 0.5f, 2.0f, (float)src.right * dx, (float)src.bottom * dy },
+		{ {(float)dst.left  - 0.5f, (float)dst.top    - 0.5f, 0.5f, 2.0f}, {{(float)src.left  * dx, (float)src.top    * dy}} },
+		{ {(float)dst.right - 0.5f, (float)dst.top    - 0.5f, 0.5f, 2.0f}, {{(float)src.right * dx, (float)src.top    * dy}} },
+		{ {(float)dst.left  - 0.5f, (float)dst.bottom - 0.5f, 0.5f, 2.0f}, {{(float)src.left  * dx, (float)src.bottom * dy}} },
+		{ {(float)dst.right - 0.5f, (float)dst.bottom - 0.5f, 0.5f, 2.0f}, {{(float)src.right * dx, (float)src.bottom * dy}} },
 	};
 
 	hr = pD3DDev->SetTexture(0, pTexture);
@@ -1595,10 +1593,10 @@ HRESULT CDX9VideoProcessor::TextureCopy(IDirect3DTexture9* pTexture)
 	float h = (float)desc.Height - 0.5f;
 
 	MYD3DVERTEX<1> v[] = {
-		{-0.5f, -0.5f, 0.5f, 2.0f, 0, 0},
-		{    w, -0.5f, 0.5f, 2.0f, 1, 0},
-		{-0.5f,     h, 0.5f, 2.0f, 0, 1},
-		{    w,     h, 0.5f, 2.0f, 1, 1},
+		{ {-0.5f, -0.5f, 0.5f, 2.0f}, {{0, 0}} },
+		{ {    w, -0.5f, 0.5f, 2.0f}, {{1, 0}} },
+		{ {-0.5f,     h, 0.5f, 2.0f}, {{0, 1}} },
+		{ {    w,     h, 0.5f, 2.0f}, {{1, 1}} },
 	};
 
 	hr = m_pD3DDevEx->SetTexture(0, pTexture);
@@ -1642,10 +1640,10 @@ HRESULT CDX9VideoProcessor::TextureConvertColor(Tex9Video_t& texVideo)
 	h -= 0.5f;
 
 	MYD3DVERTEX<2> v[] = {
-		{-0.5f, -0.5f, 0.5f, 2.0f, {{0, 0}, {0+sx, 0+sy}}},
-		{    w, -0.5f, 0.5f, 2.0f, {{1, 0}, {1+sx, 0+sy}}},
-		{-0.5f,     h, 0.5f, 2.0f, {{0, 1}, {0+sx, 1+sy}}},
-		{    w,     h, 0.5f, 2.0f, {{1, 1}, {1+sx, 1+sy}}},
+		{ {-0.5f, -0.5f, 0.5f, 2.0f}, {{0, 0}, {0+sx, 0+sy}} },
+		{ {    w, -0.5f, 0.5f, 2.0f}, {{1, 0}, {1+sx, 0+sy}} },
+		{ {-0.5f,     h, 0.5f, 2.0f}, {{0, 1}, {0+sx, 1+sy}} },
+		{ {    w,     h, 0.5f, 2.0f}, {{1, 1}, {1+sx, 1+sy}} },
 	};
 
 	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_PSConvColorData.fConstants, std::size(m_PSConvColorData.fConstants));
@@ -1744,10 +1742,10 @@ HRESULT CDX9VideoProcessor::TextureCopyRect(IDirect3DTexture9* pTexture, const C
 	}
 
 	MYD3DVERTEX<1> v[] = {
-		{(float)points[0].x - 0.5f, (float)points[0].y - 0.5f, 0.5f, 2.0f, {srcRect.left  * dx, srcRect.top    * dy} },
-		{(float)points[1].x - 0.5f, (float)points[1].y - 0.5f, 0.5f, 2.0f, {srcRect.right * dx, srcRect.top    * dy} },
-		{(float)points[2].x - 0.5f, (float)points[2].y - 0.5f, 0.5f, 2.0f, {srcRect.left  * dx, srcRect.bottom * dy} },
-		{(float)points[3].x - 0.5f, (float)points[3].y - 0.5f, 0.5f, 2.0f, {srcRect.right * dx, srcRect.bottom * dy} },
+		{ {(float)points[0].x - 0.5f, (float)points[0].y - 0.5f, 0.5f, 2.0f}, {{srcRect.left  * dx, srcRect.top    * dy}} },
+		{ {(float)points[1].x - 0.5f, (float)points[1].y - 0.5f, 0.5f, 2.0f}, {{srcRect.right * dx, srcRect.top    * dy}} },
+		{ {(float)points[2].x - 0.5f, (float)points[2].y - 0.5f, 0.5f, 2.0f}, {{srcRect.left  * dx, srcRect.bottom * dy}} },
+		{ {(float)points[3].x - 0.5f, (float)points[3].y - 0.5f, 0.5f, 2.0f}, {{srcRect.right * dx, srcRect.bottom * dy}} },
 	};
 
 	hr = m_pD3DDevEx->SetTexture(0, pTexture);
@@ -1815,10 +1813,10 @@ HRESULT CDX9VideoProcessor::TextureResizeShader(IDirect3DTexture9* pTexture, con
 	}
 
 	MYD3DVERTEX<1> v[] = {
-		{(float)points[0].x - 0.5f, (float)points[0].y - 0.5f, 0.5f, 2.0f, { tx0, ty0 } },
-		{(float)points[1].x - 0.5f, (float)points[1].y - 0.5f, 0.5f, 2.0f, { tx1, ty0 } },
-		{(float)points[2].x - 0.5f, (float)points[2].y - 0.5f, 0.5f, 2.0f, { tx0, ty1 } },
-		{(float)points[3].x - 0.5f, (float)points[3].y - 0.5f, 0.5f, 2.0f, { tx1, ty1 } },
+		{ {(float)points[0].x - 0.5f, (float)points[0].y - 0.5f, 0.5f, 2.0f}, {{tx0, ty0}} },
+		{ {(float)points[1].x - 0.5f, (float)points[1].y - 0.5f, 0.5f, 2.0f}, {{tx1, ty0}} },
+		{ {(float)points[2].x - 0.5f, (float)points[2].y - 0.5f, 0.5f, 2.0f}, {{tx0, ty1}} },
+		{ {(float)points[3].x - 0.5f, (float)points[3].y - 0.5f, 0.5f, 2.0f}, {{tx1, ty1}} },
 	};
 
 	float fConstData[][4] = {
