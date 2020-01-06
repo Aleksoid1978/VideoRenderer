@@ -1,5 +1,5 @@
 /*
-* (C) 2019 see Authors.txt
+* (C) 2019-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -297,18 +297,17 @@ HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width,
 
 	m_BltParams.DestFormat.value = 0; // output to RGB
 	m_BltParams.DestFormat.SampleFormat = DXVA2_SampleProgressiveFrame; // output to progressive RGB
-	m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_0_255; // output to full range RGB
 	if (exFmt.NominalRange == DXVA2_NominalRange_0_255 && (m_VendorId == PCIV_NVIDIA || m_VendorId == PCIV_AMDATI)) {
 		// hack for Nvidia and AMD, nothing helps Intel
 		m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_16_235;
 	} else {
-		m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_0_255; // output to full range RGB
+		// output to full range RGB
+		m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_0_255;
 	}
 
 	m_srcFormat   = inputFmt;
 	m_srcWidth    = width;
 	m_srcHeight   = height;
-	//m_bInterlaced = interlaced;
 
 	return hr;
 }
@@ -325,7 +324,6 @@ void CDXVA2VP::ReleaseVideoProcessor()
 	m_srcFormat   = D3DFMT_UNKNOWN;
 	m_srcWidth    = 0;
 	m_srcHeight   = 0;
-	//m_bInterlaced = false;
 }
 
 HRESULT CDXVA2VP::SetInputSurface(IDirect3DSurface9* pSurface, const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt)

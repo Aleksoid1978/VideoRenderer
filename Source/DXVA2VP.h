@@ -1,5 +1,5 @@
 /*
-* (C) 2019 see Authors.txt
+* (C) 2019-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -164,7 +164,6 @@ private:
 	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
 	UINT m_srcWidth    = 0;
 	UINT m_srcHeight   = 0;
-	//bool m_bInterlaced = false;
 
 	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc, UINT preferredDeintTech, D3DFORMAT& outputFmt);
 
