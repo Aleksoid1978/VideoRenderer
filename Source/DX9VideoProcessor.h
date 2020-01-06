@@ -124,7 +124,7 @@ private:
 	const wchar_t* m_strShaderX = nullptr;
 	const wchar_t* m_strShaderY = nullptr;
 
-	std::vector<CComPtr<IDirect3DPixelShader9>> m_pScreenShaders;
+	std::vector<CComPtr<IDirect3DPixelShader9>> m_pPostScaleShaders;
 
 	CRenderStats m_RenderStats;
 	CStringW m_strStatsStatic1;
@@ -200,8 +200,8 @@ public:
 
 	void Flush();
 
-	void ClearScreenSpaceShaders();
-	HRESULT AddScreenSpaceShader(const CStringA& srcCode);
+	void ClearPostScaleShaders();
+	HRESULT AddPostScaleShader(const CStringA& srcCode);
 
 private:
 	HRESULT DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);

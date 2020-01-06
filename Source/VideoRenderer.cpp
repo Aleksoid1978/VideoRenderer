@@ -1114,7 +1114,7 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 		if (m_bUsedD3D11) {
 			return E_ABORT;
 		} else {
-			m_DX9_VP.ClearScreenSpaceShaders();
+			m_DX9_VP.ClearPostScaleShaders();
 			return S_OK;
 		}
 	}
@@ -1159,7 +1159,7 @@ STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
 			if (m_bUsedD3D11) {
 				return E_ABORT;
 			} else {
-				return m_DX9_VP.AddScreenSpaceShader(srcCode);
+				return m_DX9_VP.AddPostScaleShader(srcCode);
 			}
 		}
 	}

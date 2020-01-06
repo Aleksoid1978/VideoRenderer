@@ -366,6 +366,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 
 	m_DXVA2VP.ReleaseVideoService();
 
+	ClearPostScaleShaders();
 	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
 
@@ -1360,15 +1361,15 @@ void CDX9VideoProcessor::Flush()
 	}
 }
 
-void CDX9VideoProcessor::ClearScreenSpaceShaders()
+void CDX9VideoProcessor::ClearPostScaleShaders()
 {
-	for (auto& pScreenShader : m_pScreenShaders) {
+	for (auto& pScreenShader : m_pPostScaleShaders) {
 		pScreenShader.Release();
 	}
-	m_pScreenShaders.clear();
+	m_pPostScaleShaders.clear();
 }
 
-HRESULT CDX9VideoProcessor::AddScreenSpaceShader(const CStringA& srcCode)
+HRESULT CDX9VideoProcessor::AddPostScaleShader(const CStringA& srcCode)
 {
 	HRESULT hr = S_OK;
 
@@ -1376,8 +1377,8 @@ HRESULT CDX9VideoProcessor::AddScreenSpaceShader(const CStringA& srcCode)
 		ID3DBlob* pShaderCode = nullptr;
 		hr = CompileShader(srcCode, nullptr, "ps_3_0", &pShaderCode);
 		if (S_OK == hr) {
-			m_pScreenShaders.emplace_back();
-			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pScreenShaders.back());
+			m_pPostScaleShaders.emplace_back();
+			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPostScaleShaders.back());
 			pShaderCode->Release();
 		}
 	}
