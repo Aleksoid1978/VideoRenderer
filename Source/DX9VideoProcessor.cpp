@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2019 see Authors.txt
+* (C) 2018-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -1358,6 +1358,31 @@ void CDX9VideoProcessor::Flush()
 			m_DXVA2VP.CleanSamplesData();
 		}
 	}
+}
+
+void CDX9VideoProcessor::ClearScreenSpaceShaders()
+{
+	for (auto& pScreenShader : m_pScreenShaders) {
+		pScreenShader.Release();
+	}
+	m_pScreenShaders.clear();
+}
+
+HRESULT CDX9VideoProcessor::AddScreenSpaceShader(const CStringA& srcCode)
+{
+	HRESULT hr = S_OK;
+
+	if (m_pD3DDevEx) {
+		ID3DBlob* pShaderCode = nullptr;
+		hr = CompileShader(srcCode, nullptr, "ps_3_0", &pShaderCode);
+		if (S_OK == hr) {
+			m_pScreenShaders.emplace_back();
+			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pScreenShaders.back());
+			pShaderCode->Release();
+		}
+	}
+
+	return hr;
 }
 
 HRESULT CDX9VideoProcessor::DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)

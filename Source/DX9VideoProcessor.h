@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2019 see Authors.txt
+* (C) 2018-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -124,6 +124,8 @@ private:
 	const wchar_t* m_strShaderX = nullptr;
 	const wchar_t* m_strShaderY = nullptr;
 
+	std::vector<CComPtr<IDirect3DPixelShader9>> m_pScreenShaders;
+
 	CRenderStats m_RenderStats;
 	CStringW m_strStatsStatic1;
 	CStringW m_strStatsStatic2;
@@ -197,6 +199,9 @@ public:
 	int GetRotation() { return m_iRotation; }
 
 	void Flush();
+
+	void ClearScreenSpaceShaders();
+	HRESULT AddScreenSpaceShader(const CStringA& srcCode);
 
 private:
 	HRESULT DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);

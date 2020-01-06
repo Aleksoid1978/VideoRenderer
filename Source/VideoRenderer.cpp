@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2019 see Authors.txt
+ * (C) 2018-2020 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -1135,6 +1135,27 @@ STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
 
 	return E_INVALIDARG;
 }
+
+#if EXPERIMENTAL
+
+STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
+{
+	if (!strcmp(field, "cmd_addScreenSpaceShader")) {
+		CStringA srcCode((CHAR*)value, size);
+
+		if (srcCode.GetLength()) {
+			if (m_bUsedD3D11) {
+				return E_ABORT;
+			} else {
+				return m_DX9_VP.AddScreenSpaceShader(srcCode);
+			}
+		}
+	}
+
+	return E_INVALIDARG;
+}
+
+#endif
 
 HRESULT CMpcVideoRenderer::Redraw()
 {

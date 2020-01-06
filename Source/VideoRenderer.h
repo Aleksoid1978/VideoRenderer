@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2019 see Authors.txt
+ * (C) 2018-2020 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -31,6 +31,8 @@
 #include "DX11VideoProcessor.h"
 #include "../Include/ISubRender.h"
 #include "../Include/FilterInterfacesImpl.h"
+
+#define EXPERIMENTAL 0
 
 #define STATS_X  10
 #define STATS_Y  10
@@ -255,10 +257,13 @@ public:
 	// IExFilterConfig
 	STDMETHODIMP GetBool(LPCSTR field, bool* value) override;
 	STDMETHODIMP GetInt(LPCSTR field,  int*  value) override;
-	STDMETHODIMP GetInt64(LPCSTR field, __int64 *value) override;
+	STDMETHODIMP GetInt64(LPCSTR field, __int64* value) override;
 
-	STDMETHODIMP SetBool(LPCSTR field, bool  value) override;
+	STDMETHODIMP SetBool(LPCSTR field, bool value) override;
 	STDMETHODIMP SetInt(LPCSTR field, int value) override;
+#if EXPERIMENTAL
+	STDMETHODIMP SetBin(LPCSTR field, LPVOID value, int size) override;
+#endif
 
 private:
 	HRESULT Redraw();
