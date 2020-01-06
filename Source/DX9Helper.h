@@ -24,8 +24,18 @@ struct Tex_t
 {
 	CComPtr<IDirect3DTexture9> pTexture;
 	CComPtr<IDirect3DSurface9> pSurface;
+	D3DFORMAT Format = D3DFMT_UNKNOWN;
 	UINT Width  = 0;
 	UINT Height = 0;
+
+
+	HRESULT CheckCreate(IDirect3DDevice9Ex* pDevice, const D3DFORMAT format, const UINT width, const UINT height, DWORD usage) {
+		if (format == Format && width == Width && height == Height) {
+			return S_OK;
+		}
+
+		return Create(pDevice, format, width, height, usage);
+	}
 
 	HRESULT Create(IDirect3DDevice9Ex* pDevice, const D3DFORMAT format, const UINT width, const UINT height, DWORD usage) {
 		Release();
@@ -35,6 +45,7 @@ struct Tex_t
 			EXECUTE_ASSERT(S_OK == pTexture->GetSurfaceLevel(0, &pSurface));
 			D3DSURFACE_DESC desc = {};
 			EXECUTE_ASSERT(S_OK == pSurface->GetDesc(&desc));
+			Format = desc.Format;
 			Width  = desc.Width;
 			Height = desc.Height;
 		}
@@ -45,6 +56,7 @@ struct Tex_t
 	virtual void Release() {
 		pSurface.Release();
 		pTexture.Release();
+		Format = D3DFMT_UNKNOWN;
 		Width  = 0;
 		Height = 0;
 	}
@@ -93,24 +105,36 @@ class CTexRing
 {
 	Tex_t Texs[2];
 	int index = 0;
+	UINT size = 0;
 
 public:
+	HRESULT CheckCreate(IDirect3DDevice9Ex* pDevice, const D3DFORMAT format, const UINT width, const UINT height, const UINT num) {
+		if (num == size && format == Texs[0].Format && width == Texs[0].Width && height == Texs[0].Height) {
+			return S_OK;
+		}
+
+		return Create(pDevice, format, width, height, num);
+	}
+
 	HRESULT Create(IDirect3DDevice9Ex* pDevice, const D3DFORMAT format, const UINT width, const UINT height, const UINT num) {
 		Release();
 		HRESULT hr = S_FALSE;
 		if (num >= 1) {
 			hr = Texs[0].Create(pDevice, format, width, height, D3DUSAGE_RENDERTARGET);
+			size++;
 			if (S_OK == hr && num >= 2) {
 				hr = Texs[1].Create(pDevice, format, width, height, D3DUSAGE_RENDERTARGET);
+				size++;
 			}
 		}
 		return hr;
 	}
 
 	void Release() {
-		index = 0;
 		Texs[0].Release();
 		Texs[1].Release();
+		index = 0;
+		size = 0;
 	}
 
 	Tex_t& GetFirstTex() {
