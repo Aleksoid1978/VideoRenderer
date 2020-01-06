@@ -1109,7 +1109,7 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 	}
 
 #if EXPERIMENTAL
-	if (!strcmp(field, "cmd_clearScreenSpaceShaders") && value) {
+	if (!strcmp(field, "cmd_clearPostScaleShaders") && value) {
 		CAutoLock cRendererLock(&m_RendererLock);
 		if (m_bUsedD3D11) {
 			return E_ABORT;
@@ -1152,7 +1152,7 @@ STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
 
 STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
 {
-	if (!strcmp(field, "cmd_addScreenSpaceShader")) {
+	if (!strcmp(field, "cmd_addPostScaleShader")) {
 		CStringA srcCode((CHAR*)value, size);
 		if (srcCode.GetLength()) {
 			CAutoLock cRendererLock(&m_RendererLock);
