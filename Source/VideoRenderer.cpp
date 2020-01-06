@@ -1108,6 +1108,18 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 		return S_OK;
 	}
 
+#if EXPERIMENTAL
+	if (!strcmp(field, "cmd_clearScreenSpaceShaders") && value) {
+		CAutoLock cRendererLock(&m_RendererLock);
+		if (m_bUsedD3D11) {
+			return E_ABORT;
+		} else {
+			m_DX9_VP.ClearScreenSpaceShaders();
+			return S_OK;
+		}
+	}
+#endif
+
 	return E_INVALIDARG;
 }
 
@@ -1142,8 +1154,8 @@ STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
 {
 	if (!strcmp(field, "cmd_addScreenSpaceShader")) {
 		CStringA srcCode((CHAR*)value, size);
-
 		if (srcCode.GetLength()) {
+			CAutoLock cRendererLock(&m_RendererLock);
 			if (m_bUsedD3D11) {
 				return E_ABORT;
 			} else {
