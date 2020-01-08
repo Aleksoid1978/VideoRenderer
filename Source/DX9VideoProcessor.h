@@ -204,19 +204,19 @@ public:
 	HRESULT AddPostScaleShader(const CStringA& srcCode);
 
 private:
-	HRESULT DXVA2VPPass(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
 	void UpdateVideoTexDXVA2VP();
 	void UpdateCorrectionTex(int w, int h);
 	void UpdateUpscalingShaders();
 	void UpdateDownscalingShaders();
 	HRESULT UpdateChromaScalingShader();
 
+	HRESULT DxvaVPPass(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
+	HRESULT ConvertColorPass(IDirect3DSurface9* pRenderTarget);
+	HRESULT ResizeShaderPass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
+
 	HRESULT Process(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
 
-	HRESULT ResizeShader2Pass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
-
 	HRESULT TextureCopy(IDirect3DTexture9* pTexture);
-	HRESULT TextureConvertColor(Tex9Video_t& texVideo);
 	HRESULT TextureCopyRect(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& dstRect, D3DTEXTUREFILTERTYPE filter, const int iRotation);
 	HRESULT TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& dstRect, IDirect3DPixelShader9* pShader, const int iRotation);
 

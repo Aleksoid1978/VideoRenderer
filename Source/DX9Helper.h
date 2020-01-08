@@ -109,11 +109,25 @@ class CTexRing
 
 public:
 	HRESULT CheckCreate(IDirect3DDevice9Ex* pDevice, const D3DFORMAT format, const UINT width, const UINT height, const UINT num) {
-		if (num == size && format == Texs[0].Format && width == Texs[0].Width && height == Texs[0].Height) {
-			return S_OK;
+		HRESULT hr = S_FALSE;
+		if (num == 0) {
+			Release();
+			return hr;
 		}
 
-		return Create(pDevice, format, width, height, num);
+		index = 0;
+		size = 0;
+		if (num >= 1) {
+			hr = Texs[0].CheckCreate(pDevice, format, width, height, D3DUSAGE_RENDERTARGET);
+			size++;
+			if (S_OK == hr && num >= 2) {
+				hr = Texs[1].CheckCreate(pDevice, format, width, height, D3DUSAGE_RENDERTARGET);
+				size++;
+			} else {
+				Texs[1].Release();
+			}
+		}
+		return hr;
 	}
 
 	HRESULT Create(IDirect3DDevice9Ex* pDevice, const D3DFORMAT format, const UINT width, const UINT height, const UINT num) {
