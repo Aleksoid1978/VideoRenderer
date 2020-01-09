@@ -1,5 +1,5 @@
 /*
-* (C) 2019 see Authors.txt
+* (C) 2019-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -151,14 +151,14 @@ public:
 		size = 0;
 	}
 
-	Tex_t& GetFirstTex() {
+	Tex_t* GetFirstTex() {
 		index = 0;
-		return Texs[0];
+		return &Texs[0];
 	}
 
-	Tex_t& GetNextTex() {
+	Tex_t* GetNextTex() {
 		index = (index + 1) & 1;
-		return Texs[index];
+		return &Texs[index];
 	}
 };
 
