@@ -1055,6 +1055,18 @@ STDMETHODIMP CMpcVideoRenderer::GetInt(LPCSTR field, int* value)
 {
 	CheckPointer(value, E_POINTER);
 
+	if (!strcmp(field, "renderType")) {
+		if (m_inputMT.IsValid()) {
+			if (m_bUsedD3D11) {
+				*value = 11; // Direct3D 11
+			} else {
+				*value = 9; // Direct3D 9
+			}
+		} else {
+			*value = 0; // not initialized
+		}
+		return S_OK;
+	}
 	if (!strcmp(field, "playbackState")) {
 		*value = m_filterState;
 		return S_OK;
