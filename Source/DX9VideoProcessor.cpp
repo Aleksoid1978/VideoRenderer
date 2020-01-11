@@ -1364,12 +1364,12 @@ void CDX9VideoProcessor::Flush()
 void CDX9VideoProcessor::ClearPostScaleShaders()
 {
 	for (auto& pScreenShader : m_pPostScaleShaders) {
-		pScreenShader.Release();
+		pScreenShader.shader.Release();
 	}
 	m_pPostScaleShaders.clear();
 }
 
-HRESULT CDX9VideoProcessor::AddPostScaleShader(const CStringA& srcCode)
+HRESULT CDX9VideoProcessor::AddPostScaleShader(const CStringW& name, const CStringA& srcCode)
 {
 	HRESULT hr = S_OK;
 
@@ -1378,8 +1378,10 @@ HRESULT CDX9VideoProcessor::AddPostScaleShader(const CStringA& srcCode)
 		hr = CompileShader(srcCode, nullptr, "ps_3_0", &pShaderCode);
 		if (S_OK == hr) {
 			m_pPostScaleShaders.emplace_back();
-			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPostScaleShaders.back());
-			if (FAILED(hr)) {
+			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPostScaleShaders.back().shader);
+			if (S_OK == hr) {
+				m_pPostScaleShaders.back().name = name;
+			} else {
 				m_pPostScaleShaders.pop_back();
 			}
 			pShaderCode->Release();

@@ -162,6 +162,12 @@ public:
 	}
 };
 
+struct ExternalPixelShader9_t
+{
+	CStringW name; // TODO
+	CComPtr<IDirect3DPixelShader9> shader;
+};
+
 UINT GetAdapter(HWND hWnd, IDirect3D9Ex* pD3D);
 
 HRESULT Dump4ByteSurface(IDirect3DSurface9* pSurface, const wchar_t* filename);

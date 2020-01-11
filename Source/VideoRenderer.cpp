@@ -1169,11 +1169,13 @@ STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
 	if (!strcmp(field, "cmd_addPostScaleShader")) {
 		CStringA srcCode((CHAR*)value, size);
 		if (srcCode.GetLength()) {
+			CStringW shaderName;
+			shaderName.Format(L"HLSL %d bytes", size); // TODO: use shader file name
 			CAutoLock cRendererLock(&m_RendererLock);
 			if (m_bUsedD3D11) {
 				return E_ABORT;
 			} else {
-				return m_DX9_VP.AddPostScaleShader(srcCode);
+				return m_DX9_VP.AddPostScaleShader(shaderName, srcCode);
 			}
 		}
 	}

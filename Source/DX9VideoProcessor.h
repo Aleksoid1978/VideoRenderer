@@ -124,7 +124,7 @@ private:
 	const wchar_t* m_strShaderX = nullptr;
 	const wchar_t* m_strShaderY = nullptr;
 
-	std::vector<CComPtr<IDirect3DPixelShader9>> m_pPostScaleShaders;
+	std::vector<ExternalPixelShader9_t> m_pPostScaleShaders;
 
 	CRenderStats m_RenderStats;
 	CStringW m_strStatsStatic1;
@@ -201,7 +201,7 @@ public:
 	void Flush();
 
 	void ClearPostScaleShaders();
-	HRESULT AddPostScaleShader(const CStringA& srcCode);
+	HRESULT AddPostScaleShader(const CStringW& name, const CStringA& srcCode);
 
 private:
 	void UpdateVideoTexDXVA2VP();
