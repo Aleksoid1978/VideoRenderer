@@ -1165,16 +1165,16 @@ HRESULT CDX9VideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
 
 HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 {
-	CRect rSrcRect(m_srcRect);
+	CRect srcRect(m_srcRect);
 	int w, h;
 	if (m_iRotation == 90 || m_iRotation == 270) {
-		w = rSrcRect.Height();
-		h = rSrcRect.Width();
+		w = srcRect.Height();
+		h = srcRect.Width();
 	} else {
-		w = rSrcRect.Width();
-		h = rSrcRect.Height();
+		w = srcRect.Width();
+		h = srcRect.Height();
 	}
-	CRect rDstRect(0, 0, w, h);
+	CRect dstRect(0, 0, w, h);
 
 	BITMAPINFOHEADER* pBIH = (BITMAPINFOHEADER*)pDIBImage;
 	memset(pBIH, 0, sizeof(BITMAPINFOHEADER));
@@ -1198,7 +1198,7 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 		UpdateCorrectionTex(w, h);
 	}
 
-	hr = Process(pRGB32Surface, rSrcRect, rDstRect, 0);
+	hr = Process(pRGB32Surface, srcRect, dstRect, 0);
 
 	if (m_DXVA2VP.IsReady() && (m_pPSCorrection || m_bVPScaling)) {
 		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
@@ -1379,6 +1379,9 @@ HRESULT CDX9VideoProcessor::AddPostScaleShader(const CStringA& srcCode)
 		if (S_OK == hr) {
 			m_pPostScaleShaders.emplace_back();
 			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPostScaleShaders.back());
+			if (FAILED(hr)) {
+				m_pPostScaleShaders.pop_back();
+			}
 			pShaderCode->Release();
 		}
 	}
@@ -1451,9 +1454,9 @@ HRESULT CDX9VideoProcessor::UpdateChromaScalingShader()
 	return hr;
 }
 
-HRESULT CDX9VideoProcessor::DxvaVPPass(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
+HRESULT CDX9VideoProcessor::DxvaVPPass(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
 {
-	m_DXVA2VP.SetRectangles(rSrcRect, rDstRect);
+	m_DXVA2VP.SetRectangles(srcRect, dstRect);
 
 	HRESULT hr = m_DXVA2VP.Process(pRenderTarget, m_CurrentSampleFmt, second);
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::DxvaVPPass() : VideoProcessBlt() failed with error %s", HR2Str(hr));
@@ -1558,19 +1561,19 @@ HRESULT CDX9VideoProcessor::ConvertColorPass(IDirect3DSurface9* pRenderTarget)
 
 }
 
-HRESULT CDX9VideoProcessor::ResizeShaderPass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect)
+HRESULT CDX9VideoProcessor::ResizeShaderPass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect)
 {
 	HRESULT hr = S_OK;
-	const int w2 = rDstRect.Width();
-	const int h2 = rDstRect.Height();
+	const int w2 = dstRect.Width();
+	const int h2 = dstRect.Height();
 	const int k = m_bInterpolateAt50pct ? 2 : 1;
 
 	int w1, h1;
 	IDirect3DPixelShader9* resizerX;
 	IDirect3DPixelShader9* resizerY;
 	if (m_iRotation == 90 || m_iRotation == 270) {
-		w1 = rSrcRect.Height();
-		h1 = rSrcRect.Width();
+		w1 = srcRect.Height();
+		h1 = srcRect.Width();
 		resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleY.p : m_pShaderUpscaleY.p; // use Y scaling here
 		if (resizerX) {
 			resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY.p : m_pShaderUpscaleY.p;
@@ -1578,8 +1581,8 @@ HRESULT CDX9VideoProcessor::ResizeShaderPass(IDirect3DTexture9* pTexture, IDirec
 			resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleX.p : m_pShaderUpscaleX.p; // use X scaling here
 		}
 	} else {
-		w1 = rSrcRect.Width();
-		h1 = rSrcRect.Height();
+		w1 = srcRect.Width();
+		h1 = srcRect.Height();
 		resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleX.p : m_pShaderUpscaleX.p;
 		resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY.p : m_pShaderUpscaleY.p;
 	}
@@ -1602,7 +1605,7 @@ HRESULT CDX9VideoProcessor::ResizeShaderPass(IDirect3DTexture9* pTexture, IDirec
 			hr = m_TexResize.Create(m_pD3DDevEx, D3DFMT_A16B16G16R16F,texWidth, texHeight, D3DUSAGE_RENDERTARGET);
 			if (FAILED(hr)) {
 				DLog(L"CDX9VideoProcessor::ProcessTex() : m_TexResize.Create() failed with error %s", HR2Str(hr));
-				return TextureCopyRect(pTexture, rSrcRect, rDstRect, D3DTEXF_LINEAR, m_iRotation);
+				return TextureCopyRect(pTexture, srcRect, dstRect, D3DTEXF_LINEAR, m_iRotation);
 			}
 		}
 
@@ -1610,27 +1613,27 @@ HRESULT CDX9VideoProcessor::ResizeShaderPass(IDirect3DTexture9* pTexture, IDirec
 
 		// resize width
 		hr = m_pD3DDevEx->SetRenderTarget(0, m_TexResize.pSurface);
-		hr = TextureResizeShader(pTexture, rSrcRect, resizeRect, resizerX, m_iRotation);
+		hr = TextureResizeShader(pTexture, srcRect, resizeRect, resizerX, m_iRotation);
 
 		// resize height
 		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-		hr = TextureResizeShader(m_TexResize.pTexture, resizeRect, rDstRect, resizerY, 0);
+		hr = TextureResizeShader(m_TexResize.pTexture, resizeRect, dstRect, resizerY, 0);
 	}
 	else {
 		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
 		if (resizerX) {
 			// one pass resize for width
-			hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, resizerX, m_iRotation);
+			hr = TextureResizeShader(pTexture, srcRect, dstRect, resizerX, m_iRotation);
 		}
 		else if (resizerY) {
 			// one pass resize for height
-			hr = TextureResizeShader(pTexture, rSrcRect, rDstRect, resizerY, m_iRotation);
+			hr = TextureResizeShader(pTexture, srcRect, dstRect, resizerY, m_iRotation);
 		}
 		else {
 			// no resize
 			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-			hr = TextureCopyRect(pTexture, rSrcRect, rDstRect, D3DTEXF_POINT, m_iRotation);
+			hr = TextureCopyRect(pTexture, srcRect, dstRect, D3DTEXF_POINT, m_iRotation);
 		}
 	}
 
@@ -1639,7 +1642,7 @@ HRESULT CDX9VideoProcessor::ResizeShaderPass(IDirect3DTexture9* pTexture, IDirec
 	return hr;
 }
 
-HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second)
+HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
 {
 	HRESULT hr = S_OK;
 
@@ -1647,32 +1650,32 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 		if (m_pPSCorrection && m_TexCorrection.pTexture) {
 			CRect rCorrection(0, 0, m_TexCorrection.Width, m_TexCorrection.Height);
 			if (m_bVPScaling) {
-				hr = DxvaVPPass(m_TexCorrection.pSurface, rSrcRect, rCorrection, second);
+				hr = DxvaVPPass(m_TexCorrection.pSurface, srcRect, rCorrection, second);
 			}
 			else {
-				hr = DxvaVPPass(m_TexConvert.pSurface, rSrcRect, rSrcRect, second);
-				hr = ResizeShaderPass(m_TexConvert.pTexture, m_TexCorrection.pSurface, rSrcRect, rCorrection);
+				hr = DxvaVPPass(m_TexConvert.pSurface, srcRect, srcRect, second);
+				hr = ResizeShaderPass(m_TexConvert.pTexture, m_TexCorrection.pSurface, srcRect, rCorrection);
 			}
 			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 			hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
-			hr = TextureCopyRect(m_TexCorrection.pTexture, rCorrection, rDstRect, D3DTEXF_POINT, 0);
+			hr = TextureCopyRect(m_TexCorrection.pTexture, rCorrection, dstRect, D3DTEXF_POINT, 0);
 			m_pD3DDevEx->SetPixelShader(nullptr);
 		}
 		else {
 			if (m_bVPScaling) {
 				if (m_iRotation && m_TexCorrection.pTexture) {
 					CRect rCorrection(0, 0, m_TexCorrection.Width, m_TexCorrection.Height);
-					hr = DxvaVPPass(m_TexCorrection.pSurface, rSrcRect, rCorrection, second);
+					hr = DxvaVPPass(m_TexCorrection.pSurface, srcRect, rCorrection, second);
 					hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-					hr = TextureCopyRect(m_TexCorrection.pTexture, rCorrection, rDstRect, D3DTEXF_POINT, m_iRotation);
+					hr = TextureCopyRect(m_TexCorrection.pTexture, rCorrection, dstRect, D3DTEXF_POINT, m_iRotation);
 				}
 				else {
-					hr = DxvaVPPass(pRenderTarget, rSrcRect, rDstRect, second);
+					hr = DxvaVPPass(pRenderTarget, srcRect, dstRect, second);
 				}
 			}
 			else {
-				hr = DxvaVPPass(m_TexConvert.pSurface, rSrcRect, rSrcRect, second);
-				hr = ResizeShaderPass(m_TexConvert.pTexture, pRenderTarget, rSrcRect, rDstRect);
+				hr = DxvaVPPass(m_TexConvert.pSurface, srcRect, srcRect, second);
+				hr = ResizeShaderPass(m_TexConvert.pTexture, pRenderTarget, srcRect, dstRect);
 			}
 		}
 	}
@@ -1694,7 +1697,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 		}
 
 		// Resize
-		hr = ResizeShaderPass(pTexture, pRenderTarget, rSrcRect, rDstRect);
+		hr = ResizeShaderPass(pTexture, pRenderTarget, srcRect, dstRect);
 	}
 
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::Process() : failed with error %s", HR2Str(hr));
