@@ -389,7 +389,6 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 {
 	CheckPointer(pSample, E_POINTER);
-	CAutoLock cRendererLock(&m_RendererLock);
 
 	HRESULT hr = S_OK;
 
@@ -445,6 +444,9 @@ HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 	}
 
 	if (m_State == State_Paused) {
+		m_bInReceive = FALSE;
+
+		CAutoLock cSampleLock(&m_RendererLock);
 		DoRenderSample(m_pMediaSample);
 	}
 
