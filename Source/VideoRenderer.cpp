@@ -1166,16 +1166,42 @@ STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
 
 STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
 {
-	if (!strcmp(field, "cmd_addPostScaleShader")) {
-		CStringA srcCode((CHAR*)value, size);
-		if (srcCode.GetLength()) {
+	if (size > 0) {
+		if (!strcmp(field, "cmd_addPostScaleShader")) {
+			BYTE* p = (BYTE*)value;
+			const BYTE* end = p + size;
+			uint32_t chunkcode;
+			int32_t chunksize;
 			CStringW shaderName;
-			shaderName.Format(L"HLSL %d bytes", size); // TODO: use shader file name
-			CAutoLock cRendererLock(&m_RendererLock);
-			if (m_bUsedD3D11) {
-				return E_ABORT;
-			} else {
-				return m_DX9_VP.AddPostScaleShader(shaderName, srcCode);
+			CStringA shaderCode;
+
+			while (p + 8 < end) {
+				memcpy(&chunkcode, p, 4);
+				p += 4;
+				memcpy(&chunksize, p, 4);
+				p += 4;
+				if (chunksize <= 0 || p + chunksize > end) {
+					break;
+				}
+
+				switch (chunkcode) {
+				case FCC('NAME'):
+					shaderName.SetString((LPCWSTR)p, chunksize / sizeof(wchar_t));
+					break;
+				case FCC('CODE'):
+					shaderCode.SetString((LPCSTR)p, chunksize);
+					break;
+				}
+				p += chunksize;
+			}
+
+			if (shaderCode.GetLength()) {
+				CAutoLock cRendererLock(&m_RendererLock);
+				if (m_bUsedD3D11) {
+					return E_ABORT;
+				} else {
+					return m_DX9_VP.AddPostScaleShader(shaderName, shaderCode);
+				}
 			}
 		}
 	}
