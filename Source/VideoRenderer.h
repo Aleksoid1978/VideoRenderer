@@ -32,8 +32,6 @@
 #include "../Include/ISubRender.h"
 #include "../Include/FilterInterfacesImpl.h"
 
-#define EXPERIMENTAL 0
-
 #define STATS_X  10
 #define STATS_Y  10
 #define STATS_W 512
@@ -261,9 +259,7 @@ public:
 
 	STDMETHODIMP SetBool(LPCSTR field, bool value) override;
 	STDMETHODIMP SetInt(LPCSTR field, int value) override;
-#if EXPERIMENTAL
 	STDMETHODIMP SetBin(LPCSTR field, LPVOID value, int size) override;
-#endif
 
 private:
 	HRESULT Redraw();

@@ -343,9 +343,10 @@ void CDX9VideoProcessor::ReleaseVP()
 	m_DXVA2VP.ReleaseVideoProcessor();
 
 	m_TexSrcVideo.Release();
-	m_TexConvert.Release();
-	m_TexCorrection.Release();
+	m_TexDxvaOutput.Release();
+	m_TexConvertOutput.Release();
 	m_TexResize.Release();
+	m_TexsPostScale.Release();
 
 	m_srcParams      = {};
 	m_srcDXVA2Format = D3DFMT_UNKNOWN;
@@ -769,8 +770,6 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// DXVA2 Video Processor
 	if (FmtConvParams.DXVA2Format != D3DFMT_UNKNOWN && S_OK == InitializeDXVA2VP(FmtConvParams, biWidth, biHeight, false)) {
-		UpdateVideoTexDXVA2VP();
-
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_ST2084));
 		}
@@ -782,7 +781,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		}
 		DLogIf(m_pPSCorrection, L"CDX9VideoProcessor::InitMediaType() m_pPSCorrection created");
 
-		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
+		UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
 		UpdateStatsStatic();
 
 		m_pFilter->m_inputMT = *pmt;
@@ -795,6 +794,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	// Tex Video Processor
 	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
 		SetShaderConvertColorParams();
+		UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
 		UpdateStatsStatic();
 
 		m_pFilter->m_inputMT = *pmt;
@@ -1103,9 +1103,9 @@ HRESULT CDX9VideoProcessor::FillBlack()
 
 void CDX9VideoProcessor::SetVideoRect(const CRect& videoRect)
 {
-	UpdateCorrectionTex(videoRect.Width(), videoRect.Height());
 	m_videoRect = videoRect;
 	UpdateRenderRects();
+	UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
 }
 
 HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
@@ -1195,13 +1195,13 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 	}
 
 	if (m_DXVA2VP.IsReady() && (m_pPSCorrection || m_bVPScaling)) {
-		UpdateCorrectionTex(w, h);
+		UpdateTexures(w, h);
 	}
 
 	hr = Process(pRGB32Surface, srcRect, dstRect, 0);
 
 	if (m_DXVA2VP.IsReady() && (m_pPSCorrection || m_bVPScaling)) {
-		UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
+		UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
 	}
 
 	if (FAILED(hr)) {
@@ -1295,9 +1295,7 @@ void CDX9VideoProcessor::SetVPEnableFmts(const VPEnableFormats_t& VPFormats)
 void CDX9VideoProcessor::SetVPScaling(bool value)
 {
 	m_bVPScaling = value;
-
-	UpdateVideoTexDXVA2VP();
-	UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height()); // may be needed when frame rotation is active
+	UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
 }
 
 void CDX9VideoProcessor::SetChromaScaling(int value)
@@ -1347,7 +1345,7 @@ void CDX9VideoProcessor::SetDownscaling(int value)
 void CDX9VideoProcessor::SetRotation(int value)
 {
 	m_iRotation = value;
-	UpdateCorrectionTex(m_videoRect.Width(), m_videoRect.Height());
+	UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
 }
 
 void CDX9VideoProcessor::Flush()
@@ -1381,6 +1379,9 @@ HRESULT CDX9VideoProcessor::AddPostScaleShader(const CStringW& name, const CStri
 			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPostScaleShaders.back().shader);
 			if (S_OK == hr) {
 				m_pPostScaleShaders.back().name = name;
+				if (m_pPostScaleShaders.size() <= 2) {
+					UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
+				}
 				DLog(L"CDX9VideoProcessor::AddPostScaleShader() : \"%s\" pixel shader added successfully.", name);
 			} else {
 				DLog(L"CDX9VideoProcessor::AddPostScaleShader() : create pixel shader \"%s\" FAILED!", name);
@@ -1393,32 +1394,37 @@ HRESULT CDX9VideoProcessor::AddPostScaleShader(const CStringW& name, const CStri
 	return hr;
 }
 
-void CDX9VideoProcessor::UpdateVideoTexDXVA2VP()
+void CDX9VideoProcessor::UpdateTexures(int w, int h)
 {
+	if (!m_SurfaceWidth || !m_SurfaceHeight) {
+		return;
+	}
+
+	// TODO: try making w and h a multiple of 128.
+	HRESULT hr = S_OK;
+
 	if (m_DXVA2VP.IsReady()) {
 		if (m_bVPScaling) {
-			m_TexConvert.Release();
+			if (m_iRotation == 90 || m_iRotation == 270) {
+				hr = m_TexDxvaOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, h, w, D3DUSAGE_RENDERTARGET);
+			} else {
+				hr = m_TexDxvaOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, w, h, D3DUSAGE_RENDERTARGET);
+			}
 		} else {
-			m_TexConvert.Create(m_pD3DDevEx, m_DXVA2OutputFmt, m_SurfaceWidth, m_SurfaceHeight, D3DUSAGE_RENDERTARGET);
+			hr = m_TexDxvaOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, m_SurfaceWidth, m_SurfaceHeight, D3DUSAGE_RENDERTARGET);
 		}
+		m_TexConvertOutput.Release();
 	}
+	else {
+		m_TexDxvaOutput.Release();
+		hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, m_SurfaceWidth, m_SurfaceHeight, D3DUSAGE_RENDERTARGET);
 }
 
-void CDX9VideoProcessor::UpdateCorrectionTex(int w, int h)
-{
-	if (m_pPSCorrection || (m_DXVA2VP.IsReady() && m_bVPScaling && m_iRotation)) {
-		if (m_iRotation == 90 || m_iRotation == 270) {
-			std::swap(w, h);
-		}
-		if (w != m_TexCorrection.Width || h != m_TexCorrection.Height) {
-			const D3DFORMAT format = m_bVPScaling ? m_DXVA2OutputFmt : m_InternalTexFmt;
-			HRESULT hr = m_TexCorrection.Create(m_pD3DDevEx, format, w, h, D3DUSAGE_RENDERTARGET);
-			DLogIf(FAILED(hr), "CDX9VideoProcessor::UpdateCorrectionTex() : m_TexCorrection.Create() failed with error %s", HR2Str(hr));
-		}
-		// else do nothing
-	} else {
-		m_TexCorrection.Release();
+	UINT numPostScaleShaders = m_pPostScaleShaders.size();
+	if (m_pPSCorrection) {
+		numPostScaleShaders++;
 	}
+	hr = m_TexsPostScale.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, w, h, numPostScaleShaders);
 }
 
 void CDX9VideoProcessor::UpdateUpscalingShaders()
@@ -1650,58 +1656,80 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 {
 	HRESULT hr = S_OK;
 
+	CRect rSrc = srcRect;
+	IDirect3DTexture9* pInputTexture = nullptr;
+
 	if (m_DXVA2VP.IsReady()) {
-		if (m_pPSCorrection && m_TexCorrection.pTexture) {
-			CRect rCorrection(0, 0, m_TexCorrection.Width, m_TexCorrection.Height);
-			if (m_bVPScaling) {
-				hr = DxvaVPPass(m_TexCorrection.pSurface, srcRect, rCorrection, second);
-			}
-			else {
-				hr = DxvaVPPass(m_TexConvert.pSurface, srcRect, srcRect, second);
-				hr = ResizeShaderPass(m_TexConvert.pTexture, m_TexCorrection.pSurface, srcRect, rCorrection);
-			}
-			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-			hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
-			hr = TextureCopyRect(m_TexCorrection.pTexture, rCorrection, dstRect, D3DTEXF_POINT, 0);
-			m_pD3DDevEx->SetPixelShader(nullptr);
+		if (m_bVPScaling) {
+			RECT rect = { 0, 0, m_TexDxvaOutput.Width, m_TexDxvaOutput.Height };
+			hr = DxvaVPPass(m_TexDxvaOutput.pSurface, rSrc, rect, second);
+			rSrc = rect;
+		} else {
+			hr = DxvaVPPass(m_TexDxvaOutput.pSurface, rSrc, rSrc, second);
 		}
-		else {
-			if (m_bVPScaling) {
-				if (m_iRotation && m_TexCorrection.pTexture) {
-					CRect rCorrection(0, 0, m_TexCorrection.Width, m_TexCorrection.Height);
-					hr = DxvaVPPass(m_TexCorrection.pSurface, srcRect, rCorrection, second);
-					hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-					hr = TextureCopyRect(m_TexCorrection.pTexture, rCorrection, dstRect, D3DTEXF_POINT, m_iRotation);
-				}
-				else {
-					hr = DxvaVPPass(pRenderTarget, srcRect, dstRect, second);
-				}
-			}
-			else {
-				hr = DxvaVPPass(m_TexConvert.pSurface, srcRect, srcRect, second);
-				hr = ResizeShaderPass(m_TexConvert.pTexture, pRenderTarget, srcRect, dstRect);
-			}
-		}
+
+		pInputTexture = m_TexDxvaOutput.pTexture;
+	}
+	else if (m_PSConvColorData.bEnable) {
+		ConvertColorPass(m_TexConvertOutput.pSurface);
+		pInputTexture = m_TexConvertOutput.pTexture;
 	}
 	else {
-		IDirect3DTexture9* pTexture = m_TexSrcVideo.pTexture;
+		pInputTexture = m_TexSrcVideo.pTexture;
+	}
 
-		// Convert color pass
-		if (m_pPSConvertColor && m_PSConvColorData.bEnable) {
+	if (m_pPSCorrection || m_pPostScaleShaders.size()) {
+		Tex_t* Tex = m_TexsPostScale.GetFirstTex();
+		RECT rect = { 0, 0, Tex->Width, Tex->Height };
 
-			if (!m_TexConvert.pTexture) {
-				hr = m_TexConvert.Create(m_pD3DDevEx, m_InternalTexFmt, m_srcWidth, m_srcHeight, D3DUSAGE_RENDERTARGET);
-				DLogIf(FAILED(hr), "CDX9VideoProcessor::ProcessTex() : m_TexConvert.Create() failed with error %s", HR2Str(hr));
+		hr = ResizeShaderPass(pInputTexture, Tex->pSurface, rSrc, rect);
+
+		rSrc = rect;
+
+		if (m_pPSCorrection) {
+			hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
+		}
+
+		if (m_pPostScaleShaders.size()) {
+			if (m_pPSCorrection) {
+				pInputTexture = Tex->pTexture;
+				Tex = m_TexsPostScale.GetNextTex();
+				hr = m_pD3DDevEx->SetRenderTarget(0, Tex->pSurface);
+				hr = TextureCopyRect(pInputTexture, rect, rect, D3DTEXF_POINT, 0);
 			}
 
-			if (m_TexConvert.pTexture) {
-				ConvertColorPass(m_TexConvert.pSurface);
-				pTexture = m_TexConvert.pTexture;
+			if (m_pPostScaleShaders.size()) {
+				static __int64 counter = 0;
+				static long start = GetTickCount();
+
+				long stop = GetTickCount();
+				long diff = stop - start;
+				if (diff >= 10 * 60 * 1000) {
+					start = stop;    // reset after 10 min (ps float has its limits in both range and accuracy)
+				}
+				float fConstData[][4] = {
+					{(float)Tex->Width, (float)Tex->Height, (float)(counter++), (float)diff / 1000},
+					{1.0f / Tex->Width, 1.0f / Tex->Height, 0, 0},
+				};
+				hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, _countof(fConstData));
+
+				for (UINT idx = 0; idx < m_pPostScaleShaders.size() - 1; idx++) {
+					pInputTexture = Tex->pTexture;
+					Tex = m_TexsPostScale.GetNextTex();
+					hr = m_pD3DDevEx->SetPixelShader(m_pPostScaleShaders[idx].shader);
+					hr = m_pD3DDevEx->SetRenderTarget(0, Tex->pSurface);
+					hr = TextureCopyRect(pInputTexture, rect, rect, D3DTEXF_POINT, 0);
+				}
+				hr = m_pD3DDevEx->SetPixelShader(m_pPostScaleShaders.back().shader);
 			}
 		}
 
-		// Resize
-		hr = ResizeShaderPass(pTexture, pRenderTarget, srcRect, dstRect);
+		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
+		hr = TextureCopyRect(Tex->pTexture, rect, dstRect, D3DTEXF_POINT, 0);
+		m_pD3DDevEx->SetPixelShader(nullptr);
+	}
+	else {
+		hr = ResizeShaderPass(pInputTexture, pRenderTarget, rSrc, dstRect);
 	}
 
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::Process() : failed with error %s", HR2Str(hr));

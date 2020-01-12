@@ -106,9 +106,10 @@ private:
 
 	// D3D9 Video Processor
 	Tex9Video_t m_TexSrcVideo; // for copy of frame
-	Tex_t m_TexConvert;    // for result of color conversion with DXVA2 VP
-	Tex_t m_TexCorrection; // for result of correction after DXVA2 VP
+	Tex_t m_TexDxvaOutput;
+	Tex_t m_TexConvertOutput;
 	Tex_t m_TexResize;     // for intermediate result of two-pass resize
+	CTexRing m_TexsPostScale;
 
 	CComPtr<IDirect3DPixelShader9> m_pPSCorrection;
 	CComPtr<IDirect3DPixelShader9> m_pPSConvertColor;
@@ -204,8 +205,7 @@ public:
 	HRESULT AddPostScaleShader(const CStringW& name, const CStringA& srcCode);
 
 private:
-	void UpdateVideoTexDXVA2VP();
-	void UpdateCorrectionTex(int w, int h);
+	void UpdateTexures(int w, int h);
 	void UpdateUpscalingShaders();
 	void UpdateDownscalingShaders();
 	HRESULT UpdateChromaScalingShader();

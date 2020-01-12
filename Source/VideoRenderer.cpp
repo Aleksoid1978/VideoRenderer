@@ -1122,7 +1122,6 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 		return S_OK;
 	}
 
-#if EXPERIMENTAL
 	if (!strcmp(field, "cmd_clearPostScaleShaders") && value) {
 		CAutoLock cRendererLock(&m_RendererLock);
 		if (m_bUsedD3D11) {
@@ -1132,7 +1131,6 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 			return S_OK;
 		}
 	}
-#endif
 
 	return E_INVALIDARG;
 }
@@ -1161,8 +1159,6 @@ STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
 
 	return E_INVALIDARG;
 }
-
-#if EXPERIMENTAL
 
 STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
 {
@@ -1208,8 +1204,6 @@ STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
 
 	return E_INVALIDARG;
 }
-
-#endif
 
 HRESULT CMpcVideoRenderer::Redraw()
 {
