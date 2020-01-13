@@ -1,5 +1,5 @@
 /*
-* (C) 2019 see Authors.txt
+* (C) 2019-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -24,6 +24,60 @@
 #include <d3d11.h>
 #include "Helper.h"
 #include "DX11Helper.h"
+
+D3D11_TEXTURE2D_DESC CreateTex2DDesc(const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type)
+{
+	D3D11_TEXTURE2D_DESC desc;
+	desc.Width = width;
+	desc.Height = height;
+	desc.MipLevels = 1;
+	desc.ArraySize = 1;
+	desc.Format = format;
+	desc.SampleDesc = { 1, 0 };
+
+	switch (type) {
+	default:
+	case Tex2D_Default:
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = 0;
+		desc.CPUAccessFlags = 0;
+		desc.MiscFlags = 0;
+		break;
+	case Tex2D_DefaultRTarget:
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+		desc.CPUAccessFlags = 0;
+		desc.MiscFlags = 0;
+		break;
+	case Tex2D_DefaultShaderRTarget:
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+		desc.CPUAccessFlags = 0;
+		desc.MiscFlags = 0;
+		break;
+	case Tex2D_DefaultShaderRTargetGDI:
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+		desc.CPUAccessFlags = 0;
+		desc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
+		break;
+	case Tex2D_DynamicShaderWrite:
+	case Tex2D_DynamicShaderWriteNoSRV:
+		desc.Usage = D3D11_USAGE_DYNAMIC;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		desc.MiscFlags = 0;
+		break;
+	case Tex2D_StagingRead:
+		desc.Usage = D3D11_USAGE_STAGING;
+		desc.BindFlags = 0;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		desc.MiscFlags = 0;
+		break;
+	}
+
+	return desc;
+}
 
 UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAdapter)
 {
@@ -72,7 +126,9 @@ HRESULT Dump4ByteTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D*
 		} else {
 			ID3D11Device *pDevice;
 			pTexture2D->GetDevice(&pDevice);
-			hr = CreateTex2D(pDevice, desc.Format, desc.Width, desc.Height, Tex2D_StagingRead, &pTexture2DShared);
+			D3D11_TEXTURE2D_DESC desc2 = CreateTex2DDesc(desc.Format, desc.Width, desc.Height, Tex2D_StagingRead);
+
+			hr = pDevice->CreateTexture2D(&desc2, nullptr, &pTexture2DShared);
 			pDevice->Release();
 
 			pDeviceContext->CopyResource(pTexture2DShared, pTexture2D);

@@ -1,5 +1,5 @@
 /*
-* (C) 2019 see Authors.txt
+* (C) 2019-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -32,59 +32,7 @@ enum Tex2DType {
 	Tex2D_StagingRead,
 };
 
-inline HRESULT CreateTex2D(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type, ID3D11Texture2D** ppTexture2D)
-{
-	D3D11_TEXTURE2D_DESC desc;
-	desc.Width = width;
-	desc.Height = height;
-	desc.MipLevels = 1;
-	desc.ArraySize = 1;
-	desc.Format = format;
-	desc.SampleDesc = { 1, 0 };
-
-	switch (type) {
-	default:
-	case Tex2D_Default:
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = 0;
-		desc.CPUAccessFlags = 0;
-		desc.MiscFlags = 0;
-		break;
-	case Tex2D_DefaultRTarget:
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = D3D11_BIND_RENDER_TARGET;
-		desc.CPUAccessFlags = 0;
-		desc.MiscFlags = 0;
-		break;
-	case Tex2D_DefaultShaderRTarget:
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-		desc.CPUAccessFlags = 0;
-		desc.MiscFlags = 0;
-		break;
-	case Tex2D_DefaultShaderRTargetGDI:
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-		desc.CPUAccessFlags = 0;
-		desc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
-		break;
-	case Tex2D_DynamicShaderWrite:
-	case Tex2D_DynamicShaderWriteNoSRV:
-		desc.Usage = D3D11_USAGE_DYNAMIC;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		desc.MiscFlags = 0;
-		break;
-	case Tex2D_StagingRead:
-		desc.Usage = D3D11_USAGE_STAGING;
-		desc.BindFlags = 0;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-		desc.MiscFlags = 0;
-		break;
-	}
-
-	return pDevice->CreateTexture2D(&desc, nullptr, ppTexture2D);
-}
+D3D11_TEXTURE2D_DESC CreateTex2DDesc(const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type);
 
 struct Tex2D_t
 {
@@ -92,10 +40,19 @@ struct Tex2D_t
 	D3D11_TEXTURE2D_DESC desc = {};
 	CComPtr<ID3D11ShaderResourceView> pShaderResource;
 
+	HRESULT CheckCreate(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type) {
+		if (format == desc.Format && width == desc.Width && height == desc.Height) {
+			return S_OK;
+		}
+
+		return Create(pDevice, format, width, height, type);
+	}
+
 	HRESULT Create(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type) {
 		Release();
+		D3D11_TEXTURE2D_DESC texdesc = CreateTex2DDesc(format, width, height, type);
 
-		HRESULT hr = CreateTex2D(pDevice, format, width, height, type, &pTexture);
+		HRESULT hr = pDevice->CreateTexture2D(&texdesc, nullptr, &pTexture);
 		if (S_OK == hr) {
 			pTexture->GetDesc(&desc);
 
@@ -132,8 +89,9 @@ struct Tex11Video_t : Tex2D_t
 
 	HRESULT CreateEx(ID3D11Device* pDevice, const DXGI_FORMAT format, const DX11PlanarPrms_t* pPlanes, const UINT width, const UINT height, const Tex2DType type) {
 		Release();
+		D3D11_TEXTURE2D_DESC texdesc = CreateTex2DDesc(format, width, height, type);
 
-		HRESULT hr = CreateTex2D(pDevice, format, width, height, type, &pTexture);
+		HRESULT hr = pDevice->CreateTexture2D(&texdesc, nullptr, &pTexture);
 		if (S_OK == hr) {
 			pTexture->GetDesc(&desc);
 
@@ -164,7 +122,9 @@ struct Tex11Video_t : Tex2D_t
 			if (S_OK == hr) {
 				const UINT chromaWidth = width / pPlanes->div_chroma_w;
 				const UINT chromaHeight = height / pPlanes->div_chroma_h;
-				hr = CreateTex2D(pDevice, pPlanes->FmtPlane2, chromaWidth, chromaHeight, type, &pTexture2);
+				texdesc = CreateTex2DDesc(pPlanes->FmtPlane2, chromaWidth, chromaHeight, type);
+
+				hr = pDevice->CreateTexture2D(&texdesc, nullptr, &pTexture2);
 				if (S_OK == hr) {
 					D3D11_SHADER_RESOURCE_VIEW_DESC shaderDesc;
 					shaderDesc.Format = pPlanes->FmtPlane2;
@@ -175,7 +135,9 @@ struct Tex11Video_t : Tex2D_t
 
 					if (S_OK == hr && pPlanes->FmtPlane3) {
 						// 3 textures, 3 SRV
-						hr = CreateTex2D(pDevice, pPlanes->FmtPlane3, chromaWidth, chromaHeight, type, &pTexture3);
+						texdesc = CreateTex2DDesc(pPlanes->FmtPlane3, chromaWidth, chromaHeight, type);
+
+						hr = pDevice->CreateTexture2D(&texdesc, nullptr, &pTexture3);
 						if (S_OK == hr) {
 							shaderDesc.Format = pPlanes->FmtPlane3;
 							hr = pDevice->CreateShaderResourceView(pTexture3, &shaderDesc, &pShaderResource3);

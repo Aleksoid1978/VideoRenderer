@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2019 see Authors.txt
+* (C) 2018-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -1882,7 +1882,9 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 
 	HRESULT hr = S_OK;
 	CComPtr<ID3D11Texture2D> pRGB32Texture2D;
-	hr = CreateTex2D(m_pDevice, DXGI_FORMAT_B8G8R8X8_UNORM, w, h, Tex2D_DefaultRTarget, &pRGB32Texture2D);
+	D3D11_TEXTURE2D_DESC texdesc = CreateTex2DDesc(DXGI_FORMAT_B8G8R8X8_UNORM, w, h, Tex2D_DefaultRTarget);
+
+	hr = m_pDevice->CreateTexture2D(&texdesc, nullptr, &pRGB32Texture2D);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -1912,7 +1914,9 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	}
 
 	CComPtr<ID3D11Texture2D> pRGB32Texture2D_Shared;
-	hr = CreateTex2D(m_pDevice, DXGI_FORMAT_B8G8R8X8_UNORM, w, h, Tex2D_StagingRead, &pRGB32Texture2D_Shared);
+	texdesc = CreateTex2DDesc(DXGI_FORMAT_B8G8R8X8_UNORM, w, h, Tex2D_StagingRead);
+
+	hr = m_pDevice->CreateTexture2D(&texdesc, nullptr, &pRGB32Texture2D_Shared);
 	if (FAILED(hr)) {
 		return hr;
 	}
