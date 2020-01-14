@@ -163,6 +163,74 @@ struct Tex11Video_t : Tex2D_t
 	}
 };
 
+class CTex2DRing
+{
+	Tex2D_t Texs[2];
+	int index = 0;
+	UINT size = 0;
+
+public:
+	HRESULT CheckCreate(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const UINT num) {
+		HRESULT hr = S_FALSE;
+		if (num == 0) {
+			Release();
+			return hr;
+		}
+
+		index = 0;
+		size = 0;
+		if (num >= 1) {
+			hr = Texs[0].CheckCreate(pDevice, format, width, height, Tex2D_DefaultShaderRTarget);
+			size++;
+			if (S_OK == hr && num >= 2) {
+				hr = Texs[1].CheckCreate(pDevice, format, width, height, Tex2D_DefaultShaderRTarget);
+				size++;
+			}
+			else {
+				Texs[1].Release();
+			}
+		}
+		return hr;
+	}
+
+	HRESULT Create(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const UINT num) {
+		Release();
+		HRESULT hr = S_FALSE;
+		if (num >= 1) {
+			hr = Texs[0].Create(pDevice, format, width, height, Tex2D_DefaultShaderRTarget);
+			size++;
+			if (S_OK == hr && num >= 2) {
+				hr = Texs[1].Create(pDevice, format, width, height, Tex2D_DefaultShaderRTarget);
+				size++;
+			}
+		}
+		return hr;
+	}
+
+	void Release() {
+		Texs[0].Release();
+		Texs[1].Release();
+		index = 0;
+		size = 0;
+	}
+
+	Tex2D_t* GetFirstTex() {
+		index = 0;
+		return &Texs[0];
+	}
+
+	Tex2D_t* GetNextTex() {
+		index = (index + 1) & 1;
+		return &Texs[index];
+	}
+};
+
+struct ExternalPixelShader11_t
+{
+	CStringW name; // TODO
+	CComPtr<ID3D11PixelShader> shader;
+};
+
 inline DirectX::XMFLOAT4 D3DCOLORtoXMFLOAT4(const D3DCOLOR color)
 {
 	return DirectX::XMFLOAT4{

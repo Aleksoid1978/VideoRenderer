@@ -1365,6 +1365,7 @@ void CDX9VideoProcessor::ClearPostScaleShaders()
 		pScreenShader.shader.Release();
 	}
 	m_pPostScaleShaders.clear();
+	DLog(L"CDX9VideoProcessor::ClearPostScaleShaders().");
 }
 
 HRESULT CDX9VideoProcessor::AddPostScaleShader(const CStringW& name, const CStringA& srcCode)

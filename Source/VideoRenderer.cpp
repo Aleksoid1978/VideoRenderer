@@ -1125,11 +1125,11 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 	if (!strcmp(field, "cmd_clearPostScaleShaders") && value) {
 		CAutoLock cRendererLock(&m_RendererLock);
 		if (m_bUsedD3D11) {
-			return E_ABORT;
+			m_DX11_VP.ClearPostScaleShaders();
 		} else {
 			m_DX9_VP.ClearPostScaleShaders();
-			return S_OK;
 		}
+		return S_OK;
 	}
 
 	return E_INVALIDARG;
@@ -1194,7 +1194,7 @@ STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
 			if (shaderCode.GetLength()) {
 				CAutoLock cRendererLock(&m_RendererLock);
 				if (m_bUsedD3D11) {
-					return E_ABORT;
+					return m_DX11_VP.AddPostScaleShader(shaderName, shaderCode);
 				} else {
 					return m_DX9_VP.AddPostScaleShader(shaderName, shaderCode);
 				}

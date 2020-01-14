@@ -519,8 +519,9 @@ void CDX11VideoProcessor::ReleaseDevice()
 
 	m_Font3D.InvalidateDeviceObjects();
 	m_Rect3D.InvalidateDeviceObjects();
-
 	m_TexStats.Release();
+
+	ClearPostScaleShaders();
 	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
 
@@ -2070,6 +2071,40 @@ void CDX11VideoProcessor::Flush()
 	if (m_D3D11VP.IsReady()) {
 		m_D3D11VP.ResetFrameOrder();
 	}
+}
+
+void CDX11VideoProcessor::ClearPostScaleShaders()
+{
+	for (auto& pScreenShader : m_pPostScaleShaders) {
+		pScreenShader.shader.Release();
+	}
+	m_pPostScaleShaders.clear();
+	DLog(L"CDX11VideoProcessor::ClearPostScaleShaders().");
+}
+
+HRESULT CDX11VideoProcessor::AddPostScaleShader(const CStringW& name, const CStringA& srcCode)
+{
+	HRESULT hr = S_OK;
+
+	if (m_pDevice) {
+		ID3DBlob* pShaderCode = nullptr;
+		hr = CompileShader(srcCode, nullptr, "ps_4_0", &pShaderCode);
+		if (S_OK == hr) {
+			m_pPostScaleShaders.emplace_back();
+			hr = m_pDevice->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPostScaleShaders.back().shader);
+			if (S_OK == hr) {
+				m_pPostScaleShaders.back().name = name;
+				DLog(L"CDX11VideoProcessor::AddPostScaleShader() : \"%s\" pixel shader added successfully.", name);
+			}
+			else {
+				DLog(L"CDX11VideoProcessor::AddPostScaleShader() : create pixel shader \"%s\" FAILED!", name);
+				m_pPostScaleShaders.pop_back();
+			}
+			pShaderCode->Release();
+		}
+	}
+
+	return hr;
 }
 
 void CDX11VideoProcessor::UpdateStatsStatic()

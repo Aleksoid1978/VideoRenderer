@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2019 see Authors.txt
+* (C) 2018-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -91,6 +91,8 @@ private:
 	CComPtr<ID3D11PixelShader> m_pShaderDownscaleY;
 	const wchar_t* m_strShaderX = nullptr;
 	const wchar_t* m_strShaderY = nullptr;
+
+	std::vector<ExternalPixelShader11_t> m_pPostScaleShaders;
 
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
@@ -242,6 +244,9 @@ public:
 	int GetRotation() { return m_iRotation; }
 
 	void Flush();
+
+	void ClearPostScaleShaders();
+	HRESULT AddPostScaleShader(const CStringW& name, const CStringA& srcCode);
 
 private:
 	void UpdateConvertTexD3D11VP();
