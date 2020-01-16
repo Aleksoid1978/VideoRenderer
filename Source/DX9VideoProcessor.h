@@ -131,7 +131,7 @@ private:
 	CStringW m_strStatsStatic1;
 	CStringW m_strStatsStatic2;
 	CStringW m_strStatsStatic3;
-	bool m_bSrcFromGPU = false;
+	int m_iSrcFromGPU = 0;
 
 	Tex_t m_TexStats;
 	CD3D9Font m_Font3D;

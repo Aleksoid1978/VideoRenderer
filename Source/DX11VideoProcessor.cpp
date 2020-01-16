@@ -1337,7 +1337,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	m_FieldDrawn = 0;
 
 	if (CComQIPtr<IMediaSampleD3D11> pMSD3D11 = pSample) {
-		m_bSrcFromGPU = true;
+		m_iSrcFromGPU = 11;
 
 		CComQIPtr<ID3D11Texture2D> pD3D11Texture2D;
 		UINT ArraySlice = 0;
@@ -1372,7 +1372,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 	else if (CComQIPtr<IMFGetService> pService = pSample) {
-		m_bSrcFromGPU = true;
+		m_iSrcFromGPU = 9;
 
 		CComPtr<IDirect3DSurface9> pSurface9;
 		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface9)))) {
@@ -1413,7 +1413,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 	else {
-		m_bSrcFromGPU = false;
+		m_iSrcFromGPU = 0;
 
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
@@ -2113,7 +2113,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		m_strStatsStatic1.Format(L"MPC VR v%S, Direct3D 11", MPCVR_VERSION_STR);
 		m_strStatsStatic1.AppendFormat(L"\nGraph. Adapter: %s", m_strAdapterDescription);
 
-		m_strStatsStatic2.Format(L" %S %ux%u", m_srcParams.str, m_srcRectWidth, m_srcRectHeight);
+		m_strStatsStatic2.Format(L"%S %ux%u", m_srcParams.str, m_srcRectWidth, m_srcRectHeight);
 		if (m_srcParams.CSType == CS_YUV) {
 			LPCSTR strs[6] = {};
 			GetExtendedFormatString(strs, m_srcExFmt, m_srcParams.CSType);
@@ -2195,8 +2195,11 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	}
 	str.AppendFormat(L",%7.03f", m_pFilter->m_DrawStats.GetAverageFps());
 	str.Append(L"\nInput format  :");
-	if (m_bSrcFromGPU) {
-		str.Append(L" GPU");
+	if (m_iSrcFromGPU == 11) {
+		str.Append(L" DXGI_");
+	}
+	else if (m_iSrcFromGPU == 9) {
+		str.Append(L" D3DFMT_");
 	}
 	str.Append(m_strStatsStatic2);
 
