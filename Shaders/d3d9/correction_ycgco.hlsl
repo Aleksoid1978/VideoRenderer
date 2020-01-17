@@ -18,11 +18,10 @@ static float4x4 ycgco_rgb = {
 
 float4 main(float2 tex : TEXCOORD0) : COLOR
 {
-    // original pixel
-    float4 c0 = tex2D(s0, tex);
+    float4 color = tex2D(s0, tex); // original pixel
 
-    c0 = mul(rgb_ycbcr709, c0); // convert RGB to YUV and get original YCgCo
-    c0 = mul(ycgco_rgb, c0); // convert YCgCo to RGB
+    color = mul(rgb_ycbcr709, color); // convert RGB to YUV and get original YCgCo
+    color = mul(ycgco_rgb, color); // convert YCgCo to RGB
 
-    return c0;
+    return color;
 }
