@@ -71,9 +71,10 @@ private:
 	CComPtr<ID3D11InputLayout>   m_pVSimpleInputLayout;
 
 	Tex11Video_t m_TexSrcVideo; // for copy of frame
-	Tex2D_t m_TexConvert;     // for result of color conversion
-	Tex2D_t m_TexCorrection;  // for result of correction after D3D11 VP
-	Tex2D_t m_TexResize;      // for intermediate result of two-pass resize
+	Tex2D_t m_TexD3D11VPOutput;
+	Tex2D_t m_TexConvertOutput;
+	Tex2D_t m_TexResize;        // for intermediate result of two-pass resize
+	CTex2DRing m_TexsPostScale;
 
 	// D3D11 Video Processor
 	CD3D11VP m_D3D11VP;
@@ -249,26 +250,26 @@ public:
 	HRESULT AddPostScaleShader(const CStringW& name, const CStringA& srcCode);
 
 private:
-	void UpdateConvertTexD3D11VP();
-	void UpdateCorrectionTex(const int w, const int h);
+	void UpdateTexures(int w, int h);
 	void UpdateUpscalingShaders();
 	void UpdateDownscalingShaders();
 	HRESULT UpdateChromaScalingShader();
+
+	HRESULT D3D11VPPass(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
+	HRESULT ConvertColorPass(ID3D11Texture2D* pRenderTarget);
+	HRESULT ResizeShaderPass(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect);
+
+	HRESULT Process(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
 
 	HRESULT AlphaBlt(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget, D3D11_VIEWPORT& viewport);
 	HRESULT AlphaBltSub(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, D3D11_VIEWPORT& viewport);
 	HRESULT TextureCopyRect(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
 							const CRect& srcRect, const CRect& destRect,
 							ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer, const int iRotation);
-	HRESULT TextureConvertColor(const Tex11Video_t& texVideo, ID3D11Texture2D* pRenderTarget);
+
 	HRESULT TextureResizeShader(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
 							const CRect& srcRect, const CRect& destRect,
 							ID3D11PixelShader* pPixelShader, const int iRotation);
-
-	HRESULT Process(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
-
-	HRESULT D3D11VPPass(ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect, const bool second);
-	HRESULT ResizeShader2Pass(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& rSrcRect, const CRect& rDstRect);
 
 	void UpdateStatsStatic();
 	HRESULT DrawStats(ID3D11Texture2D* pRenderTarget);
