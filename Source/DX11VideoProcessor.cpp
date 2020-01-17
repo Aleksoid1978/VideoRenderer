@@ -508,7 +508,6 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_TexsPostScale.Release();
 
 	SAFE_RELEASE(m_PSConvColorData.pConstants);
-	SAFE_RELEASE(m_pPostScaleConstants);
 
 	m_D3D11VP.ReleaseVideoProcessor();
 
@@ -542,6 +541,8 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pShaderDownscaleY.Release();
 	m_strShaderX = nullptr;
 	m_strShaderY = nullptr;
+
+	SAFE_RELEASE(m_pPostScaleConstants);
 
 	m_pVSimpleInputLayout.Release();
 	m_pVS_Simple.Release();
