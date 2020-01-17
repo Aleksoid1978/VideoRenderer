@@ -63,6 +63,14 @@ struct PS_COLOR_TRANSFORM {
 	DirectX::XMFLOAT4 cm_c;
 };
 
+struct PS_EXTSHADER_CONSTANTS {
+	DirectX::XMFLOAT2 wh;
+	uint32_t counter;
+	float diff;
+	DirectX::XMFLOAT2 dxy;
+	DirectX::XMFLOAT2 empty;
+};
+
 HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer, const UINT srcW, const UINT srcH, const RECT& srcRect, const int iRotation)
 {
 	ASSERT(ppVertexBuffer);
@@ -500,6 +508,7 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_TexsPostScale.Release();
 
 	SAFE_RELEASE(m_PSConvColorData.pConstants);
+	SAFE_RELEASE(m_pPostScaleConstants);
 
 	m_D3D11VP.ReleaseVideoProcessor();
 
@@ -723,6 +732,13 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateInputLayout(Layout, std::size(Layout), data, size, &m_pVSimpleInputLayout));
 
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_Simple, IDF_PSH11_SIMPLE));
+
+	D3D11_BUFFER_DESC BufferDesc = {};
+	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	BufferDesc.ByteWidth = sizeof(PS_EXTSHADER_CONSTANTS);
+	BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	BufferDesc.CPUAccessFlags = 0;
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, nullptr, &m_pPostScaleConstants));
 
 	CComPtr<IDXGIDevice> pDXGIDevice;
 	hr = m_pDevice->QueryInterface(IID_PPV_ARGS(&pDXGIDevice));
@@ -1700,6 +1716,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 
 		rSrc = rect;
 		ID3D11PixelShader* pPixelShader = nullptr;
+		ID3D11Buffer* pConstantBuffer = nullptr;
 
 		if (m_pPSCorrection) {
 			pPixelShader = m_pPSCorrection;
@@ -1712,8 +1729,12 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 				hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, nullptr, 0);
 			}
 
+			PS_EXTSHADER_CONSTANTS ConstData = {
+				{(float)Tex->desc.Width, (float)Tex->desc.Height}, 0, 0,
+				{1.0f / Tex->desc.Width, 1.0f / Tex->desc.Height }, {0, 0}
+			};
+
 			if (m_pPostScaleShaders.size()) {
-				/* // TODO
 				static __int64 counter = 0;
 				static long start = GetTickCount();
 
@@ -1722,24 +1743,23 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 				if (diff >= 10 * 60 * 1000) {
 					start = stop;    // reset after 10 min (ps float has its limits in both range and accuracy)
 				}
-				float fConstData[][4] = {
-					{(float)Tex->desc.Width, (float)Tex->desc.Height, (float)(counter++), (float)diff / 1000},
-					{1.0f / Tex->desc.Width, 1.0f / Tex->desc.Height, 0, 0},
-				};
-				hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, _countof(fConstData));
-				*/
+				ConstData.counter = counter++;
+				ConstData.diff = (float)diff / 1000;
+
+				m_pDeviceContext->UpdateSubresource(m_pPostScaleConstants, 0, nullptr, &ConstData, 0, 0);
 
 				for (UINT idx = 0; idx < m_pPostScaleShaders.size() - 1; idx++) {
 					pInputTexture = Tex;
 					Tex = m_TexsPostScale.GetNextTex();
 					pPixelShader = m_pPostScaleShaders[idx].shader;
-					hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, nullptr, 0);
+					hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, m_pPostScaleConstants, 0);
 				}
 				pPixelShader = m_pPostScaleShaders.back().shader;
+				pConstantBuffer = m_pPostScaleConstants;
 			}
 		}
 
-		hr = TextureCopyRect(*Tex, pRenderTarget, rect, dstRect, pPixelShader, nullptr, 0);
+		hr = TextureCopyRect(*Tex, pRenderTarget, rect, dstRect, pPixelShader, pConstantBuffer, 0);
 	}
 	else {
 		hr = ResizeShaderPass(*pInputTexture, pRenderTarget, rSrc, dstRect);

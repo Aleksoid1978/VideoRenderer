@@ -94,6 +94,7 @@ private:
 	const wchar_t* m_strShaderY = nullptr;
 
 	std::vector<ExternalPixelShader11_t> m_pPostScaleShaders;
+	ID3D11Buffer* m_pPostScaleConstants = nullptr;
 
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
