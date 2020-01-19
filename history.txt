@@ -1,7 +1,9 @@
+v0.4.0
 ------------------------
 Fixed freezing during frequent timeline navigation.
-Added support for "post scale" shaders for DX9 mode.
-Recommended version of MPC-BE v1.5.5.4998 or later.
+Added support for "post scale" shaders.
+Some changes in statistics.
+Recommended version of MPC-BE v1.5.5.5021 or later.
 
 v0.3.8.1060 - 2019.12.30
 ------------------------
