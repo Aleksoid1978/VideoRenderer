@@ -64,12 +64,15 @@ struct PS_COLOR_TRANSFORM {
 };
 
 struct PS_EXTSHADER_CONSTANTS {
-	DirectX::XMFLOAT2 wh;
-	uint32_t counter;
-	float diff;
-	DirectX::XMFLOAT2 dxy;
-	DirectX::XMFLOAT2 empty;
+	DirectX::XMFLOAT2 pxy; // pixel size in normalized coordinates
+	DirectX::XMFLOAT2 wh;  // width and height of texture
+	uint32_t counter;      // rendered frame counter
+	float clock;           // some time in seconds
+	float reserved1;
+	float reserved2;
 };
+
+static_assert(sizeof(PS_EXTSHADER_CONSTANTS) % 16 == 0);
 
 HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer, const UINT srcW, const UINT srcH, const RECT& srcRect, const int iRotation)
 {
@@ -1735,11 +1738,6 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 				hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, nullptr, 0);
 			}
 
-			PS_EXTSHADER_CONSTANTS ConstData = {
-				{(float)Tex->desc.Width, (float)Tex->desc.Height}, 0, 0,
-				{1.0f / Tex->desc.Width, 1.0f / Tex->desc.Height }, {0, 0}
-			};
-
 			if (m_pPostScaleShaders.size()) {
 				static __int64 counter = 0;
 				static long start = GetTickCount();
@@ -1749,8 +1747,14 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 				if (diff >= 10 * 60 * 1000) {
 					start = stop;    // reset after 10 min (ps float has its limits in both range and accuracy)
 				}
-				ConstData.counter = counter++;
-				ConstData.diff = (float)diff / 1000;
+
+				PS_EXTSHADER_CONSTANTS ConstData = {
+					{1.0f / Tex->desc.Width, 1.0f / Tex->desc.Height },
+					{(float)Tex->desc.Width, (float)Tex->desc.Height},
+					counter++,
+					(float)diff / 1000,
+					0, 0
+				};
 
 				m_pDeviceContext->UpdateSubresource(m_pPostScaleConstants, 0, nullptr, &ConstData, 0, 0);
 
