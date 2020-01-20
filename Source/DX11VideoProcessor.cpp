@@ -501,6 +501,10 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_pFilter->ResetStreamingTimes2();
 	m_RenderStats.Reset();
 
+	if (m_pDeviceContext) {
+		m_pDeviceContext->ClearState();
+	}
+
 	m_TexSrcVideo.Release();
 	m_TexD3D11VPOutput.Release();
 	m_TexConvertOutput.Release();
@@ -559,14 +563,13 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pSurface9SubPic.Release();
 
 	if (m_pDeviceContext) {
-		// need ClearState() and Flush() for ID3D11DeviceContext when using DXGI_SWAP_EFFECT_DISCARD in Windows 8/8.1
-		m_pDeviceContext->ClearState();
+		// need ClearState() (see ReleaseVP()) and Flush() for ID3D11DeviceContext when using DXGI_SWAP_EFFECT_DISCARD in Windows 8/8.1
 		m_pDeviceContext->Flush();
 	}
 	m_pDeviceContext.Release();
 	ReleaseDX9Device();
 
-#if (0 && _DEBUG)
+#if (1 && _DEBUG)
 	if (m_pDevice) {
 		ID3D11Debug* pDebugDevice = nullptr;
 		HRESULT hr2 = m_pDevice->QueryInterface(IID_PPV_ARGS(&pDebugDevice));
