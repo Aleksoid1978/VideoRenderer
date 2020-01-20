@@ -1515,15 +1515,12 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	uint64_t tick1 = GetPreciseTick();
 
 	if (!m_videoRect.IsRectEmpty() && !m_windowRect.IsRectEmpty()) {
-
-		if (!(m_D3D11VP.IsReady() && m_bVPScaling) || m_pPSCorrection) {
-			// fill the BackBuffer with black only when necessary
-			ID3D11RenderTargetView* pRenderTargetView;
-			if (S_OK == m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView)) {
-				const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-				m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
-				pRenderTargetView->Release();
-			}
+		// fill the BackBuffer with black
+		ID3D11RenderTargetView* pRenderTargetView;
+		if (S_OK == m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView)) {
+			const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
+			pRenderTargetView->Release();
 		}
 
 		hr = Process(pBackBuffer, m_srcRenderRect, m_dstRenderRect, m_FieldDrawn == 2);
