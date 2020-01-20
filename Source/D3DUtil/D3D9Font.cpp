@@ -76,8 +76,12 @@ HRESULT CD3D9Font::InitDeviceObjects(IDirect3DDevice9* pd3dDevice)
 {
 	HRESULT hr = S_OK;
 
+	InvalidateDeviceObjects();
+
 	// Keep a local copy of the device
 	m_pd3dDevice = pd3dDevice;
+	m_pd3dDevice->AddRef();
+
 	D3DCAPS9 d3dCaps;
 	m_pd3dDevice->GetDeviceCaps(&d3dCaps);
 
@@ -238,7 +242,8 @@ void CD3D9Font::InvalidateDeviceObjects()
 
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pTexture);
-	m_pd3dDevice = nullptr;
+
+	SAFE_RELEASE(m_pd3dDevice);
 }
 
 // Get the dimensions of a text string
