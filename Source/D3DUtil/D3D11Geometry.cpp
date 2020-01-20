@@ -78,6 +78,8 @@ HRESULT CD3D11Quadrilateral::InitDeviceObjects(ID3D11Device* pDevice, ID3D11Devi
 
 void CD3D11Quadrilateral::InvalidateDeviceObjects()
 {
+	SAFE_RELEASE(m_pVertexShader);
+	SAFE_RELEASE(m_pPixelShader);
 	SAFE_RELEASE(m_pBlendState);
 	SAFE_RELEASE(m_pInputLayout);
 	SAFE_RELEASE(m_pVertexBuffer);
