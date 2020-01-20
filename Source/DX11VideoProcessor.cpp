@@ -485,6 +485,8 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd)
 	if (S_OK == hr) {
 		UpdateStatsStatic();
 	}
+	pDeviceContext->Release();
+	pDevice->Release();
 
 	return hr;
 }
