@@ -541,6 +541,8 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_Rect3D.InvalidateDeviceObjects();
 
 	m_TexStats.Release();
+
+	ClearPostScaleShaders();
 	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
 
