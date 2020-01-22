@@ -1,4 +1,5 @@
-// Used code from project mpv - https://github.com/mpv-player/mpv
+// Used code from project mpv
+// https://github.com/mpv-player/mpv/blob/master/video/csputils.h
 
 #pragma once
 
@@ -117,4 +118,7 @@ struct mp_cmat {
 };
 
 double mp_get_csp_mul(enum mp_csp csp, int input_bits, int texture_bits);
-void mp_get_csp_matrix(struct mp_csp_params& params, struct mp_cmat& out);
+void mp_get_csp_matrix(struct mp_csp_params *params, struct mp_cmat *out);
+
+void mp_invert_matrix3x3(float m[3][3]);
+void mp_invert_cmat(struct mp_cmat *out, struct mp_cmat *in);

@@ -525,7 +525,7 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 	m_PSConvColorData.bEnable = m_srcParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
 
 	mp_cmat cmatrix;
-	mp_get_csp_matrix(csp_params, cmatrix);
+	mp_get_csp_matrix(&csp_params, &cmatrix);
 
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
