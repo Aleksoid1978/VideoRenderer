@@ -30,9 +30,9 @@ private:
 	UINT    m_nResetTocken = 0;
 
 	UINT m_nCurrentAdapter9 = D3DADAPTER_DEFAULT;
-	D3DDISPLAYMODEEX m_DisplayMode = { sizeof(D3DDISPLAYMODEEX) };
 
 protected:
+	D3DDISPLAYMODEEX m_DisplayMode = { sizeof(D3DDISPLAYMODEEX) };
 	CComPtr<IDirect3DDevice9Ex> m_pD3DDevEx;
 	D3DFORMAT m_srcDXVA2Format = D3DFMT_UNKNOWN;
 	D3DPRESENT_PARAMETERS m_d3dpp = {};
