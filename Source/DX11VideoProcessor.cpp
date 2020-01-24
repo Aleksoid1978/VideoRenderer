@@ -1092,25 +1092,23 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		// D3D11 VP does not work correctly if RGB32 with odd frame width (source or target) on Nvidia adapters
 
 		if (S_OK == InitializeD3D11VP(FmtConvParams, biWidth, biHeight, false)) {
-			HRESULT hr2 = S_FALSE;
 			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-				hr2 = CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_ST2084);
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_ST2084));
 			}
 			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
-				hr2 = CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_HLG);
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_HLG));
 			}
 			else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
-				hr2 = CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_YCGCO);
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_YCGCO));
 			}
-			DLogIf(FAILED(hr2), L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection creation failed with error %s", HR2Str(hr2));
-			DLogIf(S_OK == hr2, L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection created");
+			DLogIf(m_pPSCorrection, L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection created");
 
 			m_pFilter->m_inputMT = *pmt;
 			UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
 			UpdateStatsStatic();
 
 			if (m_pFilter->m_pSubCallBack) {
-				HRESULT hr = m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
+				HRESULT hr2 = m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
 			}
 
 			return TRUE;
