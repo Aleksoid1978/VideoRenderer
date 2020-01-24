@@ -172,55 +172,69 @@ void TextureBlt11(
 	pDeviceContext->PSSetShaderResources(0, 1, views);
 }
 
-void CDX11VideoProcessor::AlphaBlt(ID3D11RenderTargetView* pRenderTargetView, ID3D11ShaderResourceView* pShaderResource, D3D11_VIEWPORT& viewport)
+HRESULT CDX11VideoProcessor::AlphaBlt(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget, D3D11_VIEWPORT& viewport)
 {
-	UINT Stride = sizeof(VERTEX);
-	UINT Offset = 0;
-
-	// Set resources
-	m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
-	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
-	m_pDeviceContext->RSSetViewports(1, &viewport);
-	m_pDeviceContext->OMSetBlendState(m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-	m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
-	m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
-	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
-	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
-
-	// Draw textured quad onto render target
-	m_pDeviceContext->Draw(4, 0);
-
-	pRenderTargetView->Release();
-}
-
-HRESULT CDX11VideoProcessor::AlphaBltSub(ID3D11RenderTargetView* pRenderTargetView, ID3D11ShaderResourceView* pShaderResource, const CRect& srcRect, D3D11_VIEWPORT& viewport)
-{
-	UINT Stride = sizeof(VERTEX);
-	UINT Offset = 0;
-	ID3D11Buffer* pVertexBuffer = nullptr;
-	HRESULT hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, m_d3dpp.BackBufferWidth, m_d3dpp.BackBufferHeight, srcRect, 0);
+	ID3D11RenderTargetView* pRenderTargetView;
+	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
 
 	if (S_OK == hr) {
+		UINT Stride = sizeof(VERTEX);
+		UINT Offset = 0;
+
 		// Set resources
 		m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
 		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 		m_pDeviceContext->RSSetViewports(1, &viewport);
-		m_pDeviceContext->OMSetBlendState(m_pFilter->m_bSubInvAlpha ? m_pAlphaBlendStateInv : m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
+		m_pDeviceContext->OMSetBlendState(m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 		m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
 		m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
 		m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
 		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-		m_pDeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &Stride, &Offset);
+		m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
 
 		// Draw textured quad onto render target
 		m_pDeviceContext->Draw(4, 0);
 
-		pVertexBuffer->Release();
+		pRenderTargetView->Release();
 	}
-	DLogIf(FAILED(hr), L"CDX11VideoProcessor:AlphaBltSub() : CreateVertexBuffer() failed with error %s", HR2Str(hr));
+	DLogIf(FAILED(hr), L"AlphaBlt() : CreateRenderTargetView() failed with error %s", HR2Str(hr));
+
+	return hr;
+}
+
+HRESULT CDX11VideoProcessor::AlphaBltSub(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, D3D11_VIEWPORT& viewport)
+{
+	ID3D11RenderTargetView* pRenderTargetView;
+	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+
+	if (S_OK == hr) {
+		UINT Stride = sizeof(VERTEX);
+		UINT Offset = 0;
+		ID3D11Buffer* pVertexBuffer = nullptr;
+		hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, m_d3dpp.BackBufferWidth, m_d3dpp.BackBufferHeight, srcRect, 0);
+
+		if (S_OK == hr) {
+			// Set resources
+			m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
+			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+			m_pDeviceContext->RSSetViewports(1, &viewport);
+			m_pDeviceContext->OMSetBlendState(m_pFilter->m_bSubInvAlpha ? m_pAlphaBlendStateInv : m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
+			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
+			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
+			m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
+			m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
+			m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+			m_pDeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &Stride, &Offset);
+
+			// Draw textured quad onto render target
+			m_pDeviceContext->Draw(4, 0);
+
+			pVertexBuffer->Release();
+		}
+		pRenderTargetView->Release();
+	}
+	DLogIf(FAILED(hr), L"CDX11VideoProcessor:AlphaBlt() : CreateRenderTargetView() failed with error %s", HR2Str(hr));
 
 	return hr;
 }
@@ -1472,13 +1486,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		return hr;
 	}
 
-	CComPtr<ID3D11RenderTargetView> pBackBufferRTV;
-	hr = m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pBackBufferRTV);
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::Render() : CreateRenderTargetView() failed with error %s", HR2Str(hr));
-		return hr;
-	}
-
 	uint64_t tick0 = GetPreciseTick();
 
 	HRESULT hrSubPic = E_FAIL;
@@ -1509,8 +1516,12 @@ HRESULT CDX11VideoProcessor::Render(int field)
 
 	if (!m_videoRect.IsRectEmpty() && !m_windowRect.IsRectEmpty()) {
 		// fill the BackBuffer with black
-		const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		m_pDeviceContext->ClearRenderTargetView(pBackBufferRTV, ClearColor);
+		ID3D11RenderTargetView* pRenderTargetView;
+		if (S_OK == m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView)) {
+			const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
+			pRenderTargetView->Release();
+		}
 
 		hr = Process(pBackBuffer, m_srcRenderRect, m_dstRenderRect, m_FieldDrawn == 2);
 	}
@@ -1527,7 +1538,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		VP.Height = rSrcPri.Height();
 		VP.MinDepth = 0.0f;
 		VP.MaxDepth = 1.0f;
-		hrSubPic = AlphaBltSub(pBackBufferRTV, m_pShaderResourceSubPic, rSrcPri, VP);
+		hrSubPic = AlphaBltSub(m_pShaderResourceSubPic, pBackBuffer, rSrcPri, VP);
 		ASSERT(S_OK == hrSubPic);
 
 		hrSubPic = m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, m_pFilter->m_bSubInvAlpha ? D3DCOLOR_ARGB(0, 0, 0, 0) : D3DCOLOR_ARGB(255, 0, 0, 0));
@@ -1537,7 +1548,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		uint64_t tick3 = GetPreciseTick();
 		m_RenderStats.renderticks = tick2 - tick1;
 		m_RenderStats.substicks = (tick3 - tick2) + (tick1 - tick0);
-		hr = DrawStats(pBackBufferRTV);
+		hr = DrawStats(pBackBuffer);
 		m_RenderStats.statsticks = GetPreciseTick() - tick3;
 	}
 
@@ -2220,7 +2231,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 	}
 }
 
-HRESULT CDX11VideoProcessor::DrawStats(ID3D11RenderTargetView* pRenderTargetView)
+HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 {
 	if (m_windowRect.IsRectEmpty()) {
 		return E_ABORT;
@@ -2285,22 +2296,22 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11RenderTargetView* pRenderTargetView
 	str.AppendFormat(L"\nSync offset   : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
 #endif
 
-	ID3D11RenderTargetView* pStatsRTV = nullptr;
-	HRESULT hr = m_pDevice->CreateRenderTargetView(m_TexStats.pTexture, nullptr, &pStatsRTV);
+	ID3D11RenderTargetView* pRenderTargetView = nullptr;
+	HRESULT hr = m_pDevice->CreateRenderTargetView(m_TexStats.pTexture, nullptr, &pRenderTargetView);
 	if (S_OK == hr) {
 		const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.75f };
-		m_pDeviceContext->ClearRenderTargetView(pStatsRTV, ClearColor);
+		m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
 
 		const SIZE rtSize{ m_TexStats.desc.Width, m_TexStats.desc.Height };
-		hr = m_Font3D.Draw2DText(pStatsRTV, rtSize, 5, 5, D3DCOLOR_XRGB(255, 255, 255), str);
+		hr = m_Font3D.Draw2DText(pRenderTargetView, rtSize, 5, 5, D3DCOLOR_XRGB(255, 255, 255), str);
 		static int col = STATS_W;
 		if (--col < 0) {
 			col = STATS_W;
 		}
 		m_Rect3D.Set({ col, STATS_H - 11, col + 5, STATS_H - 1 }, rtSize, D3DCOLOR_XRGB(128, 255, 128));
-		m_Rect3D.Draw(pStatsRTV, rtSize);
+		m_Rect3D.Draw(pRenderTargetView, rtSize);
 
-		pStatsRTV->Release();
+		pRenderTargetView->Release();
 
 		D3D11_VIEWPORT VP;
 		VP.TopLeftX = STATS_X;
@@ -2309,7 +2320,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11RenderTargetView* pRenderTargetView
 		VP.Height   = STATS_H;
 		VP.MinDepth = 0.0f;
 		VP.MaxDepth = 1.0f;
-		AlphaBlt(pRenderTargetView, m_TexStats.pShaderResource, VP);
+		hr = AlphaBlt(m_TexStats.pShaderResource, pRenderTarget, VP);
 	}
 
 	return hr;
