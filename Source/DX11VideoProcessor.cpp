@@ -718,6 +718,10 @@ HRESULT CDX11VideoProcessor::MemCopyToTexSrcVideo(BYTE* srcData, const int srcPi
 			BYTE* src = (srcPitch < 0) ? srcData + srcPitch * (1 - (int)srcHeight) : srcData;
 			m_pConvertFn(srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, src, srcPitch);
 			m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
+			if (m_D3D11VP.IsReady()) {
+				// ID3D11VideoProcessor does not use textures with D3D11_CPU_ACCESS_WRITE flag
+				m_pDeviceContext->CopyResource(m_D3D11VP.GetNextInputTexture(m_SampleFormat), m_TexSrcVideo.pTexture);
+			}
 		}
 	}
 
