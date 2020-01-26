@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2019 see Authors.txt
+* (C) 2018-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -136,6 +136,7 @@ inline T round_pow2(T number, T pow2)
 	}
 }
 
+LPCWSTR GetWindowsVersion();
 LPCWSTR GetNameAndVersion();
 
 inline CStringW CStringFromGUID(const GUID& guid)

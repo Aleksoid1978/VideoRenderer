@@ -371,11 +371,17 @@ HRESULT CVRInfoPPage::OnActivate()
 		return S_OK;
 	}
 
-	CStringW str;
-	if (S_OK == m_pVideoRenderer->GetVideoProcessorInfo(str)) {
-		str.Replace(L"\n", L"\r\n");
+	CStringW strInfo(L"Windows ");
+	strInfo.Append(GetWindowsVersion());
+	strInfo.Append(L"\r\n");
+
+	CStringW strVP;
+	if (S_OK == m_pVideoRenderer->GetVideoProcessorInfo(strVP)) {
+		strVP.Replace(L"\n", L"\r\n");
 	}
-	SetDlgItemTextW(IDC_EDIT1, str);
+	strInfo.Append(strVP);
+
+	SetDlgItemTextW(IDC_EDIT1, strInfo);
 
 	SetDlgItemTextW(IDC_EDIT2, GetNameAndVersion());
 

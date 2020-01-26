@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2019 see Authors.txt
+* (C) 2018-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -23,6 +23,26 @@
 #include "CPUInfo.h"
 #include "../Include/Version.h"
 #include "Helper.h"
+
+LPCWSTR GetWindowsVersion()
+{
+	if (IsWindows10OrGreater()) {
+		return L"10";
+	}
+	else if (IsWindows8Point1OrGreater()) {
+		return L"8.1";
+	}
+	else if (IsWindows8OrGreater()) {
+		return L"8";
+	}
+	else if (IsWindows7SP1OrGreater()) {
+		return L"7 SP1";
+	}
+	else if (IsWindows7OrGreater()) {
+		return L"7";
+	}
+	return L"Vista or older";
+}
 
 CStringW GetVersionStr()
 {

@@ -59,6 +59,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	DbgSetModuleLevel(LOG_ERROR, DWORD_MAX);
 #endif
 
+	DLog(L"Windows %s", GetWindowsVersion());
 	DLog(GetNameAndVersion());
 
 	ASSERT(S_OK == *phr);
