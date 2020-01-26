@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2019 see Authors.txt
+ * (C) 2018-2020 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -103,6 +103,23 @@ void CVRMainPPage::SetControls()
 	SendDlgItemMessageW(IDC_COMBO4, CB_SETCURSEL, m_SetsPP.iSwapEffect, 0);
 }
 
+void CVRMainPPage::EnableControls()
+{
+	if (!IsWindows8OrGreater()) { // Windows 7
+		const BOOL bEnable = !m_SetsPP.bUseD3D11;
+		GetDlgItem(IDC_STATIC1).EnableWindow(bEnable); // not working for GROUPBOX
+		GetDlgItem(IDC_STATIC2).EnableWindow(bEnable);
+		GetDlgItem(IDC_CHECK7).EnableWindow(bEnable);
+		GetDlgItem(IDC_CHECK8).EnableWindow(bEnable);
+		GetDlgItem(IDC_CHECK9).EnableWindow(bEnable);
+		GetDlgItem(IDC_CHECK4).EnableWindow(bEnable);
+		GetDlgItem(IDC_CHECK3).EnableWindow(bEnable);
+		GetDlgItem(IDC_CHECK5).EnableWindow(bEnable);
+		GetDlgItem(IDC_STATIC3).EnableWindow(bEnable);
+		GetDlgItem(IDC_COMBO4).EnableWindow(bEnable);
+	}
+}
+
 HRESULT CVRMainPPage::OnConnect(IUnknown *pUnk)
 {
 	if (pUnk == nullptr) return E_POINTER;
@@ -133,10 +150,11 @@ HRESULT CVRMainPPage::OnActivate()
 
 	m_pVideoRenderer->GetSettings(m_SetsPP);
 
-	if (!IsWindows8OrGreater()) {
+	if (!IsWindows7SP1OrGreater()) {
 		GetDlgItem(IDC_CHECK1).EnableWindow(FALSE);
 		m_SetsPP.bUseD3D11 = false;
 	}
+	EnableControls();
 
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"Auto 8/10-bit Integer",  0);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"8-bit Integer",          8);
@@ -181,6 +199,7 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 		if (HIWORD(wParam) == BN_CLICKED) {
 			if (nID == IDC_CHECK1) {
 				m_SetsPP.bUseD3D11 = IsDlgButtonChecked(IDC_CHECK1) == BST_CHECKED;
+				EnableControls();
 				SetDirty();
 				return (LRESULT)1;
 			}

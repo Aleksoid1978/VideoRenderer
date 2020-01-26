@@ -199,6 +199,8 @@ private:
 
 	void UpdateRenderRects();
 
+	HRESULT MemCopyToTexSrcVideo(BYTE* srcData, const int srcPitch, const int srcHeight);
+
 public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
 	HRESULT InitSwapChain();

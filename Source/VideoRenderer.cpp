@@ -147,7 +147,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	m_DX11_VP.SetSwapEffect(m_Sets.iSwapEffect);
 
 	// other
-	m_bUsedD3D11 = m_Sets.bUseD3D11 && IsWindows8OrGreater();
+	m_bUsedD3D11 = m_Sets.bUseD3D11 && IsWindows7SP1OrGreater();
 
 	// initialize the video processor
 	if (m_bUsedD3D11) {

@@ -682,6 +682,48 @@ void CDX11VideoProcessor::UpdateRenderRects()
 	}
 }
 
+HRESULT CDX11VideoProcessor::MemCopyToTexSrcVideo(BYTE* srcData, const int srcPitch, const int srcHeight)
+{
+	HRESULT hr = S_FALSE;
+	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+
+	if (m_TexSrcVideo.pTexture2) {
+		hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		if (SUCCEEDED(hr)) {
+			CopyFrameAsIs(srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, srcData, srcPitch);
+			m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
+
+			hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture2, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+			if (SUCCEEDED(hr)) {
+				const UINT cromaH = srcHeight / m_srcParams.pDX11Planes->div_chroma_h;
+				const UINT cromaPitch = (m_TexSrcVideo.pTexture3) ? srcPitch / m_srcParams.pDX11Planes->div_chroma_w : srcPitch;
+				srcData += srcPitch * srcHeight;
+				CopyFrameAsIs(cromaH, (BYTE*)mappedResource.pData, mappedResource.RowPitch, srcData, cromaPitch);
+				m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture2, 0);
+
+				if (m_TexSrcVideo.pTexture3) {
+					hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture3, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+					if (SUCCEEDED(hr)) {
+						srcData += cromaPitch * cromaH;
+						CopyFrameAsIs(cromaH, (BYTE*)mappedResource.pData, mappedResource.RowPitch, srcData, cromaPitch);
+						m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture3, 0);
+					}
+				}
+			}
+		}
+	} else {
+		hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		if (SUCCEEDED(hr)) {
+			ASSERT(m_pConvertFn);
+			BYTE* src = (srcPitch < 0) ? srcData + srcPitch * (1 - (int)srcHeight) : srcData;
+			m_pConvertFn(srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, src, srcPitch);
+			m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
+		}
+	}
+
+	return hr;
+}
+
 HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
 {
 	DLog(L"CDX11VideoProcessor::SetDevice()");
@@ -697,11 +739,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	m_pDeviceContext = pContext;
 
 	HRESULT hr = m_D3D11VP.InitVideoDevice(m_pDevice, m_pDeviceContext);
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::SetDevice() : InitVideoDevice failed with error %s", HR2Str(hr));
-		ReleaseDevice();
-		return hr;
-	}
+	DLogIf(FAILED(hr), L"CDX11VideoProcessor::SetDevice() : InitVideoDevice failed with error %s", HR2Str(hr));
 
 	D3D11_SAMPLER_DESC SampDesc = {};
 	SampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
@@ -842,7 +880,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	desc1.SampleDesc.Count = 1;
 	desc1.SampleDesc.Quality = 0;
 	desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	if (m_iSwapEffect == SWAPEFFECT_Flip) {
+	if (m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) {
 		desc1.BufferCount = 2;
 		desc1.Scaling = DXGI_SCALING_NONE;
 #if VER_PRODUCTBUILD >= 10000
@@ -1150,6 +1188,10 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_texture)
 {
+	if (!m_D3D11VP.IsVideoDeviceOk()) {
+		return E_ABORT;
+	}
+
 	const auto& dxgiFormat = params.VP11Format;
 
 	DLog(L"CDX11VideoProcessor::InitializeD3D11VP() started with input surface: %s, %u x %u", DXGIFormatToString(dxgiFormat), width, height);
@@ -1312,8 +1354,6 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 	return hr;
 }
 
-#define BREAK_ON_ERROR(hr) { if (FAILED(hr)) { break; }}
-
 HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 {
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
@@ -1399,13 +1439,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			D3DLOCKED_RECT lr_src;
 			hr = pSurface9->LockRect(&lr_src, nullptr, D3DLOCK_READONLY); // slow
 			if (S_OK == hr) {
-				D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-				hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-				if (S_OK == hr) {
-					ASSERT(m_pConvertFn);
-					m_pConvertFn(m_TextureHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, (BYTE*)lr_src.pBits, lr_src.Pitch); // slow
-					m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
-				}
+				hr = MemCopyToTexSrcVideo((BYTE*)lr_src.pBits, lr_src.Pitch, m_TextureHeight);
 				pSurface9->UnlockRect();
 			}
 
@@ -1421,47 +1455,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
-			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-
-			if (m_TexSrcVideo.pTexture2) {
-				hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-				if (SUCCEEDED(hr)) {
-					CopyFrameAsIs(m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, m_srcPitch);
-					m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
-
-					hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture2, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-					if (SUCCEEDED(hr)) {
-						const UINT cromaH = m_srcHeight / m_srcParams.pDX11Planes->div_chroma_h;
-						const UINT cromaPitch = (m_TexSrcVideo.pTexture3) ? m_srcPitch / m_srcParams.pDX11Planes->div_chroma_w : m_srcPitch;
-						data += m_srcPitch * m_srcHeight;
-						CopyFrameAsIs(cromaH, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, cromaPitch);
-						m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture2, 0);
-
-						if (m_TexSrcVideo.pTexture3) {
-							hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture3, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-							if (SUCCEEDED(hr)) {
-								data += cromaPitch * cromaH;
-								CopyFrameAsIs(cromaH, (BYTE*)mappedResource.pData, mappedResource.RowPitch, data, cromaPitch);
-								m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture3, 0);
-							}
-						}
-					}
-				}
-
-
-			} else {
-				hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-				if (SUCCEEDED(hr)) {
-					ASSERT(m_pConvertFn);
-					BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
-					m_pConvertFn(m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, src, m_srcPitch);
-					m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
-					if (m_D3D11VP.IsReady()) {
-						// ID3D11VideoProcessor does not use textures with D3D11_CPU_ACCESS_WRITE flag
-						m_pDeviceContext->CopyResource(m_D3D11VP.GetNextInputTexture(m_SampleFormat), m_TexSrcVideo.pTexture);
-					}
-				}
-			}
+			hr = MemCopyToTexSrcVideo(data, m_srcPitch, m_srcHeight);
 		}
 	}
 

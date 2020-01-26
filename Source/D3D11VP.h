@@ -1,5 +1,5 @@
 /*
-* (C) 2019 see Authors.txt
+* (C) 2019-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -147,6 +147,7 @@ public:
 
 	HRESULT InitInputTextures(ID3D11Device* pDevice);
 
+	bool IsVideoDeviceOk() { return (m_pVideoDevice != nullptr); }
 	bool IsReady() { return (m_pVideoProcessor != nullptr); }
 	void GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, UINT& rateConvIndex, D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS& rateConvCaps);
 
