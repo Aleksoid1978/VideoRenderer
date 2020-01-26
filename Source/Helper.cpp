@@ -56,6 +56,9 @@ CStringW GetVersionStr()
 		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_HASH))
 	);
 #endif
+#ifdef _WIN64
+	version.Append(L" x64");
+#endif
 #ifdef _DEBUG
 	version.Append(L" DEBUG");
 #endif
