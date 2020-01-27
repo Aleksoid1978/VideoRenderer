@@ -918,12 +918,12 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 					D3DLOCKED_RECT lr;
 					hr = m_TexSrcVideo.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 					if (S_OK == hr) {
-						CopyFrameAsIs(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, (BYTE*)lr_src.pBits, lr_src.Pitch);
+						CopyFrameAsIs(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, (const BYTE*)lr_src.pBits, lr_src.Pitch);
 						hr = m_TexSrcVideo.pSurface->UnlockRect();
 					}
 					hr = m_TexSrcVideo.Plane2.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 					if (S_OK == hr) {
-						CopyFrameAsIs(m_srcHeight/m_srcParams.pDX9Planes->div_chroma_h, (BYTE*)lr.pBits, lr.Pitch, (BYTE*)lr_src.pBits + lr_src.Pitch * m_srcHeight, lr_src.Pitch);
+						CopyFrameAsIs(m_srcHeight/m_srcParams.pDX9Planes->div_chroma_h, (BYTE*)lr.pBits, lr.Pitch, (const BYTE*)lr_src.pBits + lr_src.Pitch * m_srcHeight, lr_src.Pitch);
 						hr = m_TexSrcVideo.Plane2.pSurface->UnlockRect();
 					}
 					hr = pSurface->UnlockRect();
@@ -952,7 +952,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				hr = pDXVA2VPSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 				if (S_OK == hr) {
 					ASSERT(m_pConvertFn);
-					BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
+					const BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
 					m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
 					hr = pDXVA2VPSurface->UnlockRect();
 				}
@@ -986,7 +986,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 					hr = m_TexSrcVideo.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 					if (S_OK == hr) {
 						ASSERT(m_pConvertFn);
-						BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
+						const BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
 						m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
 						hr = m_TexSrcVideo.pSurface->UnlockRect();
 					}

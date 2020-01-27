@@ -287,7 +287,7 @@ CopyFrameDataFn GetCopyFunction(const FmtConvParams_t& params)
 	return params.Func;
 }
 
-void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
 	if (dst_pitch == src_pitch) {
 		memcpy(dst, src, dst_pitch * height);
@@ -303,7 +303,7 @@ void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int 
 	}
 }
 
-void CopyFrameRGB24(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+void CopyFrameRGB24(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
 	UINT line_pixels = abs(src_pitch) / 3;
 
@@ -328,7 +328,7 @@ void CopyFrameRGB24(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int
 	}
 }
 
-void CopyRGB24_SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+void CopyRGB24_SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
 	UINT line_pixels = abs(src_pitch) / 3;
 	__m128i mask = _mm_setr_epi8(0, 1, 2, -1, 3, 4, 5, -1, 6, 7, 8, -1, 9, 10, 11, -1);
@@ -359,7 +359,7 @@ void CopyRGB24_SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, in
 	}
 }
 
-void CopyFrameRGB48(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+void CopyFrameRGB48(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
 	UINT line_pixels = abs(src_pitch) / 6;
 
@@ -384,7 +384,7 @@ void CopyFrameRGB48(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int
 	}
 }
 
-void CopyRGB48_SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+void CopyRGB48_SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
 	UINT line_pixels = abs(src_pitch) / 6;
 	__m128i mask = _mm_setr_epi8(0, 1, 2, 3, 4, 5, -1, -1, 6, 7, 8, 9, 10, 11, -1, -1);
@@ -415,7 +415,7 @@ void CopyRGB48_SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, in
 	}
 }
 
-void CopyFrameB64A(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+void CopyFrameB64A(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
 	UINT line_pixels = abs(src_pitch) / 8;
 
@@ -434,7 +434,7 @@ void CopyFrameB64A(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int 
 	}
 }
 
-void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
 	ASSERT(src_pitch > 0);
 
@@ -462,7 +462,7 @@ void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int 
 	}
 }
 
-void CopyBiPlanar420(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+void CopyBiPlanar420(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
 	ASSERT(src_pitch > 0);
 	const UINT lines = height * 3 / 2;
@@ -481,7 +481,7 @@ void CopyBiPlanar420(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, in
 	}
 }
 
-void CopyBiPlanar422(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+void CopyBiPlanar422(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
 	ASSERT(src_pitch > 0);
 	const UINT lines = height * 2;
@@ -498,7 +498,7 @@ void CopyBiPlanar422(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, in
 	}
 }
 
-void CopyFrameY410(const UINT height, BYTE* dst, UINT dst_pitch, BYTE* src, int src_pitch)
+void CopyFrameY410(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
 	ASSERT(src_pitch > 0);
 	UINT line_pixels = src_pitch / 4;

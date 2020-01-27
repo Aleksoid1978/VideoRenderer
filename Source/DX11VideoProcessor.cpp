@@ -682,7 +682,7 @@ void CDX11VideoProcessor::UpdateRenderRects()
 	}
 }
 
-HRESULT CDX11VideoProcessor::MemCopyToTexSrcVideo(BYTE* srcData, const int srcPitch, const int srcHeight)
+HRESULT CDX11VideoProcessor::MemCopyToTexSrcVideo(const BYTE* srcData, const int srcPitch, const int srcHeight)
 {
 	HRESULT hr = S_FALSE;
 	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
@@ -715,7 +715,7 @@ HRESULT CDX11VideoProcessor::MemCopyToTexSrcVideo(BYTE* srcData, const int srcPi
 		hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 		if (SUCCEEDED(hr)) {
 			ASSERT(m_pConvertFn);
-			BYTE* src = (srcPitch < 0) ? srcData + srcPitch * (1 - (int)srcHeight) : srcData;
+			const BYTE* src = (srcPitch < 0) ? srcData + srcPitch * (1 - (int)srcHeight) : srcData;
 			m_pConvertFn(srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, src, srcPitch);
 			m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
 			if (m_D3D11VP.IsReady()) {
