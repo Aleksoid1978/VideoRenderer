@@ -718,10 +718,6 @@ HRESULT CDX11VideoProcessor::MemCopyToTexSrcVideo(const BYTE* srcData, const int
 			const BYTE* src = (srcPitch < 0) ? srcData + srcPitch * (1 - (int)srcHeight) : srcData;
 			m_pConvertFn(srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, src, srcPitch);
 			m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
-			if (m_D3D11VP.IsReady()) {
-				// ID3D11VideoProcessor does not use textures with D3D11_CPU_ACCESS_WRITE flag
-				m_pDeviceContext->CopyResource(m_D3D11VP.GetNextInputTexture(m_SampleFormat), m_TexSrcVideo.pTexture);
-			}
 		}
 	}
 
@@ -1460,6 +1456,11 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
 			hr = MemCopyToTexSrcVideo(data, m_srcPitch, m_srcHeight);
+		}
+
+		if (m_D3D11VP.IsReady()) {
+			// ID3D11VideoProcessor does not use textures with D3D11_CPU_ACCESS_WRITE flag
+			m_pDeviceContext->CopyResource(m_D3D11VP.GetNextInputTexture(m_SampleFormat), m_TexSrcVideo.pTexture);
 		}
 	}
 

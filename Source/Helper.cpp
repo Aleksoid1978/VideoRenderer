@@ -26,10 +26,13 @@
 
 LPCWSTR GetWindowsVersion()
 {
+#if VER_PRODUCTBUILD >= 10000
 	if (IsWindows10OrGreater()) {
 		return L"10";
 	}
-	else if (IsWindows8Point1OrGreater()) {
+	else
+#endif
+	if (IsWindows8Point1OrGreater()) {
 		return L"8.1";
 	}
 	else if (IsWindows8OrGreater()) {
