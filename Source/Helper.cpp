@@ -24,15 +24,20 @@
 #include "../Include/Version.h"
 #include "Helper.h"
 
+#ifndef _WIN32_WINNT_WINTHRESHOLD
+#define _WIN32_WINNT_WINTHRESHOLD 0x0A00
+VERSIONHELPERAPI IsWindows10OrGreater()
+{
+	return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_WINTHRESHOLD), LOBYTE(_WIN32_WINNT_WINTHRESHOLD), 0);
+}
+#endif
+
 LPCWSTR GetWindowsVersion()
 {
-#if VER_PRODUCTBUILD >= 10000
 	if (IsWindows10OrGreater()) {
 		return L"10";
 	}
-	else
-#endif
-	if (IsWindows8Point1OrGreater()) {
+	else if (IsWindows8Point1OrGreater()) {
 		return L"8.1";
 	}
 	else if (IsWindows8OrGreater()) {
