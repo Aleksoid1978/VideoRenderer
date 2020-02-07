@@ -1,5 +1,5 @@
 /*
-* (C) 2019 see Authors.txt
+* (C) 2019-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -558,7 +558,7 @@ public:
 
 		hr = CoCreateInstance(
 			CLSID_WICImagingFactory,
-			NULL,
+			nullptr,
 			CLSCTX_INPROC_SERVER,
 			IID_IWICImagingFactory,
 			(LPVOID*)&m_pWICFactory
@@ -822,7 +822,7 @@ private:
 			hr = pStream->InitializeFromFilename(filename, GENERIC_WRITE);
 		}
 		if (SUCCEEDED(hr)) {
-			hr = m_pWICFactory->CreateEncoder(guidContainerFormat, NULL, &pEncoder);
+			hr = m_pWICFactory->CreateEncoder(guidContainerFormat, nullptr, &pEncoder);
 		}
 		if (SUCCEEDED(hr)) {
 			hr = pEncoder->Initialize(pStream, WICBitmapEncoderNoCache);

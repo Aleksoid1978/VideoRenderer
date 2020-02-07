@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2019 see Authors.txt
+ * (C) 2018-2020 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -192,6 +192,8 @@ UINT STDMETHODCALLTYPE CVideoRendererInputPin::GetD3D11AdapterIndex()
 
 void CVideoRendererInputPin::SetNewMediaType(const CMediaType& mt)
 {
+	DLog(L"CVideoRendererInputPin::SetNewMediaType()");
+
 	SAFE_DELETE(m_pNewMT);
 	m_pNewMT = new CMediaType(mt);
 	auto pAlloc = static_cast<CCustomAllocator*>(m_pAllocator);

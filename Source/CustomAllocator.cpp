@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2019 see Authors.txt
+* (C) 2018-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -166,6 +166,8 @@ HRESULT CCustomAllocator::GetBuffer(IMediaSample** ppBuffer, REFERENCE_TIME* pSt
 
 void CCustomAllocator::SetNewMediaType(const CMediaType& mt)
 {
+	DLog(L"CCustomAllocator::SetNewMediaType()");
+
 	SAFE_DELETE(m_pNewMT);
 	m_pNewMT = new CMediaType(mt);
 

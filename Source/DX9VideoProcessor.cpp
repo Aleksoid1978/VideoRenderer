@@ -746,6 +746,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcPitch &= ~1u;
 	}
 	if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
+		DLog(L"CDX9VideoProcessor::InitMediaType() applied unsafe hack for NV12. m_srcPitch: %d -> %d", m_srcPitch, ALIGN(m_srcPitch, 4));
 		m_srcPitch = ALIGN(m_srcPitch, 4);
 	}
 	if (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0) {
@@ -2079,7 +2080,7 @@ STDMETHODIMP CDX9VideoProcessor::QueryInterface(REFIID riid, void **ppv)
 		*ppv = static_cast<IMFVideoProcessor*>(this);
 	}
 	else {
-		*ppv = NULL;
+		*ppv = nullptr;
 		return E_NOINTERFACE;
 	}
 	AddRef();
