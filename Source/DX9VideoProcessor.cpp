@@ -615,7 +615,7 @@ BOOL CDX9VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 		else if (FmtParams.cformat == CF_RGB48 || FmtParams.cformat == CF_B48R) {
 			Size.cx = ALIGN(Size.cx, 2);
 		}
-		else if (FmtParams.cformat == CF_RGB64 || FmtParams.cformat == CF_B64A) {
+		else if (FmtParams.cformat == CF_ARGB64 || FmtParams.cformat == CF_B64A) {
 			// nothing
 		}
 		else {
