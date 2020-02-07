@@ -742,7 +742,9 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	m_srcPitch     = biSizeImage * 2 / (biHeight * FmtConvParams.PitchCoeff);
-	m_srcPitch    &= ~1u;
+	if (FmtConvParams.cformat != CF_Y8 && FmtConvParams.cformat != CF_Y800) {
+		m_srcPitch &= ~1u;
+	}
 	if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
 		m_srcPitch = ALIGN(m_srcPitch, 4);
 	}
