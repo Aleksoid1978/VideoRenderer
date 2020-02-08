@@ -117,6 +117,40 @@ CStringW HR2Str(const HRESULT hr)
 	return str;
 }
 
+CStringW MediaType2Str(const CMediaType *pmt)
+{
+	if (!pmt) {
+		return L"no media type";
+	}
+
+	CStringW str;
+
+	str.AppendFormat(L"MajorType : %s", (pmt->majortype == MEDIATYPE_Video) ? L"Video" : L"unknown");
+	const auto FmtConvParams = GetFmtConvParams(pmt->subtype);
+	str.AppendFormat(L"\nSubType   : %S", FmtConvParams.str);
+	str.Append(L"\nFormatType: ");
+
+	if (pmt->formattype == FORMAT_VideoInfo2) {
+		str.Append(L"VideoInfo2");
+		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
+		str.AppendFormat(L"\nBimapSize : %d x %d", vih2->bmiHeader.biWidth, vih2->bmiHeader.biHeight);
+		str.AppendFormat(L"\nSourceRect: (%d, %d, %d, %d)", vih2->rcSource.left, vih2->rcSource.top, vih2->rcSource.right, vih2->rcSource.bottom);
+		str.AppendFormat(L"\nSizeImage : %u bytes", vih2->bmiHeader.biSizeImage);
+	}
+	else if (pmt->formattype == FORMAT_VideoInfo) {
+		str.Append(L"VideoInfo");
+		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)pmt->pbFormat;
+		str.AppendFormat(L"\nBimapSize : %d x %d", vih->bmiHeader.biWidth, vih->bmiHeader.biHeight);
+		str.AppendFormat(L"\nSourceRect: (%d, %d, %d, %d)", vih->rcSource.left, vih->rcSource.top, vih->rcSource.right, vih->rcSource.bottom);
+		str.AppendFormat(L"\nSizeImage : %u bytes", vih->bmiHeader.biSizeImage);
+	}
+	else {
+		str.Append(L"unknown");
+	}
+
+	return str;
+}
+
 const wchar_t* D3DFormatToString(const D3DFORMAT format)
 {
 	switch (format) {

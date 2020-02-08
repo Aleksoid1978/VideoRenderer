@@ -150,6 +150,7 @@ inline CStringW CStringFromGUID(const GUID& guid)
 }
 
 CStringW HR2Str(const HRESULT hr);
+CStringW MediaType2Str(const CMediaType *pmt);
 
 const wchar_t* D3DFormatToString(const D3DFORMAT format);
 const wchar_t* DXGIFormatToString(const DXGI_FORMAT format);

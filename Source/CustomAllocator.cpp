@@ -156,6 +156,7 @@ HRESULT CCustomAllocator::GetBuffer(IMediaSample** ppBuffer, REFERENCE_TIME* pSt
 	HRESULT hr = __super::GetBuffer(ppBuffer, pStartTime, pEndTime, dwFlags);
 
 	if (SUCCEEDED(hr) && m_pNewMT) {
+		DLog(L"CCustomAllocator::GetBuffer() set new media type for MediaSample");
 		(*ppBuffer)->SetMediaType(m_pNewMT);
 		SAFE_DELETE(m_pNewMT);
 		m_cbBuffer = 0;
