@@ -1,4 +1,4 @@
-v0.4.0
+v0.4.1.1130 - 2020.02.10
 ------------------------
 Fixed freezing during frequent timeline navigation.
 Added support for "post scale" shaders.
