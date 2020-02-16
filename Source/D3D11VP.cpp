@@ -123,16 +123,21 @@ void CD3D11VP::ReleaseVideoDevice()
 int GetBitDepth(const DXGI_FORMAT format)
 {
 	switch (format) {
+	case DXGI_FORMAT_R8_TYPELESS:
 	case DXGI_FORMAT_B8G8R8X8_UNORM:
 	case DXGI_FORMAT_B8G8R8A8_UNORM:
 	case DXGI_FORMAT_AYUV:
 	case DXGI_FORMAT_NV12:
+	case DXGI_FORMAT_420_OPAQUE:
 	case DXGI_FORMAT_YUY2:
 	default:
 		return 8;
+	case DXGI_FORMAT_R10G10B10A2_UNORM:
 	case DXGI_FORMAT_P010:
 	case DXGI_FORMAT_Y410:
 		return 10;
+	case DXGI_FORMAT_R16G16B16A16_UNORM:
+	case DXGI_FORMAT_R16_TYPELESS:
 	case DXGI_FORMAT_P016:
 	case DXGI_FORMAT_Y416:
 		return 16;
@@ -204,8 +209,11 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 	}
 
 	// select output format
-	if (outputFmt == DXGI_FORMAT_UNKNOWN) {
-		outputFmt = (GetBitDepth(inputFmt) > 8) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
+	// always overriding the output format because there are problems with FLOAT
+	if (GetBitDepth(inputFmt) <= 8 && (outputFmt == DXGI_FORMAT_B8G8R8A8_UNORM || outputFmt == DXGI_FORMAT_UNKNOWN)) {
+		outputFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
+	} else {
+		outputFmt = DXGI_FORMAT_R10G10B10A2_UNORM;
 	}
 
 	hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(outputFmt, &uiFlags);

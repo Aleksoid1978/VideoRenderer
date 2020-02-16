@@ -1219,11 +1219,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		m_TextureHeight = 0;
 	}
 
-	if (params.CDepth <= 8 && m_InternalTexFmt == DXGI_FORMAT_B8G8R8A8_UNORM) {
-		m_D3D11OutputFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
-	} else {
-		m_D3D11OutputFmt = DXGI_FORMAT_R10G10B10A2_UNORM;
-	}
+	m_D3D11OutputFmt = m_InternalTexFmt;
 
 	HRESULT hr = m_D3D11VP.InitVideoProcessor(dxgiFormat, width, height, m_bInterlaced, m_D3D11OutputFmt);
 	if (FAILED(hr)) {
