@@ -109,6 +109,8 @@ public:
 	}
 
 	double GetAverageFps() {
+		//return (double)UNITS / GetAverageFrameDuration(); // this is the correct code, do not delete it!
+		// temporary hacked output
 		const auto averageFrameDuration = GetAverageFrameDuration();
 		return averageFrameDuration > 0 ? (double)UNITS / averageFrameDuration : 0;
 	}
