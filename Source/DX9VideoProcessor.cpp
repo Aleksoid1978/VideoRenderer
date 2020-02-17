@@ -741,7 +741,9 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcAspectRatioY = m_srcRectHeight / gcd;
 	}
 
-	m_srcPitch     = biSizeImage * 2 / (biHeight * FmtConvParams.PitchCoeff);
+	m_srcLines = biHeight * FmtConvParams.PitchCoeff / 2;
+	m_srcPitch = biSizeImage / m_srcLines;
+
 	if (FmtConvParams.cformat != CF_Y8 && FmtConvParams.cformat != CF_Y800) {
 		m_srcPitch &= ~1u;
 	}

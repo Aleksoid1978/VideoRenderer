@@ -108,6 +108,7 @@ private:
 	UINT  m_srcRectWidth    = 0;
 	UINT  m_srcRectHeight   = 0;
 	int   m_srcPitch        = 0;
+	UINT  m_srcLines        = 0;
 	DWORD m_srcAspectRatioX = 0;
 	DWORD m_srcAspectRatioY = 0;
 	CRect m_srcRect;
