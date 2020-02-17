@@ -25,8 +25,8 @@
 enum Tex2DType {
 	Tex2D_Default,
 	Tex2D_DefaultRTarget,
+	Tex2D_DefaultShader,
 	Tex2D_DefaultShaderRTarget,
-	Tex2D_DefaultShaderRTargetGDI,
 	Tex2D_DynamicShaderWrite,
 	Tex2D_DynamicShaderWriteNoSRV,
 	Tex2D_StagingRead,

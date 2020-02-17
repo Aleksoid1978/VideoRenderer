@@ -49,17 +49,17 @@ D3D11_TEXTURE2D_DESC CreateTex2DDesc(const DXGI_FORMAT format, const UINT width,
 		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = 0;
 		break;
+	case Tex2D_DefaultShader:
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		desc.CPUAccessFlags = 0;
+		desc.MiscFlags = 0;
+		break;
 	case Tex2D_DefaultShaderRTarget:
 		desc.Usage = D3D11_USAGE_DEFAULT;
 		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = 0;
-		break;
-	case Tex2D_DefaultShaderRTargetGDI:
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-		desc.CPUAccessFlags = 0;
-		desc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
 		break;
 	case Tex2D_DynamicShaderWrite:
 	case Tex2D_DynamicShaderWriteNoSRV:
