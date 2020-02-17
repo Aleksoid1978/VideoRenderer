@@ -109,7 +109,8 @@ public:
 	}
 
 	double GetAverageFps() {
-		return (double)UNITS / GetAverageFrameDuration();
+		const auto averageFrameDuration = GetAverageFrameDuration();
+		return averageFrameDuration > 0 ? (double)UNITS / averageFrameDuration : 0;
 	}
 };
 
