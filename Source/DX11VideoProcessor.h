@@ -209,6 +209,7 @@ public:
 
 	HRESULT InitializeD3D11VP(const FmtConvParams_t& params, const UINT width, const UINT height);
 	HRESULT InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height);
+	void UpdatFrameProperties(); // use this after receiving modified frame from hardware decoder
 
 	BOOL GetAlignmentSize(const CMediaType& mt, SIZE& Size);
 

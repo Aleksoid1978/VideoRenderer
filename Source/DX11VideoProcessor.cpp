@@ -1283,6 +1283,12 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 	return S_OK;
 }
 
+void CDX11VideoProcessor::UpdatFrameProperties()
+{
+	m_srcPitch = m_srcWidth * m_srcParams.Packsize;
+	m_srcLines = m_srcHeight * m_srcParams.PitchCoeff / 2;
+}
+
 void CDX11VideoProcessor::Start()
 {
 	m_rtStart = 0;
@@ -1384,6 +1390,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			if (FAILED(hr)) {
 				return hr;
 			}
+			UpdatFrameProperties();
 		}
 
 		// here should be used CopySubresourceRegion instead of CopyResource
@@ -1413,6 +1420,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				if (FAILED(hr)) {
 					return hr;
 				}
+				UpdatFrameProperties();
 			}
 
 			D3DLOCKED_RECT lr_src;

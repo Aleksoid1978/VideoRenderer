@@ -465,6 +465,12 @@ HRESULT CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const
 	return S_OK;
 }
 
+void CDX9VideoProcessor::UpdatFrameProperties()
+{
+	m_srcPitch = m_srcWidth * m_srcParams.Packsize;
+	m_srcLines = m_srcHeight * m_srcParams.PitchCoeff / 2;
+}
+
 HRESULT CDX9VideoProcessor::CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid)
 {
 	if (!m_pD3DDevEx || !ppPixelShader) {
@@ -880,6 +886,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				if (FAILED(hr)) {
 					return hr;
 				}
+				UpdatFrameProperties();
 			}
 
 			if (m_DXVA2VP.IsReady()) {
