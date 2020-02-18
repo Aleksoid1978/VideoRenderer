@@ -353,8 +353,6 @@ void CDX9VideoProcessor::ReleaseVP()
 	m_pConvertFn     = nullptr;
 	m_srcWidth       = 0;
 	m_srcHeight      = 0;
-	m_SurfaceWidth   = 0;
-	m_SurfaceHeight  = 0;
 }
 
 void CDX9VideoProcessor::ReleaseDevice()
@@ -384,29 +382,14 @@ void CDX9VideoProcessor::ReleaseDevice()
 	m_pD3DDevEx.Release();
 }
 
-HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_surface)
+HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const UINT width, const UINT height)
 {
 	const auto& dxva2format = params.DXVA2Format;
 
 	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() started with input surface: %s, %u x %u", D3DFormatToString(dxva2format), width, height);
 
-	if (only_update_surface) {
-		if (dxva2format != m_srcParams.DXVA2Format) {
-			DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : incorrect surface format!");
-			ASSERT(0);
-			return E_FAIL;
-		}
-		if (width < m_srcWidth || height < m_srcHeight) {
-			DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : surface size less than frame size!");
-			return E_FAIL;
-		}
-		m_DXVA2VP.ReleaseVideoProcessor();
-
-		m_SurfaceWidth  = 0;
-		m_SurfaceHeight = 0;
-	}
-
 	if (m_VendorId != PCIV_INTEL && (dxva2format == D3DFMT_X8R8G8B8 || dxva2format == D3DFMT_A8R8G8B8)) {
+		m_DXVA2VP.ReleaseVideoProcessor();
 		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : RGB input is not supported");
 		return E_FAIL;
 	}
@@ -417,15 +400,11 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 		return hr;
 	}
 
-	m_SurfaceWidth  = width;
-	m_SurfaceHeight = height;
-	if (!only_update_surface) {
-		m_srcParams      = params;
-		m_srcDXVA2Format = dxva2format;
-		m_pConvertFn     = GetCopyFunction(params);
-		m_srcWidth       = width;
-		m_srcHeight      = height;
-	}
+	m_srcWidth       = width;
+	m_srcHeight      = height;
+	m_srcParams      = params;
+	m_srcDXVA2Format = dxva2format;
+	m_pConvertFn     = GetCopyFunction(params);
 
 	m_DXVA2VP.GetProcAmpRanges(m_DXVA2ProcAmpRanges);
 	m_DXVA2VP.SetProcAmpValues(m_DXVA2ProcAmpValues);
@@ -452,13 +431,11 @@ HRESULT CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const
 	// fill the surface in black, to avoid the "green screen"
 	m_pD3DDevEx->ColorFill(m_TexSrcVideo.pSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
 
-	m_SurfaceWidth   = width;
-	m_SurfaceHeight  = height;
+	m_srcWidth       = width;
+	m_srcHeight      = height;
 	m_srcParams      = params;
 	m_srcDXVA2Format = d3dformat;
 	m_pConvertFn     = GetCopyFunction(params);
-	m_srcWidth       = width;
-	m_srcHeight      = height;
 
 	// set default ProcAmp ranges
 	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
@@ -774,7 +751,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	// DXVA2 Video Processor
-	if (FmtConvParams.DXVA2Format != D3DFMT_UNKNOWN && S_OK == InitializeDXVA2VP(FmtConvParams, biWidth, biHeight, false)) {
+	if (FmtConvParams.DXVA2Format != D3DFMT_UNKNOWN && S_OK == InitializeDXVA2VP(FmtConvParams, biWidth, biHeight)) {
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_ST2084));
 		}
@@ -894,9 +871,9 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 			if (FAILED(hr) || desc.Format != m_srcDXVA2Format) {
 				return E_FAIL;
 			}
-			if (desc.Width != m_SurfaceWidth || desc.Height != m_SurfaceHeight) {
+			if (desc.Width != m_srcWidth || desc.Height != m_srcHeight) {
 				if (m_DXVA2VP.IsReady()) {
-					hr = InitializeDXVA2VP(m_srcParams, desc.Width, desc.Height, true);
+					hr = InitializeDXVA2VP(m_srcParams, desc.Width, desc.Height);
 				} else {
 					hr = InitializeTexVP(m_srcParams, desc.Width, desc.Height);
 				}
@@ -1409,7 +1386,7 @@ HRESULT CDX9VideoProcessor::AddPostScaleShader(const CStringW& name, const CStri
 
 void CDX9VideoProcessor::UpdateTexures(int w, int h)
 {
-	if (!m_SurfaceWidth || !m_SurfaceHeight) {
+	if (!m_srcWidth || !m_srcHeight) {
 		return;
 	}
 
@@ -1424,13 +1401,13 @@ void CDX9VideoProcessor::UpdateTexures(int w, int h)
 				hr = m_TexDxvaOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, w, h, D3DUSAGE_RENDERTARGET);
 			}
 		} else {
-			hr = m_TexDxvaOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, m_SurfaceWidth, m_SurfaceHeight, D3DUSAGE_RENDERTARGET);
+			hr = m_TexDxvaOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, m_srcWidth, m_srcHeight, D3DUSAGE_RENDERTARGET);
 		}
 		m_TexConvertOutput.Release();
 	}
 	else {
 		m_TexDxvaOutput.Release();
-		hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, m_SurfaceWidth, m_SurfaceHeight, D3DUSAGE_RENDERTARGET);
+		hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, m_srcWidth, m_srcHeight, D3DUSAGE_RENDERTARGET);
 }
 
 	UINT numPostScaleShaders = m_pPostScaleShaders.size();

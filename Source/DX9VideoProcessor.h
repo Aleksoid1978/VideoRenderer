@@ -83,11 +83,9 @@ private:
 	CRect m_trgRect;
 	DXVA2_ExtendedFormat m_decExFmt = {};
 	DXVA2_ExtendedFormat m_srcExFmt = {};
-	bool m_bInterlaced = false;
+	bool  m_bInterlaced = false;
 
-	// DXVA2 decoder surface parameters
-	UINT      m_SurfaceWidth  = 0;
-	UINT      m_SurfaceHeight = 0;
+	// DXVA2 surface format
 	D3DFORMAT m_DXVA2OutputFmt = D3DFMT_UNKNOWN;
 
 	// intermediate texture format
@@ -151,7 +149,7 @@ private:
 	void ReleaseVP();
 	void ReleaseDevice();
 
-	HRESULT InitializeDXVA2VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_surface);
+	HRESULT InitializeDXVA2VP(const FmtConvParams_t& params, const UINT width, const UINT height);
 
 	HRESULT InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height);
 	HRESULT CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);
