@@ -115,11 +115,9 @@ private:
 	CRect m_trgRect;
 	DXVA2_ExtendedFormat m_decExFmt = {};
 	DXVA2_ExtendedFormat m_srcExFmt = {};
-	bool m_bInterlaced = false;
+	bool  m_bInterlaced = false;
 
-	// D3D11 decoder texture parameters
-	UINT m_TextureWidth  = 0;
-	UINT m_TextureHeight = 0;
+	// D3D11 VP texture format
 	DXGI_FORMAT m_D3D11OutputFmt = DXGI_FORMAT_UNKNOWN;
 
 	// intermediate texture format
@@ -209,7 +207,7 @@ public:
 	BOOL VerifyMediaType(const CMediaType* pmt);
 	BOOL InitMediaType(const CMediaType* pmt);
 
-	HRESULT InitializeD3D11VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_surface);
+	HRESULT InitializeD3D11VP(const FmtConvParams_t& params, const UINT width, const UINT height);
 	HRESULT InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height);
 
 	BOOL GetAlignmentSize(const CMediaType& mt, SIZE& Size);

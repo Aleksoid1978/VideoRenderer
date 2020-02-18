@@ -526,8 +526,6 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_pConvertFn     = nullptr;
 	m_srcWidth       = 0;
 	m_srcHeight      = 0;
-	m_TextureWidth   = 0;
-	m_TextureHeight  = 0;
 }
 
 void CDX11VideoProcessor::ReleaseDevice()
@@ -1148,7 +1146,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	if (FmtConvParams.VP11Format != DXGI_FORMAT_UNKNOWN && !(m_VendorId == PCIV_NVIDIA && FmtConvParams.CSType == CS_RGB)) {
 		// D3D11 VP does not work correctly if RGB32 with odd frame width (source or target) on Nvidia adapters
 
-		if (S_OK == InitializeD3D11VP(FmtConvParams, biWidth, biHeight, false)) {
+		if (S_OK == InitializeD3D11VP(FmtConvParams, biWidth, biHeight)) {
 			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_ST2084));
 			}
@@ -1191,7 +1189,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	return FALSE;
 }
 
-HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, const UINT width, const UINT height, bool only_update_texture)
+HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, const UINT width, const UINT height)
 {
 	if (!m_D3D11VP.IsVideoDeviceOk()) {
 		return E_ABORT;
@@ -1201,28 +1199,9 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 
 	DLog(L"CDX11VideoProcessor::InitializeD3D11VP() started with input surface: %s, %u x %u", DXGIFormatToString(dxgiFormat), width, height);
 
-	//CheckPointer(m_pVideoDevice, E_FAIL);
-
-	if (only_update_texture) {
-		if (dxgiFormat != m_srcDXGIFormat) {
-			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : incorrect texture format!");
-			ASSERT(0);
-			return E_FAIL;
-		}
-		if (width < m_srcWidth || height < m_srcHeight) {
-			DLog(L"CDX9VideoProcessor::InitializeD3D11VP() : texture size less than frame size!");
-			return E_FAIL;
-		}
-		m_TexSrcVideo.Release();
-
-		m_D3D11VP.ReleaseVideoProcessor();
-
-		m_TextureWidth = 0;
-		m_TextureHeight = 0;
-	}
+	m_TexSrcVideo.Release();
 
 	m_D3D11OutputFmt = m_InternalTexFmt;
-
 	HRESULT hr = m_D3D11VP.InitVideoProcessor(dxgiFormat, width, height, m_bInterlaced, m_D3D11OutputFmt);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : InitVideoProcessor() failed with error %s", HR2Str(hr));
@@ -1243,16 +1222,12 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return hr;
 	}
 
-	m_TextureWidth  = width;
-	m_TextureHeight = height;
-	if (!only_update_texture) {
-		m_srcParams      = params;
-		m_srcDXGIFormat  = dxgiFormat;
-		m_srcDXVA2Format = params.DXVA2Format;
-		m_pConvertFn     = GetCopyFunction(params);
-		m_srcWidth       = width;
-		m_srcHeight      = height;
-	}
+	m_srcWidth       = width;
+	m_srcHeight      = height;
+	m_srcParams      = params;
+	m_srcDXGIFormat  = dxgiFormat;
+	m_srcDXVA2Format = params.DXVA2Format;
+	m_pConvertFn     = GetCopyFunction(params);
 
 	DLog(L"CDX11VideoProcessor::InitializeD3D11VP() completed successfully");
 
@@ -1273,14 +1248,12 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 		return hr;
 	}
 
-	m_TextureWidth   = width;
-	m_TextureHeight  = height;
+	m_srcWidth       = width;
+	m_srcHeight      = height;
 	m_srcParams      = params;
 	m_srcDXGIFormat  = srcDXGIFormat;
 	m_srcDXVA2Format = params.DXVA2Format;
 	m_pConvertFn     = GetCopyFunction(params);
-	m_srcWidth       = width;
-	m_srcHeight      = height;
 
 	// set default ProcAmp ranges
 	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
@@ -1402,9 +1375,9 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			return hr;
 		}
 
-		if (desc.Width != m_TextureWidth || desc.Height != m_TextureHeight) {
+		if (desc.Width != m_srcWidth || desc.Height != m_srcHeight) {
 			if (m_D3D11VP.IsReady()) {
-				hr = InitializeD3D11VP(m_srcParams, desc.Width, desc.Height, true);
+				hr = InitializeD3D11VP(m_srcParams, desc.Width, desc.Height);
 			} else {
 				hr = InitializeTexVP(m_srcParams, desc.Width, desc.Height);
 			}
@@ -1431,9 +1404,9 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				return E_FAIL;
 			}
 
-			if (desc.Width != m_TextureWidth || desc.Height != m_TextureHeight) {
+			if (desc.Width != m_srcWidth || desc.Height != m_srcHeight) {
 				if (m_D3D11VP.IsReady()) {
-					hr = InitializeD3D11VP(m_srcParams, desc.Width, desc.Height, true);
+					hr = InitializeD3D11VP(m_srcParams, desc.Width, desc.Height);
 				} else {
 					hr = InitializeTexVP(m_srcParams, desc.Width, desc.Height);
 				}
@@ -1445,7 +1418,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			D3DLOCKED_RECT lr_src;
 			hr = pSurface9->LockRect(&lr_src, nullptr, D3DLOCK_READONLY); // slow
 			if (S_OK == hr) {
-				hr = MemCopyToTexSrcVideo((BYTE*)lr_src.pBits, lr_src.Pitch, m_TextureHeight);
+				hr = MemCopyToTexSrcVideo((BYTE*)lr_src.pBits, lr_src.Pitch, m_srcHeight);
 				pSurface9->UnlockRect();
 			}
 
@@ -1625,7 +1598,7 @@ HRESULT CDX11VideoProcessor::FillBlack()
 
 void CDX11VideoProcessor::UpdateTexures(int w, int h)
 {
-	if (!m_TextureWidth || !m_TextureHeight) {
+	if (!m_srcWidth || !m_srcHeight) {
 		return;
 	}
 
@@ -1642,13 +1615,13 @@ void CDX11VideoProcessor::UpdateTexures(int w, int h)
 			}
 		}
 		else {
-			hr = m_TexD3D11VPOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, m_TextureWidth, m_TextureHeight, Tex2D_DefaultShaderRTarget);
+			hr = m_TexD3D11VPOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, m_srcWidth, m_srcHeight, Tex2D_DefaultShaderRTarget);
 		}
 		m_TexConvertOutput.Release();
 	}
 	else {
 		m_TexD3D11VPOutput.Release();
-		hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_InternalTexFmt, m_TextureWidth, m_TextureHeight, Tex2D_DefaultShaderRTarget);
+		hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_InternalTexFmt, m_srcWidth, m_srcHeight, Tex2D_DefaultShaderRTarget);
 	}
 
 	UINT numPostScaleShaders = m_pPostScaleShaders.size();
