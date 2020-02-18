@@ -268,56 +268,6 @@ HRESULT CDX11VideoProcessor::TextureCopyRect(const Tex2D_t& Tex, ID3D11Texture2D
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::ConvertColorPass(ID3D11Texture2D* pRenderTarget)
-{
-	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
-
-	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
-	if (FAILED(hr)) {
-		DLog(L"TextureCopyRect() : CreateRenderTargetView() failed with error %s", HR2Str(hr));
-		return hr;
-	}
-
-	UINT width = (m_srcParams.cformat == CF_YUY2)
-		? m_TexSrcVideo.desc.Width * 2
-		: m_TexSrcVideo.desc.Width;
-
-	D3D11_VIEWPORT VP;
-	VP.TopLeftX = 0;
-	VP.TopLeftY = 0;
-	VP.Width = (FLOAT)width;
-	VP.Height = (FLOAT)m_TexSrcVideo.desc.Height;
-	VP.MinDepth = 0.0f;
-	VP.MaxDepth = 1.0f;
-
-	const UINT Stride = sizeof(VERTEX);
-	const UINT Offset = 0;
-
-	// Set resources
-	m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
-	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView.p, nullptr);
-	m_pDeviceContext->RSSetViewports(1, &VP);
-	m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-	m_pDeviceContext->PSSetShader(m_pPSConvertColor, nullptr, 0);
-	m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexSrcVideo.pShaderResource.p);
-	m_pDeviceContext->PSSetShaderResources(1, 1, &m_TexSrcVideo.pShaderResource2.p);
-	m_pDeviceContext->PSSetShaderResources(2, 1, &m_TexSrcVideo.pShaderResource3.p);
-	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
-	m_pDeviceContext->PSSetSamplers(1, 1, (m_srcParams.Subsampling == 444) ? &m_pSamplerPoint : &m_pSamplerLinear);
-	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
-	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
-
-	// Draw textured quad onto render target
-	m_pDeviceContext->Draw(4, 0);
-
-	ID3D11ShaderResourceView* views[3] = {};
-	m_pDeviceContext->PSSetShaderResources(0, 3, views);
-
-	return hr;
-}
-
 HRESULT CDX11VideoProcessor::TextureResizeShader(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, ID3D11PixelShader* pPixelShader, const int iRotation)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
@@ -978,52 +928,6 @@ BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 	return TRUE;
 }
 
-BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
-{
-	if (InitMediaType(&mt)) {
-		const auto& FmtParams = GetFmtConvParams(mt.subtype);
-
-		if (FmtParams.cformat == CF_RGB24) {
-			Size.cx = ALIGN(Size.cx, 4);
-		}
-		else if (FmtParams.cformat == CF_RGB48 || FmtParams.cformat == CF_B48R) {
-			Size.cx = ALIGN(Size.cx, 2);
-		}
-		else if (FmtParams.cformat == CF_ARGB64 || FmtParams.cformat == CF_B64A) {
-			// nothing
-		}
-		else {
-			if (!m_TexSrcVideo.pTexture) {
-				return FALSE;
-			}
-
-			UINT RowPitch = 0;
-			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-			if (SUCCEEDED(m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource))) {
-				RowPitch = mappedResource.RowPitch;
-				m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
-			}
-
-			if (!RowPitch) {
-				return FALSE;
-			}
-
-			Size.cx = RowPitch / FmtParams.Packsize;
-		}
-
-		if (FmtParams.cformat == CF_RGB24 || FmtParams.cformat == CF_XRGB32 || FmtParams.cformat == CF_ARGB32) {
-			Size.cy = -abs(Size.cy); // only for biCompression == BI_RGB
-		} else {
-			Size.cy = abs(Size.cy);
-		}
-
-		return TRUE;
-
-	}
-
-	return FALSE;
-}
-
 BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 {
 	DLog(L"CDX11VideoProcessor::InitMediaType()");
@@ -1111,7 +1015,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	m_srcLines = biHeight * FmtConvParams.PitchCoeff / 2;
-	m_srcPitch = biSizeImage * 2 / (biHeight * FmtConvParams.PitchCoeff);
+	m_srcPitch = biSizeImage / m_srcLines;
 
 	if (FmtConvParams.cformat != CF_Y8 && FmtConvParams.cformat != CF_Y800) {
 		m_srcPitch &= ~1u;
@@ -1287,6 +1191,52 @@ void CDX11VideoProcessor::UpdatFrameProperties()
 {
 	m_srcPitch = m_srcWidth * m_srcParams.Packsize;
 	m_srcLines = m_srcHeight * m_srcParams.PitchCoeff / 2;
+}
+
+BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
+{
+	if (InitMediaType(&mt)) {
+		const auto& FmtParams = GetFmtConvParams(mt.subtype);
+
+		if (FmtParams.cformat == CF_RGB24) {
+			Size.cx = ALIGN(Size.cx, 4);
+		}
+		else if (FmtParams.cformat == CF_RGB48 || FmtParams.cformat == CF_B48R) {
+			Size.cx = ALIGN(Size.cx, 2);
+		}
+		else if (FmtParams.cformat == CF_ARGB64 || FmtParams.cformat == CF_B64A) {
+			// nothing
+		}
+		else {
+			if (!m_TexSrcVideo.pTexture) {
+				return FALSE;
+			}
+
+			UINT RowPitch = 0;
+			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+			if (SUCCEEDED(m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource))) {
+				RowPitch = mappedResource.RowPitch;
+				m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
+			}
+
+			if (!RowPitch) {
+				return FALSE;
+			}
+
+			Size.cx = RowPitch / FmtParams.Packsize;
+		}
+
+		if (FmtParams.cformat == CF_RGB24 || FmtParams.cformat == CF_XRGB32 || FmtParams.cformat == CF_ARGB32) {
+			Size.cy = -abs(Size.cy); // only for biCompression == BI_RGB
+		} else {
+			Size.cy = abs(Size.cy);
+		}
+
+		return TRUE;
+
+	}
+
+	return FALSE;
 }
 
 void CDX11VideoProcessor::Start()
@@ -1673,6 +1623,143 @@ HRESULT CDX11VideoProcessor::UpdateChromaScalingShader()
 	return hr;
 }
 
+HRESULT CDX11VideoProcessor::D3D11VPPass(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
+{
+	HRESULT hr = m_D3D11VP.SetRectangles(srcRect, dstRect);
+
+	hr = m_D3D11VP.Process(pRenderTarget, m_SampleFormat, second);
+	if (FAILED(hr)) {
+		DLog(L"CDX11VideoProcessor::ProcessD3D11() : m_D3D11VP.Process() failed with error %s", HR2Str(hr));
+	}
+
+	return hr;
+}
+
+HRESULT CDX11VideoProcessor::ConvertColorPass(ID3D11Texture2D* pRenderTarget)
+{
+	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
+
+	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+	if (FAILED(hr)) {
+		DLog(L"TextureCopyRect() : CreateRenderTargetView() failed with error %s", HR2Str(hr));
+		return hr;
+	}
+
+	UINT width = (m_srcParams.cformat == CF_YUY2)
+		? m_TexSrcVideo.desc.Width * 2
+		: m_TexSrcVideo.desc.Width;
+
+	D3D11_VIEWPORT VP;
+	VP.TopLeftX = 0;
+	VP.TopLeftY = 0;
+	VP.Width = (FLOAT)width;
+	VP.Height = (FLOAT)m_TexSrcVideo.desc.Height;
+	VP.MinDepth = 0.0f;
+	VP.MaxDepth = 1.0f;
+
+	const UINT Stride = sizeof(VERTEX);
+	const UINT Offset = 0;
+
+	// Set resources
+	m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
+	m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView.p, nullptr);
+	m_pDeviceContext->RSSetViewports(1, &VP);
+	m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
+	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
+	m_pDeviceContext->PSSetShader(m_pPSConvertColor, nullptr, 0);
+	m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexSrcVideo.pShaderResource.p);
+	m_pDeviceContext->PSSetShaderResources(1, 1, &m_TexSrcVideo.pShaderResource2.p);
+	m_pDeviceContext->PSSetShaderResources(2, 1, &m_TexSrcVideo.pShaderResource3.p);
+	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
+	m_pDeviceContext->PSSetSamplers(1, 1, (m_srcParams.Subsampling == 444) ? &m_pSamplerPoint : &m_pSamplerLinear);
+	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
+	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
+
+	// Draw textured quad onto render target
+	m_pDeviceContext->Draw(4, 0);
+
+	ID3D11ShaderResourceView* views[3] = {};
+	m_pDeviceContext->PSSetShaderResources(0, 3, views);
+
+	return hr;
+}
+
+HRESULT CDX11VideoProcessor::ResizeShaderPass(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect)
+{
+	HRESULT hr = S_OK;
+	const int w2 = dstRect.Width();
+	const int h2 = dstRect.Height();
+	const int k = m_bInterpolateAt50pct ? 2 : 1;
+
+	int w1, h1;
+	ID3D11PixelShader* resizerX;
+	ID3D11PixelShader* resizerY;
+	if (m_iRotation == 90 || m_iRotation == 270) {
+		w1 = srcRect.Height();
+		h1 = srcRect.Width();
+		resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleY.p : m_pShaderUpscaleY.p; // use Y scaling here
+		if (resizerX) {
+			resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY.p : m_pShaderUpscaleY.p;
+		} else {
+			resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleX.p : m_pShaderUpscaleX.p; // use X scaling here
+		}
+	} else {
+		w1 = srcRect.Width();
+		h1 = srcRect.Height();
+		resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleX.p : m_pShaderUpscaleX.p;
+		resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY.p : m_pShaderUpscaleY.p;
+	}
+
+	if (resizerX && resizerY) {
+		// two pass resize
+
+		// check intermediate texture
+		const UINT texWidth = w2;
+		const UINT texHeight = h1;
+
+		if (m_TexResize.pTexture) {
+			if (texWidth != m_TexResize.desc.Width || texHeight != m_TexResize.desc.Height) {
+				m_TexResize.Release(); // need new texture
+			}
+		}
+
+		if (!m_TexResize.pTexture) {
+			// use only float textures here
+			hr = m_TexResize.Create(m_pDevice, DXGI_FORMAT_R16G16B16A16_FLOAT, texWidth, texHeight, Tex2D_DefaultShaderRTarget);
+			if (FAILED(hr)) {
+				DLog(L"CDX11VideoProcessor::ResizeShaderPass() : m_TexResize.Create() failed with error %s", HR2Str(hr));
+				return hr;
+			}
+		}
+
+		CRect resizeRect(0, 0, texWidth, texHeight);
+
+		// First resize pass
+		hr = TextureResizeShader(Tex, m_TexResize.pTexture, srcRect, resizeRect, resizerX, m_iRotation);
+		// Second resize pass
+		hr = TextureResizeShader(m_TexResize, pRenderTarget, resizeRect, dstRect, resizerY, 0);
+	}
+	else {
+		if (resizerX) {
+			// one pass resize for width
+			hr = TextureResizeShader(Tex, pRenderTarget, srcRect, dstRect, resizerX, m_iRotation);
+		}
+		else if (resizerY) {
+			// one pass resize for height
+			hr = TextureResizeShader(Tex, pRenderTarget, srcRect, dstRect, resizerY, m_iRotation);
+		}
+		else {
+			// no resize
+			hr = TextureCopyRect(Tex, pRenderTarget, srcRect, dstRect, m_pPS_Simple, nullptr, m_iRotation);
+		}
+	}
+
+	DLogIf(FAILED(hr), L"CDX11VideoProcessor::ResizeShaderPass() : failed with error %s", HR2Str(hr));
+
+	return hr;
+}
+
 HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
 {
 	HRESULT hr = S_OK;
@@ -1759,93 +1846,6 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 	}
 
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::Process() : failed with error %s", HR2Str(hr));
-
-	return hr;
-}
-
-HRESULT CDX11VideoProcessor::D3D11VPPass(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
-{
-	HRESULT hr = m_D3D11VP.SetRectangles(srcRect, dstRect);
-
-	hr = m_D3D11VP.Process(pRenderTarget, m_SampleFormat, second);
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::ProcessD3D11() : m_D3D11VP.Process() failed with error %s", HR2Str(hr));
-	}
-
-	return hr;
-}
-
-HRESULT CDX11VideoProcessor::ResizeShaderPass(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect)
-{
-	HRESULT hr = S_OK;
-	const int w2 = dstRect.Width();
-	const int h2 = dstRect.Height();
-	const int k = m_bInterpolateAt50pct ? 2 : 1;
-
-	int w1, h1;
-	ID3D11PixelShader* resizerX;
-	ID3D11PixelShader* resizerY;
-	if (m_iRotation == 90 || m_iRotation == 270) {
-		w1 = srcRect.Height();
-		h1 = srcRect.Width();
-		resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleY.p : m_pShaderUpscaleY.p; // use Y scaling here
-		if (resizerX) {
-			resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY.p : m_pShaderUpscaleY.p;
-		} else {
-			resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleX.p : m_pShaderUpscaleX.p; // use X scaling here
-		}
-	} else {
-		w1 = srcRect.Width();
-		h1 = srcRect.Height();
-		resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleX.p : m_pShaderUpscaleX.p;
-		resizerY = (h1 == h2) ? nullptr : (h1 > k * h2) ? m_pShaderDownscaleY.p : m_pShaderUpscaleY.p;
-	}
-
-	if (resizerX && resizerY) {
-		// two pass resize
-
-		// check intermediate texture
-		const UINT texWidth = w2;
-		const UINT texHeight = h1;
-
-		if (m_TexResize.pTexture) {
-			if (texWidth != m_TexResize.desc.Width || texHeight != m_TexResize.desc.Height) {
-				m_TexResize.Release(); // need new texture
-			}
-		}
-
-		if (!m_TexResize.pTexture) {
-			// use only float textures here
-			hr = m_TexResize.Create(m_pDevice, DXGI_FORMAT_R16G16B16A16_FLOAT, texWidth, texHeight, Tex2D_DefaultShaderRTarget);
-			if (FAILED(hr)) {
-				DLog(L"CDX11VideoProcessor::ResizeShaderPass() : m_TexResize.Create() failed with error %s", HR2Str(hr));
-				return hr;
-			}
-		}
-
-		CRect resizeRect(0, 0, texWidth, texHeight);
-
-		// First resize pass
-		hr = TextureResizeShader(Tex, m_TexResize.pTexture, srcRect, resizeRect, resizerX, m_iRotation);
-		// Second resize pass
-		hr = TextureResizeShader(m_TexResize, pRenderTarget, resizeRect, dstRect, resizerY, 0);
-	}
-	else {
-		if (resizerX) {
-			// one pass resize for width
-			hr = TextureResizeShader(Tex, pRenderTarget, srcRect, dstRect, resizerX, m_iRotation);
-		}
-		else if (resizerY) {
-			// one pass resize for height
-			hr = TextureResizeShader(Tex, pRenderTarget, srcRect, dstRect, resizerY, m_iRotation);
-		}
-		else {
-			// no resize
-			hr = TextureCopyRect(Tex, pRenderTarget, srcRect, dstRect, m_pPS_Simple, nullptr, m_iRotation);
-		}
-	}
-
-	DLogIf(FAILED(hr), L"CDX11VideoProcessor::ResizeShaderPass() : failed with error %s", HR2Str(hr));
 
 	return hr;
 }
