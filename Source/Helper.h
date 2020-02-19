@@ -159,7 +159,7 @@ void SetDefaultDXVA2ProcAmpRanges(DXVA2_ValueRange(&DXVA2ProcAmpRanges)[4]);
 void SetDefaultDXVA2ProcAmpValues(DXVA2_ProcAmpValues& DXVA2ProcAmpValues);
 bool IsDefaultDXVA2ProcAmpValues(const DXVA2_ProcAmpValues& DXVA2ProcAmpValues);
 
-typedef void(*CopyFrameDataFn)(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
+typedef void(*CopyFrameDataFn)(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 
 enum ColorFormat_t {
 	CF_NONE = 0,
@@ -233,23 +233,19 @@ const FmtConvParams_t& GetFmtConvParams(const GUID subtype);
 CopyFrameDataFn GetCopyFunction(const FmtConvParams_t& params);
 
 // YUY2, AYUV, RGB32 to D3DFMT_X8R8G8B8, ARGB32 to D3DFMT_A8R8G8B8
-void CopyFrameAsIs(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
+void CopyFrameAsIs(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 // RGB24 to D3DFMT_X8R8G8B8
-void CopyFrameRGB24(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
-void CopyRGB24_SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch); // 30% faster than CopyFrameRGB24().
+void CopyFrameRGB24(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
+void CopyRGB24_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch); // 30% faster than CopyFrameRGB24().
 // RGB48, b48r to D3DFMT_A16B16G16R16
-void CopyFrameRGB48(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
-void CopyRGB48_SSSE3(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch); // Not faster than CopyFrameRGB48().
+void CopyFrameRGB48(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
+void CopyRGB48_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch); // Not faster than CopyFrameRGB48().
 // b64a to D3DFMT_A16B16G16R16
-void CopyFrameB64A(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
+void CopyFrameB64A(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 // YV12
-void CopyFrameYV12(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
-// NV12, P010, P016
-void CopyBiPlanar420(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
-// P210, P216
-void CopyBiPlanar422(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
+void CopyFrameYV12(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 // Y410 (not used)
-void CopyFrameY410(const UINT height, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
+void CopyFrameY410(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 
 void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d);
 

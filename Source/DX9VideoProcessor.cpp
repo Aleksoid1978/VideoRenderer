@@ -941,8 +941,8 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				hr = pDXVA2VPSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 				if (S_OK == hr) {
 					ASSERT(m_pConvertFn);
-					const BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
-					m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
+					const BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcLines) : data;
+					m_pConvertFn(m_srcLines, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
 					hr = pDXVA2VPSurface->UnlockRect();
 				}
 			} else {
@@ -975,8 +975,8 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 					hr = m_TexSrcVideo.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 					if (S_OK == hr) {
 						ASSERT(m_pConvertFn);
-						const BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcHeight) : data;
-						m_pConvertFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
+						const BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcLines) : data;
+						m_pConvertFn(m_srcLines, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
 						hr = m_TexSrcVideo.pSurface->UnlockRect();
 					}
 				}
