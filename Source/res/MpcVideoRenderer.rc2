@@ -52,6 +52,7 @@ IDF_SHADER_CONVOL_BICUBIC15_X   FILE                    "..\\_bin\\shaders\\down
 IDF_SHADER_CONVOL_BICUBIC15_Y   FILE                    "..\\_bin\\shaders\\downscaler_bicubic15_y.cso"
 IDF_SHADER_CONVOL_LANCZOS_X     FILE                    "..\\_bin\\shaders\\downscaler_lanczos_x.cso"
 IDF_SHADER_CONVOL_LANCZOS_Y     FILE                    "..\\_bin\\shaders\\downscaler_lanczos_y.cso"
+IDF_SHADER_FINAL_PASS           FILE                    "..\\_bin\\shaders\\final_pass.cso"
 
 IDF_VSH11_SIMPLE                FILE                    "..\\_bin\\shaders\\vs_simple.cso"
 IDF_PSH11_SIMPLE                FILE                    "..\\_bin\\shaders\\ps_simple.cso"

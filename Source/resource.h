@@ -36,6 +36,7 @@
 #define IDF_SHADER_CONVOL_BICUBIC15_Y   659
 #define IDF_SHADER_CONVOL_LANCZOS_X     660
 #define IDF_SHADER_CONVOL_LANCZOS_Y     661
+#define IDF_SHADER_FINAL_PASS           670
 #define IDF_VSH11_SIMPLE                800
 #define IDF_PSH11_SIMPLE                801
 #define IDF_VSH11_GEOMETRY              802
