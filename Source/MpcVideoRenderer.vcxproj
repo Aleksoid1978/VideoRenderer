@@ -28,7 +28,7 @@
   <Import Project="..\platform.props" />
   <PropertyGroup Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-	<UseOfMfc>Static</UseOfMfc>
+    <UseOfMfc>Static</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -133,6 +133,7 @@
     <ResourceCompile Include="MpcVideoRenderer.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="res\dither32x32float16.bin" />
     <None Include="res\MpcVideoRenderer.rc2" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

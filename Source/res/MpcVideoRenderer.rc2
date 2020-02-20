@@ -20,6 +20,8 @@
 // FILE
 //
 
+IDF_DITHER_32X32_FLOAT16        FILE                    "res\\dither32x32float16.bin"
+
 IDF_HLSL_HDR_TONE_MAPPING       FILE                    "..\\Shaders\\convert\\hdr_tone_mapping.hlsl"
 IDF_HLSL_COLORSPACE_GAMUT_CONV  FILE                    "..\\Shaders\\convert\\colorspace_gamut_conversion.hlsl"
 
