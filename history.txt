@@ -1,3 +1,7 @@
+v0.4.2
+------------------------
+Fixed frame brightness for 10 bit video after D3D11 video processor.
+
 v0.4.1.1130 - 2020.02.10
 ------------------------
 Fixed freezing during frequent timeline navigation.
