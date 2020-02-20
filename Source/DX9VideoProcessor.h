@@ -102,6 +102,7 @@ private:
 	CRect m_dstRenderRect;
 
 	int m_iRotation = 0;
+	bool m_bFinalPass = false;
 
 	// D3D9 Video Processor
 	Tex9Video_t m_TexSrcVideo; // for copy of frame
@@ -109,6 +110,7 @@ private:
 	Tex_t m_TexConvertOutput;
 	Tex_t m_TexResize;     // for intermediate result of two-pass resize
 	CTexRing m_TexsPostScale;
+	Tex_t m_TexDither;
 
 	CComPtr<IDirect3DPixelShader9> m_pPSCorrection;
 	CComPtr<IDirect3DPixelShader9> m_pPSConvertColor;
@@ -123,6 +125,7 @@ private:
 	CComPtr<IDirect3DPixelShader9> m_pShaderDownscaleY;
 	const wchar_t* m_strShaderX = nullptr;
 	const wchar_t* m_strShaderY = nullptr;
+	CComPtr<IDirect3DPixelShader9> m_pPSFinalPass;
 
 	std::vector<ExternalPixelShader9_t> m_pPostScaleShaders;
 
@@ -213,6 +216,7 @@ private:
 	HRESULT DxvaVPPass(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
 	HRESULT ConvertColorPass(IDirect3DSurface9* pRenderTarget);
 	HRESULT ResizeShaderPass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect);
+	HRESULT FinalPass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect);
 
 	HRESULT Process(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
 

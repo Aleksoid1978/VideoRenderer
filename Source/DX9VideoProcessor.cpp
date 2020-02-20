@@ -325,6 +325,42 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 		hr2 = m_Rect3D.InitDeviceObjects(m_pD3DDevEx);
 	}
 
+	const UINT dither_size = 32;
+	HRESULT hr3 = m_TexDither.Create(m_pD3DDevEx, D3DFMT_A16B16G16R16F, dither_size, dither_size, D3DUSAGE_DYNAMIC);
+	if (S_OK == hr3) {
+		LPVOID data;
+		DWORD size;
+		hr3 = GetDataFromResource(data, size, IDF_DITHER_32X32_FLOAT16);
+		if (S_OK == hr3) {
+			D3DLOCKED_RECT lockedRect;
+			hr3 = m_TexDither.pTexture->LockRect(0, &lockedRect, nullptr, D3DLOCK_DISCARD);
+			if (S_OK == hr3) {
+				uint16_t* src = (uint16_t*)data;
+				BYTE* dst = (BYTE*)lockedRect.pBits;
+				for (UINT y = 0; y < dither_size; y++) {
+					uint16_t* pUInt16 = reinterpret_cast<uint16_t*>(dst);
+					for (UINT x = 0; x < dither_size; x++) {
+						*pUInt16++ = src[x];
+						*pUInt16++ = src[x];
+						*pUInt16++ = src[x];
+						*pUInt16++ = src[x];
+					}
+					src += dither_size;
+					dst += lockedRect.Pitch;
+				}
+				hr3 = m_TexDither.pTexture->UnlockRect(0);
+			}
+		}
+		if (S_OK == hr3) {
+			m_pPSFinalPass.Release();
+			hr3 = CreatePShaderFromResource(&m_pPSFinalPass, IDF_SHADER_FINAL_PASS);
+		}
+
+		if (FAILED(hr3)) {
+			m_TexDither.Release();
+		}
+	}
+
 	return hr;
 }
 
@@ -361,6 +397,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 
 	ReleaseVP();
 
+	m_TexDither.Release();
 	m_TexStats.Release();
 
 	m_DXVA2VP.ReleaseVideoService();
@@ -375,6 +412,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 	m_pShaderDownscaleY.Release();
 	m_strShaderX = nullptr;
 	m_strShaderY = nullptr;
+	m_pPSFinalPass.Release();
 
 	m_Font3D.InvalidateDeviceObjects();
 	m_Rect3D.InvalidateDeviceObjects();
@@ -1415,10 +1453,15 @@ void CDX9VideoProcessor::UpdateTexures(int w, int h)
 	else {
 		m_TexDxvaOutput.Release();
 		hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, m_srcWidth, m_srcHeight, D3DUSAGE_RENDERTARGET);
-}
+	}
+
+	m_bFinalPass = (m_InternalTexFmt != D3DFMT_X8R8G8B8 && m_TexDither.pTexture && m_pPSFinalPass);
 
 	UINT numPostScaleShaders = m_pPostScaleShaders.size();
 	if (m_pPSCorrection) {
+		numPostScaleShaders++;
+	}
+	if (m_bFinalPass) {
 		numPostScaleShaders++;
 	}
 	hr = m_TexsPostScale.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, w, h, numPostScaleShaders);
@@ -1649,6 +1692,62 @@ HRESULT CDX9VideoProcessor::ResizeShaderPass(IDirect3DTexture9* pTexture, IDirec
 	return hr;
 }
 
+HRESULT CDX9VideoProcessor::FinalPass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect)
+{
+	HRESULT hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
+
+	D3DSURFACE_DESC desc;
+	if (!pTexture || FAILED(pTexture->GetLevelDesc(0, &desc))) {
+		return E_FAIL;
+	}
+
+	const float w = (float)desc.Width;
+	const float h = (float)desc.Height;
+	const float dx = 1.0f / w;
+	const float dy = 1.0f / h;
+
+	MYD3DVERTEX<1> v[] = {
+		{ {(float)dstRect.left  - 0.5f, (float)dstRect.top    - 0.5f, 0.5f, 2.0f}, {{srcRect.left  * dx, srcRect.top    * dy}} },
+		{ {(float)dstRect.right - 0.5f, (float)dstRect.top    - 0.5f, 0.5f, 2.0f}, {{srcRect.right * dx, srcRect.top    * dy}} },
+		{ {(float)dstRect.left  - 0.5f, (float)dstRect.bottom - 0.5f, 0.5f, 2.0f}, {{srcRect.left  * dx, srcRect.bottom * dy}} },
+		{ {(float)dstRect.right - 0.5f, (float)dstRect.bottom - 0.5f, 0.5f, 2.0f}, {{srcRect.right * dx, srcRect.bottom * dy}} },
+	};
+
+	hr = m_pD3DDevEx->SetPixelShader(m_pPSFinalPass);
+
+	// Set sampler: image
+	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+
+	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+
+	hr = m_pD3DDevEx->SetTexture(0, pTexture);
+
+	// Set sampler: ditherMap
+	hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+	hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+	hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+
+	hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);
+	hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);
+
+	hr = m_pD3DDevEx->SetTexture(1, m_TexDither.pTexture);
+
+	// Set constants
+	float fConstData[][4] = {
+		{w / 32, h / 32, 0.0f, 0.0f}
+	};
+	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, _countof(fConstData));
+
+	hr = TextureBlt(m_pD3DDevEx, v, D3DTEXF_POINT);
+
+	m_pD3DDevEx->SetTexture(1, nullptr);
+
+	return hr;
+}
+
 HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
 {
 	HRESULT hr = S_OK;
@@ -1675,7 +1774,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 		pInputTexture = m_TexSrcVideo.pTexture;
 	}
 
-	if (m_pPSCorrection || m_pPostScaleShaders.size()) {
+	if (m_pPSCorrection || m_pPostScaleShaders.size() || m_bFinalPass) {
 		Tex_t* Tex = m_TexsPostScale.GetFirstTex();
 		RECT rect = { 0, 0, Tex->Width, Tex->Height };
 
@@ -1721,8 +1820,20 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 			}
 		}
 
-		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-		hr = TextureCopyRect(Tex->pTexture, rect, dstRect, D3DTEXF_POINT, 0);
+		if (m_bFinalPass) {
+			if (m_pPSCorrection || m_pPostScaleShaders.size()) {
+				pInputTexture = Tex->pTexture;
+				Tex = m_TexsPostScale.GetNextTex();
+				hr = m_pD3DDevEx->SetRenderTarget(0, Tex->pSurface);
+				hr = TextureCopyRect(pInputTexture, rect, rect, D3DTEXF_POINT, 0);
+			}
+
+			hr = FinalPass(Tex->pTexture, pRenderTarget, rect, dstRect);
+		}
+		else {
+			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
+			hr = TextureCopyRect(Tex->pTexture, rect, dstRect, D3DTEXF_POINT, 0);
+		}
 		m_pD3DDevEx->SetPixelShader(nullptr);
 	}
 	else {
