@@ -1845,10 +1845,10 @@ HRESULT CDX11VideoProcessor::FinalPass(const Tex2D_t& Tex, ID3D11Texture2D* pRen
 	}
 
 	D3D11_VIEWPORT VP;
-	VP.TopLeftX = 0;
-	VP.TopLeftY = 0;
-	VP.Width = (FLOAT)Tex.desc.Width;;
-	VP.Height = (FLOAT)Tex.desc.Height;
+	VP.TopLeftX = (FLOAT)dstRect.left;
+	VP.TopLeftY = (FLOAT)dstRect.top;
+	VP.Width    = (FLOAT)dstRect.Width();
+	VP.Height   = (FLOAT)dstRect.Height();
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
 
