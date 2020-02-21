@@ -7,6 +7,7 @@
 Texture2D tex : register(t0);
 Texture2D texDither : register(t1);
 SamplerState samp : register(s0);
+SamplerState sampDither : register(s1);
 
 cbuffer PS_CONSTANTS : register(b0)
 {
@@ -23,7 +24,7 @@ float4 main(PS_INPUT input) : SV_Target
 {
     float4 pixel = tex.Sample(samp, input.Tex);
 
-    float4 ditherValue = texDither.Sample(samp, input.Tex * ditherCoordScale);
+    float4 ditherValue = texDither.Sample(sampDither, input.Tex * ditherCoordScale);
     pixel = floor(pixel * QUANTIZATION + ditherValue) / QUANTIZATION;
 
     return pixel;
