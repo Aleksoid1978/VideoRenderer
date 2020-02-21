@@ -63,6 +63,7 @@ private:
 	CComPtr<ID3D11DeviceContext> m_pDeviceContext;
 	ID3D11SamplerState*          m_pSamplerPoint = nullptr;
 	ID3D11SamplerState*          m_pSamplerLinear = nullptr;
+	ID3D11SamplerState*          m_pSamplerDither = nullptr;
 	CComPtr<ID3D11BlendState>    m_pAlphaBlendState;
 	CComPtr<ID3D11BlendState>    m_pAlphaBlendStateInv;
 	ID3D11Buffer*                m_pFullFrameVertexBuffer = nullptr;
@@ -75,6 +76,7 @@ private:
 	Tex2D_t m_TexConvertOutput;
 	Tex2D_t m_TexResize;        // for intermediate result of two-pass resize
 	CTex2DRing m_TexsPostScale;
+	Tex2D_t m_TexDither;
 
 	// D3D11 Video Processor
 	CD3D11VP m_D3D11VP;
@@ -95,6 +97,7 @@ private:
 
 	std::vector<ExternalPixelShader11_t> m_pPostScaleShaders;
 	ID3D11Buffer* m_pPostScaleConstants = nullptr;
+	CComPtr<ID3D11PixelShader> m_pPSFinalPass;
 
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
@@ -136,6 +139,7 @@ private:
 	CRect m_dstRenderRect;
 
 	int m_iRotation = 0;
+	bool m_bFinalPass = false;
 
 	HWND m_hWnd = nullptr;
 	UINT m_nCurrentAdapter = -1;
@@ -261,6 +265,7 @@ private:
 	HRESULT D3D11VPPass(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
 	HRESULT ConvertColorPass(ID3D11Texture2D* pRenderTarget);
 	HRESULT ResizeShaderPass(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect);
+	HRESULT FinalPass(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect);
 
 	HRESULT Process(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
 

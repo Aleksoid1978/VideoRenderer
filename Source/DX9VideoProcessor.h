@@ -125,9 +125,9 @@ private:
 	CComPtr<IDirect3DPixelShader9> m_pShaderDownscaleY;
 	const wchar_t* m_strShaderX = nullptr;
 	const wchar_t* m_strShaderY = nullptr;
-	CComPtr<IDirect3DPixelShader9> m_pPSFinalPass;
 
 	std::vector<ExternalPixelShader9_t> m_pPostScaleShaders;
+	CComPtr<IDirect3DPixelShader9> m_pPSFinalPass;
 
 	CRenderStats m_RenderStats;
 	CStringW m_strStatsStatic1;

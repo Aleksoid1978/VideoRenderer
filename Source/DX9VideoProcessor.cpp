@@ -48,6 +48,8 @@ static const ScalingShaderResId s_Downscaling9ResIDs[DOWNSCALE_COUNT] = {
 	{IDF_SHADER_CONVOL_LANCZOS_X,   IDF_SHADER_CONVOL_LANCZOS_Y,   L"Lanczos"      }
 };
 
+const UINT dither_size = 32;
+
 #pragma pack(push, 1)
 template<unsigned texcoords>
 struct MYD3DVERTEX {
@@ -325,7 +327,6 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 		hr2 = m_Rect3D.InitDeviceObjects(m_pD3DDevEx);
 	}
 
-	const UINT dither_size = 32;
 	HRESULT hr3 = m_TexDither.Create(m_pD3DDevEx, D3DFMT_A16B16G16R16F, dither_size, dither_size, D3DUSAGE_DYNAMIC);
 	if (S_OK == hr3) {
 		LPVOID data;
@@ -1737,7 +1738,7 @@ HRESULT CDX9VideoProcessor::FinalPass(IDirect3DTexture9* pTexture, IDirect3DSurf
 
 	// Set constants
 	float fConstData[][4] = {
-		{w / 32, h / 32, 0.0f, 0.0f}
+		{w / dither_size, h / dither_size, 0.0f, 0.0f}
 	};
 	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, _countof(fConstData));
 

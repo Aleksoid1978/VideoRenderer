@@ -23,7 +23,7 @@ float4 main(PS_INPUT input) : SV_Target
 {
     float4 pixel = tex.Sample(samp, input.Tex);
 
-    float4 ditherValue = tex.Sample(samp, input.Tex * ditherCoordScale);
+    float4 ditherValue = texDither.Sample(samp, input.Tex * ditherCoordScale);
     pixel = floor(pixel * QUANTIZATION + ditherValue) / QUANTIZATION;
 
     return pixel;
