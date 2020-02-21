@@ -86,6 +86,7 @@ IDF_PSH11_CONVOL_BICUBIC15_X    FILE                    "..\\_bin\\shaders\\ps_d
 IDF_PSH11_CONVOL_BICUBIC15_Y    FILE                    "..\\_bin\\shaders\\ps_downscaler_bicubic15_y.cso"
 IDF_PSH11_CONVOL_LANCZOS_X      FILE                    "..\\_bin\\shaders\\ps_downscaler_lanczos_x.cso"
 IDF_PSH11_CONVOL_LANCZOS_Y      FILE                    "..\\_bin\\shaders\\ps_downscaler_lanczos_y.cso"
+IDF_PSH11_FINAL_PASS            FILE                    "..\\_bin\\shaders\\ps_final_pass.cso"
 
 
 /////////////////////////////////////////////////////////////////////////////

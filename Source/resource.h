@@ -71,6 +71,7 @@
 #define IDF_PSH11_CONVOL_BICUBIC15_Y    859
 #define IDF_PSH11_CONVOL_LANCZOS_X      860
 #define IDF_PSH11_CONVOL_LANCZOS_Y      861
+#define IDF_PSH11_FINAL_PASS            870
 #define IDC_STATIC1                     1001
 #define IDC_STATIC2                     1002
 #define IDC_STATIC3                     1003
