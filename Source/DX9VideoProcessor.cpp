@@ -1067,9 +1067,8 @@ HRESULT CDX9VideoProcessor::Render(int field)
 	}
 
  	if (m_bShowStats) {
-		hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
 		uint64_t tick3 = GetPreciseTick();
-		hr = DrawStats();
+		hr = DrawStats(pBackBuffer);
 		m_RenderStats.renderticks = tick2 - tick1;
 		m_RenderStats.substicks   = tick3 - tick2;
 		m_RenderStats.statsticks  = GetPreciseTick() - tick3;
@@ -2078,7 +2077,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 	}
 }
 
-HRESULT CDX9VideoProcessor::DrawStats()
+HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 {
 	if (m_windowRect.IsRectEmpty()) {
 		return E_ABORT;
@@ -2142,8 +2141,6 @@ HRESULT CDX9VideoProcessor::DrawStats()
 #endif
 
 	HRESULT hr = S_OK;
-	CComPtr<IDirect3DSurface9> pRenderTarget;
-	hr = m_pD3DDevEx->GetRenderTarget(0, &pRenderTarget);
 	hr = m_pD3DDevEx->SetRenderTarget(0, m_TexStats.pSurface);
 
 	hr = m_pD3DDevEx->ColorFill(m_TexStats.pSurface, nullptr, D3DCOLOR_ARGB(192, 0, 0, 0));

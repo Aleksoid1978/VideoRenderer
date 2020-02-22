@@ -225,7 +225,7 @@ private:
 	HRESULT TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& dstRect, IDirect3DPixelShader9* pShader, const int iRotation);
 
 	void UpdateStatsStatic();
-	HRESULT DrawStats();
+	HRESULT DrawStats(IDirect3DSurface9* pRenderTarget);
 
 public:
 	// IUnknown
