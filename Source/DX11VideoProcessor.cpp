@@ -2310,11 +2310,12 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 			m_strStatsStatic2.AppendFormat(L"D3D11 VP, output to %s", DXGIFormatToString(m_D3D11OutputFmt));
 		} else {
 			m_strStatsStatic2.Append(L"Shaders");
-			if (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422) {
-				m_strStatsStatic2.AppendFormat(L"\nChroma Scaling: %s", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom" : L"Bilinear");
-			}
 		}
 		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", DXGIFormatToString(m_InternalTexFmt));
+
+		if (!m_D3D11VP.IsReady() && (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422)) {
+			m_strStatsStatic2.AppendFormat(L"\nChroma Scaling: %s", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom" : L"Bilinear");
+		}
 
 		DXGI_SWAP_CHAIN_DESC1 swapchain_desc;
 		if (m_pDXGISwapChain1 && S_OK == m_pDXGISwapChain1->GetDesc1(&swapchain_desc)) {
@@ -2357,10 +2358,10 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	str.AppendFormat(L",%7.03f", m_pFilter->m_DrawStats.GetAverageFps());
 	str.Append(L"\nInput format  :");
 	if (m_iSrcFromGPU == 11) {
-		str.Append(L" DXGI_");
+		str.Append(L" D3D11_");
 	}
 	else if (m_iSrcFromGPU == 9) {
-		str.Append(L" D3DFMT_");
+		str.Append(L" DXVA2_");
 	}
 	str.Append(m_strStatsStatic2);
 

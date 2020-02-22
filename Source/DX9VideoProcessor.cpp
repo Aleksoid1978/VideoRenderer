@@ -2055,11 +2055,12 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 			m_strStatsStatic2.AppendFormat(L"DXVA2 VP, output to %s", D3DFormatToString(m_DXVA2OutputFmt));
 		} else {
 			m_strStatsStatic2.Append(L"Shaders");
-			if (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422) {
-				m_strStatsStatic2.AppendFormat(L"\nChroma Scaling: %s", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom" : L"Bilinear");
-			}
 		}
 		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", D3DFormatToString(m_InternalTexFmt));
+
+		if (!m_DXVA2VP.IsReady() && (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422)) {
+			m_strStatsStatic2.AppendFormat(L"\nChroma Scaling: %s", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom" : L"Bilinear");
+		}
 
 		if (m_d3dpp.SwapEffect) {
 			m_strStatsStatic3.SetString(L"\nPresentation  : ");
@@ -2102,7 +2103,7 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	str.AppendFormat(L",%7.03f", m_pFilter->m_DrawStats.GetAverageFps());
 	str.Append(L"\nInput format  :");
 	if (m_iSrcFromGPU == 9) {
-		str.Append(L" D3DFMT_");
+		str.Append(L" DXVA2_");
 	}
 	str.Append(m_strStatsStatic2);
 
