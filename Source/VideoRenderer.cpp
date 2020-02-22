@@ -41,6 +41,7 @@
 #define OPT_Upscaling            L"Upscaling"
 #define OPT_Downscaling          L"Downscaling"
 #define OPT_InterpolateAt50pct   L"InterpolateAt50pct"
+#define OPT_Dither               L"Dither"
 #define OPT_SwapEffect           L"SwapEffect"
 
 static const wchar_t g_szClassName[] = L"VRWindow";
@@ -118,6 +119,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_InterpolateAt50pct, dw)) {
 			m_Sets.bInterpolateAt50pct = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_Dither, dw)) {
+			m_Sets.bUseDither = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_SwapEffect, dw)) {
 			m_Sets.iSwapEffect = discard((int)dw, (int)SWAPEFFECT_Discard, (int)SWAPEFFECT_Discard, (int)SWAPEFFECT_Flip);
@@ -987,10 +991,17 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 	}
 
 	if (setings.bInterpolateAt50pct != m_Sets.bInterpolateAt50pct) {
-		if (!m_bUsedD3D11) {
+		if (m_bUsedD3D11) {
+			m_DX11_VP.SetInterpolateAt50pct(setings.bInterpolateAt50pct);
+		} else {
 			m_DX9_VP.SetInterpolateAt50pct(setings.bInterpolateAt50pct);
 		}
 		m_Sets.bInterpolateAt50pct = setings.bInterpolateAt50pct;
+	}
+
+	if (setings.bUseDither != m_Sets.bUseDither) {
+		// TODO
+		m_Sets.bUseDither = setings.bUseDither;
 	}
 
 	if (m_Sets.iTextureFmt != setings.iTextureFmt
@@ -1034,6 +1045,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_Upscaling,          m_Sets.iUpscaling);
 		key.SetDWORDValue(OPT_Downscaling,        m_Sets.iDownscaling);
 		key.SetDWORDValue(OPT_InterpolateAt50pct, m_Sets.bInterpolateAt50pct);
+		key.SetDWORDValue(OPT_Dither,             m_Sets.bUseDither);
 		key.SetDWORDValue(OPT_SwapEffect,         m_Sets.iSwapEffect);
 	}
 

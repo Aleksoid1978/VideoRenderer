@@ -57,6 +57,7 @@ private:
 	int  m_iUpscaling          = UPSCALE_CatmullRom; // interpolation
 	int  m_iDownscaling        = DOWNSCALE_Hamming;  // convolution
 	bool m_bInterpolateAt50pct = true;
+	bool m_bUseDither          = true;
 	int  m_iSwapEffect         = SWAPEFFECT_Discard;
 
 	CComPtr<ID3D11Device>        m_pDevice;

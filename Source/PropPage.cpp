@@ -95,6 +95,7 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling    ? BST_CHECKED : BST_UNCHECKED);
 
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK10, m_SetsPP.bUseDither   ? BST_CHECKED : BST_UNCHECKED);
 
 	SendDlgItemMessageW(IDC_COMBO5, CB_SETCURSEL, m_SetsPP.iChromaScaling, 0);
 	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, m_SetsPP.iUpscaling, 0);
@@ -182,6 +183,7 @@ HRESULT CVRMainPPage::OnActivate()
 
 	SetDlgItemTextW(IDC_EDIT2, GetNameAndVersion());
 
+	GetDlgItem(IDC_CHECK10).ShowWindow(SW_HIDE); // TODO
 	SetControls();
 
 	SetCursor(m_hWnd, IDC_ARROW);
@@ -240,6 +242,11 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			}
 			if (nID == IDC_CHECK4) {
 				m_SetsPP.VPFmts.bOther = IsDlgButtonChecked(IDC_CHECK4) == BST_CHECKED;
+				SetDirty();
+				return (LRESULT)1;
+			}
+			if (nID == IDC_CHECK10) {
+				m_SetsPP.bUseDither = IsDlgButtonChecked(IDC_CHECK10) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}

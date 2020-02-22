@@ -79,6 +79,7 @@ struct Settings_t {
 	int  iUpscaling;
 	int  iDownscaling;
 	bool bInterpolateAt50pct;
+	bool bUseDither;
 	int  iSwapEffect;
 
 	Settings_t() {
@@ -99,6 +100,7 @@ struct Settings_t {
 		iUpscaling          = UPSCALE_CatmullRom;
 		iDownscaling        = DOWNSCALE_Hamming;
 		bInterpolateAt50pct = true;
+		bUseDither          = true;
 		iSwapEffect         = SWAPEFFECT_Discard;
 	}
 };
