@@ -1629,7 +1629,12 @@ void CDX11VideoProcessor::UpdateTexures(int w, int h)
 		hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_InternalTexFmt, m_srcWidth, m_srcHeight, Tex2D_DefaultShaderRTarget);
 	}
 
-	m_bFinalPass = (m_InternalTexFmt != D3DFMT_X8R8G8B8 && m_TexDither.pTexture && m_pPSFinalPass);
+	UpdatePostScaleTexures(w, h);
+}
+
+void CDX11VideoProcessor::UpdatePostScaleTexures(int w, int h)
+{
+	m_bFinalPass = (m_bUseDither && m_InternalTexFmt != DXGI_FORMAT_B8G8R8A8_UNORM && m_TexDither.pTexture && m_pPSFinalPass);
 
 	UINT numPostScaleShaders = m_pPostScaleShaders.size();
 	if (m_pPSCorrection) {
@@ -1638,7 +1643,7 @@ void CDX11VideoProcessor::UpdateTexures(int w, int h)
 	if (m_bFinalPass) {
 		numPostScaleShaders++;
 	}
-	hr = m_TexsPostScale.CheckCreate(m_pDevice, m_InternalTexFmt, w, h, numPostScaleShaders);
+	HRESULT hr = m_TexsPostScale.CheckCreate(m_pDevice, m_InternalTexFmt, w, h, numPostScaleShaders);
 }
 
 void CDX11VideoProcessor::UpdateUpscalingShaders()
@@ -2204,6 +2209,12 @@ void CDX11VideoProcessor::SetDownscaling(int value)
 		UpdateDownscalingShaders();
 	}
 };
+
+void CDX11VideoProcessor::SetDither(bool value)
+{
+	m_bUseDither = value;
+	UpdatePostScaleTexures(m_videoRect.Width(), m_videoRect.Height());
+}
 
 void CDX11VideoProcessor::SetRotation(int value)
 {

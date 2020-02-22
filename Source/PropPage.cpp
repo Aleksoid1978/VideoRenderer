@@ -183,7 +183,6 @@ HRESULT CVRMainPPage::OnActivate()
 
 	SetDlgItemTextW(IDC_EDIT2, GetNameAndVersion());
 
-	GetDlgItem(IDC_CHECK10).ShowWindow(SW_HIDE); // TODO
 	SetControls();
 
 	SetCursor(m_hWnd, IDC_ARROW);

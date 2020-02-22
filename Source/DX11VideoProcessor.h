@@ -247,6 +247,7 @@ public:
 	void SetUpscaling(int value);
 	void SetDownscaling(int value);
 	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
+	void SetDither(bool value);
 	void SetSwapEffect(int value) { m_iSwapEffect = value; }
 
 	void SetRotation(int value);
@@ -259,6 +260,7 @@ public:
 
 private:
 	void UpdateTexures(int w, int h);
+	void UpdatePostScaleTexures(int w, int h);
 	void UpdateUpscalingShaders();
 	void UpdateDownscalingShaders();
 	HRESULT UpdateChromaScalingShader();

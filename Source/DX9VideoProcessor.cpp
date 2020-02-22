@@ -1376,6 +1376,12 @@ void CDX9VideoProcessor::SetDownscaling(int value)
 	}
 };
 
+void CDX9VideoProcessor::SetDither(bool value)
+{
+	m_bUseDither = value;
+	UpdatePostScaleTexures(m_videoRect.Width(), m_videoRect.Height());
+}
+
 void CDX9VideoProcessor::SetRotation(int value)
 {
 	m_iRotation = value;
@@ -1455,7 +1461,12 @@ void CDX9VideoProcessor::UpdateTexures(int w, int h)
 		hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, m_srcWidth, m_srcHeight, D3DUSAGE_RENDERTARGET);
 	}
 
-	m_bFinalPass = (m_InternalTexFmt != D3DFMT_X8R8G8B8 && m_TexDither.pTexture && m_pPSFinalPass);
+	UpdatePostScaleTexures(w, h);
+}
+
+void CDX9VideoProcessor::UpdatePostScaleTexures(int w, int h)
+{
+	m_bFinalPass = (m_bUseDither && m_InternalTexFmt != D3DFMT_X8R8G8B8 && m_TexDither.pTexture && m_pPSFinalPass);
 
 	UINT numPostScaleShaders = m_pPostScaleShaders.size();
 	if (m_pPSCorrection) {
@@ -1464,7 +1475,7 @@ void CDX9VideoProcessor::UpdateTexures(int w, int h)
 	if (m_bFinalPass) {
 		numPostScaleShaders++;
 	}
-	hr = m_TexsPostScale.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, w, h, numPostScaleShaders);
+	HRESULT hr = m_TexsPostScale.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, w, h, numPostScaleShaders);
 }
 
 void CDX9VideoProcessor::UpdateUpscalingShaders()
