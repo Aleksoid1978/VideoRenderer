@@ -132,7 +132,7 @@ public:
 };
 
 struct CRenderStats {
-	//unsigned dropped1 = 0;
+	//unsigned dropped1 = 0; // used m_DrawStats.m_dropped
 	unsigned dropped2 = 0;
 	unsigned failed = 0;
 	//unsigned skipped_interval = 0;
