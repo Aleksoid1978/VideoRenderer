@@ -82,6 +82,7 @@ private:
 	// D3D11 Video Processor
 	CD3D11VP m_D3D11VP;
 	CComPtr<ID3D11PixelShader> m_pPSCorrection;
+	const wchar_t* m_strCorrection = nullptr;
 
 	// D3D11 Shader Video Processor
 	CComPtr<ID3D11PixelShader> m_pPSConvertColor;
@@ -152,6 +153,7 @@ private:
 	CStringW m_strStatsStatic1;
 	CStringW m_strStatsStatic2;
 	CStringW m_strStatsStatic3;
+	CStringW m_strStatsStatic4;
 	int m_iSrcFromGPU = 0;
 
 	Tex2D_t m_TexStats;

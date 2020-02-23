@@ -114,6 +114,7 @@ private:
 	Tex_t m_TexDither;
 
 	CComPtr<IDirect3DPixelShader9> m_pPSCorrection;
+	const wchar_t* m_strCorrection = nullptr;
 	CComPtr<IDirect3DPixelShader9> m_pPSConvertColor;
 	struct {
 		bool bEnable = false;
@@ -134,6 +135,7 @@ private:
 	CStringW m_strStatsStatic1;
 	CStringW m_strStatsStatic2;
 	CStringW m_strStatsStatic3;
+	CStringW m_strStatsStatic4;
 	int m_iSrcFromGPU = 0;
 
 	Tex_t m_TexStats;

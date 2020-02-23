@@ -472,6 +472,7 @@ void CDX11VideoProcessor::ReleaseVP()
 	SAFE_RELEASE(m_PSConvColorData.pConstants);
 
 	m_D3D11VP.ReleaseVideoProcessor();
+	m_strCorrection = nullptr;
 
 	m_srcParams      = {};
 	m_srcDXGIFormat  = DXGI_FORMAT_UNKNOWN;
@@ -1100,12 +1101,15 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		if (S_OK == InitializeD3D11VP(FmtConvParams, biWidth, biHeight)) {
 			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_ST2084));
+				m_strCorrection = L"ST 2084 correction";
 			}
 			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_HLG));
+				m_strCorrection = L"HLG correction";
 			}
 			else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_YCGCO));
+				m_strCorrection = L"YCoCg correction";
 			}
 			DLogIf(m_pPSCorrection, L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection created");
 
@@ -1644,6 +1648,23 @@ void CDX11VideoProcessor::UpdatePostScaleTexures(int w, int h)
 		numPostScaleShaders++;
 	}
 	HRESULT hr = m_TexsPostScale.CheckCreate(m_pDevice, m_InternalTexFmt, w, h, numPostScaleShaders);
+
+	if (SUCCEEDED(hr) && numPostScaleShaders) {
+		m_strStatsStatic3 = L"\nPostProcessing:";
+		if (m_strCorrection) {
+			m_strStatsStatic3.AppendFormat(L" %s,", m_strCorrection);
+		}
+		if (m_pPostScaleShaders.size()) {
+			m_strStatsStatic3.AppendFormat(L" shaders[%u],", m_pPostScaleShaders.size());
+		}
+		if (m_bFinalPass) {
+			m_strStatsStatic3.Append(L" dither");
+		}
+		m_strStatsStatic3.TrimRight(',');
+	}
+	else {
+		m_strStatsStatic3.Empty();
+	}
 }
 
 void CDX11VideoProcessor::UpdateUpscalingShaders()
@@ -2310,29 +2331,28 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 			m_strStatsStatic2.AppendFormat(L"D3D11 VP, output to %s", DXGIFormatToString(m_D3D11OutputFmt));
 		} else {
 			m_strStatsStatic2.Append(L"Shaders");
+			if (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422) {
+				m_strStatsStatic2.AppendFormat(L", Chroma Scaling: %s", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom" : L"Bilinear");
+			}
 		}
 		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", DXGIFormatToString(m_InternalTexFmt));
 
-		if (!m_D3D11VP.IsReady() && (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422)) {
-			m_strStatsStatic2.AppendFormat(L"\nChroma Scaling: %s", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom" : L"Bilinear");
-		}
-
 		DXGI_SWAP_CHAIN_DESC1 swapchain_desc;
 		if (m_pDXGISwapChain1 && S_OK == m_pDXGISwapChain1->GetDesc1(&swapchain_desc)) {
-			m_strStatsStatic3.SetString(L"\nPresentation  : ");
+			m_strStatsStatic4.SetString(L"\nPresentation  : ");
 			switch (swapchain_desc.SwapEffect) {
 			case DXGI_SWAP_EFFECT_DISCARD:
-				m_strStatsStatic3.Append(L"Discard");
+				m_strStatsStatic4.Append(L"Discard");
 				break;
 			case DXGI_SWAP_EFFECT_SEQUENTIAL:
-				m_strStatsStatic3.Append(L"Sequential");
+				m_strStatsStatic4.Append(L"Sequential");
 				break;
 			case DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL:
-				m_strStatsStatic3.Append(L"Flip sequential");
+				m_strStatsStatic4.Append(L"Flip sequential");
 				break;
 #if VER_PRODUCTBUILD >= 10000
 			case DXGI_SWAP_EFFECT_FLIP_DISCARD:
-				m_strStatsStatic3.Append(L"Flip discard");
+				m_strStatsStatic4.Append(L"Flip discard");
 				break;
 #endif
 			}
@@ -2341,6 +2361,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		m_strStatsStatic1 = L"Error";
 		m_strStatsStatic2.Empty();
 		m_strStatsStatic3.Empty();
+		m_strStatsStatic4.Empty();
 	}
 }
 
@@ -2388,7 +2409,9 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			}
 		}
 	}
+
 	str.Append(m_strStatsStatic3);
+	str.Append(m_strStatsStatic4);
 
 	str.AppendFormat(L"\nFrames: %5u, skipped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);

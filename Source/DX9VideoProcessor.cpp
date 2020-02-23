@@ -378,6 +378,7 @@ void CDX9VideoProcessor::ReleaseVP()
 	m_RenderStats.Reset();
 
 	m_DXVA2VP.ReleaseVideoProcessor();
+	m_strCorrection = nullptr;
 
 	m_TexSrcVideo.Release();
 	m_TexDxvaOutput.Release();
@@ -799,12 +800,15 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	if (FmtConvParams.DXVA2Format != D3DFMT_UNKNOWN && S_OK == InitializeDXVA2VP(FmtConvParams, biWidth, biHeight)) {
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_ST2084));
+			m_strCorrection = L"ST 2084 correction";
 		}
 		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_HLG));
+			m_strCorrection = L"HLG correction";
 		}
 		else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_YCGCO));
+			m_strCorrection = L"YCoCg correction";
 		}
 		DLogIf(m_pPSCorrection, L"CDX9VideoProcessor::InitMediaType() m_pPSCorrection created");
 
@@ -1476,6 +1480,23 @@ void CDX9VideoProcessor::UpdatePostScaleTexures(int w, int h)
 		numPostScaleShaders++;
 	}
 	HRESULT hr = m_TexsPostScale.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, w, h, numPostScaleShaders);
+
+	if (SUCCEEDED(hr) && numPostScaleShaders) {
+		m_strStatsStatic3 = L"\nPostProcessing:";
+		if (m_strCorrection) {
+			m_strStatsStatic3.AppendFormat(L" %s,", m_strCorrection);
+		}
+		if (m_pPostScaleShaders.size()) {
+			m_strStatsStatic3.AppendFormat(L" shaders[%u],", m_pPostScaleShaders.size());
+		}
+		if (m_bFinalPass) {
+			m_strStatsStatic3.Append(L" dither");
+		}
+		m_strStatsStatic3.TrimRight(',');
+	}
+	else {
+		m_strStatsStatic3.Empty();
+	}
 }
 
 void CDX9VideoProcessor::UpdateUpscalingShaders()
@@ -2055,30 +2076,29 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 			m_strStatsStatic2.AppendFormat(L"DXVA2 VP, output to %s", D3DFormatToString(m_DXVA2OutputFmt));
 		} else {
 			m_strStatsStatic2.Append(L"Shaders");
+			if (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422) {
+				m_strStatsStatic2.AppendFormat(L", Chroma scaling: %s", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom" : L"Bilinear");
+			}
 		}
 		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", D3DFormatToString(m_InternalTexFmt));
 
-		if (!m_DXVA2VP.IsReady() && (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422)) {
-			m_strStatsStatic2.AppendFormat(L"\nChroma Scaling: %s", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom" : L"Bilinear");
-		}
-
 		if (m_d3dpp.SwapEffect) {
-			m_strStatsStatic3.SetString(L"\nPresentation  : ");
+			m_strStatsStatic4.SetString(L"\nPresentation  : ");
 			switch (m_d3dpp.SwapEffect) {
 			case D3DSWAPEFFECT_DISCARD:
-				m_strStatsStatic3.Append(L"Discard");
+				m_strStatsStatic4.Append(L"Discard");
 				break;
 			case D3DSWAPEFFECT_FLIP:
-				m_strStatsStatic3.Append(L"Flip");
+				m_strStatsStatic4.Append(L"Flip");
 				break;
 			case D3DSWAPEFFECT_COPY:
-				m_strStatsStatic3.Append(L"Copy");
+				m_strStatsStatic4.Append(L"Copy");
 				break;
 			case D3DSWAPEFFECT_OVERLAY:
-				m_strStatsStatic3.Append(L"Overlay");
+				m_strStatsStatic4.Append(L"Overlay");
 				break;
 			case D3DSWAPEFFECT_FLIPEX:
-				m_strStatsStatic3.Append(L"FlipEx");
+				m_strStatsStatic4.Append(L"FlipEx");
 				break;
 			}
 		}
@@ -2086,6 +2106,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 		m_strStatsStatic1 = L"Error";
 		m_strStatsStatic2.Empty();
 		m_strStatsStatic3.Empty();
+		m_strStatsStatic4.Empty();
 	}
 }
 
@@ -2131,7 +2152,9 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 			}
 		}
 	}
+
 	str.Append(m_strStatsStatic3);
+	str.Append(m_strStatsStatic4);
 
 	str.AppendFormat(L"\nFrames: %5u, skipped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
