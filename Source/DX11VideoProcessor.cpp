@@ -1513,8 +1513,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hr = Process(pBackBuffer, m_srcRenderRect, m_dstRenderRect, m_FieldDrawn == 2);
 	}
 
-	uint64_t tick3 = GetPreciseTick();
-
 	if (S_OK == hrSubPic) {
 		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 
@@ -1531,11 +1529,8 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hrSubPic = m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, m_pFilter->m_bSubInvAlpha ? D3DCOLOR_ARGB(0, 0, 0, 0) : D3DCOLOR_ARGB(255, 0, 0, 0));
 	}
 
-	uint64_t tick4 = GetPreciseTick();
-
 	if (m_bShowStats) {
 		hr = DrawStats(pBackBuffer);
-		m_RenderStats.substicks = (tick4 - tick3) + (tick2 - tick1); // after DrawStats to relate to paintticks
 	}
 
 #if 0
@@ -1569,6 +1564,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		}
 	}
 #endif
+	m_RenderStats.substicks = tick2 - tick1; // after DrawStats to relate to paintticks
 	uint64_t tick5 = GetPreciseTick();
 	m_RenderStats.paintticks = tick5 - tick1;
 
