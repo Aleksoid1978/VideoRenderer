@@ -1412,6 +1412,7 @@ void CDX9VideoProcessor::ClearPostScaleShaders()
 		pScreenShader.shader.Release();
 	}
 	m_pPostScaleShaders.clear();
+	UpdatePostScaleTexures(m_videoRect.Width(), m_videoRect.Height());
 	DLog(L"CDX9VideoProcessor::ClearPostScaleShaders().");
 }
 
@@ -1427,9 +1428,7 @@ HRESULT CDX9VideoProcessor::AddPostScaleShader(const CStringW& name, const CStri
 			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPostScaleShaders.back().shader);
 			if (S_OK == hr) {
 				m_pPostScaleShaders.back().name = name;
-				if (m_pPostScaleShaders.size() <= 2) {
-					UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
-				}
+				UpdatePostScaleTexures(m_videoRect.Width(), m_videoRect.Height());
 				DLog(L"CDX9VideoProcessor::AddPostScaleShader() : \"%s\" pixel shader added successfully.", name);
 			} else {
 				DLog(L"CDX9VideoProcessor::AddPostScaleShader() : create pixel shader \"%s\" FAILED!", name);

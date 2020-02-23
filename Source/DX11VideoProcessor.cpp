@@ -2261,6 +2261,7 @@ void CDX11VideoProcessor::ClearPostScaleShaders()
 		pScreenShader.shader.Release();
 	}
 	m_pPostScaleShaders.clear();
+	UpdatePostScaleTexures(m_videoRect.Width(), m_videoRect.Height());
 	DLog(L"CDX11VideoProcessor::ClearPostScaleShaders().");
 }
 
@@ -2276,9 +2277,7 @@ HRESULT CDX11VideoProcessor::AddPostScaleShader(const CStringW& name, const CStr
 			hr = m_pDevice->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPostScaleShaders.back().shader);
 			if (S_OK == hr) {
 				m_pPostScaleShaders.back().name = name;
-				if (m_pPostScaleShaders.size() <= 2) {
-					UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
-				}
+				UpdatePostScaleTexures(m_videoRect.Width(), m_videoRect.Height());
 				DLog(L"CDX11VideoProcessor::AddPostScaleShader() : \"%s\" pixel shader added successfully.", name);
 			}
 			else {
