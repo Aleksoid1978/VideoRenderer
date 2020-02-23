@@ -2256,7 +2256,6 @@ void CDX11VideoProcessor::ClearPostScaleShaders()
 		pScreenShader.shader.Release();
 	}
 	m_pPostScaleShaders.clear();
-	UpdatePostScaleTexures(m_videoRect.Width(), m_videoRect.Height());
 	DLog(L"CDX11VideoProcessor::ClearPostScaleShaders().");
 }
 
