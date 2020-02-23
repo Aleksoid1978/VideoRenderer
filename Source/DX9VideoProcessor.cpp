@@ -1054,8 +1054,6 @@ HRESULT CDX9VideoProcessor::Render(int field)
 
 	hr = m_pD3DDevEx->EndScene();
 
-	uint64_t tick2 = GetPreciseTick();
-
 	const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 	const CRect rDstPri(m_windowRect);
 
@@ -1070,14 +1068,8 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		}
 	}
 
-	uint64_t tick3 = GetPreciseTick();
  	if (m_bShowStats) {
-		m_RenderStats.renderticks = tick2 - tick1;
-		m_RenderStats.substicks   = tick3 - tick2;
 		hr = DrawStats(pBackBuffer);
-		uint64_t tick4 = GetPreciseTick();
-		m_RenderStats.statsticks  = tick4 - tick3;
-		tick3 = tick4;
  	}
 
 #if 0
@@ -1100,13 +1092,14 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		nTearingPos = (nTearingPos + 7) % szWindow.cx;
 	}
 #endif
+	uint64_t tick2 = GetPreciseTick();
+	m_RenderStats.paintticks = tick2 - tick1;
 
 	if (m_d3dpp.SwapEffect == D3DSWAPEFFECT_DISCARD) {
 		hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
 	} else {
 		hr = m_pD3DDevEx->PresentEx(nullptr, nullptr, nullptr, nullptr, 0);
 	}
-	m_RenderStats.presentticks = GetPreciseTick() - tick3;
 
 	return hr;
 }
@@ -2160,20 +2153,17 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 
 	str.AppendFormat(L"\nFrames: %5u, skipped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
-	str.AppendFormat(L"\nTimes(ms): Copy%3llu, Render%3llu, Subs%3llu, Stats%3llu, Present%3llu",
-		m_RenderStats.copyticks    * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.renderticks  * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.substicks    * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.statsticks   * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
+	str.AppendFormat(L"\nTimes(ms): Copy%3llu, Paint%3llu",
+		m_RenderStats.copyticks  * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.paintticks * 1000 / GetPreciseTicksPerSecondI());
 #if 0
 	str.AppendFormat(L"\n1:%6.03f, 2:%6.03f, 3:%6.03f, 4:%6.03f, 5:%6.03f, 6:%6.03f ms",
-		m_RenderStats.t1 * 1000.0 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.t2 * 1000.0 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.t3 * 1000.0 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.t4 * 1000.0 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.t5 * 1000.0 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.t6 * 1000.0 / GetPreciseTicksPerSecondI());
+		m_RenderStats.t1 * 1000 / GetPreciseTicksPerSecond(),
+		m_RenderStats.t2 * 1000 / GetPreciseTicksPerSecond(),
+		m_RenderStats.t3 * 1000 / GetPreciseTicksPerSecond(),
+		m_RenderStats.t4 * 1000 / GetPreciseTicksPerSecond(),
+		m_RenderStats.t5 * 1000 / GetPreciseTicksPerSecond(),
+		m_RenderStats.t6 * 1000 / GetPreciseTicksPerSecond());
 #else
 	str.AppendFormat(L"\nSync offset   : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
 #endif

@@ -141,6 +141,7 @@ struct CRenderStats {
 	uint64_t renderticks = 0;
 	uint64_t substicks = 0;
 	uint64_t statsticks = 0;
+	uint64_t paintticks = 0;
 	uint64_t presentticks = 0;
 	REFERENCE_TIME syncoffset = 0;
 
