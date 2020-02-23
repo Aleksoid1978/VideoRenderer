@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2019 see Authors.txt
+* (C) 2018-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -141,6 +141,7 @@ struct CRenderStats {
 	uint64_t renderticks = 0;
 	uint64_t substicks = 0;
 	uint64_t statsticks = 0;
+	uint64_t presentticks = 0;
 	REFERENCE_TIME syncoffset = 0;
 
 	uint64_t t1 = 0;

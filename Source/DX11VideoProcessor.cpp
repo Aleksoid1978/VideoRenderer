@@ -1531,12 +1531,14 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hrSubPic = m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, m_pFilter->m_bSubInvAlpha ? D3DCOLOR_ARGB(0, 0, 0, 0) : D3DCOLOR_ARGB(255, 0, 0, 0));
 	}
 
+	uint64_t tick3 = GetPreciseTick();
 	if (m_bShowStats) {
-		uint64_t tick3 = GetPreciseTick();
 		m_RenderStats.renderticks = tick2 - tick1;
 		m_RenderStats.substicks = (tick3 - tick2) + (tick1 - tick0);
 		hr = DrawStats(pBackBuffer);
-		m_RenderStats.statsticks = GetPreciseTick() - tick3;
+		uint64_t tick4 = GetPreciseTick();
+		m_RenderStats.statsticks = tick4 - tick3;
+		tick3 = tick4;
 	}
 
 #if 0
@@ -1572,6 +1574,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 #endif
 
 	hr = m_pDXGISwapChain1->Present(1, 0);
+	m_RenderStats.presentticks = GetPreciseTick() - tick3;
 
 	return hr;
 }
@@ -1655,7 +1658,7 @@ void CDX11VideoProcessor::UpdatePostScaleTexures(int w, int h)
 			m_strStatsStatic3.AppendFormat(L" %s,", m_strCorrection);
 		}
 		if (m_pPostScaleShaders.size()) {
-			m_strStatsStatic3.AppendFormat(L" shaders[%u],", m_pPostScaleShaders.size());
+			m_strStatsStatic3.AppendFormat(L" shaders[%u],", (UINT)m_pPostScaleShaders.size());
 		}
 		if (m_bFinalPass) {
 			m_strStatsStatic3.Append(L" dither");
@@ -2415,11 +2418,12 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 
 	str.AppendFormat(L"\nFrames: %5u, skipped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
-	str.AppendFormat(L"\nTimes(ms): Copy%3llu, Render%3llu, Subs%3llu, Stats%3llu",
-		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.renderticks * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.substicks * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.statsticks * 1000 / GetPreciseTicksPerSecondI());
+	str.AppendFormat(L"\nTimes(ms): Copy%3llu, Render%3llu, Subs%3llu, Stats%3llu, Present%3llu",
+		m_RenderStats.copyticks    * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.renderticks  * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.substicks    * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.statsticks   * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
 #if 0
 	str.AppendFormat(L"\n1:%6.03f, 2:%6.03f, 3:%6.03f, 4:%6.03f, 5:%6.03f, 6:%6.03f ms",
 		m_RenderStats.t1 * 1000.0 / GetPreciseTicksPerSecondI(),
