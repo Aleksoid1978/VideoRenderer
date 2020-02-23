@@ -1473,7 +1473,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		return hr;
 	}
 
-	uint64_t tick0 = GetPreciseTick();
+	uint64_t tick1 = GetPreciseTick();
 
 	HRESULT hrSubPic = E_FAIL;
 	if (m_pFilter->m_pSubCallBack && m_pShaderResourceSubPic) {
@@ -1499,7 +1499,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		}
 	}
 
-	uint64_t tick1 = GetPreciseTick();
+	uint64_t tick2 = GetPreciseTick();
 
 	if (!m_videoRect.IsRectEmpty() && !m_windowRect.IsRectEmpty()) {
 		// fill the BackBuffer with black
@@ -1513,7 +1513,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hr = Process(pBackBuffer, m_srcRenderRect, m_dstRenderRect, m_FieldDrawn == 2);
 	}
 
-	uint64_t tick2 = GetPreciseTick();
+	uint64_t tick3 = GetPreciseTick();
 
 	if (S_OK == hrSubPic) {
 		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
@@ -1531,14 +1531,11 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hrSubPic = m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, m_pFilter->m_bSubInvAlpha ? D3DCOLOR_ARGB(0, 0, 0, 0) : D3DCOLOR_ARGB(255, 0, 0, 0));
 	}
 
-	uint64_t tick3 = GetPreciseTick();
+	uint64_t tick4 = GetPreciseTick();
+
 	if (m_bShowStats) {
-		m_RenderStats.renderticks = tick2 - tick1;
-		m_RenderStats.substicks = (tick3 - tick2) + (tick1 - tick0);
 		hr = DrawStats(pBackBuffer);
-		uint64_t tick4 = GetPreciseTick();
-		m_RenderStats.statsticks = tick4 - tick3;
-		tick3 = tick4;
+		m_RenderStats.substicks = (tick4 - tick3) + (tick2 - tick1); // after DrawStats to relate to paintticks
 	}
 
 #if 0
@@ -1572,9 +1569,11 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		}
 	}
 #endif
+	uint64_t tick5 = GetPreciseTick();
+	m_RenderStats.paintticks = tick5 - tick1;
 
 	hr = m_pDXGISwapChain1->Present(1, 0);
-	m_RenderStats.presentticks = GetPreciseTick() - tick3;
+	m_RenderStats.presentticks = GetPreciseTick() - tick5;
 
 	return hr;
 }
@@ -2417,20 +2416,19 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 
 	str.AppendFormat(L"\nFrames: %5u, skipped: %u/%u, failed: %u",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
-	str.AppendFormat(L"\nTimes(ms): Copy%3llu, Render%3llu, Subs%3llu, Stats%3llu, Present%3llu",
+	str.AppendFormat(L"\nTimes(ms): Copy%3llu, Paint%3llu [DX9Subs%3llu], Present%3llu",
 		m_RenderStats.copyticks    * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.renderticks  * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.paintticks   * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.substicks    * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.statsticks   * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
 #if 0
 	str.AppendFormat(L"\n1:%6.03f, 2:%6.03f, 3:%6.03f, 4:%6.03f, 5:%6.03f, 6:%6.03f ms",
-		m_RenderStats.t1 * 1000.0 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.t2 * 1000.0 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.t3 * 1000.0 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.t4 * 1000.0 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.t5 * 1000.0 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.t6 * 1000.0 / GetPreciseTicksPerSecondI());
+		m_RenderStats.t1 * 1000 / GetPreciseTicksPerSecond(),
+		m_RenderStats.t2 * 1000 / GetPreciseTicksPerSecond(),
+		m_RenderStats.t3 * 1000 / GetPreciseTicksPerSecond(),
+		m_RenderStats.t4 * 1000 / GetPreciseTicksPerSecond(),
+		m_RenderStats.t5 * 1000 / GetPreciseTicksPerSecond(),
+		m_RenderStats.t6 * 1000 / GetPreciseTicksPerSecond());
 #else
 	str.AppendFormat(L"\nSync offset   : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
 #endif
