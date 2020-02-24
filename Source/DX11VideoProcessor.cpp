@@ -1646,23 +1646,7 @@ void CDX11VideoProcessor::UpdatePostScaleTexures(int w, int h)
 		numPostScaleShaders++;
 	}
 	HRESULT hr = m_TexsPostScale.CheckCreate(m_pDevice, m_InternalTexFmt, w, h, numPostScaleShaders);
-
-	if (SUCCEEDED(hr) && numPostScaleShaders) {
-		m_strStatsStatic3 = L"\nPostProcessing:";
-		if (m_strCorrection) {
-			m_strStatsStatic3.AppendFormat(L" %s,", m_strCorrection);
-		}
-		if (m_pPostScaleShaders.size()) {
-			m_strStatsStatic3.AppendFormat(L" shaders[%u],", (UINT)m_pPostScaleShaders.size());
-		}
-		if (m_bFinalPass) {
-			m_strStatsStatic3.Append(L" dither");
-		}
-		m_strStatsStatic3.TrimRight(',');
-	}
-	else {
-		m_strStatsStatic3.Empty();
-	}
+	UpdateStatsStatic3();
 }
 
 void CDX11VideoProcessor::UpdateUpscalingShaders()
@@ -2256,6 +2240,7 @@ void CDX11VideoProcessor::ClearPostScaleShaders()
 		pScreenShader.shader.Release();
 	}
 	m_pPostScaleShaders.clear();
+	UpdateStatsStatic3();
 	DLog(L"CDX11VideoProcessor::ClearPostScaleShaders().");
 }
 
@@ -2358,6 +2343,26 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		m_strStatsStatic2.Empty();
 		m_strStatsStatic3.Empty();
 		m_strStatsStatic4.Empty();
+	}
+}
+
+void CDX11VideoProcessor::UpdateStatsStatic3()
+{
+	if (m_strCorrection || m_pPostScaleShaders.size() || m_bFinalPass) {
+		m_strStatsStatic3 = L"\nPostProcessing:";
+		if (m_strCorrection) {
+			m_strStatsStatic3.AppendFormat(L" %s,", m_strCorrection);
+		}
+		if (m_pPostScaleShaders.size()) {
+			m_strStatsStatic3.AppendFormat(L" shaders[%u],", (UINT)m_pPostScaleShaders.size());
+		}
+		if (m_bFinalPass) {
+			m_strStatsStatic3.Append(L" dither");
+		}
+		m_strStatsStatic3.TrimRight(',');
+	}
+	else {
+		m_strStatsStatic3.Empty();
 	}
 }
 

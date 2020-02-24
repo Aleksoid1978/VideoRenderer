@@ -285,6 +285,7 @@ private:
 							ID3D11PixelShader* pPixelShader, const int iRotation);
 
 	void UpdateStatsStatic();
+	void UpdateStatsStatic3();
 	HRESULT DrawStats(ID3D11Texture2D* pRenderTarget);
 
 public:
