@@ -717,6 +717,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 			m_decExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
 		}
 		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
+		m_rtAvgTimePerFrame = vih2->AvgTimePerFrame;
 	}
 	else if (pmt->formattype == FORMAT_VideoInfo) {
 		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)pmt->pbFormat;
@@ -726,6 +727,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcAspectRatioX = 0;
 		m_srcAspectRatioY = 0;
 		m_bInterlaced = 0;
+		m_rtAvgTimePerFrame = vih->AvgTimePerFrame;
 	}
 	else {
 		return FALSE;
@@ -1062,7 +1064,7 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
 
 		if (CComQIPtr<ISubRenderCallback4> pSubCallBack4 = m_pFilter->m_pSubCallBack) {
-			pSubCallBack4->RenderEx3(rtStart, 0, 0, rDstVid, rDstVid, rSrcPri);
+			pSubCallBack4->RenderEx3(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
 		} else {
 			m_pFilter->m_pSubCallBack->Render(rtStart, rDstVid.left, rDstVid.top, rDstVid.right, rDstVid.bottom, rSrcPri.Width(), rSrcPri.Height());
 		}

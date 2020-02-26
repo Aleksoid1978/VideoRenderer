@@ -705,7 +705,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	SampDesc.MinLOD = 0;
 	SampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateSamplerState(&SampDesc, &m_pSamplerPoint));
-	
+
 	SampDesc.Filter = D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT; // linear interpolation for magnification
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateSamplerState(&SampDesc, &m_pSamplerLinear));
 
@@ -1015,6 +1015,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			m_decExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
 		}
 		m_bInterlaced = (vih2->dwInterlaceFlags & AMINTERLACE_IsInterlaced);
+		m_rtAvgTimePerFrame = vih2->AvgTimePerFrame;
 	}
 	else if (pmt->formattype == FORMAT_VideoInfo) {
 		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)pmt->pbFormat;
@@ -1024,6 +1025,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcAspectRatioX = 0;
 		m_srcAspectRatioY = 0;
 		m_bInterlaced = 0;
+		m_rtAvgTimePerFrame = vih->AvgTimePerFrame;
 	}
 	else {
 		return FALSE;
@@ -1482,7 +1484,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
 
 		if (CComQIPtr<ISubRenderCallback4> pSubCallBack4 = m_pFilter->m_pSubCallBack) {
-			hrSubPic = pSubCallBack4->RenderEx3(rtStart, 0, 0, rDstVid, rDstVid, rSrcPri);
+			hrSubPic = pSubCallBack4->RenderEx3(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
 		} else {
 			hrSubPic = m_pFilter->m_pSubCallBack->Render(rtStart, rDstVid.left, rDstVid.top, rDstVid.right, rDstVid.bottom, rSrcPri.Width(), rSrcPri.Height());
 		}

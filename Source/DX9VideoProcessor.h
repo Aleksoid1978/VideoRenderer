@@ -85,6 +85,7 @@ private:
 	DXVA2_ExtendedFormat m_decExFmt = {};
 	DXVA2_ExtendedFormat m_srcExFmt = {};
 	bool  m_bInterlaced = false;
+	REFERENCE_TIME m_rtAvgTimePerFrame = 0;
 
 	// DXVA2 surface format
 	D3DFORMAT m_DXVA2OutputFmt = D3DFMT_UNKNOWN;

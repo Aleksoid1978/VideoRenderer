@@ -121,6 +121,7 @@ private:
 	DXVA2_ExtendedFormat m_decExFmt = {};
 	DXVA2_ExtendedFormat m_srcExFmt = {};
 	bool  m_bInterlaced = false;
+	REFERENCE_TIME m_rtAvgTimePerFrame = 0;
 
 	// D3D11 VP texture format
 	DXGI_FORMAT m_D3D11OutputFmt = DXGI_FORMAT_UNKNOWN;
