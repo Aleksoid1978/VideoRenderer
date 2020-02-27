@@ -250,7 +250,11 @@ void CBaseVideoRenderer2::OnRenderStart(IMediaSample *pMediaSample)
 
 	REFERENCE_TIME StartTime, EndTime;
 	if (!pMediaSample || FAILED(pMediaSample->GetTime(&StartTime, &EndTime))) {
-		StartTime = m_tRenderStart * 10000;
+		if (m_pClock && S_OK == m_pClock->GetTime(&StartTime)) {
+			StartTime -= m_tStart;
+		} else {
+			StartTime = m_tRenderStart * 10000;
+		}
 	}
 	m_FrameStats.Add(StartTime);
 } // OnRenderStart
