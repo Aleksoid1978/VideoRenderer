@@ -162,6 +162,8 @@ public:
 
     // These provide a full video quality management implementation
 
+	void OnReceiveFirstSample(IMediaSample *pMediaSample);
+
     void OnRenderStart(IMediaSample *pMediaSample);
     void OnRenderEnd(IMediaSample *pMediaSample);
     void OnWaitStart();

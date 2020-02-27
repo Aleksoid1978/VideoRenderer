@@ -231,6 +231,12 @@ void CBaseVideoRenderer2::OnDirectRender(IMediaSample *pMediaSample)
     ThrottleWait();
 } // OnDirectRender
 
+void CBaseVideoRenderer2::OnReceiveFirstSample(IMediaSample *pMediaSample)
+{
+	OnRenderStart(pMediaSample);
+	DoRenderSample(pMediaSample);
+	OnRenderEnd(pMediaSample);
+}
 
 // Called just before we start drawing.  All we do is to get the current clock
 // time (from the system) and return.  We have to store the start render time
@@ -241,6 +247,12 @@ void CBaseVideoRenderer2::OnRenderStart(IMediaSample *pMediaSample)
 {
     RecordFrameLateness(m_trLate, m_trFrame);
     m_tRenderStart = timeGetTime();
+
+	REFERENCE_TIME StartTime, EndTime;
+	if (!pMediaSample || FAILED(pMediaSample->GetTime(&StartTime, &EndTime))) {
+		StartTime = m_tRenderStart * 10000;
+	}
+	m_FrameStats.Add(StartTime);
 } // OnRenderStart
 
 
@@ -760,11 +772,6 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
 
 BOOL CBaseVideoRenderer2::ScheduleSample(IMediaSample *pMediaSample)
 {
-	REFERENCE_TIME StartTime, EndTime;
-	if (pMediaSample && S_OK == pMediaSample->GetTime(&StartTime, &EndTime)) {
-		m_FrameStats.Add(StartTime);
-	}
-
     // We override ShouldDrawSampleNow to add quality management
 
     BOOL bDrawImage = CBaseRenderer::ScheduleSample(pMediaSample);

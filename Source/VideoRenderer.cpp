@@ -450,13 +450,6 @@ HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 		Ready();
 	}
 
-	if (m_State == State_Paused) {
-		m_bInReceive = FALSE;
-
-		CAutoLock cSampleLock(&m_RendererLock);
-		DoRenderSample(m_pMediaSample);
-	}
-
 	// Having set an advise link with the clock we sit and wait. We may be
 	// awoken by the clock firing or by a state change. The rendering call
 	// will lock the critical section and check we can still render the data

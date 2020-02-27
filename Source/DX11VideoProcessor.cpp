@@ -1299,13 +1299,11 @@ void CDX11VideoProcessor::Start()
 
 HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 {
-	REFERENCE_TIME rtStart, rtEnd;
-	pSample->GetTime(&rtStart, &rtEnd);
+	REFERENCE_TIME rtStart = m_pFilter->m_FrameStats.GeTimestamp();
+	const REFERENCE_TIME rtFrameDur = m_pFilter->m_FrameStats.GetAverageFrameDuration();
+	const REFERENCE_TIME rtEnd = rtStart + rtFrameDur;
 
 	m_rtStart = rtStart;
-
-	const REFERENCE_TIME rtFrameDur = m_pFilter->m_FrameStats.GetAverageFrameDuration();
-	rtEnd = rtStart + rtFrameDur;
 	CRefTime rtClock(rtStart);
 
 	HRESULT hr = CopySample(pSample);
