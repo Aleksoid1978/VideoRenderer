@@ -231,13 +231,6 @@ void CBaseVideoRenderer2::OnDirectRender(IMediaSample *pMediaSample)
     ThrottleWait();
 } // OnDirectRender
 
-void CBaseVideoRenderer2::OnReceiveFirstSample(IMediaSample *pMediaSample)
-{
-	//OnRenderStart(pMediaSample);
-	DoRenderSample(pMediaSample);
-	//OnRenderEnd(pMediaSample);
-}
-
 // Called just before we start drawing.  All we do is to get the current clock
 // time (from the system) and return.  We have to store the start render time
 // in a member variable because it isn't used until we complete the drawing

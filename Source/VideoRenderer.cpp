@@ -414,6 +414,8 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 
 HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 {
+	// îverride CBaseRenderer::Receive() for the implementation of the search during the pause
+
 	if (m_bFlushing) {
 		DLog(L"CMpcVideoRenderer::Receive() - flushing, skip sample");
 		return S_OK;
@@ -445,7 +447,8 @@ HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 
 			m_bInReceive = TRUE;
 			CAutoLock cSampleLock(&m_RendererLock);
-			OnReceiveFirstSample(pSample);
+
+			DoRenderSample(pSample);
 		}
 		Ready();
 	}
