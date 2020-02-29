@@ -447,10 +447,15 @@ HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 
 			m_bInReceive = TRUE;
 			CAutoLock cSampleLock(&m_RendererLock);
-
-			DoRenderSample(pSample);
 		}
 		Ready();
+	}
+
+	if (m_State == State_Paused) {
+		m_bInReceive = FALSE;
+
+		CAutoLock cSampleLock(&m_RendererLock);
+		DoRenderSample(m_pMediaSample);
 	}
 
 	// Having set an advise link with the clock we sit and wait. We may be
