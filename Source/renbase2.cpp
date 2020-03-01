@@ -255,8 +255,8 @@ void CBaseVideoRenderer2::OnRenderEnd(IMediaSample *pMediaSample)
     // not enough as figures can go 9,10,9,9,83,9 and we must disregard 83
 
     int tr = (timeGetTime() - m_tRenderStart)*10000;   // convert mSec->UNITS
-    if (tr < m_trRenderAvg*2 || tr < 2 * m_trRenderLast) {
-        // DO_MOVING_AVG(m_trRenderAvg, tr);
+	if (tr < m_trRenderAvg*32 || tr < m_trRenderLast*32) {
+		// But in reality, the rendering time can cyclically increase and decrease by 25 times. For example : 5 125 6 127 5 126.
         m_trRenderAvg = (tr + (AVGPERIOD-1)*m_trRenderAvg)/AVGPERIOD;
     }
     m_trRenderLast = tr;
