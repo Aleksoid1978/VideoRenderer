@@ -102,6 +102,7 @@ private:
 	CMediaType m_inputMT;
 
 	ISubRenderCallback* m_pSubCallBack = nullptr;
+	bool bUseInMPCBE = false;
 
 	CAMEvent m_evDX9Init;
 	CAMEvent m_evDX9InitHwnd;
@@ -248,10 +249,7 @@ public:
 	STDMETHODIMP SaveSettings();
 
 	// ISubRender
-	STDMETHODIMP SetCallback(ISubRenderCallback* cb) {
-		m_pSubCallBack = cb;
-		return S_OK;
-	}
+	STDMETHODIMP SetCallback(ISubRenderCallback* cb);
 
 	// IExFilterConfig
 	STDMETHODIMP GetBool(LPCSTR field, bool* value) override;

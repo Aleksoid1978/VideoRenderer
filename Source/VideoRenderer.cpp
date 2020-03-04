@@ -25,6 +25,7 @@
 #include "PropPage.h"
 #include "VideoRendererInputPin.h"
 #include "../Include/Version.h"
+#include "../Include/SubRenderIntf.h"
 #include "VideoRenderer.h"
 
 #define OPT_REGKEY_VIDEORENDERER L"Software\\MPC-BE Filters\\MPC Video Renderer"
@@ -385,7 +386,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			m_DX9_VP.SetVideoRect(m_videoRect);
 		}
 
-		if (!m_pSubCallBack) {
+		if (!bUseInMPCBE) {
 			Redraw();
 		}
 	}
@@ -685,7 +686,8 @@ STDMETHODIMP CMpcVideoRenderer::GetSourcePosition(long *pLeft, long *pTop, long 
 STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long Width, long Height)
 {
 	const CRect videoRect(Left, Top, Left + Width, Top + Height);
-	if (videoRect.IsRectNull() || videoRect == m_videoRect) {
+	if (videoRect.IsRectNull()
+			|| (bUseInMPCBE && videoRect == m_videoRect)) {
 		return S_OK;
 	}
 
@@ -698,7 +700,7 @@ STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long
 		m_DX9_VP.SetVideoRect(videoRect);
 	}
 
-	if (!m_pSubCallBack) {
+	if (!bUseInMPCBE) {
 		Redraw();
 	}
 
@@ -858,7 +860,7 @@ STDMETHODIMP CMpcVideoRenderer::get_Owner(OAHWND *Owner)
 STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Width, long Height)
 {
 	const CRect windowRect(Left, Top, Left + Width, Top + Height);
-	if (windowRect == m_windowRect) {
+	if (bUseInMPCBE && windowRect == m_windowRect) {
 		return S_OK;
 	}
 
@@ -884,7 +886,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 
 	m_windowRect = windowRect;
 
-	if (!m_pSubCallBack) {
+	if (!bUseInMPCBE) {
 		Redraw();
 	}
 
@@ -1054,6 +1056,24 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_InterpolateAt50pct, m_Sets.bInterpolateAt50pct);
 		key.SetDWORDValue(OPT_Dither,             m_Sets.bUseDither);
 		key.SetDWORDValue(OPT_SwapEffect,         m_Sets.iSwapEffect);
+	}
+
+	return S_OK;
+}
+
+// ISubRender
+STDMETHODIMP CMpcVideoRenderer::SetCallback(ISubRenderCallback* cb)
+{
+	bUseInMPCBE = false;
+
+	m_pSubCallBack = cb;
+	if (CComQIPtr<ISubRenderOptions> pSubRenderOptions = m_pSubCallBack) {
+		LPWSTR name = nullptr;
+		int nLen;
+		if (S_OK == pSubRenderOptions->GetString("name", &name, &nLen) && name && nLen) {
+			bUseInMPCBE = (wcscmp(name, L"MPC-BE") == 0);
+			LocalFree(name);
+		}
 	}
 
 	return S_OK;
