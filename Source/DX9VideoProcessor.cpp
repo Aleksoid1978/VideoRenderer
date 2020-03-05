@@ -1245,6 +1245,57 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 	return hr;
 }
 
+HRESULT CDX9VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned *pSize)
+{
+	HRESULT hr = S_OK;
+	const UINT width  = m_windowRect.Width();
+	const UINT height = m_windowRect.Height();
+
+	// use the back buffer, because the display profile is applied to the front buffer
+	CComPtr<IDirect3DSurface9> pBackBuffer;
+	CComPtr<IDirect3DSurface9> pDestSurface;
+	if (FAILED(hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer))
+		|| FAILED(hr = m_pD3DDevEx->CreateRenderTarget(width, height, D3DFMT_X8R8G8B8, D3DMULTISAMPLE_NONE, 0, TRUE, &pDestSurface, nullptr))
+		|| FAILED(hr = m_pD3DDevEx->StretchRect(pBackBuffer, m_windowRect, pDestSurface, nullptr, D3DTEXF_NONE))) {
+		DLog(L"CDX9VideoProcessor::GetDisplayedImage() failed with error %s", HR2Str(hr));
+		return hr;
+	}
+
+	*pSize = width * height * 4 + sizeof(BITMAPINFOHEADER);
+	BYTE* p = (BYTE*)CoTaskMemAlloc(*pSize); // only this allocator can be used
+	if (!p) {
+		return E_OUTOFMEMORY;
+	}
+
+	BITMAPINFOHEADER* pBIH = (BITMAPINFOHEADER*)p;
+	ZeroMemory(pBIH, sizeof(BITMAPINFOHEADER));
+	pBIH->biSize      = sizeof(BITMAPINFOHEADER);
+	pBIH->biWidth     = width;
+	pBIH->biHeight    = height;
+	pBIH->biBitCount  = 32;
+	pBIH->biPlanes    = 1;
+	pBIH->biSizeImage = DIBSIZE(*pBIH);
+
+	UINT dst_pitch = pBIH->biSizeImage / height;
+
+	D3DLOCKED_RECT lr;
+	hr = pDestSurface->LockRect(&lr, nullptr, D3DLOCK_READONLY);
+	if (S_OK == hr) {
+		CopyFrameAsIs(height, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)lr.pBits + lr.Pitch * (height - 1), -lr.Pitch);
+		hr = pDestSurface->UnlockRect();
+	}
+
+	if (FAILED(hr)) {
+		DLog(L"CDX9VideoProcessor::GetDisplayedImage() failed with error %s", HR2Str(hr));
+		CoTaskMemFree(p);
+		return hr;
+	}
+
+	*ppDib = p;
+
+	return hr;
+}
+
 HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 {
 	str = L"DirectX 9";

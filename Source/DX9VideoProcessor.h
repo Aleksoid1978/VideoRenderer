@@ -189,6 +189,7 @@ public:
 	HRESULT GetVideoSize(long *pWidth, long *pHeight);
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
 	HRESULT GetCurentImage(long *pDIBImage);
+	HRESULT GetDisplayedImage(BYTE **ppDib, unsigned *pSize);
 	HRESULT GetVPInfo(CStringW& str);
 	ColorFormat_t GetColorFormat() { return m_srcParams.cformat; }
 
