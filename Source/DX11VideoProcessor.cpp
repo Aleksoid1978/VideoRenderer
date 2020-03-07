@@ -2091,6 +2091,58 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	return S_OK;
 }
 
+HRESULT CDX11VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned* pSize)
+{
+	CComPtr<ID3D11Texture2D> pBackBuffer;
+	HRESULT hr = m_pDXGISwapChain1->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
+	if (FAILED(hr)) {
+		DLog(L"CDX11VideoProcessor::GetDisplayedImage() failed with error %s", HR2Str(hr));
+		return hr;
+	}
+
+	D3D11_TEXTURE2D_DESC desc;
+	pBackBuffer->GetDesc(&desc);
+
+	D3D11_TEXTURE2D_DESC desc2 = CreateTex2DDesc(DXGI_FORMAT_B8G8R8A8_UNORM, desc.Width, desc.Height, Tex2D_StagingRead);
+	CComPtr<ID3D11Texture2D> pTexture2DShared;
+	hr = m_pDevice->CreateTexture2D(&desc2, nullptr, &pTexture2DShared);
+	if (FAILED(hr)) {
+		DLog(L"CDX11VideoProcessor::GetDisplayedImage() failed with error %s", HR2Str(hr));
+		return hr;
+	}
+
+	*pSize = desc.Width * desc.Height * 4 + sizeof(BITMAPINFOHEADER);
+	BYTE* p = (BYTE*)CoTaskMemAlloc(*pSize); // only this allocator can be used
+	if (!p) {
+		return E_OUTOFMEMORY;
+	}
+
+	BITMAPINFOHEADER* pBIH = (BITMAPINFOHEADER*)p;
+	ZeroMemory(pBIH, sizeof(BITMAPINFOHEADER));
+	pBIH->biSize      = sizeof(BITMAPINFOHEADER);
+	pBIH->biWidth     = desc.Width;
+	pBIH->biHeight    = desc.Height;
+	pBIH->biBitCount  = 32;
+	pBIH->biPlanes    = 1;
+	pBIH->biSizeImage = DIBSIZE(*pBIH);
+
+	UINT dst_pitch = pBIH->biSizeImage / desc.Height;
+
+	m_pDeviceContext->CopyResource(pTexture2DShared, pBackBuffer);
+
+	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+	hr = m_pDeviceContext->Map(pTexture2DShared, 0, D3D11_MAP_READ, 0, &mappedResource);
+	if (SUCCEEDED(hr)) {
+		CopyFrameAsIs(desc.Height, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)mappedResource.pData + mappedResource.RowPitch * (desc.Height - 1), -(int)mappedResource.RowPitch);
+		m_pDeviceContext->Unmap(pTexture2DShared, 0);
+		*ppDib = p;
+	} else {
+		CoTaskMemFree(p);
+	}
+
+	return hr;
+}
+
 HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 {
 	str = L"DirectX 11";
