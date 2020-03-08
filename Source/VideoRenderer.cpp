@@ -385,10 +385,6 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 		} else {
 			m_DX9_VP.SetVideoRect(m_videoRect);
 		}
-
-		if (!bUseInMPCBE) {
-			Redraw();
-		}
 	}
 
 	return S_OK;
