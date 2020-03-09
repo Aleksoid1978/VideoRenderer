@@ -682,8 +682,7 @@ STDMETHODIMP CMpcVideoRenderer::GetSourcePosition(long *pLeft, long *pTop, long 
 STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long Width, long Height)
 {
 	const CRect videoRect(Left, Top, Left + Width, Top + Height);
-	if (videoRect.IsRectNull()
-			|| (bUseInMPCBE && videoRect == m_videoRect)) {
+	if (videoRect.IsRectNull() || videoRect == m_videoRect) {
 		return S_OK;
 	}
 
@@ -856,7 +855,7 @@ STDMETHODIMP CMpcVideoRenderer::get_Owner(OAHWND *Owner)
 STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Width, long Height)
 {
 	const CRect windowRect(Left, Top, Left + Width, Top + Height);
-	if (bUseInMPCBE && windowRect == m_windowRect) {
+	if (windowRect == m_windowRect) {
 		return S_OK;
 	}
 
