@@ -2,6 +2,11 @@ v0.4.2
 ------------------------
 Fixed frame brightness for 10 bit video after D3D11 video processor.
 Added dithering. It is used for final reduction of bit depth from 10/16 bits to 8 bits.
+Fixed statistics when playing some devices.
+Fixed frame skipping in some rare cases.
+Improved display of subtitles.
+Improved compatibility with some players.
+Recommended version of MPC-BE v1.5.5.5117 or later.
 
 v0.4.1.1130 - 2020.02.10
 ------------------------

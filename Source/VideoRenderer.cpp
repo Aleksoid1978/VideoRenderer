@@ -1145,6 +1145,7 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 
 	if (!strcmp(field, "lessRedraws")) {
 		m_bMeticulousRedrawing = !value;
+		return S_OK;
 	}
 
 	if (!strcmp(field, "cmd_redraw") && value) {
