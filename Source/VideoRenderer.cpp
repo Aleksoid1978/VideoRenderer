@@ -25,7 +25,6 @@
 #include "PropPage.h"
 #include "VideoRendererInputPin.h"
 #include "../Include/Version.h"
-#include "../Include/SubRenderIntf.h"
 #include "VideoRenderer.h"
 
 #define OPT_REGKEY_VIDEORENDERER L"Software\\MPC-BE Filters\\MPC Video Renderer"
@@ -697,7 +696,7 @@ STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long
 		}
 	}
 
-	if (!bUseInMPCBE) {
+	if (m_bMeticulousRedrawing) {
 		Redraw();
 	}
 
@@ -883,7 +882,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 
 	m_windowRect = windowRect;
 
-	if (!bUseInMPCBE) {
+	if (m_bMeticulousRedrawing) {
 		Redraw();
 	}
 
@@ -1061,17 +1060,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 // ISubRender
 STDMETHODIMP CMpcVideoRenderer::SetCallback(ISubRenderCallback* cb)
 {
-	bUseInMPCBE = false;
-
 	m_pSubCallBack = cb;
-	if (CComQIPtr<ISubRenderOptions> pSubRenderOptions = m_pSubCallBack) {
-		LPWSTR name = nullptr;
-		int nLen;
-		if (S_OK == pSubRenderOptions->GetString("name", &name, &nLen) && name && nLen) {
-			bUseInMPCBE = (wcscmp(name, L"MPC-BE") == 0);
-			LocalFree(name);
-		}
-	}
 
 	return S_OK;
 }
@@ -1152,6 +1141,10 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 			Redraw();
 		}
 		return S_OK;
+	}
+
+	if (!strcmp(field, "lessRedraws")) {
+		m_bMeticulousRedrawing = !value;
 	}
 
 	if (!strcmp(field, "cmd_redraw") && value) {

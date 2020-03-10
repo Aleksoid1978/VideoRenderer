@@ -102,7 +102,6 @@ private:
 	CMediaType m_inputMT;
 
 	ISubRenderCallback* m_pSubCallBack = nullptr;
-	bool bUseInMPCBE = false;
 
 	CAMEvent m_evDX9Init;
 	CAMEvent m_evDX9InitHwnd;
@@ -114,6 +113,8 @@ private:
 	void DX9Thread();
 
 	CRect m_windowRect, m_videoRect;
+
+	bool m_bMeticulousRedrawing = true;
 
 	bool m_bSubInvAlpha = false;
 	bool m_bCheckSubInvAlpha = false;
