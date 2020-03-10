@@ -682,17 +682,19 @@ STDMETHODIMP CMpcVideoRenderer::GetSourcePosition(long *pLeft, long *pTop, long 
 STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long Width, long Height)
 {
 	const CRect videoRect(Left, Top, Left + Width, Top + Height);
-	if (videoRect.IsRectNull() || videoRect == m_videoRect) {
+	if (videoRect.IsRectNull()) {
 		return S_OK;
 	}
 
-	m_videoRect = videoRect;
+	if (videoRect != m_videoRect) {
+		m_videoRect = videoRect;
 
-	CAutoLock cRendererLock(&m_RendererLock);
-	if (m_bUsedD3D11) {
-		m_DX11_VP.SetVideoRect(videoRect);
-	} else {
-		m_DX9_VP.SetVideoRect(videoRect);
+		CAutoLock cRendererLock(&m_RendererLock);
+		if (m_bUsedD3D11) {
+			m_DX11_VP.SetVideoRect(videoRect);
+		} else {
+			m_DX9_VP.SetVideoRect(videoRect);
+		}
 	}
 
 	if (!bUseInMPCBE) {
