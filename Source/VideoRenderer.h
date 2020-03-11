@@ -114,7 +114,7 @@ private:
 
 	CRect m_windowRect, m_videoRect;
 
-	bool m_bMeticulousRedrawing = true;
+	bool m_bForceRedrawing = true;
 
 	bool m_bSubInvAlpha = false;
 	bool m_bCheckSubInvAlpha = false;

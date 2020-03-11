@@ -696,7 +696,7 @@ STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long
 		}
 	}
 
-	if (m_bMeticulousRedrawing) {
+	if (m_bForceRedrawing) {
 		Redraw();
 	}
 
@@ -882,7 +882,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 
 	m_windowRect = windowRect;
 
-	if (m_bMeticulousRedrawing) {
+	if (m_bForceRedrawing) {
 		Redraw();
 	}
 
@@ -1144,7 +1144,7 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 	}
 
 	if (!strcmp(field, "lessRedraws")) {
-		m_bMeticulousRedrawing = !value;
+		m_bForceRedrawing = !value;
 		return S_OK;
 	}
 
