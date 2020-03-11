@@ -735,24 +735,39 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	UINT biWidth  = pBIH->biWidth;
 	UINT biHeight = labs(pBIH->biHeight);
-	if (pmt->FormatLength() == 112 + sizeof(VR_Extradata)) {
-		const VR_Extradata* vrextra = reinterpret_cast<VR_Extradata*>(pmt->pbFormat + 112);
-		if (vrextra->QueryWidth == pBIH->biWidth && vrextra->QueryHeight == pBIH->biHeight && vrextra->Compression == pBIH->biCompression) {
-			biWidth  = vrextra->FrameWidth;
-			biHeight = abs(vrextra->FrameHeight);
-		}
-	}
-
 	UINT biSizeImage = pBIH->biSizeImage;
 	if (pBIH->biSizeImage == 0 && pBIH->biCompression == BI_RGB) { // biSizeImage may be zero for BI_RGB bitmaps
 		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
 	}
 
+	m_srcLines = biHeight * FmtConvParams.PitchCoeff / 2;
+	m_srcPitch = biWidth * FmtConvParams.Packsize;
+	switch (FmtConvParams.cformat) {
+	case CF_Y8:
+	case CF_NV12:
+	case CF_RGB24:
+		m_srcPitch = ALIGN(m_srcPitch, 4);
+		break;
+	}
+	if (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0) {
+		m_srcPitch = -m_srcPitch;
+	}
+
+	UINT origW = biWidth;
+	UINT origH = biHeight;
+	if (pmt->FormatLength() == 112 + sizeof(VR_Extradata)) {
+		const VR_Extradata* vrextra = reinterpret_cast<VR_Extradata*>(pmt->pbFormat + 112);
+		if (vrextra->QueryWidth == pBIH->biWidth && vrextra->QueryHeight == pBIH->biHeight && vrextra->Compression == pBIH->biCompression) {
+			origW  = vrextra->FrameWidth;
+			origH = abs(vrextra->FrameHeight);
+		}
+	}
+
 	if (m_srcRect.IsRectNull()) {
-		m_srcRect.SetRect(0, 0, biWidth, biHeight);
+		m_srcRect.SetRect(0, 0, origW, origH);
 	}
 	if (m_trgRect.IsRectNull()) {
-		m_trgRect.SetRect(0, 0, biWidth, biHeight);
+		m_trgRect.SetRect(0, 0, origW, origH);
 	}
 	m_srcRectWidth  = m_srcRect.Width();
 	m_srcRectHeight = m_srcRect.Height();
@@ -763,20 +778,6 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		const auto gcd = std::gcd(m_srcRectWidth, m_srcRectHeight);
 		m_srcAspectRatioX = m_srcRectWidth / gcd;
 		m_srcAspectRatioY = m_srcRectHeight / gcd;
-	}
-
-	m_srcLines = biHeight * FmtConvParams.PitchCoeff / 2;
-	m_srcPitch = biSizeImage / m_srcLines;
-
-	if (FmtConvParams.cformat != CF_Y8 && FmtConvParams.cformat != CF_Y800) {
-		m_srcPitch &= ~1u;
-	}
-	if (SubType == MEDIASUBTYPE_NV12 && biSizeImage % 4) {
-		DLog(L"CDX9VideoProcessor::InitMediaType() applied unsafe hack for NV12. m_srcPitch: %d -> %d", m_srcPitch, ALIGN(m_srcPitch, 4));
-		m_srcPitch = ALIGN(m_srcPitch, 4);
-	}
-	if (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0) {
-		m_srcPitch = -m_srcPitch;
 	}
 
 	UpdateUpscalingShaders();
