@@ -748,17 +748,16 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
 	}
 
-	m_srcExFmt = SpecifyExtendedFormat(m_decExFmt, FmtConvParams, m_srcRectWidth, m_srcRectHeight);
-
 	if (m_srcRect.IsRectNull()) {
 		m_srcRect.SetRect(0, 0, biWidth, biHeight);
 	}
 	if (m_trgRect.IsRectNull()) {
 		m_trgRect.SetRect(0, 0, biWidth, biHeight);
 	}
-
 	m_srcRectWidth  = m_srcRect.Width();
 	m_srcRectHeight = m_srcRect.Height();
+
+	m_srcExFmt = SpecifyExtendedFormat(m_decExFmt, FmtConvParams, m_srcRectWidth, m_srcRectHeight);
 
 	if (!m_srcAspectRatioX || !m_srcAspectRatioY) {
 		const auto gcd = std::gcd(m_srcRectWidth, m_srcRectHeight);
