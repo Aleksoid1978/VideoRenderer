@@ -1247,6 +1247,10 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 
 HRESULT CDX9VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned *pSize)
 {
+	if (!m_pD3DDevEx) {
+		return E_ABORT;
+	}
+
 	HRESULT hr = S_OK;
 	const UINT width  = m_windowRect.Width();
 	const UINT height = m_windowRect.Height();

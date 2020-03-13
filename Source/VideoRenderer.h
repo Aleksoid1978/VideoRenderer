@@ -256,6 +256,7 @@ public:
 	STDMETHODIMP GetBool(LPCSTR field, bool* value) override;
 	STDMETHODIMP GetInt(LPCSTR field,  int*  value) override;
 	STDMETHODIMP GetInt64(LPCSTR field, __int64* value) override;
+	STDMETHODIMP GetBin(LPCSTR field, LPVOID* value, unsigned* size) override;
 
 	STDMETHODIMP SetBool(LPCSTR field, bool value) override;
 	STDMETHODIMP SetInt(LPCSTR field, int value) override;

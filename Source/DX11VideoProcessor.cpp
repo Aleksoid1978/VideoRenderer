@@ -2093,6 +2093,10 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 
 HRESULT CDX11VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned* pSize)
 {
+	if (!m_pDXGISwapChain1 || !m_pDevice || !m_pDeviceContext) {
+		return E_ABORT;
+	}
+
 	CComPtr<ID3D11Texture2D> pBackBuffer;
 	HRESULT hr = m_pDXGISwapChain1->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
 	if (FAILED(hr)) {

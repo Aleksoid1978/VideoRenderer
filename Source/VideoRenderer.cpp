@@ -1126,6 +1126,24 @@ STDMETHODIMP CMpcVideoRenderer::GetInt64(LPCSTR field, __int64 *value)
 	return E_INVALIDARG;
 }
 
+STDMETHODIMP CMpcVideoRenderer::GetBin(LPCSTR field, LPVOID* value, unsigned* size)
+{
+	if (!strcmp(field, "displayedImage")) {
+		CAutoLock cRendererLock(&m_RendererLock);
+
+		HRESULT hr;
+		if (m_bUsedD3D11) {
+			hr = m_DX11_VP.GetDisplayedImage((BYTE**)value, size);
+		} else {
+			hr = m_DX9_VP.GetDisplayedImage((BYTE**)value, size);
+		}
+		
+		return hr;
+	}
+
+	return E_INVALIDARG;
+}
+
 STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 {
 	if (!strcmp(field, "statsEnable")) {
