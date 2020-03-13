@@ -849,7 +849,7 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 STDMETHODIMP CMpcVideoRenderer::get_Owner(OAHWND *Owner)
 {
 	CheckPointer(Owner, E_POINTER);
-	*Owner = (OAHWND)m_hWnd;
+	*Owner = (OAHWND)m_hWndParent;
 	return S_OK;
 }
 
