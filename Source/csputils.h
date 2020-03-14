@@ -84,6 +84,12 @@ struct mp_colorspace {
 	float sig_peak; // highest relative value in signal. 0 = unknown/auto
 };
 
+// For many colorspace conversions, in particular those involving HDR, an
+// implicit reference white level is needed. Since this magic constant shows up
+// a lot, give it an explicit name. The value of 100 cd/m^2 comes from ITU-R
+// documents such as ITU-R BT.2100
+#define MP_REF_WHITE 100.0
+
 struct mp_csp_params {
 	struct mp_colorspace color = {MP_CSP_BT_709, MP_CSP_LEVELS_TV}; // input colorspace
 	enum mp_csp_levels levels_out = MP_CSP_LEVELS_PC; // output device

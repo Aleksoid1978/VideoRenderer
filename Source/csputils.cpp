@@ -51,6 +51,27 @@ static void mp_mul_matrix3x3(float a[3][3], float b[3][3])
     }
 }
 
+// Get the nominal peak for a given colorspace, relative to the reference white
+// level. In other words, this returns the brightest encodable value that can
+// be represented by a given transfer curve.
+float mp_trc_nom_peak(enum mp_csp_trc trc)
+{
+    switch (trc) {
+    case MP_CSP_TRC_PQ:           return 10000.0 / MP_REF_WHITE;
+    case MP_CSP_TRC_HLG:          return 12.0;
+    case MP_CSP_TRC_V_LOG:        return 46.0855f;
+    case MP_CSP_TRC_S_LOG1:       return 6.52f;
+    case MP_CSP_TRC_S_LOG2:       return 9.212f;
+    }
+
+    return 1.0;
+}
+
+bool mp_trc_is_hdr(enum mp_csp_trc trc)
+{
+    return mp_trc_nom_peak(trc) > 1.0;
+}
+
 // Get multiplication factor required if image data is fit within the LSBs of a
 // higher smaller bit depth isfixed-point texture data.
 double mp_get_csp_mul(enum mp_csp csp, int input_bits, int texture_bits)
