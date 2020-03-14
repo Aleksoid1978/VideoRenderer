@@ -2116,7 +2116,7 @@ HRESULT CDX11VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned* pSize)
 	}
 
 	*pSize = desc.Width * desc.Height * 4 + sizeof(BITMAPINFOHEADER);
-	BYTE* p = (BYTE*)CoTaskMemAlloc(*pSize); // only this allocator can be used
+	BYTE* p = (BYTE*)LocalAlloc(LMEM_FIXED, *pSize); // only this allocator can be used
 	if (!p) {
 		return E_OUTOFMEMORY;
 	}
@@ -2141,7 +2141,7 @@ HRESULT CDX11VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned* pSize)
 		m_pDeviceContext->Unmap(pTexture2DShared, 0);
 		*ppDib = p;
 	} else {
-		CoTaskMemFree(p);
+		LocalFree(p);
 	}
 
 	return hr;

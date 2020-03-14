@@ -1266,7 +1266,7 @@ HRESULT CDX9VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned *pSize)
 	}
 
 	*pSize = width * height * 4 + sizeof(BITMAPINFOHEADER);
-	BYTE* p = (BYTE*)CoTaskMemAlloc(*pSize); // only this allocator can be used
+	BYTE* p = (BYTE*)LocalAlloc(LMEM_FIXED, *pSize); // only this allocator can be used
 	if (!p) {
 		return E_OUTOFMEMORY;
 	}
@@ -1291,7 +1291,7 @@ HRESULT CDX9VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned *pSize)
 
 	if (FAILED(hr)) {
 		DLog(L"CDX9VideoProcessor::GetDisplayedImage() failed with error %s", HR2Str(hr));
-		CoTaskMemFree(p);
+		LocalFree(p);
 		return hr;
 	}
 
