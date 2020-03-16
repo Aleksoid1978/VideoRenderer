@@ -44,8 +44,8 @@ STDMETHODIMP CVideoRendererInputPin::NonDelegatingQueryInterface(REFIID riid, vo
 	CheckPointer(ppv, E_POINTER);
 
 	return
-		(riid == __uuidof(IMFGetService)) ? GetInterface((IMFGetService*)this, ppv) :
-		(riid == __uuidof(ID3D11DecoderConfiguration)) ? GetInterface((ID3D11DecoderConfiguration*)this, ppv) :
+		QI(IMFGetService)
+		QI(ID3D11DecoderConfiguration)
 		__super::NonDelegatingQueryInterface(riid, ppv);
 }
 
@@ -195,10 +195,10 @@ void CVideoRendererInputPin::SetNewMediaType(const CMediaType& mt)
 	DLog(L"CVideoRendererInputPin::SetNewMediaType()");
 
 	SAFE_DELETE(m_pNewMT);
-	m_pNewMT = new CMediaType(mt);
 	auto pAlloc = static_cast<CCustomAllocator*>(m_pAllocator);
 	if (pAlloc) {
-		pAlloc->SetNewMediaType(*m_pNewMT);
-		SAFE_DELETE(m_pNewMT);
+		pAlloc->SetNewMediaType(mt);
+	} else {
+		m_pNewMT = new CMediaType(mt);
 	}
 }
