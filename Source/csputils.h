@@ -105,6 +105,9 @@ struct mp_csp_params {
 	int input_bits   = 8;
 };
 
+float mp_trc_nom_peak(enum mp_csp_trc trc);
+bool mp_trc_is_hdr(enum mp_csp_trc trc);
+
 /* Color conversion matrix: RGB = m * YUV + c
  * m is in row-major matrix, with m[row][col], e.g.:
  *     [ a11 a12 a13 ]     float m[3][3] = { { a11, a12, a13 },
