@@ -193,8 +193,7 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 	}
 
 	if (m_hWnd) {
-		BOOL ret = DestroyWindow(m_hWnd);
-		DLogIf(!ret, L"DestroyWindow(m_hWnd) failed with error %s", HR2Str(HRESULT_FROM_WIN32(GetLastError())));
+		::SendMessageW(m_hWnd, WM_CLOSE, 0, 0);
 	}
 
 	UnregisterClassW(g_szClassName, g_hInst);
@@ -216,8 +215,13 @@ void CMpcVideoRenderer::DX9Thread()
 				{
 					bool bChangeDevice = false;
 					m_hrThread = m_DX9_VP.Init(m_hWnd, &bChangeDevice);
-					if (bChangeDevice) {
-						OnDisplayChange();
+					if (bChangeDevice && m_pInputPin->IsConnected() == TRUE && m_pSink) {
+						auto pPin = (IPin*)m_pInputPin;
+						m_pInputPin->AddRef();
+						EXECUTE_ASSERT(S_OK == m_pSink->Notify(EC_DISPLAY_CHANGED, (LONG_PTR)pPin, 0));
+						SetAbortSignal(TRUE);
+						SAFE_RELEASE(m_pMediaSample);
+						m_pInputPin->Release();
 					}
 				}
 				m_evThreadFinishJob.Set();
@@ -795,10 +799,12 @@ STDMETHODIMP CMpcVideoRenderer::GetPreferredAspectRatio(long *plAspectX, long *p
 STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 {
 	if (m_hWndParent != (HWND)Owner) {
+		CAutoLock cRendererLock(&m_RendererLock);
+
 		m_hWndParent = (HWND)Owner;
 
 		if (m_hWnd) {
-			DestroyWindow(m_hWnd);
+			::SendMessageW(m_hWnd, WM_CLOSE, 0, 0);
 			m_hWnd = nullptr;
 		}
 
@@ -932,8 +938,7 @@ STDMETHODIMP_(void) CMpcVideoRenderer::GetSettings(Settings_t& setings)
 
 STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 {
-	m_Sets.bUseD3D11   = setings.bUseD3D11;
-	m_Sets.iSwapEffect = setings.iSwapEffect;
+	m_Sets.bUseD3D11 = setings.bUseD3D11;
 
 	CAutoLock cRendererLock(&m_RendererLock);
 
@@ -1029,6 +1034,21 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 				m_DX9_VP.SetVPEnableFmts(m_Sets.VPFmts);
 				ret = m_DX9_VP.InitMediaType(&m_inputMT);
 			}
+		}
+	}
+
+	if (m_Sets.iSwapEffect != setings.iSwapEffect) {
+		m_Sets.iSwapEffect = setings.iSwapEffect;
+		if (m_hWnd) {
+			auto hwnd = m_hWndParent;
+			m_hWndParent = nullptr;
+			if (m_bUsedD3D11) {
+				m_DX11_VP.ReleaseSwapChain();
+				m_DX11_VP.SetSwapEffect(m_Sets.iSwapEffect);
+			} else {
+				m_DX9_VP.SetSwapEffect(m_Sets.iSwapEffect);
+			}
+			put_Owner((OAHWND)hwnd);
 		}
 	}
 }
@@ -1137,7 +1157,7 @@ STDMETHODIMP CMpcVideoRenderer::GetBin(LPCSTR field, LPVOID* value, unsigned* si
 		} else {
 			hr = m_DX9_VP.GetDisplayedImage((BYTE**)value, size);
 		}
-		
+
 		return hr;
 	}
 

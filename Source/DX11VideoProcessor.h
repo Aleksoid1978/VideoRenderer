@@ -211,6 +211,7 @@ private:
 public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
 	HRESULT InitSwapChain();
+	void ReleaseSwapChain() { m_pDXGISwapChain1.Release(); }
 
 	BOOL VerifyMediaType(const CMediaType* pmt);
 	BOOL InitMediaType(const CMediaType* pmt);

@@ -362,6 +362,8 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 		}
 	}
 
+	UpdateStatsStatic();
+
 	return hr;
 }
 

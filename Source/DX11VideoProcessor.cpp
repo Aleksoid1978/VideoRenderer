@@ -387,6 +387,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd)
 		SAFE_RELEASE(pDXGIAdapter);
 		if (!m_pDXGISwapChain1) {
 			InitSwapChain();
+			UpdateStatsStatic();
 		}
 		return S_OK;
 	}
