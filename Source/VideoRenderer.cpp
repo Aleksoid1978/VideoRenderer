@@ -810,6 +810,7 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 
 		WNDCLASSEXW wc = { sizeof(wc) };
 		if (!GetClassInfoExW(g_hInst, g_szClassName, &wc)) {
+			wc.style = CS_DBLCLKS | CS_HREDRAW | CS_VREDRAW;
 			wc.lpfnWndProc = ::DefWindowProcW;
 			wc.hInstance = g_hInst;
 			wc.lpszClassName = g_szClassName;
