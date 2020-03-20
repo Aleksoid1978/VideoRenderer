@@ -385,7 +385,7 @@ void CDXVA2VP::CleanSamplesData()
 	m_VideoSamples.Clean();
 }
 
-HRESULT CDXVA2VP::SetRectangles(const CRect& srcRect, const CRect& dstRect)
+void CDXVA2VP::SetRectangles(const CRect& srcRect, const CRect& dstRect)
 {
 	m_BltParams.TargetRect = dstRect;
 	m_BltParams.ConstrictionSize.cx = dstRect.Width();
@@ -393,8 +393,6 @@ HRESULT CDXVA2VP::SetRectangles(const CRect& srcRect, const CRect& dstRect)
 
 	// Initialize main stream video samples
 	m_VideoSamples.SetRects(srcRect, dstRect);
-
-	return S_OK;
 }
 
 void CDXVA2VP::SetProcAmpValues(DXVA2_ProcAmpValues& PropValues)
@@ -424,7 +422,7 @@ HRESULT CDXVA2VP::Process(IDirect3DSurface9* pRenderTarget, const DXVA2_SampleFo
 	}
 
 	HRESULT hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &m_BltParams, m_VideoSamples.Data(), m_VideoSamples.Size(), nullptr);
-	DLogIf(FAILED(hr), L"CDX9VideoProcessor::DXVA2VPPass() : VideoProcessBlt() failed with error %s", HR2Str(hr));
+	DLogIf(FAILED(hr), L"CDXVA2VP::Process() : VideoProcessBlt() failed with error %s", HR2Str(hr));
 
 	return hr;
 }

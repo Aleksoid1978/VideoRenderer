@@ -1574,12 +1574,9 @@ HRESULT CDX9VideoProcessor::UpdateChromaScalingShader()
 
 HRESULT CDX9VideoProcessor::DxvaVPPass(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
 {
-	HRESULT hr = m_DXVA2VP.SetRectangles(srcRect, dstRect);
+	m_DXVA2VP.SetRectangles(srcRect, dstRect);
 
-	hr = m_DXVA2VP.Process(pRenderTarget, m_CurrentSampleFmt, second);
-	DLogIf(FAILED(hr), L"CDX9VideoProcessor::DxvaVPPass() : VideoProcessBlt() failed with error %s", HR2Str(hr));
-
-	return hr;
+	return m_DXVA2VP.Process(pRenderTarget, m_CurrentSampleFmt, second);
 }
 
 HRESULT CDX9VideoProcessor::ConvertColorPass(IDirect3DSurface9* pRenderTarget)
