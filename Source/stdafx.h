@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2019 see Authors.txt
+ * (C) 2018-2020 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -26,6 +26,10 @@
 
 #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
 #define VC_EXTRALEAN        // Exclude rarely-used stuff from Windows headers
+
+#ifdef _DEBUG
+#define D3D_DEBUG_INFO
+#endif
 
 #include <atlbase.h>
 #include <atlstr.h>
