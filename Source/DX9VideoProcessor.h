@@ -100,9 +100,6 @@ private:
 	CRect m_videoRect;
 	CRect m_windowRect;
 
-	CRect m_srcRenderRect;
-	CRect m_dstRenderRect;
-
 	int m_iRotation = 0;
 	bool m_bFinalPass = false;
 

@@ -576,31 +576,25 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 
 void CDX9VideoProcessor::UpdateRenderRects()
 {
-	m_srcRenderRect = m_srcRect;
-	m_dstRenderRect = m_videoRect;
-	ClipToSurface(m_windowRect.Width(), m_windowRect.Height(), m_srcRenderRect, m_dstRenderRect);
-
-	{
-		const int w2 = m_dstRenderRect.Width();
-		const int h2 = m_dstRenderRect.Height();
-		const int k = m_bInterpolateAt50pct ? 2 : 1;
-		int w1, h1;
-		if (m_iRotation == 90 || m_iRotation == 270) {
-			w1 = m_srcRenderRect.Height();
-			h1 = m_srcRenderRect.Width();
-		} else {
-			w1 = m_srcRenderRect.Width();
-			h1 = m_srcRenderRect.Height();
-		}
-		m_strShaderX = (w1 == w2) ? nullptr
-			: (w1 > k * w2)
-			? s_Downscaling9ResIDs[m_iDownscaling].description
-			: s_Upscaling9ResIDs[m_iUpscaling].description;
-		m_strShaderY = (h1 == h2) ? nullptr
-			: (h1 > k * h2)
-			? s_Downscaling9ResIDs[m_iDownscaling].description
-			: s_Upscaling9ResIDs[m_iUpscaling].description;
+	const int w2 = m_videoRect.Width();
+	const int h2 = m_videoRect.Height();
+	const int k = m_bInterpolateAt50pct ? 2 : 1;
+	int w1, h1;
+	if (m_iRotation == 90 || m_iRotation == 270) {
+		w1 = m_srcRect.Height();
+		h1 = m_srcRect.Width();
+	} else {
+		w1 = m_srcRect.Width();
+		h1 = m_srcRect.Height();
 	}
+	m_strShaderX = (w1 == w2) ? nullptr
+		: (w1 > k * w2)
+		? s_Downscaling9ResIDs[m_iDownscaling].description
+		: s_Upscaling9ResIDs[m_iUpscaling].description;
+	m_strShaderY = (h1 == h2) ? nullptr
+		: (h1 > k * h2)
+		? s_Downscaling9ResIDs[m_iDownscaling].description
+		: s_Upscaling9ResIDs[m_iUpscaling].description;
 }
 
 BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
@@ -1051,7 +1045,7 @@ HRESULT CDX9VideoProcessor::Render(int field)
 	m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
 
 	if (!m_videoRect.IsRectEmpty()) {
-		hr = Process(pBackBuffer, m_srcRenderRect, m_dstRenderRect, m_FieldDrawn == 2);
+		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2);
 	}
 
 	hr = m_pD3DDevEx->EndScene();
@@ -1355,8 +1349,6 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 	str.AppendFormat(L"\nTarget rect   : %d,%d,%d,%d - %dx%d", m_trgRect.left, m_trgRect.top, m_trgRect.right, m_trgRect.bottom, m_trgRect.Width(), m_trgRect.Height());
 	str.AppendFormat(L"\nVideo rect    : %d,%d,%d,%d - %dx%d", m_videoRect.left, m_videoRect.top, m_videoRect.right, m_videoRect.bottom, m_videoRect.Width(), m_videoRect.Height());
 	str.AppendFormat(L"\nWindow rect   : %d,%d,%d,%d - %dx%d", m_windowRect.left, m_windowRect.top, m_windowRect.right, m_windowRect.bottom, m_windowRect.Width(), m_windowRect.Height());
-	str.AppendFormat(L"\nSrcRender rect: %d,%d,%d,%d - %dx%d", m_srcRenderRect.left, m_srcRenderRect.top, m_srcRenderRect.right, m_srcRenderRect.bottom, m_srcRenderRect.Width(), m_srcRenderRect.Height());
-	str.AppendFormat(L"\nDstRender rect: %d,%d,%d,%d - %dx%d", m_dstRenderRect.left, m_dstRenderRect.top, m_dstRenderRect.right, m_dstRenderRect.bottom, m_dstRenderRect.Width(), m_dstRenderRect.Height());
 #endif
 
 	return S_OK;
@@ -2181,10 +2173,10 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	}
 	str.Append(m_strStatsStatic2);
 
-	const int srcW = m_srcRenderRect.Width();
-	const int srcH = m_srcRenderRect.Height();
-	const int dstW = m_dstRenderRect.Width();
-	const int dstH = m_dstRenderRect.Height();
+	const int srcW = m_srcRect.Width();
+	const int srcH = m_srcRect.Height();
+	const int dstW = m_videoRect.Width();
+	const int dstH = m_videoRect.Height();
 	if (m_iRotation) {
 		str.AppendFormat(L"\nScaling       : %dx%d r%d°> %dx%d", srcW, srcH, m_iRotation, dstW, dstH);
 	} else {
