@@ -1497,7 +1497,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 
 	uint64_t tick2 = GetPreciseTick();
 
-	if (!m_videoRect.IsRectEmpty() && !m_windowRect.IsRectEmpty()) {
+	if (!m_windowRect.IsRectEmpty()) {
 		// fill the BackBuffer with black
 		ID3D11RenderTargetView* pRenderTargetView;
 		if (S_OK == m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView)) {
@@ -1505,7 +1505,9 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
 			pRenderTargetView->Release();
 		}
+	}
 
+	if (!m_renderRect.IsRectEmpty()) {
 		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2);
 	}
 

@@ -1043,10 +1043,11 @@ HRESULT CDX9VideoProcessor::Render(int field)
 	CComPtr<IDirect3DSurface9> pBackBuffer;
 	hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
 
+	// fill the BackBuffer with black
 	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
 	m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
 
-	if (!m_videoRect.IsRectEmpty()) {
+	if (!m_renderRect.IsRectEmpty()) {
 		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2);
 	}
 
