@@ -574,8 +574,10 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 	}
 }
 
-void CDX9VideoProcessor::UpdateRenderRects()
+void CDX9VideoProcessor::UpdateRenderRect()
 {
+	m_renderRect.IntersectRect(m_videoRect, m_windowRect);
+
 	const int w2 = m_videoRect.Width();
 	const int h2 = m_videoRect.Height();
 	const int k = m_bInterpolateAt50pct ? 2 : 1;
@@ -1127,14 +1129,14 @@ HRESULT CDX9VideoProcessor::FillBlack()
 void CDX9VideoProcessor::SetVideoRect(const CRect& videoRect)
 {
 	m_videoRect = videoRect;
-	UpdateRenderRects();
+	UpdateRenderRect();
 	UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
 }
 
 HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 {
 	m_windowRect = windowRect;
-	UpdateRenderRects();
+	UpdateRenderRect();
 
 	if (m_pD3DDevEx && !m_windowRect.IsRectEmpty()) {
 		UINT backBufW = m_windowRect.Width();

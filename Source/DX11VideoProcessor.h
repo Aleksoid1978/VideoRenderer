@@ -137,6 +137,7 @@ private:
 
 	CRect m_videoRect;
 	CRect m_windowRect;
+	CRect m_renderRect;
 
 	int m_iRotation = 0;
 	bool m_bFinalPass = false;
@@ -201,7 +202,7 @@ private:
 	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
 
-	void UpdateRenderRects();
+	void UpdateRenderRect();
 
 	HRESULT MemCopyToTexSrcVideo(const BYTE* srcData, const int srcPitch);
 

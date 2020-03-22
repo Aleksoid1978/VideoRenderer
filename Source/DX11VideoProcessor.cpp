@@ -608,8 +608,10 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants));
 }
 
-void CDX11VideoProcessor::UpdateRenderRects()
+void CDX11VideoProcessor::UpdateRenderRect()
 {
+	m_renderRect.IntersectRect(m_videoRect, m_windowRect);
+
 	const int w2 = m_videoRect.Width();
 	const int h2 = m_videoRect.Height();
 	const int k = m_bInterpolateAt50pct ? 2 : 1;
@@ -1970,14 +1972,14 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 void CDX11VideoProcessor::SetVideoRect(const CRect& videoRect)
 {
 	m_videoRect = videoRect;
-	UpdateRenderRects();
+	UpdateRenderRect();
 	UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
 }
 
 HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 {
 	m_windowRect = windowRect;
-	UpdateRenderRects();
+	UpdateRenderRect();
 
 	HRESULT hr = S_OK;
 	const UINT w = m_windowRect.Width();

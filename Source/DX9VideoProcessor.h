@@ -99,6 +99,7 @@ private:
 
 	CRect m_videoRect;
 	CRect m_windowRect;
+	CRect m_renderRect;
 
 	int m_iRotation = 0;
 	bool m_bFinalPass = false;
@@ -160,7 +161,7 @@ private:
 	HRESULT CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
 
-	void UpdateRenderRects();
+	void UpdateRenderRect();
 
 public:
 	BOOL VerifyMediaType(const CMediaType* pmt);
