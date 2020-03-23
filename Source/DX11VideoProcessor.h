@@ -263,7 +263,7 @@ public:
 
 private:
 	void UpdateTexures(int w, int h);
-	void UpdatePostScaleTexures(int w, int h);
+	void UpdatePostScaleTexures();
 	void UpdateUpscalingShaders();
 	void UpdateDownscalingShaders();
 	HRESULT UpdateChromaScalingShader();

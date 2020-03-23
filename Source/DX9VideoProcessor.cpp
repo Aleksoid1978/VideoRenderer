@@ -1431,7 +1431,7 @@ void CDX9VideoProcessor::SetDownscaling(int value)
 void CDX9VideoProcessor::SetDither(bool value)
 {
 	m_bUseDither = value;
-	UpdatePostScaleTexures(m_videoRect.Width(), m_videoRect.Height());
+	UpdatePostScaleTexures();
 }
 
 void CDX9VideoProcessor::SetRotation(int value)
@@ -1473,7 +1473,7 @@ HRESULT CDX9VideoProcessor::AddPostScaleShader(const CStringW& name, const CStri
 			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPostScaleShaders.back().shader);
 			if (S_OK == hr) {
 				m_pPostScaleShaders.back().name = name;
-				UpdatePostScaleTexures(m_videoRect.Width(), m_videoRect.Height());
+				UpdatePostScaleTexures();
 				DLog(L"CDX9VideoProcessor::AddPostScaleShader() : \"%s\" pixel shader added successfully.", name);
 			} else {
 				DLog(L"CDX9VideoProcessor::AddPostScaleShader() : create pixel shader \"%s\" FAILED!", name);
@@ -1512,10 +1512,10 @@ void CDX9VideoProcessor::UpdateTexures(int w, int h)
 		hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, m_srcWidth, m_srcHeight, D3DUSAGE_RENDERTARGET);
 	}
 
-	UpdatePostScaleTexures(w, h);
+	UpdatePostScaleTexures();
 }
 
-void CDX9VideoProcessor::UpdatePostScaleTexures(int w, int h)
+void CDX9VideoProcessor::UpdatePostScaleTexures()
 {
 	m_bFinalPass = (m_bUseDither && m_InternalTexFmt != D3DFMT_X8R8G8B8 && m_TexDither.pTexture && m_pPSFinalPass);
 
@@ -1526,7 +1526,7 @@ void CDX9VideoProcessor::UpdatePostScaleTexures(int w, int h)
 	if (m_bFinalPass) {
 		numPostScaleShaders++;
 	}
-	HRESULT hr = m_TexsPostScale.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, w, h, numPostScaleShaders);
+	HRESULT hr = m_TexsPostScale.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, m_windowRect.Width(), m_windowRect.Height(), numPostScaleShaders);
 	UpdateStatsStatic3();
 }
 

@@ -1629,10 +1629,10 @@ void CDX11VideoProcessor::UpdateTexures(int w, int h)
 		hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_InternalTexFmt, m_srcWidth, m_srcHeight, Tex2D_DefaultShaderRTarget);
 	}
 
-	UpdatePostScaleTexures(w, h);
+	UpdatePostScaleTexures();
 }
 
-void CDX11VideoProcessor::UpdatePostScaleTexures(int w, int h)
+void CDX11VideoProcessor::UpdatePostScaleTexures()
 {
 	m_bFinalPass = (m_bUseDither && m_InternalTexFmt != DXGI_FORMAT_B8G8R8A8_UNORM && m_TexDither.pTexture && m_pPSFinalPass);
 
@@ -1643,7 +1643,7 @@ void CDX11VideoProcessor::UpdatePostScaleTexures(int w, int h)
 	if (m_bFinalPass) {
 		numPostScaleShaders++;
 	}
-	HRESULT hr = m_TexsPostScale.CheckCreate(m_pDevice, m_InternalTexFmt, w, h, numPostScaleShaders);
+	HRESULT hr = m_TexsPostScale.CheckCreate(m_pDevice, m_InternalTexFmt, m_windowRect.Width(), m_windowRect.Height(), numPostScaleShaders);
 	UpdateStatsStatic3();
 }
 
@@ -2268,7 +2268,7 @@ void CDX11VideoProcessor::SetDownscaling(int value)
 void CDX11VideoProcessor::SetDither(bool value)
 {
 	m_bUseDither = value;
-	UpdatePostScaleTexures(m_videoRect.Width(), m_videoRect.Height());
+	UpdatePostScaleTexures();
 }
 
 void CDX11VideoProcessor::SetRotation(int value)
@@ -2308,7 +2308,7 @@ HRESULT CDX11VideoProcessor::AddPostScaleShader(const CStringW& name, const CStr
 			hr = m_pDevice->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPostScaleShaders.back().shader);
 			if (S_OK == hr) {
 				m_pPostScaleShaders.back().name = name;
-				UpdatePostScaleTexures(m_videoRect.Width(), m_videoRect.Height());
+				UpdatePostScaleTexures();
 				DLog(L"CDX11VideoProcessor::AddPostScaleShader() : \"%s\" pixel shader added successfully.", name);
 			}
 			else {
