@@ -108,7 +108,7 @@ private:
 	Tex9Video_t m_TexSrcVideo; // for copy of frame
 	Tex_t m_TexDxvaOutput;
 	Tex_t m_TexConvertOutput;
-	Tex_t m_TexResize;     // for intermediate result of two-pass resize
+	Tex_t m_TexResize;         // for intermediate result of two-pass resize
 	CTexRing m_TexsPostScale;
 	Tex_t m_TexDither;
 

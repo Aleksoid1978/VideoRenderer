@@ -1799,7 +1799,7 @@ HRESULT CDX9VideoProcessor::FinalPass(IDirect3DTexture9* pTexture, IDirect3DSurf
 	float fConstData[][4] = {
 		{w / dither_size, h / dither_size, 0.0f, 0.0f}
 	};
-	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, _countof(fConstData));
+	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, std::size(fConstData));
 
 	hr = TextureBlt(m_pD3DDevEx, v, D3DTEXF_POINT);
 
@@ -1867,7 +1867,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 					{(float)Tex->Width, (float)Tex->Height, (float)(counter++), (float)diff / 1000},
 					{1.0f / Tex->Width, 1.0f / Tex->Height, 0, 0},
 				};
-				hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, _countof(fConstData));
+				hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, std::size(fConstData));
 
 				for (UINT idx = 0; idx < m_pPostScaleShaders.size() - 1; idx++) {
 					pInputTexture = Tex->pTexture;
