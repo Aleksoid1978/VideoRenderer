@@ -1897,11 +1897,11 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 
 	if (m_pPSCorrection || m_pPostScaleShaders.size() || m_bFinalPass) {
 		Tex2D_t* Tex = m_TexsPostScale.GetFirstTex();
-		RECT rect = { 0, 0, Tex->desc.Width, Tex->desc.Height };
+		CRect rect;
+		rect.IntersectRect(dstRect, CRect(0, 0, Tex->desc.Width, Tex->desc.Height));
 
-		hr = ResizeShaderPass(*pInputTexture, Tex->pTexture, rSrc, rect);
+		hr = ResizeShaderPass(*pInputTexture, Tex->pTexture, rSrc, dstRect);
 
-		rSrc = rect;
 		ID3D11PixelShader* pPixelShader = nullptr;
 		ID3D11Buffer* pConstantBuffer = nullptr;
 
@@ -1954,10 +1954,10 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 				hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, nullptr, 0);
 			}
 
-			hr = FinalPass(*Tex, pRenderTarget, rect, dstRect);
+			hr = FinalPass(*Tex, pRenderTarget, rect, rect);
 		}
 		else {
-			hr = TextureCopyRect(*Tex, pRenderTarget, rect, dstRect, pPixelShader, pConstantBuffer, 0);
+			hr = TextureCopyRect(*Tex, pRenderTarget, rect, rect, pPixelShader, pConstantBuffer, 0);
 		}
 	}
 	else {
