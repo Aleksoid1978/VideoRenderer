@@ -1291,6 +1291,7 @@ BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 void CDX11VideoProcessor::Start()
 {
 	m_rtStart = 0;
+	UpdatePostScaleTexures();
 }
 
 HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)

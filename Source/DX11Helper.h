@@ -207,6 +207,10 @@ public:
 		return hr;
 	}
 
+	UINT Size() {
+		return size;
+	}
+
 	void Release() {
 		Texs[0].Release();
 		Texs[1].Release();
