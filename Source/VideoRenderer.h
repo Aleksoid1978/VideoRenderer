@@ -89,6 +89,7 @@ private:
 
 	HWND m_hWnd = nullptr;
 	HWND m_hWndParent = nullptr;
+	HWND m_hWndDrain = nullptr;
 
 	int m_Stepping = 0;
 	REFERENCE_TIME m_rtStartTime = 0;
@@ -221,8 +222,8 @@ public:
 	STDMETHODIMP get_Height(long *pHeight) { return E_NOTIMPL; }
 	STDMETHODIMP put_Owner(OAHWND Owner);
 	STDMETHODIMP get_Owner(OAHWND *Owner);
-	STDMETHODIMP put_MessageDrain(OAHWND Drain) { return E_NOTIMPL; }
-	STDMETHODIMP get_MessageDrain(OAHWND *Drain) { return E_NOTIMPL; }
+	STDMETHODIMP put_MessageDrain(OAHWND Drain);
+	STDMETHODIMP get_MessageDrain(OAHWND* Drain);
 	STDMETHODIMP get_BorderColor(long *Color) { return E_NOTIMPL; }
 	STDMETHODIMP put_BorderColor(long Color) { return E_NOTIMPL; }
 	STDMETHODIMP get_FullScreenMode(long *FullScreenMode) { return E_NOTIMPL; }
@@ -261,6 +262,8 @@ public:
 	STDMETHODIMP SetBool(LPCSTR field, bool value) override;
 	STDMETHODIMP SetInt(LPCSTR field, int value) override;
 	STDMETHODIMP SetBin(LPCSTR field, LPVOID value, int size) override;
+
+	LRESULT OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 private:
 	HRESULT Redraw();

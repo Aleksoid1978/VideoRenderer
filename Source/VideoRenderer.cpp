@@ -46,6 +46,8 @@
 
 static const wchar_t g_szClassName[] = L"VRWindow";
 
+#define CheckConnected(pin, code) { if (pin == nullptr || pin->IsConnected() == FALSE) return code; }
+
 //
 // CMpcVideoRenderer
 //
@@ -795,6 +797,21 @@ STDMETHODIMP CMpcVideoRenderer::GetPreferredAspectRatio(long *plAspectX, long *p
 	}
 }
 
+LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CMpcVideoRenderer* pThis = (CMpcVideoRenderer*)GetWindowLongPtrW(hwnd, 0);
+	if (!pThis) {
+		if ((uMsg != WM_NCCREATE)
+				|| (nullptr == (pThis = (CMpcVideoRenderer*)((LPCREATESTRUCTW)lParam)->lpCreateParams))) {
+			return DefWindowProcW(hwnd, uMsg, wParam, lParam);
+		}
+
+		SetWindowLongPtrW(hwnd, 0, (LONG_PTR)pThis);
+	}
+
+	return pThis->OnReceiveMessage(hwnd, uMsg, wParam, lParam);
+}
+
 // IVideoWindow
 STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 {
@@ -811,9 +828,10 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 		WNDCLASSEXW wc = { sizeof(wc) };
 		if (!GetClassInfoExW(g_hInst, g_szClassName, &wc)) {
 			wc.style = CS_DBLCLKS | CS_HREDRAW | CS_VREDRAW;
-			wc.lpfnWndProc = ::DefWindowProcW;
+			wc.lpfnWndProc = WndProc;
 			wc.hInstance = g_hInst;
 			wc.lpszClassName = g_szClassName;
+			wc.cbWndExtra = sizeof(this);
 			if (!RegisterClassExW(&wc)) {
 				return E_FAIL;
 			}
@@ -828,7 +846,7 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 			m_hWndParent,
 			nullptr,
 			g_hInst,
-			nullptr
+			this
 		);
 
 		if (!m_hWnd) {
@@ -857,6 +875,21 @@ STDMETHODIMP CMpcVideoRenderer::get_Owner(OAHWND *Owner)
 {
 	CheckPointer(Owner, E_POINTER);
 	*Owner = (OAHWND)m_hWndParent;
+	return S_OK;
+}
+
+STDMETHODIMP CMpcVideoRenderer::put_MessageDrain(OAHWND Drain)
+{
+	CheckConnected(m_pInputPin, VFW_E_NOT_CONNECTED);
+	m_hWndDrain = (HWND)Drain;
+	return S_OK;
+}
+
+STDMETHODIMP CMpcVideoRenderer::get_MessageDrain(OAHWND* Drain)
+{
+	CheckPointer(Drain, E_POINTER);
+	CheckConnected(m_pInputPin, VFW_E_NOT_CONNECTED);
+	*Drain = (OAHWND)m_hWndDrain;
 	return S_OK;
 }
 
@@ -1296,4 +1329,50 @@ HRESULT CMpcVideoRenderer::Redraw()
 	}
 
 	return hr;
+}
+
+LRESULT CMpcVideoRenderer::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if (m_hWndDrain && !InSendMessage()) {
+		switch (uMsg) {
+			case WM_CHAR:
+			case WM_DEADCHAR:
+			case WM_KEYDOWN:
+			case WM_KEYUP:
+			case WM_LBUTTONDBLCLK:
+			case WM_LBUTTONDOWN:
+			case WM_LBUTTONUP:
+			case WM_MBUTTONDBLCLK:
+			case WM_MBUTTONDOWN:
+			case WM_MBUTTONUP:
+			case WM_MOUSEACTIVATE:
+			case WM_MOUSEMOVE:
+			case WM_NCLBUTTONDBLCLK:
+			case WM_NCLBUTTONDOWN:
+			case WM_NCLBUTTONUP:
+			case WM_NCMBUTTONDBLCLK:
+			case WM_NCMBUTTONDOWN:
+			case WM_NCMBUTTONUP:
+			case WM_NCMOUSEMOVE:
+			case WM_NCRBUTTONDBLCLK:
+			case WM_NCRBUTTONDOWN:
+			case WM_NCRBUTTONUP:
+			case WM_RBUTTONDBLCLK:
+			case WM_RBUTTONDOWN:
+			case WM_RBUTTONUP:
+			case WM_XBUTTONDOWN:
+			case WM_XBUTTONUP:
+			case WM_XBUTTONDBLCLK:
+			case WM_MOUSEWHEEL:
+			case WM_MOUSEHWHEEL:
+			case WM_SYSCHAR:
+			case WM_SYSDEADCHAR:
+			case WM_SYSKEYDOWN:
+			case WM_SYSKEYUP:
+				PostMessageW(m_hWndDrain, uMsg, wParam, lParam);
+				return 0L;
+		}
+	}
+
+	return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 }
