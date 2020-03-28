@@ -1628,8 +1628,6 @@ void CDX11VideoProcessor::UpdateTexures(int w, int h)
 		m_TexD3D11VPOutput.Release();
 		hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_InternalTexFmt, m_srcWidth, m_srcHeight, Tex2D_DefaultShaderRTarget);
 	}
-
-	UpdatePostScaleTexures();
 }
 
 void CDX11VideoProcessor::UpdatePostScaleTexures()
@@ -1990,6 +1988,8 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 	if (m_pDXGISwapChain1) {
 		hr = m_pDXGISwapChain1->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
 	}
+
+	UpdatePostScaleTexures();
 
 	return hr;
 }

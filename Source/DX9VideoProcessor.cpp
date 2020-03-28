@@ -1154,6 +1154,8 @@ HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 		}
 	}
 
+	UpdatePostScaleTexures();
+
 	return S_OK;
 }
 
@@ -1511,8 +1513,6 @@ void CDX9VideoProcessor::UpdateTexures(int w, int h)
 		m_TexDxvaOutput.Release();
 		hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, m_srcWidth, m_srcHeight, D3DUSAGE_RENDERTARGET);
 	}
-
-	UpdatePostScaleTexures();
 }
 
 void CDX9VideoProcessor::UpdatePostScaleTexures()
