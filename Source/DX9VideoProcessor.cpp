@@ -841,7 +841,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 void CDX9VideoProcessor::Start()
 {
 	m_rtStart = 0;
-	UpdatePostScaleTexures();
+	//UpdatePostScaleTexures();
 }
 
 HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
