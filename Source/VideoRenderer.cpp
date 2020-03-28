@@ -46,8 +46,6 @@
 
 static const wchar_t g_szClassName[] = L"VRWindow";
 
-#define CheckConnected(pin, code) { if (pin == nullptr || pin->IsConnected() == FALSE) return code; }
-
 //
 // CMpcVideoRenderer
 //
@@ -880,7 +878,9 @@ STDMETHODIMP CMpcVideoRenderer::get_Owner(OAHWND *Owner)
 
 STDMETHODIMP CMpcVideoRenderer::put_MessageDrain(OAHWND Drain)
 {
-	CheckConnected(m_pInputPin, VFW_E_NOT_CONNECTED);
+	if (m_pInputPin == nullptr || m_pInputPin->IsConnected() == FALSE) {
+		return VFW_E_NOT_CONNECTED;
+	}
 	m_hWndDrain = (HWND)Drain;
 	return S_OK;
 }
@@ -888,7 +888,9 @@ STDMETHODIMP CMpcVideoRenderer::put_MessageDrain(OAHWND Drain)
 STDMETHODIMP CMpcVideoRenderer::get_MessageDrain(OAHWND* Drain)
 {
 	CheckPointer(Drain, E_POINTER);
-	CheckConnected(m_pInputPin, VFW_E_NOT_CONNECTED);
+	if (m_pInputPin == nullptr || m_pInputPin->IsConnected() == FALSE) {
+		return VFW_E_NOT_CONNECTED;
+	}
 	*Drain = (OAHWND)m_hWndDrain;
 	return S_OK;
 }
