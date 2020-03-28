@@ -1836,11 +1836,10 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 
 	if (m_pPSCorrection || m_pPostScaleShaders.size() || m_bFinalPass) {
 		Tex_t* Tex = m_TexsPostScale.GetFirstTex();
-		RECT rect = { 0, 0, Tex->Width, Tex->Height };
+		CRect rect;
+		rect.IntersectRect(dstRect, CRect(0, 0, Tex->Width, Tex->Height));
 
-		hr = ResizeShaderPass(pInputTexture, Tex->pSurface, rSrc, rect);
-
-		rSrc = rect;
+		hr = ResizeShaderPass(pInputTexture, Tex->pSurface, rSrc, dstRect);
 
 		if (m_pPSCorrection) {
 			hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
@@ -1888,11 +1887,11 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 				hr = TextureCopyRect(pInputTexture, rect, rect, D3DTEXF_POINT, 0);
 			}
 
-			hr = FinalPass(Tex->pTexture, pRenderTarget, rect, dstRect);
+			hr = FinalPass(Tex->pTexture, pRenderTarget, rect, rect);
 		}
 		else {
 			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-			hr = TextureCopyRect(Tex->pTexture, rect, dstRect, D3DTEXF_POINT, 0);
+			hr = TextureCopyRect(Tex->pTexture, rect, rect, D3DTEXF_POINT, 0);
 		}
 		m_pD3DDevEx->SetPixelShader(nullptr);
 	}
