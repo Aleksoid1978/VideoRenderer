@@ -1703,8 +1703,11 @@ HRESULT CDX9VideoProcessor::ResizeShaderPass(IDirect3DTexture9* pTexture, IDirec
 	if (resizerX && resizerY) {
 		// two pass resize
 
+		D3DSURFACE_DESC desc;
+		pRenderTarget->GetDesc(&desc);
+
 		// check intermediate texture
-		const UINT texWidth = w2;
+		const UINT texWidth  = desc.Width;
 		const UINT texHeight = h1;
 
 		if (m_TexResize.pTexture) {
@@ -1722,7 +1725,7 @@ HRESULT CDX9VideoProcessor::ResizeShaderPass(IDirect3DTexture9* pTexture, IDirec
 			}
 		}
 
-		CRect resizeRect(0, 0, m_TexResize.Width, m_TexResize.Height);
+		CRect resizeRect(dstRect.left, 0, dstRect.right, texHeight);
 
 		// resize width
 		hr = m_pD3DDevEx->SetRenderTarget(0, m_TexResize.pSurface);

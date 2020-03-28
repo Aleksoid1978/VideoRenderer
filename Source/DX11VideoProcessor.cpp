@@ -1773,8 +1773,11 @@ HRESULT CDX11VideoProcessor::ResizeShaderPass(const Tex2D_t& Tex, ID3D11Texture2
 	if (resizerX && resizerY) {
 		// two pass resize
 
+		D3D11_TEXTURE2D_DESC desc;
+		pRenderTarget->GetDesc(&desc);
+
 		// check intermediate texture
-		const UINT texWidth = w2;
+		const UINT texWidth  = desc.Width;
 		const UINT texHeight = h1;
 
 		if (m_TexResize.pTexture) {
@@ -1792,7 +1795,7 @@ HRESULT CDX11VideoProcessor::ResizeShaderPass(const Tex2D_t& Tex, ID3D11Texture2
 			}
 		}
 
-		CRect resizeRect(0, 0, texWidth, texHeight);
+		CRect resizeRect(dstRect.left, 0, dstRect.right, texHeight);
 
 		// First resize pass
 		hr = TextureResizeShader(Tex, m_TexResize.pTexture, srcRect, resizeRect, resizerX, m_iRotation);
