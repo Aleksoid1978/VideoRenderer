@@ -522,6 +522,7 @@ STDMETHODIMP CMpcVideoRenderer::Run(REFERENCE_TIME rtStart)
 		return NOERROR;
 	}
 
+	CAutoLock cVideoLock(&m_InterfaceLock);
 	m_filterState = State_Running;
 
 	if (m_bUsedD3D11) {
