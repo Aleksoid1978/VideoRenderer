@@ -813,6 +813,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		DLogIf(m_pPSCorrection, L"CDX9VideoProcessor::InitMediaType() m_pPSCorrection created");
 
 		UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
+		UpdatePostScaleTexures();
 		UpdateStatsStatic();
 
 		m_pFilter->m_inputMT = *pmt;
@@ -826,6 +827,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
 		SetShaderConvertColorParams();
 		UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
+		UpdatePostScaleTexures();
 		UpdateStatsStatic();
 
 		m_pFilter->m_inputMT = *pmt;

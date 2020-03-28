@@ -1113,6 +1113,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 			m_pFilter->m_inputMT = *pmt;
 			UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
+			UpdatePostScaleTexures();
 			UpdateStatsStatic();
 
 			if (m_pFilter->m_pSubCallBack) {
@@ -1130,6 +1131,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_pFilter->m_inputMT = *pmt;
 		SetShaderConvertColorParams();
 		UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
+		UpdatePostScaleTexures();
 		UpdateStatsStatic();
 
 		if (m_pFilter->m_pSubCallBack) {
