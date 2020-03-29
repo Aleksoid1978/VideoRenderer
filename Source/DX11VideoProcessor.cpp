@@ -1003,7 +1003,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
 		pBIH = &vih2->bmiHeader;
 		m_srcRect = vih2->rcSource;
-		m_trgRect = vih2->rcTarget;
 		m_srcAspectRatioX = vih2->dwPictAspectRatioX;
 		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
 		if (FmtConvParams.CSType == CS_YUV && (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT))) {
@@ -1017,7 +1016,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)pmt->pbFormat;
 		pBIH = &vih->bmiHeader;
 		m_srcRect = vih->rcSource;
-		m_trgRect = vih->rcTarget;
 		m_srcAspectRatioX = 0;
 		m_srcAspectRatioY = 0;
 		m_bInterlaced = 0;
@@ -1059,9 +1057,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	if (m_srcRect.IsRectNull()) {
 		m_srcRect.SetRect(0, 0, origW, origH);
-	}
-	if (m_trgRect.IsRectNull()) {
-		m_trgRect.SetRect(0, 0, origW, origH);
 	}
 	m_srcRectWidth  = m_srcRect.Width();
 	m_srcRectHeight = m_srcRect.Height();
@@ -2193,7 +2188,6 @@ HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 #ifdef _DEBUG
 	str.Append(L"\n\nDEBUG info:");
 	str.AppendFormat(L"\nSource rect   : %d,%d,%d,%d - %dx%d", m_srcRect.left, m_srcRect.top, m_srcRect.right, m_srcRect.bottom, m_srcRect.Width(), m_srcRect.Height());
-	str.AppendFormat(L"\nTarget rect   : %d,%d,%d,%d - %dx%d", m_trgRect.left, m_trgRect.top, m_trgRect.right, m_trgRect.bottom, m_trgRect.Width(), m_trgRect.Height());
 	str.AppendFormat(L"\nVideo rect    : %d,%d,%d,%d - %dx%d", m_videoRect.left, m_videoRect.top, m_videoRect.right, m_videoRect.bottom, m_videoRect.Width(), m_videoRect.Height());
 	str.AppendFormat(L"\nWindow rect   : %d,%d,%d,%d - %dx%d", m_windowRect.left, m_windowRect.top, m_windowRect.right, m_windowRect.bottom, m_windowRect.Width(), m_windowRect.Height());
 #endif
