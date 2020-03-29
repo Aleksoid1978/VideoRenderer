@@ -819,7 +819,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	ReleaseVP();
 
 	// Tex Video Processor
-	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
+	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, origW, origH)) {
 		SetShaderConvertColorParams();
 		UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
 		UpdatePostScaleTexures();

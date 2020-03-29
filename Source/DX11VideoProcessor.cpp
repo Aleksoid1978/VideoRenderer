@@ -1122,7 +1122,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	// Tex Video Processor
-	if (FmtConvParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, biWidth, biHeight)) {
+	if (FmtConvParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, origW, origH)) {
 		m_pFilter->m_inputMT = *pmt;
 		SetShaderConvertColorParams();
 		UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
