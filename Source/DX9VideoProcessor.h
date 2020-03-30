@@ -116,6 +116,10 @@ private:
 	CComPtr<IDirect3DPixelShader9> m_pPSConvertColor;
 	struct {
 		bool bEnable = false;
+		struct ConvColorVertex_t {
+			DirectX::XMFLOAT4 Pos;
+			DirectX::XMFLOAT2 Tex[2];
+		} VertexData[4] = {};
 		float fConstants[4][4] = {};
 	} m_PSConvColorData;
 

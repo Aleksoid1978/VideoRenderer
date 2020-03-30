@@ -1559,6 +1559,44 @@ HRESULT CDX9VideoProcessor::UpdateChromaScalingShader()
 			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);
 			pShaderCode->Release();
 		}
+
+		float w = (float)m_TexSrcVideo.Width;
+		float h = (float)m_TexSrcVideo.Height;
+		const float dx = 1.0f / w;
+		const float dy = 1.0f / h;
+		float sx = 0.0f;
+		float sy = 0.0f;
+
+		if (m_srcParams.cformat == CF_YUY2) {
+			w *= 2;
+		}
+		else if (m_iChromaScaling == CHROMA_Bilinear) {
+			if (m_srcParams.Subsampling == 420) {
+				switch (m_srcExFmt.VideoChromaSubsampling) {
+				case DXVA2_VideoChromaSubsampling_Cosited:
+					sx = 0.5f * dx;
+					sy = 0.5f * dy;
+					break;
+				case DXVA2_VideoChromaSubsampling_MPEG1:
+					//nothing;
+					break;
+				case DXVA2_VideoChromaSubsampling_MPEG2:
+				default:
+					sx = 0.5f * dx;
+				}
+			}
+			else if (m_srcParams.Subsampling == 422) {
+				sx = 0.5f * dx;
+			}
+		}
+
+		w -= 0.5f;
+		h -= 0.5f;
+
+		m_PSConvColorData.VertexData[0] = { {-0.5f, -0.5f, 0.5f, 2.0f}, {{0, 0}, {0 + sx, 0 + sy}} };
+		m_PSConvColorData.VertexData[1] = { {    w, -0.5f, 0.5f, 2.0f}, {{1, 0}, {1 + sx, 0 + sy}} };
+		m_PSConvColorData.VertexData[2] = { {-0.5f,     h, 0.5f, 2.0f}, {{0, 1}, {0 + sx, 1 + sy}} };
+		m_PSConvColorData.VertexData[3] = { {    w,     h, 0.5f, 2.0f}, {{1, 1}, {1 + sx, 1 + sy}} };
 	}
 
 	return hr;
@@ -1574,44 +1612,6 @@ HRESULT CDX9VideoProcessor::DxvaVPPass(IDirect3DSurface9* pRenderTarget, const C
 HRESULT CDX9VideoProcessor::ConvertColorPass(IDirect3DSurface9* pRenderTarget)
 {
 	HRESULT hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-
-	float w = (float)m_TexSrcVideo.Width;
-	float h = (float)m_TexSrcVideo.Height;
-	float sx = 0.0f;
-	float sy = 0.0f;
-
-	if (m_srcParams.cformat == CF_YUY2) {
-		w *= 2;
-	}
-	else if (m_iChromaScaling == CHROMA_Bilinear) {
-		if (m_srcParams.Subsampling == 420) {
-			switch (m_srcExFmt.VideoChromaSubsampling) {
-			case DXVA2_VideoChromaSubsampling_Cosited:
-				sx = 0.5f / w;
-				sy = 0.5f / h;
-				break;
-			case DXVA2_VideoChromaSubsampling_MPEG1:
-				//nothing;
-				break;
-			case DXVA2_VideoChromaSubsampling_MPEG2:
-			default:
-				sx = 0.5f / w;
-			}
-		}
-		else if (m_srcParams.Subsampling == 422) {
-			sx = 0.5f / w;
-		}
-	}
-
-	w -= 0.5f;
-	h -= 0.5f;
-
-	MYD3DVERTEX<2> v[] = {
-		{ {-0.5f, -0.5f, 0.5f, 2.0f}, {{0, 0}, {0+sx, 0+sy}} },
-		{ {    w, -0.5f, 0.5f, 2.0f}, {{1, 0}, {1+sx, 0+sy}} },
-		{ {-0.5f,     h, 0.5f, 2.0f}, {{0, 1}, {0+sx, 1+sy}} },
-		{ {    w,     h, 0.5f, 2.0f}, {{1, 1}, {1+sx, 1+sy}} },
-	};
 
 	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_PSConvColorData.fConstants, std::size(m_PSConvColorData.fConstants));
 	hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColor);
@@ -1656,7 +1656,7 @@ HRESULT CDX9VideoProcessor::ConvertColorPass(IDirect3DSurface9* pRenderTarget)
 	}
 
 	hr = m_pD3DDevEx->SetFVF(D3DFVF_XYZRHW | FVF);
-	hr = m_pD3DDevEx->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(v[0]));
+	hr = m_pD3DDevEx->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, m_PSConvColorData.VertexData, sizeof(m_PSConvColorData.VertexData[0]));
 
 	m_pD3DDevEx->SetPixelShader(nullptr);
 
@@ -1829,6 +1829,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 	else if (m_PSConvColorData.bEnable) {
 		ConvertColorPass(m_TexConvertOutput.pSurface);
 		pInputTexture = m_TexConvertOutput.pTexture;
+		Dump4ByteSurface(m_TexConvertOutput.pSurface, L"c:\\temp\\convet.bmp");
 	}
 	else {
 		pInputTexture = m_TexSrcVideo.pTexture;

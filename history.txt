@@ -10,7 +10,7 @@ Added the ability to get the displayed image.
 Added the ability to switch the "Swap effect" setting during playback.
 Fixed problems with rotation and zoom in some situations.
 Added support for IVideoWindow::put_MessageDrain and IVideoWindow::get_MessageDrain calls.
-Recommended version of MPC-BE v1.5.5.5117 or later.
+Recommended version of MPC-BE v1.5.5.5125 or later.
 
 v0.4.1.1130 - 2020.02.10
 ------------------------
