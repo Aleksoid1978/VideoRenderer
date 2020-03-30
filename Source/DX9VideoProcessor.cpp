@@ -1829,7 +1829,6 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 	else if (m_PSConvColorData.bEnable) {
 		ConvertColorPass(m_TexConvertOutput.pSurface);
 		pInputTexture = m_TexConvertOutput.pTexture;
-		Dump4ByteSurface(m_TexConvertOutput.pSurface, L"c:\\temp\\convet.bmp");
 	}
 	else {
 		pInputTexture = m_TexSrcVideo.pTexture;
