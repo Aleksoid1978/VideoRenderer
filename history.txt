@@ -1,4 +1,4 @@
-v0.4.2
+v0.4.3.1215 - 2020.04.01
 ------------------------
 Fixed frame brightness for 10 bit video after D3D11 video processor.
 Added dithering. It is used for final reduction of bit depth from 10/16 bits to 8 bits.
