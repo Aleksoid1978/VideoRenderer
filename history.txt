@@ -1,3 +1,7 @@
+v0.4.4
+------------------------
+...
+
 v0.4.3.1215 - 2020.04.01
 ------------------------
 Fixed frame brightness for 10 bit video after D3D11 video processor.
