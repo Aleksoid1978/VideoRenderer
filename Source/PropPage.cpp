@@ -390,9 +390,9 @@ HRESULT CVRInfoPPage::OnActivate()
 #ifdef _DEBUG
 	{
 		UINT32 num_paths;
-		DISPLAYCONFIG_PATH_INFO* paths = nullptr;
 		UINT32 num_modes;
-		DISPLAYCONFIG_MODE_INFO* modes = nullptr;
+		std::vector<DISPLAYCONFIG_PATH_INFO> paths;
+		std::vector<DISPLAYCONFIG_MODE_INFO> modes;
 		LONG res;
 
 		// The display configuration could change between the call to
@@ -401,25 +401,22 @@ HRESULT CVRInfoPPage::OnActivate()
 		do {
 			res = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &num_paths, &num_modes);
 			if (res == ERROR_SUCCESS) {
-				// Free old buffers if they exist and allocate new ones
-				free(paths);
-				free(modes);
-				paths = (DISPLAYCONFIG_PATH_INFO*)malloc(sizeof(DISPLAYCONFIG_PATH_INFO) * num_paths);
-				modes = (DISPLAYCONFIG_MODE_INFO*)malloc(sizeof(DISPLAYCONFIG_MODE_INFO) * num_modes);
-
-				res = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &num_paths, paths, &num_modes, modes, NULL);
+				paths.resize(num_paths);
+				modes.resize(num_modes);
+				res = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &num_paths, paths.data(), &num_modes, modes.data(), nullptr);
 			}
 		} while (res == ERROR_INSUFFICIENT_BUFFER);
 
 		if (res == ERROR_SUCCESS) {
-			DISPLAYCONFIG_PATH_INFO* path = nullptr;
-			// Search for a path with a matching device name
+			// num_paths and num_modes could decrease in a loop
+			paths.resize(num_paths);
+			modes.resize(num_modes);
 
-			auto get_refresh_rate = [](DISPLAYCONFIG_PATH_INFO* path, DISPLAYCONFIG_MODE_INFO* modes) {
+			auto get_refresh_rate = [](const DISPLAYCONFIG_PATH_INFO& path, DISPLAYCONFIG_MODE_INFO* modes) {
 				double freq = 0.0;
 
-				if (path && path->targetInfo.modeInfoIdx != DISPLAYCONFIG_PATH_MODE_IDX_INVALID) {
-					DISPLAYCONFIG_MODE_INFO* mode = &modes[path->targetInfo.modeInfoIdx];
+				if (path.targetInfo.modeInfoIdx != DISPLAYCONFIG_PATH_MODE_IDX_INVALID) {
+					DISPLAYCONFIG_MODE_INFO* mode = &modes[path.targetInfo.modeInfoIdx];
 					if (mode->infoType == DISPLAYCONFIG_MODE_INFO_TYPE_TARGET) {
 						DISPLAYCONFIG_RATIONAL* vSyncFreq = &mode->targetMode.targetVideoSignalInfo.vSyncFreq;
 						if (vSyncFreq->Denominator != 0 && vSyncFreq->Numerator / vSyncFreq->Denominator > 1) {
@@ -429,7 +426,7 @@ HRESULT CVRInfoPPage::OnActivate()
 				}
 
 				if (freq == 0.0) {
-					DISPLAYCONFIG_RATIONAL* refreshRate = &path->targetInfo.refreshRate;
+					const DISPLAYCONFIG_RATIONAL* refreshRate = &path.targetInfo.refreshRate;
 					if (refreshRate->Denominator != 0 && refreshRate->Numerator / refreshRate->Denominator > 1) {
 						freq = (double)refreshRate->Numerator / (double)refreshRate->Denominator;
 					}
@@ -440,20 +437,17 @@ HRESULT CVRInfoPPage::OnActivate()
 
 			strInfo.Append(L"\r\n");
 
-			for (UINT32 i = 0; i < num_paths; i++) {
+			for (const auto& path : paths) {
 				// Send a GET_SOURCE_NAME request
 				DISPLAYCONFIG_SOURCE_DEVICE_NAME source = {
-					{DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME, sizeof(source), paths[i].sourceInfo.adapterId, paths[i].sourceInfo.id}, {},
+					{DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME, sizeof(source), path.sourceInfo.adapterId, path.sourceInfo.id}, {},
 				};
 				if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS) {
-					double freq = get_refresh_rate(&paths[i], modes);
+					double freq = get_refresh_rate(path, modes.data());
 					strInfo.AppendFormat(L"\r\n%s - %.03f Ãö", source.viewGdiDeviceName, freq);
 				}
 			}
 		}
-
-		free(paths);
-		free(modes);
 	}
 #endif
 
