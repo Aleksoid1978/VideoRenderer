@@ -444,7 +444,7 @@ HRESULT CVRInfoPPage::OnActivate()
 				};
 				if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS) {
 					double freq = get_refresh_rate(path, modes.data());
-					strInfo.AppendFormat(L"\r\n%s - %.03f Ãö", source.viewGdiDeviceName, freq);
+					strInfo.AppendFormat(L"\r\n%s - %.03f Hz", source.viewGdiDeviceName, freq);
 				}
 			}
 		}
