@@ -1203,6 +1203,26 @@ STDMETHODIMP CMpcVideoRenderer::GetBin(LPCSTR field, LPVOID* value, unsigned* si
 
 STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 {
+	if (!strcmp(field, "cmd_redraw") && value) {
+		Redraw();
+		return S_OK;
+	}
+
+	if (!strcmp(field, "cmd_clearPostScaleShaders") && value) {
+		CAutoLock cRendererLock(&m_RendererLock);
+		if (m_bUsedD3D11) {
+			m_DX11_VP.ClearPostScaleShaders();
+		} else {
+			m_DX9_VP.ClearPostScaleShaders();
+		}
+		return S_OK;
+	}
+
+	if (!strcmp(field, "displayChange") && value) {
+		// TODO
+		return S_OK;
+	}
+
 	if (!strcmp(field, "statsEnable")) {
 		m_Sets.bShowStats = value;
 		if (m_bUsedD3D11) {
@@ -1220,21 +1240,6 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 
 	if (!strcmp(field, "lessRedraws")) {
 		m_bForceRedrawing = !value;
-		return S_OK;
-	}
-
-	if (!strcmp(field, "cmd_redraw") && value) {
-		Redraw();
-		return S_OK;
-	}
-
-	if (!strcmp(field, "cmd_clearPostScaleShaders") && value) {
-		CAutoLock cRendererLock(&m_RendererLock);
-		if (m_bUsedD3D11) {
-			m_DX11_VP.ClearPostScaleShaders();
-		} else {
-			m_DX9_VP.ClearPostScaleShaders();
-		}
 		return S_OK;
 	}
 

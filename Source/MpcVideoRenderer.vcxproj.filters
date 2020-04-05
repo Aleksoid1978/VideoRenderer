@@ -84,6 +84,9 @@
     <ClCompile Include="D3DUtil\D3D11Font.cpp">
       <Filter>D3DUtil</Filter>
     </ClCompile>
+    <ClCompile Include="DisplayConfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -166,6 +169,9 @@
     </ClInclude>
     <ClInclude Include="D3DUtil\D3D11Font.h">
       <Filter>D3DUtil</Filter>
+    </ClInclude>
+    <ClInclude Include="DisplayConfig.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
