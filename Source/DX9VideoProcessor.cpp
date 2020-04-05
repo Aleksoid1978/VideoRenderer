@@ -29,6 +29,7 @@
 #include "VideoRenderer.h"
 #include "../Include/Version.h"
 #include "DX9VideoProcessor.h"
+#include "DisplayConfig.h"
 #include "Shaders.h"
 
 static const ScalingShaderResId s_Upscaling9ResIDs[UPSCALE_COUNT] = {
@@ -362,6 +363,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 		}
 	}
 
+	UpdateDiplayInfo();
 	UpdateStatsStatic();
 
 	return hr;
@@ -1333,11 +1335,19 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 		str.Append(L"Shaders");
 	}
 
-	str.AppendFormat(L"\nDisplay Mode    : %u x %u, %u", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate);
+	str.AppendFormat(L"\nDisplay Mode    : %u x %u", m_DisplayMode.Width, m_DisplayMode.Height);
+	if (m_dRefreshRate > 0.0) {
+		str.AppendFormat(L", %.03f", m_dRefreshRate);
+	} else {
+		str.AppendFormat(L", %u", m_DisplayMode.RefreshRate);
+	}
 	if (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
 		str.AppendChar('i');
 	}
 	str.Append(L" Hz");
+	if (m_bPrimaryDisplay) {
+		str.Append(L" [Primary]");
+	}
 
 	if (m_pPostScaleShaders.size()) {
 		str.Append(L"\n\nPost scale pixel shaders:");
@@ -1447,6 +1457,24 @@ void CDX9VideoProcessor::Flush()
 		} else {
 			m_DXVA2VP.CleanSamplesData();
 		}
+	}
+}
+
+void CDX9VideoProcessor::UpdateDiplayInfo()
+{
+	const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+	const HMONITOR hMonPrimary = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY);
+
+	MONITORINFOEXW mi = { sizeof(mi) };
+	GetMonitorInfoW(hMon, (MONITORINFO*)&mi);
+	m_dRefreshRate = GetRefreshRate(mi.szDevice);
+	if (hMon == hMonPrimary) {
+		m_bPrimaryDisplay = true;
+		m_dRefreshRatePrimary = m_dRefreshRate;
+	} else {
+		m_bPrimaryDisplay = false;
+		GetMonitorInfoW(hMonPrimary, (MONITORINFO*)&mi);
+		m_dRefreshRatePrimary = GetRefreshRate(mi.szDevice);
 	}
 }
 

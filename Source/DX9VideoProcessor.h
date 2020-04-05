@@ -63,6 +63,10 @@ private:
 	D3DDISPLAYMODEEX m_DisplayMode = { sizeof(D3DDISPLAYMODEEX) };
 	D3DPRESENT_PARAMETERS m_d3dpp = {};
 
+	bool   m_bPrimaryDisplay     = false;
+	double m_dRefreshRate        = 0.0;
+	double m_dRefreshRatePrimary = 0.0;
+
 	// DXVA2 Video Processor
 	CDXVA2VP m_DXVA2VP;
 	DXVA2_ValueRange m_DXVA2ProcAmpRanges[4] = {};
@@ -211,6 +215,7 @@ public:
 
 	void Flush();
 
+	void UpdateDiplayInfo();
 	void ClearPostScaleShaders();
 	HRESULT AddPostScaleShader(const CStringW& name, const CStringA& srcCode);
 

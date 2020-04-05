@@ -1219,7 +1219,11 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 	}
 
 	if (!strcmp(field, "displayChange") && value) {
-		// TODO
+		if (m_bUsedD3D11) {
+			m_DX11_VP.UpdateDiplayInfo();
+		} else {
+			m_DX9_VP.UpdateDiplayInfo();
+		}
 		return S_OK;
 	}
 

@@ -79,6 +79,10 @@ private:
 	CTex2DRing m_TexsPostScale;
 	Tex2D_t m_TexDither;
 
+	bool   m_bPrimaryDisplay     = false;
+	double m_dRefreshRate        = 0.0;
+	double m_dRefreshRatePrimary = 0.0;
+
 	// D3D11 Video Processor
 	CD3D11VP m_D3D11VP;
 	CComPtr<ID3D11PixelShader> m_pPSCorrection;
@@ -257,6 +261,7 @@ public:
 
 	void Flush();
 
+	void UpdateDiplayInfo();
 	void ClearPostScaleShaders();
 	HRESULT AddPostScaleShader(const CStringW& name, const CStringA& srcCode);
 
