@@ -21,6 +21,7 @@
 #include "stdafx.h"
 #include "resource.h"
 #include "Helper.h"
+#include "DisplayConfig.h"
 #include "PropPage.h"
 
 void SetCursor(HWND hWnd, LPCWSTR lpCursorName)
@@ -389,83 +390,34 @@ HRESULT CVRInfoPPage::OnActivate()
 
 #ifdef _DEBUG
 	{
-		UINT32 num_paths;
-		UINT32 num_modes;
-		std::vector<DISPLAYCONFIG_PATH_INFO> paths;
-		std::vector<DISPLAYCONFIG_MODE_INFO> modes;
-		LONG res;
+		std::vector<DisplayConfig_t> displayConfigs;
 
-		// The display configuration could change between the call to
-		// GetDisplayConfigBufferSizes and the call to QueryDisplayConfig, so call
-		// them in a loop until the correct buffer size is chosen
-		do {
-			res = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &num_paths, &num_modes);
-			if (res == ERROR_SUCCESS) {
-				paths.resize(num_paths);
-				modes.resize(num_modes);
-				res = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &num_paths, paths.data(), &num_modes, modes.data(), nullptr);
+		bool ret = GetDisplayConfigs(displayConfigs);
+
+		strInfo.Append(L"\r\n");
+
+		for (const auto& dc : displayConfigs) {
+			double freq = (double)dc.refreshRate.Numerator / (double)dc.refreshRate.Denominator;
+			strInfo.AppendFormat(L"\r\n%s - %.03f Hz", dc.displayName, freq);
+
+			char* output = nullptr;
+			switch (dc.outputTechnology) {
+			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HD15:
+				output = "VGA";
+				break;
+			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DVI:
+				output = "DVI";
+				break;
+			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI:
+				output = "HDMI";
+				break;
+			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EXTERNAL:
+			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EMBEDDED:
+				output = "DisplayPort";
+				break;
 			}
-		} while (res == ERROR_INSUFFICIENT_BUFFER);
-
-		if (res == ERROR_SUCCESS) {
-			// num_paths and num_modes could decrease in a loop
-			paths.resize(num_paths);
-			modes.resize(num_modes);
-
-			auto get_refresh_rate = [](const DISPLAYCONFIG_PATH_INFO& path, DISPLAYCONFIG_MODE_INFO* modes) {
-				double freq = 0.0;
-
-				if (path.targetInfo.modeInfoIdx != DISPLAYCONFIG_PATH_MODE_IDX_INVALID) {
-					DISPLAYCONFIG_MODE_INFO* mode = &modes[path.targetInfo.modeInfoIdx];
-					if (mode->infoType == DISPLAYCONFIG_MODE_INFO_TYPE_TARGET) {
-						DISPLAYCONFIG_RATIONAL* vSyncFreq = &mode->targetMode.targetVideoSignalInfo.vSyncFreq;
-						if (vSyncFreq->Denominator != 0 && vSyncFreq->Numerator / vSyncFreq->Denominator > 1) {
-							freq = (double)vSyncFreq->Numerator / (double)vSyncFreq->Denominator;
-						}
-					}
-				}
-
-				if (freq == 0.0) {
-					const DISPLAYCONFIG_RATIONAL* refreshRate = &path.targetInfo.refreshRate;
-					if (refreshRate->Denominator != 0 && refreshRate->Numerator / refreshRate->Denominator > 1) {
-						freq = (double)refreshRate->Numerator / (double)refreshRate->Denominator;
-					}
-				}
-
-				return freq;
-			};
-
-			strInfo.Append(L"\r\n");
-
-			for (const auto& path : paths) {
-				// Send a GET_SOURCE_NAME request
-				DISPLAYCONFIG_SOURCE_DEVICE_NAME source = {
-					{DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME, sizeof(source), path.sourceInfo.adapterId, path.sourceInfo.id}, {},
-				};
-				if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS) {
-					double freq = get_refresh_rate(path, modes.data());
-					strInfo.AppendFormat(L"\r\n%s - %.03f Hz", source.viewGdiDeviceName, freq);
-
-					char* output = nullptr;
-					switch (path.targetInfo.outputTechnology) {
-					case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HD15:
-						output = "VGA";
-						break;
-					case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DVI:
-						output = "DVI";
-						break;
-					case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI:
-						output = "HDMI";
-						break;
-					case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EXTERNAL:
-					case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EMBEDDED:
-						output = "DisplayPort";
-						break;
-					}
-					if (output) {
-						strInfo.AppendFormat(L" %S", output);
-					}
-				}
+			if (output) {
+				strInfo.AppendFormat(L" %S", output);
 			}
 		}
 	}

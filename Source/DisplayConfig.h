@@ -18,5 +18,16 @@
  *
  */
 
+struct DisplayConfig_t {
+	UINT32 width;
+	UINT32 height;
+	DISPLAYCONFIG_RATIONAL                refreshRate;
+	DISPLAYCONFIG_SCANLINE_ORDERING       scanLineOrdering;
+	DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY outputTechnology;
+	WCHAR displayName[CCHDEVICENAME];
+};
 
 double GetRefreshRate(const wchar_t* displayName);
+
+bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs);
+
