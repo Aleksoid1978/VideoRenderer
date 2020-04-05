@@ -445,6 +445,26 @@ HRESULT CVRInfoPPage::OnActivate()
 				if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS) {
 					double freq = get_refresh_rate(path, modes.data());
 					strInfo.AppendFormat(L"\r\n%s - %.03f Hz", source.viewGdiDeviceName, freq);
+
+					char* output = nullptr;
+					switch (path.targetInfo.outputTechnology) {
+					case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HD15:
+						output = "VGA";
+						break;
+					case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DVI:
+						output = "DVI";
+						break;
+					case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI:
+						output = "HDMI";
+						break;
+					case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EXTERNAL:
+					case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EMBEDDED:
+						output = "DisplayPort";
+						break;
+					}
+					if (output) {
+						strInfo.AppendFormat(L" %S", output);
+					}
 				}
 			}
 		}
