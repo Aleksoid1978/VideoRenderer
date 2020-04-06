@@ -87,7 +87,7 @@ double GetRefreshRate(const wchar_t* displayName)
 	return 0.0;
 }
 
-static bool is_valid_refresh_rate(DISPLAYCONFIG_RATIONAL& rr)
+static bool is_valid_refresh_rate(const DISPLAYCONFIG_RATIONAL& rr)
 {
 	// DisplayConfig sometimes reports a rate of 1 when the rate is not known
 	return rr.Denominator != 0 && rr.Numerator / rr.Denominator > 1;
