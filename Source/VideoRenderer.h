@@ -85,7 +85,10 @@ private:
 	Settings_t m_Sets;
 
 	bool m_bUsedD3D11 = false; // current state
+
 	FILTER_STATE m_filterState = State_Stopped;
+	bool m_bFlushing = false;
+	bool m_bValidBuffer = false;
 
 	HWND m_hWnd = nullptr;
 	HWND m_hWndParent = nullptr;
@@ -119,8 +122,6 @@ private:
 
 	bool m_bSubInvAlpha = false;
 	bool m_bCheckSubInvAlpha = false;
-
-	bool m_bFlushing = false;
 
 public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);

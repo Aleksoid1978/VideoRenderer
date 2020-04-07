@@ -255,6 +255,8 @@ HRESULT CMpcVideoRenderer::EndFlush()
 {
 	DLog(L"CMpcVideoRenderer::EndFlush()");
 
+	m_bValidBuffer = false;
+
 	if (m_bUsedD3D11) {
 		m_DX11_VP.Flush();
 	} else {
@@ -404,6 +406,8 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 	} else {
 		hr = m_DX9_VP.ProcessSample(pSample);
 	}
+
+	m_bValidBuffer = true;
 
 	if (m_Stepping && !(--m_Stepping)) {
 		this->NotifyEvent(EC_STEP_COMPLETE, 0, 0);
@@ -1323,17 +1327,17 @@ STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
 HRESULT CMpcVideoRenderer::Redraw()
 {
 	CAutoLock cRendererLock(&m_RendererLock);
-	const auto bFrameDrawn = m_DrawStats.GetFrames() > 0;
+	const auto bDrawFrame = m_bValidBuffer && m_filterState != State_Stopped;
 
 	HRESULT hr = S_OK;
 	if (m_bUsedD3D11) {
-		if (bFrameDrawn && m_filterState != State_Stopped) {
+		if (bDrawFrame) {
 			hr = m_DX11_VP.Render(0);
 		} else {
 			hr = m_DX11_VP.FillBlack();
 		}
 	} else {
-		if (bFrameDrawn && m_filterState != State_Stopped) {
+		if (bDrawFrame) {
 			hr = m_DX9_VP.Render(0);
 		} else {
 			hr = m_DX9_VP.FillBlack();
