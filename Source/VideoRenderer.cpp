@@ -407,7 +407,9 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 		hr = m_DX9_VP.ProcessSample(pSample);
 	}
 
-	m_bValidBuffer = true;
+	if (SUCCEEDED(hr)) {
+		m_bValidBuffer = true;
+	}
 
 	if (m_Stepping && !(--m_Stepping)) {
 		this->NotifyEvent(EC_STEP_COMPLETE, 0, 0);
