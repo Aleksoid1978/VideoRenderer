@@ -1092,6 +1092,7 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 				m_DX9_VP.SetSwapEffect(m_Sets.iSwapEffect);
 			}
 			put_Owner((OAHWND)hwnd);
+			Redraw();
 		}
 	}
 }
