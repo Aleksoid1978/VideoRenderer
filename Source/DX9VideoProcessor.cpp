@@ -794,7 +794,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	// DXVA2 Video Processor
-	if (FmtConvParams.DXVA2Format != D3DFMT_UNKNOWN && S_OK == InitializeDXVA2VP(FmtConvParams, biWidth, biHeight)) {
+	if (FmtConvParams.DXVA2Format != D3DFMT_UNKNOWN && S_OK == InitializeDXVA2VP(FmtConvParams, origW, origH)) {
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_ST2084));
 			m_strCorrection = L"ST 2084 correction";

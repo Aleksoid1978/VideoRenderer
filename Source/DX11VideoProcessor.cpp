@@ -1093,7 +1093,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	if (FmtConvParams.VP11Format != DXGI_FORMAT_UNKNOWN && !(m_VendorId == PCIV_NVIDIA && FmtConvParams.CSType == CS_RGB)) {
 		// D3D11 VP does not work correctly if RGB32 with odd frame width (source or target) on Nvidia adapters
 
-		if (S_OK == InitializeD3D11VP(FmtConvParams, biWidth, biHeight)) {
+		if (S_OK == InitializeD3D11VP(FmtConvParams, origW, origH)) {
 			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_ST2084));
 				m_strCorrection = L"ST 2084 correction";
