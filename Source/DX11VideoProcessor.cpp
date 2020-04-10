@@ -2555,6 +2555,9 @@ STDMETHODIMP CDX11VideoProcessor::QueryInterface(REFIID riid, void **ppv)
 	else if (riid == IID_IMFVideoProcessor) {
 		*ppv = static_cast<IMFVideoProcessor*>(this);
 	}
+	else if (riid == IID_IMFVideoMixerBitmap) {
+		*ppv = static_cast<IMFVideoMixerBitmap*>(this);
+	}
 	else {
 		*ppv = nullptr;
 		return E_NOINTERFACE;

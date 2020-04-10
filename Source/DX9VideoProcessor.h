@@ -33,6 +33,7 @@ class CMpcVideoRenderer;
 
 class CDX9VideoProcessor
 	: public IMFVideoProcessor
+	, public IMFVideoMixerBitmap
 {
 private:
 	long m_nRefCount = 1;
@@ -260,4 +261,10 @@ public:
 	STDMETHODIMP SetFilteringValue(DWORD dwProperty, DXVA2_Fixed32 *pValue) { return E_NOTIMPL; }
 	STDMETHODIMP GetBackgroundColor(COLORREF *lpClrBkg);
 	STDMETHODIMP SetBackgroundColor(COLORREF ClrBkg) { return E_NOTIMPL; }
+
+	// IMFVideoMixerBitmap
+	STDMETHODIMP ClearAlphaBitmap() override { return E_NOTIMPL; }
+	STDMETHODIMP GetAlphaBitmapParameters(MFVideoAlphaBitmapParams *pBmpParms) override { return E_NOTIMPL; }
+	STDMETHODIMP SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpParms) override { return E_NOTIMPL; }
+	STDMETHODIMP UpdateAlphaBitmapParameters(const MFVideoAlphaBitmapParams *pBmpParms) override { return E_NOTIMPL; }
 };
