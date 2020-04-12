@@ -1531,6 +1531,23 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hr = DrawStats(pBackBuffer);
 	}
 
+	if (0) { // disabled because causes problems accessing ID3D11DeviceContext
+		CAutoLock BitMapLock(&m_AlphaBitmapLock);
+		if (m_TexAlphaBitmap.pShaderResource) {
+			D3D11_TEXTURE2D_DESC desc;
+			pBackBuffer->GetDesc(&desc);
+			D3D11_VIEWPORT VP = {
+				m_AlphaBitmapNRectDest.left * desc.Width,
+				m_AlphaBitmapNRectDest.top * desc.Height,
+				(m_AlphaBitmapNRectDest.right - m_AlphaBitmapNRectDest.left) * desc.Width,
+				(m_AlphaBitmapNRectDest.bottom - m_AlphaBitmapNRectDest.top) * desc.Height,
+				0.0f,
+				1.0f
+			};
+			hr = AlphaBlt(m_TexAlphaBitmap.pShaderResource, pBackBuffer, VP);
+		}
+	}
+
 #if 0
 	{ // Tearing test (very non-optimal implementation, use only for tests)
 		static int nTearingPos = 0;
