@@ -151,6 +151,11 @@ private:
 
 	REFERENCE_TIME m_rtStart = 0;
 
+	CCritSec m_AlphaBitmapLock;
+	Tex_t    m_TexAlphaBitmap;
+	RECT     m_AlphaBitmapRectSrc = {};
+	MFVideoNormalizedRect m_AlphaBitmapNRectDest = {};
+
 public:
 	CDX9VideoProcessor(CMpcVideoRenderer* pFilter);
 	~CDX9VideoProcessor();
@@ -263,8 +268,8 @@ public:
 	STDMETHODIMP SetBackgroundColor(COLORREF ClrBkg) { return E_NOTIMPL; }
 
 	// IMFVideoMixerBitmap
-	STDMETHODIMP ClearAlphaBitmap() override { return E_NOTIMPL; }
-	STDMETHODIMP GetAlphaBitmapParameters(MFVideoAlphaBitmapParams *pBmpParms) override { return E_NOTIMPL; }
-	STDMETHODIMP SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpParms) override { return E_NOTIMPL; }
-	STDMETHODIMP UpdateAlphaBitmapParameters(const MFVideoAlphaBitmapParams *pBmpParms) override { return E_NOTIMPL; }
+	STDMETHODIMP ClearAlphaBitmap() override;
+	STDMETHODIMP GetAlphaBitmapParameters(MFVideoAlphaBitmapParams *pBmpParms) override;
+	STDMETHODIMP SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpParms) override;
+	STDMETHODIMP UpdateAlphaBitmapParameters(const MFVideoAlphaBitmapParams *pBmpParms) override;
 };

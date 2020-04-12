@@ -405,6 +405,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 
 	m_TexDither.Release();
 	m_TexStats.Release();
+	m_TexAlphaBitmap.Release();
 
 	m_DXVA2VP.ReleaseVideoService();
 
@@ -2381,4 +2382,107 @@ STDMETHODIMP CDX9VideoProcessor::GetBackgroundColor(COLORREF *lpClrBkg)
 	CheckPointer(lpClrBkg, E_POINTER);
 	*lpClrBkg = RGB(0, 0, 0);
 	return S_OK;
+}
+
+// IMFVideoMixerBitmap
+
+STDMETHODIMP CDX9VideoProcessor::ClearAlphaBitmap()
+{
+	CAutoLock BitMapLock(&m_AlphaBitmapLock);
+	m_TexAlphaBitmap.Release();
+	return S_OK;
+}
+
+STDMETHODIMP CDX9VideoProcessor::GetAlphaBitmapParameters(MFVideoAlphaBitmapParams *pBmpParms)
+{
+	CheckPointer(pBmpParms, E_POINTER);
+	CAutoLock BitMapLock(&m_AlphaBitmapLock);
+
+	if (m_TexAlphaBitmap.pTexture) {
+		pBmpParms->dwFlags      = MFVideoAlphaBitmap_SrcRect|MFVideoAlphaBitmap_DestRect;
+		pBmpParms->clrSrcKey    = 0; // non used
+		pBmpParms->rcSrc        = m_AlphaBitmapRectSrc;
+		pBmpParms->nrcDest      = m_AlphaBitmapNRectDest;
+		pBmpParms->fAlpha       = 0; // non used
+		pBmpParms->dwFilterMode = D3DTEXF_POINT;
+		return S_OK;
+	} else {
+		return MF_E_NOT_INITIALIZED;
+	}
+}
+
+STDMETHODIMP CDX9VideoProcessor::SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpParms)
+{
+	CheckPointer(pBmpParms, E_POINTER);
+	CheckPointer(m_pD3DDevEx, E_ABORT);
+	CAutoLock BitMapLock(&m_AlphaBitmapLock);
+
+	HRESULT hr = E_FAIL;
+
+	if (pBmpParms->GetBitmapFromDC && pBmpParms->bitmap.hdc) {
+		HBITMAP hBitmap = (HBITMAP)GetCurrentObject(pBmpParms->bitmap.hdc, OBJ_BITMAP);
+		if (!hBitmap) {
+			return E_INVALIDARG;
+		}
+		DIBSECTION info = {0};
+		if (!::GetObjectW(hBitmap, sizeof(DIBSECTION), &info)) {
+			return E_INVALIDARG;
+		}
+		BITMAP& bm = info.dsBm;
+		if (!bm.bmWidth || !bm.bmHeight || bm.bmBitsPixel != 32 || !bm.bmBits) {
+			return E_INVALIDARG;
+		}
+
+		hr = m_TexAlphaBitmap.CheckCreate(m_pD3DDevEx, D3DFMT_A8R8G8B8, bm.bmWidth, bm.bmHeight, D3DUSAGE_DYNAMIC);
+		if (S_OK == hr) {
+			D3DLOCKED_RECT r;
+			HRESULT hr = m_TexAlphaBitmap.pSurface->LockRect(&r, nullptr, D3DLOCK_DISCARD);
+			if (S_OK == hr) {
+				if (bm.bmWidthBytes == r.Pitch) {
+					memcpy(r.pBits, bm.bmBits, bm.bmWidthBytes * bm.bmHeight);
+				} else {
+					LONG linesize = std::min(bm.bmWidthBytes, (LONG)r.Pitch);
+					BYTE* src = (BYTE*)bm.bmBits;
+					BYTE* dst = (BYTE*)r.pBits;
+					for (LONG y = 0; y < bm.bmHeight; ++y) {
+						memcpy(dst, src, linesize);
+						src += bm.bmWidthBytes;
+						dst += r.Pitch;
+					}
+				}
+				hr = m_TexAlphaBitmap.pSurface->UnlockRect();
+			}
+		}
+	} else {
+		return E_INVALIDARG;
+	}
+
+	if (SUCCEEDED(hr)) {
+		m_AlphaBitmapRectSrc = { 0, 0, (LONG)m_TexAlphaBitmap.Width, (LONG)m_TexAlphaBitmap.Height };
+		m_AlphaBitmapNRectDest = { 0, 0, 1, 1 };
+
+		hr = UpdateAlphaBitmapParameters(&pBmpParms->params);
+	}
+
+	return hr;
+}
+
+STDMETHODIMP CDX9VideoProcessor::UpdateAlphaBitmapParameters(const MFVideoAlphaBitmapParams *pBmpParms)
+{
+	CheckPointer(pBmpParms, E_POINTER);
+	CAutoLock BitMapLock(&m_AlphaBitmapLock);
+
+	if (m_TexAlphaBitmap.pTexture) {
+		if (pBmpParms->dwFlags & MFVideoAlphaBitmap_SrcRect) {
+			m_AlphaBitmapRectSrc = pBmpParms->rcSrc;
+		}
+		if (pBmpParms->dwFlags & MFVideoAlphaBitmap_DestRect) {
+			m_AlphaBitmapNRectDest = pBmpParms->nrcDest;
+		}
+		DWORD validFlags = MFVideoAlphaBitmap_SrcRect|MFVideoAlphaBitmap_DestRect;
+
+		return ((pBmpParms->dwFlags & validFlags) == validFlags) ? S_OK : S_FALSE;
+	} else {
+		return MF_E_NOT_INITIALIZED;
+	}
 }
