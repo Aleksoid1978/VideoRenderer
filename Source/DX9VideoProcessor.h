@@ -151,7 +151,6 @@ private:
 
 	REFERENCE_TIME m_rtStart = 0;
 
-	CCritSec m_AlphaBitmapLock;
 	Tex_t    m_TexAlphaBitmap;
 	RECT     m_AlphaBitmapRectSrc = {};
 	MFVideoNormalizedRect m_AlphaBitmapNRectDest = {};

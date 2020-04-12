@@ -1072,19 +1072,16 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		hr = DrawStats(pBackBuffer);
 	}
 
-	{
-		CAutoLock BitMapLock(&m_AlphaBitmapLock);
-		if (m_TexAlphaBitmap.pTexture) {
-			D3DSURFACE_DESC desc;
-			pBackBuffer->GetDesc(&desc);
-			RECT rDst = {
-				m_AlphaBitmapNRectDest.left * desc.Width,
-				m_AlphaBitmapNRectDest.top * desc.Height,
-				m_AlphaBitmapNRectDest.right * desc.Width,
-				m_AlphaBitmapNRectDest.bottom * desc.Height
-			};
-			hr = AlphaBlt(m_pD3DDevEx, &m_AlphaBitmapRectSrc, &rDst, m_TexAlphaBitmap.pTexture);
-		}
+	if (m_TexAlphaBitmap.pTexture) {
+		D3DSURFACE_DESC desc;
+		pBackBuffer->GetDesc(&desc);
+		RECT rDst = {
+			m_AlphaBitmapNRectDest.left * desc.Width,
+			m_AlphaBitmapNRectDest.top * desc.Height,
+			m_AlphaBitmapNRectDest.right * desc.Width,
+			m_AlphaBitmapNRectDest.bottom * desc.Height
+		};
+		hr = AlphaBlt(m_pD3DDevEx, &m_AlphaBitmapRectSrc, &rDst, m_TexAlphaBitmap.pTexture);
 	}
 
 #if 0
@@ -2403,7 +2400,8 @@ STDMETHODIMP CDX9VideoProcessor::GetBackgroundColor(COLORREF *lpClrBkg)
 
 STDMETHODIMP CDX9VideoProcessor::ClearAlphaBitmap()
 {
-	CAutoLock BitMapLock(&m_AlphaBitmapLock);
+	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
+
 	m_TexAlphaBitmap.Release();
 	return S_OK;
 }
@@ -2411,7 +2409,7 @@ STDMETHODIMP CDX9VideoProcessor::ClearAlphaBitmap()
 STDMETHODIMP CDX9VideoProcessor::GetAlphaBitmapParameters(MFVideoAlphaBitmapParams *pBmpParms)
 {
 	CheckPointer(pBmpParms, E_POINTER);
-	CAutoLock BitMapLock(&m_AlphaBitmapLock);
+	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
 	if (m_TexAlphaBitmap.pTexture) {
 		pBmpParms->dwFlags      = MFVideoAlphaBitmap_SrcRect|MFVideoAlphaBitmap_DestRect;
@@ -2429,9 +2427,9 @@ STDMETHODIMP CDX9VideoProcessor::GetAlphaBitmapParameters(MFVideoAlphaBitmapPara
 STDMETHODIMP CDX9VideoProcessor::SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpParms)
 {
 	CheckPointer(pBmpParms, E_POINTER);
-	CheckPointer(m_pD3DDevEx, E_ABORT);
-	CAutoLock BitMapLock(&m_AlphaBitmapLock);
+	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
+	CheckPointer(m_pD3DDevEx, E_ABORT);
 	HRESULT hr = S_FALSE;
 
 	if (pBmpParms->GetBitmapFromDC && pBmpParms->bitmap.hdc) {
@@ -2485,7 +2483,7 @@ STDMETHODIMP CDX9VideoProcessor::SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpPa
 STDMETHODIMP CDX9VideoProcessor::UpdateAlphaBitmapParameters(const MFVideoAlphaBitmapParams *pBmpParms)
 {
 	CheckPointer(pBmpParms, E_POINTER);
-	CAutoLock BitMapLock(&m_AlphaBitmapLock);
+	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
 	if (m_TexAlphaBitmap.pTexture) {
 		if (pBmpParms->dwFlags & MFVideoAlphaBitmap_SrcRect) {
