@@ -1068,9 +1068,24 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		}
 	}
 
- 	if (m_bShowStats) {
+	if (m_bShowStats) {
 		hr = DrawStats(pBackBuffer);
- 	}
+	}
+
+	{
+		CAutoLock BitMapLock(&m_AlphaBitmapLock);
+		if (m_TexAlphaBitmap.pTexture) {
+			D3DSURFACE_DESC desc;
+			pBackBuffer->GetDesc(&desc);
+			RECT rDst = {
+				m_AlphaBitmapNRectDest.left * desc.Width,
+				m_AlphaBitmapNRectDest.top * desc.Height,
+				m_AlphaBitmapNRectDest.right * desc.Width,
+				m_AlphaBitmapNRectDest.bottom * desc.Height
+			};
+			hr = AlphaBlt(m_pD3DDevEx, &m_AlphaBitmapRectSrc, &rDst, m_TexAlphaBitmap.pTexture);
+		}
+	}
 
 #if 0
 	{ // Tearing test
