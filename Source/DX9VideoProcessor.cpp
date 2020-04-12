@@ -2432,7 +2432,7 @@ STDMETHODIMP CDX9VideoProcessor::SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpPa
 	CheckPointer(m_pD3DDevEx, E_ABORT);
 	CAutoLock BitMapLock(&m_AlphaBitmapLock);
 
-	HRESULT hr = E_FAIL;
+	HRESULT hr = S_FALSE;
 
 	if (pBmpParms->GetBitmapFromDC && pBmpParms->bitmap.hdc) {
 		HBITMAP hBitmap = (HBITMAP)GetCurrentObject(pBmpParms->bitmap.hdc, OBJ_BITMAP);
@@ -2450,19 +2450,19 @@ STDMETHODIMP CDX9VideoProcessor::SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpPa
 
 		hr = m_TexAlphaBitmap.CheckCreate(m_pD3DDevEx, D3DFMT_A8R8G8B8, bm.bmWidth, bm.bmHeight, D3DUSAGE_DYNAMIC);
 		if (S_OK == hr) {
-			D3DLOCKED_RECT r;
-			HRESULT hr = m_TexAlphaBitmap.pSurface->LockRect(&r, nullptr, D3DLOCK_DISCARD);
+			D3DLOCKED_RECT lr;
+			hr = m_TexAlphaBitmap.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD);
 			if (S_OK == hr) {
-				if (bm.bmWidthBytes == r.Pitch) {
-					memcpy(r.pBits, bm.bmBits, bm.bmWidthBytes * bm.bmHeight);
+				if (bm.bmWidthBytes == lr.Pitch) {
+					memcpy(lr.pBits, bm.bmBits, bm.bmWidthBytes * bm.bmHeight);
 				} else {
-					LONG linesize = std::min(bm.bmWidthBytes, (LONG)r.Pitch);
+					LONG linesize = std::min(bm.bmWidthBytes, (LONG)lr.Pitch);
 					BYTE* src = (BYTE*)bm.bmBits;
-					BYTE* dst = (BYTE*)r.pBits;
+					BYTE* dst = (BYTE*)lr.pBits;
 					for (LONG y = 0; y < bm.bmHeight; ++y) {
 						memcpy(dst, src, linesize);
 						src += bm.bmWidthBytes;
-						dst += r.Pitch;
+						dst += lr.Pitch;
 					}
 				}
 				hr = m_TexAlphaBitmap.pSurface->UnlockRect();
