@@ -109,7 +109,7 @@ static HRESULT TextureBlt(IDirect3DDevice9* pD3DDev, MYD3DVERTEX<texcoords> v[4]
 	return S_OK;
 }
 
-HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTexture9* pTexture)
+HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTexture9* pTexture, D3DTEXTUREFILTERTYPE filter)
 {
 	ASSERT(pD3DDev);
 	ASSERT(pSrc);
@@ -157,8 +157,8 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTex
 	hr = pD3DDev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
 	hr = pD3DDev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
 
-	hr = pD3DDev->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-	hr = pD3DDev->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+	hr = pD3DDev->SetSamplerState(0, D3DSAMP_MAGFILTER, filter);
+	hr = pD3DDev->SetSamplerState(0, D3DSAMP_MINFILTER, filter);
 	hr = pD3DDev->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
 
 	hr = pD3DDev->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
@@ -1082,7 +1082,7 @@ HRESULT CDX9VideoProcessor::Render(int field)
 			m_AlphaBitmapNRectDest.right * desc.Width,
 			m_AlphaBitmapNRectDest.bottom * desc.Height
 		};
-		hr = AlphaBlt(m_pD3DDevEx, &m_AlphaBitmapRectSrc, &rDst, m_TexAlphaBitmap.pTexture);
+		hr = AlphaBlt(m_pD3DDevEx, &m_AlphaBitmapRectSrc, &rDst, m_TexAlphaBitmap.pTexture, D3DTEXF_LINEAR);
 	}
 
 #if 0
@@ -2278,7 +2278,7 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 
 	hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
-	hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H), m_TexStats.pTexture);
+	hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H), m_TexStats.pTexture, D3DTEXF_POINT);
 	m_pD3DDevEx->EndScene();
 
 	return hr;
@@ -2418,7 +2418,7 @@ STDMETHODIMP CDX9VideoProcessor::GetAlphaBitmapParameters(MFVideoAlphaBitmapPara
 		pBmpParms->rcSrc        = m_AlphaBitmapRectSrc;
 		pBmpParms->nrcDest      = m_AlphaBitmapNRectDest;
 		pBmpParms->fAlpha       = 0; // non used
-		pBmpParms->dwFilterMode = D3DTEXF_POINT;
+		pBmpParms->dwFilterMode = D3DTEXF_LINEAR;
 		return S_OK;
 	} else {
 		return MF_E_NOT_INITIALIZED;
