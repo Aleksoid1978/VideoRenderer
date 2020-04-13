@@ -1531,7 +1531,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hr = DrawStats(pBackBuffer);
 	}
 
-	if (m_TexAlphaBitmap.pShaderResource) {
+	if (m_bAlphaBitmapEnable && m_TexAlphaBitmap.pShaderResource) {
 		D3D11_TEXTURE2D_DESC desc;
 		pBackBuffer->GetDesc(&desc);
 		D3D11_VIEWPORT VP = {

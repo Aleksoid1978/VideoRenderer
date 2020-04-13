@@ -1072,7 +1072,7 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		hr = DrawStats(pBackBuffer);
 	}
 
-	if (m_TexAlphaBitmap.pTexture) {
+	if (m_bAlphaBitmapEnable && m_TexAlphaBitmap.pTexture) {
 		D3DSURFACE_DESC desc;
 		pBackBuffer->GetDesc(&desc);
 		RECT rDst = {
