@@ -192,6 +192,7 @@ private:
 
 	REFERENCE_TIME m_rtStart = 0;
 
+	bool     m_bAlphaBitmapEnable = false;
 	Tex2D_t  m_TexAlphaBitmap;
 	RECT     m_AlphaBitmapRectSrc = {};
 	MFVideoNormalizedRect m_AlphaBitmapNRectDest = {};

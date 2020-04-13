@@ -2676,8 +2676,8 @@ STDMETHODIMP CDX11VideoProcessor::GetBackgroundColor(COLORREF *lpClrBkg)
 STDMETHODIMP CDX11VideoProcessor::ClearAlphaBitmap()
 {
 	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
+	m_bAlphaBitmapEnable = false;
 
-	m_TexAlphaBitmap.Release();
 	return S_OK;
 }
 
@@ -2686,7 +2686,7 @@ STDMETHODIMP CDX11VideoProcessor::GetAlphaBitmapParameters(MFVideoAlphaBitmapPar
 	CheckPointer(pBmpParms, E_POINTER);
 	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
-	if (m_TexAlphaBitmap.pTexture) {
+	if (m_bAlphaBitmapEnable && m_TexAlphaBitmap.pTexture) {
 		pBmpParms->dwFlags      = MFVideoAlphaBitmap_SrcRect|MFVideoAlphaBitmap_DestRect;
 		pBmpParms->clrSrcKey    = 0; // non used
 		pBmpParms->rcSrc        = m_AlphaBitmapRectSrc;
@@ -2745,7 +2745,9 @@ STDMETHODIMP CDX11VideoProcessor::SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpP
 		return E_INVALIDARG;
 	}
 
-	if (SUCCEEDED(hr)) {
+	m_bAlphaBitmapEnable = SUCCEEDED(hr);
+
+	if (m_bAlphaBitmapEnable) {
 		m_AlphaBitmapRectSrc = { 0, 0, (LONG)m_TexAlphaBitmap.desc.Width, (LONG)m_TexAlphaBitmap.desc.Height };
 		m_AlphaBitmapNRectDest = { 0, 0, 1, 1 };
 
@@ -2760,7 +2762,7 @@ STDMETHODIMP CDX11VideoProcessor::UpdateAlphaBitmapParameters(const MFVideoAlpha
 	CheckPointer(pBmpParms, E_POINTER);
 	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
-	if (m_TexAlphaBitmap.pTexture) {
+	if (m_bAlphaBitmapEnable && m_TexAlphaBitmap.pTexture) {
 		if (pBmpParms->dwFlags & MFVideoAlphaBitmap_SrcRect) {
 			m_AlphaBitmapRectSrc = pBmpParms->rcSrc;
 		}
