@@ -195,6 +195,7 @@ private:
 	bool     m_bAlphaBitmapEnable = false;
 	Tex2D_t  m_TexAlphaBitmap;
 	RECT     m_AlphaBitmapRectSrc = {};
+	CComPtr<ID3D11Buffer> m_pAlphaBitmapVertex;
 	MFVideoNormalizedRect m_AlphaBitmapNRectDest = {};
 
 public:
@@ -285,7 +286,8 @@ private:
 
 	HRESULT Process(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
 
-	HRESULT AlphaBlt(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget, D3D11_VIEWPORT& viewport);
+	HRESULT AlphaBlt(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget,
+					ID3D11Buffer* pVertexBuffer, D3D11_VIEWPORT* pViewPort, ID3D11SamplerState* pSampler);
 	HRESULT AlphaBltSub(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, D3D11_VIEWPORT& viewport);
 	HRESULT TextureCopyRect(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
 							const CRect& srcRect, const CRect& destRect,

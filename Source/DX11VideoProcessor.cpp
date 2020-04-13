@@ -175,7 +175,12 @@ void TextureBlt11(
 	pDeviceContext->PSSetShaderResources(0, 1, views);
 }
 
-HRESULT CDX11VideoProcessor::AlphaBlt(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget, D3D11_VIEWPORT& viewport)
+HRESULT CDX11VideoProcessor::AlphaBlt(
+	ID3D11ShaderResourceView* pShaderResource,
+	ID3D11Texture2D* pRenderTarget,
+	ID3D11Buffer* pVertexBuffer,
+	D3D11_VIEWPORT* pViewPort,
+	ID3D11SamplerState* pSampler)
 {
 	ID3D11RenderTargetView* pRenderTargetView;
 	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
@@ -187,14 +192,14 @@ HRESULT CDX11VideoProcessor::AlphaBlt(ID3D11ShaderResourceView* pShaderResource,
 		// Set resources
 		m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
 		m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
-		m_pDeviceContext->RSSetViewports(1, &viewport);
+		m_pDeviceContext->RSSetViewports(1, pViewPort);
 		m_pDeviceContext->OMSetBlendState(m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 		m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
 		m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
-		m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
+		m_pDeviceContext->PSSetSamplers(0, 1, &pSampler);
 		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-		m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
+		m_pDeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &Stride, &Offset);
 
 		// Draw textured quad onto render target
 		m_pDeviceContext->Draw(4, 0);
@@ -498,6 +503,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_TexDither.Release();
 	m_TexStats.Release();
 	m_bAlphaBitmapEnable = false;
+	m_pAlphaBitmapVertex.Release();
 	m_TexAlphaBitmap.Release();
 
 	ClearPostScaleShaders();
@@ -1544,7 +1550,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			0.0f,
 			1.0f
 		};
-		hr = AlphaBlt(m_TexAlphaBitmap.pShaderResource, pBackBuffer, VP);
+		hr = AlphaBlt(m_TexAlphaBitmap.pShaderResource, pBackBuffer, m_pAlphaBitmapVertex, &VP, m_pSamplerLinear);
 	}
 
 #if 0
@@ -2553,7 +2559,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		VP.Height   = STATS_H;
 		VP.MinDepth = 0.0f;
 		VP.MaxDepth = 1.0f;
-		hr = AlphaBlt(m_TexStats.pShaderResource, pRenderTarget, VP);
+		hr = AlphaBlt(m_TexStats.pShaderResource, pRenderTarget, m_pFullFrameVertexBuffer, &VP, m_pSamplerPoint);
 	}
 
 	return hr;
@@ -2694,7 +2700,7 @@ STDMETHODIMP CDX11VideoProcessor::GetAlphaBitmapParameters(MFVideoAlphaBitmapPar
 		pBmpParms->rcSrc        = m_AlphaBitmapRectSrc;
 		pBmpParms->nrcDest      = m_AlphaBitmapNRectDest;
 		pBmpParms->fAlpha       = 0; // non used
-		pBmpParms->dwFilterMode = D3DTEXF_POINT;
+		pBmpParms->dwFilterMode = D3DTEXF_LINEAR;
 		return S_OK;
 	} else {
 		return MF_E_NOT_INITIALIZED;
@@ -2753,6 +2759,8 @@ STDMETHODIMP CDX11VideoProcessor::SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpP
 		m_AlphaBitmapRectSrc = { 0, 0, (LONG)m_TexAlphaBitmap.desc.Width, (LONG)m_TexAlphaBitmap.desc.Height };
 		m_AlphaBitmapNRectDest = { 0, 0, 1, 1 };
 
+		m_pAlphaBitmapVertex.Release();
+
 		hr = UpdateAlphaBitmapParameters(&pBmpParms->params);
 	}
 
@@ -2764,9 +2772,19 @@ STDMETHODIMP CDX11VideoProcessor::UpdateAlphaBitmapParameters(const MFVideoAlpha
 	CheckPointer(pBmpParms, E_POINTER);
 	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
+	HRESULT hr = S_FALSE;
+
 	if (m_bAlphaBitmapEnable) {
 		if (pBmpParms->dwFlags & MFVideoAlphaBitmap_SrcRect) {
 			m_AlphaBitmapRectSrc = pBmpParms->rcSrc;
+			m_pAlphaBitmapVertex.Release();
+		}
+		if (!m_pAlphaBitmapVertex) {
+			HRESULT hr = CreateVertexBuffer(m_pDevice, &m_pAlphaBitmapVertex, m_TexAlphaBitmap.desc.Width, m_TexAlphaBitmap.desc.Height, m_AlphaBitmapRectSrc, 0);
+			if (FAILED(hr)) {
+				m_bAlphaBitmapEnable = false;
+				return hr;
+			}
 		}
 		if (pBmpParms->dwFlags & MFVideoAlphaBitmap_DestRect) {
 			m_AlphaBitmapNRectDest = pBmpParms->nrcDest;
