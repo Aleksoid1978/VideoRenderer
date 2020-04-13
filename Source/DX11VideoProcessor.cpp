@@ -497,6 +497,8 @@ void CDX11VideoProcessor::ReleaseDevice()
 
 	m_TexDither.Release();
 	m_TexStats.Release();
+	m_bAlphaBitmapEnable = false;
+	m_TexAlphaBitmap.Release();
 
 	ClearPostScaleShaders();
 	m_pPSCorrection.Release();
@@ -1531,7 +1533,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hr = DrawStats(pBackBuffer);
 	}
 
-	if (m_bAlphaBitmapEnable && m_TexAlphaBitmap.pShaderResource) {
+	if (m_bAlphaBitmapEnable) {
 		D3D11_TEXTURE2D_DESC desc;
 		pBackBuffer->GetDesc(&desc);
 		D3D11_VIEWPORT VP = {
@@ -2686,7 +2688,7 @@ STDMETHODIMP CDX11VideoProcessor::GetAlphaBitmapParameters(MFVideoAlphaBitmapPar
 	CheckPointer(pBmpParms, E_POINTER);
 	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
-	if (m_bAlphaBitmapEnable && m_TexAlphaBitmap.pTexture) {
+	if (m_bAlphaBitmapEnable) {
 		pBmpParms->dwFlags      = MFVideoAlphaBitmap_SrcRect|MFVideoAlphaBitmap_DestRect;
 		pBmpParms->clrSrcKey    = 0; // non used
 		pBmpParms->rcSrc        = m_AlphaBitmapRectSrc;
@@ -2745,7 +2747,7 @@ STDMETHODIMP CDX11VideoProcessor::SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpP
 		return E_INVALIDARG;
 	}
 
-	m_bAlphaBitmapEnable = SUCCEEDED(hr);
+	m_bAlphaBitmapEnable = SUCCEEDED(hr) && m_TexAlphaBitmap.pShaderResource;
 
 	if (m_bAlphaBitmapEnable) {
 		m_AlphaBitmapRectSrc = { 0, 0, (LONG)m_TexAlphaBitmap.desc.Width, (LONG)m_TexAlphaBitmap.desc.Height };
@@ -2762,7 +2764,7 @@ STDMETHODIMP CDX11VideoProcessor::UpdateAlphaBitmapParameters(const MFVideoAlpha
 	CheckPointer(pBmpParms, E_POINTER);
 	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
-	if (m_bAlphaBitmapEnable && m_TexAlphaBitmap.pTexture) {
+	if (m_bAlphaBitmapEnable) {
 		if (pBmpParms->dwFlags & MFVideoAlphaBitmap_SrcRect) {
 			m_AlphaBitmapRectSrc = pBmpParms->rcSrc;
 		}

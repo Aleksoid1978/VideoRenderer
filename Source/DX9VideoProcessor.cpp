@@ -405,6 +405,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 
 	m_TexDither.Release();
 	m_TexStats.Release();
+	m_bAlphaBitmapEnable = false;
 	m_TexAlphaBitmap.Release();
 
 	m_DXVA2VP.ReleaseVideoService();
@@ -1072,7 +1073,7 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		hr = DrawStats(pBackBuffer);
 	}
 
-	if (m_bAlphaBitmapEnable && m_TexAlphaBitmap.pTexture) {
+	if (m_bAlphaBitmapEnable) {
 		D3DSURFACE_DESC desc;
 		pBackBuffer->GetDesc(&desc);
 		RECT rDst = {
@@ -2411,7 +2412,7 @@ STDMETHODIMP CDX9VideoProcessor::GetAlphaBitmapParameters(MFVideoAlphaBitmapPara
 	CheckPointer(pBmpParms, E_POINTER);
 	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
-	if (m_bAlphaBitmapEnable && m_TexAlphaBitmap.pTexture) {
+	if (m_bAlphaBitmapEnable) {
 		pBmpParms->dwFlags      = MFVideoAlphaBitmap_SrcRect|MFVideoAlphaBitmap_DestRect;
 		pBmpParms->clrSrcKey    = 0; // non used
 		pBmpParms->rcSrc        = m_AlphaBitmapRectSrc;
@@ -2470,7 +2471,7 @@ STDMETHODIMP CDX9VideoProcessor::SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpPa
 		return E_INVALIDARG;
 	}
 
-	m_bAlphaBitmapEnable = SUCCEEDED(hr);
+	m_bAlphaBitmapEnable = SUCCEEDED(hr) && m_TexAlphaBitmap.pTexture;
 
 	if (m_bAlphaBitmapEnable) {
 		m_AlphaBitmapRectSrc = { 0, 0, (LONG)m_TexAlphaBitmap.Width, (LONG)m_TexAlphaBitmap.Height };
@@ -2487,7 +2488,7 @@ STDMETHODIMP CDX9VideoProcessor::UpdateAlphaBitmapParameters(const MFVideoAlphaB
 	CheckPointer(pBmpParms, E_POINTER);
 	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
-	if (m_bAlphaBitmapEnable && m_TexAlphaBitmap.pTexture) {
+	if (m_bAlphaBitmapEnable) {
 		if (pBmpParms->dwFlags & MFVideoAlphaBitmap_SrcRect) {
 			m_AlphaBitmapRectSrc = pBmpParms->rcSrc;
 		}
