@@ -1,5 +1,8 @@
 v0.4.4
 ------------------------
+Fixed problem with old frame output after play-stop-play.
+Fixed the green line on the right side of the frame when using a DXVA2 or D3D11 video processor and a software decoder on AMD graphics cards.
+Added support for IMFVideoMixerBitmap. Now some players can draw images over video (OSD).
 Recommended version of MPC-BE v1.5.5.5183 or later.
 
 v0.4.3.1215 - 2020.04.01
