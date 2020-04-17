@@ -1,4 +1,4 @@
-v0.4.4
+v0.4.5.1242 - 2020.04.17
 ------------------------
 Fixed problem with old frame output after play-stop-play.
 Fixed the green line on the right side of the frame when using a DXVA2 or D3D11 video processor and a software decoder on AMD graphics cards.
