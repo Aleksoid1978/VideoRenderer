@@ -1,3 +1,6 @@
+v0.4.6
+------------------------
+
 v0.4.5.1242 - 2020.04.17
 ------------------------
 Fixed problem with old frame output after play-stop-play.
