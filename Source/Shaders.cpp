@@ -161,12 +161,8 @@ HRESULT GetShaderConvertColor(
 	ASSERT(planes == (fmtParams.pDX11Planes ? (fmtParams.pDX11Planes->FmtPlane3 ? 3 : 2) : 1));
 	DLog(L"GetShaderConvertColor() frame consists of %d planes", planes);
 
-	code.AppendFormat("#define w %u\n", (fmtParams.cformat == CF_YUY2) ? texW*2 : texW);
-	code.AppendFormat("#define h %u\n", texH);
-	code.AppendFormat("#define dx %.15f\n", 1.0 / texW);
-	code.AppendFormat("#define dy %.15f\n", 1.0 / texH);
-	code.Append("static const float2 wh = {w, h};\n");
-	code.Append("static const float2 dxdy = {dx, dy};\n");
+	code.AppendFormat("static const float2 wh = {%u, %u};\n", (fmtParams.cformat == CF_YUY2) ? texW*2 : texW, texH);
+	code.AppendFormat("static const float2 dxdy = {%.15f, %.15f};\n", 1.0 / texW, 1.0 / texH);
 
 	if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 		code.Append("#define CATMULLROM_05(c0,c1,c2,c3) (9*(c1+c2)-(c0+c3))*0.0625\n");
@@ -367,7 +363,7 @@ HRESULT GetShaderConvertColor(
 
 		switch (planes) {
 		case 1:
-			code.Append("float4 main(float2 tex : TEXCOORD0) : COLOR\n"
+			code.Append("\nfloat4 main(float2 tex : TEXCOORD0) : COLOR\n"
 				"{\n");
 			code.Append("float4 color = tex2D(s0, tex);\n");
 			if (fmtParams.cformat == CF_YUY2) {
@@ -388,7 +384,7 @@ HRESULT GetShaderConvertColor(
 			}
 			break;
 		case 2:
-			code.Append("float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n{\n");
+			code.Append("\nfloat4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n{\n");
 			code.Append("float colorY = tex2D(sY, t0).r;\n"
 				"float2 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
@@ -442,7 +438,7 @@ HRESULT GetShaderConvertColor(
 			code.Append("float4 color = float4(colorY, colorUV, 0);\n");
 			break;
 		case 3:
-			code.Append("float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n"
+			code.Append("\nfloat4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n"
 				"{\n");
 			code.AppendFormat("float colorY = tex2D(sY, t0).r;\n"
 				"float2 colorUV;\n");
@@ -499,7 +495,7 @@ HRESULT GetShaderConvertColor(
 			break;
 		}
 	}
-
+	code.Append("//convert color\n");
 	code.Append("color.rgb = float3(mul(cm_r, color), mul(cm_g, color), mul(cm_b, color)) + cm_c;\n");
 
 	if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
