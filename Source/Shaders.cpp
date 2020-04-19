@@ -343,8 +343,6 @@ HRESULT GetShaderConvertColor(
 			code.Append("float4 color = float4(colorY, colorUV, 0);\n");
 			break;
 		}
-
-		code.Append("color.rgb = float3(mul(cm_r, color.rgb), mul(cm_g, color.rgb), mul(cm_b, color.rgb)) + cm_c;\n");
 	}
 	else {
 		switch (planes) {
@@ -362,9 +360,9 @@ HRESULT GetShaderConvertColor(
 			break;
 		}
 
-		code.Append("float4 cm_r : register(c0);\n"
-					"float4 cm_g : register(c1);\n"
-					"float4 cm_b : register(c2);\n"
+		code.Append("float3 cm_r : register(c0);\n"
+					"float3 cm_g : register(c1);\n"
+					"float3 cm_b : register(c2);\n"
 					"float3 cm_c : register(c3);\n");
 
 		switch (planes) {
@@ -392,7 +390,7 @@ HRESULT GetShaderConvertColor(
 		case 2:
 			code.Append("float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n{\n");
 			code.Append("float colorY = tex2D(sY, t0).r;\n"
-				"float3 colorUV;\n");
+				"float2 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
 				code.Append("float2 pos = t0 * (wh*0.5);"
 					"float2 t = frac(pos);\n"
@@ -406,34 +404,42 @@ HRESULT GetShaderConvertColor(
 					"float2 w3 = (t3 - t2) / 2;\n");
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
-						code.AppendFormat("float3 c%d%d = tex2D(sUV, (pos + float2(%d+0.5, %d+0.5))*dxdy*2).rga;\n", x, y, x-1, y-1);
+						if (fmtParams.cformat == CF_NV12) {
+							code.AppendFormat("float2 c%d%d = tex2D(sUV, (pos + float2(%d+0.5, %d+0.5))*dxdy*2).ra;\n", x, y, x - 1, y - 1);
+						} else {
+							code.AppendFormat("float2 c%d%d = tex2D(sUV, (pos + float2(%d+0.5, %d+0.5))*dxdy*2).rg;\n", x, y, x - 1, y - 1);
+						}
 					}
 				}
 				code.Append(
-					"float3 Q0 = c00 * w0.y + c01 * w1.y + c02 * w2.y + c03 * w3.y;\n"
-					"float3 Q1 = c10 * w0.y + c11 * w1.y + c12 * w2.y + c13 * w3.y;\n"
-					"float3 Q2 = c20 * w0.y + c21 * w1.y + c22 * w2.y + c23 * w3.y;\n"
-					"float3 Q3 = c30 * w0.y + c31 * w1.y + c32 * w2.y + c33 * w3.y;\n"
+					"float2 Q0 = c00 * w0.y + c01 * w1.y + c02 * w2.y + c03 * w3.y;\n"
+					"float2 Q1 = c10 * w0.y + c11 * w1.y + c12 * w2.y + c13 * w3.y;\n"
+					"float2 Q2 = c20 * w0.y + c21 * w1.y + c22 * w2.y + c23 * w3.y;\n"
+					"float2 Q3 = c30 * w0.y + c31 * w1.y + c32 * w2.y + c33 * w3.y;\n"
 					"colorUV = Q0 * w0.x + Q1 * w1.x + Q2 * w2.x + Q3 * w3.x;\n");
 			}
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 				code.Append(
 					"if (fmod(t0.x*w, 2) < 1.0) {\n"
 						"t0.x += 0.5*dx;\n"
-						"colorUV = tex2D(sUV, t0).rga;\n"
+						"colorUV = tex2D(sUV, t0).rg;\n"
 					"} else {\n"
 						"t0.x -= 0.5*dx;\n"
-						"float3 c0 = tex2D(sUV, t0 + float2(-2*dx, 0)).rga;\n"
-						"float3 c1 = tex2D(sUV, t0).rga;\n"
-						"float3 c2 = tex2D(sUV, t0 + float2(2*dx, 0)).rga;\n"
-						"float3 c3 = tex2D(sUV, t0 + float2(4*dx, 0)).rga;\n"
+						"float2 c0 = tex2D(sUV, t0 + float2(-2*dx, 0)).rg;\n"
+						"float2 c1 = tex2D(sUV, t0).rg;\n"
+						"float2 c2 = tex2D(sUV, t0 + float2(2*dx, 0)).rg;\n"
+						"float2 c3 = tex2D(sUV, t0 + float2(4*dx, 0)).rg;\n"
 						"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
 					"}\n");
 			}
 			else { // CHROMA_Bilinear or YUV 4:4:4
-				code.Append("colorUV = tex2D(sUV, t1).rga;\n");
+				if (fmtParams.cformat == CF_NV12) {
+					code.Append("colorUV = tex2D(sUV, t1).ra;\n");
+				} else {
+					code.Append("colorUV = tex2D(sUV, t1).rg;\n");
+				}
 			}
-			code.Append("float4 color = float4(colorY, colorUV);\n");
+			code.Append("float4 color = float4(colorY, colorUV, 0);\n");
 			break;
 		case 3:
 			code.Append("float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n"
@@ -492,9 +498,9 @@ HRESULT GetShaderConvertColor(
 			code.Append("float4 color = float4(colorY, colorUV, 0);\n");
 			break;
 		}
-
-		code.Append("color.rgb = float3(mul(cm_r, color), mul(cm_g, color), mul(cm_b, color)) + cm_c;\n");
 	}
+
+	code.Append("color.rgb = float3(mul(cm_r, color), mul(cm_g, color), mul(cm_b, color)) + cm_c;\n");
 
 	if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 		code.Append("color = correct_ST2084(color);\n");

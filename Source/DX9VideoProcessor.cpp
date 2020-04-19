@@ -571,11 +571,6 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 			std::swap(m_PSConvColorData.fConstants[i][0], m_PSConvColorData.fConstants[i][1]);
 		}
 	}
-	else if (m_srcParams.cformat == CF_NV12) {
-		for (int i = 0; i < 3; i++) {
-			std::swap(m_PSConvColorData.fConstants[i][2], m_PSConvColorData.fConstants[i][3]);
-		}
-	}
 }
 
 void CDX9VideoProcessor::UpdateRenderRect()
