@@ -75,7 +75,7 @@ struct mp_csp_primaries mp_get_csp_primaries(enum mp_csp_prim spc)
 
     switch (spc) {
     case MP_CSP_PRIM_BT_470M:
-        return mp_csp_primaries{
+        return {
             {0.670f, 0.330f},
             {0.210f, 0.710f},
             {0.140f, 0.080f},

@@ -594,6 +594,8 @@ void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspac
 	case DXVA2_VideoPrimaries_BT470_2_SysBG: colorspace.primaries = MP_CSP_PRIM_BT_601_625; break;
 	case DXVA2_VideoPrimaries_SMPTE170M:
 	case DXVA2_VideoPrimaries_SMPTE240M:     colorspace.primaries = MP_CSP_PRIM_BT_601_525; break;
+	case VIDEOPRIMARIES_BT2020:              colorspace.primaries = MP_CSP_PRIM_BT_2020;    break;
+	case VIDEOPRIMARIES_DCI_P3:              colorspace.primaries = MP_CSP_PRIM_DCI_P3;     break;
 	default:
 		colorspace.primaries = MP_CSP_PRIM_AUTO;
 	}
