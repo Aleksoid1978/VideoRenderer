@@ -822,6 +822,7 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 {
 	if (m_hWndParent != (HWND)Owner) {
 		CAutoLock cRendererLock(&m_RendererLock);
+		HRESULT hr;
 
 		m_hWndParent = (HWND)Owner;
 
@@ -838,7 +839,9 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 			wc.lpszClassName = g_szClassName;
 			wc.cbWndExtra = sizeof(this);
 			if (!RegisterClassExW(&wc)) {
-				return E_FAIL;
+				hr = HRESULT_FROM_WIN32(GetLastError());
+				DLog(L"CMpcVideoRenderer::put_Owner() : RegisterClassExW failed with error %s", HR2Str(hr));
+				return hr;
 			}
 		}
 
@@ -862,7 +865,6 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 			SetWindowPos(m_hWnd, nullptr, m_windowRect.left, m_windowRect.top, m_windowRect.Width(), m_windowRect.Height(), SWP_NOZORDER | SWP_NOACTIVATE);
 		}
 
-		HRESULT hr;
 		if (m_bUsedD3D11) {
 			hr = m_DX11_VP.Init(m_hWnd);
 		} else {
