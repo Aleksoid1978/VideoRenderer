@@ -105,6 +105,15 @@ struct mp_csp_params {
 	int input_bits   = 8;
 };
 
+struct mp_csp_col_xy {
+    float x, y;
+};
+
+struct mp_csp_primaries {
+    struct mp_csp_col_xy red, green, blue, white;
+};
+
+struct mp_csp_primaries mp_get_csp_primaries(enum mp_csp_prim csp);
 float mp_trc_nom_peak(enum mp_csp_trc trc);
 bool mp_trc_is_hdr(enum mp_csp_trc trc);
 
@@ -125,6 +134,8 @@ struct mp_cmat {
 	float m[3][3];
 	float c[3];
 };
+
+void mp_get_rgb2xyz_matrix(struct mp_csp_primaries space, float m[3][3]);
 
 double mp_get_csp_mul(enum mp_csp csp, int input_bits, int texture_bits);
 void mp_get_csp_matrix(struct mp_csp_params *params, struct mp_cmat *out);

@@ -51,6 +51,125 @@ static void mp_mul_matrix3x3(float a[3][3], float b[3][3])
     }
 }
 
+// return the primaries associated with a certain mp_csp_primaries val
+struct mp_csp_primaries mp_get_csp_primaries(enum mp_csp_prim spc)
+{
+    /*
+    Values from: ITU-R Recommendations BT.470-6, BT.601-7, BT.709-5, BT.2020-0
+
+    https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.470-6-199811-S!!PDF-E.pdf
+    https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.601-7-201103-I!!PDF-E.pdf
+    https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.709-5-200204-I!!PDF-E.pdf
+    https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.2020-0-201208-I!!PDF-E.pdf
+
+    Other colorspaces from https://en.wikipedia.org/wiki/RGB_color_space#Specifications
+    */
+
+    // CIE standard illuminant series
+    static const struct mp_csp_col_xy
+        d50 = {0.34577f, 0.35850f},
+        d65 = {0.31271f, 0.32902f},
+        c   = {0.31006f, 0.31616f},
+        dci = {0.31400f, 0.35100f},
+        e   = {1.0f/3.0f, 1.0f/3.0f};
+
+    switch (spc) {
+    case MP_CSP_PRIM_BT_470M:
+        return mp_csp_primaries{
+            {0.670f, 0.330f},
+            {0.210f, 0.710f},
+            {0.140f, 0.080f},
+            c
+        };
+    case MP_CSP_PRIM_BT_601_525:
+        return {
+            {0.630f, 0.340f},
+            {0.310f, 0.595f},
+            {0.155f, 0.070f},
+            d65
+        };
+    case MP_CSP_PRIM_BT_601_625:
+        return {
+            {0.640f, 0.330f},
+            {0.290f, 0.600f},
+            {0.150f, 0.060f},
+            d65
+        };
+    // This is the default assumption if no colorspace information could
+    // be determined, eg. for files which have no video channel.
+    case MP_CSP_PRIM_AUTO:
+    case MP_CSP_PRIM_BT_709:
+        return {
+            {0.640f, 0.330f},
+            {0.300f, 0.600f},
+            {0.150f, 0.060f},
+            d65
+        };
+    case MP_CSP_PRIM_BT_2020:
+        return {
+            {0.708f, 0.292f},
+            {0.170f, 0.797f},
+            {0.131f, 0.046f},
+            d65
+        };
+    case MP_CSP_PRIM_APPLE:
+        return {
+            {0.625f, 0.340f},
+            {0.280f, 0.595f},
+            {0.115f, 0.070f},
+            d65
+        };
+    case MP_CSP_PRIM_ADOBE:
+        return {
+            {0.640f, 0.330f},
+            {0.210f, 0.710f},
+            {0.150f, 0.060f},
+            d65
+        };
+    case MP_CSP_PRIM_PRO_PHOTO:
+        return {
+            {0.7347f, 0.2653f},
+            {0.1596f, 0.8404f},
+            {0.0366f, 0.0001f},
+            d50
+        };
+    case MP_CSP_PRIM_CIE_1931:
+        return {
+            {0.7347f, 0.2653f},
+            {0.2738f, 0.7174f},
+            {0.1666f, 0.0089f},
+            e
+        };
+    // From SMPTE RP 431-2 and 432-1
+    case MP_CSP_PRIM_DCI_P3:
+    case MP_CSP_PRIM_DISPLAY_P3:
+        return {
+            {0.680f, 0.320f},
+            {0.265f, 0.690f},
+            {0.150f, 0.060f},
+            spc == MP_CSP_PRIM_DCI_P3 ? dci : d65
+        };
+    // From Panasonic VARICAM reference manual
+    case MP_CSP_PRIM_V_GAMUT:
+        return {
+            {0.730f, 0.280f},
+            {0.165f, 0.840f},
+            {0.100f, -0.03f},
+            d65
+        };
+    // From Sony S-Log reference manual
+    case MP_CSP_PRIM_S_GAMUT:
+        return {
+            {0.730f, 0.280f},
+            {0.140f, 0.855f},
+            {0.100f, -0.05f},
+            d65
+        };
+    default:
+        return {{0}};
+    }
+}
+
 // Get the nominal peak for a given colorspace, relative to the reference white
 // level. In other words, this returns the brightest encodable value that can
 // be represented by a given transfer curve.
@@ -70,6 +189,43 @@ float mp_trc_nom_peak(enum mp_csp_trc trc)
 bool mp_trc_is_hdr(enum mp_csp_trc trc)
 {
     return mp_trc_nom_peak(trc) > 1.0;
+}
+
+// Compute the RGB/XYZ matrix as described here:
+// http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+void mp_get_rgb2xyz_matrix(struct mp_csp_primaries space, float m[3][3])
+{
+    float S[3], X[4], Z[4];
+
+    // Convert from CIE xyY to XYZ. Note that Y=1 holds true for all primaries
+    X[0] = space.red.x   / space.red.y;
+    X[1] = space.green.x / space.green.y;
+    X[2] = space.blue.x  / space.blue.y;
+    X[3] = space.white.x / space.white.y;
+
+    Z[0] = (1 - space.red.x   - space.red.y)   / space.red.y;
+    Z[1] = (1 - space.green.x - space.green.y) / space.green.y;
+    Z[2] = (1 - space.blue.x  - space.blue.y)  / space.blue.y;
+    Z[3] = (1 - space.white.x - space.white.y) / space.white.y;
+
+    // S = XYZ^-1 * W
+    for (int i = 0; i < 3; i++) {
+        m[0][i] = X[i];
+        m[1][i] = 1;
+        m[2][i] = Z[i];
+    }
+
+    mp_invert_matrix3x3(m);
+
+    for (int i = 0; i < 3; i++)
+        S[i] = m[i][0] * X[3] + m[i][1] * 1 + m[i][2] * Z[3];
+
+    // M = [Sc * XYZc]
+    for (int i = 0; i < 3; i++) {
+        m[0][i] = S[i] * X[i];
+        m[1][i] = S[i] * 1;
+        m[2][i] = S[i] * Z[i];
+    }
 }
 
 // Get multiplication factor required if image data is fit within the LSBs of a
@@ -115,7 +271,7 @@ double mp_get_csp_mul(enum mp_csp csp, int input_bits, int texture_bits)
  */
 static void luma_coeffs(struct mp_cmat *mat, float lr, float lg, float lb)
 {
-    assert(fabs(lr + lg + lb - 1) < 1e-6);
+    assert(fabs(lr+lg+lb - 1) < 1e-6);
     *mat = mp_cmat{
         { {1, 0,                    2 * (1-lr)          },
           {1, -2 * (1-lb) * lb/lg, -2 * (1-lr) * lr/lg  },
@@ -152,16 +308,18 @@ void mp_get_csp_matrix(struct mp_csp_params *params, struct mp_cmat *m)
         levels_in = (mp_csp_levels)-1;
         break;
     }
-    //case MP_CSP_XYZ: {
+    /*
+    case MP_CSP_XYZ: {
         // The vo should probably not be using a matrix generated by this
         // function for XYZ sources, but if it does, let's just convert it to
         // an equivalent RGB space based on the colorimetry metadata it
         // provided in mp_csp_params. (At the risk of clipping, if the
         // chosen primaries are too small to fit the actual data)
-    //  mp_get_xyz2rgb_coeffs(params, MP_INTENT_RELATIVE_COLORIMETRIC, m);
-    //  levels_in = (mp_csp_levels)-1;
-    //  break;
-    //}
+        mp_get_xyz2rgb_coeffs(params, MP_INTENT_RELATIVE_COLORIMETRIC, m);
+        levels_in = (mp_csp_levels)-1;
+        break;
+    }
+    */
     case MP_CSP_YCGCO: {
         *m = mp_cmat{
             {{1,  -1,  1},
@@ -196,9 +354,9 @@ void mp_get_csp_matrix(struct mp_csp_params *params, struct mp_cmat *m)
     // by ITU-R BT.2100. If somebody ever complains about full-range YUV looking
     // different from their reference display, this comment is probably why.
     struct yuvlevels { double ymin, ymax, cmax, cmid; }
-    yuvlim = { 16 * s, 235 * s, 240 * s, 128 * s },
-        yuvfull = { 0 * s, 255 * s, 255 * s, 128 * s },
-        anyfull = { 0 * s, 255 * s, 255 * s / 2, 0 }, // cmax picked to make cmul=ymul
+        yuvlim = { 16*s, 235*s, 240*s, 128*s },
+        yuvfull = { 0*s, 255*s, 255*s, 128*s },
+        anyfull = { 0*s, 255*s, 255*s/2, 0 }, // cmax picked to make cmul=ymul
         yuvlev;
     switch (levels_in) {
     case MP_CSP_LEVELS_TV: yuvlev = yuvlim; break;
@@ -212,7 +370,7 @@ void mp_get_csp_matrix(struct mp_csp_params *params, struct mp_cmat *m)
     if (levels_out <= MP_CSP_LEVELS_AUTO || levels_out >= MP_CSP_LEVELS_COUNT)
         levels_out = MP_CSP_LEVELS_PC;
     struct rgblevels { double min, max; }
-    rgblim = { 16 / 255., 235 / 255. },
+        rgblim =  { 16/255., 235/255. },
         rgbfull = { 0,        1 },
         rgblev;
     switch (levels_out) {
