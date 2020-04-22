@@ -161,6 +161,8 @@ HRESULT GetShaderConvertColor(
 	ASSERT(planes == (fmtParams.pDX11Planes ? (fmtParams.pDX11Planes->FmtPlane3 ? 3 : 2) : 1));
 	DLog(L"GetShaderConvertColor() frame consists of %d planes", planes);
 
+	code.AppendFormat("#define w %u\n", (fmtParams.cformat == CF_YUY2) ? texW * 2 : texW);
+	code.AppendFormat("#define dx %.15f\n", 1.0 / texW);
 	code.AppendFormat("static const float2 wh = {%u, %u};\n", (fmtParams.cformat == CF_YUY2) ? texW*2 : texW, texH);
 	code.AppendFormat("static const float2 dxdy = {%.15f, %.15f};\n", 1.0 / texW, 1.0 / texH);
 
@@ -173,7 +175,7 @@ HRESULT GetShaderConvertColor(
 	if (fmtParams.Subsampling == 420) {
 		switch (exFmt.VideoChromaSubsampling) {
 		case DXVA2_VideoChromaSubsampling_Cosited:
-			strChromaPos = "+float2(dx*0.5,dy*0.5)";
+			strChromaPos = "+dxdy*0.5";
 			strChromaPos2 = "+float2(-0.25,-0.25)";
 			DLog(L"GetShaderConvertColor() set chroma location Co-sited");
 			break;
