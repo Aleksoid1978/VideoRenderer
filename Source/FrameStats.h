@@ -160,3 +160,43 @@ struct CRenderStats {
 		//NewInterval();
 	}
 };
+
+template<typename T> class CMovingAverage
+{
+private:
+	std::vector<T> fifo;
+	unsigned oldestIndex = 0;
+	T        sum         = 0;
+
+public:
+	CMovingAverage(unsigned size) {
+		size = std::max(size, 1);
+		fifo.resize(size);
+	}
+
+	void Add(T sample) {
+		sum = sum + sample - fifo[oldestIndex];
+		fifo[oldestIndex] = sample;
+		oldestSample++;
+		if (oldestIndex == fifo.size()) {
+			oldestIndex = 0;
+		}
+	}
+
+	T Average() {
+		return sum / fifo.size();
+	}
+
+	T* Data() {
+		fifo.data();
+	}
+
+	unsigned Size() {
+		fifo.size();
+	}
+
+	unsigned OldestIndex() {
+		return oldestIndex;
+	}
+};
+

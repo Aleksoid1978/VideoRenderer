@@ -167,6 +167,7 @@ public:
 
 	void ClearPoints();
 	bool AddPoints(POINT* poins, const UINT size, const D3DCOLOR color);
+	bool AddGFPoints(int Xstart, int Xstep, int* Ydata, UINT Yoffset, const UINT size, const D3DCOLOR color);
 
 	HRESULT UpdateVertexBuffer();
 	HRESULT Draw();
@@ -176,6 +177,9 @@ public:
 
 class CD3D9Lines : public CD3D9Dots
 {
+private:
+	using CD3D9Dots::AddGFPoints;
+
 protected:
 	inline bool CheckNumPoints(const UINT num) override
 	{

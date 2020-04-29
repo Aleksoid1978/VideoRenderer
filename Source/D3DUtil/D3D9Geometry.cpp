@@ -58,6 +58,7 @@ void CD3D9Dots::InvalidateDeviceObjects()
 void CD3D9Dots::ClearPoints()
 {
 	m_Vertices.clear();
+	m_bAlphaBlend = false;
 }
 
 bool CD3D9Dots::AddPoints(POINT* poins, const UINT size, const D3DCOLOR color)
@@ -72,7 +73,29 @@ bool CD3D9Dots::AddPoints(POINT* poins, const UINT size, const D3DCOLOR color)
 	m_Vertices.resize(pos + size);
 
 	while (pos < m_Vertices.size()) {
-		m_Vertices[pos] = { {(float)(*poins++).x, (float)(*poins++).y, 0.f, 1.f}, color };
+		m_Vertices[pos++] = { {(float)(*poins++).x, (float)(*poins++).y, 0.f, 1.f}, color };
+	}
+
+	return true;
+}
+
+bool CD3D9Dots::AddGFPoints(int Xstart, int Xstep, int* Ydata, UINT Yoffset, const UINT size, const D3DCOLOR color)
+{
+	if (!CheckNumPoints(size)) {
+		return false;
+	}
+
+	m_bAlphaBlend = (color >> 24) < 0xFF;
+
+	auto pos = m_Vertices.size();
+	m_Vertices.resize(pos + size);
+
+	while (pos < m_Vertices.size()) {
+		m_Vertices[pos++] = { {(float)Xstart, (float)Ydata[Yoffset++], 0.f, 1.f}, color };
+		Xstart += Xstep;
+		if (Yoffset == size) {
+			Yoffset = 0;
+		}
 	}
 
 	return true;
