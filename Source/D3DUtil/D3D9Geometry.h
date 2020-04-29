@@ -1,5 +1,5 @@
 /*
- * (C) 2019 see Authors.txt
+ * (C) 2019-2020 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -19,10 +19,6 @@
  */
 
 #pragma once
-
-#include <d3d9.h>
-#include <vector>
-#include "Helper.h"
 
 struct POINTVERTEX {
 	DirectX::XMFLOAT4 pos;
@@ -142,132 +138,68 @@ public:
 	}
 };
 
+// CD3D9Dots
+
 class CD3D9Dots
 {
 protected:
-	IDirect3DDevice9* m_pD3DDev = nullptr;
+	IDirect3DDevice9* m_pDevice = nullptr;
 
 	bool m_bAlphaBlend = false;
 	std::vector<POINTVERTEX> m_Vertices;
 	IDirect3DVertexBuffer9* m_pVertexBuffer = nullptr;
 
-	virtual inline bool CheckBadPoints(const std::vector<POINT>& poins)
+	virtual inline bool CheckNumPoints(const UINT num)
 	{
-		return (poins.size() == 0);
+		return (num > 0);
 	}
 
 	virtual inline HRESULT DrawPrimitive()
 	{
-		return m_pD3DDev->DrawPrimitive(D3DPT_POINTLIST, 0, m_Vertices.size());
+		return m_pDevice->DrawPrimitive(D3DPT_POINTLIST, 0, m_Vertices.size());
 	}
 
 public:
-	~CD3D9Dots()
-	{
-		InvalidateDeviceObjects();
-	}
+	~CD3D9Dots();
 
-	HRESULT InitDeviceObjects(IDirect3DDevice9* pD3DDev)
-	{
-		InvalidateDeviceObjects();
-		if (!pD3DDev) {
-			return E_POINTER;
-		}
+	HRESULT InitDeviceObjects(IDirect3DDevice9* pDevice);
+	void InvalidateDeviceObjects();
 
-		m_pD3DDev = pD3DDev;
+	void ClearPoints();
+	bool AddPoints(POINT* poins, const UINT size, const D3DCOLOR color);
 
-		return S_OK;
-	}
-
-	void InvalidateDeviceObjects()
-	{
-		m_pD3DDev = nullptr;
-		SAFE_RELEASE(m_pVertexBuffer);
-	}
-
-	HRESULT Set(const std::vector<POINT>& poins, const D3DCOLOR color)
-	{
-		if (CheckBadPoints(poins)) {
-			return E_INVALIDARG;
-		}
-		HRESULT hr = S_OK;
-
-		if (m_Vertices.size() != poins.size()) {
-			SAFE_RELEASE(m_pVertexBuffer);
-		}
-
-		m_bAlphaBlend = (color >> 24) < 0xFF;
-
-		m_Vertices.clear();
-		m_Vertices.reserve(poins.size());
-		for (const auto& point : poins) {
-			m_Vertices.emplace_back(POINTVERTEX{ {(float)point.x, (float)point.y, 0.5f, 1.0f}, color });
-		}
-
-		UINT vertexSize = m_Vertices.size() * sizeof(POINTVERTEX);
-
-		if (!m_pVertexBuffer) {
-			hr = m_pD3DDev->CreateVertexBuffer(vertexSize, 0, D3DFVF_XYZRHW | D3DFVF_DIFFUSE, D3DPOOL_DEFAULT, &m_pVertexBuffer, nullptr);
-		}
-
-		if (m_pVertexBuffer) {
-			VOID* pVertices;
-			hr = m_pVertexBuffer->Lock(0, vertexSize, (void**)&pVertices, 0);
-			if (S_OK == hr) {
-				memcpy(pVertices, m_Vertices.data(), vertexSize);
-				m_pVertexBuffer->Unlock();
-			};
-		}
-
-		return hr;
-	}
-
-	HRESULT Draw()
-	{
-		if (m_bAlphaBlend) {
-			m_pD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-			m_pD3DDev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-			m_pD3DDev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-		}
-		else {
-			m_pD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-		}
-		m_pD3DDev->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA);
-
-		HRESULT hr = m_pD3DDev->SetStreamSource(0, m_pVertexBuffer, 0, sizeof(POINTVERTEX));
-		if (S_OK == hr) {
-			hr = m_pD3DDev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
-			hr = DrawPrimitive();
-		}
-
-		return hr;
-	}
+	HRESULT UpdateVertexBuffer();
+	HRESULT Draw();
 };
+
+// CD3D9Lines
 
 class CD3D9Lines : public CD3D9Dots
 {
 protected:
-	inline bool CheckBadPoints(const std::vector<POINT>& poins) override
+	inline bool CheckNumPoints(const UINT num) override
 	{
-		return (poins.size() < 2 && poins.size() & 1);
+		return (num >= 2 && !(num & 1));
 	}
 
 	inline HRESULT DrawPrimitive() override
 	{
-		return m_pD3DDev->DrawPrimitive(D3DPT_LINELIST, 0, m_Vertices.size());
+		return m_pDevice->DrawPrimitive(D3DPT_LINELIST, 0, m_Vertices.size());
 	}
 };
+
+// CD3D9Polyline
 
 class CD3D9Polyline : public CD3D9Dots
 {
 protected:
-	inline bool CheckBadPoints(const std::vector<POINT>& poins) override
+	inline bool CheckNumPoints(const UINT num) override
 	{
-		return (poins.size() < 2);
+		return (num >= 2 || m_Vertices.size() && num > 0);
 	}
 
 	inline HRESULT DrawPrimitive() override
 	{
-		return m_pD3DDev->DrawPrimitive(D3DPT_LINESTRIP, 0, m_Vertices.size());
+		return m_pDevice->DrawPrimitive(D3DPT_LINESTRIP, 0, m_Vertices.size());
 	}
 };
