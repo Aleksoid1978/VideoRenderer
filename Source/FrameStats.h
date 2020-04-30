@@ -177,7 +177,7 @@ public:
 	void Add(T sample) {
 		sum = sum + sample - fifo[oldestIndex];
 		fifo[oldestIndex] = sample;
-		oldestSample++;
+		oldestIndex++;
 		if (oldestIndex == fifo.size()) {
 			oldestIndex = 0;
 		}

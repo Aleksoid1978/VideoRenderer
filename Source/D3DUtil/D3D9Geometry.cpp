@@ -95,7 +95,7 @@ bool CD3D9Dots::AddGFPoints(
 	m_Vertices.resize(pos + size);
 
 	while (pos < m_Vertices.size()) {
-		m_Vertices[pos++] = { {(float)Xstart, (float)(Yaxis + Ydata[Yoffset++]), 0.f, 1.f}, color };
+		m_Vertices[pos++] = { {(float)Xstart, (float)(Yaxis - Ydata[Yoffset++]), 0.f, 1.f}, color };
 		Xstart += Xstep;
 		if (Yoffset == size) {
 			Yoffset = 0;
