@@ -326,6 +326,10 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 	}
 	if (S_OK == hr2) {
 		hr2 = m_Rect3D.InitDeviceObjects(m_pD3DDevEx);
+
+		hr2 = m_Underlay.InitDeviceObjects(m_pD3DDevEx);
+		hr2 = m_Lines.InitDeviceObjects(m_pD3DDevEx);
+		hr2 = m_SyncLine.InitDeviceObjects(m_pD3DDevEx);
 	}
 
 	HRESULT hr3 = m_TexDither.Create(m_pD3DDevEx, D3DFMT_A16B16G16R16F, dither_size, dither_size, D3DUSAGE_DYNAMIC);
@@ -424,6 +428,10 @@ void CDX9VideoProcessor::ReleaseDevice()
 
 	m_Font3D.InvalidateDeviceObjects();
 	m_Rect3D.InvalidateDeviceObjects();
+
+	m_Underlay.InvalidateDeviceObjects();
+	m_Lines.InvalidateDeviceObjects();
+	m_SyncLine.InvalidateDeviceObjects();
 
 	m_pD3DDevEx.Release();
 }
@@ -861,6 +869,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 	}
 
 	m_RenderStats.syncoffset = rtClock - rtStart;
+	m_Syncs.Add((int)std::clamp(m_RenderStats.syncoffset / 10000, -150ll, 200ll));
 
 	if (SecondFramePossible()) {
 		if (rtEnd < rtClock) {
@@ -876,6 +885,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 		rtStart += rtFrameDur / 2;
 		m_RenderStats.syncoffset = rtClock - rtStart;
+		m_Syncs.Add((int)std::clamp(m_RenderStats.syncoffset/10000, -150ll, 200ll));
 	}
 
 	return hr;
@@ -1161,6 +1171,26 @@ HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 			HRESULT hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
 			DLogIf(FAILED(hr), L"CDX9VideoProcessor::SetWindowRect() : ResetEx() failed with error %s", HR2Str(hr));
 		}
+
+		const int Xend = m_windowRect.right - 100;
+		m_Xstart = Xend - m_Xstep * m_Syncs.Size();
+		m_Yaxis = m_windowRect.bottom - 200;
+
+		m_Underlay.Set(CRect(m_Xstart, m_Yaxis - 150, Xend, m_Yaxis + 100), D3DCOLOR_ARGB(80, 0, 0, 0));
+
+		m_Lines.ClearPoints();
+		POINT points[6];
+		points[0] = { m_Xstart, m_Yaxis };
+		points[1] = { Xend,     m_Yaxis };
+		m_Lines.AddPoints(points, 2, D3DCOLOR_XRGB(150, 150, 255));
+		points[0] = { m_Xstart, m_Yaxis - 100 };
+		points[1] = { Xend,     m_Yaxis - 100 };
+		points[2] = { m_Xstart, m_Yaxis - 50 };
+		points[3] = { Xend,     m_Yaxis - 50 };
+		points[4] = { m_Xstart, m_Yaxis + 50 };
+		points[5] = { Xend,     m_Yaxis + 50 };
+		m_Lines.AddPoints(points, 6, D3DCOLOR_XRGB(100, 100, 255));
+		m_Lines.UpdateVertexBuffer();
 	}
 
 	UpdatePostScaleTexures();
@@ -2274,6 +2304,17 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
 	hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H), m_TexStats.pTexture, D3DTEXF_POINT);
+
+	if (STATS_X + STATS_W + 5 < m_Xstart && m_windowRect.bottom > 360) {
+		m_Underlay.Draw(m_pD3DDevEx);
+		m_Lines.Draw();
+
+		m_SyncLine.ClearPoints();
+		m_SyncLine.AddGFPoints(m_Xstart, m_Xstep, m_Yaxis, m_Syncs.Data(), m_Syncs.OldestIndex(), 100, D3DCOLOR_XRGB(255, 100, 100));
+		m_SyncLine.UpdateVertexBuffer();
+		m_SyncLine.Draw();
+	}
+
 	m_pD3DDevEx->EndScene();
 
 	return hr;

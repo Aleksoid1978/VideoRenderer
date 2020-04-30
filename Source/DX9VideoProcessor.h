@@ -146,8 +146,15 @@ private:
 	int m_iSrcFromGPU = 0;
 
 	Tex_t m_TexStats;
-	CD3D9Font m_Font3D;
+	CD3D9Font      m_Font3D;
 	CD3D9Rectangle m_Rect3D;
+	CD3D9Rectangle m_Underlay;
+	CD3D9Lines     m_Lines;
+	CD3D9Polyline  m_SyncLine;
+	CMovingAverage<int> m_Syncs = CMovingAverage<int>(100);
+	int m_Xstep  = 5;
+	int m_Xstart = 0;
+	int m_Yaxis  = 0;
 
 	REFERENCE_TIME m_rtStart = 0;
 
