@@ -167,7 +167,10 @@ public:
 
 	void ClearPoints();
 	bool AddPoints(POINT* poins, const UINT size, const D3DCOLOR color);
-	bool AddGFPoints(int Xstart, int Xstep, int* Ydata, UINT Yoffset, const UINT size, const D3DCOLOR color);
+	bool AddGFPoints(
+		int Xstart, int Xstep,
+		int Yaxis, int* Ydata, UINT Yoffset,
+		const UINT size, const D3DCOLOR color);
 
 	HRESULT UpdateVertexBuffer();
 	HRESULT Draw();
@@ -188,7 +191,7 @@ protected:
 
 	inline HRESULT DrawPrimitive() override
 	{
-		return m_pDevice->DrawPrimitive(D3DPT_LINELIST, 0, m_Vertices.size());
+		return m_pDevice->DrawPrimitive(D3DPT_LINELIST, 0, m_Vertices.size() / 2);
 	}
 };
 
@@ -204,6 +207,6 @@ protected:
 
 	inline HRESULT DrawPrimitive() override
 	{
-		return m_pDevice->DrawPrimitive(D3DPT_LINESTRIP, 0, m_Vertices.size());
+		return m_pDevice->DrawPrimitive(D3DPT_LINESTRIP, 0, m_Vertices.size()-1);
 	}
 };

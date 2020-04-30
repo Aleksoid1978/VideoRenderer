@@ -80,7 +80,10 @@ bool CD3D9Dots::AddPoints(POINT* poins, const UINT size, const D3DCOLOR color)
 	return true;
 }
 
-bool CD3D9Dots::AddGFPoints(int Xstart, int Xstep, int* Ydata, UINT Yoffset, const UINT size, const D3DCOLOR color)
+bool CD3D9Dots::AddGFPoints(
+	int Xstart, int Xstep,
+	int Yaxis, int* Ydata, UINT Yoffset,
+	const UINT size, const D3DCOLOR color)
 {
 	if (!CheckNumPoints(size)) {
 		return false;
@@ -92,7 +95,7 @@ bool CD3D9Dots::AddGFPoints(int Xstart, int Xstep, int* Ydata, UINT Yoffset, con
 	m_Vertices.resize(pos + size);
 
 	while (pos < m_Vertices.size()) {
-		m_Vertices[pos++] = { {(float)Xstart, (float)Ydata[Yoffset++], 0.f, 1.f}, color };
+		m_Vertices[pos++] = { {(float)Xstart, (float)(Yaxis + Ydata[Yoffset++]), 0.f, 1.f}, color };
 		Xstart += Xstep;
 		if (Yoffset == size) {
 			Yoffset = 0;

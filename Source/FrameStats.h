@@ -170,7 +170,7 @@ private:
 
 public:
 	CMovingAverage(unsigned size) {
-		size = std::max(size, 1);
+		size = std::max(size, 1u);
 		fifo.resize(size);
 	}
 
@@ -188,11 +188,11 @@ public:
 	}
 
 	T* Data() {
-		fifo.data();
+		return fifo.data();
 	}
 
 	unsigned Size() {
-		fifo.size();
+		return fifo.size();
 	}
 
 	unsigned OldestIndex() {
