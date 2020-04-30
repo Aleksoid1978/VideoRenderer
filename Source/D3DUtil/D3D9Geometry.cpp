@@ -73,7 +73,8 @@ bool CD3D9Dots::AddPoints(POINT* poins, const UINT size, const D3DCOLOR color)
 	m_Vertices.resize(pos + size);
 
 	while (pos < m_Vertices.size()) {
-		m_Vertices[pos++] = { {(float)(*poins++).x, (float)(*poins++).y, 0.f, 1.f}, color };
+		m_Vertices[pos++] = { {(float)(*poins).x, (float)(*poins).y, 0.f, 1.f}, color };
+		poins++;
 	}
 
 	return true;
