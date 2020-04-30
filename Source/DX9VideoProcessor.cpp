@@ -2299,14 +2299,14 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 		col = STATS_W;
 	}
 	m_Rect3D.Set({ col, STATS_H - 11, col + 5, STATS_H - 1 }, D3DCOLOR_XRGB(128, 255, 128));
-	m_Rect3D.Draw(m_pD3DDevEx);
+	m_Rect3D.Draw();
 
 	hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
 	hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H), m_TexStats.pTexture, D3DTEXF_POINT);
 
 	if (STATS_X + STATS_W + 5 < m_Xstart && m_windowRect.bottom > 360) {
-		m_Underlay.Draw(m_pD3DDevEx);
+		m_Underlay.Draw();
 		m_Lines.Draw();
 
 		m_SyncLine.ClearPoints();

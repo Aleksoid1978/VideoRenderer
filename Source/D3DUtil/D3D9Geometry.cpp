@@ -28,6 +28,111 @@
 
 
 //
+// CD3D9Quadrilateral
+//
+
+
+CD3D9Quadrilateral::~CD3D9Quadrilateral()
+{
+	InvalidateDeviceObjects();
+}
+
+HRESULT CD3D9Quadrilateral::InitDeviceObjects(IDirect3DDevice9* pDevice)
+{
+	InvalidateDeviceObjects();
+	if (!pDevice) {
+		return E_POINTER;
+	}
+	m_pDevice = pDevice;
+	m_pDevice->AddRef();
+
+	HRESULT hr = m_pDevice->CreateVertexBuffer(6 * sizeof(POINTVERTEX), 0, D3DFVF_XYZRHW | D3DFVF_DIFFUSE, D3DPOOL_DEFAULT, &m_pVertexBuffer, nullptr);
+
+	return hr;
+}
+
+void CD3D9Quadrilateral::InvalidateDeviceObjects()
+{
+	SAFE_RELEASE(m_pVertexBuffer);
+	SAFE_RELEASE(m_pDevice);
+}
+
+HRESULT CD3D9Quadrilateral::Set(const float x1, const float y1, const float x2, const float y2, const float x3, const float y3, const float x4, const float y4, const D3DCOLOR color)
+{
+	HRESULT hr = S_OK;
+
+	m_bAlphaBlend = (color >> 24) < 0xFF;
+
+	m_Vertices[0] = { {x1, y1, 0.5f, 1.0f}, color };
+	m_Vertices[1] = { {x2, y2, 0.5f, 1.0f}, color };
+	m_Vertices[2] = { {x3, y3, 0.5f, 1.0f}, color };
+	m_Vertices[3] = { {x1, y1, 0.5f, 1.0f}, color };
+	m_Vertices[4] = { {x3, y3, 0.5f, 1.0f}, color };
+	m_Vertices[5] = { {x4, y4, 0.5f, 1.0f}, color };
+
+	if (m_pVertexBuffer) {
+		VOID* pVertices;
+		hr = m_pVertexBuffer->Lock(0, sizeof(m_Vertices), (void**)&pVertices, 0);
+		if (S_OK == hr) {
+			memcpy(pVertices, m_Vertices, sizeof(m_Vertices));
+			m_pVertexBuffer->Unlock();
+		};
+	}
+
+	return hr;
+}
+
+HRESULT CD3D9Quadrilateral::Draw()
+{
+	if (m_bAlphaBlend) {
+		m_pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+		m_pDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+		m_pDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+	}
+	else {
+		m_pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+	}
+	m_pDevice->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA);
+
+	HRESULT hr = m_pDevice->SetStreamSource(0, m_pVertexBuffer, 0, sizeof(POINTVERTEX));
+	if (S_OK == hr) {
+		hr = m_pDevice->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
+		hr = m_pDevice->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 2);
+	}
+
+	return hr;
+}
+
+//
+// CD3D9Rectangle
+//
+
+HRESULT CD3D9Rectangle::Set(const RECT& rect, const D3DCOLOR color)
+{
+	return CD3D9Quadrilateral::Set(rect.left, rect.top, rect.right, rect.top, rect.right, rect.bottom, rect.left, rect.bottom, color);
+}
+
+//
+// CD3D9Stripe
+//
+
+HRESULT CD3D9Stripe::Set(const int x1, const int y1, const int x2, const int y2, const int thickness, const D3DCOLOR color)
+{
+	const float a = x2 - x1;
+	const float b = y1 - y2;
+	const float c = sqrtf(a*a + b*b);
+	const float xt = thickness * b / c;
+	const float yt = thickness * a / c;
+
+	const float x3 = x2 + xt;
+	const float y3 = y2 + yt;
+	const float x4 = x1 + xt;
+	const float y4 = y1 + yt;
+
+	return CD3D9Quadrilateral::Set(x1, y1, x2, y2, x3, y3, x4, y4, color);
+}
+
+//
 // CD3D9Dots
 //
 
@@ -51,8 +156,8 @@ HRESULT CD3D9Dots::InitDeviceObjects(IDirect3DDevice9* pDevice)
 
 void CD3D9Dots::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(m_pDevice);
 	SAFE_RELEASE(m_pVertexBuffer);
+	SAFE_RELEASE(m_pDevice);
 }
 
 void CD3D9Dots::ClearPoints()
