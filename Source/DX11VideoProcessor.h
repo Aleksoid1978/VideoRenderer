@@ -162,6 +162,11 @@ private:
 	Tex2D_t m_TexStats;
 	CD3D11Font m_Font3D;
 	CD3D11Rectangle m_Rect3D;
+	CD3D11Rectangle m_Underlay;
+	CMovingAverage<int> m_Syncs = CMovingAverage<int>(100);
+	int m_Xstep  = 5;
+	int m_Xstart = 0;
+	int m_Yaxis  = 0;
 
 	HMODULE m_hDXGILib = nullptr;
 	HMODULE m_hD3D11Lib = nullptr;

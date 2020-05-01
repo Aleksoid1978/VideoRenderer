@@ -119,3 +119,40 @@ public:
 	HRESULT UpdateVertexBuffer();
 	void Draw();
 };
+
+// CD3D11Lines
+
+class CD3D11Lines : public CD3D11Dots
+{
+private:
+	using CD3D11Dots::AddGFPoints;
+
+protected:
+	inline bool CheckNumPoints(const UINT num) override
+	{
+		return (num >= 2 && !(num & 1));
+	}
+
+	inline void DrawPrimitive() override
+	{
+		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+		m_pDeviceContext->Draw(m_Vertices.size(), 0);
+	}
+};
+
+// CD3D9Polyline
+
+class CD3D11Polyline : public CD3D11Dots
+{
+protected:
+	inline bool CheckNumPoints(const UINT num) override
+	{
+		return (num >= 2 || m_Vertices.size() && num > 0);
+	}
+
+	inline void DrawPrimitive() override
+	{
+		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+		m_pDeviceContext->Draw(m_Vertices.size(), 0);
+	}
+};

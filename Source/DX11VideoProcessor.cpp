@@ -500,6 +500,8 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_Font3D.InvalidateDeviceObjects();
 	m_Rect3D.InvalidateDeviceObjects();
 
+	m_Underlay.InvalidateDeviceObjects();
+
 	m_TexDither.Release();
 	m_TexStats.Release();
 	m_bAlphaBitmapEnable = false;
@@ -827,6 +829,8 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	}
 	if (S_OK == hr2) {
 		hr2 = m_Rect3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+
+		hr2 = m_Underlay.InitDeviceObjects(m_pDevice, m_pDeviceContext);
 	}
 	ASSERT(S_OK == hr2);
 
@@ -1324,6 +1328,7 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 	}
 
 	m_RenderStats.syncoffset = rtClock - rtStart;
+	m_Syncs.Add((int)std::clamp(m_RenderStats.syncoffset/10000, -150ll, 200ll));
 
 	if (SecondFramePossible()) {
 		if (rtEnd < rtClock) {
@@ -1339,6 +1344,7 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 		rtStart += rtFrameDur / 2;
 		m_RenderStats.syncoffset = rtClock - rtStart;
+		m_Syncs.Add((int)std::clamp(m_RenderStats.syncoffset/10000, -150ll, 200ll));
 	}
 
 	return hr;
@@ -2014,6 +2020,14 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 		hr = m_pDXGISwapChain1->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
 	}
 
+	if (m_pDeviceContext && !m_windowRect.IsRectEmpty()) {
+		const int Xend = m_windowRect.right - 100;
+		m_Xstart = Xend - m_Xstep * m_Syncs.Size();
+		m_Yaxis = m_windowRect.bottom - 200;
+
+		m_Underlay.Set(CRect(m_Xstart, m_Yaxis - 150, Xend, m_Yaxis + 100), m_windowRect.Size(), D3DCOLOR_ARGB(80, 0, 0, 0));
+	}
+
 	UpdatePostScaleTexures();
 
 	return hr;
@@ -2560,6 +2574,15 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		VP.MinDepth = 0.0f;
 		VP.MaxDepth = 1.0f;
 		hr = AlphaBlt(m_TexStats.pShaderResource, pRenderTarget, m_pFullFrameVertexBuffer, &VP, m_pSamplerPoint);
+
+		/*
+		if (STATS_X + STATS_W + 5 < m_Xstart && m_windowRect.bottom > 360) {
+			hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+			if (S_OK == hr) {
+				m_Underlay.Draw(pRenderTargetView, m_windowRect.Size());
+			}
+		}
+		*/
 	}
 
 	return hr;
