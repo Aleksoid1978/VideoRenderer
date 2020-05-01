@@ -100,7 +100,6 @@ HRESULT CD3D11Quadrilateral::Set(const float x1, const float y1, const float x2,
 	HRESULT hr = S_OK;
 
 	m_bAlphaBlend = (color >> 24) < 0xFF;
-
 	DirectX::XMFLOAT4 colorRGBAf = D3DCOLORtoXMFLOAT4(color);
 
 	m_Vertices[0] = { {x4, y4, 0.5f}, colorRGBAf };
@@ -187,4 +186,154 @@ HRESULT CD3D11Stripe::Set(const int x1, const int y1, const int x2, const int y2
 	const float y4 = y1 + yt;
 
 	return CD3D11Quadrilateral::Set(x1, y1, x2, y2, x3, y3, x4, y4, color);
+}
+
+//
+// CD3D11Dots
+//
+
+CD3D11Dots::~CD3D11Dots()
+{
+	InvalidateDeviceObjects();
+}
+
+HRESULT CD3D11Dots::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
+{
+	InvalidateDeviceObjects();
+	if (!pDevice || !pDeviceContext) {
+		return E_POINTER;
+	}
+
+	m_pDevice = pDevice;
+	m_pDevice->AddRef();
+	m_pDeviceContext = pDeviceContext;
+	m_pDeviceContext->AddRef();
+
+
+
+	LPVOID data;
+	DWORD size;
+	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VSH11_GEOMETRY));
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateVertexShader(data, size, nullptr, &m_pVertexShader));
+
+	static const D3D11_INPUT_ELEMENT_DESC vertexLayout[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateInputLayout(vertexLayout, std::size(vertexLayout), data, size, &m_pInputLayout));
+
+	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PSH11_GEOMETRY));
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPixelShader));
+
+	return S_OK;
+}
+
+void CD3D11Dots::InvalidateDeviceObjects()
+{
+	SAFE_RELEASE(m_pPixelShader);
+	SAFE_RELEASE(m_pInputLayout);
+	SAFE_RELEASE(m_pVertexShader);
+	SAFE_RELEASE(m_pDeviceContext);
+	SAFE_RELEASE(m_pDevice);
+}
+
+void CD3D11Dots::ClearPoints()
+{
+	m_Vertices.clear();
+	m_bAlphaBlend = false;
+}
+
+bool CD3D11Dots::AddPoints(POINT* poins, const UINT size, const D3DCOLOR color)
+{
+	if (!CheckNumPoints(size)) {
+		return false;
+	}
+
+	m_bAlphaBlend = (color >> 24) < 0xFF;
+	DirectX::XMFLOAT4 colorRGBAf = D3DCOLORtoXMFLOAT4(color);
+
+	auto pos = m_Vertices.size();
+	m_Vertices.resize(pos + size);
+
+	while (pos < m_Vertices.size()) {
+		m_Vertices[pos++] = { {(float)(*poins).x, (float)(*poins).y, 0.f}, colorRGBAf };
+		poins++;
+	}
+
+	return true;
+}
+
+bool CD3D11Dots::AddGFPoints(
+	int Xstart, int Xstep,
+	int Yaxis, int* Ydata, UINT Yoffset,
+	const UINT size, const D3DCOLOR color)
+{
+	if (!CheckNumPoints(size)) {
+		return false;
+	}
+
+	m_bAlphaBlend = (color >> 24) < 0xFF;
+	DirectX::XMFLOAT4 colorRGBAf = D3DCOLORtoXMFLOAT4(color);
+
+	auto pos = m_Vertices.size();
+	m_Vertices.resize(pos + size);
+
+	while (pos < m_Vertices.size()) {
+		m_Vertices[pos++] = { {(float)Xstart, (float)(Yaxis - Ydata[Yoffset++]), 0.f}, colorRGBAf };
+		Xstart += Xstep;
+		if (Yoffset == size) {
+			Yoffset = 0;
+		}
+	}
+
+	return true;
+}
+
+HRESULT CD3D11Dots::UpdateVertexBuffer()
+{
+	HRESULT hr = S_FALSE;
+	UINT vertexSize = m_Vertices.size() * sizeof(POINTVERTEX11);
+
+	D3D11_BUFFER_DESC desc;
+
+	if (m_pVertexBuffer) {
+		m_pVertexBuffer->GetDesc(&desc);
+		if (desc.ByteWidth < vertexSize) {
+			SAFE_RELEASE(m_pVertexBuffer);
+		}
+	}
+
+	if (!m_pVertexBuffer) {
+		desc = { vertexSize, D3D11_USAGE_DYNAMIC, D3D11_BIND_VERTEX_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+		hr = m_pDevice->CreateBuffer(&desc, nullptr, &m_pVertexBuffer);
+	}
+
+	if (m_pVertexBuffer) {
+		D3D11_MAPPED_SUBRESOURCE mappedResource;
+		hr = m_pDeviceContext->Map(m_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		if (S_OK == hr) {
+			memcpy(mappedResource.pData, m_Vertices.data(), vertexSize);
+			m_pDeviceContext->Unmap(m_pVertexBuffer, 0);
+		};
+	}
+
+	return hr;
+}
+
+void CD3D11Dots::Draw()
+{
+	HRESULT hr = S_OK;
+	UINT Stride = sizeof(POINTVERTEX11);
+	UINT Offset = 0;
+	ID3D11ShaderResourceView* views[1] = {};
+
+	m_pDeviceContext->PSSetShaderResources(0, 1, views);
+	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
+	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &Stride, &Offset);
+	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
+	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
+
+	m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK); // TODO
+
+	DrawPrimitive();
 }

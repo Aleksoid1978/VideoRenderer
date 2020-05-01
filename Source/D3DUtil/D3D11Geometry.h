@@ -74,3 +74,48 @@ private:
 public:
 	HRESULT Set(const int x1, const int y1, const int x2, const int y2, const int thickness, const D3DCOLOR color);
 };
+
+// CD3D11Dots
+
+class CD3D11Dots
+{
+protected:
+	ID3D11Device* m_pDevice = nullptr;
+	ID3D11DeviceContext* m_pDeviceContext = nullptr;
+
+	ID3D11InputLayout*  m_pInputLayout  = nullptr;
+	ID3D11VertexShader* m_pVertexShader = nullptr;
+	ID3D11PixelShader*  m_pPixelShader  = nullptr;
+
+	ID3D11Buffer* m_pVertexBuffer = nullptr;
+
+	bool m_bAlphaBlend = false;
+	std::vector<POINTVERTEX11> m_Vertices;
+
+	virtual inline bool CheckNumPoints(const UINT num)
+	{
+		return (num > 0);
+	}
+
+	virtual inline void DrawPrimitive()
+	{
+		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+		m_pDeviceContext->Draw(m_Vertices.size(), 0);
+	}
+
+public:
+	~CD3D11Dots();
+
+	HRESULT InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
+	void InvalidateDeviceObjects();
+
+	void ClearPoints();
+	bool AddPoints(POINT* poins, const UINT size, const D3DCOLOR color);
+	bool AddGFPoints(
+		int Xstart, int Xstep,
+		int Yaxis, int* Ydata, UINT Yoffset,
+		const UINT size, const D3DCOLOR color);
+
+	HRESULT UpdateVertexBuffer();
+	void Draw();
+};
