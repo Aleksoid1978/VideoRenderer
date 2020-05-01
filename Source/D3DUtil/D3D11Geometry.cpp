@@ -1,5 +1,5 @@
 /*
- * (C) 2019 see Authors.txt
+ * (C) 2019-2020 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -21,10 +21,18 @@
 #pragma once
 
 #include "stdafx.h"
+
+#include <d3d11.h>
 #include "Helper.h"
 #include "DX11Helper.h"
 #include "resource.h"
+
 #include "D3D11Geometry.h"
+
+
+//
+// CD3D11Quadrilateral
+//
 
 CD3D11Quadrilateral::~CD3D11Quadrilateral()
 {
@@ -115,7 +123,7 @@ HRESULT CD3D11Quadrilateral::Set(const float x1, const float y1, const float x2,
 HRESULT CD3D11Quadrilateral::Draw(ID3D11RenderTargetView* pRenderTargetView, const SIZE& rtSize)
 {
 	HRESULT hr = S_OK;
-	UINT Stride = sizeof(VERTEX);
+	UINT Stride = sizeof(POINTVERTEX11);
 	UINT Offset = 0;
 	ID3D11ShaderResourceView* views[1] = {};
 
@@ -145,4 +153,38 @@ HRESULT CD3D11Quadrilateral::Draw(ID3D11RenderTargetView* pRenderTargetView, con
 	m_pDeviceContext->Draw(std::size(m_Vertices), 0);
 
 	return hr;
+}
+
+//
+// CD3D11Rectangle
+//
+
+HRESULT CD3D11Rectangle::Set(const RECT& rect, const SIZE& rtSize, const D3DCOLOR color)
+{
+	const float left   = (float)(rect.left*2)    / rtSize.cx - 1;
+	const float top    = (float)(-rect.top*2)    / rtSize.cy + 1;
+	const float right  = (float)(rect.right*2)   / rtSize.cx - 1;
+	const float bottom = (float)(-rect.bottom*2) / rtSize.cy + 1;
+
+	return CD3D11Quadrilateral::Set(left, top, right, top, right, bottom, left, bottom, color);
+}
+
+//
+// CD3D11Stripe
+//
+
+HRESULT CD3D11Stripe::Set(const int x1, const int y1, const int x2, const int y2, const int thickness, const D3DCOLOR color)
+{
+	const float a = x2 - x1;
+	const float b = y1 - y2;
+	const float c = sqrtf(a*a + b * b);
+	const float xt = thickness * b / c;
+	const float yt = thickness * a / c;
+
+	const float x3 = x2 + xt;
+	const float y3 = y2 + yt;
+	const float x4 = x1 + xt;
+	const float y4 = y1 + yt;
+
+	return CD3D11Quadrilateral::Set(x1, y1, x2, y2, x3, y3, x4, y4, color);
 }

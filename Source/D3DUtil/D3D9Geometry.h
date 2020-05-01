@@ -20,7 +20,7 @@
 
 #pragma once
 
-struct POINTVERTEX {
+struct POINTVERTEX9 {
 	DirectX::XMFLOAT4 pos;
 	DWORD color;
 };
@@ -34,7 +34,7 @@ protected:
 	IDirect3DVertexBuffer9* m_pVertexBuffer = nullptr;
 
 	bool m_bAlphaBlend = false;
-	POINTVERTEX m_Vertices[6] = {};
+	POINTVERTEX9 m_Vertices[6] = {};
 
 public:
 	~CD3D9Quadrilateral();
@@ -83,7 +83,7 @@ protected:
 	IDirect3DVertexBuffer9* m_pVertexBuffer = nullptr;
 
 	bool m_bAlphaBlend = false;
-	std::vector<POINTVERTEX> m_Vertices;
+	std::vector<POINTVERTEX9> m_Vertices;
 
 	virtual inline bool CheckNumPoints(const UINT num)
 	{

@@ -1,5 +1,5 @@
 /*
- * (C) 2019 see Authors.txt
+ * (C) 2019-2020 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -20,7 +20,12 @@
 
 #pragma once
 
-#include <d3d11.h>
+struct POINTVERTEX11 {
+	DirectX::XMFLOAT3 Pos;
+	DirectX::XMFLOAT4 Color;
+};
+
+// CD3D11Quadrilateral
 
 class CD3D11Quadrilateral
 {
@@ -31,11 +36,7 @@ protected:
 	bool m_bAlphaBlend = false;
 	ID3D11BlendState* m_pBlendState = nullptr;
 
-	struct VERTEX {
-		DirectX::XMFLOAT3 Pos;
-		DirectX::XMFLOAT4 Color;
-	};
-	VERTEX m_Vertices[4] = {};
+	POINTVERTEX11 m_Vertices[4] = {};
 	ID3D11Buffer* m_pVertexBuffer = nullptr;
 	ID3D11InputLayout* m_pInputLayout = nullptr;
 
@@ -52,6 +53,7 @@ public:
 	HRESULT Draw(ID3D11RenderTargetView* pRenderTargetView, const SIZE& rtSize);
 };
 
+// CD3D11Rectangle
 
 class CD3D11Rectangle : public CD3D11Quadrilateral
 {
@@ -59,17 +61,10 @@ private:
 	using CD3D11Quadrilateral::Set;
 
 public:
-	HRESULT Set(const RECT& rect, const SIZE& rtSize, const D3DCOLOR color)
-	{
-		const float left   = (float)(rect.left*2)    / rtSize.cx - 1;
-		const float top    = (float)(-rect.top*2)    / rtSize.cy + 1;
-		const float right  = (float)(rect.right*2)   / rtSize.cx - 1;
-		const float bottom = (float)(-rect.bottom*2) / rtSize.cy + 1;
-
-		return CD3D11Quadrilateral::Set(left, top, right, top, right, bottom, left, bottom, color);
-	}
+	HRESULT Set(const RECT& rect, const SIZE& rtSize, const D3DCOLOR color);
 };
 
+// CD3D11Stripe
 
 class CD3D11Stripe : public CD3D11Quadrilateral
 {
@@ -77,19 +72,5 @@ private:
 	using CD3D11Quadrilateral::Set;
 
 public:
-	HRESULT Set(const int x1, const int y1, const int x2, const int y2, const int thickness, const D3DCOLOR color)
-	{
-		const float a = x2 - x1;
-		const float b = y1 - y2;
-		const float c = sqrtf(a*a + b * b);
-		const float xt = thickness * b / c;
-		const float yt = thickness * a / c;
-
-		const float x3 = x2 + xt;
-		const float y3 = y2 + yt;
-		const float x4 = x1 + xt;
-		const float y4 = y1 + yt;
-
-		return CD3D11Quadrilateral::Set(x1, y1, x2, y2, x3, y3, x4, y4, color);
-	}
+	HRESULT Set(const int x1, const int y1, const int x2, const int y2, const int thickness, const D3DCOLOR color);
 };

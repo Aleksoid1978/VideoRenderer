@@ -50,4 +50,3 @@ namespace Gdiplus
 };
 #include <numeric>
 #include <vector>
-

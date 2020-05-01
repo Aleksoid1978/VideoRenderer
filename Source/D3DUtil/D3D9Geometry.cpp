@@ -21,7 +21,6 @@
 #include "stdafx.h"
 
 #include <d3d9.h>
-#include <vector>
 #include "Helper.h"
 
 #include "D3D9Geometry.h"
@@ -30,7 +29,6 @@
 //
 // CD3D9Quadrilateral
 //
-
 
 CD3D9Quadrilateral::~CD3D9Quadrilateral()
 {
@@ -46,7 +44,7 @@ HRESULT CD3D9Quadrilateral::InitDeviceObjects(IDirect3DDevice9* pDevice)
 	m_pDevice = pDevice;
 	m_pDevice->AddRef();
 
-	HRESULT hr = m_pDevice->CreateVertexBuffer(6 * sizeof(POINTVERTEX), 0, D3DFVF_XYZRHW | D3DFVF_DIFFUSE, D3DPOOL_DEFAULT, &m_pVertexBuffer, nullptr);
+	HRESULT hr = m_pDevice->CreateVertexBuffer(6 * sizeof(POINTVERTEX9), 0, D3DFVF_XYZRHW | D3DFVF_DIFFUSE, D3DPOOL_DEFAULT, &m_pVertexBuffer, nullptr);
 
 	return hr;
 }
@@ -94,7 +92,7 @@ HRESULT CD3D9Quadrilateral::Draw()
 	}
 	m_pDevice->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA);
 
-	HRESULT hr = m_pDevice->SetStreamSource(0, m_pVertexBuffer, 0, sizeof(POINTVERTEX));
+	HRESULT hr = m_pDevice->SetStreamSource(0, m_pVertexBuffer, 0, sizeof(POINTVERTEX9));
 	if (S_OK == hr) {
 		hr = m_pDevice->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
 		hr = m_pDevice->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 2);
@@ -213,7 +211,7 @@ bool CD3D9Dots::AddGFPoints(
 HRESULT CD3D9Dots::UpdateVertexBuffer()
 {
 	HRESULT hr = S_FALSE;
-	UINT vertexSize = m_Vertices.size() * sizeof(POINTVERTEX);
+	UINT vertexSize = m_Vertices.size() * sizeof(POINTVERTEX9);
 
 	if (m_pVertexBuffer) {
 		D3DVERTEXBUFFER_DESC desc;
@@ -251,7 +249,7 @@ HRESULT CD3D9Dots::Draw()
 	}
 	m_pDevice->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA);
 
-	HRESULT hr = m_pDevice->SetStreamSource(0, m_pVertexBuffer, 0, sizeof(POINTVERTEX));
+	HRESULT hr = m_pDevice->SetStreamSource(0, m_pVertexBuffer, 0, sizeof(POINTVERTEX9));
 	if (S_OK == hr) {
 		hr = m_pDevice->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
 		hr = DrawPrimitive();
