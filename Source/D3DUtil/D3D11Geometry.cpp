@@ -267,7 +267,8 @@ bool CD3D11Dots::AddPoints(POINT* poins, const UINT size, const D3DCOLOR color)
 
 bool CD3D11Dots::AddGFPoints(
 	int Xstart, int Xstep,
-	int Yaxis, int* Ydata, UINT Yoffset,
+	int Yaxis, int Yscale,
+	int* Ydata, UINT Yoffset,
 	const UINT size, const D3DCOLOR color)
 {
 	if (!CheckNumPoints(size)) {
@@ -282,7 +283,7 @@ bool CD3D11Dots::AddGFPoints(
 
 	while (pos < m_Vertices.size()) {
 		const float x = (float)(Xstart * 2) / m_RTSize.cx - 1;
-		const float y = (float)((Ydata[Yoffset++] - Yaxis) * 2) / m_RTSize.cy + 1;
+		const float y = (float)((Ydata[Yoffset++] * Yscale - Yaxis) * 2) / m_RTSize.cy + 1;
 
 		m_Vertices[pos++] = { {x, y, 0.f}, colorRGBAf };
 		Xstart += Xstep;

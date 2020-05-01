@@ -114,7 +114,8 @@ public:
 	bool AddPoints(POINT* poins, const UINT size, const D3DCOLOR color);
 	bool AddGFPoints(
 		int Xstart, int Xstep,
-		int Yaxis, int* Ydata, UINT Yoffset,
+		int Yaxis, int Yscale,
+		int* Ydata, UINT Yoffset,
 		const UINT size, const D3DCOLOR color);
 
 	HRESULT UpdateVertexBuffer();
