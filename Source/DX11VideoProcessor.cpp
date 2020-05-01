@@ -501,6 +501,8 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_Rect3D.InvalidateDeviceObjects();
 
 	m_Underlay.InvalidateDeviceObjects();
+	m_Lines.InvalidateDeviceObjects();
+	m_SyncLine.InvalidateDeviceObjects();
 
 	m_TexDither.Release();
 	m_TexStats.Release();
@@ -831,6 +833,8 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		hr2 = m_Rect3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
 
 		hr2 = m_Underlay.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+		hr2 = m_Lines.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+		hr2 = m_SyncLine.InitDeviceObjects(m_pDevice, m_pDeviceContext);
 	}
 	ASSERT(S_OK == hr2);
 
@@ -2021,11 +2025,27 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 	}
 
 	if (m_pDeviceContext && !m_windowRect.IsRectEmpty()) {
+		SIZE rtSize = m_windowRect.Size();
+
 		const int Xend = m_windowRect.right - 100;
 		m_Xstart = Xend - m_Xstep * m_Syncs.Size();
 		m_Yaxis = m_windowRect.bottom - 200;
 
-		m_Underlay.Set(CRect(m_Xstart, m_Yaxis - 150, Xend, m_Yaxis + 100), m_windowRect.Size(), D3DCOLOR_ARGB(80, 0, 0, 0));
+		m_Underlay.Set(CRect(m_Xstart, m_Yaxis - 150, Xend, m_Yaxis + 100), rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
+
+		m_Lines.ClearPoints(rtSize);
+		POINT points[6];
+		points[0] = { m_Xstart, m_Yaxis };
+		points[1] = { Xend,     m_Yaxis };
+		m_Lines.AddPoints(points, 2, D3DCOLOR_XRGB(150, 150, 255));
+		points[0] = { m_Xstart, m_Yaxis - 100 };
+		points[1] = { Xend,     m_Yaxis - 100 };
+		points[2] = { m_Xstart, m_Yaxis - 50 };
+		points[3] = { Xend,     m_Yaxis - 50 };
+		points[4] = { m_Xstart, m_Yaxis + 50 };
+		points[5] = { Xend,     m_Yaxis + 50 };
+		m_Lines.AddPoints(points, 6, D3DCOLOR_XRGB(100, 100, 255));
+		m_Lines.UpdateVertexBuffer();
 	}
 
 	UpdatePostScaleTexures();
@@ -2575,14 +2595,22 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		VP.MaxDepth = 1.0f;
 		hr = AlphaBlt(m_TexStats.pShaderResource, pRenderTarget, m_pFullFrameVertexBuffer, &VP, m_pSamplerPoint);
 
-		/*
 		if (STATS_X + STATS_W + 5 < m_Xstart && m_windowRect.bottom > 360) {
 			hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
 			if (S_OK == hr) {
-				m_Underlay.Draw(pRenderTargetView, m_windowRect.Size());
+				SIZE rtSize = m_windowRect.Size();
+				m_Underlay.Draw(pRenderTargetView, rtSize);
+
+				m_Lines.Draw();
+
+				m_SyncLine.ClearPoints(rtSize);
+				m_SyncLine.AddGFPoints(m_Xstart, m_Xstep, m_Yaxis, m_Syncs.Data(), m_Syncs.OldestIndex(), 100, D3DCOLOR_XRGB(255, 100, 100));
+				m_SyncLine.UpdateVertexBuffer();
+				m_SyncLine.Draw();
+
+				pRenderTargetView->Release();
 			}
 		}
-		*/
 	}
 
 	return hr;

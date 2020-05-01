@@ -209,8 +209,6 @@ HRESULT CD3D11Dots::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 	m_pDeviceContext = pDeviceContext;
 	m_pDeviceContext->AddRef();
 
-
-
 	LPVOID data;
 	DWORD size;
 	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VSH11_GEOMETRY));
@@ -237,10 +235,11 @@ void CD3D11Dots::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pDevice);
 }
 
-void CD3D11Dots::ClearPoints()
+void CD3D11Dots::ClearPoints(SIZE& newRTSize)
 {
 	m_Vertices.clear();
 	m_bAlphaBlend = false;
+	m_RTSize = newRTSize;
 }
 
 bool CD3D11Dots::AddPoints(POINT* poins, const UINT size, const D3DCOLOR color)
@@ -256,7 +255,10 @@ bool CD3D11Dots::AddPoints(POINT* poins, const UINT size, const D3DCOLOR color)
 	m_Vertices.resize(pos + size);
 
 	while (pos < m_Vertices.size()) {
-		m_Vertices[pos++] = { {(float)(*poins).x, (float)(*poins).y, 0.f}, colorRGBAf };
+		const float x = (float)((*poins).x * 2) / m_RTSize.cx - 1;
+		const float y = 1 - (float)((*poins).y * 2) / m_RTSize.cy;
+
+		m_Vertices[pos++] = { {x, y, 0.f}, colorRGBAf };
 		poins++;
 	}
 
@@ -279,7 +281,10 @@ bool CD3D11Dots::AddGFPoints(
 	m_Vertices.resize(pos + size);
 
 	while (pos < m_Vertices.size()) {
-		m_Vertices[pos++] = { {(float)Xstart, (float)(Yaxis - Ydata[Yoffset++]), 0.f}, colorRGBAf };
+		const float x = (float)(Xstart * 2) / m_RTSize.cx - 1;
+		const float y = (float)((Ydata[Yoffset++] - Yaxis) * 2) / m_RTSize.cy + 1;
+
+		m_Vertices[pos++] = { {x, y, 0.f}, colorRGBAf };
 		Xstart += Xstep;
 		if (Yoffset == size) {
 			Yoffset = 0;

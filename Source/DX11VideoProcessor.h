@@ -163,6 +163,8 @@ private:
 	CD3D11Font m_Font3D;
 	CD3D11Rectangle m_Rect3D;
 	CD3D11Rectangle m_Underlay;
+	CD3D11Lines     m_Lines;
+	CD3D11Polyline  m_SyncLine;
 	CMovingAverage<int> m_Syncs = CMovingAverage<int>(100);
 	int m_Xstep  = 5;
 	int m_Xstart = 0;

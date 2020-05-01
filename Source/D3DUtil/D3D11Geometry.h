@@ -89,6 +89,7 @@ protected:
 
 	ID3D11Buffer* m_pVertexBuffer = nullptr;
 
+	SIZE m_RTSize = {};
 	bool m_bAlphaBlend = false;
 	std::vector<POINTVERTEX11> m_Vertices;
 
@@ -109,7 +110,7 @@ public:
 	HRESULT InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 	void InvalidateDeviceObjects();
 
-	void ClearPoints();
+	void ClearPoints(SIZE& newRTSize);
 	bool AddPoints(POINT* poins, const UINT size, const D3DCOLOR color);
 	bool AddGFPoints(
 		int Xstart, int Xstep,
