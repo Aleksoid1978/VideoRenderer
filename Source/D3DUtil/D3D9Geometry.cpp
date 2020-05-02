@@ -199,7 +199,7 @@ bool CD3D9Dots::AddGFPoints(
 	m_Vertices.resize(pos + size);
 
 	while (pos < m_Vertices.size()) {
-		const float y = (float)(Yaxis - Ydata[Yoffset++] * Yscale);
+		const float y = Yaxis - float(Ydata[Yoffset++] * Yscale) / 10000;
 		m_Vertices[pos++] = { {(float)Xstart, y, 0.f, 1.f}, color };
 		Xstart += Xstep;
 		if (Yoffset == size) {

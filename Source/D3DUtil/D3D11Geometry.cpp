@@ -283,7 +283,7 @@ bool CD3D11Dots::AddGFPoints(
 
 	while (pos < m_Vertices.size()) {
 		const float x = (float)(Xstart * 2) / m_RTSize.cx - 1;
-		const float y = (float)((Ydata[Yoffset++] * Yscale - Yaxis) * 2) / m_RTSize.cy + 1;
+		const float y = (float(Ydata[Yoffset++] * Yscale) / 10000 - Yaxis) * 2 / m_RTSize.cy + 1;
 
 		m_Vertices[pos++] = { {x, y, 0.f}, colorRGBAf };
 		Xstart += Xstep;

@@ -869,7 +869,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 	}
 
 	m_RenderStats.syncoffset = rtClock - rtStart;
-	m_Syncs.Add((int)std::clamp(m_RenderStats.syncoffset / 10000, -150ll, 200ll));
+	m_Syncs.Add((int)std::clamp(m_RenderStats.syncoffset, -UNITS, UNITS));
 
 	if (SecondFramePossible()) {
 		if (rtEnd < rtClock) {
@@ -885,7 +885,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 		rtStart += rtFrameDur / 2;
 		m_RenderStats.syncoffset = rtClock - rtStart;
-		m_Syncs.Add((int)std::clamp(m_RenderStats.syncoffset/10000, -150ll, 200ll));
+		m_Syncs.Add((int)std::clamp(m_RenderStats.syncoffset, -UNITS, UNITS));
 	}
 
 	return hr;
