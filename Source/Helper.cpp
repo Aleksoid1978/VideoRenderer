@@ -58,7 +58,7 @@ CStringW GetVersionStr()
 #if MPCVR_RELEASE
 	version.Format(L"v%S", MPCVR_VERSION_STR);
 #else
-	version.Format(L"v%S (git-%S-%S)",
+	version.Format(L"%S (git-%S-%S)",
 		MPCVR_VERSION_STR,
 		_CRT_STRINGIZE(MPCVR_REV_DATE),
 		_CRT_STRINGIZE(MPCVR_REV_HASH)
