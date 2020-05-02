@@ -124,6 +124,7 @@
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Time.h" />
+    <ClInclude Include="VideoProcessor.h" />
     <ClInclude Include="VideoRenderer.h" />
     <ClInclude Include="VideoRendererInputPin.h" />
   </ItemGroup>

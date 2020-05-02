@@ -179,9 +179,11 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTex
 // CDX9VideoProcessor
 
 CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
-	: m_pFilter(pFilter)
+	: CVideoProcessor(pFilter)
 	, m_Font3D(L"Consolas", 14)
 {
+	m_nCurrentAdapter = D3DADAPTER_DEFAULT;
+
 	HRESULT hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
 	if (!m_pD3DEx) {
 		return;

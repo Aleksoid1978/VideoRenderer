@@ -176,6 +176,9 @@
     <ClInclude Include="DisplayConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="VideoProcessor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MpcVideoRenderer.rc">

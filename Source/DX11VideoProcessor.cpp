@@ -326,9 +326,11 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(const Tex2D_t& Tex, ID3D11Textu
 // CDX11VideoProcessor
 
 CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter)
-	: m_pFilter(pFilter)
+	: CVideoProcessor(pFilter)
 	, m_Font3D(L"Consolas", 14)
 {
+	m_nCurrentAdapter = -1;
+
 	m_hDXGILib = LoadLibraryW(L"dxgi.dll");
 	if (!m_hDXGILib) {
 		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : failed to load dxgi.dll");

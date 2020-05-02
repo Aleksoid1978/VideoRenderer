@@ -28,68 +28,29 @@
 #include "FrameStats.h"
 #include "D3DUtil/D3D9Font.h"
 #include "D3DUtil/D3D9Geometry.h"
+#include "VideoProcessor.h"
 
-class CMpcVideoRenderer;
 
 class CDX9VideoProcessor
-	: public IMFVideoProcessor
+	: public CVideoProcessor
+	, public IMFVideoProcessor
 	, public IMFVideoMixerBitmap
 {
 private:
-	long m_nRefCount = 1;
-	CMpcVideoRenderer* m_pFilter = nullptr;
-
-	bool m_bShowStats          = false;
-	int  m_iTexFormat          = TEXFMT_AUTOINT;
-	VPEnableFormats_t m_VPFormats = {true, true, true, true};
-	bool m_bDeintDouble        = true;
-	bool m_bVPScaling          = true;
-	int  m_iChromaScaling      = CHROMA_Bilinear;
-	int  m_iUpscaling          = UPSCALE_CatmullRom; // interpolation
-	int  m_iDownscaling        = DOWNSCALE_Hamming;  // convolution
-	bool m_bInterpolateAt50pct = true;
-	bool m_bUseDither          = true;
-	int  m_iSwapEffect         = SWAPEFFECT_Discard;
-
 	// Direct3D 9
 	CComPtr<IDirect3D9Ex>            m_pD3DEx;
 	CComPtr<IDirect3DDevice9Ex>      m_pD3DDevEx;
 	CComPtr<IDirect3DDeviceManager9> m_pD3DDeviceManager;
-	UINT     m_nResetTocken = 0;
-	DWORD    m_VendorId = 0;
-	CStringW m_strAdapterDescription;
+	UINT m_nResetTocken = 0;
 
-	HWND m_hWnd = nullptr;
-	UINT m_nCurrentAdapter = D3DADAPTER_DEFAULT;
 	D3DDISPLAYMODEEX m_DisplayMode = { sizeof(D3DDISPLAYMODEEX) };
 	D3DPRESENT_PARAMETERS m_d3dpp = {};
 
-	bool   m_bPrimaryDisplay     = false;
-	double m_dRefreshRate        = 0.0;
-	double m_dRefreshRatePrimary = 0.0;
-
 	// DXVA2 Video Processor
 	CDXVA2VP m_DXVA2VP;
-	DXVA2_ValueRange m_DXVA2ProcAmpRanges[4] = {};
-	DXVA2_ProcAmpValues m_DXVA2ProcAmpValues = {};
 
 	// Input parameters
-	FmtConvParams_t m_srcParams = {};
 	D3DFORMAT m_srcDXVA2Format = D3DFMT_UNKNOWN;
-	CopyFrameDataFn m_pConvertFn = nullptr;
-	UINT  m_srcWidth        = 0;
-	UINT  m_srcHeight       = 0;
-	UINT  m_srcRectWidth    = 0;
-	UINT  m_srcRectHeight   = 0;
-	int   m_srcPitch        = 0;
-	UINT  m_srcLines        = 0;
-	DWORD m_srcAspectRatioX = 0;
-	DWORD m_srcAspectRatioY = 0;
-	CRect m_srcRect;
-	DXVA2_ExtendedFormat m_decExFmt = {};
-	DXVA2_ExtendedFormat m_srcExFmt = {};
-	bool  m_bInterlaced = false;
-	REFERENCE_TIME m_rtAvgTimePerFrame = 0;
 
 	// DXVA2 surface format
 	D3DFORMAT m_DXVA2OutputFmt = D3DFMT_UNKNOWN;
@@ -99,14 +60,6 @@ private:
 
 	// Processing parameters
 	DXVA2_SampleFormat m_CurrentSampleFmt = DXVA2_SampleProgressiveFrame;
-	int m_FieldDrawn = 0;
-
-	CRect m_videoRect;
-	CRect m_windowRect;
-	CRect m_renderRect;
-
-	int m_iRotation = 0;
-	bool m_bFinalPass = false;
 
 	// D3D9 Video Processor
 	Tex9Video_t m_TexSrcVideo; // for copy of frame
@@ -132,37 +85,20 @@ private:
 	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleY;
 	CComPtr<IDirect3DPixelShader9> m_pShaderDownscaleX;
 	CComPtr<IDirect3DPixelShader9> m_pShaderDownscaleY;
-	const wchar_t* m_strShaderX = nullptr;
-	const wchar_t* m_strShaderY = nullptr;
 
 	std::vector<ExternalPixelShader9_t> m_pPostScaleShaders;
 	CComPtr<IDirect3DPixelShader9> m_pPSFinalPass;
 
-	CRenderStats m_RenderStats;
-	CStringW m_strStatsStatic1;
-	CStringW m_strStatsStatic2;
-	CStringW m_strStatsStatic3;
-	CStringW m_strStatsStatic4;
-	int m_iSrcFromGPU = 0;
+	// AlphaBitmap
+	Tex_t    m_TexAlphaBitmap;
 
+	// Statistics
 	Tex_t m_TexStats;
 	CD3D9Font      m_Font3D;
 	CD3D9Rectangle m_Rect3D;
 	CD3D9Rectangle m_Underlay;
 	CD3D9Lines     m_Lines;
 	CD3D9Polyline  m_SyncLine;
-	CMovingAverage<int> m_Syncs = CMovingAverage<int>(120);
-	const int m_Xstep  = 4;
-	const int m_Yscale = 2;
-	int m_Xstart = 0;
-	int m_Yaxis  = 0;
-
-	REFERENCE_TIME m_rtStart = 0;
-
-	bool     m_bAlphaBitmapEnable = false;
-	Tex_t    m_TexAlphaBitmap;
-	RECT     m_AlphaBitmapRectSrc = {};
-	MFVideoNormalizedRect m_AlphaBitmapNRectDest = {};
 
 public:
 	CDX9VideoProcessor(CMpcVideoRenderer* pFilter);

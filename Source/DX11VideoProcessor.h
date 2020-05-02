@@ -33,34 +33,21 @@
 #include "D3DUtil/D3D11Font.h"
 #include "D3DUtil/D3D11Geometry.h"
 #include "DX9Device.h"
+#include "VideoProcessor.h"
 
 
-class CMpcVideoRenderer;
 class CVideoRendererInputPin;
 
 class CDX11VideoProcessor
-	: public CDX9Device
+	: public CVideoProcessor
+	, public CDX9Device
 	, public IMFVideoProcessor
 	, public IMFVideoMixerBitmap
 {
 private:
 	friend class CVideoRendererInputPin;
 
-	long m_nRefCount = 1;
-	CMpcVideoRenderer* m_pFilter = nullptr;
-
-	bool m_bShowStats          = false;
-	int  m_iTexFormat          = TEXFMT_AUTOINT;
-	VPEnableFormats_t m_VPFormats = {true, true, true, true};
-	bool m_bDeintDouble        = true;
-	bool m_bVPScaling          = true;
-	int  m_iChromaScaling      = CHROMA_Bilinear;
-	int  m_iUpscaling          = UPSCALE_CatmullRom; // interpolation
-	int  m_iDownscaling        = DOWNSCALE_Hamming;  // convolution
-	bool m_bInterpolateAt50pct = true;
-	bool m_bUseDither          = true;
-	int  m_iSwapEffect         = SWAPEFFECT_Discard;
-
+	// Direct3D 11
 	CComPtr<ID3D11Device>        m_pDevice;
 	CComPtr<ID3D11DeviceContext> m_pDeviceContext;
 	ID3D11SamplerState*          m_pSamplerPoint = nullptr;
@@ -80,10 +67,6 @@ private:
 	CTex2DRing m_TexsPostScale;
 	Tex2D_t m_TexDither;
 
-	bool   m_bPrimaryDisplay     = false;
-	double m_dRefreshRate        = 0.0;
-	double m_dRefreshRatePrimary = 0.0;
-
 	// D3D11 Video Processor
 	CD3D11VP m_D3D11VP;
 	CComPtr<ID3D11PixelShader> m_pPSCorrection;
@@ -99,8 +82,6 @@ private:
 	CComPtr<ID3D11PixelShader> m_pShaderUpscaleY;
 	CComPtr<ID3D11PixelShader> m_pShaderDownscaleX;
 	CComPtr<ID3D11PixelShader> m_pShaderDownscaleY;
-	const wchar_t* m_strShaderX = nullptr;
-	const wchar_t* m_strShaderY = nullptr;
 
 	std::vector<ExternalPixelShader11_t> m_pPostScaleShaders;
 	ID3D11Buffer* m_pPostScaleConstants = nullptr;
@@ -110,22 +91,7 @@ private:
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
 
 	// Input parameters
-	FmtConvParams_t m_srcParams = {};
 	DXGI_FORMAT m_srcDXGIFormat = DXGI_FORMAT_UNKNOWN;
-	CopyFrameDataFn m_pConvertFn = nullptr;
-	UINT  m_srcWidth        = 0;
-	UINT  m_srcHeight       = 0;
-	UINT  m_srcRectWidth    = 0;
-	UINT  m_srcRectHeight   = 0;
-	int   m_srcPitch        = 0;
-	UINT  m_srcLines        = 0;
-	DWORD m_srcAspectRatioX = 0;
-	DWORD m_srcAspectRatioY = 0;
-	CRect m_srcRect;
-	DXVA2_ExtendedFormat m_decExFmt = {};
-	DXVA2_ExtendedFormat m_srcExFmt = {};
-	bool  m_bInterlaced = false;
-	REFERENCE_TIME m_rtAvgTimePerFrame = 0;
 
 	// D3D11 VP texture format
 	DXGI_FORMAT m_D3D11OutputFmt = DXGI_FORMAT_UNKNOWN;
@@ -134,42 +100,6 @@ private:
 	DXGI_FORMAT m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
 
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
-	int m_FieldDrawn = 0;
-
-	DXVA2_ValueRange m_DXVA2ProcAmpRanges[4] = {};
-	DXVA2_ProcAmpValues m_DXVA2ProcAmpValues = {};
-
-	CRect m_videoRect;
-	CRect m_windowRect;
-	CRect m_renderRect;
-
-	int m_iRotation = 0;
-	bool m_bFinalPass = false;
-
-	HWND m_hWnd = nullptr;
-	UINT m_nCurrentAdapter = -1;
-
-	DWORD m_VendorId = 0;
-	CStringW m_strAdapterDescription;
-
-	CRenderStats m_RenderStats;
-	CStringW m_strStatsStatic1;
-	CStringW m_strStatsStatic2;
-	CStringW m_strStatsStatic3;
-	CStringW m_strStatsStatic4;
-	int m_iSrcFromGPU = 0;
-
-	Tex2D_t m_TexStats;
-	CD3D11Font m_Font3D;
-	CD3D11Rectangle m_Rect3D;
-	CD3D11Rectangle m_Underlay;
-	CD3D11Lines     m_Lines;
-	CD3D11Polyline  m_SyncLine;
-	CMovingAverage<int> m_Syncs = CMovingAverage<int>(120);
-	const int m_Xstep  = 4;
-	const int m_Yscale = 2;
-	int m_Xstart = 0;
-	int m_Yaxis  = 0;
 
 	HMODULE m_hDXGILib = nullptr;
 	HMODULE m_hD3D11Lib = nullptr;
@@ -187,13 +117,17 @@ private:
 	CComPtr<ID3D11Texture2D>          m_pTextureSubPic;
 	CComPtr<ID3D11ShaderResourceView> m_pShaderResourceSubPic;
 
-	REFERENCE_TIME m_rtStart = 0;
-
-	bool     m_bAlphaBitmapEnable = false;
+	// AlphaBitmap
 	Tex2D_t  m_TexAlphaBitmap;
-	RECT     m_AlphaBitmapRectSrc = {};
 	CComPtr<ID3D11Buffer> m_pAlphaBitmapVertex;
-	MFVideoNormalizedRect m_AlphaBitmapNRectDest = {};
+
+	// Statistics
+	Tex2D_t m_TexStats;
+	CD3D11Font m_Font3D;
+	CD3D11Rectangle m_Rect3D;
+	CD3D11Rectangle m_Underlay;
+	CD3D11Lines     m_Lines;
+	CD3D11Polyline  m_SyncLine;
 
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter);
