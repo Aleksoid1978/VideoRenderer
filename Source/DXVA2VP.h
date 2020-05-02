@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <atltypes.h>
 #include <dxva2api.h>
 
 class VideoSampleBuffer

@@ -29,7 +29,6 @@
 #include "VideoRenderer.h"
 #include "../Include/Version.h"
 #include "DX9VideoProcessor.h"
-#include "DisplayConfig.h"
 #include "Shaders.h"
 
 static const ScalingShaderResId s_Upscaling9ResIDs[UPSCALE_COUNT] = {
@@ -842,12 +841,6 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	return FALSE;
 }
 
-void CDX9VideoProcessor::Start()
-{
-	m_rtStart = 0;
-	//UpdatePostScaleTexures();
-}
-
 HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 {
 	REFERENCE_TIME rtStart = m_pFilter->m_FrameStats.GeTimestamp();
@@ -1199,38 +1192,6 @@ HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 	return S_OK;
 }
 
-HRESULT CDX9VideoProcessor::GetVideoSize(long *pWidth, long *pHeight)
-{
-	CheckPointer(pWidth, E_POINTER);
-	CheckPointer(pHeight, E_POINTER);
-
-	if (m_iRotation == 90 || m_iRotation == 270) {
-		*pWidth  = m_srcRectHeight;
-		*pHeight = m_srcRectWidth;
-	} else {
-		*pWidth  = m_srcRectWidth;
-		*pHeight = m_srcRectHeight;
-	}
-
-	return S_OK;
-}
-
-HRESULT CDX9VideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
-{
-	CheckPointer(plAspectX, E_POINTER);
-	CheckPointer(plAspectY, E_POINTER);
-
-	if (m_iRotation == 90 || m_iRotation == 270) {
-		*plAspectX = m_srcAspectRatioY;
-		*plAspectY = m_srcAspectRatioX;
-	} else {
-		*plAspectX = m_srcAspectRatioX;
-		*plAspectY = m_srcAspectRatioY;
-	}
-
-	return S_OK;
-}
-
 HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 {
 	CRect srcRect(m_srcRect);
@@ -1406,27 +1367,6 @@ HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
 	return S_OK;
 }
 
-void CDX9VideoProcessor::SetTexFormat(int value)
-{
-	switch (value) {
-	case TEXFMT_AUTOINT:
-	case TEXFMT_8INT:
-	case TEXFMT_10INT:
-	case TEXFMT_16FLOAT:
-		m_iTexFormat = value;
-		break;
-	default:
-		DLog(L"CDX9VideoProcessor::SetTexFormat() unknown value %d", value);
-		ASSERT(FALSE);
-		return;
-	}
-}
-
-void CDX9VideoProcessor::SetVPEnableFmts(const VPEnableFormats_t& VPFormats)
-{
-	m_VPFormats = VPFormats;
-}
-
 void CDX9VideoProcessor::SetVPScaling(bool value)
 {
 	m_bVPScaling = value;
@@ -1497,24 +1437,6 @@ void CDX9VideoProcessor::Flush()
 		} else {
 			m_DXVA2VP.CleanSamplesData();
 		}
-	}
-}
-
-void CDX9VideoProcessor::UpdateDiplayInfo()
-{
-	const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
-	const HMONITOR hMonPrimary = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY);
-
-	MONITORINFOEXW mi = { sizeof(mi) };
-	GetMonitorInfoW(hMon, (MONITORINFO*)&mi);
-	m_dRefreshRate = GetRefreshRate(mi.szDevice);
-	if (hMon == hMonPrimary) {
-		m_bPrimaryDisplay = true;
-		m_dRefreshRatePrimary = m_dRefreshRate;
-	} else {
-		m_bPrimaryDisplay = false;
-		GetMonitorInfoW(hMonPrimary, (MONITORINFO*)&mi);
-		m_dRefreshRatePrimary = GetRefreshRate(mi.szDevice);
 	}
 }
 

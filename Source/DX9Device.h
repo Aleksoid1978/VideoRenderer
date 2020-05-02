@@ -20,8 +20,6 @@
 
 #pragma once
 
-#include <atltypes.h>
-
 class CDX9Device
 {
 private:

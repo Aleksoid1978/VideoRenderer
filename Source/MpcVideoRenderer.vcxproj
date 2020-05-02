@@ -94,6 +94,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Time.cpp" />
+    <ClCompile Include="VideoProcessor.cpp" />
     <ClCompile Include="VideoRenderer.cpp" />
     <ClCompile Include="VideoRendererInputPin.cpp" />
   </ItemGroup>

@@ -20,6 +20,9 @@
 
 #pragma once
 
+#include <evr9.h>
+#include "FrameStats.h"
+
 class CMpcVideoRenderer;
 
 class CVideoProcessor
@@ -28,7 +31,7 @@ protected:
 	long m_nRefCount = 1;
 	CMpcVideoRenderer* m_pFilter = nullptr;
 
-	// settings
+	// Settings
 	bool m_bShowStats          = false;
 	int  m_iTexFormat          = TEXFMT_AUTOINT;
 	VPEnableFormats_t m_VPFormats = {true, true, true, true};
@@ -104,4 +107,26 @@ protected:
 
 public:
 	CVideoProcessor(CMpcVideoRenderer* pFilter) : m_pFilter(pFilter) {}
+
+	void Start() { m_rtStart = 0; }
+
+	ColorFormat_t GetColorFormat() { return m_srcParams.cformat; }
+
+	void GetSourceRect(CRect& sourceRect) { sourceRect = m_srcRect; }
+	void GetVideoRect(CRect& videoRect) { videoRect = m_videoRect; }
+
+	HRESULT GetVideoSize(long *pWidth, long *pHeight);
+
+	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
+
+	int GetRotation() { return m_iRotation; }
+
+	// Settings
+	void SetTexFormat(int value);
+	void SetVPEnableFmts(const VPEnableFormats_t& VPFormats) { m_VPFormats = VPFormats; }
+	void SetDeintDouble(bool value) { m_bDeintDouble = value; }
+	void SetShowStats(bool value)   { m_bShowStats   = value; }
+	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
+
+	void UpdateDiplayInfo();
 };

@@ -34,6 +34,7 @@
 #include <atlbase.h>
 #include <atlstr.h>
 #include <atlwin.h>
+#include <atltypes.h>
 
 #include <dmodshow.h>
 #include <dvdmedia.h>

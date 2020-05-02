@@ -90,6 +90,9 @@
     <ClCompile Include="D3DUtil\D3D9Geometry.cpp">
       <Filter>D3DUtil</Filter>
     </ClCompile>
+    <ClCompile Include="VideoProcessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">

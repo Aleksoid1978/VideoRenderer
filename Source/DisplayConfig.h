@@ -30,4 +30,3 @@ struct DisplayConfig_t {
 double GetRefreshRate(const wchar_t* displayName);
 
 bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs);
-

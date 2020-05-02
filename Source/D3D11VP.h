@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <atltypes.h>
 #include <d3d11.h>
 
 class VideoTextureBuffer // TODO

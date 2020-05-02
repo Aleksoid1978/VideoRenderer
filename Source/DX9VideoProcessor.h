@@ -20,12 +20,10 @@
 
 #pragma once
 
-#include <evr9.h> // for IMFVideoProcessor
 #include "IVideoRenderer.h"
 #include "Helper.h"
 #include "DX9Helper.h"
 #include "DXVA2VP.h"
-#include "FrameStats.h"
 #include "D3DUtil/D3D9Font.h"
 #include "D3DUtil/D3D9Geometry.h"
 #include "VideoProcessor.h"
@@ -126,8 +124,6 @@ public:
 
 	BOOL GetAlignmentSize(const CMediaType& mt, SIZE& Size);
 
-	void Start();
-
 	HRESULT ProcessSample(IMediaSample* pSample);
 	HRESULT CopySample(IMediaSample* pSample);
 	// Render: 1 - render first fied or progressive frame, 2 - render second fied, 0 or other - forced repeat of render.
@@ -135,37 +131,26 @@ public:
 	HRESULT FillBlack();
 	bool SecondFramePossible() { return m_bDeintDouble && m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd; }
 
-	void GetSourceRect(CRect& sourceRect) { sourceRect = m_srcRect; }
-	void GetVideoRect(CRect& videoRect) { videoRect = m_videoRect; }
 	void SetVideoRect(const CRect& videoRect);
 	HRESULT SetWindowRect(const CRect& windowRect);
 
 	IDirect3DDeviceManager9* GetDeviceManager9() { return m_pD3DDeviceManager; }
-	HRESULT GetVideoSize(long *pWidth, long *pHeight);
-	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
 	HRESULT GetCurentImage(long *pDIBImage);
 	HRESULT GetDisplayedImage(BYTE **ppDib, unsigned *pSize);
 	HRESULT GetVPInfo(CStringW& str);
-	ColorFormat_t GetColorFormat() { return m_srcParams.cformat; }
 
-	void SetDeintDouble(bool value) { m_bDeintDouble = value; }
-	void SetShowStats(bool value)   { m_bShowStats   = value; }
-	void SetTexFormat(int value);
-	void SetVPEnableFmts(const VPEnableFormats_t& VPFormats);
+	// Settings
 	void SetVPScaling(bool value);
 	void SetChromaScaling(int value);
 	void SetUpscaling(int value);
 	void SetDownscaling(int value);
-	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
 	void SetDither(bool value);
 	void SetSwapEffect(int value) { m_iSwapEffect = value; }
 
 	void SetRotation(int value);
-	int GetRotation() { return m_iRotation; }
 
 	void Flush();
 
-	void UpdateDiplayInfo();
 	void ClearPostScaleShaders();
 	HRESULT AddPostScaleShader(const CStringW& name, const CStringA& srcCode);
 

@@ -20,16 +20,13 @@
 
 #pragma once
 
-#include <atltypes.h>
 #include <ntverp.h>
 #include <DXGI1_2.h>
 #include <dxva2api.h>
 #include <strmif.h>
-#include <evr9.h> // for IMFVideoProcessor
 #include "IVideoRenderer.h"
 #include "DX11Helper.h"
 #include "D3D11VP.h"
-#include "FrameStats.h"
 #include "D3DUtil/D3D11Font.h"
 #include "D3DUtil/D3D11Geometry.h"
 #include "DX9Device.h"
@@ -161,8 +158,6 @@ public:
 
 	BOOL GetAlignmentSize(const CMediaType& mt, SIZE& Size);
 
-	void Start();
-
 	HRESULT ProcessSample(IMediaSample* pSample);
 	HRESULT CopySample(IMediaSample* pSample);
 	// Render: 1 - render first fied or progressive frame, 2 - render second fied, 0 or other - forced repeat of render.
@@ -170,36 +165,25 @@ public:
 	HRESULT FillBlack();
 	bool SecondFramePossible() { return m_bDeintDouble && m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE; }
 
-	void GetSourceRect(CRect& sourceRect) { sourceRect = m_srcRect; }
-	void GetVideoRect(CRect& videoRect) { videoRect = m_videoRect; }
 	void SetVideoRect(const CRect& videoRect);
 	HRESULT SetWindowRect(const CRect& windowRect);
 
-	HRESULT GetVideoSize(long *pWidth, long *pHeight);
-	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
 	HRESULT GetCurentImage(long *pDIBImage);
 	HRESULT GetDisplayedImage(BYTE **ppDib, unsigned* pSize);
 	HRESULT GetVPInfo(CStringW& str);
-	ColorFormat_t GetColorFormat() { return m_srcParams.cformat; }
 
-	void SetDeintDouble(bool value) { m_bDeintDouble = value; };
-	void SetShowStats(bool value)   { m_bShowStats   = value; };
-	void SetTexFormat(int value);
-	void SetVPEnableFmts(const VPEnableFormats_t& VPFormats);
+	// Settings
 	void SetVPScaling(bool value);
 	void SetChromaScaling(int value);
 	void SetUpscaling(int value);
 	void SetDownscaling(int value);
-	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
 	void SetDither(bool value);
 	void SetSwapEffect(int value) { m_iSwapEffect = value; }
 
 	void SetRotation(int value);
-	int GetRotation() { return m_iRotation; }
 
 	void Flush();
 
-	void UpdateDiplayInfo();
 	void ClearPostScaleShaders();
 	HRESULT AddPostScaleShader(const CStringW& name, const CStringA& srcCode);
 

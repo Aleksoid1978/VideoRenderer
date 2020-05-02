@@ -32,7 +32,6 @@
 #include "../Include/Version.h"
 #include "DX11VideoProcessor.h"
 #include "../Include/ID3DVideoMemoryConfiguration.h"
-#include "DisplayConfig.h"
 #include "Shaders.h"
 
 static const ScalingShaderResId s_Upscaling11ResIDs[UPSCALE_COUNT] = {
@@ -1305,12 +1304,6 @@ BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 	return FALSE;
 }
 
-void CDX11VideoProcessor::Start()
-{
-	m_rtStart = 0;
-	//UpdatePostScaleTexures();
-}
-
 HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 {
 	REFERENCE_TIME rtStart = m_pFilter->m_FrameStats.GeTimestamp();
@@ -2054,38 +2047,6 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::GetVideoSize(long *pWidth, long *pHeight)
-{
-	CheckPointer(pWidth, E_POINTER);
-	CheckPointer(pHeight, E_POINTER);
-
-	if (m_iRotation == 90 || m_iRotation == 270) {
-		*pWidth  = m_srcRectHeight;
-		*pHeight = m_srcRectWidth;
-	} else {
-		*pWidth  = m_srcRectWidth;
-		*pHeight = m_srcRectHeight;
-	}
-
-	return S_OK;
-}
-
-HRESULT CDX11VideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
-{
-	CheckPointer(plAspectX, E_POINTER);
-	CheckPointer(plAspectY, E_POINTER);
-
-	if (m_iRotation == 90 || m_iRotation == 270) {
-		*plAspectX = m_srcAspectRatioY;
-		*plAspectY = m_srcAspectRatioX;
-	} else {
-		*plAspectX = m_srcAspectRatioX;
-		*plAspectY = m_srcAspectRatioY;
-	}
-
-	return S_OK;
-}
-
 HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 {
 	CRect rSrcRect(m_srcRect);
@@ -2262,27 +2223,6 @@ HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 	return S_OK;
 }
 
-void CDX11VideoProcessor::SetTexFormat(int value)
-{
-	switch (value) {
-	case TEXFMT_AUTOINT:
-	case TEXFMT_8INT:
-	case TEXFMT_10INT:
-	case TEXFMT_16FLOAT:
-		m_iTexFormat = value;
-		break;
-	default:
-		DLog(L"CDX11VideoProcessor::SetTexFormat() unknown value %d", value);
-		ASSERT(FALSE);
-		return;
-	}
-}
-
-void CDX11VideoProcessor::SetVPEnableFmts(const VPEnableFormats_t& VPFormats)
-{
-	m_VPFormats = VPFormats;
-}
-
 void CDX11VideoProcessor::SetVPScaling(bool value)
 {
 	m_bVPScaling = value;
@@ -2350,24 +2290,6 @@ void CDX11VideoProcessor::Flush()
 {
 	if (m_D3D11VP.IsReady()) {
 		m_D3D11VP.ResetFrameOrder();
-	}
-}
-
-void CDX11VideoProcessor::UpdateDiplayInfo()
-{
-	const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
-	const HMONITOR hMonPrimary = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY);
-
-	MONITORINFOEXW mi = { sizeof(mi) };
-	GetMonitorInfoW(hMon, (MONITORINFO*)&mi);
-	m_dRefreshRate = GetRefreshRate(mi.szDevice);
-	if (hMon == hMonPrimary) {
-		m_bPrimaryDisplay = true;
-		m_dRefreshRatePrimary = m_dRefreshRate;
-	} else {
-		m_bPrimaryDisplay = false;
-		GetMonitorInfoW(hMonPrimary, (MONITORINFO*)&mi);
-		m_dRefreshRatePrimary = GetRefreshRate(mi.szDevice);
 	}
 }
 
