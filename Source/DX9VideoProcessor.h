@@ -86,7 +86,7 @@ private:
 	CComPtr<IDirect3DPixelShader9> m_pPSFinalPass;
 
 	// AlphaBitmap
-	Tex_t    m_TexAlphaBitmap;
+	Tex_t m_TexAlphaBitmap;
 
 	// Statistics
 	Tex_t m_TexStats;

@@ -86,8 +86,8 @@ protected:
 	int m_FieldDrawn = 0;
 
 	// AlphaBitmap
-	bool     m_bAlphaBitmapEnable = false;
-	RECT     m_AlphaBitmapRectSrc = {};
+	bool m_bAlphaBitmapEnable = false;
+	RECT m_AlphaBitmapRectSrc = {};
 	MFVideoNormalizedRect m_AlphaBitmapNRectDest = {};
 
 	// Statistics
@@ -99,6 +99,9 @@ protected:
 	int m_iSrcFromGPU = 0;
 	const wchar_t* m_strShaderX = nullptr;
 	const wchar_t* m_strShaderY = nullptr;
+	const int m_StatsW = 512;
+	const int m_StatsH = 270;
+	const RECT m_StatsRect = { 10, 10, 10 + m_StatsW, 10 + m_StatsH };
 
 	// Graph of a function
 	CMovingAverage<int> m_Syncs = CMovingAverage<int>(120);

@@ -113,7 +113,7 @@ private:
 	CComPtr<ID3D11ShaderResourceView> m_pShaderResourceSubPic;
 
 	// AlphaBitmap
-	Tex2D_t  m_TexAlphaBitmap;
+	Tex2D_t m_TexAlphaBitmap;
 	CComPtr<ID3D11Buffer> m_pAlphaBitmapVertex;
 
 	// Statistics

@@ -22,7 +22,7 @@
 
 #include <d3d11.h>
 
-class VideoTextureBuffer // TODO
+class VideoTextureBuffer
 {
 private:
 	std::vector<ID3D11Texture2D*> m_Textures;

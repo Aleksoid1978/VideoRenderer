@@ -108,7 +108,7 @@ static HRESULT TextureBlt(IDirect3DDevice9* pD3DDev, MYD3DVERTEX<texcoords> v[4]
 	return S_OK;
 }
 
-HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, RECT* pSrc, RECT* pDst, IDirect3DTexture9* pTexture, D3DTEXTUREFILTERTYPE filter)
+HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, const RECT* pSrc, const RECT* pDst, IDirect3DTexture9* pTexture, D3DTEXTUREFILTERTYPE filter)
 {
 	ASSERT(pD3DDev);
 	ASSERT(pSrc);
@@ -321,7 +321,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
 		m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
 	}
 
-	HRESULT hr2 = m_TexStats.Create(m_pD3DDevEx, D3DFMT_A8R8G8B8, STATS_W, STATS_H, D3DUSAGE_RENDERTARGET);
+	HRESULT hr2 = m_TexStats.Create(m_pD3DDevEx, D3DFMT_A8R8G8B8, m_StatsW, m_StatsH, D3DUSAGE_RENDERTARGET);
 	if (S_OK == hr2) {
 		hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
 	}
@@ -2217,18 +2217,18 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 
 	hr = m_pD3DDevEx->BeginScene();
 	hr = m_Font3D.Draw2DText(5, 5, D3DCOLOR_XRGB(255, 255, 255), str);
-	static int col = STATS_W;
+	static int col = m_StatsW;
 	if (--col < 0) {
-		col = STATS_W;
+		col = m_StatsW;
 	}
-	m_Rect3D.Set({ col, STATS_H - 11, col + 5, STATS_H - 1 }, D3DCOLOR_XRGB(128, 255, 128));
+	m_Rect3D.Set({ col, m_StatsH - 11, col + 5, m_StatsH - 1 }, D3DCOLOR_XRGB(128, 255, 128));
 	m_Rect3D.Draw();
 
 	hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
-	hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, STATS_W, STATS_H), CRect(STATS_X, STATS_Y, STATS_X + STATS_W, STATS_X + STATS_H), m_TexStats.pTexture, D3DTEXF_POINT);
+	hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, m_StatsW, m_StatsH), &m_StatsRect, m_TexStats.pTexture, D3DTEXF_POINT);
 
-	if (STATS_X + STATS_W + 5 < m_Xstart && m_windowRect.bottom > 360) {
+	if (m_StatsRect.right + 5 < m_Xstart && m_windowRect.bottom > 360) {
 		m_Underlay.Draw();
 		m_Lines.Draw();
 

@@ -292,7 +292,7 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(const Tex2D_t& Tex, ID3D11Textu
 		return hr;
 	}
 
-	const FLOAT constants[][4] = { // TODO: check for rotation
+	const FLOAT constants[][4] = {
 		{(float)Tex.desc.Width, (float)Tex.desc.Height, 1.0f / Tex.desc.Width, 1.0f / Tex.desc.Height},
 		{(float)srcRect.Width() / dstRect.Width(), (float)srcRect.Height() / dstRect.Height(), 0, 0}
 	};
@@ -826,7 +826,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		DLog(L"Graphics adapter: %s", m_strAdapterDescription);
 	}
 
-	HRESULT hr2 = m_TexStats.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, STATS_W, STATS_H, Tex2D_DefaultShaderRTarget);
+	HRESULT hr2 = m_TexStats.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, m_StatsW, m_StatsH, Tex2D_DefaultShaderRTarget);
 	if (S_OK == hr2) {
 		hr2 = m_Font3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
 	}
@@ -2500,25 +2500,25 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 
 		const SIZE rtSize{ m_TexStats.desc.Width, m_TexStats.desc.Height };
 		hr = m_Font3D.Draw2DText(pRenderTargetView, rtSize, 5, 5, D3DCOLOR_XRGB(255, 255, 255), str);
-		static int col = STATS_W;
+		static int col = m_StatsW;
 		if (--col < 0) {
-			col = STATS_W;
+			col = m_StatsW;
 		}
-		m_Rect3D.Set({ col, STATS_H - 11, col + 5, STATS_H - 1 }, rtSize, D3DCOLOR_XRGB(128, 255, 128));
+		m_Rect3D.Set({ col, m_StatsH - 11, col + 5, m_StatsH - 1 }, rtSize, D3DCOLOR_XRGB(128, 255, 128));
 		m_Rect3D.Draw(pRenderTargetView, rtSize);
 
 		pRenderTargetView->Release();
 
 		D3D11_VIEWPORT VP;
-		VP.TopLeftX = STATS_X;
-		VP.TopLeftY = STATS_Y;
-		VP.Width    = STATS_W;
-		VP.Height   = STATS_H;
+		VP.TopLeftX = m_StatsRect.left;
+		VP.TopLeftY = m_StatsRect.top;
+		VP.Width    = m_StatsW;
+		VP.Height   = m_StatsH;
 		VP.MinDepth = 0.0f;
 		VP.MaxDepth = 1.0f;
 		hr = AlphaBlt(m_TexStats.pShaderResource, pRenderTarget, m_pFullFrameVertexBuffer, &VP, m_pSamplerPoint);
 
-		if (STATS_X + STATS_W + 5 < m_Xstart && m_windowRect.bottom > 360) {
+		if (m_StatsRect.right + 5 < m_Xstart && m_windowRect.bottom > 360) {
 			hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
 			if (S_OK == hr) {
 				SIZE rtSize = m_windowRect.Size();

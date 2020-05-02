@@ -231,7 +231,7 @@ public:
 
 struct ExternalPixelShader11_t
 {
-	CStringW name; // TODO
+	CStringW name;
 	CComPtr<ID3D11PixelShader> shader;
 };
 

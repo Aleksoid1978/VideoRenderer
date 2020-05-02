@@ -639,14 +639,6 @@ STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPV
 				return m_DX9_VP.GetDeviceManager9()->QueryInterface(riid, ppvObject);
 			}
 		}
-		/*
-		} else if (riid == __uuidof(IDirectXVideoDecoderService) || riid == __uuidof(IDirectXVideoProcessorService) ) {
-		return m_pD3DDeviceManager->GetVideoService(m_hDevice, riid, ppvObject);
-		} else if (riid == __uuidof(IDirectXVideoAccelerationService)) {
-		// TODO : to be tested....
-		return pDXVA2CreateVideoService(m_pD3DDevEx, riid, ppvObject);
-		}
-		*/
 	}
 	if (guidService == MR_VIDEO_MIXER_SERVICE) {
 		if (riid == IID_IMFVideoProcessor || riid == IID_IMFVideoMixerBitmap) {
