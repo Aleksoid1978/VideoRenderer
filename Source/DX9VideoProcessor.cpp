@@ -1167,21 +1167,15 @@ HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 			DLogIf(FAILED(hr), L"CDX9VideoProcessor::SetWindowRect() : ResetEx() failed with error %s", HR2Str(hr));
 		}
 
-		const int Xend = m_windowRect.right - 20;
-		m_Xstart = Xend - m_Xstep * m_Syncs.Size();
-
-		const int bottom = m_windowRect.bottom - 20;
-		const int top = bottom - 125 * m_Yscale;
-		m_Yaxis = bottom - 50 * m_Yscale;
-
-		m_Underlay.Set(CRect(m_Xstart, top, Xend, bottom), D3DCOLOR_ARGB(80, 0, 0, 0));
+		CalcGraphRect();
+		m_Underlay.Set(m_GraphRect, D3DCOLOR_ARGB(80, 0, 0, 0));
 
 		m_Lines.ClearPoints();
 		POINT points[2];
 		const int linestep = 20 * m_Yscale;
-		for (int y = top + (m_Yaxis - top) % (linestep); y < bottom; y += linestep) {
-			points[0] = { m_Xstart, y };
-			points[1] = { Xend,     y };
+		for (int y = m_GraphRect.top + (m_Yaxis - m_GraphRect.top) % (linestep); y < m_GraphRect.bottom; y += linestep) {
+			points[0] = { m_GraphRect.left,  y };
+			points[1] = { m_GraphRect.right, y };
 			m_Lines.AddPoints(points, std::size(points), (y == m_Yaxis) ? D3DCOLOR_XRGB(150, 150, 255) : D3DCOLOR_XRGB(100, 100, 255));
 		}
 		m_Lines.UpdateVertexBuffer();
@@ -2228,12 +2222,14 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 
 	hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, m_StatsW, m_StatsH), &m_StatsRect, m_TexStats.pTexture, D3DTEXF_POINT);
 
-	if (m_StatsRect.right + 5 < m_Xstart && m_windowRect.bottom > 360) {
+	CRect r;
+	if (m_GraphRect.left > 0 && m_GraphRect.top > 0 && !r.IntersectRect(&m_StatsRect, &m_GraphRect)) {
 		m_Underlay.Draw();
 		m_Lines.Draw();
 
 		m_SyncLine.ClearPoints();
-		m_SyncLine.AddGFPoints(m_Xstart, m_Xstep, m_Yaxis, m_Yscale, m_Syncs.Data(), m_Syncs.OldestIndex(), m_Syncs.Size(), D3DCOLOR_XRGB(255, 100, 100));
+		m_SyncLine.AddGFPoints(m_GraphRect.left, m_Xstep, m_Yaxis, m_Yscale,
+			m_Syncs.Data(), m_Syncs.OldestIndex(), m_Syncs.Size(), D3DCOLOR_XRGB(255, 100, 100));
 		m_SyncLine.UpdateVertexBuffer();
 		m_SyncLine.Draw();
 	}

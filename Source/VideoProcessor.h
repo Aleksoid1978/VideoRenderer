@@ -107,7 +107,7 @@ protected:
 	CMovingAverage<int> m_Syncs = CMovingAverage<int>(120);
 	const int m_Xstep  = 4;
 	const int m_Yscale = 2;
-	int m_Xstart = 0;
+	RECT m_GraphRect = {};
 	int m_Yaxis  = 0;
 
 	CVideoProcessor(CMpcVideoRenderer* pFilter) : m_pFilter(pFilter) {}
@@ -133,6 +133,7 @@ public:
 	void SetShowStats(bool value)   { m_bShowStats   = value; }
 	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
 
+	void CalcGraphRect();
 	void UpdateDiplayInfo();
 
 	// IUnknown

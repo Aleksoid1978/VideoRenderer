@@ -2022,21 +2022,15 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 	if (m_pDeviceContext && !m_windowRect.IsRectEmpty()) {
 		SIZE rtSize = m_windowRect.Size();
 
-		const int Xend = m_windowRect.right - 20;
-		m_Xstart = Xend - m_Xstep * m_Syncs.Size();
-
-		const int bottom = m_windowRect.bottom - 20;
-		const int top = bottom - 125 * m_Yscale;
-		m_Yaxis = bottom - 50 * m_Yscale;
-
-		m_Underlay.Set(CRect(m_Xstart, top, Xend, bottom), rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
+		CalcGraphRect();
+		m_Underlay.Set(m_GraphRect, rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
 
 		m_Lines.ClearPoints(rtSize);
 		POINT points[2];
 		const int linestep = 20 * m_Yscale;
-		for (int y = top + (m_Yaxis - top) % (linestep); y < bottom; y += linestep) {
-			points[0] = { m_Xstart, y };
-			points[1] = { Xend,     y };
+		for (int y = m_GraphRect.top + (m_Yaxis - m_GraphRect.top) % (linestep); y < m_GraphRect.bottom; y += linestep) {
+			points[0] = { m_GraphRect.left,  y };
+			points[1] = { m_GraphRect.right, y };
 			m_Lines.AddPoints(points, std::size(points), (y == m_Yaxis) ? D3DCOLOR_XRGB(150, 150, 255) : D3DCOLOR_XRGB(100, 100, 255));
 		}
 		m_Lines.UpdateVertexBuffer();
@@ -2518,7 +2512,8 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		VP.MaxDepth = 1.0f;
 		hr = AlphaBlt(m_TexStats.pShaderResource, pRenderTarget, m_pFullFrameVertexBuffer, &VP, m_pSamplerPoint);
 
-		if (m_StatsRect.right + 5 < m_Xstart && m_windowRect.bottom > 360) {
+		CRect r;
+		if (m_GraphRect.left > 0 && m_GraphRect.top > 0 && !r.IntersectRect(&m_StatsRect, &m_GraphRect)) {
 			hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
 			if (S_OK == hr) {
 				SIZE rtSize = m_windowRect.Size();
@@ -2527,7 +2522,8 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 				m_Lines.Draw();
 
 				m_SyncLine.ClearPoints(rtSize);
-				m_SyncLine.AddGFPoints(m_Xstart, m_Xstep, m_Yaxis, m_Yscale, m_Syncs.Data(), m_Syncs.OldestIndex(), m_Syncs.Size(), D3DCOLOR_XRGB(255, 100, 100));
+				m_SyncLine.AddGFPoints(m_GraphRect.left, m_Xstep, m_Yaxis, m_Yscale,
+					m_Syncs.Data(), m_Syncs.OldestIndex(), m_Syncs.Size(), D3DCOLOR_XRGB(255, 100, 100));
 				m_SyncLine.UpdateVertexBuffer();
 				m_SyncLine.Draw();
 

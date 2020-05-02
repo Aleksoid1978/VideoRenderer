@@ -75,6 +75,17 @@ void CVideoProcessor::SetTexFormat(int value)
 	}
 }
 
+void CVideoProcessor::CalcGraphRect()
+{
+	m_GraphRect.right = m_windowRect.right - 20;
+	m_GraphRect.left  = m_GraphRect.right - m_Xstep * m_Syncs.Size();
+
+	m_GraphRect.bottom = m_windowRect.bottom - 20;
+	m_GraphRect.top    = m_GraphRect.bottom - 125 * m_Yscale;
+
+	m_Yaxis = m_GraphRect.bottom - 50 * m_Yscale;
+}
+
 void CVideoProcessor::UpdateDiplayInfo()
 {
 	const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
