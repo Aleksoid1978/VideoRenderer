@@ -2029,26 +2029,21 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 
 		const int Xend = m_windowRect.right - 20;
 		m_Xstart = Xend - m_Xstep * m_Syncs.Size();
-		m_Yaxis = m_windowRect.bottom - 120;
 
-		m_Underlay.Set(CRect(m_Xstart, m_Yaxis - 150, Xend, m_Yaxis + 100), rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
+		const int bottom = m_windowRect.bottom - 20;
+		const int top = bottom - 125 * m_Yscale;
+		m_Yaxis = bottom - 50 * m_Yscale;
+
+		m_Underlay.Set(CRect(m_Xstart, top, Xend, bottom), rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
 
 		m_Lines.ClearPoints(rtSize);
-		POINT points[10];
-		points[0] = { m_Xstart, m_Yaxis };
-		points[1] = { Xend,     m_Yaxis };
-		m_Lines.AddPoints(points, 2, D3DCOLOR_XRGB(150, 150, 255));
-		points[0] = { m_Xstart, m_Yaxis - 60*m_Yscale };
-		points[1] = { Xend,     m_Yaxis - 60*m_Yscale };
-		points[2] = { m_Xstart, m_Yaxis - 40*m_Yscale };
-		points[3] = { Xend,     m_Yaxis - 40*m_Yscale };
-		points[4] = { m_Xstart, m_Yaxis - 20*m_Yscale };
-		points[5] = { Xend,     m_Yaxis - 20*m_Yscale };
-		points[6] = { m_Xstart, m_Yaxis + 20*m_Yscale };
-		points[7] = { Xend,     m_Yaxis + 20*m_Yscale };
-		points[8] = { m_Xstart, m_Yaxis + 40*m_Yscale };
-		points[9] = { Xend,     m_Yaxis + 40*m_Yscale };
-		m_Lines.AddPoints(points, std::size(points), D3DCOLOR_XRGB(100, 100, 255));
+		POINT points[2];
+		const int linestep = 20 * m_Yscale;
+		for (int y = top + (m_Yaxis - top) % (linestep); y < bottom; y += linestep) {
+			points[0] = { m_Xstart, y };
+			points[1] = { Xend,     y };
+			m_Lines.AddPoints(points, std::size(points), (y == m_Yaxis) ? D3DCOLOR_XRGB(150, 150, 255) : D3DCOLOR_XRGB(100, 100, 255));
+		}
 		m_Lines.UpdateVertexBuffer();
 	}
 
