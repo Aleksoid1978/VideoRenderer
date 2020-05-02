@@ -133,7 +133,7 @@ public:
 	void SetShowStats(bool value)   { m_bShowStats   = value; }
 	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
 
-	void CalcGraphRect();
+	void CalcGraphParams();
 	void UpdateDiplayInfo();
 
 	// IUnknown

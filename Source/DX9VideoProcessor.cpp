@@ -1167,7 +1167,7 @@ HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 			DLogIf(FAILED(hr), L"CDX9VideoProcessor::SetWindowRect() : ResetEx() failed with error %s", HR2Str(hr));
 		}
 
-		CalcGraphRect();
+		CalcGraphParams();
 		m_Underlay.Set(m_GraphRect, D3DCOLOR_ARGB(80, 0, 0, 0));
 
 		m_Lines.ClearPoints();

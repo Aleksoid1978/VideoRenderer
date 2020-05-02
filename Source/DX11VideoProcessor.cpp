@@ -2022,7 +2022,7 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 	if (m_pDeviceContext && !m_windowRect.IsRectEmpty()) {
 		SIZE rtSize = m_windowRect.Size();
 
-		CalcGraphRect();
+		CalcGraphParams();
 		m_Underlay.Set(m_GraphRect, rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
 
 		m_Lines.ClearPoints(rtSize);
