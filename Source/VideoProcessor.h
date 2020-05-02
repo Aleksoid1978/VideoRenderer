@@ -26,6 +26,8 @@
 class CMpcVideoRenderer;
 
 class CVideoProcessor
+	: public IMFVideoProcessor
+	, public IMFVideoMixerBitmap
 {
 protected:
 	long m_nRefCount = 1;
@@ -105,9 +107,9 @@ protected:
 	int m_Xstart = 0;
 	int m_Yaxis  = 0;
 
-public:
 	CVideoProcessor(CMpcVideoRenderer* pFilter) : m_pFilter(pFilter) {}
 
+public:
 	void Start() { m_rtStart = 0; }
 
 	ColorFormat_t GetColorFormat() { return m_srcParams.cformat; }
@@ -129,4 +131,26 @@ public:
 	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
 
 	void UpdateDiplayInfo();
+
+	// IUnknown
+	STDMETHODIMP QueryInterface(REFIID riid, void **ppv);
+	STDMETHODIMP_(ULONG) AddRef();
+	STDMETHODIMP_(ULONG) Release();
+
+	// IMFVideoProcessor
+	STDMETHODIMP GetAvailableVideoProcessorModes(UINT *lpdwNumProcessingModes, GUID **ppVideoProcessingModes) { return E_NOTIMPL; }
+	STDMETHODIMP GetVideoProcessorCaps(LPGUID lpVideoProcessorMode, DXVA2_VideoProcessorCaps *lpVideoProcessorCaps) { return E_NOTIMPL; }
+	STDMETHODIMP GetVideoProcessorMode(LPGUID lpMode) { return E_NOTIMPL; }
+	STDMETHODIMP SetVideoProcessorMode(LPGUID lpMode) { return E_NOTIMPL; }
+	STDMETHODIMP GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange);
+	STDMETHODIMP GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *Values);
+	STDMETHODIMP GetFilteringRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange) { return E_NOTIMPL; }
+	STDMETHODIMP GetFilteringValue(DWORD dwProperty, DXVA2_Fixed32 *pValue) { return E_NOTIMPL; }
+	STDMETHODIMP SetFilteringValue(DWORD dwProperty, DXVA2_Fixed32 *pValue) { return E_NOTIMPL; }
+	STDMETHODIMP GetBackgroundColor(COLORREF *lpClrBkg);
+	STDMETHODIMP SetBackgroundColor(COLORREF ClrBkg) { return E_NOTIMPL; }
+
+	// IMFVideoMixerBitmap
+	STDMETHODIMP ClearAlphaBitmap() override;
+	STDMETHODIMP GetAlphaBitmapParameters(MFVideoAlphaBitmapParams *pBmpParms) override;
 };

@@ -2243,79 +2243,7 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	return hr;
 }
 
-// IUnknown
-STDMETHODIMP CDX9VideoProcessor::QueryInterface(REFIID riid, void **ppv)
-{
-	if (!ppv) {
-		return E_POINTER;
-	}
-	if (riid == IID_IUnknown) {
-		*ppv = static_cast<IUnknown*>(static_cast<IMFVideoProcessor*>(this));
-	}
-	else if (riid == IID_IMFVideoProcessor) {
-		*ppv = static_cast<IMFVideoProcessor*>(this);
-	}
-	else if (riid == IID_IMFVideoMixerBitmap) {
-		*ppv = static_cast<IMFVideoMixerBitmap*>(this);
-	}
-	else {
-		*ppv = nullptr;
-		return E_NOINTERFACE;
-	}
-	AddRef();
-	return S_OK;
-}
-
-STDMETHODIMP_(ULONG) CDX9VideoProcessor::AddRef()
-{
-	return InterlockedIncrement(&m_nRefCount);
-}
-
-STDMETHODIMP_(ULONG) CDX9VideoProcessor::Release()
-{
-	ULONG uCount = InterlockedDecrement(&m_nRefCount);
-	if (uCount == 0) {
-		delete this;
-	}
-	// For thread safety, return a temporary variable.
-	return uCount;
-}
-
 // IMFVideoProcessor
-
-STDMETHODIMP CDX9VideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange)
-{
-	CheckPointer(pPropRange, E_POINTER);
-	if (m_srcParams.cformat == CF_NONE) {
-		return MF_E_TRANSFORM_TYPE_NOT_SET;
-	}
-
-	switch (dwProperty) {
-	case DXVA2_ProcAmp_Brightness: memcpy(pPropRange, &m_DXVA2ProcAmpRanges[0], sizeof(DXVA2_ValueRange)); break;
-	case DXVA2_ProcAmp_Contrast:   memcpy(pPropRange, &m_DXVA2ProcAmpRanges[1], sizeof(DXVA2_ValueRange)); break;
-	case DXVA2_ProcAmp_Hue:        memcpy(pPropRange, &m_DXVA2ProcAmpRanges[2], sizeof(DXVA2_ValueRange)); break;
-	case DXVA2_ProcAmp_Saturation: memcpy(pPropRange, &m_DXVA2ProcAmpRanges[3], sizeof(DXVA2_ValueRange)); break;
-	default:
-		return E_INVALIDARG;
-	}
-
-	return S_OK;
-}
-
-STDMETHODIMP CDX9VideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *Values)
-{
-	CheckPointer(Values, E_POINTER);
-	if (m_srcParams.cformat == CF_NONE) {
-		return MF_E_TRANSFORM_TYPE_NOT_SET;
-	}
-
-	if (dwFlags&DXVA2_ProcAmp_Brightness) { Values->Brightness = m_DXVA2ProcAmpValues.Brightness; }
-	if (dwFlags&DXVA2_ProcAmp_Contrast)   { Values->Contrast   = m_DXVA2ProcAmpValues.Contrast; }
-	if (dwFlags&DXVA2_ProcAmp_Hue)        { Values->Hue        = m_DXVA2ProcAmpValues.Hue; }
-	if (dwFlags&DXVA2_ProcAmp_Saturation) { Values->Saturation = m_DXVA2ProcAmpValues.Saturation; }
-
-	return S_OK;
-}
 
 STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *pValues)
 {
@@ -2349,40 +2277,7 @@ STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 	return S_OK;
 }
 
-STDMETHODIMP CDX9VideoProcessor::GetBackgroundColor(COLORREF *lpClrBkg)
-{
-	CheckPointer(lpClrBkg, E_POINTER);
-	*lpClrBkg = RGB(0, 0, 0);
-	return S_OK;
-}
-
 // IMFVideoMixerBitmap
-
-STDMETHODIMP CDX9VideoProcessor::ClearAlphaBitmap()
-{
-	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
-	m_bAlphaBitmapEnable = false;
-
-	return S_OK;
-}
-
-STDMETHODIMP CDX9VideoProcessor::GetAlphaBitmapParameters(MFVideoAlphaBitmapParams *pBmpParms)
-{
-	CheckPointer(pBmpParms, E_POINTER);
-	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
-
-	if (m_bAlphaBitmapEnable) {
-		pBmpParms->dwFlags      = MFVideoAlphaBitmap_SrcRect|MFVideoAlphaBitmap_DestRect;
-		pBmpParms->clrSrcKey    = 0; // non used
-		pBmpParms->rcSrc        = m_AlphaBitmapRectSrc;
-		pBmpParms->nrcDest      = m_AlphaBitmapNRectDest;
-		pBmpParms->fAlpha       = 0; // non used
-		pBmpParms->dwFilterMode = D3DTEXF_LINEAR;
-		return S_OK;
-	} else {
-		return MF_E_NOT_INITIALIZED;
-	}
-}
 
 STDMETHODIMP CDX9VideoProcessor::SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpParms)
 {

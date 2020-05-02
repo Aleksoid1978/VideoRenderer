@@ -20,9 +20,10 @@
 
 #include "stdafx.h"
 
+#include <Mferror.h>
 #include "DisplayConfig.h"
 #include "Helper.h"
-#include "IVideoRenderer.h"
+#include "VideoRenderer.h"
 
 #include "VideoProcessor.h"
 
@@ -89,5 +90,115 @@ void CVideoProcessor::UpdateDiplayInfo()
 		m_bPrimaryDisplay = false;
 		GetMonitorInfoW(hMonPrimary, (MONITORINFO*)&mi);
 		m_dRefreshRatePrimary = GetRefreshRate(mi.szDevice);
+	}
+}
+
+// IUnknown
+
+STDMETHODIMP CVideoProcessor::QueryInterface(REFIID riid, void **ppv)
+{
+	if (!ppv) {
+		return E_POINTER;
+	}
+	if (riid == IID_IUnknown) {
+		*ppv = static_cast<IUnknown*>(static_cast<IMFVideoProcessor*>(this));
+	}
+	else if (riid == IID_IMFVideoProcessor) {
+		*ppv = static_cast<IMFVideoProcessor*>(this);
+	}
+	else if (riid == IID_IMFVideoMixerBitmap) {
+		*ppv = static_cast<IMFVideoMixerBitmap*>(this);
+	}
+	else {
+		*ppv = nullptr;
+		return E_NOINTERFACE;
+	}
+	AddRef();
+	return S_OK;
+}
+
+STDMETHODIMP_(ULONG) CVideoProcessor::AddRef()
+{
+	return InterlockedIncrement(&m_nRefCount);
+}
+
+STDMETHODIMP_(ULONG) CVideoProcessor::Release()
+{
+	ULONG uCount = InterlockedDecrement(&m_nRefCount);
+	if (uCount == 0) {
+		delete this;
+	}
+	// For thread safety, return a temporary variable.
+	return uCount;
+}
+
+// IMFVideoProcessor
+
+STDMETHODIMP CVideoProcessor::GetProcAmpRange(DWORD dwProperty, DXVA2_ValueRange *pPropRange)
+{
+	CheckPointer(pPropRange, E_POINTER);
+	if (m_srcParams.cformat == CF_NONE) {
+		return MF_E_TRANSFORM_TYPE_NOT_SET;
+	}
+
+	switch (dwProperty) {
+	case DXVA2_ProcAmp_Brightness: *pPropRange = m_DXVA2ProcAmpRanges[0]; break;
+	case DXVA2_ProcAmp_Contrast:   *pPropRange = m_DXVA2ProcAmpRanges[1]; break;
+	case DXVA2_ProcAmp_Hue:        *pPropRange = m_DXVA2ProcAmpRanges[2]; break;
+	case DXVA2_ProcAmp_Saturation: *pPropRange = m_DXVA2ProcAmpRanges[3]; break;
+	default:
+		return E_INVALIDARG;
+	}
+
+	return S_OK;
+}
+
+STDMETHODIMP CVideoProcessor::GetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpValues *Values)
+{
+	CheckPointer(Values, E_POINTER);
+	if (m_srcParams.cformat == CF_NONE) {
+		return MF_E_TRANSFORM_TYPE_NOT_SET;
+	}
+
+	if (dwFlags&DXVA2_ProcAmp_Brightness) { Values->Brightness = m_DXVA2ProcAmpValues.Brightness; }
+	if (dwFlags&DXVA2_ProcAmp_Contrast)   { Values->Contrast   = m_DXVA2ProcAmpValues.Contrast  ; }
+	if (dwFlags&DXVA2_ProcAmp_Hue)        { Values->Hue        = m_DXVA2ProcAmpValues.Hue       ; }
+	if (dwFlags&DXVA2_ProcAmp_Saturation) { Values->Saturation = m_DXVA2ProcAmpValues.Saturation; }
+
+	return S_OK;
+}
+
+STDMETHODIMP CVideoProcessor::GetBackgroundColor(COLORREF *lpClrBkg)
+{
+	CheckPointer(lpClrBkg, E_POINTER);
+	*lpClrBkg = RGB(0, 0, 0);
+	return S_OK;
+}
+
+// IMFVideoMixerBitmap
+
+STDMETHODIMP CVideoProcessor::ClearAlphaBitmap()
+{
+	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
+	m_bAlphaBitmapEnable = false;
+
+	return S_OK;
+}
+
+STDMETHODIMP CVideoProcessor::GetAlphaBitmapParameters(MFVideoAlphaBitmapParams *pBmpParms)
+{
+	CheckPointer(pBmpParms, E_POINTER);
+	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
+
+	if (m_bAlphaBitmapEnable) {
+		pBmpParms->dwFlags      = MFVideoAlphaBitmap_SrcRect|MFVideoAlphaBitmap_DestRect;
+		pBmpParms->clrSrcKey    = 0; // non used
+		pBmpParms->rcSrc        = m_AlphaBitmapRectSrc;
+		pBmpParms->nrcDest      = m_AlphaBitmapNRectDest;
+		pBmpParms->fAlpha       = 0; // non used
+		pBmpParms->dwFilterMode = D3DTEXF_LINEAR;
+		return S_OK;
+	} else {
+		return MF_E_NOT_INITIALIZED;
 	}
 }
