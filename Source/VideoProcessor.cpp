@@ -77,11 +77,24 @@ void CVideoProcessor::SetTexFormat(int value)
 
 void CVideoProcessor::CalcGraphParams()
 {
-	m_GraphRect.right = m_windowRect.right - 20;
-	m_GraphRect.left  = m_GraphRect.right - m_Xstep * m_Syncs.Size();
+	auto CalcGraphRect = [&]() {
+		m_GraphRect.right = m_windowRect.right - 20;
+		m_GraphRect.left  = m_GraphRect.right - m_Xstep * m_Syncs.Size();
 
-	m_GraphRect.bottom = m_windowRect.bottom - 20;
-	m_GraphRect.top    = m_GraphRect.bottom - 120 * m_Yscale;
+		m_GraphRect.bottom = m_windowRect.bottom - 20;
+		m_GraphRect.top    = m_GraphRect.bottom - 120 * m_Yscale;
+	};
+	
+	m_Xstep = 4;
+	m_Yscale = 2;
+	CalcGraphRect();
+
+	CRect r;
+	if (r.IntersectRect(&m_StatsRect, &m_GraphRect)) {
+		m_Xstep = 2;
+		m_Yscale = 1;
+		CalcGraphRect();
+	}
 
 	m_Yaxis = m_GraphRect.bottom - 50 * m_Yscale;
 }

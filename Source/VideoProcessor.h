@@ -105,8 +105,8 @@ protected:
 
 	// Graph of a function
 	CMovingAverage<int> m_Syncs = CMovingAverage<int>(120);
-	const int m_Xstep  = 4;
-	const int m_Yscale = 2;
+	int m_Xstep  = 4;
+	int m_Yscale = 2;
 	RECT m_GraphRect = {};
 	int m_Yaxis  = 0;
 
