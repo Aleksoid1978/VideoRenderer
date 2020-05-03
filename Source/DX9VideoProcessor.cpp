@@ -2222,8 +2222,7 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 
 	hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, m_StatsW, m_StatsH), &m_StatsRect, m_TexStats.pTexture, D3DTEXF_POINT);
 
-	CRect r;
-	if (m_GraphRect.left > 0 && m_GraphRect.top > 0 && !r.IntersectRect(&m_StatsRect, &m_GraphRect)) {
+	if (CheckGraphPlacement()) {
 		m_Underlay.Draw();
 		m_Lines.Draw();
 

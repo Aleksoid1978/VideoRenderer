@@ -2512,8 +2512,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		VP.MaxDepth = 1.0f;
 		hr = AlphaBlt(m_TexStats.pShaderResource, pRenderTarget, m_pFullFrameVertexBuffer, &VP, m_pSamplerPoint);
 
-		CRect r;
-		if (m_GraphRect.left > 0 && m_GraphRect.top > 0 && !r.IntersectRect(&m_StatsRect, &m_GraphRect)) {
+		if (CheckGraphPlacement()) {
 			hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
 			if (S_OK == hr) {
 				SIZE rtSize = m_windowRect.Size();

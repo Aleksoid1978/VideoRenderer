@@ -75,6 +75,12 @@ void CVideoProcessor::SetTexFormat(int value)
 	}
 }
 
+bool CVideoProcessor::CheckGraphPlacement()
+{
+	return m_GraphRect.left >= 0 && m_GraphRect.top >= 0
+		&& !(m_GraphRect.left < m_StatsRect.right && m_GraphRect.top < m_StatsRect.bottom);
+}
+
 void CVideoProcessor::CalcGraphParams()
 {
 	auto CalcGraphRect = [&]() {
@@ -89,8 +95,7 @@ void CVideoProcessor::CalcGraphParams()
 	m_Yscale = 2;
 	CalcGraphRect();
 
-	CRect r;
-	if (m_GraphRect.left < 0 || m_GraphRect.top < 0 || r.IntersectRect(&m_StatsRect, &m_GraphRect)) {
+	if (!CheckGraphPlacement()) {
 		m_Xstep = 2;
 		m_Yscale = 1;
 		CalcGraphRect();
