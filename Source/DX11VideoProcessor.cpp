@@ -1126,8 +1126,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			DLogIf(m_pPSCorrection, L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection created");
 
 			m_pFilter->m_inputMT = *pmt;
-			UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
-			UpdatePostScaleTexures();
+			UpdateTexures(m_videoRect.Size());
+			UpdatePostScaleTexures(m_windowRect.Size());
 			UpdateStatsStatic();
 
 			if (m_pFilter->m_pSubCallBack) {
@@ -1144,8 +1144,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	if (FmtConvParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, origW, origH)) {
 		m_pFilter->m_inputMT = *pmt;
 		SetShaderConvertColorParams();
-		UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
-		UpdatePostScaleTexures();
+		UpdateTexures(m_videoRect.Size());
+		UpdatePostScaleTexures(m_windowRect.Size());
 		UpdateStatsStatic();
 
 		if (m_pFilter->m_pSubCallBack) {
@@ -1628,7 +1628,7 @@ HRESULT CDX11VideoProcessor::FillBlack()
 	return hr;
 }
 
-void CDX11VideoProcessor::UpdateTexures(int w, int h)
+void CDX11VideoProcessor::UpdateTexures(SIZE texsize)
 {
 	if (!m_srcWidth || !m_srcHeight) {
 		return;
@@ -1640,10 +1640,10 @@ void CDX11VideoProcessor::UpdateTexures(int w, int h)
 	if (m_D3D11VP.IsReady()) {
 		if (m_bVPScaling) {
 			if (m_iRotation == 90 || m_iRotation == 270) {
-				hr = m_TexD3D11VPOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, h, w, Tex2D_DefaultShaderRTarget);
+				hr = m_TexD3D11VPOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, texsize.cx, texsize.cy, Tex2D_DefaultShaderRTarget);
 			}
 			else {
-				hr = m_TexD3D11VPOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, w, h, Tex2D_DefaultShaderRTarget);
+				hr = m_TexD3D11VPOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, texsize.cx, texsize.cy, Tex2D_DefaultShaderRTarget);
 			}
 		}
 		else {
@@ -1657,7 +1657,7 @@ void CDX11VideoProcessor::UpdateTexures(int w, int h)
 	}
 }
 
-void CDX11VideoProcessor::UpdatePostScaleTexures()
+void CDX11VideoProcessor::UpdatePostScaleTexures(SIZE texsize)
 {
 	m_bFinalPass = (m_bUseDither && m_InternalTexFmt != DXGI_FORMAT_B8G8R8A8_UNORM && m_TexDither.pTexture && m_pPSFinalPass);
 
@@ -1668,7 +1668,7 @@ void CDX11VideoProcessor::UpdatePostScaleTexures()
 	if (m_bFinalPass) {
 		numPostScaleShaders++;
 	}
-	HRESULT hr = m_TexsPostScale.CheckCreate(m_pDevice, m_InternalTexFmt, m_windowRect.Width(), m_windowRect.Height(), numPostScaleShaders);
+	HRESULT hr = m_TexsPostScale.CheckCreate(m_pDevice, m_InternalTexFmt, texsize.cx, texsize.cy, numPostScaleShaders);
 	UpdateStatsStatic3();
 }
 
@@ -2003,7 +2003,7 @@ void CDX11VideoProcessor::SetVideoRect(const CRect& videoRect)
 {
 	m_videoRect = videoRect;
 	UpdateRenderRect();
-	UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
+	UpdateTexures(m_videoRect.Size());
 }
 
 HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
@@ -2036,31 +2036,31 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 		m_Lines.UpdateVertexBuffer();
 	}
 
-	UpdatePostScaleTexures();
+	UpdatePostScaleTexures(m_windowRect.Size());
 
 	return hr;
 }
 
 HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 {
-	CRect rSrcRect(m_srcRect);
+	CRect srcRect(m_srcRect);
 	int w, h;
 	if (m_iRotation == 90 || m_iRotation == 270) {
-		w = rSrcRect.Height();
-		h = rSrcRect.Width();
+		w = srcRect.Height();
+		h = srcRect.Width();
 	} else {
-		w = rSrcRect.Width();
-		h = rSrcRect.Height();
+		w = srcRect.Width();
+		h = srcRect.Height();
 	}
-	CRect rDstRect(0, 0, w, h);
+	CRect imageRect(0, 0, w, h);
 
 	BITMAPINFOHEADER* pBIH = (BITMAPINFOHEADER*)pDIBImage;
 	memset(pBIH, 0, sizeof(BITMAPINFOHEADER));
-	pBIH->biSize = sizeof(BITMAPINFOHEADER);
-	pBIH->biWidth = w;
-	pBIH->biHeight = h;
-	pBIH->biPlanes = 1;
-	pBIH->biBitCount = 32;
+	pBIH->biSize      = sizeof(BITMAPINFOHEADER);
+	pBIH->biWidth     = w;
+	pBIH->biHeight    = h;
+	pBIH->biPlanes    = 1;
+	pBIH->biBitCount  = 32;
 	pBIH->biSizeImage = DIBSIZE(*pBIH);
 
 	UINT dst_pitch = pBIH->biSizeImage / h;
@@ -2074,11 +2074,21 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 		return hr;
 	}
 
-	UpdateTexures(w, h);
+	if (m_D3D11VP.IsReady() && (m_pPSCorrection || m_bVPScaling)) {
+		UpdateTexures(imageRect.Size());
+	}
+	if (m_pPSCorrection || m_pPostScaleShaders.size() || m_bFinalPass) {
+		UpdatePostScaleTexures(imageRect.Size());
+	}
 
-	hr = Process(pRGB32Texture2D, rSrcRect, rDstRect, false);
+	hr = Process(pRGB32Texture2D, srcRect, imageRect, false);
 
-	UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
+	if (m_D3D11VP.IsReady() && (m_pPSCorrection || m_bVPScaling)) {
+		UpdateTexures(m_videoRect.Size());
+	}
+	if (m_pPSCorrection || m_pPostScaleShaders.size() || m_bFinalPass) {
+		UpdatePostScaleTexures(m_windowRect.Size());
+	}
 
 	if (FAILED(hr)) {
 		return hr;
@@ -2220,7 +2230,7 @@ HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
 void CDX11VideoProcessor::SetVPScaling(bool value)
 {
 	m_bVPScaling = value;
-	UpdateTexures(m_videoRect.Width(), m_videoRect.Height());
+	UpdateTexures(m_videoRect.Size());
 }
 
 void CDX11VideoProcessor::SetChromaScaling(int value)
@@ -2269,7 +2279,7 @@ void CDX11VideoProcessor::SetDownscaling(int value)
 void CDX11VideoProcessor::SetDither(bool value)
 {
 	m_bUseDither = value;
-	UpdatePostScaleTexures();
+	UpdatePostScaleTexures(m_windowRect.Size());
 }
 
 void CDX11VideoProcessor::SetRotation(int value)
@@ -2309,7 +2319,7 @@ HRESULT CDX11VideoProcessor::AddPostScaleShader(const CStringW& name, const CStr
 			hr = m_pDevice->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPostScaleShaders.back().shader);
 			if (S_OK == hr) {
 				m_pPostScaleShaders.back().name = name;
-				UpdatePostScaleTexures();
+				UpdatePostScaleTexures(m_windowRect.Size());
 				DLog(L"CDX11VideoProcessor::AddPostScaleShader() : \"%s\" pixel shader added successfully.", name);
 			}
 			else {

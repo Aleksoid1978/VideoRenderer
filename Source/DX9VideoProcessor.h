@@ -153,8 +153,8 @@ public:
 	HRESULT AddPostScaleShader(const CStringW& name, const CStringA& srcCode);
 
 private:
-	void UpdateTexures(int w, int h);
-	void UpdatePostScaleTexures();
+	void UpdateTexures(SIZE texsize);
+	void UpdatePostScaleTexures(SIZE texsize);
 	void UpdateUpscalingShaders();
 	void UpdateDownscalingShaders();
 	HRESULT UpdateChromaScalingShader();
