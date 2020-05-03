@@ -90,7 +90,7 @@ void CVideoProcessor::CalcGraphParams()
 	CalcGraphRect();
 
 	CRect r;
-	if (r.IntersectRect(&m_StatsRect, &m_GraphRect)) {
+	if (m_GraphRect.left < 0 || m_GraphRect.top < 0 || r.IntersectRect(&m_StatsRect, &m_GraphRect)) {
 		m_Xstep = 2;
 		m_Yscale = 1;
 		CalcGraphRect();
