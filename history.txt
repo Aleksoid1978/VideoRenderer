@@ -1,6 +1,7 @@
 v0.4.6
 ------------------------
 Added Sync Offset graph in statistics.
+Fixed getting the current image using IBasicVideo::GetCurrentImage.
 
 v0.4.5.1242 - 2020.04.17
 ------------------------
