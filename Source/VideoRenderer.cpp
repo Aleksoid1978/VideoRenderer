@@ -585,7 +585,7 @@ STDMETHODIMP CMpcVideoRenderer::Set(REFGUID PropSet, ULONG Id, LPVOID pInstanceD
 	DLog(L"IKsPropertySet::Set(%s, %u, ...)", CStringFromGUID(PropSet), Id);
 
 	if (PropSet == AM_KSPROPSETID_CopyProt) {
-		if (Id == AM_PROPERTY_COPY_MACROVISION) {
+		if (Id == AM_PROPERTY_COPY_MACROVISION || Id == AM_PROPERTY_COPY_DIGITAL_CP) {
 			DLog(L"Oops, no-no-no, no macrovision please");
 			return S_OK;
 		}
@@ -610,7 +610,16 @@ STDMETHODIMP CMpcVideoRenderer::Get(REFGUID PropSet, ULONG Id, LPVOID pInstanceD
 {
 	DLog(L"IKsPropertySet::Get(%s, %u, ...)", CStringFromGUID(PropSet), Id);
 
-	return E_PROP_SET_UNSUPPORTED;
+	if (PropSet == AM_KSPROPSETID_CopyProt) {
+		if (Id == AM_PROPERTY_COPY_ANALOG_COMPONENT) {
+			return S_FALSE;
+		}
+	}
+	else {
+		return E_PROP_SET_UNSUPPORTED;
+	}
+
+	return E_PROP_ID_UNSUPPORTED;
 }
 
 STDMETHODIMP CMpcVideoRenderer::QuerySupported(REFGUID PropSet, ULONG Id, ULONG* pTypeSupport)
@@ -618,7 +627,7 @@ STDMETHODIMP CMpcVideoRenderer::QuerySupported(REFGUID PropSet, ULONG Id, ULONG*
 	DLog(L"IKsPropertySet::QuerySupported(%s, %u, ...)", CStringFromGUID(PropSet), Id);
 
 	if (PropSet == AM_KSPROPSETID_CopyProt) {
-		if (Id == AM_PROPERTY_COPY_MACROVISION) {
+		if (Id == AM_PROPERTY_COPY_MACROVISION || Id == AM_PROPERTY_COPY_DIGITAL_CP) {
 			*pTypeSupport = KSPROPERTY_SUPPORT_SET;
 			return S_OK;
 		}
