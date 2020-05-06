@@ -56,7 +56,7 @@ CStringW GetVersionStr()
 {
 	CStringW version;
 #if MPCVR_RELEASE
-	version.Format(L"v%S", MPCVR_VERSION_STR);
+	version.Format(L"%S", MPCVR_VERSION_STR);
 #else
 	version.Format(L"%S (git-%S-%S)",
 		MPCVR_VERSION_STR,
