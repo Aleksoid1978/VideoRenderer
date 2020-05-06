@@ -2,6 +2,7 @@ v0.4.6
 ------------------------
 Added Sync Offset graph in statistics.
 Fixed getting the current image using IBasicVideo::GetCurrentImage.
+Improved playback support for some protected DVD-Video.
 
 v0.4.5.1242 - 2020.04.17
 ------------------------

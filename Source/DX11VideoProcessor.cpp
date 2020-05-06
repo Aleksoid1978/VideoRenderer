@@ -2532,7 +2532,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 
 				m_SyncLine.ClearPoints(rtSize);
 				m_SyncLine.AddGFPoints(m_GraphRect.left, m_Xstep, m_Yaxis, m_Yscale,
-					m_Syncs.Data(), m_Syncs.OldestIndex(), m_Syncs.Size(), D3DCOLOR_XRGB(255, 100, 100));
+					m_Syncs.Data(), m_Syncs.OldestIndex(), m_Syncs.Size(), D3DCOLOR_XRGB(100, 200, 100));
 				m_SyncLine.UpdateVertexBuffer();
 				m_SyncLine.Draw();
 
