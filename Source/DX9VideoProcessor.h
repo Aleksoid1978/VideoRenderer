@@ -133,7 +133,7 @@ public:
 	HRESULT SetWindowRect(const CRect& windowRect);
 
 	IDirect3DDeviceManager9* GetDeviceManager9() { return m_pD3DDeviceManager; }
-	HRESULT GetCurentImage(long *pDIBImage);
+	HRESULT GetCurrentImage(long* pDIBImage, CRect targetRect = { 0 });
 	HRESULT GetDisplayedImage(BYTE **ppDib, unsigned *pSize);
 	HRESULT GetVPInfo(CStringW& str);
 

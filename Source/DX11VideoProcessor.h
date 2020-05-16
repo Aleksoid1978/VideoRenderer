@@ -166,7 +166,7 @@ public:
 	void SetVideoRect(const CRect& videoRect);
 	HRESULT SetWindowRect(const CRect& windowRect);
 
-	HRESULT GetCurentImage(long *pDIBImage);
+	HRESULT GetCurrentImage(long* pDIBImage, CRect targetRect = { 0 });
 	HRESULT GetDisplayedImage(BYTE **ppDib, unsigned* pSize);
 	HRESULT GetVPInfo(CStringW& str);
 

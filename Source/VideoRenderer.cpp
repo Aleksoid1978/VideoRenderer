@@ -791,9 +791,9 @@ STDMETHODIMP CMpcVideoRenderer::GetCurrentImage(long *pBufferSize, long *pDIBIma
 	}
 
 	if (m_bUsedD3D11) {
-		hr = m_DX11_VP.GetCurentImage(pDIBImage);
+		hr = m_DX11_VP.GetCurrentImage(pDIBImage);
 	} else {
-		hr = m_DX9_VP.GetCurentImage(pDIBImage);
+		hr = m_DX9_VP.GetCurrentImage(pDIBImage);
 	}
 
 	return hr;
@@ -1209,6 +1209,54 @@ STDMETHODIMP CMpcVideoRenderer::GetBin(LPCSTR field, LPVOID* value, unsigned* si
 			hr = m_DX11_VP.GetDisplayedImage((BYTE**)value, size);
 		} else {
 			hr = m_DX9_VP.GetDisplayedImage((BYTE**)value, size);
+		}
+
+		return hr;
+	} else if (!strcmp(field, "currentImageAR")) {
+		CheckPointer(size, E_POINTER);
+
+		CAutoLock cVideoLock(&m_InterfaceLock);
+		CAutoLock cRendererLock(&m_RendererLock);
+		HRESULT hr;
+
+		CRect rect;
+		long aspectX, aspectY;
+		if (m_bUsedD3D11) {
+			m_DX11_VP.GetSourceRect(rect);
+			m_DX11_VP.GetAspectRatio(&aspectX, &aspectY);
+		} else {
+			m_DX9_VP.GetSourceRect(rect);
+			m_DX9_VP.GetAspectRatio(&aspectX, &aspectY);
+		}
+
+		if (aspectX > 0 && aspectY > 0) {
+			rect.right += MulDiv(rect.Height(), aspectX, aspectY) - rect.Width();
+		}
+
+		const int w = rect.Width();
+		const int h = rect.Height();
+
+
+		// VFW_E_NOT_PAUSED ?
+
+		if (w <= 0 || h <= 0) {
+			return E_FAIL;
+		}
+		long dibSize = w * h * 4 + sizeof(BITMAPINFOHEADER);
+
+		if (value == nullptr) {
+			*size = dibSize;
+			return S_OK;
+		}
+
+		if (dibSize > * size) {
+			return E_OUTOFMEMORY;
+		}
+
+		if (m_bUsedD3D11) {
+			hr = m_DX11_VP.GetCurrentImage((long*)value, rect);
+		} else {
+			hr = m_DX9_VP.GetCurrentImage((long*)value, rect);
 		}
 
 		return hr;

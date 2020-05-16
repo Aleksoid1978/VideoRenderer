@@ -2041,16 +2041,22 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
+HRESULT CDX11VideoProcessor::GetCurrentImage(long *pDIBImage, CRect targetRect)
 {
-	CRect srcRect(m_srcRect);
+	CRect srcRect(m_srcRect), useRect;
 	int w, h;
-	if (m_iRotation == 90 || m_iRotation == 270) {
-		w = srcRect.Height();
-		h = srcRect.Width();
+	if (!targetRect.IsRectEmpty()) {
+		useRect = targetRect;
 	} else {
-		w = srcRect.Width();
-		h = srcRect.Height();
+		useRect = srcRect;
+	}
+
+	if (m_iRotation == 90 || m_iRotation == 270) {
+		w = useRect.Height();
+		h = useRect.Width();
+	} else {
+		w = useRect.Width();
+		h = useRect.Height();
 	}
 	CRect imageRect(0, 0, w, h);
 
