@@ -765,10 +765,17 @@ STDMETHODIMP CMpcVideoRenderer::GetCurrentImage(long *pBufferSize, long *pDIBIma
 	HRESULT hr;
 
 	CRect rect;
+	long aspectX, aspectY;
 	if (m_bUsedD3D11) {
 		m_DX11_VP.GetSourceRect(rect);
+		m_DX11_VP.GetAspectRatio(&aspectX, &aspectY);
 	} else {
 		m_DX9_VP.GetSourceRect(rect);
+		m_DX9_VP.GetAspectRatio(&aspectX, &aspectY);
+	}
+
+	if (aspectX > 0 && aspectY > 0) {
+		rect.right += MulDiv(rect.Height(), aspectX, aspectY) - rect.Width();
 	}
 
 	const int w = rect.Width();

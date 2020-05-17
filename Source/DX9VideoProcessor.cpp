@@ -1189,6 +1189,12 @@ HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 {
 	CRect srcRect(m_srcRect);
+	long aspectX, aspectY;
+	GetAspectRatio(&aspectX, &aspectY);
+	if (aspectX > 0 && aspectY > 0) {
+		srcRect.right += MulDiv(srcRect.Height(), aspectX, aspectY) - srcRect.Width();
+	}
+
 	int w, h;
 	if (m_iRotation == 90 || m_iRotation == 270) {
 		w = srcRect.Height();
@@ -1224,7 +1230,7 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 		UpdatePostScaleTexures(imageRect.Size());
 	}
 
-	hr = Process(pRGB32Surface, srcRect, imageRect, 0);
+	hr = Process(pRGB32Surface, m_srcRect, imageRect, 0);
 
 	if (m_DXVA2VP.IsReady() && (m_pPSCorrection || m_bVPScaling)) {
 		UpdateTexures(m_videoRect.Size());
