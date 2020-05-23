@@ -764,22 +764,29 @@ STDMETHODIMP CMpcVideoRenderer::GetCurrentImage(long *pBufferSize, long *pDIBIma
 	CAutoLock cRendererLock(&m_RendererLock);
 	HRESULT hr;
 
-	CRect rect;
+	CSize framesize;
 	long aspectX, aspectY;
+	int iRotation;
 	if (m_bUsedD3D11) {
-		m_DX11_VP.GetSourceRect(rect);
+		m_DX11_VP.GetVideoSize(&framesize.cx, &framesize.cy);
 		m_DX11_VP.GetAspectRatio(&aspectX, &aspectY);
+		iRotation = m_DX11_VP.GetRotation();
 	} else {
-		m_DX9_VP.GetSourceRect(rect);
+		m_DX9_VP.GetVideoSize(&framesize.cx, &framesize.cy);
 		m_DX9_VP.GetAspectRatio(&aspectX, &aspectY);
+		iRotation = m_DX9_VP.GetRotation();
 	}
 
 	if (aspectX > 0 && aspectY > 0) {
-		rect.right += MulDiv(rect.Height(), aspectX, aspectY) - rect.Width();
+		if (iRotation == 90 || iRotation == 270) {
+			framesize.cy = MulDiv(framesize.cx, aspectY, aspectX);
+		} else {
+			framesize.cx = MulDiv(framesize.cy, aspectX, aspectY);
+		}
 	}
 
-	const int w = rect.Width();
-	const int h = rect.Height();
+	const auto w = framesize.cx;
+	const auto h = framesize.cy;
 
 	// VFW_E_NOT_PAUSED ?
 

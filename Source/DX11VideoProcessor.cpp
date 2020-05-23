@@ -2043,22 +2043,16 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 
 HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 {
-	CRect srcRect(m_srcRect);
-	long aspectX, aspectY;
-	GetAspectRatio(&aspectX, &aspectY);
-	if (aspectX > 0 && aspectY > 0) {
-		srcRect.right += MulDiv(srcRect.Height(), aspectX, aspectY) - srcRect.Width();
+	CSize framesize(m_srcRect.Width(), m_srcRect.Height());
+	if (m_srcAspectRatioX > 0 && m_srcAspectRatioY > 0) {
+		framesize.cx = MulDiv(framesize.cy, m_srcAspectRatioX, m_srcAspectRatioY);
 	}
-
-	int w, h;
 	if (m_iRotation == 90 || m_iRotation == 270) {
-		w = srcRect.Height();
-		h = srcRect.Width();
-	} else {
-		w = srcRect.Width();
-		h = srcRect.Height();
+		std::swap(framesize.cx, framesize.cy);
 	}
-	CRect imageRect(0, 0, w, h);
+	const auto w = framesize.cx;
+	const auto h = framesize.cy;
+	const CRect imageRect(0, 0, w, h);
 
 	BITMAPINFOHEADER* pBIH = (BITMAPINFOHEADER*)pDIBImage;
 	memset(pBIH, 0, sizeof(BITMAPINFOHEADER));
