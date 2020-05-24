@@ -379,7 +379,7 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 	}
 }
 
-HRESULT CDX11VideoProcessor::Init(const HWND hwnd)
+HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
 {
 	DLog(L"CDX11VideoProcessor::Init()");
 
@@ -391,6 +391,24 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd)
 	const UINT currentAdapter = GetAdapter(hwnd, m_pDXGIFactory1, &pDXGIAdapter);
 	CheckPointer(pDXGIAdapter, E_FAIL);
 	if (m_nCurrentAdapter == currentAdapter) {
+		if (hwnd) {
+			HRESULT hr = InitDX9Device(hwnd, pChangeDevice);
+			ASSERT(S_OK == hr);
+			if (m_pD3DDevEx) {
+				// set a special blend mode for alpha channels for ISubRenderCallback rendering
+				// this is necessary for the second alpha blending
+				m_pD3DDevEx->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, TRUE);
+				m_pD3DDevEx->SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_ONE);
+				m_pD3DDevEx->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ZERO);
+				m_pD3DDevEx->SetRenderState(D3DRS_BLENDOPALPHA, D3DBLENDOP_ADD);
+
+				if (pChangeDevice && m_pFilter->m_pSubCallBack) {
+					m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
+					UpdateDiplayInfo();
+				}
+			}
+		}
+
 		SAFE_RELEASE(pDXGIAdapter);
 		if (!m_pDXGISwapChain1) {
 			InitSwapChain();
@@ -399,6 +417,10 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd)
 		return S_OK;
 	}
 	m_nCurrentAdapter = currentAdapter;
+
+	if (m_bUseNativeExternalDecoder && m_pDXGISwapChain1) {
+		return S_OK;
+	}
 
 	m_pDXGISwapChain1.Release();
 	m_pDXGIFactory2.Release();
@@ -451,6 +473,10 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd)
 	if (S_OK == hr) {
 		UpdateDiplayInfo();
 		UpdateStatsStatic();
+
+		if (pChangeDevice) {
+			*pChangeDevice = true;
+		}
 	}
 
 	return hr;
@@ -690,7 +716,7 @@ HRESULT CDX11VideoProcessor::MemCopyToTexSrcVideo(const BYTE* srcData, const int
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
+HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, const bool bFromDecoder/* = false*/)
 {
 	DLog(L"CDX11VideoProcessor::SetDevice()");
 
@@ -799,7 +825,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		}
 	}
 
-	hr = InitDX9Device(m_hWnd, nullptr);
+	hr = InitDX9Device(m_hWnd);
 	ASSERT(S_OK == hr);
 	if (m_pD3DDevEx) {
 		// set a special blend mode for alpha channels for ISubRenderCallback rendering
@@ -873,6 +899,8 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 			m_TexDither.Release();
 		}
 	}
+
+	m_bUseNativeExternalDecoder = bFromDecoder;
 
 	return hr;
 }

@@ -100,7 +100,7 @@ public:
 	CDX9VideoProcessor(CMpcVideoRenderer* pFilter);
 	~CDX9VideoProcessor();
 
-	HRESULT Init(const HWND hwnd, bool* pChangeDevice);
+	HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr);
 	bool Initialized();
 
 private:

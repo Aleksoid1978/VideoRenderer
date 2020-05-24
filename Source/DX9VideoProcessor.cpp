@@ -208,7 +208,7 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	m_pD3DEx.Release();
 }
 
-HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice)
+HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
 {
 	DLog(L"CDX9VideoProcessor::Init()");
 
