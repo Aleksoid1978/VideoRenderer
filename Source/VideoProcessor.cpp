@@ -90,7 +90,7 @@ void CVideoProcessor::CalcGraphParams()
 		m_GraphRect.bottom = m_windowRect.bottom - 20;
 		m_GraphRect.top    = m_GraphRect.bottom - 120 * m_Yscale;
 	};
-	
+
 	m_Xstep = 4;
 	m_Yscale = 2;
 	CalcGraphRect();
@@ -107,7 +107,7 @@ void CVideoProcessor::CalcGraphParams()
 void CVideoProcessor::UpdateDiplayInfo()
 {
 	const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
-	const HMONITOR hMonPrimary = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY);
+	const HMONITOR hMonPrimary = MonitorFromPoint(CPoint(0, 0), MONITOR_DEFAULTTOPRIMARY);
 
 	MONITORINFOEXW mi = { sizeof(mi) };
 	GetMonitorInfoW(hMon, (MONITORINFO*)&mi);
