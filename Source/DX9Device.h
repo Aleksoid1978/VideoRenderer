@@ -41,6 +41,6 @@ public:
 
 	IDirect3DDeviceManager9* GetDeviceManager9() { return m_pD3DDeviceManager; }
 
-	HRESULT InitDX9Device(const HWND hwnd, bool* pChangeDevice);
+	HRESULT InitDX9Device(const HWND hwnd, bool* pChangeDevice = nullptr);
 	void ReleaseDX9Device();
 };

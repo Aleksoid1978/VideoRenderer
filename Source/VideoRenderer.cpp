@@ -208,20 +208,15 @@ void CMpcVideoRenderer::DX9Thread()
 		m_hrThread = E_FAIL;
 		switch (dwObject) {
 			case WAIT_OBJECT_0:
-				m_hrThread = m_DX9_VP.Init(::GetForegroundWindow(), nullptr);
+				m_hrThread = m_DX9_VP.Init(::GetForegroundWindow());
 				m_evThreadFinishJob.Set();
 				break;
 			case WAIT_OBJECT_0 + 1:
 				{
 					bool bChangeDevice = false;
 					m_hrThread = m_DX9_VP.Init(m_hWnd, &bChangeDevice);
-					if (bChangeDevice && m_pInputPin->IsConnected() == TRUE && m_pSink) {
-						auto pPin = (IPin*)m_pInputPin;
-						m_pInputPin->AddRef();
-						EXECUTE_ASSERT(S_OK == m_pSink->Notify(EC_DISPLAY_CHANGED, (LONG_PTR)pPin, 0));
-						SetAbortSignal(TRUE);
-						SAFE_RELEASE(m_pMediaSample);
-						m_pInputPin->Release();
+					if (bChangeDevice) {
+						DoAfterChangingDevice();
 					}
 				}
 				m_evThreadFinishJob.Set();
@@ -887,7 +882,11 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 		}
 
 		if (m_bUsedD3D11) {
-			hr = m_DX11_VP.Init(m_hWnd);
+			bool bChangeDevice = false;
+			hr = m_DX11_VP.Init(m_hWnd, &bChangeDevice);
+			if (bChangeDevice) {
+				DoAfterChangingDevice();
+			}
 		} else {
 			m_evDX9InitHwnd.Set();
 			WaitForSingleObject(m_evThreadFinishJob, INFINITE);
@@ -1371,6 +1370,19 @@ HRESULT CMpcVideoRenderer::Redraw()
 	}
 
 	return hr;
+}
+
+void CMpcVideoRenderer::DoAfterChangingDevice()
+{
+	if (m_pInputPin->IsConnected() == TRUE && m_pSink) {
+		DLog(L"CMpcVideoRenderer::DoAfterChangingDevice()");
+		auto pPin = (IPin*)m_pInputPin;
+		m_pInputPin->AddRef();
+		EXECUTE_ASSERT(S_OK == m_pSink->Notify(EC_DISPLAY_CHANGED, (LONG_PTR)pPin, 0));
+		SetAbortSignal(TRUE);
+		SAFE_RELEASE(m_pMediaSample);
+		m_pInputPin->Release();
+	}
 }
 
 LRESULT CMpcVideoRenderer::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)

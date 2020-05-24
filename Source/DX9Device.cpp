@@ -50,7 +50,7 @@ CDX9Device::~CDX9Device()
 	m_pD3DEx.Release();
 }
 
-HRESULT CDX9Device::InitDX9Device(const HWND hwnd, bool* pChangeDevice)
+HRESULT CDX9Device::InitDX9Device(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
 {
 	DLog(L"CDX9Device::InitDX9Device()");
 

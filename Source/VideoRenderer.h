@@ -264,4 +264,5 @@ public:
 
 private:
 	HRESULT Redraw();
+	void DoAfterChangingDevice();
 };

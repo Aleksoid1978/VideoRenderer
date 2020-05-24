@@ -32,7 +32,6 @@
 #include "DX9Device.h"
 #include "VideoProcessor.h"
 
-
 class CVideoRendererInputPin;
 
 class CDX11VideoProcessor
@@ -124,11 +123,13 @@ private:
 	CD3D11Lines     m_Lines;
 	CD3D11Polyline  m_SyncLine;
 
+	bool m_bUseNativeExternalDecoder = false;
+
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter);
 	~CDX11VideoProcessor();
 
-	HRESULT Init(const HWND hwnd);
+	HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr);
 	bool Initialized();
 
 private:
@@ -143,7 +144,7 @@ private:
 	HRESULT MemCopyToTexSrcVideo(const BYTE* srcData, const int srcPitch);
 
 public:
-	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
+	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, const bool bFromDecoder = false);
 	HRESULT InitSwapChain();
 	void ReleaseSwapChain() { m_pDXGISwapChain1.Release(); }
 
