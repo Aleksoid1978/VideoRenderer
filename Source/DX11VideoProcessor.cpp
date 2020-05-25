@@ -471,9 +471,6 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	pDevice->Release();
 
 	if (S_OK == hr) {
-		UpdateDiplayInfo();
-		UpdateStatsStatic();
-
 		if (pChangeDevice) {
 			*pChangeDevice = true;
 		}
@@ -672,6 +669,26 @@ void CDX11VideoProcessor::UpdateRenderRect()
 		: (h1 > k * h2)
 		? s_Downscaling11ResIDs[m_iDownscaling].description
 		: s_Upscaling11ResIDs[m_iUpscaling].description;
+}
+
+void CDX11VideoProcessor::SetGraphSize()
+{
+	if (m_pDeviceContext && !m_windowRect.IsRectEmpty()) {
+		SIZE rtSize = m_windowRect.Size();
+
+		CalcGraphParams();
+		m_Underlay.Set(m_GraphRect, rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
+
+		m_Lines.ClearPoints(rtSize);
+		POINT points[2];
+		const int linestep = 20 * m_Yscale;
+		for (int y = m_GraphRect.top + (m_Yaxis - m_GraphRect.top) % (linestep); y < m_GraphRect.bottom; y += linestep) {
+			points[0] = { m_GraphRect.left,  y };
+			points[1] = { m_GraphRect.right, y };
+			m_Lines.AddPoints(points, std::size(points), (y == m_Yaxis) ? D3DCOLOR_XRGB(150, 150, 255) : D3DCOLOR_XRGB(100, 100, 255));
+		}
+		m_Lines.UpdateVertexBuffer();
+	}
 }
 
 HRESULT CDX11VideoProcessor::MemCopyToTexSrcVideo(const BYTE* srcData, const int srcPitch)
@@ -901,6 +918,10 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	}
 
 	m_bUseNativeExternalDecoder = bFromDecoder;
+
+	UpdateDiplayInfo();
+	UpdateStatsStatic();
+	SetGraphSize();
 
 	return hr;
 }
@@ -2047,22 +2068,7 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 		hr = m_pDXGISwapChain1->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
 	}
 
-	if (m_pDeviceContext && !m_windowRect.IsRectEmpty()) {
-		SIZE rtSize = m_windowRect.Size();
-
-		CalcGraphParams();
-		m_Underlay.Set(m_GraphRect, rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
-
-		m_Lines.ClearPoints(rtSize);
-		POINT points[2];
-		const int linestep = 20 * m_Yscale;
-		for (int y = m_GraphRect.top + (m_Yaxis - m_GraphRect.top) % (linestep); y < m_GraphRect.bottom; y += linestep) {
-			points[0] = { m_GraphRect.left,  y };
-			points[1] = { m_GraphRect.right, y };
-			m_Lines.AddPoints(points, std::size(points), (y == m_Yaxis) ? D3DCOLOR_XRGB(150, 150, 255) : D3DCOLOR_XRGB(100, 100, 255));
-		}
-		m_Lines.UpdateVertexBuffer();
-	}
+	SetGraphSize();
 
 	UpdatePostScaleTexures(m_windowRect.Size());
 

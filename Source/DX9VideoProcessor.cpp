@@ -368,6 +368,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 		}
 	}
 
+	SetGraphSize();
 	UpdateDiplayInfo();
 	UpdateStatsStatic();
 
@@ -605,6 +606,24 @@ void CDX9VideoProcessor::UpdateRenderRect()
 		: (h1 > k * h2)
 		? s_Downscaling9ResIDs[m_iDownscaling].description
 		: s_Upscaling9ResIDs[m_iUpscaling].description;
+}
+
+void CDX9VideoProcessor::SetGraphSize()
+{
+	if (m_pD3DDevEx && !m_windowRect.IsRectEmpty()) {
+		CalcGraphParams();
+		m_Underlay.Set(m_GraphRect, D3DCOLOR_ARGB(80, 0, 0, 0));
+
+		m_Lines.ClearPoints();
+		POINT points[2];
+		const int linestep = 20 * m_Yscale;
+		for (int y = m_GraphRect.top + (m_Yaxis - m_GraphRect.top) % (linestep); y < m_GraphRect.bottom; y += linestep) {
+			points[0] = { m_GraphRect.left,  y };
+			points[1] = { m_GraphRect.right, y };
+			m_Lines.AddPoints(points, std::size(points), (y == m_Yaxis) ? D3DCOLOR_XRGB(150, 150, 255) : D3DCOLOR_XRGB(100, 100, 255));
+		}
+		m_Lines.UpdateVertexBuffer();
+	}
 }
 
 BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
@@ -1167,18 +1186,7 @@ HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 			DLogIf(FAILED(hr), L"CDX9VideoProcessor::SetWindowRect() : ResetEx() failed with error %s", HR2Str(hr));
 		}
 
-		CalcGraphParams();
-		m_Underlay.Set(m_GraphRect, D3DCOLOR_ARGB(80, 0, 0, 0));
-
-		m_Lines.ClearPoints();
-		POINT points[2];
-		const int linestep = 20 * m_Yscale;
-		for (int y = m_GraphRect.top + (m_Yaxis - m_GraphRect.top) % (linestep); y < m_GraphRect.bottom; y += linestep) {
-			points[0] = { m_GraphRect.left,  y };
-			points[1] = { m_GraphRect.right, y };
-			m_Lines.AddPoints(points, std::size(points), (y == m_Yaxis) ? D3DCOLOR_XRGB(150, 150, 255) : D3DCOLOR_XRGB(100, 100, 255));
-		}
-		m_Lines.UpdateVertexBuffer();
+		SetGraphSize();
 	}
 
 	UpdatePostScaleTexures(m_windowRect.Size());

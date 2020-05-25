@@ -141,6 +141,8 @@ private:
 
 	void UpdateRenderRect();
 
+	void SetGraphSize();
+
 	HRESULT MemCopyToTexSrcVideo(const BYTE* srcData, const int srcPitch);
 
 public:

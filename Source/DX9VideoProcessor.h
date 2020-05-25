@@ -116,6 +116,8 @@ private:
 
 	void UpdateRenderRect();
 
+	void SetGraphSize();
+
 public:
 	BOOL VerifyMediaType(const CMediaType* pmt);
 	BOOL InitMediaType(const CMediaType* pmt);
