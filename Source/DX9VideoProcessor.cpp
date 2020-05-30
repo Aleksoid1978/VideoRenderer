@@ -1175,7 +1175,7 @@ HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 	if (m_pD3DDevEx && !m_windowRect.IsRectEmpty()) {
 		UINT backBufW = m_windowRect.Width();
 		UINT backBufH = m_windowRect.Height();
-		if (m_d3dpp.SwapEffect == D3DSWAPEFFECT_DISCARD) {
+		if (m_d3dpp.SwapEffect == D3DSWAPEFFECT_DISCARD && m_d3dpp.Windowed) {
 			backBufW = ALIGN(backBufW, 128);
 			backBufH = ALIGN(backBufH, 128);
 		}
