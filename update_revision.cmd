@@ -19,6 +19,12 @@ IF %ERRORLEVEL% NEQ 0 (
 ECHO 0 >> revision.h
 )
 
+<nul set /p strTemp=#define MPCVR_REV_BRANCH >> revision.h
+%gitexe% symbolic-ref --short HEAD >> revision.h
+IF %ERRORLEVEL% NEQ 0 (
+ECHO LOCAL >> revision.h
+)
+
 :END
 ENDLOCAL
 EXIT /B
