@@ -133,6 +133,9 @@
     <ProjectReference Include="..\BaseClasses\BaseClasses.vcxproj">
       <Project>{e8a3f6fa-ae1c-4c8e-a0b6-9c8480324eaa}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\external\fmt.vcxproj">
+      <Project>{cf8302e6-21a3-4dd3-8a33-e19b6732f40b}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MpcVideoRenderer.rc" />
