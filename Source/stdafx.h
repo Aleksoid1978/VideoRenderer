@@ -38,7 +38,6 @@
 
 #include <dmodshow.h>
 #include <dvdmedia.h>
-#include "../BaseClasses/streams.h"
 #include <VersionHelpers.h>
 #include <DirectXMath.h>
 
@@ -51,3 +50,7 @@ namespace Gdiplus
 };
 #include <numeric>
 #include <vector>
+
+#include "../BaseClasses/streams.h"
+#include "../external/fmt/include/fmt/format.h"
+#include "../external/fmt/include/fmt/printf.h"

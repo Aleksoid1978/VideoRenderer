@@ -198,7 +198,7 @@ BOOL CDXVA2VP::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& vi
 	m_BltParams.DetailFilterChroma.Threshold = DFilterValues[4];
 	m_BltParams.DetailFilterChroma.Radius    = DFilterValues[5];
 
-	DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : create %s processor ", CStringFromGUID(devguid));
+	DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : create %s processor ", GUIDtoWString(devguid));
 
 	return TRUE;
 }

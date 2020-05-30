@@ -94,6 +94,8 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Time.cpp" />
+    <ClCompile Include="Utils\StringUtil.cpp" />
+    <ClCompile Include="Utils\Util.cpp" />
     <ClCompile Include="VideoProcessor.cpp" />
     <ClCompile Include="VideoRenderer.cpp" />
     <ClCompile Include="VideoRendererInputPin.cpp" />
@@ -125,6 +127,8 @@
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Time.h" />
+    <ClInclude Include="Utils\StringUtil.h" />
+    <ClInclude Include="Utils\Util.h" />
     <ClInclude Include="VideoProcessor.h" />
     <ClInclude Include="VideoRenderer.h" />
     <ClInclude Include="VideoRendererInputPin.h" />

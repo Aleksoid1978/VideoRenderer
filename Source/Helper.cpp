@@ -32,26 +32,6 @@ VERSIONHELPERAPI IsWindows10OrGreater()
 }
 #endif
 
-LPCWSTR GetWindowsVersion()
-{
-	if (IsWindows10OrGreater()) {
-		return L"10";
-	}
-	else if (IsWindows8Point1OrGreater()) {
-		return L"8.1";
-	}
-	else if (IsWindows8OrGreater()) {
-		return L"8";
-	}
-	else if (IsWindows7SP1OrGreater()) {
-		return L"7 SP1";
-	}
-	else if (IsWindows7OrGreater()) {
-		return L"7";
-	}
-	return L"Vista or older";
-}
-
 CStringW GetVersionStr()
 {
 	CStringW version;
@@ -78,44 +58,6 @@ LPCWSTR GetNameAndVersion()
 	static CStringW version = L"MPC Video Renderer " + GetVersionStr();
 
 	return (LPCWSTR)version;
-}
-
-CStringW HR2Str(const HRESULT hr)
-{
-	CStringW str;
-#define UNPACK_VALUE(VALUE) case VALUE: str = L#VALUE; break;
-#define UNPACK_HR_WIN32(VALUE) case (((VALUE) & 0x0000FFFF) | (FACILITY_WIN32 << 16) | 0x80000000): str = L#VALUE; break;
-	switch (hr) {
-		// common HRESULT values https://docs.microsoft.com/en-us/windows/desktop/seccrypto/common-hresult-values
-		UNPACK_VALUE(S_OK);
-		UNPACK_VALUE(S_FALSE);
-		UNPACK_VALUE(E_NOTIMPL);
-		UNPACK_VALUE(E_NOINTERFACE);
-		UNPACK_VALUE(E_POINTER);
-		UNPACK_VALUE(E_ABORT);
-		UNPACK_VALUE(E_FAIL);
-		UNPACK_VALUE(E_UNEXPECTED);
-		UNPACK_VALUE(E_ACCESSDENIED);
-		UNPACK_VALUE(E_HANDLE);
-		UNPACK_VALUE(E_OUTOFMEMORY);
-		UNPACK_VALUE(E_INVALIDARG);
-		// some D3DERR values https://docs.microsoft.com/en-us/windows/desktop/direct3d9/d3derr
-		UNPACK_VALUE(D3DERR_DEVICEHUNG);
-		UNPACK_VALUE(D3DERR_DEVICELOST);
-		UNPACK_VALUE(D3DERR_DEVICENOTRESET);
-		UNPACK_VALUE(D3DERR_DRIVERINTERNALERROR);
-		UNPACK_VALUE(D3DERR_INVALIDCALL);
-		UNPACK_VALUE(D3DERR_OUTOFVIDEOMEMORY);
-		UNPACK_VALUE(D3DERR_WASSTILLDRAWING);
-		// some System Error Codes
-		UNPACK_HR_WIN32(ERROR_INVALID_WINDOW_HANDLE);
-		UNPACK_HR_WIN32(ERROR_CLASS_ALREADY_EXISTS);
-	default:
-		str.Format(L"0x%08x", hr);
-	};
-#undef UNPACK_VALUE
-#undef UNPACK_HR_WIN32
-	return str;
 }
 
 CStringW MediaType2Str(const CMediaType *pmt)
@@ -217,7 +159,7 @@ const wchar_t* DXGIFormatToString(const DXGI_FORMAT format)
 	return L"UNKNOWN";
 }
 
-const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
+std::wstring DXVA2VPDeviceToString(const GUID& guid)
 {
 	if (guid == DXVA2_VideoProcProgressiveDevice) {
 		return L"ProgressiveDevice";
@@ -229,7 +171,7 @@ const wchar_t* DXVA2VPDeviceToString(const GUID& guid)
 		return L"SoftwareDevice";
 	}
 
-	return CStringFromGUID(guid);
+	return GUIDtoWString(guid);
 }
 
 static const DXVA2_ValueRange s_DefaultDXVA2ProcAmpRanges[4] = {
@@ -756,28 +698,4 @@ void GetExtendedFormatString(LPCSTR (&strs)[6], const DXVA2_ExtendedFormat exFor
 		strs[4] = getDesc(exFormat.VideoPrimaries, primaries, std::size(primaries));
 		strs[5] = getDesc(exFormat.VideoTransferFunction, transfunc, std::size(transfunc));
 	}
-}
-
-HRESULT GetDataFromResource(LPVOID& data, DWORD& size, UINT resid)
-{
-	static const HMODULE hModule = (HMODULE)&__ImageBase;
-
-	HRSRC hrsrc = FindResourceW(hModule, MAKEINTRESOURCEW(resid), L"FILE");
-	if (!hrsrc) {
-		return E_INVALIDARG;
-	}
-	HGLOBAL hGlobal = LoadResource(hModule, hrsrc);
-	if (!hGlobal) {
-		return E_FAIL;
-	}
-	size = SizeofResource(hModule, hrsrc);
-	if (!size) {
-		return E_FAIL;
-	}
-	data = LockResource(hGlobal);
-	if (!data) {
-		return E_FAIL;
-	}
-
-	return S_OK;
 }

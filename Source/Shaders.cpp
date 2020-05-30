@@ -47,8 +47,8 @@ HRESULT CompileShader(const CStringA& srcCode, const D3D_SHADER_MACRO* pDefines,
 		SAFE_RELEASE(*ppShaderBlob);
 
 		if (pErrorBlob) {
-			CStringA strErrorMsgs((char*)pErrorBlob->GetBufferPointer(), pErrorBlob->GetBufferSize());
-			DLog(strErrorMsgs);
+			std::string strErrorMsgs((char*)pErrorBlob->GetBufferPointer(), pErrorBlob->GetBufferSize());
+			DLog(A2WStr(strErrorMsgs).c_str());
 		} else {
 			DLog(L"Unexpected compiler error");
 		}
@@ -126,7 +126,7 @@ HRESULT GetShaderConvertColor(
 	const int chromaScaling,
 	ID3DBlob** ppCode)
 {
-	DLog(L"GetShaderConvertColor() started for %S %ux%u extfmt:0x%08x chroma:%d", fmtParams.str, texW, texH, exFmt.value, chromaScaling);
+	DLog(L"GetShaderConvertColor() started for %s %ux%u extfmt:0x%08x chroma:%d", A2WStr(fmtParams.str), texW, texH, exFmt.value, chromaScaling);
 
 	CStringA code;
 	HRESULT hr = S_OK;
