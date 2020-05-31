@@ -378,15 +378,15 @@ HRESULT CVRInfoPPage::OnActivate()
 		return S_OK;
 	}
 
-	CStringW strInfo(L"Windows ");
-	strInfo.Append(GetWindowsVersion());
-	strInfo.Append(L"\r\n");
+	std::wstring strInfo(L"Windows ");
+	strInfo.append(GetWindowsVersion());
+	strInfo.append(L"\r\n");
 
-	CStringW strVP;
+	std::wstring strVP;
 	if (S_OK == m_pVideoRenderer->GetVideoProcessorInfo(strVP)) {
-		strVP.Replace(L"\n", L"\r\n");
+		str_replace(strVP, L"\n", L"\r\n");
+		strInfo.append(strVP);
 	}
-	strInfo.Append(strVP);
 
 #ifdef _DEBUG
 	{
@@ -394,36 +394,36 @@ HRESULT CVRInfoPPage::OnActivate()
 
 		bool ret = GetDisplayConfigs(displayConfigs);
 
-		strInfo.Append(L"\r\n");
+		strInfo.append(L"\r\n");
 
 		for (const auto& dc : displayConfigs) {
 			double freq = (double)dc.refreshRate.Numerator / (double)dc.refreshRate.Denominator;
-			strInfo.AppendFormat(L"\r\n%s - %.03f Hz", dc.displayName, freq);
+			strInfo += fmt::format(L"\r\n{} - {:.3f} Hz", dc.displayName, freq);
 
-			char* output = nullptr;
+			const wchar_t* output = nullptr;
 			switch (dc.outputTechnology) {
 			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HD15:
-				output = "VGA";
+				output = L"VGA";
 				break;
 			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DVI:
-				output = "DVI";
+				output = L"DVI";
 				break;
 			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI:
-				output = "HDMI";
+				output = L"HDMI";
 				break;
 			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EXTERNAL:
 			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EMBEDDED:
-				output = "DisplayPort";
+				output = L"DisplayPort";
 				break;
 			}
 			if (output) {
-				strInfo.AppendFormat(L" %S", output);
+				strInfo += fmt::format(L" {}", output);
 			}
 		}
 	}
 #endif
 
-	SetDlgItemTextW(IDC_EDIT1, strInfo);
+	SetDlgItemTextW(IDC_EDIT1, strInfo.c_str());
 
 	SetDlgItemTextW(IDC_EDIT2, GetNameAndVersion());
 

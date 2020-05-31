@@ -982,7 +982,7 @@ STDMETHODIMP CMpcVideoRenderer::GetPages(CAUUID* pPages)
 
 // IVideoRenderer
 
-STDMETHODIMP CMpcVideoRenderer::GetVideoProcessorInfo(CStringW& str)
+STDMETHODIMP CMpcVideoRenderer::GetVideoProcessorInfo(std::wstring& str)
 {
 	if (m_bUsedD3D11) {
 		return m_DX11_VP.GetVPInfo(str);

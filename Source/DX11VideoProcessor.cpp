@@ -2203,58 +2203,58 @@ HRESULT CDX11VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned* pSize)
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::GetVPInfo(CStringW& str)
+HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 {
 	str = L"DirectX 11";
-	str.AppendFormat(L"\nGraphics adapter: %s", m_strAdapterDescription);
-	str.Append(L"\nVideoProcessor  : ");
+	str += fmt::format(L"\nGraphics adapter: {}", m_strAdapterDescription);
+	str.append(L"\nVideoProcessor  : ");
 	if (m_D3D11VP.IsReady()) {
 		D3D11_VIDEO_PROCESSOR_CAPS caps;
 		UINT rateConvIndex;
 		D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS rateConvCaps;
 		m_D3D11VP.GetVPParams(caps, rateConvIndex, rateConvCaps);
 
-		str.AppendFormat(L"D3D11, RateConversion_%u", rateConvIndex);
+		str += fmt::format(L"D3D11, RateConversion_{}", rateConvIndex);
 
-		str.Append(L"\nDeinterlaceTech.:");
-		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND)               str.Append(L" Blend,");
-		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB)                 str.Append(L" Bob,");
-		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_ADAPTIVE)            str.Append(L" Adaptive,");
-		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_MOTION_COMPENSATION) str.Append(L" Motion Compensation,");
-		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_INVERSE_TELECINE)                str.Append(L" Inverse Telecine,");
-		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_FRAME_RATE_CONVERSION)           str.Append(L" Frame Rate Conversion");
-		str.TrimRight(',');
-		str.AppendFormat(L"\nReference Frames: Past %u, Future %u", rateConvCaps.PastFrames, rateConvCaps.FutureFrames);
+		str.append(L"\nDeinterlaceTech.:");
+		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND)               str.append(L" Blend,");
+		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB)                 str.append(L" Bob,");
+		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_ADAPTIVE)            str.append(L" Adaptive,");
+		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_MOTION_COMPENSATION) str.append(L" Motion Compensation,");
+		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_INVERSE_TELECINE)                str.append(L" Inverse Telecine,");
+		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_FRAME_RATE_CONVERSION)           str.append(L" Frame Rate Conversion");
+		str_trim_end(str, ',');
+		str += fmt::format(L"\nReference Frames: Past {}, Future {}", rateConvCaps.PastFrames, rateConvCaps.FutureFrames);
 	} else {
-		str.Append(L"Shaders");
+		str.append(L"Shaders");
 	}
 
-	str.AppendFormat(L"\nDisplay Mode    : %u x %u", m_DisplayMode.Width, m_DisplayMode.Height);
+	str += fmt::format(L"\nDisplay Mode    : %u x %u", m_DisplayMode.Width, m_DisplayMode.Height);
 	if (m_dRefreshRate > 0.0) {
-		str.AppendFormat(L", %.03f", m_dRefreshRate);
+		str += fmt::format(L", {:.3f}", m_dRefreshRate);
 	} else {
-		str.AppendFormat(L", %u", m_DisplayMode.RefreshRate);
+		str += fmt::format(L", {}", m_DisplayMode.RefreshRate);
 	}
 	if (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
-		str.AppendChar('i');
+		str.append(L"i");
 	}
-	str.Append(L" Hz");
+	str.append(L" Hz");
 	if (m_bPrimaryDisplay) {
-		str.Append(L" [Primary]");
+		str.append(L" [Primary]");
 	}
 
 	if (m_pPostScaleShaders.size()) {
-		str.Append(L"\n\nPost scale pixel shaders:");
+		str.append(L"\n\nPost scale pixel shaders:");
 		for (const auto& pshader : m_pPostScaleShaders) {
-			str.AppendFormat(L"\n  %s", pshader.name);
+			str += fmt::format(L"\n  {}", pshader.name);
 		}
 	}
 
 #ifdef _DEBUG
-	str.Append(L"\n\nDEBUG info:");
-	str.AppendFormat(L"\nSource rect   : %d,%d,%d,%d - %dx%d", m_srcRect.left, m_srcRect.top, m_srcRect.right, m_srcRect.bottom, m_srcRect.Width(), m_srcRect.Height());
-	str.AppendFormat(L"\nVideo rect    : %d,%d,%d,%d - %dx%d", m_videoRect.left, m_videoRect.top, m_videoRect.right, m_videoRect.bottom, m_videoRect.Width(), m_videoRect.Height());
-	str.AppendFormat(L"\nWindow rect   : %d,%d,%d,%d - %dx%d", m_windowRect.left, m_windowRect.top, m_windowRect.right, m_windowRect.bottom, m_windowRect.Width(), m_windowRect.Height());
+	str.append(L"\n\nDEBUG info:");
+	str += fmt::format(L"\nSource rect   : {},{},{},{} - {}x{}", m_srcRect.left, m_srcRect.top, m_srcRect.right, m_srcRect.bottom, m_srcRect.Width(), m_srcRect.Height());
+	str += fmt::format(L"\nVideo rect    : {},{},{},{} - {}x{}", m_videoRect.left, m_videoRect.top, m_videoRect.right, m_videoRect.bottom, m_videoRect.Width(), m_videoRect.Height());
+	str += fmt::format(L"\nWindow rect   : {},{},{},{} - {}x{}", m_windowRect.left, m_windowRect.top, m_windowRect.right, m_windowRect.bottom, m_windowRect.Width(), m_windowRect.Height());
 #endif
 
 	return S_OK;

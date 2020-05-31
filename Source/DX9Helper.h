@@ -168,7 +168,7 @@ public:
 
 struct ExternalPixelShader9_t
 {
-	CStringW name;
+	std::wstring name;
 	CComPtr<IDirect3DPixelShader9> shader;
 };
 

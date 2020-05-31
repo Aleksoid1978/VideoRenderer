@@ -238,7 +238,7 @@ public:
 	STDMETHODIMP GetPages(CAUUID* pPages);
 
 	// IVideoRenderer
-	STDMETHODIMP GetVideoProcessorInfo(CStringW& str);
+	STDMETHODIMP GetVideoProcessorInfo(std::wstring& str);
 	STDMETHODIMP_(bool) GetActive();
 
 	STDMETHODIMP_(void) GetSettings(Settings_t& setings);

@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2019 see Authors.txt
+ * (C) 2018-2020 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -107,7 +107,7 @@ struct Settings_t {
 
 interface __declspec(uuid("1AB00F10-5F55-42AC-B53F-38649F11BE3E"))
 IVideoRenderer : public IUnknown {
-	STDMETHOD(GetVideoProcessorInfo) (CStringW& str) PURE;
+	STDMETHOD(GetVideoProcessorInfo) (std::wstring& str) PURE;
 	STDMETHOD_(bool, GetActive()) PURE;
 
 	STDMETHOD_(void, GetSettings(Settings_t& setings)) PURE;

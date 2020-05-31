@@ -87,6 +87,27 @@ inline const std::wstring str_trim(const std::wstring_view& sv)
 }
 
 //
+// trimming a character at the end
+//
+
+inline void str_trim_end(std::string& s, const char ch)
+{
+	s.erase(s.find_last_not_of(ch) + 1);
+}
+
+inline void str_trim_end(std::wstring& s, const wchar_t ch)
+{
+	s.erase(s.find_last_not_of(ch) + 1);
+}
+
+//
+//
+//
+
+void str_replace(std::string& s, const std::string& from, const std::string& to);
+void str_replace(std::wstring& s, const std::wstring& from, const std::wstring& to);
+
+//
 // simple convert ANSI string to wide character string
 //
 

@@ -69,11 +69,12 @@ BOOL CDXVA2VP::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& vi
 	}
 #ifdef _DEBUG
 	{
-		CStringW dbgstr = L"DXVA2-VP output formats:";
+		std::wstring dbgstr = L"DXVA2-VP output formats:";
 		for (UINT j = 0; j < count; j++) {
-			dbgstr.AppendFormat(L"\n  %s", D3DFormatToString(formats[j]));
+			dbgstr.append(L"\n  ");
+			dbgstr.append(D3DFormatToString(formats[j]));
 		}
-		DLog(dbgstr.GetString());
+		DLog(dbgstr);
 	}
 #endif
 

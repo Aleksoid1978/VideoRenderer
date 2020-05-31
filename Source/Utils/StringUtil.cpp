@@ -44,6 +44,38 @@ void str_split(const std::wstring& wstr, std::vector<std::wstring>& tokens, wcha
 	}
 }
 
+void str_replace(std::string& s, const std::string& from, const std::string& to)
+{
+	std::string str;
+	size_t pos = 0;
+	size_t pf = 0;
+	while ((pf = s.find(from, pos)) < s.size()) {
+		str.append(s, pos, pf - pos);
+		str.append(to);
+		pos = pf + from.size();
+	}
+	if (str.size()) {
+		str.append(s, pos);
+		s = str;
+	}
+}
+
+void str_replace(std::wstring& s, const std::wstring& from, const std::wstring& to)
+{
+	std::wstring str;
+	size_t pos = 0;
+	size_t pf = 0;
+	while ((pf = s.find(from, pos)) < s.size()) {
+		str.append(s, pos, pf - pos);
+		str.append(to);
+		pos = pf + from.size();
+	}
+	if (str.size()) {
+		str.append(s, pos);
+		s = str;
+	}
+}
+
 std::string ConvertWideToANSI(const std::wstring& wstr)
 {
 	int count = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), wstr.length(), nullptr, 0, nullptr, nullptr);

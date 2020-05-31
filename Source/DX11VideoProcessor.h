@@ -171,7 +171,7 @@ public:
 
 	HRESULT GetCurentImage(long *pDIBImage);
 	HRESULT GetDisplayedImage(BYTE **ppDib, unsigned* pSize);
-	HRESULT GetVPInfo(CStringW& str);
+	HRESULT GetVPInfo(std::wstring& str);
 
 	// Settings
 	void SetVPScaling(bool value);

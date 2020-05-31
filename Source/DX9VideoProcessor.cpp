@@ -236,15 +236,15 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 #ifdef _DEBUG
 	D3DCAPS9 DevCaps = {};
 	if (S_OK == m_pD3DEx->GetDeviceCaps(m_nCurrentAdapter, D3DDEVTYPE_HAL, &DevCaps)) {
-		CStringW dbgstr = L"DeviceCaps:";
-		dbgstr.AppendFormat(L"\n  MaxTextureWidth                 : %u", DevCaps.MaxTextureWidth);
-		dbgstr.AppendFormat(L"\n  MaxTextureHeight                : %u", DevCaps.MaxTextureHeight);
-		dbgstr.AppendFormat(L"\n  PresentationInterval IMMEDIATE  : %s", (DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_IMMEDIATE) ? L"supported" : L"NOT supported");
-		dbgstr.AppendFormat(L"\n  PresentationInterval ONE        : %s", (DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_ONE) ? L"supported" : L"NOT supported");
-		dbgstr.AppendFormat(L"\n  Caps READ_SCANLINE              : %s", (DevCaps.Caps & D3DCAPS_READ_SCANLINE) ? L"supported" : L"NOT supported");
-		dbgstr.AppendFormat(L"\n  PixelShaderVersion              : %u.%u", D3DSHADER_VERSION_MAJOR(DevCaps.PixelShaderVersion), D3DSHADER_VERSION_MINOR(DevCaps.PixelShaderVersion));
-		dbgstr.AppendFormat(L"\n  MaxPixelShader30InstructionSlots: %u", DevCaps.MaxPixelShader30InstructionSlots);
-		DLog(dbgstr.GetString());
+		std::wstring dbgstr = L"DeviceCaps:";
+		dbgstr += fmt::format(L"\n  MaxTextureWidth                 : {}", DevCaps.MaxTextureWidth);
+		dbgstr += fmt::format(L"\n  MaxTextureHeight                : {}", DevCaps.MaxTextureHeight);
+		dbgstr += fmt::format(L"\n  PresentationInterval IMMEDIATE  : {}", (DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_IMMEDIATE) ? L"supported" : L"NOT supported");
+		dbgstr += fmt::format(L"\n  PresentationInterval ONE        : {}", (DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_ONE) ? L"supported" : L"NOT supported");
+		dbgstr += fmt::format(L"\n  Caps READ_SCANLINE              : {}", (DevCaps.Caps & D3DCAPS_READ_SCANLINE) ? L"supported" : L"NOT supported");
+		dbgstr += fmt::format(L"\n  PixelShaderVersion              : {}.{}", D3DSHADER_VERSION_MAJOR(DevCaps.PixelShaderVersion), D3DSHADER_VERSION_MINOR(DevCaps.PixelShaderVersion));
+		dbgstr += fmt::format(L"\n  MaxPixelShader30InstructionSlots: {}", DevCaps.MaxPixelShader30InstructionSlots);
+		DLog(dbgstr);
 	}
 #endif
 
@@ -1309,66 +1309,66 @@ HRESULT CDX9VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned *pSize)
 	return hr;
 }
 
-HRESULT CDX9VideoProcessor::GetVPInfo(CStringW& str)
+HRESULT CDX9VideoProcessor::GetVPInfo(std::wstring& str)
 {
 	str = L"DirectX 9";
-	str.AppendFormat(L"\nGraphics adapter: %s", m_strAdapterDescription);
+	str += fmt::format(L"\nGraphics adapter: {}", m_strAdapterDescription);
 
-	str.Append(L"\nVideoProcessor  : ");
+	str.append(L"\nVideoProcessor  : ");
 	if (m_DXVA2VP.IsReady()) {
 		GUID DXVA2VPGuid;
 		DXVA2_VideoProcessorCaps DXVA2VPcaps;
 		m_DXVA2VP.GetVPParams(DXVA2VPGuid, DXVA2VPcaps);
 
-		str.AppendFormat(L"DXVA2 %s", DXVA2VPDeviceToString(DXVA2VPGuid));
+		str += fmt::format(L"DXVA2 {}", DXVA2VPDeviceToString(DXVA2VPGuid));
 
 		UINT dt = DXVA2VPcaps.DeinterlaceTechnology;
-		str.Append(L"\nDeinterlaceTech.:");
+		str.append(L"\nDeinterlaceTech.:");
 		if (dt & DXVA2_DeinterlaceTech_Mask) {
-			if (dt & DXVA2_DeinterlaceTech_BOBLineReplicate)       str.Append(L" BOBLineReplicate,");
-			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch)     str.Append(L" BOBVerticalStretch,");
-			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch4Tap) str.Append(L" BOBVerticalStretch4Tap,");
-			if (dt & DXVA2_DeinterlaceTech_MedianFiltering)        str.Append(L" MedianFiltering,");
-			if (dt & DXVA2_DeinterlaceTech_EdgeFiltering)          str.Append(L" EdgeFiltering,");
-			if (dt & DXVA2_DeinterlaceTech_FieldAdaptive)          str.Append(L" FieldAdaptive,");
-			if (dt & DXVA2_DeinterlaceTech_PixelAdaptive)          str.Append(L" PixelAdaptive,");
-			if (dt & DXVA2_DeinterlaceTech_MotionVectorSteered)    str.Append(L" MotionVectorSteered,");
-			if (dt & DXVA2_DeinterlaceTech_InverseTelecine)        str.Append(L" InverseTelecine");
-			str.TrimRight(',');
-			str.AppendFormat(L"\nReferenceSamples: Backward %u, Forward %u", DXVA2VPcaps.NumBackwardRefSamples, DXVA2VPcaps.NumForwardRefSamples);
+			if (dt & DXVA2_DeinterlaceTech_BOBLineReplicate)       str.append(L" BOBLineReplicate,");
+			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch)     str.append(L" BOBVerticalStretch,");
+			if (dt & DXVA2_DeinterlaceTech_BOBVerticalStretch4Tap) str.append(L" BOBVerticalStretch4Tap,");
+			if (dt & DXVA2_DeinterlaceTech_MedianFiltering)        str.append(L" MedianFiltering,");
+			if (dt & DXVA2_DeinterlaceTech_EdgeFiltering)          str.append(L" EdgeFiltering,");
+			if (dt & DXVA2_DeinterlaceTech_FieldAdaptive)          str.append(L" FieldAdaptive,");
+			if (dt & DXVA2_DeinterlaceTech_PixelAdaptive)          str.append(L" PixelAdaptive,");
+			if (dt & DXVA2_DeinterlaceTech_MotionVectorSteered)    str.append(L" MotionVectorSteered,");
+			if (dt & DXVA2_DeinterlaceTech_InverseTelecine)        str.append(L" InverseTelecine");
+			str_trim_end(str, ',');
+			str += fmt::format(L"\nReferenceSamples: Backward {}, Forward {}", DXVA2VPcaps.NumBackwardRefSamples, DXVA2VPcaps.NumForwardRefSamples);
 		} else {
-			str.Append(L" none");
+			str.append(L" none");
 		}
 	} else {
-		str.Append(L"Shaders");
+		str.append(L"Shaders");
 	}
 
-	str.AppendFormat(L"\nDisplay Mode    : %u x %u", m_DisplayMode.Width, m_DisplayMode.Height);
+	str += fmt::format(L"\nDisplay Mode    : {} x {}", m_DisplayMode.Width, m_DisplayMode.Height);
 	if (m_dRefreshRate > 0.0) {
-		str.AppendFormat(L", %.03f", m_dRefreshRate);
+		str += fmt::format(L", {:.3f}", m_dRefreshRate);
 	} else {
-		str.AppendFormat(L", %u", m_DisplayMode.RefreshRate);
+		str += fmt::format(L", {}", m_DisplayMode.RefreshRate);
 	}
 	if (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
-		str.AppendChar('i');
+		str.append(L"i");
 	}
-	str.Append(L" Hz");
+	str.append(L" Hz");
 	if (m_bPrimaryDisplay) {
-		str.Append(L" [Primary]");
+		str.append(L" [Primary]");
 	}
 
 	if (m_pPostScaleShaders.size()) {
-		str.Append(L"\n\nPost scale pixel shaders:");
+		str.append(L"\n\nPost scale pixel shaders:");
 		for (const auto& pshader : m_pPostScaleShaders) {
-			str.AppendFormat(L"\n  %s", pshader.name);
+			str += fmt::format(L"\n  {}", pshader.name);
 		}
 	}
 
 #ifdef _DEBUG
-	str.Append(L"\n\nDEBUG info:");
-	str.AppendFormat(L"\nSource rect   : %d,%d,%d,%d - %dx%d", m_srcRect.left, m_srcRect.top, m_srcRect.right, m_srcRect.bottom, m_srcRect.Width(), m_srcRect.Height());
-	str.AppendFormat(L"\nVideo rect    : %d,%d,%d,%d - %dx%d", m_videoRect.left, m_videoRect.top, m_videoRect.right, m_videoRect.bottom, m_videoRect.Width(), m_videoRect.Height());
-	str.AppendFormat(L"\nWindow rect   : %d,%d,%d,%d - %dx%d", m_windowRect.left, m_windowRect.top, m_windowRect.right, m_windowRect.bottom, m_windowRect.Width(), m_windowRect.Height());
+	str.append(L"\n\nDEBUG info:");
+	str += fmt::format(L"\nSource rect   : {},{},{},{} - {}x{}", m_srcRect.left, m_srcRect.top, m_srcRect.right, m_srcRect.bottom, m_srcRect.Width(), m_srcRect.Height());
+	str += fmt::format(L"\nVideo rect    : {},{},{},{} - {}x{}", m_videoRect.left, m_videoRect.top, m_videoRect.right, m_videoRect.bottom, m_videoRect.Width(), m_videoRect.Height());
+	str += fmt::format(L"\nWindow rect   : {},{},{},{} - {}x{}", m_windowRect.left, m_windowRect.top, m_windowRect.right, m_windowRect.bottom, m_windowRect.Width(), m_windowRect.Height());
 #endif
 
 	return S_OK;

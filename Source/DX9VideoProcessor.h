@@ -137,7 +137,7 @@ public:
 	IDirect3DDeviceManager9* GetDeviceManager9() { return m_pD3DDeviceManager; }
 	HRESULT GetCurentImage(long *pDIBImage);
 	HRESULT GetDisplayedImage(BYTE **ppDib, unsigned *pSize);
-	HRESULT GetVPInfo(CStringW& str);
+	HRESULT GetVPInfo(std::wstring& str);
 
 	// Settings
 	void SetVPScaling(bool value);
