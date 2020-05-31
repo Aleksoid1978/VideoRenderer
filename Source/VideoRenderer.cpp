@@ -1312,8 +1312,8 @@ STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
 			const BYTE* end = p + size;
 			uint32_t chunkcode;
 			int32_t chunksize;
-			CStringW shaderName;
-			CStringA shaderCode;
+			std::wstring shaderName;
+			std::string shaderCode;
 
 			while (p + 8 < end) {
 				memcpy(&chunkcode, p, 4);
@@ -1326,16 +1326,16 @@ STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
 
 				switch (chunkcode) {
 				case FCC('NAME'):
-					shaderName.SetString((LPCWSTR)p, chunksize / sizeof(wchar_t));
+					shaderName.assign((LPCWSTR)p, chunksize / sizeof(wchar_t));
 					break;
 				case FCC('CODE'):
-					shaderCode.SetString((LPCSTR)p, chunksize);
+					shaderCode.assign((LPCSTR)p, chunksize);
 					break;
 				}
 				p += chunksize;
 			}
 
-			if (shaderCode.GetLength()) {
+			if (shaderCode.size()) {
 				CAutoLock cRendererLock(&m_RendererLock);
 				if (m_bUsedD3D11) {
 					return m_DX11_VP.AddPostScaleShader(shaderName, shaderCode);

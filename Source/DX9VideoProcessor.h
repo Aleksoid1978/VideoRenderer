@@ -152,7 +152,7 @@ public:
 	void Flush();
 
 	void ClearPostScaleShaders();
-	HRESULT AddPostScaleShader(const CStringW& name, const CStringA& srcCode);
+	HRESULT AddPostScaleShader(const std::wstring& name, const std::string& srcCode);
 
 private:
 	void UpdateTexures(SIZE texsize);

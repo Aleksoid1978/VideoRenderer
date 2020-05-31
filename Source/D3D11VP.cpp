@@ -258,18 +258,18 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 		if (maxProcCaps) {
 			if (S_OK == m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(m_RateConvIndex, &m_RateConvCaps)) {
 #ifdef _DEBUG
-				dbgstr.Format(L"RateConversionCaps[%u]:", m_RateConvIndex);
-				dbgstr.Append(L"\n  ProcessorCaps:");
-				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND)               { dbgstr.Append(L" Blend,"); }
-				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB)                 { dbgstr.Append(L" Bob,"); }
-				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_ADAPTIVE)            { dbgstr.Append(L" Adaptive,"); }
-				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_MOTION_COMPENSATION) { dbgstr.Append(L" Motion Compensation,"); }
-				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_INVERSE_TELECINE)                { dbgstr.Append(L" Inverse Telecine,"); }
-				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_FRAME_RATE_CONVERSION)           { dbgstr.Append(L" Frame Rate Conversion"); }
-				dbgstr.TrimRight(',');
-				dbgstr.AppendFormat(L"\n  PastFrames   : %u", m_RateConvCaps.PastFrames);
-				dbgstr.AppendFormat(L"\n  FutureFrames : %u", m_RateConvCaps.FutureFrames);
-				DLog(dbgstr.GetString());
+				dbgstr = fmt::format(L"RateConversionCaps[{}]:", m_RateConvIndex);
+				dbgstr.append(L"\n  ProcessorCaps:");
+				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND)               { dbgstr.append(L" Blend,"); }
+				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB)                 { dbgstr.append(L" Bob,"); }
+				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_ADAPTIVE)            { dbgstr.append(L" Adaptive,"); }
+				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_MOTION_COMPENSATION) { dbgstr.append(L" Motion Compensation,"); }
+				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_INVERSE_TELECINE)                { dbgstr.append(L" Inverse Telecine,"); }
+				if (m_RateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_FRAME_RATE_CONVERSION)           { dbgstr.append(L" Frame Rate Conversion"); }
+				str_trim_end(dbgstr, ',');
+				dbgstr += fmt::format(L"\n  PastFrames   : {}", m_RateConvCaps.PastFrames);
+				dbgstr += fmt::format(L"\n  FutureFrames : {}", m_RateConvCaps.FutureFrames);
+				DLog(dbgstr);
 #endif
 			}
 		}

@@ -1350,7 +1350,7 @@ HRESULT CDX9VideoProcessor::GetVPInfo(std::wstring& str)
 		str += fmt::format(L", {}", m_DisplayMode.RefreshRate);
 	}
 	if (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
-		str.append(L"i");
+		str += 'i';
 	}
 	str.append(L" Hz");
 	if (m_bPrimaryDisplay) {
@@ -1457,7 +1457,7 @@ void CDX9VideoProcessor::ClearPostScaleShaders()
 	DLog(L"CDX9VideoProcessor::ClearPostScaleShaders().");
 }
 
-HRESULT CDX9VideoProcessor::AddPostScaleShader(const CStringW& name, const CStringA& srcCode)
+HRESULT CDX9VideoProcessor::AddPostScaleShader(const std::wstring& name, const std::string& srcCode)
 {
 	HRESULT hr = S_OK;
 
