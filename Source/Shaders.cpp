@@ -126,7 +126,7 @@ HRESULT GetShaderConvertColor(
 	const int chromaScaling,
 	ID3DBlob** ppCode)
 {
-	DLog(L"GetShaderConvertColor() started for %s %ux%u extfmt:0x%08x chroma:%d", A2WStr(fmtParams.str), texW, texH, exFmt.value, chromaScaling);
+	DLog(L"GetShaderConvertColor() started for {} {}x{} extfmt:{:#010x} chroma:{}", A2WStr(fmtParams.str), texW, texH, exFmt.value, chromaScaling);
 
 	CStringA code;
 	HRESULT hr = S_OK;
@@ -156,7 +156,7 @@ HRESULT GetShaderConvertColor(
 
 	const int planes = fmtParams.pDX9Planes ? (fmtParams.pDX9Planes->FmtPlane3 ? 3 : 2) : 1;
 	ASSERT(planes == (fmtParams.pDX11Planes ? (fmtParams.pDX11Planes->FmtPlane3 ? 3 : 2) : 1));
-	DLog(L"GetShaderConvertColor() frame consists of %d planes", planes);
+	DLog(L"GetShaderConvertColor() frame consists of {} planes", planes);
 
 	code.AppendFormat("#define w %u\n", (fmtParams.cformat == CF_YUY2) ? texW * 2 : texW);
 	code.AppendFormat("#define dx %.15f\n", 1.0 / texW);

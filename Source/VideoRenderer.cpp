@@ -60,7 +60,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	DbgSetModuleLevel(LOG_ERROR, DWORD_MAX);
 #endif
 
-	DLog(L"Windows %s", GetWindowsVersion());
+	DLog(L"Windows {}", GetWindowsVersion());
 	DLog(GetNameAndVersion());
 
 	ASSERT(S_OK == *phr);
@@ -302,7 +302,7 @@ long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_mt)
 				rcSource = { 0, 0, pBIH->biWidth, abs(pBIH->biHeight) };
 			}
 
-			DLog(L"CMpcVideoRenderer::CalcImageSize() buffer size changed from %dx%d to %dx%d", pBIH->biWidth, pBIH->biHeight, Size.cx, Size.cy);
+			DLog(L"CMpcVideoRenderer::CalcImageSize() buffer size changed from {}x{} to {}x{}", pBIH->biWidth, pBIH->biHeight, Size.cx, Size.cy);
 			// overwrite buffer size
 			pBIH->biWidth  = Size.cx;
 			pBIH->biHeight = Size.cy;
@@ -345,7 +345,7 @@ HRESULT CMpcVideoRenderer::CheckMediaType(const CMediaType* pmt)
 
 HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 {
-	DLog(L"CMpcVideoRenderer::SetMediaType()\n%s", MediaType2Str(pmt));
+	DLog(L"CMpcVideoRenderer::SetMediaType()\n{}", MediaType2Str(pmt));
 
 	CheckPointer(pmt, E_POINTER);
 	CheckPointer(pmt->pbFormat, E_POINTER);
@@ -577,7 +577,7 @@ STDMETHODIMP CMpcVideoRenderer::Stop()
 // IKsPropertySet
 STDMETHODIMP CMpcVideoRenderer::Set(REFGUID PropSet, ULONG Id, LPVOID pInstanceData, ULONG InstanceLength, LPVOID pPropertyData, ULONG DataLength)
 {
-	DLog(L"IKsPropertySet::Set(%s, %u, ...)", GUIDtoWString(PropSet), Id);
+	DLog(L"IKsPropertySet::Set({}, {}, ...)", GUIDtoWString(PropSet), Id);
 
 	if (PropSet == AM_KSPROPSETID_CopyProt) {
 		if (Id == AM_PROPERTY_COPY_MACROVISION || Id == AM_PROPERTY_COPY_DIGITAL_CP) {
@@ -603,7 +603,7 @@ STDMETHODIMP CMpcVideoRenderer::Set(REFGUID PropSet, ULONG Id, LPVOID pInstanceD
 
 STDMETHODIMP CMpcVideoRenderer::Get(REFGUID PropSet, ULONG Id, LPVOID pInstanceData, ULONG InstanceLength, LPVOID pPropertyData, ULONG DataLength, ULONG* pBytesReturned)
 {
-	DLog(L"IKsPropertySet::Get(%s, %u, ...)", GUIDtoWString(PropSet), Id);
+	DLog(L"IKsPropertySet::Get({}, {}, ...)", GUIDtoWString(PropSet), Id);
 
 	if (PropSet == AM_KSPROPSETID_CopyProt) {
 		if (Id == AM_PROPERTY_COPY_ANALOG_COMPONENT) {
@@ -619,7 +619,7 @@ STDMETHODIMP CMpcVideoRenderer::Get(REFGUID PropSet, ULONG Id, LPVOID pInstanceD
 
 STDMETHODIMP CMpcVideoRenderer::QuerySupported(REFGUID PropSet, ULONG Id, ULONG* pTypeSupport)
 {
-	DLog(L"IKsPropertySet::QuerySupported(%s, %u, ...)", GUIDtoWString(PropSet), Id);
+	DLog(L"IKsPropertySet::QuerySupported({}, {}, ...)", GUIDtoWString(PropSet), Id);
 
 	if (PropSet == AM_KSPROPSETID_CopyProt) {
 		if (Id == AM_PROPERTY_COPY_MACROVISION || Id == AM_PROPERTY_COPY_DIGITAL_CP) {
@@ -856,7 +856,7 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 			wc.cbWndExtra = sizeof(this);
 			if (!RegisterClassExW(&wc)) {
 				hr = HRESULT_FROM_WIN32(GetLastError());
-				DLog(L"CMpcVideoRenderer::put_Owner() : RegisterClassExW failed with error %s", HR2Str(hr));
+				DLog(L"CMpcVideoRenderer::put_Owner() : RegisterClassExW failed with error {}", HR2Str(hr));
 				return hr;
 			}
 		}

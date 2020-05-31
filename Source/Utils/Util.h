@@ -28,14 +28,14 @@
 #endif
 
 template <typename... Args>
-inline void DebugLogFmtPrintf(const wchar_t* format, const Args &...args)
+inline void DebugLogFmt(const std::wstring_view& format, const Args &...args)
 {
-	DbgLogInfo(LOG_TRACE, 3, fmt::sprintf(format, args...).c_str());
+	DbgLogInfo(LOG_TRACE, 3, fmt::format(format, args...).c_str());
 }
 
 #ifdef _DEBUG
-#define DLog(...) DebugLogFmtPrintf(__VA_ARGS__)
-#define DLogIf(f,...) {if (f) DebugLogFmtPrintf(__VA_ARGS__);}
+#define DLog(...) DebugLogFmt(__VA_ARGS__)
+#define DLogIf(f,...) {if (f) DebugLogFmt(__VA_ARGS__);}
 #else
 #define DLog(...) __noop
 #define DLogIf(f,...) __noop

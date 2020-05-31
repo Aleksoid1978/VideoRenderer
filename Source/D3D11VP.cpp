@@ -75,14 +75,14 @@ HRESULT CD3D11VP::InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pC
 {
 	HRESULT hr = pDevice->QueryInterface(IID_PPV_ARGS(&m_pVideoDevice));
 	if (FAILED(hr)) {
-		DLog(L"CD3D11VP::InitVideoDevice() : QueryInterface(ID3D11VideoDevice) failed with error %s", HR2Str(hr));
+		DLog(L"CD3D11VP::InitVideoDevice() : QueryInterface(ID3D11VideoDevice) failed with error {}", HR2Str(hr));
 		ReleaseVideoDevice();
 		return hr;
 	}
 
 	hr = pContext->QueryInterface(IID_PPV_ARGS(&m_pVideoContext));
 	if (FAILED(hr)) {
-		DLog(L"CD3D11VP::InitVideoDevice() : QueryInterface(ID3D11VideoContext) failed with error %s", HR2Str(hr));
+		DLog(L"CD3D11VP::InitVideoDevice() : QueryInterface(ID3D11VideoContext) failed with error {}", HR2Str(hr));
 		ReleaseVideoDevice();
 		return hr;
 	}
@@ -104,8 +104,8 @@ HRESULT CD3D11VP::InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pC
 				}
 			}
 		}
-		DLog(input);
-		DLog(output);
+		DLog(input.GetString());
+		DLog(output.GetString());
 	}
 #endif
 
@@ -161,14 +161,14 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 
 	hr = m_pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &m_pVideoProcessorEnum);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateVideoProcessorEnumerator() failed with error %s", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateVideoProcessorEnumerator() failed with error {}", HR2Str(hr));
 		return hr;
 	}
 
 	// get VideoProcessorCaps
 	hr = m_pVideoProcessorEnum->GetVideoProcessorCaps(&m_VPCaps);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : GetVideoProcessorCaps() failed with error %s", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : GetVideoProcessorCaps() failed with error {}", HR2Str(hr));
 		return hr;
 	}
 #ifdef _DEBUG
@@ -198,7 +198,7 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 	if (m_VPCaps.AutoStreamCaps&D3D11_VIDEO_PROCESSOR_AUTO_STREAM_CAPS_SUPER_RESOLUTION)    { dbgstr.Append(L" Super resolution,"); }
 	if (m_VPCaps.AutoStreamCaps&D3D11_VIDEO_PROCESSOR_AUTO_STREAM_CAPS_ANAMORPHIC_SCALING)  { dbgstr.Append(L" Anamorphic scaling"); }
 	dbgstr.TrimRight(',');
-	DLog(dbgstr);
+	DLog(dbgstr.GetString());
 #endif
 
 	// check input format
@@ -219,7 +219,7 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 	hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(outputFmt, &uiFlags);
 	if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
 		if (outputFmt != DXGI_FORMAT_B8G8R8A8_UNORM) {
-			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() %s is not supported for D3D11 VP output. DXGI_FORMAT_B8G8R8A8_UNORM will be used.", DXGIFormatToString(outputFmt));
+			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() {} is not supported for D3D11 VP output. DXGI_FORMAT_B8G8R8A8_UNORM will be used.", DXGIFormatToString(outputFmt));
 			outputFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
 			hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(outputFmt, &uiFlags);
 			if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
@@ -227,7 +227,7 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 				return E_INVALIDARG;
 			}
 		} else {
-			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() %s is not supported for D3D11 VP output.", DXGIFormatToString(outputFmt));
+			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() {} is not supported for D3D11 VP output.", DXGIFormatToString(outputFmt));
 			return E_INVALIDARG;
 		}
 	}
@@ -267,7 +267,7 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 				dbgstr.TrimRight(',');
 				dbgstr.AppendFormat(L"\n  PastFrames   : %u", m_RateConvCaps.PastFrames);
 				dbgstr.AppendFormat(L"\n  FutureFrames : %u", m_RateConvCaps.FutureFrames);
-				DLog(dbgstr);
+				DLog(dbgstr.GetString());
 #endif
 			}
 		}
@@ -275,7 +275,7 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 
 	hr = m_pVideoDevice->CreateVideoProcessor(m_pVideoProcessorEnum, m_RateConvIndex, &m_pVideoProcessor);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateVideoProcessor() failed with error %s", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateVideoProcessor() failed with error {}", HR2Str(hr));
 		return hr;
 	}
 
@@ -283,7 +283,7 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 		m_VPCaps = {};
 		hr = m_pVideoProcessorEnum->GetVideoProcessorCaps(&m_VPCaps);
 		if (FAILED(hr)) {
-			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : GetVideoProcessorCaps() failed with error %s", HR2Str(hr));
+			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : GetVideoProcessorCaps() failed with error {}", HR2Str(hr));
 			return hr;
 		}
 
@@ -291,11 +291,11 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 			if (m_VPCaps.FilterCaps & (1 << i)) {
 				hr = m_pVideoProcessorEnum->GetVideoProcessorFilterRange((D3D11_VIDEO_PROCESSOR_FILTER)i, &m_VPFilterRange[i]);
 				if (FAILED(hr)) {
-					DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : GetVideoProcessorFilterRange(%u) failed with error %s", i, HR2Str(hr));
+					DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : GetVideoProcessorFilterRange({}) failed with error {}", i, HR2Str(hr));
 					m_VPCaps.FilterCaps = 0;
 					break;
 				}
-				DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : FilterRange(%u) : %5d, %4d, %3d, %f",
+				DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : FilterRange({}) : {:5d}, {:4d}, {:3d}, {:f}",
 					i, m_VPFilterRange[i].Minimum, m_VPFilterRange[i].Maximum, m_VPFilterRange[i].Default, m_VPFilterRange[i].Multiplier);
 			}
 		}
@@ -475,7 +475,7 @@ HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAM
 	CComPtr<ID3D11VideoProcessorOutputView> pOutputView;
 	HRESULT hr = m_pVideoDevice->CreateVideoProcessorOutputView(pRenderTarget, m_pVideoProcessorEnum, &OutputViewDesc, &pOutputView);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::ProcessD3D11() : CreateVideoProcessorOutputView() failed with error %s", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::ProcessD3D11() : CreateVideoProcessorOutputView() failed with error {}", HR2Str(hr));
 		return hr;
 	}
 
@@ -504,7 +504,7 @@ HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAM
 	}
 	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, StreamData.InputFrameOrField, 1, &StreamData);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::ProcessD3D11() : VideoProcessorBlt() failed with error %s", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::ProcessD3D11() : VideoProcessorBlt() failed with error {}", HR2Str(hr));
 	}
 
 	return hr;

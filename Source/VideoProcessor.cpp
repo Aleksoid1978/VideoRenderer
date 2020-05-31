@@ -69,7 +69,7 @@ void CVideoProcessor::SetTexFormat(int value)
 		m_iTexFormat = value;
 		break;
 	default:
-		DLog(L"CVideoProcessor::SetTexFormat() unknown value %d", value);
+		DLog(L"CVideoProcessor::SetTexFormat() unknown value {}", value);
 		ASSERT(FALSE);
 		return;
 	}

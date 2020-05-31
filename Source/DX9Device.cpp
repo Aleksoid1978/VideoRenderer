@@ -66,7 +66,7 @@ HRESULT CDX9Device::InitDX9Device(const HWND hwnd, bool* pChangeDevice/* = nullp
 	ZeroMemory(&m_DisplayMode, sizeof(D3DDISPLAYMODEEX));
 	m_DisplayMode.Size = sizeof(D3DDISPLAYMODEEX);
 	HRESULT hr = m_pD3DEx->GetAdapterDisplayModeEx(m_nCurrentAdapter9, &m_DisplayMode, nullptr);
-	DLog(L"Display Mode: %ux%u, %u%c", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate, (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) ? 'i' : 'p');
+	DLog(L"Display Mode: {}x{}, {}{}", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate, (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) ? 'i' : 'p');
 
 	ZeroMemory(&m_d3dpp, sizeof(m_d3dpp));
 	m_d3dpp.Windowed = TRUE;
@@ -80,7 +80,7 @@ HRESULT CDX9Device::InitDX9Device(const HWND hwnd, bool* pChangeDevice/* = nullp
 
 	if (bTryToReset) {
 		bTryToReset = SUCCEEDED(hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr));
-		DLog(L"    => ResetEx() : %s", HR2Str(hr));
+		DLog(L"    => ResetEx() : {}", HR2Str(hr));
 	}
 
 	if (!bTryToReset) {
@@ -89,7 +89,7 @@ HRESULT CDX9Device::InitDX9Device(const HWND hwnd, bool* pChangeDevice/* = nullp
 			m_nCurrentAdapter9, D3DDEVTYPE_HAL, hwnd,
 			D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS,
 			&m_d3dpp, nullptr, &m_pD3DDevEx);
-		DLog(L"    => CreateDeviceEx() : %s", HR2Str(hr));
+		DLog(L"    => CreateDeviceEx() : {}", HR2Str(hr));
 	}
 
 	if (FAILED(hr)) {

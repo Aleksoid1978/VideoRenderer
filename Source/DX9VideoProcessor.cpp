@@ -226,13 +226,13 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 	if (S_OK == m_pD3DEx->GetAdapterIdentifier(m_nCurrentAdapter, 0, &AdapID9)) {
 		m_VendorId = AdapID9.VendorId;
 		m_strAdapterDescription.Format(L"%S (%04X:%04X)", AdapID9.Description, AdapID9.VendorId, AdapID9.DeviceId);
-		DLog(L"Graphics adapter: %s", m_strAdapterDescription);
+		DLog(L"Graphics adapter: {}", m_strAdapterDescription);
 	}
 
 	ZeroMemory(&m_DisplayMode, sizeof(D3DDISPLAYMODEEX));
 	m_DisplayMode.Size = sizeof(D3DDISPLAYMODEEX);
 	HRESULT hr = m_pD3DEx->GetAdapterDisplayModeEx(m_nCurrentAdapter, &m_DisplayMode, nullptr);
-	DLog(L"Display Mode: %ux%u, %u%c", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate, (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) ? 'i' : 'p');
+	DLog(L"Display Mode: {}x{}, {}{}", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate, (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) ? 'i' : 'p');
 
 #ifdef _DEBUG
 	D3DCAPS9 DevCaps = {};
@@ -245,7 +245,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 		dbgstr.AppendFormat(L"\n  Caps READ_SCANLINE              : %s", (DevCaps.Caps & D3DCAPS_READ_SCANLINE) ? L"supported" : L"NOT supported");
 		dbgstr.AppendFormat(L"\n  PixelShaderVersion              : %u.%u", D3DSHADER_VERSION_MAJOR(DevCaps.PixelShaderVersion), D3DSHADER_VERSION_MINOR(DevCaps.PixelShaderVersion));
 		dbgstr.AppendFormat(L"\n  MaxPixelShader30InstructionSlots: %u", DevCaps.MaxPixelShader30InstructionSlots);
-		DLog(dbgstr);
+		DLog(dbgstr.GetString());
 	}
 #endif
 
@@ -268,7 +268,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 
 	if (bTryToReset) {
 		bTryToReset = SUCCEEDED(hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr));
-		DLog(L"    => ResetEx() : %s", HR2Str(hr));
+		DLog(L"    => ResetEx() : {}", HR2Str(hr));
 	}
 
 	if (!bTryToReset) {
@@ -277,7 +277,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 			m_nCurrentAdapter, D3DDEVTYPE_HAL, m_hWnd,
 			D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS,
 			&m_d3dpp, nullptr, &m_pD3DDevEx);
-		DLog(L"    => CreateDeviceEx() : %s", HR2Str(hr));
+		DLog(L"    => CreateDeviceEx() : {}", HR2Str(hr));
 	}
 
 	if (FAILED(hr)) {
@@ -306,7 +306,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 
 	hr = m_DXVA2VP.InitVideoService(m_pD3DDevEx, m_VendorId);
 	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::Init() : m_DXVA2VP.InitVideoService() failed with error %s", HR2Str(hr));
+		DLog(L"CDX9VideoProcessor::Init() : m_DXVA2VP.InitVideoService() failed with error {}", HR2Str(hr));
 		return FALSE;
 	}
 
@@ -442,7 +442,7 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 {
 	const auto& dxva2format = params.DXVA2Format;
 
-	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() started with input surface: %s, %u x %u", D3DFormatToString(dxva2format), width, height);
+	DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() started with input surface: {}, {} x {}", D3DFormatToString(dxva2format), width, height);
 
 	if (m_VendorId != PCIV_INTEL && (dxva2format == D3DFMT_X8R8G8B8 || dxva2format == D3DFMT_A8R8G8B8)) {
 		m_DXVA2VP.ReleaseVideoProcessor();
@@ -474,7 +474,7 @@ HRESULT CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const
 {
 	const auto& d3dformat = params.D3DFormat;
 
-	DLog(L"CDX9VideoProcessor::InitializeTexVP() started with input surface: %s, %u x %u", D3DFormatToString(d3dformat), width, height);
+	DLog(L"CDX9VideoProcessor::InitializeTexVP() started with input surface: {}, {} x {}", D3DFormatToString(d3dformat), width, height);
 
 	UINT texW = (params.cformat == CF_YUY2) ? width / 2 : width;
 
@@ -1183,7 +1183,7 @@ HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 			m_d3dpp.BackBufferWidth  = backBufW;
 			m_d3dpp.BackBufferHeight = backBufH;
 			HRESULT hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
-			DLogIf(FAILED(hr), L"CDX9VideoProcessor::SetWindowRect() : ResetEx() failed with error %s", HR2Str(hr));
+			DLogIf(FAILED(hr), L"CDX9VideoProcessor::SetWindowRect() : ResetEx() failed with error {}", HR2Str(hr));
 		}
 
 		SetGraphSize();
@@ -1271,7 +1271,7 @@ HRESULT CDX9VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned *pSize)
 	if (FAILED(hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer))
 		|| FAILED(hr = m_pD3DDevEx->CreateRenderTarget(width, height, D3DFMT_X8R8G8B8, D3DMULTISAMPLE_NONE, 0, TRUE, &pDestSurface, nullptr))
 		|| FAILED(hr = m_pD3DDevEx->StretchRect(pBackBuffer, m_windowRect, pDestSurface, nullptr, D3DTEXF_NONE))) {
-		DLog(L"CDX9VideoProcessor::GetDisplayedImage() failed with error %s", HR2Str(hr));
+		DLog(L"CDX9VideoProcessor::GetDisplayedImage() failed with error {}", HR2Str(hr));
 		return hr;
 	}
 
@@ -1300,7 +1300,7 @@ HRESULT CDX9VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned *pSize)
 	}
 
 	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::GetDisplayedImage() failed with error %s", HR2Str(hr));
+		DLog(L"CDX9VideoProcessor::GetDisplayedImage() failed with error {}", HR2Str(hr));
 		LocalFree(p);
 		return hr;
 	}
@@ -1384,7 +1384,7 @@ void CDX9VideoProcessor::SetVPScaling(bool value)
 void CDX9VideoProcessor::SetChromaScaling(int value)
 {
 	if (value < 0 || value >= CHROMA_COUNT) {
-		DLog(L"CDX9VideoProcessor::SetChromaScaling() unknown value %d", value);
+		DLog(L"CDX9VideoProcessor::SetChromaScaling() unknown value {}", value);
 		ASSERT(FALSE);
 		return;
 	}
@@ -1399,7 +1399,7 @@ void CDX9VideoProcessor::SetChromaScaling(int value)
 void CDX9VideoProcessor::SetUpscaling(int value)
 {
 	if (value < 0 || value >= UPSCALE_COUNT) {
-		DLog(L"CDX9VideoProcessor::SetUpscaling() unknown value %d", value);
+		DLog(L"CDX9VideoProcessor::SetUpscaling() unknown value {}", value);
 		ASSERT(FALSE);
 		return;
 	}
@@ -1413,7 +1413,7 @@ void CDX9VideoProcessor::SetUpscaling(int value)
 void CDX9VideoProcessor::SetDownscaling(int value)
 {
 	if (value < 0 || value >= DOWNSCALE_COUNT) {
-		DLog(L"CDX9VideoProcessor::SetDownscaling() unknown value %d", value);
+		DLog(L"CDX9VideoProcessor::SetDownscaling() unknown value {}", value);
 		ASSERT(FALSE);
 		return;
 	}
@@ -1471,9 +1471,9 @@ HRESULT CDX9VideoProcessor::AddPostScaleShader(const CStringW& name, const CStri
 			if (S_OK == hr) {
 				m_pPostScaleShaders.back().name = name;
 				UpdatePostScaleTexures(m_windowRect.Size());
-				DLog(L"CDX9VideoProcessor::AddPostScaleShader() : \"%s\" pixel shader added successfully.", name);
+				DLog(L"CDX9VideoProcessor::AddPostScaleShader() : \"{}\" pixel shader added successfully.", name);
 			} else {
-				DLog(L"CDX9VideoProcessor::AddPostScaleShader() : create pixel shader \"%s\" FAILED!", name);
+				DLog(L"CDX9VideoProcessor::AddPostScaleShader() : create pixel shader \"{}\" FAILED!", name);
 				m_pPostScaleShaders.pop_back();
 			}
 			pShaderCode->Release();
@@ -1712,7 +1712,7 @@ HRESULT CDX9VideoProcessor::ResizeShaderPass(IDirect3DTexture9* pTexture, IDirec
 			// use only float textures here
 			hr = m_TexResize.Create(m_pD3DDevEx, D3DFMT_A16B16G16R16F,texWidth, texHeight, D3DUSAGE_RENDERTARGET);
 			if (FAILED(hr)) {
-				DLog(L"CDX9VideoProcessor::ProcessTex() : m_TexResize.Create() failed with error %s", HR2Str(hr));
+				DLog(L"CDX9VideoProcessor::ProcessTex() : m_TexResize.Create() failed with error {}", HR2Str(hr));
 				return TextureCopyRect(pTexture, srcRect, dstRect, D3DTEXF_LINEAR, m_iRotation);
 			}
 		}
@@ -1745,7 +1745,7 @@ HRESULT CDX9VideoProcessor::ResizeShaderPass(IDirect3DTexture9* pTexture, IDirec
 		}
 	}
 
-	DLogIf(FAILED(hr), L"CDX9VideoProcessor::ResizeShaderPass() : failed with error %s", HR2Str(hr));
+	DLogIf(FAILED(hr), L"CDX9VideoProcessor::ResizeShaderPass() : failed with error {}", HR2Str(hr));
 
 	return hr;
 }
@@ -1897,7 +1897,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 		hr = ResizeShaderPass(pInputTexture, pRenderTarget, rSrc, dstRect);
 	}
 
-	DLogIf(FAILED(hr), L"CDX9VideoProcessor::Process() : failed with error %s", HR2Str(hr));
+	DLogIf(FAILED(hr), L"CDX9VideoProcessor::Process() : failed with error {}", HR2Str(hr));
 
 	return hr;
 }
