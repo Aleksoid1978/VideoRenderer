@@ -62,7 +62,7 @@ struct ScalingShaderResId {
 
 LPCWSTR GetNameAndVersion();
 
-CStringW MediaType2Str(const CMediaType *pmt);
+std::wstring MediaType2Str(const CMediaType *pmt);
 
 const wchar_t* D3DFormatToString(const D3DFORMAT format);
 const wchar_t* DXGIFormatToString(const DXGI_FORMAT format);
@@ -124,7 +124,7 @@ struct DX11PlanarPrms_t {
 struct FmtConvParams_t {
 	ColorFormat_t     cformat;
 	GUID              Subtype;
-	char*             str;
+	const wchar_t*    str;
 	D3DFORMAT         DXVA2Format;
 	D3DFORMAT         D3DFormat;
 	DX9PlanarPrms_t*  pDX9Planes;

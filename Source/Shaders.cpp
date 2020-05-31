@@ -126,7 +126,7 @@ HRESULT GetShaderConvertColor(
 	const int chromaScaling,
 	ID3DBlob** ppCode)
 {
-	DLog(L"GetShaderConvertColor() started for {} {}x{} extfmt:{:#010x} chroma:{}", A2WStr(fmtParams.str), texW, texH, exFmt.value, chromaScaling);
+	DLog(L"GetShaderConvertColor() started for {} {}x{} extfmt:{:#010x} chroma:{}", fmtParams.str, texW, texH, exFmt.value, chromaScaling);
 
 	CStringA code;
 	HRESULT hr = S_OK;
