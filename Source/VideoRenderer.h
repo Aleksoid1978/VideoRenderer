@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <d3d9.h>
 #include <mfidl.h>
 #include <dxva2api.h>
 #include <thread>

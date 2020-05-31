@@ -19,7 +19,6 @@
 */
 
 #include "stdafx.h"
-#include <d3d9.h>
 #include <mfapi.h> // for MR_BUFFER_SERVICE
 #include <mfidl.h>
 #include <Mferror.h>

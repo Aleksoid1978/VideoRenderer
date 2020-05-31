@@ -20,7 +20,6 @@
 
 #include "stdafx.h"
 #include <uuids.h>
-#include <d3d9.h>
 #include <mfapi.h> // for MR_BUFFER_SERVICE
 #include <Mferror.h>
 #include <Mfidl.h>

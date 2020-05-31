@@ -19,7 +19,6 @@
 */
 
 #include "stdafx.h"
-#include <d3d9.h> // hmm
 #include "Util.h"
 
 #ifndef _WIN32_WINNT_WINTHRESHOLD

@@ -19,10 +19,7 @@
  */
 
 #include "stdafx.h"
-
-#include <d3d9.h>
 #include "Helper.h"
-
 #include "D3D9Geometry.h"
 
 

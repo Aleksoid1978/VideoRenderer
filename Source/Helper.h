@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <d3d9.h>
 #include <dxva2api.h>
 #include "Utils/Util.h"
 #include "Utils/StringUtil.h"

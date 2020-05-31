@@ -22,7 +22,6 @@
 
 #include "stdafx.h"
 #include <memory>
-#include <d3d9.h>
 #include "Helper.h"
 #include "DX9Helper.h"
 

@@ -19,7 +19,6 @@
 */
 
 #include "stdafx.h"
-#include <d3d9.h>
 #include <dxva2api.h>
 #include "Helper.h"
 #include "DX9Helper.h"

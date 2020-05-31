@@ -40,6 +40,7 @@
 #include <dvdmedia.h>
 #include <VersionHelpers.h>
 #include <DirectXMath.h>
+#include <d3d9.h>
 
 #include <algorithm>
 // Workaround compilation errors when including GDI+ with NOMINMAX defined
@@ -53,4 +54,3 @@ namespace Gdiplus
 
 #include "../BaseClasses/streams.h"
 #include "../external/fmt/include/fmt/format.h"
-#include "../external/fmt/include/fmt/printf.h"
