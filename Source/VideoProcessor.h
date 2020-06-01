@@ -92,10 +92,10 @@ protected:
 
 	// Statistics
 	CRenderStats m_RenderStats;
-	CStringW m_strStatsStatic1;
-	CStringW m_strStatsStatic2;
-	CStringW m_strStatsStatic3;
-	CStringW m_strStatsStatic4;
+	std::wstring m_strStatsStatic1;
+	std::wstring m_strStatsStatic2;
+	std::wstring m_strStatsStatic3;
+	std::wstring m_strStatsStatic4;
 	int m_iSrcFromGPU = 0;
 	const wchar_t* m_strShaderX = nullptr;
 	const wchar_t* m_strShaderY = nullptr;

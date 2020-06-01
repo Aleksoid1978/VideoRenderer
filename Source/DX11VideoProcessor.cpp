@@ -2369,96 +2369,98 @@ HRESULT CDX11VideoProcessor::AddPostScaleShader(const std::wstring& name, const 
 void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
-		m_strStatsStatic1.Format(L"MPC VR %S, Direct3D 11", MPCVR_VERSION_STR);
-		m_strStatsStatic1.AppendFormat(L"\nGraph. Adapter: %s", m_strAdapterDescription.c_str());
+		m_strStatsStatic1 = fmt::format(
+			L"MPC VR {}, Direct3D 11"
+			L"\nGraph. Adapter: {}",
+			_CRT_WIDE(MPCVR_VERSION_STR), m_strAdapterDescription);
 
-		m_strStatsStatic2.Format(L"%S %ux%u", m_srcParams.str, m_srcRectWidth, m_srcRectHeight);
+		m_strStatsStatic2 = fmt::format(L"{} {}x{}", m_srcParams.str, m_srcRectWidth, m_srcRectHeight);
 		if (m_srcParams.CSType == CS_YUV) {
 			LPCSTR strs[6] = {};
 			GetExtendedFormatString(strs, m_srcExFmt, m_srcParams.CSType);
-			m_strStatsStatic2.AppendFormat(L"\n  Range: %hS", strs[1]);
+			m_strStatsStatic2 += fmt::format(L"\n  Range: {}", A2WStr(strs[1]));
 			if (m_decExFmt.NominalRange == DXVA2_NominalRange_Unknown) {
-				m_strStatsStatic2.AppendChar('*');
+				m_strStatsStatic2 += L'*';
 			};
-			m_strStatsStatic2.AppendFormat(L", Matrix: %hS", strs[2]);
+			m_strStatsStatic2 += fmt::format(L", Matrix: {}", A2WStr(strs[2]));
 			if (m_decExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
-				m_strStatsStatic2.AppendChar('*');
+				m_strStatsStatic2 += L'*';
 			};
-			m_strStatsStatic2.AppendFormat(L", Lighting: %hS", strs[3]);
+			m_strStatsStatic2 += fmt::format(L", Lighting: {}", A2WStr(strs[3]));
 			if (m_decExFmt.VideoLighting == DXVA2_VideoLighting_Unknown) {
-				m_strStatsStatic2.AppendChar('*');
+				m_strStatsStatic2 += L'*';
 			};
-			m_strStatsStatic2.AppendFormat(L"\n  Primaries: %hS", strs[4]);
+			m_strStatsStatic2 += fmt::format(L"\n  Primaries: {}", A2WStr(strs[4]));
 			if (m_decExFmt.VideoPrimaries == DXVA2_VideoPrimaries_Unknown) {
-				m_strStatsStatic2.AppendChar('*');
+				m_strStatsStatic2 += L'*';
 			};
-			m_strStatsStatic2.AppendFormat(L", Function: %hS", strs[5]);
+			m_strStatsStatic2 += fmt::format(L", Function: {}", A2WStr(strs[5]));
 			if (m_decExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_Unknown) {
-				m_strStatsStatic2.AppendChar('*');
+				m_strStatsStatic2 += L'*';
 			};
 			if (m_srcParams.Subsampling == 420) {
-				m_strStatsStatic2.AppendFormat(L"\n  ChromaLocation: %hS", strs[0]);
+				m_strStatsStatic2 += fmt::format(L"\n  ChromaLocation: {}", A2WStr(strs[0]));
 				if (m_decExFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Unknown) {
-					m_strStatsStatic2.AppendChar('*');
+					m_strStatsStatic2 += L'*';
 				};
 			}
 		}
-		m_strStatsStatic2.Append(L"\nVideoProcessor: ");
+		m_strStatsStatic2.append(L"\nVideoProcessor: ");
 		if (m_D3D11VP.IsReady()) {
-			m_strStatsStatic2.AppendFormat(L"D3D11 VP, output to %s", DXGIFormatToString(m_D3D11OutputFmt));
+			m_strStatsStatic2 += fmt::format(L"D3D11 VP, output to {}", DXGIFormatToString(m_D3D11OutputFmt));
 		} else {
-			m_strStatsStatic2.Append(L"Shaders");
+			m_strStatsStatic2.append(L"Shaders");
 			if (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422) {
-				m_strStatsStatic2.AppendFormat(L", Chroma Scaling: %s", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom" : L"Bilinear");
+				m_strStatsStatic2 += fmt::format(L", Chroma Scaling: {}", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom" : L"Bilinear");
 			}
 		}
-		m_strStatsStatic2.AppendFormat(L"\nInternalFormat: %s", DXGIFormatToString(m_InternalTexFmt));
+		m_strStatsStatic2 += fmt::format(L"\nInternalFormat: {}", DXGIFormatToString(m_InternalTexFmt));
 
 		DXGI_SWAP_CHAIN_DESC1 swapchain_desc;
 		if (m_pDXGISwapChain1 && S_OK == m_pDXGISwapChain1->GetDesc1(&swapchain_desc)) {
-			m_strStatsStatic4.SetString(L"\nPresentation  : ");
+			m_strStatsStatic4.assign(L"\nPresentation  : ");
 			switch (swapchain_desc.SwapEffect) {
 			case DXGI_SWAP_EFFECT_DISCARD:
-				m_strStatsStatic4.Append(L"Discard");
+				m_strStatsStatic4.append(L"Discard");
 				break;
 			case DXGI_SWAP_EFFECT_SEQUENTIAL:
-				m_strStatsStatic4.Append(L"Sequential");
+				m_strStatsStatic4.append(L"Sequential");
 				break;
 			case DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL:
-				m_strStatsStatic4.Append(L"Flip sequential");
+				m_strStatsStatic4.append(L"Flip sequential");
 				break;
 #if VER_PRODUCTBUILD >= 10000
 			case DXGI_SWAP_EFFECT_FLIP_DISCARD:
-				m_strStatsStatic4.Append(L"Flip discard");
+				m_strStatsStatic4.append(L"Flip discard");
 				break;
 #endif
 			}
 		}
 	} else {
 		m_strStatsStatic1 = L"Error";
-		m_strStatsStatic2.Empty();
-		m_strStatsStatic3.Empty();
-		m_strStatsStatic4.Empty();
+		m_strStatsStatic2.clear();
+		m_strStatsStatic3.clear();
+		m_strStatsStatic4.clear();
 	}
 }
 
 void CDX11VideoProcessor::UpdateStatsStatic3()
 {
 	if (m_strCorrection || m_pPostScaleShaders.size() || m_bFinalPass) {
-		m_strStatsStatic3 = L"\nPostProcessing:";
+		m_strStatsStatic3.assign(L"\nPostProcessing:");
 		if (m_strCorrection) {
-			m_strStatsStatic3.AppendFormat(L" %s,", m_strCorrection);
+			m_strStatsStatic3 += fmt::format(L" {},", m_strCorrection);
 		}
 		if (m_pPostScaleShaders.size()) {
-			m_strStatsStatic3.AppendFormat(L" shaders[%u],", (UINT)m_pPostScaleShaders.size());
+			m_strStatsStatic3 += fmt::format(L" shaders[{}],", m_pPostScaleShaders.size());
 		}
 		if (m_bFinalPass) {
-			m_strStatsStatic3.Append(L" dither");
+			m_strStatsStatic3.append(L" dither");
 		}
-		m_strStatsStatic3.TrimRight(',');
+		str_trim_end(m_strStatsStatic3, ',');
 	}
 	else {
-		m_strStatsStatic3.Empty();
+		m_strStatsStatic3.clear();
 	}
 }
 
@@ -2468,57 +2470,59 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		return E_ABORT;
 	}
 
-	CStringW str = m_strStatsStatic1;
-	str.AppendFormat(L"\nFrame rate    : %7.03f", m_pFilter->m_FrameStats.GetAverageFps());
+	std::wstring str = m_strStatsStatic1;
+	str += fmt::format(L"\nFrame rate    : {:7.3f}", m_pFilter->m_FrameStats.GetAverageFps());
 	if (m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
-		str.AppendChar(L'i');
+		str += L'i';
 	}
-	str.AppendFormat(L",%7.03f", m_pFilter->m_DrawStats.GetAverageFps());
-	str.Append(L"\nInput format  :");
+	str += fmt::format(L",{:7.3f}", m_pFilter->m_DrawStats.GetAverageFps());
+	str.append(L"\nInput format  :");
 	if (m_iSrcFromGPU == 11) {
-		str.Append(L" D3D11_");
+		str.append(L" D3D11_");
 	}
 	else if (m_iSrcFromGPU == 9) {
-		str.Append(L" DXVA2_");
+		str.append(L" DXVA2_");
 	}
-	str.Append(m_strStatsStatic2);
+	str.append(m_strStatsStatic2);
 
 	const int srcW = m_srcRect.Width();
 	const int srcH = m_srcRect.Height();
 	const int dstW = m_videoRect.Width();
 	const int dstH = m_videoRect.Height();
 	if (m_iRotation) {
-		str.AppendFormat(L"\nScaling       : %dx%d r%d°> %dx%d", srcW, srcH, m_iRotation, dstW, dstH);
+		str += fmt::format(L"\nScaling       : {}x{} r{}°> {}x{}", srcW, srcH, m_iRotation, dstW, dstH);
 	} else {
-		str.AppendFormat(L"\nScaling       : %dx%d -> %dx%d", srcW, srcH, dstW, dstH);
+		str += fmt::format(L"\nScaling       : {}x{} -> {}x{}", srcW, srcH, dstW, dstH);
 	}
 	if (srcW != dstW || srcH != dstH) {
 		if (m_D3D11VP.IsReady() && m_bVPScaling) {
-			str.Append(L" D3D11");
+			str.append(L" D3D11");
 		} else {
+			str += L' ';
 			if (m_strShaderX) {
-				str.AppendFormat(L" %s", m_strShaderX);
+				str.append(m_strShaderX);
 				if (m_strShaderY && m_strShaderY != m_strShaderX) {
-					str.AppendFormat(L"/%s", m_strShaderY);
+					str += L'/';
+					str.append(m_strShaderY);
 				}
 			} else if (m_strShaderY) {
-				str.AppendFormat(L" %s", m_strShaderY);
+				str.append(m_strShaderY);
 			}
 		}
 	}
 
-	str.Append(m_strStatsStatic3);
-	str.Append(m_strStatsStatic4);
+	str.append(m_strStatsStatic3);
+	str.append(m_strStatsStatic4);
 
-	str.AppendFormat(L"\nFrames: %5u, skipped: %u/%u, failed: %u",
+	str += fmt::format(L"\nFrames: {:5}, skipped: {}/{}, failed: {}",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
-	str.AppendFormat(L"\nTimes(ms): Copy%3llu, Paint%3llu [DX9Subs%3llu], Present%3llu",
+	str += fmt::format(L"\nTimes(ms): Copy{:3}, Paint{:3} [DX9Subs{:3}], Present{:3}",
 		m_RenderStats.copyticks    * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.paintticks   * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.substicks    * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
 #if 0
-	str.AppendFormat(L"\n1:%6.03f, 2:%6.03f, 3:%6.03f, 4:%6.03f, 5:%6.03f, 6:%6.03f ms",
+	str += fmt::format(L"\n1:{:6.3f}, 2:{:6.3f}, 3:{:6.3f}, 4:{:6.3f}, 5:{:6.3f}, 6:{:6.3f} ms",
 		m_RenderStats.t1 * 1000 / GetPreciseTicksPerSecond(),
 		m_RenderStats.t2 * 1000 / GetPreciseTicksPerSecond(),
 		m_RenderStats.t3 * 1000 / GetPreciseTicksPerSecond(),
@@ -2526,7 +2530,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		m_RenderStats.t5 * 1000 / GetPreciseTicksPerSecond(),
 		m_RenderStats.t6 * 1000 / GetPreciseTicksPerSecond());
 #else
-	str.AppendFormat(L"\nSync offset   : %+3lld ms", (m_RenderStats.syncoffset + 5000) / 10000);
+	str += fmt::format(L"\nSync offset   : {:+3} ms", (m_RenderStats.syncoffset + 5000) / 10000);
 #endif
 
 	ID3D11RenderTargetView* pRenderTargetView = nullptr;
@@ -2536,7 +2540,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
 
 		const SIZE rtSize{ m_TexStats.desc.Width, m_TexStats.desc.Height };
-		hr = m_Font3D.Draw2DText(pRenderTargetView, rtSize, 5, 5, D3DCOLOR_XRGB(255, 255, 255), str);
+		hr = m_Font3D.Draw2DText(pRenderTargetView, rtSize, 5, 5, D3DCOLOR_XRGB(255, 255, 255), str.c_str());
 		static int col = m_StatsW;
 		if (--col < 0) {
 			col = m_StatsW;
