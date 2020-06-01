@@ -76,7 +76,7 @@ protected:
 	HWND m_hWnd = nullptr;
 	UINT m_nCurrentAdapter; // set it in subclasses
 	DWORD m_VendorId = 0;
-	CStringW m_strAdapterDescription;
+	std::wstring m_strAdapterDescription;
 
 	bool   m_bPrimaryDisplay     = false;
 	double m_dRefreshRate        = 0.0;

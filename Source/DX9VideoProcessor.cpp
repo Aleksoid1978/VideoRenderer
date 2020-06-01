@@ -224,7 +224,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 	D3DADAPTER_IDENTIFIER9 AdapID9 = {};
 	if (S_OK == m_pD3DEx->GetAdapterIdentifier(m_nCurrentAdapter, 0, &AdapID9)) {
 		m_VendorId = AdapID9.VendorId;
-		m_strAdapterDescription.Format(L"%S (%04X:%04X)", AdapID9.Description, AdapID9.VendorId, AdapID9.DeviceId);
+		m_strAdapterDescription = fmt::format(L"{} ({:04X}:{:04X})", A2WStr(AdapID9.Description), AdapID9.VendorId, AdapID9.DeviceId);
 		DLog(L"Graphics adapter: {}", m_strAdapterDescription);
 	}
 
@@ -2062,7 +2062,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
 		m_strStatsStatic1.Format(L"MPC VR %S, Direct3D 9Ex", MPCVR_VERSION_STR);
-		m_strStatsStatic1.AppendFormat(L"\nGraph. Adapter: %s", m_strAdapterDescription);
+		m_strStatsStatic1.AppendFormat(L"\nGraph. Adapter: %s", m_strAdapterDescription.c_str());
 
 		m_strStatsStatic2.Format(L"%S %ux%u", m_srcParams.str, m_srcRectWidth, m_srcRectHeight);
 		if (m_srcParams.CSType == CS_YUV) {
