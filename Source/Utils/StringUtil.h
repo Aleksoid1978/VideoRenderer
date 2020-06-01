@@ -21,6 +21,7 @@
 #pragma once
 
 #include <cctype>
+#include <locale>
 
 //
 // convert string to lower or upper case
@@ -40,12 +41,12 @@ inline void str_toupper(std::string& s)
 
 inline void str_tolower(std::wstring& s)
 {
-	std::transform(s.begin(), s.end(), s.begin(), std::tolower);
+	std::transform(s.begin(), s.end(), s.begin(), ::tolower);
 }
 
 inline void str_toupper(std::wstring& s)
 {
-	std::transform(s.begin(), s.end(), s.begin(), std::toupper);
+	std::transform(s.begin(), s.end(), s.begin(), ::toupper);
 }
 
 inline void str_tolower_all(std::wstring& s)

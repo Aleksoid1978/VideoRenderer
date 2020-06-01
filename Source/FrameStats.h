@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "Time.h"
+#include "Times.h"
 
 template<typename T, unsigned count> class CFrameTimestamps {
 protected:

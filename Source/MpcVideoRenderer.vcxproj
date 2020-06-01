@@ -93,7 +93,7 @@
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Time.cpp" />
+    <ClCompile Include="Times.cpp" />
     <ClCompile Include="Utils\StringUtil.cpp" />
     <ClCompile Include="Utils\Util.cpp" />
     <ClCompile Include="VideoProcessor.cpp" />
@@ -126,7 +126,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="Time.h" />
+    <ClInclude Include="Times.h" />
     <ClInclude Include="Utils\StringUtil.h" />
     <ClInclude Include="Utils\Util.h" />
     <ClInclude Include="VideoProcessor.h" />

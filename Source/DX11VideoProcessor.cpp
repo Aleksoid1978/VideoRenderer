@@ -25,7 +25,7 @@
 #include <Mfidl.h>
 #include <dwmapi.h>
 #include "Helper.h"
-#include "Time.h"
+#include "Times.h"
 #include "resource.h"
 #include "VideoRenderer.h"
 #include "../Include/Version.h"

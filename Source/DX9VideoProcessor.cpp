@@ -23,7 +23,7 @@
 #include <mfidl.h>
 #include <Mferror.h>
 #include <dwmapi.h>
-#include "Time.h"
+#include "Times.h"
 #include "resource.h"
 #include "VideoRenderer.h"
 #include "../Include/Version.h"

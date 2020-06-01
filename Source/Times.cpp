@@ -19,7 +19,7 @@
 */
 
 #include "stdafx.h"
-#include "Time.h"
+#include "Times.h"
 
 // code from VirtualDub\system\source\time.cpp
 

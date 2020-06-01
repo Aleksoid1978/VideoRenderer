@@ -42,7 +42,7 @@
     <ClCompile Include="DX11VideoProcessor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Time.cpp">
+    <ClCompile Include="Times.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VideoRendererInputPin.cpp">
@@ -131,7 +131,7 @@
     <ClInclude Include="FrameStats.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Time.h">
+    <ClInclude Include="Times.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VideoRendererInputPin.h">
