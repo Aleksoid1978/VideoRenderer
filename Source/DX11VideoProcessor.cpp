@@ -76,7 +76,7 @@ struct PS_EXTSHADER_CONSTANTS {
 
 static_assert(sizeof(PS_EXTSHADER_CONSTANTS) % 16 == 0);
 
-HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer, const UINT srcW, const UINT srcH, const RECT& srcRect, const int iRotation)
+HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer, const UINT srcW, const UINT srcH, const RECT& srcRect, const int iRotation, bool flip = false)
 {
 	ASSERT(ppVertexBuffer);
 	ASSERT(*ppVertexBuffer == nullptr);
@@ -114,6 +114,11 @@ HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
 		points[2] = { +1, -1 };
 		points[3] = { +1, +1 };
 		break;
+	}
+
+	if (flip) {
+		std::swap(points[0], points[1]);
+		std::swap(points[2], points[3]);
 	}
 
 	VERTEX Vertices[4] = {
@@ -287,7 +292,7 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(const Tex2D_t& Tex, ID3D11Textu
 		return hr;
 	}
 
-	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, iRotation);
+	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, iRotation, m_bFlip);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -1884,6 +1889,9 @@ HRESULT CDX11VideoProcessor::ResizeShaderPass(const Tex2D_t& Tex, ID3D11Texture2
 			// one pass resize for height
 			hr = TextureResizeShader(Tex, pRenderTarget, srcRect, dstRect, resizerY, m_iRotation);
 		}
+		else if (m_bFlip) {
+			hr = TextureResizeShader(Tex, pRenderTarget, srcRect, dstRect, m_pShaderUpscaleX.p, m_iRotation);
+		} 
 		else {
 			// no resize
 			hr = TextureCopyRect(Tex, pRenderTarget, srcRect, dstRect, m_pPS_Simple, nullptr, m_iRotation);
@@ -2322,6 +2330,11 @@ void CDX11VideoProcessor::SetRotation(int value)
 	if (m_D3D11VP.IsReady()) {
 		//m_D3D11VP.SetRotation(m_bVPScaling ? static_cast<D3D11_VIDEO_PROCESSOR_ROTATION>(value / 90) : D3D11_VIDEO_PROCESSOR_ROTATION_IDENTITY);
 	}
+}
+
+void CDX11VideoProcessor::SetFlip(bool value) {
+	m_bFlip = value;
+	UpdateTexures(m_videoRect.Size());
 }
 
 void CDX11VideoProcessor::Flush()

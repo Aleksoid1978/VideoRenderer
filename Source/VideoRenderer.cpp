@@ -1162,6 +1162,15 @@ STDMETHODIMP CMpcVideoRenderer::GetBool(LPCSTR field, bool* value)
 		return S_OK;
 	}
 
+	if (!strcmp(field, "flip")) {
+		if (m_bUsedD3D11) {
+			*value = m_DX11_VP.GetFlip();
+		} else {
+			*value = m_DX9_VP.GetFlip();
+		}
+		return S_OK;
+	}
+
 	return E_INVALIDARG;
 }
 
@@ -1273,6 +1282,17 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 
 	if (!strcmp(field, "lessRedraws")) {
 		m_bForceRedrawing = !value;
+		return S_OK;
+	}
+
+	if (!strcmp(field, "flip")) {
+		CAutoLock cRendererLock(&m_RendererLock);
+		if (m_bUsedD3D11) {
+			m_DX11_VP.SetFlip(value);
+		} else {
+			m_DX9_VP.SetFlip(value);
+		}
+
 		return S_OK;
 	}
 

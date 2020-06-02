@@ -1437,6 +1437,13 @@ void CDX9VideoProcessor::SetRotation(int value)
 	UpdateTexures(m_videoRect.Size());
 }
 
+void CDX9VideoProcessor::SetFlip(bool value)
+{
+	m_bFlip = value;
+	UpdateTexures(m_videoRect.Size());
+}
+
+
 void CDX9VideoProcessor::Flush()
 {
 	if (m_DXVA2VP.IsReady()) {
@@ -1738,6 +1745,9 @@ HRESULT CDX9VideoProcessor::ResizeShaderPass(IDirect3DTexture9* pTexture, IDirec
 			// one pass resize for height
 			hr = TextureResizeShader(pTexture, srcRect, dstRect, resizerY, m_iRotation);
 		}
+		else if (m_bFlip) {
+			hr = TextureResizeShader(pTexture, srcRect, dstRect, m_pShaderUpscaleX.p, m_iRotation);
+		}
 		else {
 			// no resize
 			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
@@ -2036,6 +2046,11 @@ HRESULT CDX9VideoProcessor::TextureResizeShader(IDirect3DTexture9* pTexture, con
 		points[2] = { dstRect.left,  dstRect.bottom };
 		points[3] = { dstRect.right, dstRect.bottom };
 		break;
+	}
+
+	if (m_bFlip && iRotation == m_iRotation) { //if iRotation is different (= 0), we have already transformed once and are doing a simple scale
+		std::swap(points[0], points[1]);
+		std::swap(points[2], points[3]);
 	}
 
 	MYD3DVERTEX<1> v[] = {

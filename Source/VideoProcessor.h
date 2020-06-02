@@ -68,6 +68,7 @@ protected:
 	CRect m_renderRect;
 
 	int m_iRotation = 0;
+	bool m_bFlip = false;
 	bool m_bFinalPass = false;
 
 	DXVA2_ValueRange m_DXVA2ProcAmpRanges[4] = {};
@@ -132,6 +133,7 @@ public:
 	void SetDeintDouble(bool value) { m_bDeintDouble = value; }
 	void SetShowStats(bool value)   { m_bShowStats   = value; }
 	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
+	bool GetFlip() { return m_bFlip; };
 
 	bool CheckGraphPlacement();
 	void CalcGraphParams();
