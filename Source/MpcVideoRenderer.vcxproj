@@ -140,6 +140,9 @@
     <ProjectReference Include="..\external\fmt.vcxproj">
       <Project>{cf8302e6-21a3-4dd3-8a33-e19b6732f40b}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\external\minhook.vcxproj">
+      <Project>{303b855a-137d-45e9-af6d-b7241c6e66d6}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MpcVideoRenderer.rc" />
