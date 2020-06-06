@@ -479,9 +479,6 @@ HRESULT GetShaderConvertColor(
 				"color.rgb = ToneMappingHable(color.rgb);\n"
 				// Colorspace Gamut Conversion
 				"color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);\n"
-				// Linear to sRGB
-				"color.rgb = saturate(color.rgb);\n"
-				"color.rgb = pow(color.rgb, 1.0 / 2.2);\n"
 			);
 		}
 		else { // if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG)
@@ -492,9 +489,6 @@ HRESULT GetShaderConvertColor(
 				"color.rgb = ToneMappingHable(color.rgb);\n"
 				// Peak luminance
 				"color.rgb = color.rgb * (SRC_LUMINANCE_PEAK / DISPLAY_LUMINANCE_PEAK);\n"
-				// Linear to sRGB
-				"color.rgb = saturate(color.rgb);\n"
-				"color.rgb = pow(color.rgb, 1.0 / 2.2);\n"
 			);
 		}
 		// Linear to sRGB
