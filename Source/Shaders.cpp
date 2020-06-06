@@ -59,35 +59,16 @@ HRESULT CompileShader(const std::string& srcCode, const D3D_SHADER_MACRO* pDefin
 	return hr;
 }
 
-const char correct_ST2084[] =
+const char code_ST2084[] =
 	"#define ST2084_m1 ((2610.0 / 4096.0) / 4.0)\n"
 	"#define ST2084_m2 ((2523.0 / 4096.0) * 128.0)\n"
 	"#define ST2084_c1 ( 3424.0 / 4096.0)\n"
 	"#define ST2084_c2 ((2413.0 / 4096.0) * 32.0)\n"
 	"#define ST2084_c3 ((2392.0 / 4096.0) * 32.0)\n"
 	"#define SRC_LUMINANCE_PEAK     10000.0\n"
-	"#define DISPLAY_LUMINANCE_PEAK 125.0\n"
-	"\n"
-	"inline float4 correct_ST2084(float4 pixel)\n"
-	"{\n"
-		"pixel = saturate(pixel);\n" // use saturate(), because pow() can not take negative values
-		// ST2084 to Linear
-		"pixel.rgb = pow(pixel.rgb, 1.0 / ST2084_m2);\n"
-		"pixel.rgb = max(pixel.rgb - ST2084_c1, 0.0) / (ST2084_c2 - ST2084_c3 * pixel.rgb);\n"
-		"pixel.rgb = pow(pixel.rgb, 1.0 / ST2084_m1);\n"
-		// Peak luminance
-		"pixel.rgb = pixel.rgb * (SRC_LUMINANCE_PEAK / DISPLAY_LUMINANCE_PEAK);\n"
-		// HDR tone mapping
-		"pixel.rgb = ToneMappingHable(pixel.rgb);\n"
-		// Colorspace Gamut Conversion
-		"pixel.rgb = Colorspace_Gamut_Conversion_2020_to_709(pixel.rgb);\n"
-		// Linear to sRGB
-		"pixel.rgb = saturate(pixel.rgb);\n"
-		"pixel.rgb = pow(pixel.rgb, 1.0 / 2.2);\n"
-		"return pixel;\n"
-	"}\n";
+	"#define DISPLAY_LUMINANCE_PEAK 125.0\n";
 
-const char correct_HLG[] =
+const char code_HLG[] =
 	"#define SRC_LUMINANCE_PEAK     1000.0\n"
 	"#define DISPLAY_LUMINANCE_PEAK 80.0\n"
 	"\n"
@@ -101,21 +82,6 @@ const char correct_HLG[] =
 			"? x * x * B67_inv_r2\n"
 			": exp((x - B67_c) / B67_a) + B67_b;\n"
 		"return x;\n"
-	"}\n"
-	"\n"
-	"inline float4 correct_HLG(float4 pixel)\n"
-	"{\n"
-		// HLG to Linear
-		"pixel.rgb = inverse_HLG(pixel.rgb);\n"
-		"pixel.rgb /= 12.0;\n"
-		// HDR tone mapping
-		"pixel.rgb = ToneMappingHable(pixel.rgb);\n"
-		// Peak luminance
-		"pixel.rgb = pixel.rgb * (SRC_LUMINANCE_PEAK / DISPLAY_LUMINANCE_PEAK);\n"
-		// Linear to sRGB
-		"pixel.rgb = saturate(pixel.rgb);\n"
-		"pixel.rgb = pow(pixel.rgb, 1.0 / 2.2);\n"
-		"return pixel;\n"
 	"}\n";
 
 HRESULT GetShaderConvertColor(
@@ -133,7 +99,9 @@ HRESULT GetShaderConvertColor(
 	LPVOID data;
 	DWORD size;
 
-	if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
+	bool isHDR = (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG);
+
+	if (isHDR) {
 		hr = GetDataFromResource(data, size, IDF_HLSL_HDR_TONE_MAPPING);
 		if (S_OK == hr) {
 			code.append((LPCSTR)data, size);
@@ -144,11 +112,11 @@ HRESULT GetShaderConvertColor(
 				if (S_OK == hr) {
 					code.append((LPCSTR)data, size);
 					code += '\n';
-					code.append(correct_ST2084);
+					code.append(code_ST2084);
 					DLog(L"GetShaderConvertColor() add code for HDR ST2084");
 				}
-			} else {
-				code.append(correct_HLG);
+			} else { // if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG)
+				code.append(code_HLG);
 				DLog(L"GetShaderConvertColor() add code for HDR HLG");
 			}
 		}
@@ -497,11 +465,43 @@ HRESULT GetShaderConvertColor(
 	code.append("//convert color\n");
 	code.append("color.rgb = float3(mul(cm_r, color), mul(cm_g, color), mul(cm_b, color)) + cm_c;\n");
 
-	if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-		code.append("color = correct_ST2084(color);\n");
-	}
-	else if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
-		code.append("color = correct_HLG(color);\n");
+	if (isHDR) {
+		if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+			code.append(
+				"color = saturate(color);\n" // use saturate(), because pow() can not take negative values
+				// ST2084 to Linear
+				"color.rgb = pow(color.rgb, 1.0 / ST2084_m2);\n"
+				"color.rgb = max(color.rgb - ST2084_c1, 0.0) / (ST2084_c2 - ST2084_c3 * color.rgb);\n"
+				"pixel.rgb = pow(color.rgb, 1.0 / ST2084_m1);\n"
+				// Peak luminance
+				"color.rgb = color.rgb * (SRC_LUMINANCE_PEAK / DISPLAY_LUMINANCE_PEAK);\n"
+				// HDR tone mapping
+				"color.rgb = ToneMappingHable(color.rgb);\n"
+				// Colorspace Gamut Conversion
+				"color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);\n"
+				// Linear to sRGB
+				"color.rgb = saturate(color.rgb);\n"
+				"color.rgb = pow(color.rgb, 1.0 / 2.2);\n"
+			);
+		}
+		else { // if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG)
+			code.append(
+				"color.rgb = inverse_HLG(color.rgb);\n"
+				"color.rgb /= 12.0;\n"
+				// HDR tone mapping
+				"color.rgb = ToneMappingHable(color.rgb);\n"
+				// Peak luminance
+				"color.rgb = pixel.rgb * (SRC_LUMINANCE_PEAK / DISPLAY_LUMINANCE_PEAK);\n"
+				// Linear to sRGB
+				"color.rgb = saturate(color.rgb);\n"
+				"color.rgb = pow(color.rgb, 1.0 / 2.2);\n"
+			);
+		}
+		// Linear to sRGB
+		code.append(
+			"color.rgb = saturate(color.rgb);\n"
+			"color.rgb = pow(color.rgb, 1.0 / 2.2);\n"
+		);
 	}
 
 	code.append("return color;\n}");
