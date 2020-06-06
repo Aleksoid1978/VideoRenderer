@@ -43,6 +43,7 @@
 #define OPT_InterpolateAt50pct   L"InterpolateAt50pct"
 #define OPT_Dither               L"Dither"
 #define OPT_SwapEffect           L"SwapEffect"
+#define OPT_ExclusiveFullscreen  L"ExclusiveFullscreen"
 
 static const wchar_t g_szClassName[] = L"VRWindow";
 
@@ -126,6 +127,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_SwapEffect, dw)) {
 			m_Sets.iSwapEffect = discard((int)dw, (int)SWAPEFFECT_Discard, (int)SWAPEFFECT_Discard, (int)SWAPEFFECT_Flip);
 		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ExclusiveFullscreen, dw)) {
+			m_Sets.bExclusiveFS = !!dw;
+		}
 	}
 
 	// configure the video processors
@@ -140,6 +144,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	m_DX9_VP.SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
 	m_DX9_VP.SetDither(m_Sets.bUseDither);
 	m_DX9_VP.SetSwapEffect(m_Sets.iSwapEffect);
+	m_DX9_VP.SetExclusiveFS(m_Sets.bExclusiveFS);
 
 	m_DX11_VP.SetShowStats(m_Sets.bShowStats);
 	m_DX11_VP.SetTexFormat(m_Sets.iTextureFmt);
@@ -1003,7 +1008,8 @@ STDMETHODIMP_(void) CMpcVideoRenderer::GetSettings(Settings_t& setings)
 
 STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 {
-	m_Sets.bUseD3D11 = setings.bUseD3D11;
+	m_Sets.bUseD3D11    = setings.bUseD3D11;
+	m_Sets.bExclusiveFS = setings.bExclusiveFS;
 
 	CAutoLock cRendererLock(&m_RendererLock);
 
@@ -1123,21 +1129,22 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 {
 	CRegKey key;
 	if (ERROR_SUCCESS == key.Create(HKEY_CURRENT_USER, OPT_REGKEY_VIDEORENDERER)) {
-		key.SetDWORDValue(OPT_UseD3D11,           m_Sets.bUseD3D11);
-		key.SetDWORDValue(OPT_ShowStatistics,     m_Sets.bShowStats);
-		key.SetDWORDValue(OPT_TextureFormat,      m_Sets.iTextureFmt);
-		key.SetDWORDValue(OPT_VPEnableNV12,       m_Sets.VPFmts.bNV12);
-		key.SetDWORDValue(OPT_VPEnableP01x,       m_Sets.VPFmts.bP01x);
-		key.SetDWORDValue(OPT_VPEnableYUY2,       m_Sets.VPFmts.bYUY2);
-		key.SetDWORDValue(OPT_VPEnableOther,      m_Sets.VPFmts.bOther);
-		key.SetDWORDValue(OPT_DoubleFrateDeint,   m_Sets.bDeintDouble);
-		key.SetDWORDValue(OPT_VPScaling,          m_Sets.bVPScaling);
-		key.SetDWORDValue(OPT_ChromaScaling,      m_Sets.iChromaScaling);
-		key.SetDWORDValue(OPT_Upscaling,          m_Sets.iUpscaling);
-		key.SetDWORDValue(OPT_Downscaling,        m_Sets.iDownscaling);
-		key.SetDWORDValue(OPT_InterpolateAt50pct, m_Sets.bInterpolateAt50pct);
-		key.SetDWORDValue(OPT_Dither,             m_Sets.bUseDither);
-		key.SetDWORDValue(OPT_SwapEffect,         m_Sets.iSwapEffect);
+		key.SetDWORDValue(OPT_UseD3D11,            m_Sets.bUseD3D11);
+		key.SetDWORDValue(OPT_ShowStatistics,      m_Sets.bShowStats);
+		key.SetDWORDValue(OPT_TextureFormat,       m_Sets.iTextureFmt);
+		key.SetDWORDValue(OPT_VPEnableNV12,        m_Sets.VPFmts.bNV12);
+		key.SetDWORDValue(OPT_VPEnableP01x,        m_Sets.VPFmts.bP01x);
+		key.SetDWORDValue(OPT_VPEnableYUY2,        m_Sets.VPFmts.bYUY2);
+		key.SetDWORDValue(OPT_VPEnableOther,       m_Sets.VPFmts.bOther);
+		key.SetDWORDValue(OPT_DoubleFrateDeint,    m_Sets.bDeintDouble);
+		key.SetDWORDValue(OPT_VPScaling,           m_Sets.bVPScaling);
+		key.SetDWORDValue(OPT_ChromaScaling,       m_Sets.iChromaScaling);
+		key.SetDWORDValue(OPT_Upscaling,           m_Sets.iUpscaling);
+		key.SetDWORDValue(OPT_Downscaling,         m_Sets.iDownscaling);
+		key.SetDWORDValue(OPT_InterpolateAt50pct,  m_Sets.bInterpolateAt50pct);
+		key.SetDWORDValue(OPT_Dither,              m_Sets.bUseDither);
+		key.SetDWORDValue(OPT_SwapEffect,          m_Sets.iSwapEffect);
+		key.SetDWORDValue(OPT_ExclusiveFullscreen, m_Sets.bExclusiveFS);
 	}
 
 	return S_OK;

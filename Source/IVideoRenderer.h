@@ -81,6 +81,7 @@ struct Settings_t {
 	bool bInterpolateAt50pct;
 	bool bUseDither;
 	int  iSwapEffect;
+	bool bExclusiveFS;
 
 	Settings_t() {
 		SetDefault();
@@ -102,6 +103,7 @@ struct Settings_t {
 		bInterpolateAt50pct = true;
 		bUseDither          = true;
 		iSwapEffect         = SWAPEFFECT_Discard;
+		bExclusiveFS        = false;
 	}
 };
 
