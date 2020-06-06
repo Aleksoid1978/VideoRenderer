@@ -472,7 +472,7 @@ HRESULT GetShaderConvertColor(
 				// ST2084 to Linear
 				"color.rgb = pow(color.rgb, 1.0 / ST2084_m2);\n"
 				"color.rgb = max(color.rgb - ST2084_c1, 0.0) / (ST2084_c2 - ST2084_c3 * color.rgb);\n"
-				"pixel.rgb = pow(color.rgb, 1.0 / ST2084_m1);\n"
+				"color.rgb = pow(color.rgb, 1.0 / ST2084_m1);\n"
 				// Peak luminance
 				"color.rgb = color.rgb * (SRC_LUMINANCE_PEAK / DISPLAY_LUMINANCE_PEAK);\n"
 				// HDR tone mapping
@@ -491,7 +491,7 @@ HRESULT GetShaderConvertColor(
 				// HDR tone mapping
 				"color.rgb = ToneMappingHable(color.rgb);\n"
 				// Peak luminance
-				"color.rgb = pixel.rgb * (SRC_LUMINANCE_PEAK / DISPLAY_LUMINANCE_PEAK);\n"
+				"color.rgb = color.rgb * (SRC_LUMINANCE_PEAK / DISPLAY_LUMINANCE_PEAK);\n"
 				// Linear to sRGB
 				"color.rgb = saturate(color.rgb);\n"
 				"color.rgb = pow(color.rgb, 1.0 / 2.2);\n"
