@@ -44,6 +44,7 @@
 #define OPT_Dither               L"Dither"
 #define OPT_SwapEffect           L"SwapEffect"
 #define OPT_ExclusiveFullscreen  L"ExclusiveFullscreen"
+#define OPT_ExclusiveDelay       L"ExclusiveDelay"
 
 static const wchar_t g_szClassName[] = L"VRWindow";
 
@@ -130,6 +131,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ExclusiveFullscreen, dw)) {
 			m_Sets.bExclusiveFS = !!dw;
 		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ExclusiveDelay, dw)) {
+			m_Sets.bExclusiveDelay = !!dw;
+		}
 	}
 
 	// configure the video processors
@@ -145,6 +149,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	m_DX9_VP.SetDither(m_Sets.bUseDither);
 	m_DX9_VP.SetSwapEffect(m_Sets.iSwapEffect);
 	m_DX9_VP.SetExclusiveFS(m_Sets.bExclusiveFS);
+	m_DX9_VP.SetExclusiveDelay(m_Sets.bExclusiveDelay);
 
 	m_DX11_VP.SetShowStats(m_Sets.bShowStats);
 	m_DX11_VP.SetTexFormat(m_Sets.iTextureFmt);
@@ -1008,8 +1013,9 @@ STDMETHODIMP_(void) CMpcVideoRenderer::GetSettings(Settings_t& setings)
 
 STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 {
-	m_Sets.bUseD3D11    = setings.bUseD3D11;
-	m_Sets.bExclusiveFS = setings.bExclusiveFS;
+	m_Sets.bUseD3D11       = setings.bUseD3D11;
+	m_Sets.bExclusiveFS    = setings.bExclusiveFS;
+	m_Sets.bExclusiveDelay = setings.bExclusiveDelay;
 
 	CAutoLock cRendererLock(&m_RendererLock);
 
@@ -1145,6 +1151,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_Dither,              m_Sets.bUseDither);
 		key.SetDWORDValue(OPT_SwapEffect,          m_Sets.iSwapEffect);
 		key.SetDWORDValue(OPT_ExclusiveFullscreen, m_Sets.bExclusiveFS);
+		key.SetDWORDValue(OPT_ExclusiveDelay,      m_Sets.bExclusiveDelay);
 	}
 
 	return S_OK;

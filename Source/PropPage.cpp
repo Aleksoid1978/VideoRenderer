@@ -98,7 +98,9 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK10, m_SetsPP.bUseDither   ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK11, m_SetsPP.bExclusiveFS ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK12, m_SetsPP.bExclusiveDelay ? BST_CHECKED : BST_UNCHECKED);
 	GetDlgItem(IDC_CHECK11).ShowWindow(SW_HIDE); // TODO
+	GetDlgItem(IDC_CHECK12).ShowWindow(SW_HIDE); // TODO
 
 	SendDlgItemMessageW(IDC_COMBO5, CB_SETCURSEL, m_SetsPP.iChromaScaling, 0);
 	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, m_SetsPP.iUpscaling, 0);
@@ -159,6 +161,7 @@ HRESULT CVRMainPPage::OnActivate()
 		m_SetsPP.bUseD3D11 = false;
 	}
 	EnableControls();
+	GetDlgItem(IDC_CHECK12).EnableWindow(m_SetsPP.bExclusiveFS);
 
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"Auto 8/10-bit Integer",  0);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"8-bit Integer",          8);
@@ -254,6 +257,12 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			}
 			if (nID == IDC_CHECK11) {
 				m_SetsPP.bExclusiveFS = IsDlgButtonChecked(IDC_CHECK11) == BST_CHECKED;
+				GetDlgItem(IDC_CHECK12).EnableWindow(m_SetsPP.bExclusiveFS);
+				SetDirty();
+				return (LRESULT)1;
+			}
+			if (nID == IDC_CHECK12) {
+				m_SetsPP.bExclusiveDelay = IsDlgButtonChecked(IDC_CHECK12) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}

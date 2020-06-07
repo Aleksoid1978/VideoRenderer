@@ -147,6 +147,7 @@ public:
 	void SetDither(bool value);
 	void SetSwapEffect(int value) { m_iSwapEffect = value; }
 	void SetExclusiveFS(bool value) { m_bExclusiveFS = value; }
+	void SetExclusiveDelay(bool value) { m_bExclusiveDelay = value; }
 
 	void SetRotation(int value);
 	void SetFlip(bool value) { m_bFlip = value; }
