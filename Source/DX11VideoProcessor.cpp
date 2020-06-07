@@ -84,8 +84,8 @@ HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
 
 	const float src_dx = 1.0f / srcW;
 	const float src_dy = 1.0f / srcH;
-	const float src_l = src_dx * srcRect.left;
-	const float src_r = src_dx * srcRect.right;
+	float src_l = src_dx * srcRect.left;
+	float src_r = src_dx * srcRect.right;
 	const float src_t = src_dy * srcRect.top;
 	const float src_b = src_dy * srcRect.bottom;
 
@@ -117,9 +117,9 @@ HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
 		break;
 	}
 
-	// TODO
-	//if (bFlip) {
-	//}
+	if (bFlip) {
+		std::swap(src_l, src_r);
+	}
 
 	VERTEX Vertices[4] = {
 		// Vertices for drawing whole texture
