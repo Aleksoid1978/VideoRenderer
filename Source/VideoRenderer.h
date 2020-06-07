@@ -86,6 +86,7 @@ private:
 	bool m_bValidBuffer = false;
 
 	HWND m_hWnd = nullptr;
+	HWND m_hWndWindow = nullptr;
 	HWND m_hWndParent = nullptr;
 	HWND m_hWndDrain = nullptr;
 
@@ -117,6 +118,14 @@ private:
 
 	bool m_bSubInvAlpha = false;
 	bool m_bCheckSubInvAlpha = false;
+
+	bool m_bIsFullscreen = false;
+
+	HANDLE m_hFullScreenTimerHandle = nullptr;
+	BOOL StartFullScreenTimer();
+	void EndFullScreenTimer();
+
+	HRESULT Init(const bool bCreateWindow);
 
 public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
@@ -260,6 +269,8 @@ public:
 	STDMETHODIMP SetBin(LPCSTR field, LPVOID value, int size) override;
 
 	LRESULT OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+	void SwitchFullScreen();
 
 private:
 	HRESULT Redraw();

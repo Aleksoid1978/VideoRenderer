@@ -45,8 +45,6 @@ protected:
 	bool m_bInterpolateAt50pct = true;
 	bool m_bUseDither          = true;
 	int  m_iSwapEffect         = SWAPEFFECT_Discard;
-	bool m_bExclusiveFS        = false;
-	bool m_bExclusiveDelay     = false;
 
 	// Input parameters
 	FmtConvParams_t m_srcParams = {};

@@ -99,8 +99,6 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK10, m_SetsPP.bUseDither   ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK11, m_SetsPP.bExclusiveFS ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK12, m_SetsPP.bExclusiveDelay ? BST_CHECKED : BST_UNCHECKED);
-	GetDlgItem(IDC_CHECK11).ShowWindow(SW_HIDE); // TODO
-	GetDlgItem(IDC_CHECK12).ShowWindow(SW_HIDE); // TODO
 
 	SendDlgItemMessageW(IDC_COMBO5, CB_SETCURSEL, m_SetsPP.iChromaScaling, 0);
 	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, m_SetsPP.iUpscaling, 0);

@@ -174,6 +174,37 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, const RECT* pSrc, const RECT* pDst, 
 	return S_OK;
 }
 
+LPCTSTR g_pszOldWndProc = L"OldWndProc";
+static void RemoveWndProc(HWND hWnd)
+{
+	DLog(L"RemoveWndProc()");
+	auto pfnOldProc = (WNDPROC)GetPropW(hWnd, g_pszOldWndProc);
+	if (pfnOldProc) {
+		SetWindowLongPtrW(hWnd, GWLP_WNDPROC, (LONG_PTR)pfnOldProc);
+		RemovePropW(hWnd, g_pszOldWndProc);
+	}
+}
+
+static LRESULT CALLBACK ParentWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	auto pfnOldProc = (WNDPROC)GetPropW(hWnd, g_pszOldWndProc);
+
+	switch (Msg) {
+		case WM_DESTROY:
+		case WM_MOVE:
+			SetWindowLongPtrW(hWnd, GWLP_WNDPROC, (LONG_PTR)pfnOldProc);
+			RemovePropW(hWnd, g_pszOldWndProc);
+			break;
+		case WM_NCACTIVATE:
+			if (!wParam) {
+				return 0;
+			}
+			break;
+		}
+
+	return CallWindowProcW(pfnOldProc, hWnd, Msg, wParam, lParam);
+}
+
 // CDX9VideoProcessor
 
 CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
@@ -205,6 +236,8 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	m_nResetTocken = 0;
 
 	m_pD3DEx.Release();
+
+	RemoveWndProc(m_hWndParent);
 }
 
 HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
@@ -214,6 +247,11 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 	CheckPointer(m_pD3DEx, E_FAIL);
 
 	m_hWnd = hwnd;
+	m_hWndParent = m_hWnd;
+	while ((GetParent(m_hWndParent)) && (GetParent(m_hWndParent) == GetAncestor(m_hWndParent, GA_PARENT))) {
+		m_hWndParent = GetParent(m_hWndParent);
+	}
+
 	const UINT currentAdapter = GetAdapter(m_hWnd, m_pD3DEx);
 	bool bTryToReset = (currentAdapter == m_nCurrentAdapter) && m_pD3DDevEx;
 	if (!bTryToReset) {
@@ -249,34 +287,66 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 #endif
 
 	ZeroMemory(&m_d3dpp, sizeof(m_d3dpp));
-	m_d3dpp.BackBufferWidth  = std::max(1, m_windowRect.Width());
-	m_d3dpp.BackBufferHeight = std::max(1, m_windowRect.Height());
-	m_d3dpp.Windowed = TRUE;
-	m_d3dpp.hDeviceWindow = m_hWnd;
-	m_d3dpp.Flags = D3DPRESENTFLAG_VIDEO;
-	m_d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
-	if (m_iSwapEffect == SWAPEFFECT_Discard) {
-		m_d3dpp.BackBufferWidth  = ALIGN(m_d3dpp.BackBufferWidth, 128);
-		m_d3dpp.BackBufferHeight = ALIGN(m_d3dpp.BackBufferHeight, 128);
-		m_d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-		m_d3dpp.BackBufferCount = 1;
-	} else {
-		m_d3dpp.SwapEffect = IsWindows7OrGreater() ? D3DSWAPEFFECT_FLIPEX : D3DSWAPEFFECT_FLIP;
+	if (m_pFilter->m_bIsFullscreen) {
+		bTryToReset = false;
+
+		auto pfnOldProc = (WNDPROC)GetWindowLongPtrW(m_hWndParent, GWLP_WNDPROC);
+		SetWindowLongPtrW(m_hWndParent, GWLP_WNDPROC, (LONG_PTR)ParentWndProc);
+		SetPropW(m_hWndParent, g_pszOldWndProc, (HANDLE)pfnOldProc);
+
+		m_d3dpp.Windowed = FALSE;
+		m_d3dpp.hDeviceWindow = m_hWndParent;
+		m_d3dpp.SwapEffect = D3DSWAPEFFECT_FLIP;
+		m_d3dpp.Flags = D3DPRESENTFLAG_VIDEO;
 		m_d3dpp.BackBufferCount = 3;
-	}
+		m_d3dpp.FullScreen_RefreshRateInHz = m_DisplayMode.RefreshRate;
+		m_d3dpp.BackBufferWidth = m_DisplayMode.Width;
+		m_d3dpp.BackBufferHeight = m_DisplayMode.Height;
+		m_d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
 
-	if (bTryToReset) {
-		bTryToReset = SUCCEEDED(hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr));
-		DLog(L"    => ResetEx() : {}", HR2Str(hr));
-	}
+		// detect 10-bit device support
+		const bool b10BitOutput = m_InternalTexFmt != D3DFMT_X8R8G8B8 && SUCCEEDED(m_pD3DEx->CheckDeviceType(m_nCurrentAdapter, D3DDEVTYPE_HAL, D3DFMT_A2R10G10B10, D3DFMT_A2R10G10B10, FALSE));
+		m_d3dpp.BackBufferFormat = m_DisplayMode.Format = b10BitOutput ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
+		DLog(L"CDX9VideoProcessor::Init() : fullscreen - {}", D3DFormatToString(m_d3dpp.BackBufferFormat));
 
-	if (!bTryToReset) {
 		ReleaseDevice();
 		hr = m_pD3DEx->CreateDeviceEx(
-			m_nCurrentAdapter, D3DDEVTYPE_HAL, m_hWnd,
-			D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS,
-			&m_d3dpp, nullptr, &m_pD3DDevEx);
-		DLog(L"    => CreateDeviceEx() : {}", HR2Str(hr));
+			m_nCurrentAdapter, D3DDEVTYPE_HAL, m_hWndParent,
+			D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS | D3DCREATE_NOWINDOWCHANGES,
+			&m_d3dpp, &m_DisplayMode, &m_pD3DDevEx);
+		DLog(L"    => CreateDeviceEx(fullscreen) : {}", HR2Str(hr));
+	} else {
+		RemoveWndProc(m_hWndParent);
+
+		m_d3dpp.BackBufferWidth = std::max(1, m_windowRect.Width());
+		m_d3dpp.BackBufferHeight = std::max(1, m_windowRect.Height());
+		m_d3dpp.Windowed = TRUE;
+		m_d3dpp.hDeviceWindow = m_hWnd;
+		m_d3dpp.Flags = D3DPRESENTFLAG_VIDEO;
+		m_d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+		if (m_iSwapEffect == SWAPEFFECT_Discard) {
+			m_d3dpp.BackBufferWidth = ALIGN(m_d3dpp.BackBufferWidth, 128);
+			m_d3dpp.BackBufferHeight = ALIGN(m_d3dpp.BackBufferHeight, 128);
+			m_d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+			m_d3dpp.BackBufferCount = 1;
+		} else {
+			m_d3dpp.SwapEffect = IsWindows7OrGreater() ? D3DSWAPEFFECT_FLIPEX : D3DSWAPEFFECT_FLIP;
+			m_d3dpp.BackBufferCount = 3;
+		}
+
+		if (bTryToReset) {
+			bTryToReset = SUCCEEDED(hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr));
+			DLog(L"    => ResetEx() : {}", HR2Str(hr));
+		}
+
+		if (!bTryToReset) {
+			ReleaseDevice();
+			hr = m_pD3DEx->CreateDeviceEx(
+				m_nCurrentAdapter, D3DDEVTYPE_HAL, m_hWnd,
+				D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS,
+				&m_d3dpp, nullptr, &m_pD3DDevEx);
+			DLog(L"    => CreateDeviceEx() : {}", HR2Str(hr));
+		}
 	}
 
 	if (FAILED(hr)) {
@@ -292,7 +362,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 	}
 	if (hr == D3DERR_DEVICENOTRESET) {
 		DLog(L"    => D3DERR_DEVICENOTRESET");
-		hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
+		hr = m_pD3DDevEx->ResetEx(&m_d3dpp, m_d3dpp.Windowed ? nullptr : &m_DisplayMode);
 	}
 
 	if (S_OK == hr && !bTryToReset) {
@@ -1132,6 +1202,12 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		hr = m_pD3DDevEx->PresentEx(nullptr, nullptr, nullptr, nullptr, 0);
 	}
 
+#ifdef _DEBUG
+	if (FAILED(hr) || hr == S_PRESENT_OCCLUDED || hr == S_PRESENT_MODE_CHANGED) {
+		DLog(L"CDX9VideoProcessor::Render() : PresentEx() failed with error {}", HR2Str(hr));
+	}
+#endif
+
 	return hr;
 }
 
@@ -1172,17 +1248,19 @@ HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 	UpdateRenderRect();
 
 	if (m_pD3DDevEx && !m_windowRect.IsRectEmpty()) {
-		UINT backBufW = m_windowRect.Width();
-		UINT backBufH = m_windowRect.Height();
-		if (m_d3dpp.SwapEffect == D3DSWAPEFFECT_DISCARD && m_d3dpp.Windowed) {
-			backBufW = ALIGN(backBufW, 128);
-			backBufH = ALIGN(backBufH, 128);
-		}
-		if (backBufW != m_d3dpp.BackBufferWidth || backBufH != m_d3dpp.BackBufferHeight) {
-			m_d3dpp.BackBufferWidth  = backBufW;
-			m_d3dpp.BackBufferHeight = backBufH;
-			HRESULT hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
-			DLogIf(FAILED(hr), L"CDX9VideoProcessor::SetWindowRect() : ResetEx() failed with error {}", HR2Str(hr));
+		if (!m_pFilter->m_bIsFullscreen) {
+			UINT backBufW = m_windowRect.Width();
+			UINT backBufH = m_windowRect.Height();
+			if (m_d3dpp.SwapEffect == D3DSWAPEFFECT_DISCARD && m_d3dpp.Windowed) {
+				backBufW = ALIGN(backBufW, 128);
+				backBufH = ALIGN(backBufH, 128);
+			}
+			if (backBufW != m_d3dpp.BackBufferWidth || backBufH != m_d3dpp.BackBufferHeight) {
+				m_d3dpp.BackBufferWidth = backBufW;
+				m_d3dpp.BackBufferHeight = backBufH;
+				HRESULT hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
+				DLogIf(FAILED(hr), L"CDX9VideoProcessor::SetWindowRect() : ResetEx() failed with error {}", HR2Str(hr));
+			}
 		}
 
 		SetGraphSize();
@@ -2075,10 +2153,16 @@ HRESULT CDX9VideoProcessor::TextureResizeShader(
 void CDX9VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
+		std::wstring fullscreenInfo;
+		if (m_pFilter->m_bIsFullscreen) {
+			fullscreenInfo = fmt::format(L", FullScreen({}x{}@{}{})", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate, (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) ? 'i' : 'p');
+		}
+
 		m_strStatsStatic1 = fmt::format(
 			L"MPC VR {}, Direct3D 9Ex"
+			L"{}"
 			L"\nGraph. Adapter: {}",
-			_CRT_WIDE(MPCVR_VERSION_STR), m_strAdapterDescription);
+			_CRT_WIDE(MPCVR_VERSION_STR), fullscreenInfo, m_strAdapterDescription);
 
 		m_strStatsStatic2 = fmt::format(L"{} {}x{}", m_srcParams.str, m_srcRectWidth, m_srcRectHeight);
 		if (m_srcParams.CSType == CS_YUV) {
