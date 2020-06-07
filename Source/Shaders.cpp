@@ -227,7 +227,7 @@ HRESULT GetShaderConvertColor(
 					"float2 w3 = (t3 - t2) / 2;\n");
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
-						code += fmt::format("float2 c%d%d = texUV.Sample(samp, input.Tex, int2({}, {})).rg;\n", x, y, x-1, y-1);
+						code += fmt::format("float2 c{}{} = texUV.Sample(samp, input.Tex, int2({}, {})).rg;\n", x, y, x-1, y-1);
 					}
 				}
 				code.append(
