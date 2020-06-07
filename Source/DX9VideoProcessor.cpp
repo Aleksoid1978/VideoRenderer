@@ -2041,9 +2041,10 @@ HRESULT CDX9VideoProcessor::TextureResizeShader(
 		break;
 	}
 
-	// TODO
-	//if (bFlip) {
-	//}
+	if (bFlip) {
+		std::swap(points[0], points[1]);
+		std::swap(points[2], points[3]);
+	}
 
 	MYD3DVERTEX<1> v[] = {
 		{ {(float)points[0].x - 0.5f, (float)points[0].y - 0.5f, 0.5f, 2.0f}, {{tx0, ty0}} },
