@@ -3,6 +3,9 @@ v0.4.6
 Added Sync Offset graph in statistics.
 Fixed getting the current image using IBasicVideo::GetCurrentImage.
 Improved playback support for some protected DVD-Video.
+Added Sync Offset graph.
+Added support for mirroring ("flip").
+Recommended version of MPC-BE v1.5.5.5327 or later.
 
 v0.4.5.1242 - 2020.04.17
 ------------------------
