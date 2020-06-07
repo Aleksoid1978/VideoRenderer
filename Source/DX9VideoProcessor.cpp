@@ -1968,6 +1968,11 @@ HRESULT CDX9VideoProcessor::TextureCopyRect(
 		break;
 	}
 
+	if (bFlip) {
+		std::swap(points[0], points[1]);
+		std::swap(points[2], points[3]);
+	}
+
 	MYD3DVERTEX<1> v[] = {
 		{ {(float)points[0].x - 0.5f, (float)points[0].y - 0.5f, 0.5f, 2.0f}, {{srcRect.left  * dx, srcRect.top    * dy}} },
 		{ {(float)points[1].x - 0.5f, (float)points[1].y - 0.5f, 0.5f, 2.0f}, {{srcRect.right * dx, srcRect.top    * dy}} },
