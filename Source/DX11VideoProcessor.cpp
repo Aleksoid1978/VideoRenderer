@@ -75,7 +75,9 @@ struct PS_EXTSHADER_CONSTANTS {
 
 static_assert(sizeof(PS_EXTSHADER_CONSTANTS) % 16 == 0);
 
-HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer, const UINT srcW, const UINT srcH, const RECT& srcRect, const int iRotation)
+HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
+	const UINT srcW, const UINT srcH, const RECT& srcRect,
+	const int iRotation, const bool bFlip)
 {
 	ASSERT(ppVertexBuffer);
 	ASSERT(*ppVertexBuffer == nullptr);
@@ -114,6 +116,10 @@ HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
 		points[3] = { +1, +1 };
 		break;
 	}
+
+	// TODO
+	//if (bFlip) {
+	//}
 
 	VERTEX Vertices[4] = {
 		// Vertices for drawing whole texture
@@ -218,7 +224,7 @@ HRESULT CDX11VideoProcessor::AlphaBltSub(ID3D11ShaderResourceView* pShaderResour
 		UINT Stride = sizeof(VERTEX);
 		UINT Offset = 0;
 		ID3D11Buffer* pVertexBuffer = nullptr;
-		hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, m_d3dpp.BackBufferWidth, m_d3dpp.BackBufferHeight, srcRect, 0);
+		hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, m_d3dpp.BackBufferWidth, m_d3dpp.BackBufferHeight, srcRect, 0, false);
 
 		if (S_OK == hr) {
 			// Set resources
@@ -245,7 +251,11 @@ HRESULT CDX11VideoProcessor::AlphaBltSub(ID3D11ShaderResourceView* pShaderResour
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::TextureCopyRect(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& destRect, ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer, const int iRotation)
+HRESULT CDX11VideoProcessor::TextureCopyRect(
+	const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
+	const CRect& srcRect, const CRect& destRect,
+	ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer,
+	const int iRotation, const bool bFlip)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
 	CComPtr<ID3D11Buffer> pVertexBuffer;
@@ -256,7 +266,7 @@ HRESULT CDX11VideoProcessor::TextureCopyRect(const Tex2D_t& Tex, ID3D11Texture2D
 		return hr;
 	}
 
-	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, iRotation);
+	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, iRotation, bFlip);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -274,7 +284,11 @@ HRESULT CDX11VideoProcessor::TextureCopyRect(const Tex2D_t& Tex, ID3D11Texture2D
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::TextureResizeShader(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, ID3D11PixelShader* pPixelShader, const int iRotation)
+HRESULT CDX11VideoProcessor::TextureResizeShader(
+	const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
+	const CRect& srcRect, const CRect& dstRect,
+	ID3D11PixelShader* pPixelShader,
+	const int iRotation, const bool bFlip)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
 	CComPtr<ID3D11Buffer> pVertexBuffer;
@@ -286,7 +300,7 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(const Tex2D_t& Tex, ID3D11Textu
 		return hr;
 	}
 
-	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, iRotation);
+	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, iRotation, bFlip);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -781,7 +795,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	bdesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBlendState(&bdesc, &m_pAlphaBlendStateInv));
 
-	EXECUTE_ASSERT(S_OK == CreateVertexBuffer(m_pDevice, &m_pFullFrameVertexBuffer, 1, 1, CRect(0, 0, 1, 1), 0));
+	EXECUTE_ASSERT(S_OK == CreateVertexBuffer(m_pDevice, &m_pFullFrameVertexBuffer, 1, 1, CRect(0, 0, 1, 1), 0, false));
 
 	LPVOID data;
 	DWORD size;
@@ -1870,22 +1884,22 @@ HRESULT CDX11VideoProcessor::ResizeShaderPass(const Tex2D_t& Tex, ID3D11Texture2
 		CRect resizeRect(dstRect.left, 0, dstRect.right, texHeight);
 
 		// First resize pass
-		hr = TextureResizeShader(Tex, m_TexResize.pTexture, srcRect, resizeRect, resizerX, m_iRotation);
+		hr = TextureResizeShader(Tex, m_TexResize.pTexture, srcRect, resizeRect, resizerX, m_iRotation, m_bFlip);
 		// Second resize pass
-		hr = TextureResizeShader(m_TexResize, pRenderTarget, resizeRect, dstRect, resizerY, 0);
+		hr = TextureResizeShader(m_TexResize, pRenderTarget, resizeRect, dstRect, resizerY, 0, false);
 	}
 	else {
 		if (resizerX) {
 			// one pass resize for width
-			hr = TextureResizeShader(Tex, pRenderTarget, srcRect, dstRect, resizerX, m_iRotation);
+			hr = TextureResizeShader(Tex, pRenderTarget, srcRect, dstRect, resizerX, m_iRotation, m_bFlip);
 		}
 		else if (resizerY) {
 			// one pass resize for height
-			hr = TextureResizeShader(Tex, pRenderTarget, srcRect, dstRect, resizerY, m_iRotation);
+			hr = TextureResizeShader(Tex, pRenderTarget, srcRect, dstRect, resizerY, m_iRotation, m_bFlip);
 		}
 		else {
 			// no resize
-			hr = TextureCopyRect(Tex, pRenderTarget, srcRect, dstRect, m_pPS_Simple, nullptr, m_iRotation);
+			hr = TextureCopyRect(Tex, pRenderTarget, srcRect, dstRect, m_pPS_Simple, nullptr, m_iRotation, m_bFlip);
 		}
 	}
 
@@ -1906,7 +1920,7 @@ HRESULT CDX11VideoProcessor::FinalPass(const Tex2D_t& Tex, ID3D11Texture2D* pRen
 		return hr;
 	}
 
-	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, 0);
+	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, 0, false);
 	if (FAILED(hr)) {
 		DLog(L"FinalPass() : Create vertex buffer failed with error {}", HR2Str(hr));
 		return hr;
@@ -1991,7 +2005,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 			if (m_pPSCorrection) {
 				pInputTexture = Tex;
 				Tex = m_TexsPostScale.GetNextTex();
-				hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, nullptr, 0);
+				hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, nullptr, 0, false);
 			}
 
 			if (m_pPostScaleShaders.size()) {
@@ -2018,7 +2032,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 					pInputTexture = Tex;
 					Tex = m_TexsPostScale.GetNextTex();
 					pPixelShader = m_pPostScaleShaders[idx].shader;
-					hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, m_pPostScaleConstants, 0);
+					hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, m_pPostScaleConstants, 0, false);
 				}
 				pPixelShader = m_pPostScaleShaders.back().shader;
 				pConstantBuffer = m_pPostScaleConstants;
@@ -2029,13 +2043,13 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 			if (m_pPSCorrection || m_pPostScaleShaders.size()) {
 				pInputTexture = Tex;
 				Tex = m_TexsPostScale.GetNextTex();
-				hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, nullptr, 0);
+				hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, nullptr, 0, false);
 			}
 
 			hr = FinalPass(*Tex, pRenderTarget, rect, rect);
 		}
 		else {
-			hr = TextureCopyRect(*Tex, pRenderTarget, rect, rect, pPixelShader, pConstantBuffer, 0);
+			hr = TextureCopyRect(*Tex, pRenderTarget, rect, rect, pPixelShader, pConstantBuffer, 0, false);
 		}
 	}
 	else {
@@ -2691,7 +2705,7 @@ STDMETHODIMP CDX11VideoProcessor::UpdateAlphaBitmapParameters(const MFVideoAlpha
 			m_pAlphaBitmapVertex.Release();
 		}
 		if (!m_pAlphaBitmapVertex) {
-			HRESULT hr = CreateVertexBuffer(m_pDevice, &m_pAlphaBitmapVertex, m_TexAlphaBitmap.desc.Width, m_TexAlphaBitmap.desc.Height, m_AlphaBitmapRectSrc, 0);
+			HRESULT hr = CreateVertexBuffer(m_pDevice, &m_pAlphaBitmapVertex, m_TexAlphaBitmap.desc.Width, m_TexAlphaBitmap.desc.Height, m_AlphaBitmapRectSrc, 0, false);
 			if (FAILED(hr)) {
 				m_bAlphaBitmapEnable = false;
 				return hr;

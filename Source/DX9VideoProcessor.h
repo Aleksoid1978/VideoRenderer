@@ -171,8 +171,10 @@ private:
 	HRESULT Process(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
 
 	HRESULT TextureCopy(IDirect3DTexture9* pTexture);
-	HRESULT TextureCopyRect(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& dstRect, D3DTEXTUREFILTERTYPE filter, const int iRotation);
-	HRESULT TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& dstRect, IDirect3DPixelShader9* pShader, const int iRotation);
+	HRESULT TextureCopyRect(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& dstRect,
+		D3DTEXTUREFILTERTYPE filter, const int iRotation, const bool bFlip);
+	HRESULT TextureResizeShader(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& dstRect,
+		IDirect3DPixelShader9* pShader, const int iRotation, const bool bFlip);
 
 	void UpdateStatsStatic();
 	void UpdateStatsStatic3();
