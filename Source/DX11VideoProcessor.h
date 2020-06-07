@@ -182,6 +182,7 @@ public:
 	void SetSwapEffect(int value) { m_iSwapEffect = value; }
 
 	void SetRotation(int value);
+	void SetFlip(bool value) { m_bFlip = value; }
 
 	void Flush();
 

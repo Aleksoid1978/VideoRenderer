@@ -68,7 +68,8 @@ protected:
 	CRect m_windowRect;
 	CRect m_renderRect;
 
-	int m_iRotation = 0;
+	int  m_iRotation  = 0;
+	bool m_bFlip      = false;
 	bool m_bFinalPass = false;
 
 	DXVA2_ValueRange m_DXVA2ProcAmpRanges[4] = {};
@@ -126,6 +127,7 @@ public:
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
 
 	int GetRotation() { return m_iRotation; }
+	int GetFlip() { return m_bFlip; }
 
 	// Settings
 	void SetTexFormat(int value);
