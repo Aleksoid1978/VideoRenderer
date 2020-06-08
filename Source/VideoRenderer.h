@@ -270,7 +270,7 @@ public:
 
 	LRESULT OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-	void SwitchFullScreen();
+	void SwitchFullScreen(const bool bCheck);
 
 private:
 	HRESULT Redraw();

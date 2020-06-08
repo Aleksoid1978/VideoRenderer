@@ -872,7 +872,7 @@ STDMETHODIMP CMpcVideoRenderer::GetPreferredAspectRatio(long *plAspectX, long *p
 static VOID CALLBACK TimerCallbackFunc(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
 {
 	if (auto pRenderer = (CMpcVideoRenderer*)lpParameter) {
-		pRenderer->SwitchFullScreen();
+		pRenderer->SwitchFullScreen(true);
 	}
 }
 
@@ -901,21 +901,29 @@ void CMpcVideoRenderer::EndFullScreenTimer()
 	}
 }
 
-void CMpcVideoRenderer::SwitchFullScreen()
+void CMpcVideoRenderer::SwitchFullScreen(const bool bCheck)
 {
-	const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
-	MONITORINFO mi = { mi.cbSize = sizeof(mi) };
-	::GetMonitorInfoW(hMon, &mi);
-	CRect rcMonitor(mi.rcMonitor);
-
-	if (!m_bIsFullscreen && m_windowRect.Width() == rcMonitor.Width() && m_windowRect.Height() == rcMonitor.Height()) {
-		DLog(L"CMpcVideoRenderer::SwitchFullScreen() : Switch to fullscreen");
-		m_bIsFullscreen = true;
-
-		if (m_hWnd) {
-			Init(false);
-			Redraw();
+	if (bCheck) {
+		if (m_bIsFullscreen) {
+			return;
 		}
+
+		const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+		MONITORINFO mi = { mi.cbSize = sizeof(mi) };
+		::GetMonitorInfoW(hMon, &mi);
+		const CRect rcMonitor(mi.rcMonitor);
+
+		if (m_windowRect.Width() != rcMonitor.Width() || m_windowRect.Height() != rcMonitor.Height()) {
+			return;
+		}
+	}
+
+	DLog(L"CMpcVideoRenderer::SwitchFullScreen() : Switch to fullscreen");
+	m_bIsFullscreen = true;
+
+	if (m_hWnd) {
+		Init(false);
+		Redraw();
 	}
 }
 
@@ -1059,7 +1067,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 		const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 		MONITORINFO mi = { mi.cbSize = sizeof(mi) };
 		::GetMonitorInfoW(hMon, &mi);
-		CRect rcMonitor(mi.rcMonitor);
+		const CRect rcMonitor(mi.rcMonitor);
 
 		EndFullScreenTimer();
 
@@ -1067,7 +1075,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 			if (m_Sets.bExclusiveDelay) {
 				StartFullScreenTimer();
 			} else {
-				SwitchFullScreen();
+				SwitchFullScreen(false);
 			}
 		} else if (m_bIsFullscreen && (m_windowRect.Width() != rcMonitor.Width() || m_windowRect.Height() != rcMonitor.Height())) {
 			DLog(L"CMpcVideoRenderer::SetWindowPosition() : Switch from fullscreen");
