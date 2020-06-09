@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2019 see Authors.txt
+ * (C) 2018-2020 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -22,6 +22,8 @@
 #include <InitGuid.h>
 #include "VideoRenderer.h"
 #include "PropPage.h"
+
+#include "../external/minhook/include/MinHook.h"
 
 template <class T>
 static CUnknown* WINAPI CreateInstance(LPUNKNOWN lpunk, HRESULT* phr)
@@ -64,5 +66,13 @@ extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
 
 BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD dwReason, LPVOID pReserved)
 {
+	switch (dwReason) {
+		case DLL_PROCESS_ATTACH:
+			MH_Initialize();
+			break;
+		case DLL_PROCESS_DETACH:
+			MH_Uninitialize();
+			break;
+	}
 	return DllEntryPoint(hDllHandle, dwReason, pReserved);
 }

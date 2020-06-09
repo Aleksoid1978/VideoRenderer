@@ -58,7 +58,7 @@ typedef BOOL (WINAPI* pSystemParametersInfoA)(
 	_Pre_maybenull_ _Post_valid_ PVOID pvParam,
 	_In_ UINT fWinIni);
 
-pSystemParametersInfoA pOrigSystemParametersInfoA = SystemParametersInfoA;
+pSystemParametersInfoA pOrigSystemParametersInfoA = nullptr;
 BOOL WINAPI pNewSystemParametersInfoA(
 	_In_ UINT uiAction,
 	_In_ UINT uiParam,
@@ -75,7 +75,7 @@ BOOL WINAPI pNewSystemParametersInfoA(
 template <typename T>
 inline bool HookFunc(T** ppSystemFunction, PVOID pHookFunction)
 {
-	return (MH_CreateHook(*ppSystemFunction, pHookFunction, reinterpret_cast<LPVOID*>(ppSystemFunction)) == MH_OK && MH_EnableHook(MH_ALL_HOOKS) == MH_OK);
+	return MH_CreateHook(*ppSystemFunction, pHookFunction, reinterpret_cast<LPVOID*>(ppSystemFunction)) == MH_OK;
 }
 
 //
@@ -87,6 +87,8 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	, m_DX9_VP(this)
 	, m_DX11_VP(this)
 {
+	DLog(L"CMpcVideoRenderer::CMpcVideoRenderer()");
+
 #ifdef _DEBUG
 	DbgSetModuleLevel(LOG_TRACE, DWORD_MAX);
 	DbgSetModuleLevel(LOG_ERROR, DWORD_MAX);
@@ -205,14 +207,14 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		m_bUsedD3D11 = false;
 	}
 
-	if (MH_Initialize() == MH_OK) {
-		auto ret = HookFunc(&pOrigSystemParametersInfoA, pNewSystemParametersInfoA);
-		if (ret) {
-			DLog(L"CMpcVideoRenderer::CMpcVideoRenderer() : hook for SystemParametersInfoA() set");
-		} else {
-			DLog(L"CMpcVideoRenderer::CMpcVideoRenderer() : hook for SystemParametersInfoA() fail");
-		}
+	pOrigSystemParametersInfoA = SystemParametersInfoA;
+	auto ret = HookFunc(&pOrigSystemParametersInfoA, pNewSystemParametersInfoA);
+	if (ret) {
+		DLog(L"CMpcVideoRenderer::CMpcVideoRenderer() : hook for SystemParametersInfoA() set");
+	} else {
+		DLog(L"CMpcVideoRenderer::CMpcVideoRenderer() : hook for SystemParametersInfoA() fail");
 	}
+	MH_EnableHook(MH_ALL_HOOKS);
 
 	m_evDX9Init.Reset();
 	m_evDX9InitHwnd.Reset();
@@ -232,7 +234,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 CMpcVideoRenderer::~CMpcVideoRenderer()
 {
-	DLog(L"~CMpcVideoRenderer()");
+	DLog(L"CMpcVideoRenderer::~CMpcVideoRenderer()");
 
 	EndFullScreenTimer();
 
@@ -247,7 +249,7 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 
 	UnregisterClassW(g_szClassName, g_hInst);
 
-	MH_Uninitialize();
+	MH_RemoveHook(SystemParametersInfoA);
 }
 
 void CMpcVideoRenderer::DX9Thread()
