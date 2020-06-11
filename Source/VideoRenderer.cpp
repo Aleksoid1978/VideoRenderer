@@ -27,8 +27,6 @@
 #include "../Include/Version.h"
 #include "VideoRenderer.h"
 
-#include "../external/minhook/include/MinHook.h"
-
 #define OPT_REGKEY_VIDEORENDERER L"Software\\MPC-BE Filters\\MPC Video Renderer"
 #define OPT_UseD3D11             L"UseD3D11"
 #define OPT_ShowStatistics       L"ShowStatistics"
@@ -49,34 +47,6 @@
 #define OPT_ExclusiveDelay       L"ExclusiveDelay"
 
 static const wchar_t g_szClassName[] = L"VRWindow";
-
-bool bInitVP = false;
-
-typedef BOOL (WINAPI* pSystemParametersInfoA)(
-	_In_ UINT uiAction,
-	_In_ UINT uiParam,
-	_Pre_maybenull_ _Post_valid_ PVOID pvParam,
-	_In_ UINT fWinIni);
-
-pSystemParametersInfoA pOrigSystemParametersInfoA = nullptr;
-BOOL WINAPI pNewSystemParametersInfoA(
-	_In_ UINT uiAction,
-	_In_ UINT uiParam,
-	_Pre_maybenull_ _Post_valid_ PVOID pvParam,
-	_In_ UINT fWinIni)
-{
-	if (bInitVP) {
-		DLog(L"Blocking call SystemParametersInfoA() function during initialization VP");
-		return FALSE;
-	}
-	return pOrigSystemParametersInfoA(uiAction, uiParam, pvParam, fWinIni);
-}
-
-template <typename T>
-inline bool HookFunc(T** ppSystemFunction, PVOID pHookFunction)
-{
-	return MH_CreateHook(*ppSystemFunction, pHookFunction, reinterpret_cast<LPVOID*>(ppSystemFunction)) == MH_OK;
-}
 
 //
 // CMpcVideoRenderer
@@ -207,15 +177,6 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		m_bUsedD3D11 = false;
 	}
 
-	pOrigSystemParametersInfoA = SystemParametersInfoA;
-	auto ret = HookFunc(&pOrigSystemParametersInfoA, pNewSystemParametersInfoA);
-	if (ret) {
-		DLog(L"CMpcVideoRenderer::CMpcVideoRenderer() : hook for SystemParametersInfoA() set");
-	} else {
-		DLog(L"CMpcVideoRenderer::CMpcVideoRenderer() : hook for SystemParametersInfoA() fail");
-	}
-	MH_EnableHook(MH_ALL_HOOKS);
-
 	m_evDX9Init.Reset();
 	m_evDX9InitHwnd.Reset();
 	m_evDX9Resize.Reset();
@@ -248,8 +209,6 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 	}
 
 	UnregisterClassW(g_szClassName, g_hInst);
-
-	MH_RemoveHook(SystemParametersInfoA);
 }
 
 void CMpcVideoRenderer::DX9Thread()
@@ -950,10 +909,6 @@ HRESULT CMpcVideoRenderer::Init(const bool bCreateWindow/* = false*/)
 
 	HRESULT hr = S_OK;
 
-	if (!m_bUsedD3D11) {
-		bInitVP = true;
-	}
-
 	if (bCreateWindow) {
 		if (m_hWndWindow) {
 			::SendMessageW(m_hWndWindow, WM_CLOSE, 0, 0);
@@ -1009,10 +964,6 @@ HRESULT CMpcVideoRenderer::Init(const bool bCreateWindow/* = false*/)
 		m_evDX9InitHwnd.Set();
 		WaitForSingleObject(m_evThreadFinishJob, INFINITE);
 		hr = m_hrThread;
-	}
-
-	if (!m_bUsedD3D11) {
-		bInitVP = false;
 	}
 
 	return hr;

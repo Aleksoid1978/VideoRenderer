@@ -30,6 +30,8 @@
 #include "DX9VideoProcessor.h"
 #include "Shaders.h"
 
+#include "../external/minhook/include/MinHook.h"
+
 static const ScalingShaderResId s_Upscaling9ResIDs[UPSCALE_COUNT] = {
 	{0,                             0,                             L"Nearest-neighbor"  },
 	{IDF_SHADER_INTERP_MITCHELL4_X, IDF_SHADER_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
@@ -205,6 +207,78 @@ static LRESULT CALLBACK ParentWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM
 	return CallWindowProcW(pfnOldProc, hWnd, Msg, wParam, lParam);
 }
 
+bool bInitVP = false;
+
+typedef BOOL(WINAPI* pSystemParametersInfoA)(
+	_In_ UINT uiAction,
+	_In_ UINT uiParam,
+	_Pre_maybenull_ _Post_valid_ PVOID pvParam,
+	_In_ UINT fWinIni);
+
+pSystemParametersInfoA pOrigSystemParametersInfoA = nullptr;
+static BOOL WINAPI pNewSystemParametersInfoA(
+	_In_ UINT uiAction,
+	_In_ UINT uiParam,
+	_Pre_maybenull_ _Post_valid_ PVOID pvParam,
+	_In_ UINT fWinIni)
+{
+	if (bInitVP) {
+		DLog(L"Blocking call SystemParametersInfoA() function during initialization VP");
+		return FALSE;
+	}
+	return pOrigSystemParametersInfoA(uiAction, uiParam, pvParam, fWinIni);
+}
+
+typedef LONG(WINAPI* pSetWindowLongA)(
+	_In_ HWND hWnd,
+	_In_ int nIndex,
+	_In_ LONG dwNewLong);
+
+pSetWindowLongA pOrigSetWindowLongA = nullptr;
+static LONG WINAPI pNewSetWindowLongA(
+	_In_ HWND hWnd,
+	_In_ int nIndex,
+	_In_ LONG dwNewLong)
+{
+	if (bInitVP) {
+		DLog(L"Blocking call SetWindowLongA() function during initialization VP");
+		return 0L;
+	}
+	return pOrigSetWindowLongA(hWnd, nIndex, dwNewLong);
+}
+
+typedef BOOL(WINAPI* pSetWindowPos)(
+	_In_ HWND hWnd,
+	_In_opt_ HWND hWndInsertAfter,
+	_In_ int X,
+	_In_ int Y,
+	_In_ int cx,
+	_In_ int cy,
+	_In_ UINT uFlags);
+
+pSetWindowPos pOrigSetWindowPos = nullptr;
+static BOOL WINAPI pNewSetWindowPos(
+	_In_ HWND hWnd,
+	_In_opt_ HWND hWndInsertAfter,
+	_In_ int X,
+	_In_ int Y,
+	_In_ int cx,
+	_In_ int cy,
+	_In_ UINT uFlags)
+{
+	if (bInitVP) {
+		DLog(L"call SetWindowPos() function during initialization VP");
+		uFlags |= SWP_ASYNCWINDOWPOS;
+	}
+	return pOrigSetWindowPos(hWnd, hWndInsertAfter, X, Y, cx, cy, uFlags);
+}
+
+template <typename T>
+inline bool HookFunc(T** ppSystemFunction, PVOID pHookFunction)
+{
+	return MH_CreateHook(*ppSystemFunction, pHookFunction, reinterpret_cast<LPVOID*>(ppSystemFunction)) == MH_OK;
+}
+
 // CDX9VideoProcessor
 
 CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
@@ -226,6 +300,10 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
 	// set default ProcAmp ranges and values
 	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
 	SetDefaultDXVA2ProcAmpValues(m_DXVA2ProcAmpValues);
+
+	pOrigSystemParametersInfoA = nullptr;
+	pOrigSetWindowLongA = nullptr;
+	pOrigSetWindowPos = nullptr;
 }
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
@@ -238,6 +316,10 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	m_pD3DEx.Release();
 
 	RemoveWndProc(m_hWndParent);
+
+	MH_RemoveHook(SystemParametersInfoA);
+	MH_RemoveHook(SetWindowLongA);
+	MH_RemoveHook(SetWindowPos);
 }
 
 HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
@@ -245,6 +327,24 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 	DLog(L"CDX9VideoProcessor::Init()");
 
 	CheckPointer(m_pD3DEx, E_FAIL);
+
+	if (!pOrigSystemParametersInfoA) {
+		pOrigSystemParametersInfoA = SystemParametersInfoA;
+		auto ret = HookFunc(&pOrigSystemParametersInfoA, pNewSystemParametersInfoA);
+		DLogIf(!ret, L"CMpcVideoRenderer::CMpcVideoRenderer() : hook for SystemParametersInfoA() fail");
+
+		pOrigSetWindowLongA = SetWindowLongA;
+		ret = HookFunc(&pOrigSetWindowLongA, pNewSetWindowLongA);
+		DLogIf(!ret, L"CMpcVideoRenderer::CMpcVideoRenderer() : hook for SetWindowLongA() fail");
+
+		pOrigSetWindowPos = SetWindowPos;
+		ret = HookFunc(&pOrigSetWindowPos, pNewSetWindowPos);
+		DLogIf(!ret, L"CMpcVideoRenderer::CMpcVideoRenderer() : hook for SetWindowPos() fail");
+
+		MH_EnableHook(MH_ALL_HOOKS);
+	}
+
+	bInitVP = true;
 
 	m_hWnd = hwnd;
 	m_hWndParent = m_hWnd;
@@ -288,8 +388,6 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 
 	ZeroMemory(&m_d3dpp, sizeof(m_d3dpp));
 	if (m_pFilter->m_bIsFullscreen) {
-		bTryToReset = false;
-
 		auto pfnOldProc = (WNDPROC)GetWindowLongPtrW(m_hWndParent, GWLP_WNDPROC);
 		SetWindowLongPtrW(m_hWndParent, GWLP_WNDPROC, (LONG_PTR)ParentWndProc);
 		SetPropW(m_hWndParent, g_pszOldWndProc, (HANDLE)pfnOldProc);
@@ -309,12 +407,19 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 		m_d3dpp.BackBufferFormat = m_DisplayMode.Format = b10BitOutput ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
 		DLog(L"CDX9VideoProcessor::Init() : fullscreen - {}", D3DFormatToString(m_d3dpp.BackBufferFormat));
 
-		ReleaseDevice();
-		hr = m_pD3DEx->CreateDeviceEx(
-			m_nCurrentAdapter, D3DDEVTYPE_HAL, m_hWndParent,
-			D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS | D3DCREATE_NOWINDOWCHANGES,
-			&m_d3dpp, &m_DisplayMode, &m_pD3DDevEx);
-		DLog(L"    => CreateDeviceEx(fullscreen) : {}", HR2Str(hr));
+		if (bTryToReset) {
+			bTryToReset = SUCCEEDED(hr = m_pD3DDevEx->ResetEx(&m_d3dpp, &m_DisplayMode));
+			DLog(L"    => ResetEx(fullscreen) : {}", HR2Str(hr));
+		}
+
+		if (!bTryToReset) {
+			ReleaseDevice();
+			hr = m_pD3DEx->CreateDeviceEx(
+				m_nCurrentAdapter, D3DDEVTYPE_HAL, m_hWndParent,
+				D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS | D3DCREATE_NOWINDOWCHANGES,
+				&m_d3dpp, &m_DisplayMode, &m_pD3DDevEx);
+			DLog(L"    => CreateDeviceEx(fullscreen) : {}", HR2Str(hr));
+		}
 	} else {
 		RemoveWndProc(m_hWndParent);
 
@@ -349,6 +454,8 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 		}
 	}
 
+	bInitVP = false;
+
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -367,79 +474,83 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 
 	if (S_OK == hr && !bTryToReset) {
 		hr = m_pD3DDeviceManager->ResetDevice(m_pD3DDevEx, m_nResetTocken);
-	}
-
-	if (pChangeDevice) {
-		*pChangeDevice = !bTryToReset;
-	}
-
-	hr = m_DXVA2VP.InitVideoService(m_pD3DDevEx, m_VendorId);
-	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::Init() : m_DXVA2VP.InitVideoService() failed with error {}", HR2Str(hr));
-		return FALSE;
-	}
-
-	if (m_pFilter->m_inputMT.IsValid()) {
-		if (!InitMediaType(&m_pFilter->m_inputMT)) { // restore DXVA2VideoProcessor after m_DXVA2VP.InitVideoService()
-			ReleaseDevice();
+		if (FAILED(hr)) {
+			DLog(L"CDX9VideoProcessor::Init() : ResetDevice() failed with error {}", HR2Str(hr));
 			return E_FAIL;
 		}
-	}
 
-	if (m_pFilter->m_pSubCallBack) {
-		m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
-	}
+		hr = m_DXVA2VP.InitVideoService(m_pD3DDevEx, m_VendorId);
+		if (FAILED(hr)) {
+			DLog(L"CDX9VideoProcessor::Init() : m_DXVA2VP.InitVideoService() failed with error {}", HR2Str(hr));
+			return E_FAIL;
+		}
 
-	HRESULT hr2 = m_TexStats.Create(m_pD3DDevEx, D3DFMT_A8R8G8B8, m_StatsW, m_StatsH, D3DUSAGE_RENDERTARGET);
-	if (S_OK == hr2) {
-		hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
-	}
-	if (S_OK == hr2) {
-		hr2 = m_Rect3D.InitDeviceObjects(m_pD3DDevEx);
-
-		hr2 = m_Underlay.InitDeviceObjects(m_pD3DDevEx);
-		hr2 = m_Lines.InitDeviceObjects(m_pD3DDevEx);
-		hr2 = m_SyncLine.InitDeviceObjects(m_pD3DDevEx);
-	}
-
-	HRESULT hr3 = m_TexDither.Create(m_pD3DDevEx, D3DFMT_A16B16G16R16F, dither_size, dither_size, D3DUSAGE_DYNAMIC);
-	if (S_OK == hr3) {
-		LPVOID data;
-		DWORD size;
-		hr3 = GetDataFromResource(data, size, IDF_DITHER_32X32_FLOAT16);
-		if (S_OK == hr3) {
-			D3DLOCKED_RECT lockedRect;
-			hr3 = m_TexDither.pTexture->LockRect(0, &lockedRect, nullptr, D3DLOCK_DISCARD);
-			if (S_OK == hr3) {
-				uint16_t* src = (uint16_t*)data;
-				BYTE* dst = (BYTE*)lockedRect.pBits;
-				for (UINT y = 0; y < dither_size; y++) {
-					uint16_t* pUInt16 = reinterpret_cast<uint16_t*>(dst);
-					for (UINT x = 0; x < dither_size; x++) {
-						*pUInt16++ = src[x];
-						*pUInt16++ = src[x];
-						*pUInt16++ = src[x];
-						*pUInt16++ = src[x];
-					}
-					src += dither_size;
-					dst += lockedRect.Pitch;
-				}
-				hr3 = m_TexDither.pTexture->UnlockRect(0);
+		if (m_pFilter->m_inputMT.IsValid()) {
+			if (!InitMediaType(&m_pFilter->m_inputMT)) { // restore DXVA2VideoProcessor after m_DXVA2VP.InitVideoService()
+				ReleaseDevice();
+				return E_FAIL;
 			}
 		}
-		if (S_OK == hr3) {
-			m_pPSFinalPass.Release();
-			hr3 = CreatePShaderFromResource(&m_pPSFinalPass, IDF_SHADER_FINAL_PASS);
+
+		if (m_pFilter->m_pSubCallBack) {
+			m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
 		}
 
-		if (FAILED(hr3)) {
-			m_TexDither.Release();
+		HRESULT hr2 = m_TexStats.Create(m_pD3DDevEx, D3DFMT_A8R8G8B8, m_StatsW, m_StatsH, D3DUSAGE_RENDERTARGET);
+		if (S_OK == hr2) {
+			hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
+		}
+		if (S_OK == hr2) {
+			hr2 = m_Rect3D.InitDeviceObjects(m_pD3DDevEx);
+
+			hr2 = m_Underlay.InitDeviceObjects(m_pD3DDevEx);
+			hr2 = m_Lines.InitDeviceObjects(m_pD3DDevEx);
+			hr2 = m_SyncLine.InitDeviceObjects(m_pD3DDevEx);
+		}
+
+		HRESULT hr3 = m_TexDither.Create(m_pD3DDevEx, D3DFMT_A16B16G16R16F, dither_size, dither_size, D3DUSAGE_DYNAMIC);
+		if (S_OK == hr3) {
+			LPVOID data;
+			DWORD size;
+			hr3 = GetDataFromResource(data, size, IDF_DITHER_32X32_FLOAT16);
+			if (S_OK == hr3) {
+				D3DLOCKED_RECT lockedRect;
+				hr3 = m_TexDither.pTexture->LockRect(0, &lockedRect, nullptr, D3DLOCK_DISCARD);
+				if (S_OK == hr3) {
+					uint16_t* src = (uint16_t*)data;
+					BYTE* dst = (BYTE*)lockedRect.pBits;
+					for (UINT y = 0; y < dither_size; y++) {
+						uint16_t* pUInt16 = reinterpret_cast<uint16_t*>(dst);
+						for (UINT x = 0; x < dither_size; x++) {
+							*pUInt16++ = src[x];
+							*pUInt16++ = src[x];
+							*pUInt16++ = src[x];
+							*pUInt16++ = src[x];
+						}
+						src += dither_size;
+						dst += lockedRect.Pitch;
+					}
+					hr3 = m_TexDither.pTexture->UnlockRect(0);
+				}
+			}
+			if (S_OK == hr3) {
+				m_pPSFinalPass.Release();
+				hr3 = CreatePShaderFromResource(&m_pPSFinalPass, IDF_SHADER_FINAL_PASS);
+			}
+
+			if (FAILED(hr3)) {
+				m_TexDither.Release();
+			}
 		}
 	}
 
 	SetGraphSize();
 	UpdateDiplayInfo();
 	UpdateStatsStatic();
+
+	if (pChangeDevice) {
+		*pChangeDevice = !bTryToReset;
+	}
 
 	return hr;
 }
