@@ -2245,11 +2245,7 @@ HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 
 	std::wstring dmstr = DisplayConfigToString(m_DisplayConfig);
 	if (dmstr.size() == 0) {
-		dmstr = fmt::format(L"{}x{} {}", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate);
-		if (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
-			dmstr += 'i';
-		}
-		dmstr.append(L" Hz");
+		dmstr = D3DDisplayModeToString(m_DisplayMode);
 	}
 	if (m_bPrimaryDisplay) {
 		dmstr.append(L" [Primary]");
@@ -2383,10 +2379,24 @@ HRESULT CDX11VideoProcessor::AddPostScaleShader(const std::wstring& name, const 
 void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
+		std::wstring dmstr = DisplayConfigToString(m_DisplayConfig);
+		if (dmstr.size() == 0) {
+			dmstr = D3DDisplayModeToString(m_DisplayMode);
+		}
+		if (m_bPrimaryDisplay) {
+			dmstr.append(L" [Primary]");
+		}
+		if (m_pFilter->m_bIsFullscreen) {
+			dmstr.append(L" fullscreen");
+		} else {
+			dmstr.append(L" windowed");
+		}
+
 		m_strStatsStatic1 = fmt::format(
-			L"MPC VR {}, Direct3D 11"
-			L"\nGraph. Adapter: {}",
-			_CRT_WIDE(MPCVR_VERSION_STR), m_strAdapterDescription);
+			L"MPC VR {}, Direct3D 11\n"
+			L"{}\n"
+			L"Graph. Adapter: {}",
+			_CRT_WIDE(MPCVR_VERSION_STR), dmstr, m_strAdapterDescription);
 
 		m_strStatsStatic2 = fmt::format(L"{} {}x{}", m_srcParams.str, m_srcRectWidth, m_srcRectHeight);
 		if (m_srcParams.CSType == CS_YUV) {

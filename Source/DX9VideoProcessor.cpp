@@ -1534,11 +1534,7 @@ HRESULT CDX9VideoProcessor::GetVPInfo(std::wstring& str)
 
 	std::wstring dmstr = DisplayConfigToString(m_DisplayConfig);
 	if (dmstr.size() == 0) {
-		dmstr = fmt::format(L"{}x{} {}", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate);
-		if (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
-			dmstr += 'i';
-		}
-		dmstr.append(L" Hz");
+		dmstr = D3DDisplayModeToString(m_DisplayMode);
 	}
 	if (m_bPrimaryDisplay) {
 		dmstr.append(L" [Primary]");
@@ -2266,11 +2262,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 	if (m_srcParams.cformat) {
 		std::wstring dmstr = DisplayConfigToString(m_DisplayConfig);
 		if (dmstr.size() == 0) {
-			dmstr = fmt::format(L"{}x{} {}", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate);
-			if (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
-				dmstr += 'i';
-			}
-			dmstr.append(L" Hz");
+			dmstr = D3DDisplayModeToString(m_DisplayMode);
 		}
 		if (m_bPrimaryDisplay) {
 			dmstr.append(L" [Primary]");

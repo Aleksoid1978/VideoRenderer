@@ -34,3 +34,5 @@ bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig
 bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs);
 
 std::wstring DisplayConfigToString(DisplayConfig_t& dc);
+
+std::wstring D3DDisplayModeToString(D3DDISPLAYMODEEX& dm);

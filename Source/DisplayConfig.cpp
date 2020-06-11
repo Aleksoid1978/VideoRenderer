@@ -257,3 +257,13 @@ std::wstring DisplayConfigToString(DisplayConfig_t& dc)
 	}
 	return str;
 }
+
+std::wstring D3DDisplayModeToString(D3DDISPLAYMODEEX& dm)
+{
+	std::wstring str = fmt::format(L"{}x{} {}", dm.Width, dm.Height, dm.RefreshRate);
+	if (dm.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
+		str += 'i';
+	}
+	str.append(L" Hz");
+	return str;
+}
