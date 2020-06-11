@@ -93,6 +93,69 @@ static bool is_valid_refresh_rate(const DISPLAYCONFIG_RATIONAL& rr)
 	return rr.Denominator != 0 && rr.Numerator / rr.Denominator > 1;
 }
 
+bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig)
+{
+	UINT32 num_paths;
+	UINT32 num_modes;
+	std::vector<DISPLAYCONFIG_PATH_INFO> paths;
+	std::vector<DISPLAYCONFIG_MODE_INFO> modes;
+	LONG res;
+
+	// The display configuration could change between the call to
+	// GetDisplayConfigBufferSizes and the call to QueryDisplayConfig, so call
+	// them in a loop until the correct buffer size is chosen
+	do {
+		res = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &num_paths, &num_modes);
+		if (res == ERROR_SUCCESS) {
+			paths.resize(num_paths);
+			modes.resize(num_modes);
+			res = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &num_paths, paths.data(), &num_modes, modes.data(), nullptr);
+		}
+	} while (res == ERROR_INSUFFICIENT_BUFFER);
+
+	if (res == ERROR_SUCCESS) {
+		// num_paths and num_modes could decrease in a loop
+		paths.resize(num_paths);
+		modes.resize(num_modes);
+
+		for (const auto& path : paths) {
+			// Send a GET_SOURCE_NAME request
+			DISPLAYCONFIG_SOURCE_DEVICE_NAME source = {
+				{DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME, sizeof(source), path.sourceInfo.adapterId, path.sourceInfo.id}, {},
+			};
+			if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS) {
+				if (wcscmp(displayName, source.viewGdiDeviceName) == 0) {
+					if (path.targetInfo.modeInfoIdx != DISPLAYCONFIG_PATH_MODE_IDX_INVALID) {
+						DISPLAYCONFIG_MODE_INFO* mode = &modes[path.targetInfo.modeInfoIdx];
+						if (mode->infoType == DISPLAYCONFIG_MODE_INFO_TYPE_TARGET) {
+							const auto& tvsi = mode->targetMode.targetVideoSignalInfo;
+							displayConfig.width = tvsi.activeSize.cx;
+							displayConfig.height = tvsi.activeSize.cy;
+							displayConfig.refreshRate = tvsi.vSyncFreq;
+							displayConfig.scanLineOrdering = tvsi.scanLineOrdering;
+						}
+					}
+
+					if (!is_valid_refresh_rate(displayConfig.refreshRate)) {
+						displayConfig.refreshRate = path.targetInfo.refreshRate;
+						displayConfig.scanLineOrdering = path.targetInfo.scanLineOrdering;
+						if (!is_valid_refresh_rate(displayConfig.refreshRate)) {
+							displayConfig.refreshRate = { 0, 1 };
+						}
+					}
+
+					displayConfig.outputTechnology = path.targetInfo.outputTechnology;
+					memcpy(displayConfig.displayName, source.viewGdiDeviceName, sizeof(displayConfig.displayName));
+
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
 bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs)
 {
 	UINT32 num_paths;
@@ -158,4 +221,39 @@ bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs)
 	}
 
 	return displayConfigs.size() > 0;
+}
+
+std::wstring DisplayConfigToString(DisplayConfig_t& dc)
+{
+	std::wstring str;
+	if (dc.width && dc.height && dc.refreshRate.Numerator) {
+		double freq = (double)dc.refreshRate.Numerator / (double)dc.refreshRate.Denominator;
+		str = fmt::format(L"{} {}x{} {:.3f}", dc.displayName, dc.width, dc.height, freq);
+		if (dc.scanLineOrdering >= DISPLAYCONFIG_SCANLINE_ORDERING_INTERLACED) {
+			str += 'i';
+		}
+		str.append(L" Hz");
+		/*
+		const wchar_t* output = nullptr;
+		switch (dc.outputTechnology) {
+		case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HD15:
+			output = L"VGA";
+			break;
+		case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DVI:
+			output = L"DVI";
+			break;
+		case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI:
+			output = L"HDMI";
+			break;
+		case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EXTERNAL:
+		case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EMBEDDED:
+			output = L"DisplayPort";
+			break;
+		}
+		if (output) {
+			str += fmt::format(L" {}", output);
+		}
+		*/
+	}
+	return str;
 }

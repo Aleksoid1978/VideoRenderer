@@ -2243,19 +2243,19 @@ HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 		str.append(L"Shaders");
 	}
 
-	str += fmt::format(L"\nDisplay Mode    : %u x %u", m_DisplayMode.Width, m_DisplayMode.Height);
-	if (m_dRefreshRate > 0.0) {
-		str += fmt::format(L", {:.3f}", m_dRefreshRate);
-	} else {
-		str += fmt::format(L", {}", m_DisplayMode.RefreshRate);
+	std::wstring dmstr = DisplayConfigToString(m_DisplayConfig);
+	if (dmstr.size() == 0) {
+		dmstr = fmt::format(L"{}x{} {}", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate);
+		if (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
+			dmstr += 'i';
+		}
+		dmstr.append(L" Hz");
 	}
-	if (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
-		str += 'i';
-	}
-	str.append(L" Hz");
 	if (m_bPrimaryDisplay) {
-		str.append(L" [Primary]");
+		dmstr.append(L" [Primary]");
 	}
+
+	str += fmt::format(L"\nDisplay         : {}",dmstr);
 
 	if (m_pPostScaleShaders.size()) {
 		str.append(L"\n\nPost scale pixel shaders:");

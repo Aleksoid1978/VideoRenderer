@@ -29,4 +29,8 @@ struct DisplayConfig_t {
 
 double GetRefreshRate(const wchar_t* displayName);
 
+bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig);
+
 bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs);
+
+std::wstring DisplayConfigToString(DisplayConfig_t& dc);

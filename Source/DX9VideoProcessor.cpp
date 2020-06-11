@@ -1532,19 +1532,19 @@ HRESULT CDX9VideoProcessor::GetVPInfo(std::wstring& str)
 		str.append(L"Shaders");
 	}
 
-	str += fmt::format(L"\nDisplay Mode    : {} x {}", m_DisplayMode.Width, m_DisplayMode.Height);
-	if (m_dRefreshRate > 0.0) {
-		str += fmt::format(L", {:.3f}", m_dRefreshRate);
-	} else {
-		str += fmt::format(L", {}", m_DisplayMode.RefreshRate);
+	std::wstring dmstr = DisplayConfigToString(m_DisplayConfig);
+	if (dmstr.size() == 0) {
+		dmstr = fmt::format(L"{}x{} {}", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate);
+		if (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
+			dmstr += 'i';
+		}
+		dmstr.append(L" Hz");
 	}
-	if (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
-		str += 'i';
-	}
-	str.append(L" Hz");
 	if (m_bPrimaryDisplay) {
-		str.append(L" [Primary]");
+		dmstr.append(L" [Primary]");
 	}
+
+	str += fmt::format(L"\nDisplay         : {}",dmstr);
 
 	if (m_pPostScaleShaders.size()) {
 		str.append(L"\n\nPost scale pixel shaders:");
@@ -2264,16 +2264,28 @@ HRESULT CDX9VideoProcessor::TextureResizeShader(
 void CDX9VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
-		std::wstring fullscreenInfo;
+		std::wstring dmstr = DisplayConfigToString(m_DisplayConfig);
+		if (dmstr.size() == 0) {
+			dmstr = fmt::format(L"{}x{} {}", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate);
+			if (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
+				dmstr += 'i';
+			}
+			dmstr.append(L" Hz");
+		}
+		if (m_bPrimaryDisplay) {
+			dmstr.append(L" [Primary]");
+		}
 		if (m_pFilter->m_bIsFullscreen) {
-			fullscreenInfo = fmt::format(L", FullScreen({}x{}@{}{})", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate, (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) ? 'i' : 'p');
+			dmstr.append(L" fullscreen");
+		} else {
+			dmstr.append(L" windowed");
 		}
 
 		m_strStatsStatic1 = fmt::format(
-			L"MPC VR {}, Direct3D 9Ex"
-			L"{}"
-			L"\nGraph. Adapter: {}",
-			_CRT_WIDE(MPCVR_VERSION_STR), fullscreenInfo, m_strAdapterDescription);
+			L"MPC VR {}, Direct3D 9Ex\n"
+			L"{}\n"
+			L"Graph. Adapter: {}",
+			_CRT_WIDE(MPCVR_VERSION_STR), dmstr, m_strAdapterDescription);
 
 		m_strStatsStatic2 = fmt::format(L"{} {}x{}", m_srcParams.str, m_srcRectWidth, m_srcRectHeight);
 		if (m_srcParams.CSType == CS_YUV) {

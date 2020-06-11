@@ -21,7 +21,6 @@
 #include "stdafx.h"
 
 #include <Mferror.h>
-#include "DisplayConfig.h"
 #include "Helper.h"
 #include "VideoRenderer.h"
 
@@ -111,14 +110,15 @@ void CVideoProcessor::UpdateDiplayInfo()
 
 	MONITORINFOEXW mi = { sizeof(mi) };
 	GetMonitorInfoW(hMon, (MONITORINFO*)&mi);
-	m_dRefreshRate = GetRefreshRate(mi.szDevice);
+
+	bool ret = GetDisplayConfig(mi.szDevice, m_DisplayConfig);
 	if (hMon == hMonPrimary) {
 		m_bPrimaryDisplay = true;
-		m_dRefreshRatePrimary = m_dRefreshRate;
+		m_DisplayConfigPrimary = m_DisplayConfig;
 	} else {
 		m_bPrimaryDisplay = false;
 		GetMonitorInfoW(hMonPrimary, (MONITORINFO*)&mi);
-		m_dRefreshRatePrimary = GetRefreshRate(mi.szDevice);
+		ret = GetDisplayConfig(mi.szDevice, m_DisplayConfigPrimary);
 	}
 }
 

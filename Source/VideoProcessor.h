@@ -21,6 +21,7 @@
 #pragma once
 
 #include <evr9.h>
+#include "DisplayConfig.h"
 #include "FrameStats.h"
 
 class CMpcVideoRenderer;
@@ -79,9 +80,9 @@ protected:
 	DWORD m_VendorId = 0;
 	std::wstring m_strAdapterDescription;
 
-	bool   m_bPrimaryDisplay     = false;
-	double m_dRefreshRate        = 0.0;
-	double m_dRefreshRatePrimary = 0.0;
+	bool m_bPrimaryDisplay = false;
+	DisplayConfig_t m_DisplayConfig = {};
+	DisplayConfig_t m_DisplayConfigPrimary = {};
 
 	REFERENCE_TIME m_rtStart = 0;
 	int m_FieldDrawn = 0;
