@@ -342,6 +342,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter)
 	, m_Font3D(L"Consolas", 14)
 {
 	m_nCurrentAdapter = -1;
+	m_pDisplayMode = &m_DisplayMode;
 
 	m_hDXGILib = LoadLibraryW(L"dxgi.dll");
 	if (!m_hDXGILib) {
@@ -2379,24 +2380,7 @@ HRESULT CDX11VideoProcessor::AddPostScaleShader(const std::wstring& name, const 
 void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
-		std::wstring dmstr = DisplayConfigToString(m_DisplayConfig);
-		if (dmstr.empty()) {
-			dmstr = D3DDisplayModeToString(m_DisplayMode);
-		}
-		if (m_bPrimaryDisplay) {
-			dmstr.append(L" [Primary]");
-		}
-		if (m_pFilter->m_bIsFullscreen) {
-			dmstr.append(L" fullscreen");
-		} else {
-			dmstr.append(L" windowed");
-		}
-
-		m_strStatsStatic1 = fmt::format(
-			L"MPC VR {}, Direct3D 11\n"
-			L"{}\n"
-			L"Graph. Adapter: {}",
-			_CRT_WIDE(MPCVR_VERSION_STR), dmstr, m_strAdapterDescription);
+		m_strStatsStatic1 = fmt::format(L"MPC VR {}, Direct3D 11", _CRT_WIDE(MPCVR_VERSION_STR));
 
 		m_strStatsStatic2 = fmt::format(L"{} {}x{}", m_srcParams.str, m_srcRectWidth, m_srcRectHeight);
 		if (m_srcParams.CSType == CS_YUV) {
@@ -2495,6 +2479,12 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	}
 
 	std::wstring str = m_strStatsStatic1;
+	str += fmt::format(
+		L"\n{}\n"
+		L"Graph. Adapter: {}",
+		m_strStatsDispInfo, m_strAdapterDescription
+	);
+
 	str += fmt::format(L"\nFrame rate    : {:7.3f}", m_pFilter->m_FrameStats.GetAverageFps());
 	if (m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
 		str += L'i';

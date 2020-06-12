@@ -96,9 +96,11 @@ protected:
 	CRenderStats m_RenderStats;
 	std::wstring m_strStatsStatic1;
 	std::wstring m_strStatsStatic2;
-	std::wstring m_strStatsPresent;
+	std::wstring m_strStatsDispInfo;
 	std::wstring m_strStatsPostProc;
+	std::wstring m_strStatsPresent;
 	int m_iSrcFromGPU = 0;
+	D3DDISPLAYMODEEX* m_pDisplayMode = nullptr;
 	const wchar_t* m_strShaderX = nullptr;
 	const wchar_t* m_strShaderY = nullptr;
 	const int m_StatsW = 512;

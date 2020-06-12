@@ -120,6 +120,19 @@ void CVideoProcessor::UpdateDiplayInfo()
 		GetMonitorInfoW(hMonPrimary, (MONITORINFO*)&mi);
 		ret = GetDisplayConfig(mi.szDevice, m_DisplayConfigPrimary);
 	}
+
+	m_strStatsDispInfo = DisplayConfigToString(m_DisplayConfig);
+	if (m_strStatsDispInfo.empty()) {
+		m_strStatsDispInfo = D3DDisplayModeToString(*m_pDisplayMode);
+	}
+	if (m_bPrimaryDisplay) {
+		m_strStatsDispInfo.append(L" [Primary]");
+	}
+	if (m_pFilter->m_bIsFullscreen) {
+		m_strStatsDispInfo.append(L" fullscreen");
+	} else {
+		m_strStatsDispInfo.append(L" windowed");
+	}
 }
 
 // IUnknown
