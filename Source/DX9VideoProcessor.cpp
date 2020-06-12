@@ -458,12 +458,12 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 		}
 	}
 
-	bInitVP = false;
-
 	if (FAILED(hr)) {
+		bInitVP = false;
 		return hr;
 	}
 	if (!m_pD3DDevEx) {
+		bInitVP = false;
 		return E_FAIL;
 	}
 
@@ -547,6 +547,8 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 	if (m_pFilter->m_pSubCallBack) {
 		m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
 	}
+
+	bInitVP = false;
 
 	SetGraphSize();
 	UpdateDiplayInfo();
