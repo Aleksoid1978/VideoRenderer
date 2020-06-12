@@ -398,15 +398,18 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 		m_d3dpp.SwapEffect = D3DSWAPEFFECT_FLIP;
 		m_d3dpp.Flags = D3DPRESENTFLAG_VIDEO;
 		m_d3dpp.BackBufferCount = 3;
-		m_d3dpp.FullScreen_RefreshRateInHz = m_DisplayMode.RefreshRate;
-		m_d3dpp.BackBufferWidth = m_DisplayMode.Width;
+		m_d3dpp.BackBufferWidth  = m_DisplayMode.Width;
 		m_d3dpp.BackBufferHeight = m_DisplayMode.Height;
+		m_d3dpp.BackBufferFormat = m_DisplayMode.Format;
+		m_d3dpp.FullScreen_RefreshRateInHz = m_DisplayMode.RefreshRate;
 		m_d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
 
+		/*
 		// detect 10-bit device support
 		const bool b10BitOutput = m_InternalTexFmt != D3DFMT_X8R8G8B8 && SUCCEEDED(m_pD3DEx->CheckDeviceType(m_nCurrentAdapter, D3DDEVTYPE_HAL, D3DFMT_A2R10G10B10, D3DFMT_A2R10G10B10, FALSE));
 		m_d3dpp.BackBufferFormat = m_DisplayMode.Format = b10BitOutput ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
 		DLog(L"CDX9VideoProcessor::Init() : fullscreen - {}", D3DFormatToString(m_d3dpp.BackBufferFormat));
+		*/
 
 		if (bTryToReset) {
 			bTryToReset = SUCCEEDED(hr = m_pD3DDevEx->ResetEx(&m_d3dpp, &m_DisplayMode));
