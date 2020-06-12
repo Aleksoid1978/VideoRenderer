@@ -493,10 +493,6 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 			}
 		}
 
-		if (m_pFilter->m_pSubCallBack) {
-			m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
-		}
-
 		HRESULT hr2 = m_TexStats.Create(m_pD3DDevEx, D3DFMT_A8R8G8B8, m_StatsW, m_StatsH, D3DUSAGE_RENDERTARGET);
 		if (S_OK == hr2) {
 			hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
@@ -543,6 +539,10 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 				m_TexDither.Release();
 			}
 		}
+	}
+
+	if (m_pFilter->m_pSubCallBack) {
+		m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
 	}
 
 	SetGraphSize();
