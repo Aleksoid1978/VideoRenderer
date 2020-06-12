@@ -96,8 +96,8 @@ protected:
 	CRenderStats m_RenderStats;
 	std::wstring m_strStatsStatic1;
 	std::wstring m_strStatsStatic2;
-	std::wstring m_strStatsStatic3;
-	std::wstring m_strStatsStatic4;
+	std::wstring m_strStatsPresent;
+	std::wstring m_strStatsPostProc;
 	int m_iSrcFromGPU = 0;
 	const wchar_t* m_strShaderX = nullptr;
 	const wchar_t* m_strShaderY = nullptr;

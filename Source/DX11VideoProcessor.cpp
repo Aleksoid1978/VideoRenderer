@@ -1731,7 +1731,7 @@ void CDX11VideoProcessor::UpdatePostScaleTexures(SIZE texsize)
 		numPostScaleShaders++;
 	}
 	HRESULT hr = m_TexsPostScale.CheckCreate(m_pDevice, m_InternalTexFmt, texsize.cx, texsize.cy, numPostScaleShaders);
-	UpdateStatsStatic3();
+	UpdateStatsPostProc();
 }
 
 void CDX11VideoProcessor::UpdateUpscalingShaders()
@@ -2346,7 +2346,7 @@ void CDX11VideoProcessor::ClearPostScaleShaders()
 		pScreenShader.shader.Release();
 	}
 	m_pPostScaleShaders.clear();
-	UpdateStatsStatic3();
+	UpdateStatsPostProc();
 	DLog(L"CDX11VideoProcessor::ClearPostScaleShaders().");
 }
 
@@ -2442,20 +2442,20 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 
 		DXGI_SWAP_CHAIN_DESC1 swapchain_desc;
 		if (m_pDXGISwapChain1 && S_OK == m_pDXGISwapChain1->GetDesc1(&swapchain_desc)) {
-			m_strStatsStatic4.assign(L"\nPresentation  : ");
+			m_strStatsPresent.assign(L"\nPresentation  : ");
 			switch (swapchain_desc.SwapEffect) {
 			case DXGI_SWAP_EFFECT_DISCARD:
-				m_strStatsStatic4.append(L"Discard");
+				m_strStatsPresent.append(L"Discard");
 				break;
 			case DXGI_SWAP_EFFECT_SEQUENTIAL:
-				m_strStatsStatic4.append(L"Sequential");
+				m_strStatsPresent.append(L"Sequential");
 				break;
 			case DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL:
-				m_strStatsStatic4.append(L"Flip sequential");
+				m_strStatsPresent.append(L"Flip sequential");
 				break;
 #if VER_PRODUCTBUILD >= 10000
 			case DXGI_SWAP_EFFECT_FLIP_DISCARD:
-				m_strStatsStatic4.append(L"Flip discard");
+				m_strStatsPresent.append(L"Flip discard");
 				break;
 #endif
 			}
@@ -2463,28 +2463,28 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 	} else {
 		m_strStatsStatic1 = L"Error";
 		m_strStatsStatic2.clear();
-		m_strStatsStatic3.clear();
-		m_strStatsStatic4.clear();
+		m_strStatsPostProc.clear();
+		m_strStatsPresent.clear();
 	}
 }
 
-void CDX11VideoProcessor::UpdateStatsStatic3()
+void CDX11VideoProcessor::UpdateStatsPostProc()
 {
 	if (m_strCorrection || m_pPostScaleShaders.size() || m_bFinalPass) {
-		m_strStatsStatic3.assign(L"\nPostProcessing:");
+		m_strStatsPostProc.assign(L"\nPostProcessing:");
 		if (m_strCorrection) {
-			m_strStatsStatic3 += fmt::format(L" {},", m_strCorrection);
+			m_strStatsPostProc += fmt::format(L" {},", m_strCorrection);
 		}
 		if (m_pPostScaleShaders.size()) {
-			m_strStatsStatic3 += fmt::format(L" shaders[{}],", m_pPostScaleShaders.size());
+			m_strStatsPostProc += fmt::format(L" shaders[{}],", m_pPostScaleShaders.size());
 		}
 		if (m_bFinalPass) {
-			m_strStatsStatic3.append(L" dither");
+			m_strStatsPostProc.append(L" dither");
 		}
-		str_trim_end(m_strStatsStatic3, ',');
+		str_trim_end(m_strStatsPostProc, ',');
 	}
 	else {
-		m_strStatsStatic3.clear();
+		m_strStatsPostProc.clear();
 	}
 }
 
@@ -2535,8 +2535,8 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		}
 	}
 
-	str.append(m_strStatsStatic3);
-	str.append(m_strStatsStatic4);
+	str.append(m_strStatsPostProc);
+	str.append(m_strStatsPresent);
 
 	str += fmt::format(L"\nFrames: {:5}, skipped: {}/{}, failed: {}",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);

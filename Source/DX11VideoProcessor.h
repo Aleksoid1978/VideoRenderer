@@ -217,7 +217,7 @@ private:
 							const int iRotation, const bool bFlip);
 
 	void UpdateStatsStatic();
-	void UpdateStatsStatic3();
+	void UpdateStatsPostProc();
 	HRESULT DrawStats(ID3D11Texture2D* pRenderTarget);
 
 public:
