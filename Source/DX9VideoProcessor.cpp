@@ -1533,7 +1533,7 @@ HRESULT CDX9VideoProcessor::GetVPInfo(std::wstring& str)
 	}
 
 	std::wstring dmstr = DisplayConfigToString(m_DisplayConfig);
-	if (dmstr.size() == 0) {
+	if (dmstr.empty()) {
 		dmstr = D3DDisplayModeToString(m_DisplayMode);
 	}
 	if (m_bPrimaryDisplay) {
@@ -2261,7 +2261,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
 		std::wstring dmstr = DisplayConfigToString(m_DisplayConfig);
-		if (dmstr.size() == 0) {
+		if (dmstr.empty()) {
 			dmstr = D3DDisplayModeToString(m_DisplayMode);
 		}
 		if (m_bPrimaryDisplay) {
