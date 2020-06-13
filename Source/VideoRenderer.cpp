@@ -1369,7 +1369,7 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 	}
 
 	if (!strcmp(field, "displayChange") && value) {
-		CAutoLock cRendererLock(&m_RendererLock);
+		// do not lock here
 		if (m_bUsedD3D11) {
 			m_DX11_VP.UpdateDiplayInfo();
 		} else {

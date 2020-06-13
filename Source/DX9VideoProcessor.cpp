@@ -223,7 +223,7 @@ static BOOL WINAPI pNewSystemParametersInfoA(
 	_In_ UINT fWinIni)
 {
 	if (bInitVP) {
-		DLog(L"Blocking call SystemParametersInfoA() function during initialization VP");
+		DLog(L"Blocking call SystemParametersInfoA({:#06x},..) function during initialization VP", uiAction);
 		return FALSE;
 	}
 	return pOrigSystemParametersInfoA(uiAction, uiParam, pvParam, fWinIni);
