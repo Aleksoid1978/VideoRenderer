@@ -104,7 +104,7 @@ protected:
 	const wchar_t* m_strShaderX = nullptr;
 	const wchar_t* m_strShaderY = nullptr;
 	const int m_StatsW = 512;
-	const int m_StatsH = 270;
+	const int m_StatsH = 280;
 	const RECT m_StatsRect = { 10, 10, 10 + m_StatsW, 10 + m_StatsH };
 
 	// Graph of a function
