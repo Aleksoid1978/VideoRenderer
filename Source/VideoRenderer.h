@@ -90,6 +90,8 @@ private:
 	HWND m_hWndParent = nullptr;
 	HWND m_hWndDrain = nullptr;
 
+	HWND m_hWndParentMain = nullptr;
+
 	int m_Stepping = 0;
 	REFERENCE_TIME m_rtStartTime = 0;
 
@@ -142,6 +144,8 @@ public:
 
 	HRESULT BeginFlush() override;
 	HRESULT EndFlush() override;
+
+	void OnDisplayModeChange();
 
 	DECLARE_IUNKNOWN
 	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv);

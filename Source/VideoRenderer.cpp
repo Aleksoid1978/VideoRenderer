@@ -48,6 +48,39 @@
 
 static const wchar_t g_szClassName[] = L"VRWindow";
 
+LPCTSTR g_pszOldParentWndProc = L"OldParentWndProc";
+LPCTSTR g_pszThis = L"This";
+static void RemoveParentWndProc(HWND hWnd)
+{
+	DLog(L"RemoveParentWndProc()");
+	auto pfnOldProc = (WNDPROC)GetPropW(hWnd, g_pszOldParentWndProc);
+	if (pfnOldProc) {
+		SetWindowLongPtrW(hWnd, GWLP_WNDPROC, (LONG_PTR)pfnOldProc);
+		RemovePropW(hWnd, g_pszOldParentWndProc);
+		RemovePropW(hWnd, g_pszThis);
+	}
+}
+
+static LRESULT CALLBACK ParentWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	auto pfnOldProc = (WNDPROC)GetPropW(hWnd, g_pszOldParentWndProc);
+	auto pThis = (CMpcVideoRenderer*)GetPropW(hWnd, g_pszThis);
+
+	switch (Msg) {
+		case WM_DESTROY:
+			SetWindowLongPtrW(hWnd, GWLP_WNDPROC, (LONG_PTR)pfnOldProc);
+			RemovePropW(hWnd, g_pszOldParentWndProc);
+			RemovePropW(hWnd, g_pszThis);
+			break;
+		case WM_DISPLAYCHANGE:
+			DLog(L"ParentWndProc() - WM_DISPLAYCHANGE");
+			pThis->OnDisplayModeChange();
+			break;
+	}
+
+	return CallWindowProcW(pfnOldProc, hWnd, Msg, wParam, lParam);
+}
+
 //
 // CMpcVideoRenderer
 //
@@ -209,6 +242,10 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 	}
 
 	UnregisterClassW(g_szClassName, g_hInst);
+
+	if (m_hWndParentMain) {
+		RemoveParentWndProc(m_hWndParentMain);
+	}
 }
 
 void CMpcVideoRenderer::DX9Thread()
@@ -507,6 +544,17 @@ HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 	SendEndOfStream();
 	CancelNotification();
 	return NOERROR;
+}
+
+void CMpcVideoRenderer::OnDisplayModeChange()
+{
+	if (GetActive()) {
+		if (m_bUsedD3D11) {
+			m_DX11_VP.UpdateDiplayInfo();
+		} else {
+			m_DX9_VP.UpdateDiplayInfo();
+		}
+	}
 }
 
 STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** ppv)
@@ -908,6 +956,23 @@ HRESULT CMpcVideoRenderer::Init(const bool bCreateWindow/* = false*/)
 	CAutoLock cRendererLock(&m_RendererLock);
 
 	HRESULT hr = S_OK;
+
+	auto hwnd = m_hWndParent;
+	while ((GetParent(hwnd)) && (GetParent(hwnd) == GetAncestor(hwnd, GA_PARENT))) {
+		hwnd = GetParent(hwnd);
+	}
+
+	if (hwnd != m_hWndParentMain) {
+		if (m_hWndParentMain) {
+			RemoveParentWndProc(m_hWndParentMain);
+		}
+
+		m_hWndParentMain = hwnd;
+		auto pfnOldProc = (WNDPROC)GetWindowLongPtrW(m_hWndParentMain, GWLP_WNDPROC);
+		SetWindowLongPtrW(m_hWndParentMain, GWLP_WNDPROC, (LONG_PTR)ParentWndProc);
+		SetPropW(m_hWndParentMain, g_pszOldParentWndProc, (HANDLE)pfnOldProc);
+		SetPropW(m_hWndParentMain, g_pszThis, (HANDLE)this);
+	}
 
 	if (bCreateWindow) {
 		if (m_hWndWindow) {
@@ -1364,16 +1429,6 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 			m_DX11_VP.ClearPostScaleShaders();
 		} else {
 			m_DX9_VP.ClearPostScaleShaders();
-		}
-		return S_OK;
-	}
-
-	if (!strcmp(field, "displayChange") && value) {
-		// do not lock here
-		if (m_bUsedD3D11) {
-			m_DX11_VP.UpdateDiplayInfo();
-		} else {
-			m_DX9_VP.UpdateDiplayInfo();
 		}
 		return S_OK;
 	}
