@@ -2472,8 +2472,8 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 
 	std::wstring str = m_strStatsStatic1;
 	str += fmt::format(
-		L"\n{}\n"
-		L"Graph. Adapter: {}",
+		L"\nDisplay : {}"
+		L"\nGraph. Adapter: {}",
 		m_strStatsDispInfo, m_strAdapterDescription
 	);
 
