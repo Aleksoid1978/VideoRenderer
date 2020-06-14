@@ -126,18 +126,17 @@ bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig
 			if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS) {
 				if (wcscmp(displayName, source.viewGdiDeviceName) == 0) {
 					if (path.sourceInfo.modeInfoIdx != DISPLAYCONFIG_PATH_MODE_IDX_INVALID) {
-						DISPLAYCONFIG_MODE_INFO* mode = &modes[path.sourceInfo.modeInfoIdx];
-						if (mode->infoType == DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE) {
-							displayConfig.width  = mode->sourceMode.width;;
-							displayConfig.height = mode->sourceMode.height;
+						const auto& mode = modes[path.sourceInfo.modeInfoIdx];
+						if (mode.infoType == DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE) {
+							displayConfig.width  = mode.sourceMode.width;;
+							displayConfig.height = mode.sourceMode.height;
 						}
 					}
 					if (path.targetInfo.modeInfoIdx != DISPLAYCONFIG_PATH_MODE_IDX_INVALID) {
-						DISPLAYCONFIG_MODE_INFO* mode = &modes[path.targetInfo.modeInfoIdx];
-						if (mode->infoType == DISPLAYCONFIG_MODE_INFO_TYPE_TARGET) {
-							const auto& tvsi = mode->targetMode.targetVideoSignalInfo;
-							displayConfig.refreshRate      = tvsi.vSyncFreq;
-							displayConfig.scanLineOrdering = tvsi.scanLineOrdering;
+						const auto& mode = modes[path.targetInfo.modeInfoIdx];
+						if (mode.infoType == DISPLAYCONFIG_MODE_INFO_TYPE_TARGET) {
+							displayConfig.refreshRate      = mode.targetMode.targetVideoSignalInfo.vSyncFreq;
+							displayConfig.scanLineOrdering = mode.targetMode.targetVideoSignalInfo.scanLineOrdering;
 						}
 					}
 
@@ -208,18 +207,17 @@ bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs)
 		if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS) {
 			DisplayConfig_t dc = {};
 			if (path.sourceInfo.modeInfoIdx != DISPLAYCONFIG_PATH_MODE_IDX_INVALID) {
-				DISPLAYCONFIG_MODE_INFO* mode = &modes[path.sourceInfo.modeInfoIdx];
-				if (mode->infoType == DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE) {
-					dc.width  = mode->sourceMode.width;;
-					dc.height = mode->sourceMode.height;
+				const auto& mode = modes[path.sourceInfo.modeInfoIdx];
+				if (mode.infoType == DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE) {
+					dc.width  = mode.sourceMode.width;;
+					dc.height = mode.sourceMode.height;
 				}
 			}
 			if (path.targetInfo.modeInfoIdx != DISPLAYCONFIG_PATH_MODE_IDX_INVALID) {
-				DISPLAYCONFIG_MODE_INFO* mode = &modes[path.targetInfo.modeInfoIdx];
-				if (mode->infoType == DISPLAYCONFIG_MODE_INFO_TYPE_TARGET) {
-					const auto& tvsi = mode->targetMode.targetVideoSignalInfo;
-					dc.refreshRate      = tvsi.vSyncFreq;
-					dc.scanLineOrdering = tvsi.scanLineOrdering;
+				const auto& mode = modes[path.targetInfo.modeInfoIdx];
+				if (mode.infoType == DISPLAYCONFIG_MODE_INFO_TYPE_TARGET) {
+					dc.refreshRate      = mode.targetMode.targetVideoSignalInfo.vSyncFreq;
+					dc.scanLineOrdering = mode.targetMode.targetVideoSignalInfo.scanLineOrdering;
 				}
 			}
 
