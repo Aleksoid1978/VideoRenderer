@@ -147,6 +147,15 @@ bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig
 					displayConfig.outputTechnology = path.targetInfo.outputTechnology;
 					memcpy(displayConfig.displayName, source.viewGdiDeviceName, sizeof(displayConfig.displayName));
 
+					DISPLAYCONFIG_TARGET_DEVICE_NAME name= {
+						{DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME, sizeof(name), path.sourceInfo.adapterId, path.targetInfo.id}, {},
+					};
+					if (DisplayConfigGetDeviceInfo(&name.header) == ERROR_SUCCESS) {
+						memcpy(displayConfig.monitorName, name.monitorFriendlyDeviceName, sizeof(displayConfig.monitorName));
+					} else {
+						ZeroMemory(displayConfig.monitorName, sizeof(displayConfig.monitorName));
+					}
+
 					return true;
 				}
 			}

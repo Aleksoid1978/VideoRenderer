@@ -561,7 +561,6 @@ void CMpcVideoRenderer::UpdateDiplayInfo()
 		m_bPrimaryDisplay = true;
 	} else {
 		m_bPrimaryDisplay = false;
-		GetMonitorInfoW(hMonPrimary, (MONITORINFO*)&mi);
 	}
 
 	if (m_bUsedD3D11) {

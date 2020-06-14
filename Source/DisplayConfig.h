@@ -25,6 +25,7 @@ struct DisplayConfig_t {
 	DISPLAYCONFIG_SCANLINE_ORDERING       scanLineOrdering;
 	DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY outputTechnology;
 	WCHAR displayName[CCHDEVICENAME];
+	WCHAR monitorName[64];
 };
 
 double GetRefreshRate(const wchar_t* displayName);
