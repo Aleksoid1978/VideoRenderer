@@ -418,7 +418,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 
 				if (pChangeDevice && m_pFilter->m_pSubCallBack) {
 					m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
-					UpdateDiplayInfo();
+					m_pFilter->OnDisplayModeChange();
 				}
 			}
 		}
@@ -933,7 +933,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	m_bUseNativeExternalDecoder = bFromDecoder;
 
-	UpdateDiplayInfo();
+	m_pFilter->OnDisplayModeChange();
 	UpdateStatsStatic();
 	SetGraphSize();
 
@@ -2244,15 +2244,7 @@ HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 		str.append(L"Shaders");
 	}
 
-	std::wstring dmstr = DisplayConfigToString(m_DisplayConfig);
-	if (dmstr.empty()) {
-		dmstr = D3DDisplayModeToString(m_DisplayMode);
-	}
-	if (m_bPrimaryDisplay) {
-		dmstr.append(L" [Primary]");
-	}
-
-	str += fmt::format(L"\nDisplay         : {}",dmstr);
+	str += fmt::format(L"\nDisplay: {}", m_strStatsDispInfo);
 
 	if (m_pPostScaleShaders.size()) {
 		str.append(L"\n\nPost scale pixel shaders:");

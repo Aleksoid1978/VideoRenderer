@@ -103,32 +103,16 @@ void CVideoProcessor::CalcGraphParams()
 	m_Yaxis = m_GraphRect.bottom - 50 * m_Yscale;
 }
 
-void CVideoProcessor::UpdateDiplayInfo()
+void CVideoProcessor::SetDisplayInfo(const DisplayConfig_t& displayConfig, const bool primary, const bool fullscreen)
 {
-	const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
-	const HMONITOR hMonPrimary = MonitorFromPoint(CPoint(0, 0), MONITOR_DEFAULTTOPRIMARY);
-
-	MONITORINFOEXW mi = { sizeof(mi) };
-	GetMonitorInfoW(hMon, (MONITORINFO*)&mi);
-
-	bool ret = GetDisplayConfig(mi.szDevice, m_DisplayConfig);
-	if (hMon == hMonPrimary) {
-		m_bPrimaryDisplay = true;
-		m_DisplayConfigPrimary = m_DisplayConfig;
-	} else {
-		m_bPrimaryDisplay = false;
-		GetMonitorInfoW(hMonPrimary, (MONITORINFO*)&mi);
-		ret = GetDisplayConfig(mi.szDevice, m_DisplayConfigPrimary);
-	}
-
-	m_strStatsDispInfo = DisplayConfigToString(m_DisplayConfig);
+	m_strStatsDispInfo = DisplayConfigToString(displayConfig);
 	if (m_strStatsDispInfo.empty()) {
 		m_strStatsDispInfo = D3DDisplayModeToString(*m_pDisplayMode);
 	}
-	if (m_bPrimaryDisplay) {
+	if (primary) {
 		m_strStatsDispInfo.append(L" [Primary]");
 	}
-	if (m_pFilter->m_bIsFullscreen) {
+	if (fullscreen) {
 		m_strStatsDispInfo.append(L" fullscreen");
 	} else {
 		m_strStatsDispInfo.append(L" windowed");

@@ -223,7 +223,7 @@ bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs)
 	return displayConfigs.size() > 0;
 }
 
-std::wstring DisplayConfigToString(DisplayConfig_t& dc)
+std::wstring DisplayConfigToString(const DisplayConfig_t& dc)
 {
 	std::wstring str;
 	if (dc.width && dc.height && dc.refreshRate.Numerator) {
@@ -258,7 +258,7 @@ std::wstring DisplayConfigToString(DisplayConfig_t& dc)
 	return str;
 }
 
-std::wstring D3DDisplayModeToString(D3DDISPLAYMODEEX& dm)
+std::wstring D3DDisplayModeToString(const D3DDISPLAYMODEEX& dm)
 {
 	std::wstring str = fmt::format(L"{}x{} {}", dm.Width, dm.Height, dm.RefreshRate);
 	if (dm.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {

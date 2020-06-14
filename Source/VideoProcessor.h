@@ -80,10 +80,6 @@ protected:
 	DWORD m_VendorId = 0;
 	std::wstring m_strAdapterDescription;
 
-	bool m_bPrimaryDisplay = false;
-	DisplayConfig_t m_DisplayConfig = {};
-	DisplayConfig_t m_DisplayConfigPrimary = {};
-
 	REFERENCE_TIME m_rtStart = 0;
 	int m_FieldDrawn = 0;
 
@@ -141,7 +137,7 @@ public:
 	bool CheckGraphPlacement();
 	void CalcGraphParams();
 
-	void UpdateDiplayInfo();
+	void SetDisplayInfo(const DisplayConfig_t& displayConfig, const bool primary, const bool fullscreen);
 
 	// IUnknown
 	STDMETHODIMP QueryInterface(REFIID riid, void **ppv);

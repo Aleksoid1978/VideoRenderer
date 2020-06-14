@@ -76,6 +76,9 @@ static LRESULT CALLBACK ParentWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM
 			DLog(L"ParentWndProc() - WM_DISPLAYCHANGE");
 			pThis->OnDisplayModeChange();
 			break;
+		case WM_MOVE:
+			pThis->OnWindowMove();
+			break;
 	}
 
 	return CallWindowProcW(pfnOldProc, hWnd, Msg, wParam, lParam);
@@ -546,13 +549,41 @@ HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 	return NOERROR;
 }
 
+void CMpcVideoRenderer::UpdateDiplayInfo()
+{
+	const HMONITOR hMonPrimary = MonitorFromPoint(CPoint(0, 0), MONITOR_DEFAULTTOPRIMARY);
+
+	MONITORINFOEXW mi = { sizeof(mi) };
+	GetMonitorInfoW(m_hMon, (MONITORINFO*)&mi);
+
+	bool ret = GetDisplayConfig(mi.szDevice, m_DisplayConfig);
+	if (m_hMon == hMonPrimary) {
+		m_bPrimaryDisplay = true;
+	} else {
+		m_bPrimaryDisplay = false;
+		GetMonitorInfoW(hMonPrimary, (MONITORINFO*)&mi);
+	}
+
+	if (m_bUsedD3D11) {
+		m_DX11_VP.SetDisplayInfo(m_DisplayConfig, m_bPrimaryDisplay, m_bIsFullscreen);
+	} else {
+		m_DX9_VP.SetDisplayInfo(m_DisplayConfig, m_bPrimaryDisplay, m_bIsFullscreen);
+	}
+}
+
 void CMpcVideoRenderer::OnDisplayModeChange()
 {
+	m_hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+	UpdateDiplayInfo();
+}
+
+void CMpcVideoRenderer::OnWindowMove()
+{
 	if (GetActive()) {
-		if (m_bUsedD3D11) {
-			m_DX11_VP.UpdateDiplayInfo();
-		} else {
-			m_DX9_VP.UpdateDiplayInfo();
+		const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+		if (hMon != m_hMon) {
+			m_hMon = hMon;
+			UpdateDiplayInfo();
 		}
 	}
 }

@@ -551,7 +551,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 	bInitVP = false;
 
 	SetGraphSize();
-	UpdateDiplayInfo();
+	m_pFilter->OnDisplayModeChange();
 	UpdateStatsStatic();
 
 	if (pChangeDevice) {
@@ -1538,15 +1538,7 @@ HRESULT CDX9VideoProcessor::GetVPInfo(std::wstring& str)
 		str.append(L"Shaders");
 	}
 
-	std::wstring dmstr = DisplayConfigToString(m_DisplayConfig);
-	if (dmstr.empty()) {
-		dmstr = D3DDisplayModeToString(m_DisplayMode);
-	}
-	if (m_bPrimaryDisplay) {
-		dmstr.append(L" [Primary]");
-	}
-
-	str += fmt::format(L"\nDisplay         : {}",dmstr);
+	str += fmt::format(L"\nDisplay: {}", m_strStatsDispInfo);
 
 	if (m_pPostScaleShaders.size()) {
 		str.append(L"\n\nPost scale pixel shaders:");

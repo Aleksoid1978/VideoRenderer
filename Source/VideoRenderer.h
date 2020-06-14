@@ -85,12 +85,15 @@ private:
 	bool m_bFlushing = false;
 	bool m_bValidBuffer = false;
 
-	HWND m_hWnd = nullptr;
-	HWND m_hWndWindow = nullptr;
-	HWND m_hWndParent = nullptr;
-	HWND m_hWndDrain = nullptr;
-
+	HWND m_hWnd           = nullptr;
+	HWND m_hWndWindow     = nullptr;
+	HWND m_hWndParent     = nullptr;
+	HWND m_hWndDrain      = nullptr;
 	HWND m_hWndParentMain = nullptr;
+
+	HMONITOR m_hMon = nullptr;
+	bool m_bPrimaryDisplay = false;
+	DisplayConfig_t m_DisplayConfig = {};
 
 	int m_Stepping = 0;
 	REFERENCE_TIME m_rtStartTime = 0;
@@ -145,7 +148,9 @@ public:
 	HRESULT BeginFlush() override;
 	HRESULT EndFlush() override;
 
+	void UpdateDiplayInfo();
 	void OnDisplayModeChange();
+	void OnWindowMove();
 
 	DECLARE_IUNKNOWN
 	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv);
