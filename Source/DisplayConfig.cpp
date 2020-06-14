@@ -125,13 +125,18 @@ bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig
 			};
 			if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS) {
 				if (wcscmp(displayName, source.viewGdiDeviceName) == 0) {
+					if (path.sourceInfo.modeInfoIdx != DISPLAYCONFIG_PATH_MODE_IDX_INVALID) {
+						DISPLAYCONFIG_MODE_INFO* mode = &modes[path.sourceInfo.modeInfoIdx];
+						if (mode->infoType == DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE) {
+							displayConfig.width  = mode->sourceMode.width;;
+							displayConfig.height = mode->sourceMode.height;
+						}
+					}
 					if (path.targetInfo.modeInfoIdx != DISPLAYCONFIG_PATH_MODE_IDX_INVALID) {
 						DISPLAYCONFIG_MODE_INFO* mode = &modes[path.targetInfo.modeInfoIdx];
 						if (mode->infoType == DISPLAYCONFIG_MODE_INFO_TYPE_TARGET) {
 							const auto& tvsi = mode->targetMode.targetVideoSignalInfo;
-							displayConfig.width = tvsi.activeSize.cx;
-							displayConfig.height = tvsi.activeSize.cy;
-							displayConfig.refreshRate = tvsi.vSyncFreq;
+							displayConfig.refreshRate      = tvsi.vSyncFreq;
 							displayConfig.scanLineOrdering = tvsi.scanLineOrdering;
 						}
 					}
@@ -202,13 +207,17 @@ bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs)
 		};
 		if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS) {
 			DisplayConfig_t dc = {};
-
+			if (path.sourceInfo.modeInfoIdx != DISPLAYCONFIG_PATH_MODE_IDX_INVALID) {
+				DISPLAYCONFIG_MODE_INFO* mode = &modes[path.sourceInfo.modeInfoIdx];
+				if (mode->infoType == DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE) {
+					dc.width  = mode->sourceMode.width;;
+					dc.height = mode->sourceMode.height;
+				}
+			}
 			if (path.targetInfo.modeInfoIdx != DISPLAYCONFIG_PATH_MODE_IDX_INVALID) {
 				DISPLAYCONFIG_MODE_INFO* mode = &modes[path.targetInfo.modeInfoIdx];
 				if (mode->infoType == DISPLAYCONFIG_MODE_INFO_TYPE_TARGET) {
 					const auto& tvsi = mode->targetMode.targetVideoSignalInfo;
-					dc.width            = tvsi.activeSize.cx;
-					dc.height           = tvsi.activeSize.cy;
 					dc.refreshRate      = tvsi.vSyncFreq;
 					dc.scanLineOrdering = tvsi.scanLineOrdering;
 				}
