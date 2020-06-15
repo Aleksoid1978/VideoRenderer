@@ -176,37 +176,6 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, const RECT* pSrc, const RECT* pDst, 
 	return S_OK;
 }
 
-LPCTSTR g_pszOldWndProc = L"OldWndProc";
-static void RemoveWndProc(HWND hWnd)
-{
-	DLog(L"RemoveWndProc()");
-	auto pfnOldProc = (WNDPROC)GetPropW(hWnd, g_pszOldWndProc);
-	if (pfnOldProc) {
-		SetWindowLongPtrW(hWnd, GWLP_WNDPROC, (LONG_PTR)pfnOldProc);
-		RemovePropW(hWnd, g_pszOldWndProc);
-	}
-}
-
-static LRESULT CALLBACK ParentWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
-{
-	auto pfnOldProc = (WNDPROC)GetPropW(hWnd, g_pszOldWndProc);
-
-	switch (Msg) {
-		case WM_DESTROY:
-		case WM_MOVE:
-			SetWindowLongPtrW(hWnd, GWLP_WNDPROC, (LONG_PTR)pfnOldProc);
-			RemovePropW(hWnd, g_pszOldWndProc);
-			break;
-		case WM_NCACTIVATE:
-			if (!wParam) {
-				return 0;
-			}
-			break;
-		}
-
-	return CallWindowProcW(pfnOldProc, hWnd, Msg, wParam, lParam);
-}
-
 bool bInitVP = false;
 
 typedef BOOL(WINAPI* pSystemParametersInfoA)(
@@ -316,16 +285,9 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 
 	m_pD3DEx.Release();
 
-	CleanUp();
-
 	MH_RemoveHook(SystemParametersInfoA);
 	MH_RemoveHook(SetWindowLongA);
 	MH_RemoveHook(SetWindowPos);
-}
-
-void CDX9VideoProcessor::CleanUp()
-{
-	RemoveWndProc(m_hWndParent);
 }
 
 HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
@@ -353,10 +315,6 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 	bInitVP = true;
 
 	m_hWnd = hwnd;
-	m_hWndParent = m_hWnd;
-	while ((GetParent(m_hWndParent)) && (GetParent(m_hWndParent) == GetAncestor(m_hWndParent, GA_PARENT))) {
-		m_hWndParent = GetParent(m_hWndParent);
-	}
 
 	const UINT currentAdapter = GetAdapter(m_hWnd, m_pD3DEx);
 	bool bTryToReset = (currentAdapter == m_nCurrentAdapter) && m_pD3DDevEx;
@@ -394,12 +352,8 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 
 	ZeroMemory(&m_d3dpp, sizeof(m_d3dpp));
 	if (m_pFilter->m_bIsFullscreen) {
-		auto pfnOldProc = (WNDPROC)GetWindowLongPtrW(m_hWndParent, GWLP_WNDPROC);
-		SetWindowLongPtrW(m_hWndParent, GWLP_WNDPROC, (LONG_PTR)ParentWndProc);
-		SetPropW(m_hWndParent, g_pszOldWndProc, (HANDLE)pfnOldProc);
-
 		m_d3dpp.Windowed = FALSE;
-		m_d3dpp.hDeviceWindow = m_hWndParent;
+		m_d3dpp.hDeviceWindow = m_hWnd;
 		m_d3dpp.SwapEffect = D3DSWAPEFFECT_FLIP;
 		m_d3dpp.Flags = D3DPRESENTFLAG_VIDEO;
 		m_d3dpp.BackBufferCount = 3;
@@ -424,14 +378,12 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 		if (!bTryToReset) {
 			ReleaseDevice();
 			hr = m_pD3DEx->CreateDeviceEx(
-				m_nCurrentAdapter, D3DDEVTYPE_HAL, m_hWndParent,
+				m_nCurrentAdapter, D3DDEVTYPE_HAL, m_hWnd,
 				D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS | D3DCREATE_NOWINDOWCHANGES,
 				&m_d3dpp, &m_DisplayMode, &m_pD3DDevEx);
 			DLog(L"    => CreateDeviceEx(fullscreen) : {}", HR2Str(hr));
 		}
 	} else {
-		RemoveWndProc(m_hWndParent);
-
 		m_d3dpp.BackBufferWidth = std::max(1, m_windowRect.Width());
 		m_d3dpp.BackBufferHeight = std::max(1, m_windowRect.Height());
 		m_d3dpp.Windowed = TRUE;

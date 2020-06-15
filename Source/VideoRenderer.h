@@ -124,8 +124,6 @@ private:
 	bool m_bSubInvAlpha = false;
 	bool m_bCheckSubInvAlpha = false;
 
-	bool m_bIsFullscreen = false;
-
 	HANDLE m_hFullScreenTimerHandle = nullptr;
 	BOOL StartFullScreenTimer();
 	void EndFullScreenTimer();
@@ -280,6 +278,8 @@ public:
 	LRESULT OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	void SwitchFullScreen(const bool bCheck);
+
+	bool m_bIsFullscreen = false;
 
 private:
 	HRESULT Redraw();

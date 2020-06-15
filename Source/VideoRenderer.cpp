@@ -77,8 +77,20 @@ static LRESULT CALLBACK ParentWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM
 			pThis->OnDisplayModeChange();
 			break;
 		case WM_MOVE:
-			pThis->OnWindowMove();
+			if (pThis->m_bIsFullscreen) {
+				// I don't know why, but without this, the filter freezes when switching from fullscreen to window in DX9 mode.
+				SetWindowLongPtrW(hWnd, GWLP_WNDPROC, (LONG_PTR)pfnOldProc);
+				SetWindowLongPtrW(hWnd, GWLP_WNDPROC, (LONG_PTR)ParentWndProc);
+			} else {
+				pThis->OnWindowMove();
+			}
 			break;
+		case WM_NCACTIVATE:
+			if (!wParam && pThis->m_bIsFullscreen) {
+				return 0;
+			}
+			break;
+
 	}
 
 	return CallWindowProcW(pfnOldProc, hWnd, Msg, wParam, lParam);
@@ -245,8 +257,6 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 	}
 
 	UnregisterClassW(g_szClassName, g_hInst);
-
-	m_DX9_VP.CleanUp();
 
 	if (m_hWndParentMain) {
 		RemoveParentWndProc(m_hWndParentMain);
@@ -1049,7 +1059,7 @@ HRESULT CMpcVideoRenderer::Init(const bool bCreateWindow/* = false*/)
 		}
 	}
 
-	m_hWnd = m_bIsFullscreen ? m_hWndParent : m_hWndWindow;
+	m_hWnd = m_bIsFullscreen ? m_hWndParentMain : m_hWndWindow;
 
 	if (m_bUsedD3D11) {
 		bool bChangeDevice = false;

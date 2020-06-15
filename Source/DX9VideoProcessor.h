@@ -96,13 +96,9 @@ private:
 	CD3D9Lines     m_Lines;
 	CD3D9Polyline  m_SyncLine;
 
-	HWND m_hWndParent = nullptr;
-
 public:
 	CDX9VideoProcessor(CMpcVideoRenderer* pFilter);
 	~CDX9VideoProcessor();
-
-	void CleanUp();
 
 	HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr);
 	bool Initialized();
