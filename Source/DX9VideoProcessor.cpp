@@ -316,11 +316,16 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 
 	m_pD3DEx.Release();
 
-	RemoveWndProc(m_hWndParent);
+	CleanUp();
 
 	MH_RemoveHook(SystemParametersInfoA);
 	MH_RemoveHook(SetWindowLongA);
 	MH_RemoveHook(SetWindowPos);
+}
+
+void CDX9VideoProcessor::CleanUp()
+{
+	RemoveWndProc(m_hWndParent);
 }
 
 HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)

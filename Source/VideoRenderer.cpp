@@ -246,6 +246,8 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 
 	UnregisterClassW(g_szClassName, g_hInst);
 
+	m_DX9_VP.CleanUp();
+
 	if (m_hWndParentMain) {
 		RemoveParentWndProc(m_hWndParentMain);
 	}
