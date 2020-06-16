@@ -111,6 +111,7 @@ private:
 	CAMEvent m_evDX9Init;
 	CAMEvent m_evDX9InitHwnd;
 	CAMEvent m_evDX9Resize;
+	CAMEvent m_evDX9Reset;
 	CAMEvent m_evQuit;
 	CAMEvent m_evThreadFinishJob;
 	HRESULT m_hrThread = E_FAIL;
@@ -147,7 +148,7 @@ public:
 	HRESULT EndFlush() override;
 
 	void UpdateDiplayInfo();
-	void OnDisplayModeChange();
+	void OnDisplayModeChange(const bool bReset = false);
 	void OnWindowMove();
 
 	DECLARE_IUNKNOWN

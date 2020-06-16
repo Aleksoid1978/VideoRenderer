@@ -74,7 +74,7 @@ static LRESULT CALLBACK ParentWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM
 			break;
 		case WM_DISPLAYCHANGE:
 			DLog(L"ParentWndProc() - WM_DISPLAYCHANGE");
-			pThis->OnDisplayModeChange();
+			pThis->OnDisplayModeChange(true);
 			break;
 		case WM_MOVE:
 			if (pThis->m_bIsFullscreen) {
@@ -265,7 +265,7 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 
 void CMpcVideoRenderer::DX9Thread()
 {
-	HANDLE hEvts[] = { m_evDX9Init, m_evDX9InitHwnd, m_evDX9Resize, m_evQuit };
+	HANDLE hEvts[] = { m_evDX9Init, m_evDX9InitHwnd, m_evDX9Resize, m_evDX9Reset, m_evQuit };
 
 	for (;;) {
 		const auto dwObject = WaitForMultipleObjects(std::size(hEvts), hEvts, FALSE, INFINITE);
@@ -287,6 +287,10 @@ void CMpcVideoRenderer::DX9Thread()
 				break;
 			case WAIT_OBJECT_0 + 2:
 				m_hrThread = m_DX9_VP.SetWindowRect(m_windowRect);
+				m_evThreadFinishJob.Set();
+				break;
+			case WAIT_OBJECT_0 + 3:
+				m_hrThread = m_DX9_VP.Reset();
 				m_evThreadFinishJob.Set();
 				break;
 			default:
@@ -582,8 +586,15 @@ void CMpcVideoRenderer::UpdateDiplayInfo()
 	}
 }
 
-void CMpcVideoRenderer::OnDisplayModeChange()
+void CMpcVideoRenderer::OnDisplayModeChange(const bool bReset/* = false*/)
 {
+	if (bReset && !m_bUsedD3D11) {
+		CAutoLock cRendererLock(&m_RendererLock);
+
+		m_evDX9Reset.Set();
+		WaitForSingleObject(m_evThreadFinishJob, INFINITE);
+	}
+
 	m_hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 	UpdateDiplayInfo();
 }

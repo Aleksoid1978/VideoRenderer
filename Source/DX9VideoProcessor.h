@@ -133,6 +133,7 @@ public:
 
 	void SetVideoRect(const CRect& videoRect);
 	HRESULT SetWindowRect(const CRect& windowRect);
+	HRESULT Reset();
 
 	IDirect3DDeviceManager9* GetDeviceManager9() { return m_pD3DDeviceManager; }
 	HRESULT GetCurentImage(long *pDIBImage);
