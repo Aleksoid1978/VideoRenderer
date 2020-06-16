@@ -9,23 +9,23 @@
  */
 
 enum mp_csp {
-	MP_CSP_AUTO,
-	MP_CSP_BT_601,
-	MP_CSP_BT_709,
-	MP_CSP_SMPTE_240M,
-	MP_CSP_BT_2020_NC,
-	MP_CSP_BT_2020_C,
-	MP_CSP_RGB,
-	MP_CSP_XYZ,
-	MP_CSP_YCGCO,
-	MP_CSP_COUNT
+    MP_CSP_AUTO,
+    MP_CSP_BT_601,
+    MP_CSP_BT_709,
+    MP_CSP_SMPTE_240M,
+    MP_CSP_BT_2020_NC,
+    MP_CSP_BT_2020_C,
+    MP_CSP_RGB,
+    MP_CSP_XYZ,
+    MP_CSP_YCGCO,
+    MP_CSP_COUNT
 };
 
 enum mp_csp_levels {
-	MP_CSP_LEVELS_AUTO,
-	MP_CSP_LEVELS_TV,
-	MP_CSP_LEVELS_PC,
-	MP_CSP_LEVELS_COUNT,
+    MP_CSP_LEVELS_AUTO,
+    MP_CSP_LEVELS_TV,
+    MP_CSP_LEVELS_PC,
+    MP_CSP_LEVELS_COUNT,
 };
 
 enum mp_csp_prim {
@@ -76,33 +76,37 @@ enum mp_csp_light {
 };
 
 struct mp_colorspace {
-	enum mp_csp space;
-	enum mp_csp_levels levels;
-	enum mp_csp_prim primaries;
-	enum mp_csp_trc gamma;
-	enum mp_csp_light light;
-	float sig_peak; // highest relative value in signal. 0 = unknown/auto
+    enum mp_csp space;
+    enum mp_csp_levels levels;
+    enum mp_csp_prim primaries;
+    enum mp_csp_trc gamma;
+    enum mp_csp_light light;
+    float sig_peak; // highest relative value in signal. 0 = unknown/auto
 };
 
 // For many colorspace conversions, in particular those involving HDR, an
 // implicit reference white level is needed. Since this magic constant shows up
-// a lot, give it an explicit name. The value of 100 cd/m^2 comes from ITU-R
-// documents such as ITU-R BT.2100
-#define MP_REF_WHITE 100.0
+// a lot, give it an explicit name. The value of 203 cd/m^2 comes from ITU-R
+// Report BT.2408, and the value for HLG comes from the cited HLG 75% level
+// (transferred to scene space).
+#define MP_REF_WHITE 203.0
+#define MP_REF_WHITE_HLG 3.17955
 
 struct mp_csp_params {
-	struct mp_colorspace color = {MP_CSP_BT_709, MP_CSP_LEVELS_TV}; // input colorspace
-	enum mp_csp_levels levels_out = MP_CSP_LEVELS_PC; // output device
-	float brightness = 0; //    -1..0..1
-	float contrast   = 1; //     0..1..2
-	float hue        = 0; //   -pi..0..pi
-	float saturation = 1; //     0..1..2
-	float gamma      = 1; // 0.125..1..8
-	// discard U/V components
-	bool gray        = false;
-	// texture_bits/input_bits is for rescaling fixed point input to range [0,1]
-	int texture_bits = 8;
-	int input_bits   = 8;
+    struct mp_colorspace color = {MP_CSP_BT_709, MP_CSP_LEVELS_TV}; // input colorspace
+    enum mp_csp_levels levels_out = MP_CSP_LEVELS_PC; // output device
+    float brightness = 0; //    -1..0..1
+    float contrast   = 1; //     0..1..2
+    float hue        = 0; //   -pi..0..pi
+    float saturation = 1; //     0..1..2
+    float gamma      = 1; // 0.125..1..8
+    // discard U/V components
+    bool gray        = false;
+    // input is already centered and range-expanded
+    bool is_float    = false;;
+    // texture_bits/input_bits is for rescaling fixed point input to range [0,1]
+    int texture_bits = 8;
+    int input_bits   = 8;
 };
 
 struct mp_csp_col_xy {
@@ -131,8 +135,8 @@ bool mp_trc_is_hdr(enum mp_csp_trc trc);
  * The matrix might also be used for other conversions and colorspaces.
  */
 struct mp_cmat {
-	float m[3][3];
-	float c[3];
+    float m[3][3];
+    float c[3];
 };
 
 void mp_get_rgb2xyz_matrix(struct mp_csp_primaries space, float m[3][3]);

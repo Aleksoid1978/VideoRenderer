@@ -9,6 +9,8 @@
 
 #include "csputils.h"
 
+#pragma warning(disable:4305)
+
 void mp_invert_matrix3x3(float m[3][3])
 {
     float m00 = m[0][0], m01 = m[0][1], m02 = m[0][2],
@@ -67,32 +69,32 @@ struct mp_csp_primaries mp_get_csp_primaries(enum mp_csp_prim spc)
 
     // CIE standard illuminant series
     static const struct mp_csp_col_xy
-        d50 = {0.34577f, 0.35850f},
-        d65 = {0.31271f, 0.32902f},
-        c   = {0.31006f, 0.31616f},
-        dci = {0.31400f, 0.35100f},
-        e   = {1.0f/3.0f, 1.0f/3.0f};
+        d50 = {0.34577, 0.35850},
+        d65 = {0.31271, 0.32902},
+        c   = {0.31006, 0.31616},
+        dci = {0.31400, 0.35100},
+        e   = {1.0/3.0, 1.0/3.0};
 
     switch (spc) {
     case MP_CSP_PRIM_BT_470M:
         return {
-            {0.670f, 0.330f},
-            {0.210f, 0.710f},
-            {0.140f, 0.080f},
+            {0.670, 0.330},
+            {0.210, 0.710},
+            {0.140, 0.080},
             c
         };
     case MP_CSP_PRIM_BT_601_525:
         return {
-            {0.630f, 0.340f},
-            {0.310f, 0.595f},
-            {0.155f, 0.070f},
+            {0.630, 0.340},
+            {0.310, 0.595},
+            {0.155, 0.070},
             d65
         };
     case MP_CSP_PRIM_BT_601_625:
         return {
-            {0.640f, 0.330f},
-            {0.290f, 0.600f},
-            {0.150f, 0.060f},
+            {0.640, 0.330},
+            {0.290, 0.600},
+            {0.150, 0.060},
             d65
         };
     // This is the default assumption if no colorspace information could
@@ -100,69 +102,69 @@ struct mp_csp_primaries mp_get_csp_primaries(enum mp_csp_prim spc)
     case MP_CSP_PRIM_AUTO:
     case MP_CSP_PRIM_BT_709:
         return {
-            {0.640f, 0.330f},
-            {0.300f, 0.600f},
-            {0.150f, 0.060f},
+            {0.640, 0.330},
+            {0.300, 0.600},
+            {0.150, 0.060},
             d65
         };
     case MP_CSP_PRIM_BT_2020:
         return {
-            {0.708f, 0.292f},
-            {0.170f, 0.797f},
-            {0.131f, 0.046f},
+            {0.708, 0.292},
+            {0.170, 0.797},
+            {0.131, 0.046},
             d65
         };
     case MP_CSP_PRIM_APPLE:
         return {
-            {0.625f, 0.340f},
-            {0.280f, 0.595f},
-            {0.115f, 0.070f},
+            {0.625, 0.340},
+            {0.280, 0.595},
+            {0.115, 0.070},
             d65
         };
     case MP_CSP_PRIM_ADOBE:
         return {
-            {0.640f, 0.330f},
-            {0.210f, 0.710f},
-            {0.150f, 0.060f},
+            {0.640, 0.330},
+            {0.210, 0.710},
+            {0.150, 0.060},
             d65
         };
     case MP_CSP_PRIM_PRO_PHOTO:
         return {
-            {0.7347f, 0.2653f},
-            {0.1596f, 0.8404f},
-            {0.0366f, 0.0001f},
+            {0.7347, 0.2653},
+            {0.1596, 0.8404},
+            {0.0366, 0.0001},
             d50
         };
     case MP_CSP_PRIM_CIE_1931:
         return {
-            {0.7347f, 0.2653f},
-            {0.2738f, 0.7174f},
-            {0.1666f, 0.0089f},
+            {0.7347, 0.2653},
+            {0.2738, 0.7174},
+            {0.1666, 0.0089},
             e
         };
     // From SMPTE RP 431-2 and 432-1
     case MP_CSP_PRIM_DCI_P3:
     case MP_CSP_PRIM_DISPLAY_P3:
         return {
-            {0.680f, 0.320f},
-            {0.265f, 0.690f},
-            {0.150f, 0.060f},
+            {0.680, 0.320},
+            {0.265, 0.690},
+            {0.150, 0.060},
             spc == MP_CSP_PRIM_DCI_P3 ? dci : d65
         };
     // From Panasonic VARICAM reference manual
     case MP_CSP_PRIM_V_GAMUT:
         return {
-            {0.730f, 0.280f},
-            {0.165f, 0.840f},
-            {0.100f, -0.03f},
+            {0.730, 0.280},
+            {0.165, 0.840},
+            {0.100, -0.03},
             d65
         };
     // From Sony S-Log reference manual
     case MP_CSP_PRIM_S_GAMUT:
         return {
-            {0.730f, 0.280f},
-            {0.140f, 0.855f},
-            {0.100f, -0.05f},
+            {0.730, 0.280},
+            {0.140, 0.855},
+            {0.100, -0.05},
             d65
         };
     default:
@@ -177,10 +179,10 @@ float mp_trc_nom_peak(enum mp_csp_trc trc)
 {
     switch (trc) {
     case MP_CSP_TRC_PQ:           return 10000.0 / MP_REF_WHITE;
-    case MP_CSP_TRC_HLG:          return 12.0;
-    case MP_CSP_TRC_V_LOG:        return 46.0855f;
-    case MP_CSP_TRC_S_LOG1:       return 6.52f;
-    case MP_CSP_TRC_S_LOG2:       return 9.212f;
+    case MP_CSP_TRC_HLG:          return 12.0 / MP_REF_WHITE_HLG;
+    case MP_CSP_TRC_V_LOG:        return 46.0855;
+    case MP_CSP_TRC_S_LOG1:       return 6.52;
+    case MP_CSP_TRC_S_LOG2:       return 9.212;
     }
 
     return 1.0;
@@ -229,7 +231,8 @@ void mp_get_rgb2xyz_matrix(struct mp_csp_primaries space, float m[3][3])
 }
 
 // Get multiplication factor required if image data is fit within the LSBs of a
-// higher smaller bit depth isfixed-point texture data.
+// higher smaller bit depth fixed-point texture data.
+// This is broken. Use mp_get_csp_uint_mul().
 double mp_get_csp_mul(enum mp_csp csp, int input_bits, int texture_bits)
 {
     assert(texture_bits >= input_bits);
@@ -291,10 +294,10 @@ void mp_get_csp_matrix(struct mp_csp_params *params, struct mp_cmat *m)
         levels_in = MP_CSP_LEVELS_TV;
 
     switch (colorspace) {
-    case MP_CSP_BT_601:     luma_coeffs(m, 0.299f,  0.587f,  0.114f ); break;
-    case MP_CSP_BT_709:     luma_coeffs(m, 0.2126f, 0.7152f, 0.0722f); break;
-    case MP_CSP_SMPTE_240M: luma_coeffs(m, 0.2122f, 0.7013f, 0.0865f); break;
-    case MP_CSP_BT_2020_NC: luma_coeffs(m, 0.2627f, 0.6780f, 0.0593f); break;
+    case MP_CSP_BT_601:     luma_coeffs(m, 0.299,  0.587,  0.114 ); break;
+    case MP_CSP_BT_709:     luma_coeffs(m, 0.2126, 0.7152, 0.0722); break;
+    case MP_CSP_SMPTE_240M: luma_coeffs(m, 0.2122, 0.7013, 0.0865); break;
+    case MP_CSP_BT_2020_NC: luma_coeffs(m, 0.2627, 0.6780, 0.0593); break;
     case MP_CSP_BT_2020_C: {
         // Note: This outputs into the [-0.5,0.5] range for chroma information.
         // If this clips on any VO, a constant 0.5 coefficient can be added
@@ -331,6 +334,9 @@ void mp_get_csp_matrix(struct mp_csp_params *params, struct mp_cmat *m)
     default:
         abort();
     };
+
+    if (params->is_float)
+        levels_in = (mp_csp_levels)-1;
 
     if ((colorspace == MP_CSP_BT_601 || colorspace == MP_CSP_BT_709 ||
         colorspace == MP_CSP_SMPTE_240M || colorspace == MP_CSP_BT_2020_NC))
