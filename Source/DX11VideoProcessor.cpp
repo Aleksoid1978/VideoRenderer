@@ -2482,12 +2482,12 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		str += L'i';
 	}
 	str += fmt::format(L",{:7.3f}", m_pFilter->m_DrawStats.GetAverageFps());
-	str.append(L"\nInput format  :");
+	str.append(L"\nInput format  : ");
 	if (m_iSrcFromGPU == 11) {
-		str.append(L" D3D11_");
+		str.append(L"D3D11_");
 	}
 	else if (m_iSrcFromGPU == 9) {
-		str.append(L" DXVA2_");
+		str.append(L"DXVA2_");
 	}
 	str.append(m_strStatsStatic2);
 

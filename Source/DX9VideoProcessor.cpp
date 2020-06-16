@@ -2325,9 +2325,9 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 		str += L'i';
 	}
 	str += fmt::format(L",{:7.3f}", m_pFilter->m_DrawStats.GetAverageFps());
-	str.append(L"\nInput format  :");
+	str.append(L"\nInput format  : ");
 	if (m_iSrcFromGPU == 9) {
-		str.append(L" DXVA2_");
+		str.append(L"DXVA2_");
 	}
 	str.append(m_strStatsStatic2);
 
