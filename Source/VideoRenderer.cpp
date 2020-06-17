@@ -27,6 +27,8 @@
 #include "../Include/Version.h"
 #include "VideoRenderer.h"
 
+#define WM_SWITCH_FULLSCREEN (WM_APP + 0x1000)
+
 #define OPT_REGKEY_VIDEORENDERER L"Software\\MPC-BE Filters\\MPC Video Renderer"
 #define OPT_UseD3D11             L"UseD3D11"
 #define OPT_ShowStatistics       L"ShowStatistics"
@@ -986,6 +988,10 @@ void CMpcVideoRenderer::SwitchFullScreen(const bool bCheck)
 	if (m_hWnd) {
 		Init(false);
 		Redraw();
+
+		if (m_hWndParentMain) {
+			PostMessageW(m_hWndParentMain, WM_SWITCH_FULLSCREEN, 1, 0);
+		}
 	}
 }
 
@@ -1155,6 +1161,10 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 			if (m_hWnd) {
 				Init(false);
 				Redraw();
+
+				if (m_hWndParentMain) {
+					PostMessageW(m_hWndParentMain, WM_SWITCH_FULLSCREEN, 0, 0);
+				}
 			}
 		}
 	}
