@@ -5,7 +5,9 @@ Fixed getting the current image using IBasicVideo::GetCurrentImage.
 Improved playback support for some protected DVD-Video.
 Added Sync Offset graph.
 Added support for mirroring ("flip").
-Recommended version of MPC-BE v1.5.5.5327 or later.
+Added ability to change Swap effect during playback.
+Added support for exclusive full screen in DX9 mode.
+Recommended version of MPC-BE 1.5.5.5337 or later.
 
 v0.4.5.1242 - 2020.04.17
 ------------------------
