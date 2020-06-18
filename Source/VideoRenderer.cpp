@@ -263,6 +263,10 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 	if (m_hWndParentMain) {
 		RemoveParentWndProc(m_hWndParentMain);
 	}
+
+	if (m_bIsFullscreen && m_hWndParentMain) {
+		PostMessageW(m_hWndParentMain, WM_SWITCH_FULLSCREEN, 0, 0);
+	}
 }
 
 void CMpcVideoRenderer::DX9Thread()
