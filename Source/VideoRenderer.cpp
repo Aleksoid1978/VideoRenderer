@@ -468,6 +468,16 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 {
 	CheckPointer(pSample, E_POINTER);
 
+	REFERENCE_TIME StartTime, EndTime;
+	if (!pSample || FAILED(pSample->GetTime(&StartTime, &EndTime))) {
+		if (m_pClock && SUCCEEDED(m_pClock->GetTime(&StartTime))) {
+			StartTime -= m_tStart;
+		} else {
+			StartTime = m_tRenderStart * 10000;
+		}
+	}
+	m_FrameStats.Add(StartTime);
+
 	HRESULT hr = S_OK;
 
 	if (m_bUsedD3D11) {

@@ -760,17 +760,6 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
 BOOL CBaseVideoRenderer2::ScheduleSample(IMediaSample *pMediaSample)
 {
     // We override ShouldDrawSampleNow to add quality management
-
-	REFERENCE_TIME StartTime, EndTime;
-	if (!pMediaSample || FAILED(pMediaSample->GetTime(&StartTime, &EndTime))) {
-		if (m_pClock && SUCCEEDED(m_pClock->GetTime(&StartTime))) {
-			StartTime -= m_tStart;
-		} else {
-			StartTime = m_tRenderStart * 10000;
-		}
-	}
-	m_FrameStats.Add(StartTime);
-
     BOOL bDrawImage = CBaseRenderer::ScheduleSample(pMediaSample);
     if (bDrawImage == FALSE) {
 		//++m_cFramesDropped;
