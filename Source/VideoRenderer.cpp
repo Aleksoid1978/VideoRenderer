@@ -108,12 +108,6 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	, m_DX11_VP(this)
 {
 	DLog(L"CMpcVideoRenderer::CMpcVideoRenderer()");
-
-#ifdef _DEBUG
-	DbgSetModuleLevel(LOG_TRACE, DWORD_MAX);
-	DbgSetModuleLevel(LOG_ERROR, DWORD_MAX);
-#endif
-
 	DLog(L"Windows {}", GetWindowsVersion());
 	DLog(GetNameAndVersion());
 

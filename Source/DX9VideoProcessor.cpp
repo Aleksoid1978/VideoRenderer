@@ -259,11 +259,13 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
 
 	HRESULT hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
 	if (!m_pD3DEx) {
+		DLog(L"CDX9VideoProcessor::CDX9VideoProcessor() : failed to call Direct3DCreate9Ex()");
 		return;
 	}
 
-	DXVA2CreateDirect3DDeviceManager9(&m_nResetTocken, &m_pD3DDeviceManager);
+	hr = DXVA2CreateDirect3DDeviceManager9(&m_nResetTocken, &m_pD3DDeviceManager);
 	if (!m_pD3DDeviceManager) {
+		DLog(L"CDX9VideoProcessor::CDX9VideoProcessor() : failed to call DXVA2CreateDirect3DDeviceManager9()");
 		m_pD3DEx.Release();
 	}
 

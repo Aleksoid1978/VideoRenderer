@@ -21,6 +21,10 @@ CBaseVideoRenderer2::CBaseVideoRenderer2(
     m_bSupplierHandlingQuality(FALSE)
 {
     ResetStreamingTimes();
+#ifdef _DEBUG
+	DbgSetModuleLevel(LOG_TRACE, DWORD_MAX);
+	DbgSetModuleLevel(LOG_ERROR, DWORD_MAX);
+#endif
 } // Constructor
 
 
@@ -760,6 +764,7 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
 BOOL CBaseVideoRenderer2::ScheduleSample(IMediaSample *pMediaSample)
 {
     // We override ShouldDrawSampleNow to add quality management
+
     BOOL bDrawImage = CBaseRenderer::ScheduleSample(pMediaSample);
     if (bDrawImage == FALSE) {
 		//++m_cFramesDropped;
