@@ -7,7 +7,6 @@ v0.4.7.1356 - 2020.06.21
 Added Sync Offset graph in statistics.
 Fixed getting the current image using IBasicVideo::GetCurrentImage.
 Improved playback support for some protected DVD-Video.
-Added Sync Offset graph.
 Added support for mirroring ("flip").
 Added ability to change Swap effect during playback.
 Added support for exclusive full screen in DX9 mode.
