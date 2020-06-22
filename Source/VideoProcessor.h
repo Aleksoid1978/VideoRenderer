@@ -82,6 +82,7 @@ protected:
 
 	REFERENCE_TIME m_rtStart = 0;
 	int m_FieldDrawn = 0;
+	bool m_bDoubleFrames = false;
 
 	// AlphaBitmap
 	bool m_bAlphaBitmapEnable = false;
@@ -131,9 +132,10 @@ public:
 	// Settings
 	void SetTexFormat(int value);
 	void SetVPEnableFmts(const VPEnableFormats_t& VPFormats) { m_VPFormats = VPFormats; }
-	void SetDeintDouble(bool value) { m_bDeintDouble = value; }
-	void SetShowStats(bool value)   { m_bShowStats   = value; }
-	void SetInterpolateAt50pct(bool value) { m_bInterpolateAt50pct = value; }
+	void SetDeintDouble(bool value)                          { m_bDeintDouble = value; }
+	void SetShowStats(bool value)                            { m_bShowStats   = value; }
+	void SetInterpolateAt50pct(bool value)                   { m_bInterpolateAt50pct = value; }
+	void SetSwapEffect(int value)                            { m_iSwapEffect = value; }
 
 	bool CheckGraphPlacement();
 	void CalcGraphParams();

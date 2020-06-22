@@ -1397,7 +1397,7 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 	m_RenderStats.syncoffset = rtClock - rtStart;
 	m_Syncs.Add((int)std::clamp(m_RenderStats.syncoffset, -UNITS, UNITS));
 
-	if (SecondFramePossible()) {
+	if (m_bDoubleFrames) {
 		if (rtEnd < rtClock) {
 			m_RenderStats.dropped2++;
 			return S_FALSE; // skip frame
@@ -1425,15 +1425,18 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 	// Get frame type
 	m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE; // Progressive
+	m_bDoubleFrames = false;
 	if (m_bInterlaced) {
 		if (CComQIPtr<IMediaSample2> pMS2 = pSample) {
 			AM_SAMPLE2_PROPERTIES props;
 			if (SUCCEEDED(pMS2->GetProperties(sizeof(props), (BYTE*)&props))) {
-				m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_INTERLACED_BOTTOM_FIELD_FIRST;  // Bottom-field first
-				if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_WEAVE) {
-					m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;                // Progressive
-				} else if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_FIELD1FIRST) {
-					m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_INTERLACED_TOP_FIELD_FIRST; // Top-field first
+				if ((props.dwTypeSpecificFlags & AM_VIDEO_FLAG_WEAVE) == 0) {
+					if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_FIELD1FIRST) {
+						m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_INTERLACED_TOP_FIELD_FIRST; // Top-field first
+					} else {
+						m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_INTERLACED_BOTTOM_FIELD_FIRST; // Bottom-field first
+					}
+					m_bDoubleFrames = m_bDeintDouble && m_D3D11VP.IsReady();
 				}
 			}
 		}

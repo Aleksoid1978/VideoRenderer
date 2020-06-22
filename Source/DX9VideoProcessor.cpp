@@ -1035,7 +1035,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 	m_RenderStats.syncoffset = rtClock - rtStart;
 	m_Syncs.Add((int)std::clamp(m_RenderStats.syncoffset, -UNITS, UNITS));
 
-	if (SecondFramePossible()) {
+	if (m_bDoubleFrames) {
 		if (rtEnd < rtClock) {
 			m_RenderStats.dropped2++;
 			return S_FALSE; // skip frame
@@ -1061,16 +1061,18 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 
 	// Get frame type
 	m_CurrentSampleFmt = DXVA2_SampleProgressiveFrame; // Progressive
+	m_bDoubleFrames = false;
 	if (m_bInterlaced) {
 		if (CComQIPtr<IMediaSample2> pMS2 = pSample) {
 			AM_SAMPLE2_PROPERTIES props;
 			if (SUCCEEDED(pMS2->GetProperties(sizeof(props), (BYTE*)&props))) {
-				m_CurrentSampleFmt = DXVA2_SampleFieldInterleavedOddFirst;      // Bottom-field first
-				if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_WEAVE) {
-					m_CurrentSampleFmt = DXVA2_SampleProgressiveFrame;          // Progressive
-				}
-				else if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_FIELD1FIRST) {
-					m_CurrentSampleFmt = DXVA2_SampleFieldInterleavedEvenFirst; // Top-field first
+				if ((props.dwTypeSpecificFlags & AM_VIDEO_FLAG_WEAVE) == 0) {
+					if (props.dwTypeSpecificFlags & AM_VIDEO_FLAG_FIELD1FIRST) {
+						m_CurrentSampleFmt = DXVA2_SampleFieldInterleavedEvenFirst; // Top-field first
+					} else {
+						m_CurrentSampleFmt = DXVA2_SampleFieldInterleavedOddFirst;  // Bottom-field first
+					}
+					m_bDoubleFrames = m_bDeintDouble && m_DXVA2VP.IsReady();
 				}
 			}
 		}

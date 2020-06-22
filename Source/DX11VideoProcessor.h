@@ -164,7 +164,6 @@ public:
 	// Render: 1 - render first fied or progressive frame, 2 - render second fied, 0 or other - forced repeat of render.
 	HRESULT Render(int field);
 	HRESULT FillBlack();
-	bool SecondFramePossible() { return m_bDeintDouble && m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE; }
 
 	void SetVideoRect(const CRect& videoRect);
 	HRESULT SetWindowRect(const CRect& windowRect);
@@ -179,7 +178,6 @@ public:
 	void SetUpscaling(int value);
 	void SetDownscaling(int value);
 	void SetDither(bool value);
-	void SetSwapEffect(int value) { m_iSwapEffect = value; }
 
 	void SetRotation(int value);
 	void SetFlip(bool value) { m_bFlip = value; }
