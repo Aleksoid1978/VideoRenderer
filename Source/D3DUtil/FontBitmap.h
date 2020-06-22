@@ -289,15 +289,19 @@ public:
 #endif
 			&m_pD2D1Factory);
 
-		hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(m_pDWriteFactory), reinterpret_cast<IUnknown**>(&m_pDWriteFactory));
+		if (SUCCEEDED(hr)) {
+			hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(m_pDWriteFactory), reinterpret_cast<IUnknown**>(&m_pDWriteFactory));
+		}
 
-		hr = CoCreateInstance(
-			CLSID_WICImagingFactory,
-			nullptr,
-			CLSCTX_INPROC_SERVER,
-			IID_IWICImagingFactory,
-			(LPVOID*)&m_pWICFactory
-		);
+		if (SUCCEEDED(hr)) {
+			hr = CoCreateInstance(
+				CLSID_WICImagingFactory,
+				nullptr,
+				CLSCTX_INPROC_SERVER,
+				IID_IWICImagingFactory,
+				(LPVOID*)&m_pWICFactory
+			);
+		}
 	}
 
 	~CFontBitmapDWrite()
@@ -312,6 +316,10 @@ public:
 
 	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, DWORD fontFlags, const WCHAR* chars, UINT lenght)
 	{
+		if (!m_pWICFactory) {
+			return E_ABORT;
+		}
+
 		m_pWICBitmapLock.Release();
 		m_pWICBitmap.Release();
 		m_charCoords.clear();
