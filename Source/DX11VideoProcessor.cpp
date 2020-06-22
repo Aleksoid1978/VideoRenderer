@@ -1371,9 +1371,12 @@ BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 
 HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 {
-	REFERENCE_TIME rtStart = m_pFilter->m_FrameStats.GeTimestamp();
+	REFERENCE_TIME rtStart, rtEnd;
+	if (FAILED(pSample->GetTime(&rtStart, &rtEnd))) {
+		rtStart = m_pFilter->m_FrameStats.GeTimestamp();
+	}
 	const REFERENCE_TIME rtFrameDur = m_pFilter->m_FrameStats.GetAverageFrameDuration();
-	const REFERENCE_TIME rtEnd = rtStart + rtFrameDur;
+	rtEnd = rtStart + rtFrameDur;
 
 	m_rtStart = rtStart;
 	CRefTime rtClock(rtStart);
