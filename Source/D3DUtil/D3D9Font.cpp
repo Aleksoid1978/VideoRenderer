@@ -190,7 +190,7 @@ HRESULT CD3D9Font::CreateStateBlocks()
 
 		if (bSupportsAlphaBlend) {
 			m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-			m_pd3dDevice->SetRenderState(D3DRS_SRCBLEND,         D3DBLEND_SRCALPHA);
+			m_pd3dDevice->SetRenderState(D3DRS_SRCBLEND,         D3DBLEND_ONE); // pre-multiplied src
 			m_pd3dDevice->SetRenderState(D3DRS_DESTBLEND,        D3DBLEND_INVSRCALPHA);
 		} else {
 			m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);

@@ -455,7 +455,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 			}
 		}
 
-		HRESULT hr2 = m_TexStats.Create(m_pD3DDevEx, D3DFMT_A8R8G8B8, m_StatsW, m_StatsH, D3DUSAGE_RENDERTARGET);
+		HRESULT hr2 = m_StatsBackground.InitDeviceObjects(m_pD3DDevEx);
 		if (S_OK == hr2) {
 			hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
 		}
@@ -555,7 +555,6 @@ void CDX9VideoProcessor::ReleaseDevice()
 	ReleaseVP();
 
 	m_TexDither.Release();
-	m_TexStats.Release();
 	m_bAlphaBitmapEnable = false;
 	m_TexAlphaBitmap.Release();
 
@@ -573,6 +572,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 	m_strShaderY = nullptr;
 	m_pPSFinalPass.Release();
 
+	m_StatsBackground.InvalidateDeviceObjects();
 	m_Font3D.InvalidateDeviceObjects();
 	m_Rect3D.InvalidateDeviceObjects();
 
@@ -756,6 +756,8 @@ void CDX9VideoProcessor::UpdateRenderRect()
 void CDX9VideoProcessor::SetGraphSize()
 {
 	if (m_pD3DDevEx && !m_windowRect.IsRectEmpty()) {
+		m_StatsBackground.Set(m_StatsRect, D3DCOLOR_ARGB(80, 0, 0, 0));
+
 		CalcGraphParams();
 		m_Underlay.Set(m_GraphRect, D3DCOLOR_ARGB(80, 0, 0, 0));
 
@@ -2409,22 +2411,18 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 #endif
 
 	HRESULT hr = S_OK;
-	hr = m_pD3DDevEx->SetRenderTarget(0, m_TexStats.pSurface);
-
-	hr = m_pD3DDevEx->ColorFill(m_TexStats.pSurface, nullptr, D3DCOLOR_ARGB(192, 0, 0, 0));
-
-	hr = m_pD3DDevEx->BeginScene();
-	hr = m_Font3D.Draw2DText(5, 5, D3DCOLOR_XRGB(255, 255, 255), str.c_str());
-	static int col = m_StatsW;
-	if (--col < 0) {
-		col = m_StatsW;
-	}
-	m_Rect3D.Set({ col, m_StatsH - 11, col + 5, m_StatsH - 1 }, D3DCOLOR_XRGB(128, 255, 128));
-	m_Rect3D.Draw();
-
 	hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
+	hr = m_pD3DDevEx->BeginScene();
 
-	hr = AlphaBlt(m_pD3DDevEx, CRect(0, 0, m_StatsW, m_StatsH), &m_StatsRect, m_TexStats.pTexture, D3DTEXF_POINT);
+	m_StatsBackground.Draw();
+
+	hr = m_Font3D.Draw2DText(m_StatsTextRect.left, m_StatsTextRect.top, D3DCOLOR_XRGB(255, 255, 255), str.c_str());
+	static int col = m_StatsRect.right;
+	if (--col < m_StatsRect.left) {
+		col = m_StatsRect.right;
+	}
+	m_Rect3D.Set({ col, m_StatsRect.bottom - 11, col + 5, m_StatsRect.bottom - 1 }, D3DCOLOR_XRGB(128, 255, 128));
+	m_Rect3D.Draw();
 
 	if (CheckGraphPlacement()) {
 		m_Underlay.Draw();

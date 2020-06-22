@@ -23,7 +23,7 @@
 #include "D3DCommon.h"
 
 #ifndef FONTBITMAP_MODE
-#define FONTBITMAP_MODE 1
+#define FONTBITMAP_MODE 2
 // 0 - GDI, 1 - GDI+, 2 - DirectWrite
 #endif
 

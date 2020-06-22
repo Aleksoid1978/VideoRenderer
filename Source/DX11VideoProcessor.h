@@ -116,7 +116,7 @@ private:
 	CComPtr<ID3D11Buffer> m_pAlphaBitmapVertex;
 
 	// Statistics
-	Tex2D_t m_TexStats;
+	CD3D11Rectangle m_StatsBackground;
 	CD3D11Font m_Font3D;
 	CD3D11Rectangle m_Rect3D;
 	CD3D11Rectangle m_Underlay;

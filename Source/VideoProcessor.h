@@ -102,6 +102,7 @@ protected:
 	const int m_StatsW = 512;
 	const int m_StatsH = 280;
 	const RECT m_StatsRect = { 10, 10, 10 + m_StatsW, 10 + m_StatsH };
+	const RECT m_StatsTextRect = { m_StatsRect.left + 5, m_StatsRect.top + 5, m_StatsRect.right, m_StatsRect.bottom };
 
 	// Graph of a function
 	CMovingAverage<int> m_Syncs = CMovingAverage<int>(120);

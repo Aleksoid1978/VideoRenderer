@@ -535,6 +535,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	ReleaseVP();
 	m_D3D11VP.ReleaseVideoDevice();
 
+	m_StatsBackground.InvalidateDeviceObjects();
 	m_Font3D.InvalidateDeviceObjects();
 	m_Rect3D.InvalidateDeviceObjects();
 
@@ -543,7 +544,6 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_SyncLine.InvalidateDeviceObjects();
 
 	m_TexDither.Release();
-	m_TexStats.Release();
 	m_bAlphaBitmapEnable = false;
 	m_pAlphaBitmapVertex.Release();
 	m_TexAlphaBitmap.Release();
@@ -689,6 +689,8 @@ void CDX11VideoProcessor::SetGraphSize()
 {
 	if (m_pDeviceContext && !m_windowRect.IsRectEmpty()) {
 		SIZE rtSize = m_windowRect.Size();
+
+		m_StatsBackground.Set(m_StatsRect, rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
 
 		CalcGraphParams();
 		m_Underlay.Set(m_GraphRect, rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
@@ -883,7 +885,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		DLog(L"Graphics adapter: {}", m_strAdapterDescription);
 	}
 
-	HRESULT hr2 = m_TexStats.Create(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, m_StatsW, m_StatsH, Tex2D_DefaultShaderRTarget);
+	HRESULT hr2 = m_StatsBackground.InitDeviceObjects(m_pDevice, m_pDeviceContext);
 	if (S_OK == hr2) {
 		hr2 = m_Font3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
 	}
@@ -2540,48 +2542,33 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 #endif
 
 	ID3D11RenderTargetView* pRenderTargetView = nullptr;
-	HRESULT hr = m_pDevice->CreateRenderTargetView(m_TexStats.pTexture, nullptr, &pRenderTargetView);
+	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
 	if (S_OK == hr) {
-		const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.75f };
-		m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
+		SIZE rtSize = m_windowRect.Size();
 
-		const SIZE rtSize{ m_TexStats.desc.Width, m_TexStats.desc.Height };
-		hr = m_Font3D.Draw2DText(pRenderTargetView, rtSize, 5, 5, D3DCOLOR_XRGB(255, 255, 255), str.c_str());
-		static int col = m_StatsW;
-		if (--col < 0) {
-			col = m_StatsW;
+		m_StatsBackground.Draw(pRenderTargetView, rtSize);
+
+		hr = m_Font3D.Draw2DText(pRenderTargetView, rtSize, m_StatsTextRect.left, m_StatsTextRect.top, D3DCOLOR_XRGB(255, 255, 255), str.c_str());
+		static int col = m_StatsRect.right;
+		if (--col < m_StatsRect.left) {
+			col = m_StatsRect.right;
 		}
-		m_Rect3D.Set({ col, m_StatsH - 11, col + 5, m_StatsH - 1 }, rtSize, D3DCOLOR_XRGB(128, 255, 128));
+		m_Rect3D.Set({ col, m_StatsRect.bottom - 11, col + 5, m_StatsRect.bottom - 1 }, rtSize, D3DCOLOR_XRGB(128, 255, 128));
 		m_Rect3D.Draw(pRenderTargetView, rtSize);
 
-		pRenderTargetView->Release();
-
-		D3D11_VIEWPORT VP;
-		VP.TopLeftX = m_StatsRect.left;
-		VP.TopLeftY = m_StatsRect.top;
-		VP.Width    = m_StatsW;
-		VP.Height   = m_StatsH;
-		VP.MinDepth = 0.0f;
-		VP.MaxDepth = 1.0f;
-		hr = AlphaBlt(m_TexStats.pShaderResource, pRenderTarget, m_pFullFrameVertexBuffer, &VP, m_pSamplerPoint);
 
 		if (CheckGraphPlacement()) {
-			hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
-			if (S_OK == hr) {
-				SIZE rtSize = m_windowRect.Size();
-				m_Underlay.Draw(pRenderTargetView, rtSize);
+			m_Underlay.Draw(pRenderTargetView, rtSize);
 
-				m_Lines.Draw();
+			m_Lines.Draw();
 
-				m_SyncLine.ClearPoints(rtSize);
-				m_SyncLine.AddGFPoints(m_GraphRect.left, m_Xstep, m_Yaxis, m_Yscale,
-					m_Syncs.Data(), m_Syncs.OldestIndex(), m_Syncs.Size(), D3DCOLOR_XRGB(100, 200, 100));
-				m_SyncLine.UpdateVertexBuffer();
-				m_SyncLine.Draw();
-
-				pRenderTargetView->Release();
-			}
+			m_SyncLine.ClearPoints(rtSize);
+			m_SyncLine.AddGFPoints(m_GraphRect.left, m_Xstep, m_Yaxis, m_Yscale,
+				m_Syncs.Data(), m_Syncs.OldestIndex(), m_Syncs.Size(), D3DCOLOR_XRGB(100, 200, 100));
+			m_SyncLine.UpdateVertexBuffer();
+			m_SyncLine.Draw();
 		}
+		pRenderTargetView->Release();
 	}
 
 	return hr;

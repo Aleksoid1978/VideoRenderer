@@ -89,7 +89,7 @@ private:
 	Tex_t m_TexAlphaBitmap;
 
 	// Statistics
-	Tex_t m_TexStats;
+	CD3D9Rectangle m_StatsBackground;
 	CD3D9Font      m_Font3D;
 	CD3D9Rectangle m_Rect3D;
 	CD3D9Rectangle m_Underlay;
