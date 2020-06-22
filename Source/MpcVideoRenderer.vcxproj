@@ -51,7 +51,6 @@
       <AdditionalDependencies>Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>MpcVideoRenderer.def</ModuleDefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <DelayLoadDLLs>gdiplus.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
     <PreBuildEvent>
       <Command>..\update_revision.cmd</Command>

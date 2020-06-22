@@ -42,12 +42,6 @@
 #include <d3d9.h>
 
 #include <algorithm>
-// Workaround compilation errors when including GDI+ with NOMINMAX defined
-namespace Gdiplus
-{
-	using std::min;
-	using std::max;
-};
 #include <numeric>
 #include <vector>
 
