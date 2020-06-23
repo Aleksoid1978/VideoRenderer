@@ -276,10 +276,22 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
 	pOrigSystemParametersInfoA = nullptr;
 	pOrigSetWindowLongA = nullptr;
 	pOrigSetWindowPos = nullptr;
+
+	m_evInit.Reset();
+	m_evResize.Reset();
+	m_evQuit.Reset();
+	m_evThreadFinishJob.Reset();
+
+	m_deviceThread = std::thread([this] { DeviceThreadFunc(); });
 }
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
 {
+	if (m_deviceThread.joinable()) {
+		m_evQuit.Set();
+		m_deviceThread.join();
+	}
+
 	ReleaseDevice();
 
 	m_pD3DDeviceManager.Release();
@@ -292,31 +304,55 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	MH_RemoveHook(SetWindowPos);
 }
 
-HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
+void CDX9VideoProcessor::DeviceThreadFunc()
 {
-	DLog(L"CDX9VideoProcessor::Init()");
+	HANDLE hEvts[] = { m_evInit, m_evResize, m_evReset, m_evQuit };
+
+	for (;;) {
+		const auto dwObject = WaitForMultipleObjects(std::size(hEvts), hEvts, FALSE, INFINITE);
+		m_hrThread = E_FAIL;
+		switch (dwObject) {
+			case WAIT_OBJECT_0:
+				m_hrThread = InitInternal(&m_bChangeDeviceThread);
+				m_evThreadFinishJob.Set();
+				break;
+			case WAIT_OBJECT_0 + 1:
+				ResizeInternal();
+				m_evThreadFinishJob.Set();
+				break;
+			case WAIT_OBJECT_0 + 2:
+				m_hrThread = ResetInternal();
+				m_evThreadFinishJob.Set();
+				break;
+			default:
+				return;
+			}
+	}
+}
+
+HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
+{
+	DLog(L"CDX9VideoProcessor::InitInternal()");
 
 	CheckPointer(m_pD3DEx, E_FAIL);
 
 	if (!pOrigSystemParametersInfoA) {
 		pOrigSystemParametersInfoA = SystemParametersInfoA;
 		auto ret = HookFunc(&pOrigSystemParametersInfoA, pNewSystemParametersInfoA);
-		DLogIf(!ret, L"CMpcVideoRenderer::CMpcVideoRenderer() : hook for SystemParametersInfoA() fail");
+		DLogIf(!ret, L"CMpcVideoRenderer::InitInternal() : hook for SystemParametersInfoA() fail");
 
 		pOrigSetWindowLongA = SetWindowLongA;
 		ret = HookFunc(&pOrigSetWindowLongA, pNewSetWindowLongA);
-		DLogIf(!ret, L"CMpcVideoRenderer::CMpcVideoRenderer() : hook for SetWindowLongA() fail");
+		DLogIf(!ret, L"CMpcVideoRenderer::InitInternal() : hook for SetWindowLongA() fail");
 
 		pOrigSetWindowPos = SetWindowPos;
 		ret = HookFunc(&pOrigSetWindowPos, pNewSetWindowPos);
-		DLogIf(!ret, L"CMpcVideoRenderer::CMpcVideoRenderer() : hook for SetWindowPos() fail");
+		DLogIf(!ret, L"CMpcVideoRenderer::InitInternal() : hook for SetWindowPos() fail");
 
 		MH_EnableHook(MH_ALL_HOOKS);
 	}
 
 	bInitVP = true;
-
-	m_hWnd = hwnd;
 
 	const UINT currentAdapter = GetAdapter(m_hWnd, m_pD3DEx);
 	bool bTryToReset = (currentAdapter == m_nCurrentAdapter) && m_pD3DDevEx;
@@ -359,7 +395,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 		m_d3dpp.SwapEffect = D3DSWAPEFFECT_FLIP;
 		m_d3dpp.Flags = D3DPRESENTFLAG_VIDEO;
 		m_d3dpp.BackBufferCount = 3;
-		m_d3dpp.BackBufferWidth  = m_DisplayMode.Width;
+		m_d3dpp.BackBufferWidth = m_DisplayMode.Width;
 		m_d3dpp.BackBufferHeight = m_DisplayMode.Height;
 		m_d3dpp.BackBufferFormat = m_DisplayMode.Format;
 		m_d3dpp.FullScreen_RefreshRateInHz = m_DisplayMode.RefreshRate;
@@ -369,7 +405,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 		// detect 10-bit device support
 		const bool b10BitOutput = m_InternalTexFmt != D3DFMT_X8R8G8B8 && SUCCEEDED(m_pD3DEx->CheckDeviceType(m_nCurrentAdapter, D3DDEVTYPE_HAL, D3DFMT_A2R10G10B10, D3DFMT_A2R10G10B10, FALSE));
 		m_d3dpp.BackBufferFormat = m_DisplayMode.Format = b10BitOutput ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
-		DLog(L"CDX9VideoProcessor::Init() : fullscreen - {}", D3DFormatToString(m_d3dpp.BackBufferFormat));
+		DLog(L"CDX9VideoProcessor::InitInternal() : fullscreen - {}", D3DFormatToString(m_d3dpp.BackBufferFormat));
 		*/
 
 		if (bTryToReset) {
@@ -438,13 +474,13 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 	if (S_OK == hr && !bTryToReset) {
 		hr = m_pD3DDeviceManager->ResetDevice(m_pD3DDevEx, m_nResetTocken);
 		if (FAILED(hr)) {
-			DLog(L"CDX9VideoProcessor::Init() : ResetDevice() failed with error {}", HR2Str(hr));
+			DLog(L"CDX9VideoProcessor::InitInternal() : ResetDevice() failed with error {}", HR2Str(hr));
 			return E_FAIL;
 		}
 
 		hr = m_DXVA2VP.InitVideoService(m_pD3DDevEx, m_VendorId);
 		if (FAILED(hr)) {
-			DLog(L"CDX9VideoProcessor::Init() : m_DXVA2VP.InitVideoService() failed with error {}", HR2Str(hr));
+			DLog(L"CDX9VideoProcessor::InitInternal() : m_DXVA2VP.InitVideoService() failed with error {}", HR2Str(hr));
 			return E_FAIL;
 		}
 
@@ -518,6 +554,58 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullpt
 	}
 
 	return hr;
+}
+
+HRESULT CDX9VideoProcessor::ResetInternal()
+{
+	DLog(L"CDX9VideoProcessor::ResetInternal()");
+	HRESULT hr = S_OK;
+
+	bInitVP = true;
+
+	if (m_pFilter->m_bIsFullscreen) {
+		ZeroMemory(&m_DisplayMode, sizeof(D3DDISPLAYMODEEX));
+		m_DisplayMode.Size = sizeof(D3DDISPLAYMODEEX);
+		HRESULT hr = m_pD3DEx->GetAdapterDisplayModeEx(m_nCurrentAdapter, &m_DisplayMode, nullptr);
+		DLog(L"Display Mode: {}x{}, {}{}", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate, (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) ? 'i' : 'p');
+
+		m_d3dpp.BackBufferWidth = m_DisplayMode.Width;
+		m_d3dpp.BackBufferHeight = m_DisplayMode.Height;
+		m_d3dpp.BackBufferFormat = m_DisplayMode.Format;
+		m_d3dpp.FullScreen_RefreshRateInHz = m_DisplayMode.RefreshRate;
+		hr = m_pD3DDevEx->ResetEx(&m_d3dpp, &m_DisplayMode);
+		DLogIf(FAILED(hr), L"CDX9VideoProcessor::ResetInternal() : ResetEx(fullscreen) failed with error {}", HR2Str(hr));
+	} else {
+		hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
+		DLogIf(FAILED(hr), L"CDX9VideoProcessor::ResetInternal() : ResetEx() failed with error {}", HR2Str(hr));
+	}
+
+	bInitVP = false;
+
+	return hr;
+}
+
+void CDX9VideoProcessor::ResizeInternal()
+{
+	HRESULT hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
+	DLogIf(FAILED(hr), L"CDX9VideoProcessor::ResizeInternal() : ResetEx() failed with error {}", HR2Str(hr));
+}
+
+HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
+{
+	CheckPointer(m_pD3DEx, E_FAIL);
+
+	m_hWnd = hwnd;
+
+	m_bChangeDeviceThread = false;
+	m_evInit.Set();
+	WaitForSingleObject(m_evThreadFinishJob, INFINITE);
+
+	if (pChangeDevice) {
+		*pChangeDevice = m_bChangeDeviceThread;
+	}
+
+	return m_hrThread;
 }
 
 bool CDX9VideoProcessor::Initialized()
@@ -1341,8 +1429,9 @@ HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 			if (backBufW != m_d3dpp.BackBufferWidth || backBufH != m_d3dpp.BackBufferHeight) {
 				m_d3dpp.BackBufferWidth = backBufW;
 				m_d3dpp.BackBufferHeight = backBufH;
-				HRESULT hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
-				DLogIf(FAILED(hr), L"CDX9VideoProcessor::SetWindowRect() : ResetEx() failed with error {}", HR2Str(hr));
+
+				m_evResize.Set();
+				WaitForSingleObject(m_evThreadFinishJob, INFINITE);
 			}
 		}
 
@@ -1356,31 +1445,10 @@ HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 
 HRESULT CDX9VideoProcessor::Reset()
 {
-	DLog(L"CDX9VideoProcessor::Reset()");
-	HRESULT hr = S_OK;
+	m_evReset.Set();
+	WaitForSingleObject(m_evThreadFinishJob, INFINITE);
 
-	bInitVP = true;
-
-	if (m_pFilter->m_bIsFullscreen) {
-		ZeroMemory(&m_DisplayMode, sizeof(D3DDISPLAYMODEEX));
-		m_DisplayMode.Size = sizeof(D3DDISPLAYMODEEX);
-		HRESULT hr = m_pD3DEx->GetAdapterDisplayModeEx(m_nCurrentAdapter, &m_DisplayMode, nullptr);
-		DLog(L"Display Mode: {}x{}, {}{}", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate, (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) ? 'i' : 'p');
-
-		m_d3dpp.BackBufferWidth = m_DisplayMode.Width;
-		m_d3dpp.BackBufferHeight = m_DisplayMode.Height;
-		m_d3dpp.BackBufferFormat = m_DisplayMode.Format;
-		m_d3dpp.FullScreen_RefreshRateInHz = m_DisplayMode.RefreshRate;
-		hr = m_pD3DDevEx->ResetEx(&m_d3dpp, &m_DisplayMode);
-		DLogIf(FAILED(hr), L"CDX9VideoProcessor::Reset() : ResetEx(fullscreen) failed with error {}", HR2Str(hr));
-	} else {
-		hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
-		DLogIf(FAILED(hr), L"CDX9VideoProcessor::Reset() : ResetEx() failed with error {}", HR2Str(hr));
-	}
-
-	bInitVP = false;
-
-	return hr;
+	return m_hrThread;
 }
 
 HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)

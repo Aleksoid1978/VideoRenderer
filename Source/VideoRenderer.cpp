@@ -221,17 +221,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		m_bUsedD3D11 = false;
 	}
 
-	m_evDX9Init.Reset();
-	m_evDX9InitHwnd.Reset();
-	m_evDX9Resize.Reset();
-	m_evQuit.Reset();
-	m_evThreadFinishJob.Reset();
-
-	m_DX9Thread = std::thread([this] { DX9Thread(); });
-
-	m_evDX9Init.Set();
-	WaitForSingleObject(m_evThreadFinishJob, INFINITE);
-	*phr = m_hrThread;
+	*phr = m_DX9_VP.Init(::GetForegroundWindow());
 	DLogIf(S_OK == *phr, L"Direct3D9 initialization successfully!");
 
 	return;
@@ -242,11 +232,6 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 	DLog(L"CMpcVideoRenderer::~CMpcVideoRenderer()");
 
 	EndFullScreenTimer();
-
-	if (m_DX9Thread.joinable()) {
-		m_evQuit.Set();
-		m_DX9Thread.join();
-	}
 
 	if (m_hWndWindow) {
 		::SendMessageW(m_hWndWindow, WM_CLOSE, 0, 0);
@@ -260,42 +245,6 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 
 	if (m_bIsFullscreen && m_hWndParentMain) {
 		PostMessageW(m_hWndParentMain, WM_SWITCH_FULLSCREEN, 0, 0);
-	}
-}
-
-void CMpcVideoRenderer::DX9Thread()
-{
-	HANDLE hEvts[] = { m_evDX9Init, m_evDX9InitHwnd, m_evDX9Resize, m_evDX9Reset, m_evQuit };
-
-	for (;;) {
-		const auto dwObject = WaitForMultipleObjects(std::size(hEvts), hEvts, FALSE, INFINITE);
-		m_hrThread = E_FAIL;
-		switch (dwObject) {
-			case WAIT_OBJECT_0:
-				m_hrThread = m_DX9_VP.Init(::GetForegroundWindow());
-				m_evThreadFinishJob.Set();
-				break;
-			case WAIT_OBJECT_0 + 1:
-				{
-					bool bChangeDevice = false;
-					m_hrThread = m_DX9_VP.Init(m_hWnd, &bChangeDevice);
-					if (bChangeDevice) {
-						DoAfterChangingDevice();
-					}
-				}
-				m_evThreadFinishJob.Set();
-				break;
-			case WAIT_OBJECT_0 + 2:
-				m_hrThread = m_DX9_VP.SetWindowRect(m_windowRect);
-				m_evThreadFinishJob.Set();
-				break;
-			case WAIT_OBJECT_0 + 3:
-				m_hrThread = m_DX9_VP.Reset();
-				m_evThreadFinishJob.Set();
-				break;
-			default:
-				return;
-		}
 	}
 }
 
@@ -591,8 +540,7 @@ void CMpcVideoRenderer::OnDisplayModeChange(const bool bReset/* = false*/)
 	if (bReset && !m_bUsedD3D11) {
 		CAutoLock cRendererLock(&m_RendererLock);
 
-		m_evDX9Reset.Set();
-		WaitForSingleObject(m_evThreadFinishJob, INFINITE);
+		m_DX9_VP.Reset();
 	}
 
 	m_hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
@@ -1076,16 +1024,15 @@ HRESULT CMpcVideoRenderer::Init(const bool bCreateWindow/* = false*/)
 
 	m_hWnd = m_bIsFullscreen ? m_hWndParentMain : m_hWndWindow;
 
+	bool bChangeDevice = false;
 	if (m_bUsedD3D11) {
-		bool bChangeDevice = false;
 		hr = m_DX11_VP.Init(m_hWnd, &bChangeDevice);
-		if (bChangeDevice) {
-			DoAfterChangingDevice();
-		}
 	} else {
-		m_evDX9InitHwnd.Set();
-		WaitForSingleObject(m_evThreadFinishJob, INFINITE);
-		hr = m_hrThread;
+		hr = m_DX9_VP.Init(m_hWnd, &bChangeDevice);
+	}
+
+	if (bChangeDevice) {
+		DoAfterChangingDevice();
 	}
 
 	return hr;
@@ -1180,8 +1127,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 	if (m_bUsedD3D11) {
 		m_DX11_VP.SetWindowRect(m_windowRect);
 	} else {
-		m_evDX9Resize.Set();
-		WaitForSingleObject(m_evThreadFinishJob, INFINITE);
+		m_DX9_VP.SetWindowRect(m_windowRect);
 	}
 
 	m_windowRect = windowRect;

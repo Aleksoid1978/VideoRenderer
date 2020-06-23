@@ -108,16 +108,6 @@ private:
 
 	ISubRenderCallback* m_pSubCallBack = nullptr;
 
-	CAMEvent m_evDX9Init;
-	CAMEvent m_evDX9InitHwnd;
-	CAMEvent m_evDX9Resize;
-	CAMEvent m_evDX9Reset;
-	CAMEvent m_evQuit;
-	CAMEvent m_evThreadFinishJob;
-	HRESULT m_hrThread = E_FAIL;
-	std::thread m_DX9Thread;
-	void DX9Thread();
-
 	CRect m_windowRect, m_videoRect;
 
 	bool m_bForceRedrawing = true;

@@ -96,6 +96,20 @@ private:
 	CD3D9Lines     m_Lines;
 	CD3D9Polyline  m_SyncLine;
 
+	CAMEvent m_evInit;
+	CAMEvent m_evResize;
+	CAMEvent m_evReset;
+	CAMEvent m_evQuit;
+	CAMEvent m_evThreadFinishJob;
+	HRESULT m_hrThread = E_FAIL;
+	bool m_bChangeDeviceThread = false;
+	std::thread m_deviceThread;
+	void DeviceThreadFunc();
+
+	HRESULT InitInternal(bool* pChangeDevice = nullptr);
+	HRESULT ResetInternal();
+	void ResizeInternal();
+
 public:
 	CDX9VideoProcessor(CMpcVideoRenderer* pFilter);
 	~CDX9VideoProcessor();
