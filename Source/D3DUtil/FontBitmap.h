@@ -297,7 +297,7 @@ public:
 
 		if (SUCCEEDED(hr)) {
 			hr = CoCreateInstance(
-				CLSID_WICImagingFactory,
+				CLSID_WICImagingFactory1,
 				nullptr,
 				CLSCTX_INPROC_SERVER,
 				IID_IWICImagingFactory,
