@@ -184,22 +184,24 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	HRESULT hr = S_FALSE;
 
 	if (m_bUsedD3D11) {
-		m_VideoProcessor = new CDX11VideoProcessor(this);
+		m_VideoProcessor = new CDX11VideoProcessor(this, hr);
+		if (SUCCEEDED(hr)) {
+			// configure the video processor
+			m_VideoProcessor->SetShowStats(m_Sets.bShowStats);
+			m_VideoProcessor->SetTexFormat(m_Sets.iTextureFmt);
+			m_VideoProcessor->SetVPEnableFmts(m_Sets.VPFmts);
+			m_VideoProcessor->SetDeintDouble(m_Sets.bDeintDouble);
+			m_VideoProcessor->SetVPScaling(m_Sets.bVPScaling);
+			m_VideoProcessor->SetChromaScaling(m_Sets.iChromaScaling);
+			m_VideoProcessor->SetUpscaling(m_Sets.iUpscaling);
+			m_VideoProcessor->SetDownscaling(m_Sets.iDownscaling);
+			m_VideoProcessor->SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
+			m_VideoProcessor->SetDither(m_Sets.bUseDither);
+			m_VideoProcessor->SetSwapEffect(m_Sets.iSwapEffect);
 
-		// configure the video processor
-		m_VideoProcessor->SetShowStats(m_Sets.bShowStats);
-		m_VideoProcessor->SetTexFormat(m_Sets.iTextureFmt);
-		m_VideoProcessor->SetVPEnableFmts(m_Sets.VPFmts);
-		m_VideoProcessor->SetDeintDouble(m_Sets.bDeintDouble);
-		m_VideoProcessor->SetVPScaling(m_Sets.bVPScaling);
-		m_VideoProcessor->SetChromaScaling(m_Sets.iChromaScaling);
-		m_VideoProcessor->SetUpscaling(m_Sets.iUpscaling);
-		m_VideoProcessor->SetDownscaling(m_Sets.iDownscaling);
-		m_VideoProcessor->SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
-		m_VideoProcessor->SetDither(m_Sets.bUseDither);
-		m_VideoProcessor->SetSwapEffect(m_Sets.iSwapEffect);
+			hr = m_VideoProcessor->Init(m_hWnd);
+		}
 
-		hr = m_VideoProcessor->Init(m_hWnd);
 		if (FAILED(hr)) {
 			SAFE_DELETE(m_VideoProcessor);
 			m_bUsedD3D11 = false;
@@ -208,22 +210,23 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	}
 
 	if (!m_VideoProcessor) {
-		m_VideoProcessor = new CDX9VideoProcessor(this);
+		m_VideoProcessor = new CDX9VideoProcessor(this, hr);
+		if (SUCCEEDED(hr)) {
+			// configure the video processor
+			m_VideoProcessor->SetShowStats(m_Sets.bShowStats);
+			m_VideoProcessor->SetTexFormat(m_Sets.iTextureFmt);
+			m_VideoProcessor->SetVPEnableFmts(m_Sets.VPFmts);
+			m_VideoProcessor->SetDeintDouble(m_Sets.bDeintDouble);
+			m_VideoProcessor->SetVPScaling(m_Sets.bVPScaling);
+			m_VideoProcessor->SetChromaScaling(m_Sets.iChromaScaling);
+			m_VideoProcessor->SetUpscaling(m_Sets.iUpscaling);
+			m_VideoProcessor->SetDownscaling(m_Sets.iDownscaling);
+			m_VideoProcessor->SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
+			m_VideoProcessor->SetDither(m_Sets.bUseDither);
+			m_VideoProcessor->SetSwapEffect(m_Sets.iSwapEffect);
 
-		// configure the video processor
-		m_VideoProcessor->SetShowStats(m_Sets.bShowStats);
-		m_VideoProcessor->SetTexFormat(m_Sets.iTextureFmt);
-		m_VideoProcessor->SetVPEnableFmts(m_Sets.VPFmts);
-		m_VideoProcessor->SetDeintDouble(m_Sets.bDeintDouble);
-		m_VideoProcessor->SetVPScaling(m_Sets.bVPScaling);
-		m_VideoProcessor->SetChromaScaling(m_Sets.iChromaScaling);
-		m_VideoProcessor->SetUpscaling(m_Sets.iUpscaling);
-		m_VideoProcessor->SetDownscaling(m_Sets.iDownscaling);
-		m_VideoProcessor->SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
-		m_VideoProcessor->SetDither(m_Sets.bUseDither);
-		m_VideoProcessor->SetSwapEffect(m_Sets.iSwapEffect);
-
-		hr = m_VideoProcessor->Init(::GetForegroundWindow());
+			hr = m_VideoProcessor->Init(::GetForegroundWindow());
+		}
 
 		DLogIf(S_OK == hr, L"Direct3D9 initialization successfully!");
 	}

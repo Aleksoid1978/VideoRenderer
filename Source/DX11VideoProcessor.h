@@ -126,7 +126,7 @@ private:
 	bool m_bUseNativeExternalDecoder = false;
 
 public:
-	CDX11VideoProcessor(CMpcVideoRenderer* pFilter);
+	CDX11VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr);
 	~CDX11VideoProcessor() override;
 
 	HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr) override;

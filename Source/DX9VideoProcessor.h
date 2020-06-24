@@ -111,7 +111,7 @@ private:
 	void ResizeInternal();
 
 public:
-	CDX9VideoProcessor(CMpcVideoRenderer* pFilter);
+	CDX9VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr);
 	~CDX9VideoProcessor() override;
 
 	HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr) override;

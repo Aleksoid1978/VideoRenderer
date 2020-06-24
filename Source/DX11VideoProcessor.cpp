@@ -337,7 +337,7 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(
 
 // CDX11VideoProcessor
 
-CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter)
+CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr)
 	: CVideoProcessor(pFilter)
 	, m_Font3D(L"Consolas", 14)
 {
@@ -347,14 +347,16 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter)
 	m_hDXGILib = LoadLibraryW(L"dxgi.dll");
 	if (!m_hDXGILib) {
 		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : failed to load dxgi.dll");
+		hr = E_FAIL;
 		return;
 	}
 	m_fnCreateDXGIFactory1 = (PFNCREATEDXGIFACTORY1)GetProcAddress(m_hDXGILib, "CreateDXGIFactory1");
 	if (!m_fnCreateDXGIFactory1) {
 		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : failed to get CreateDXGIFactory1()");
+		hr = E_FAIL;
 		return;
 	}
-	HRESULT hr = m_fnCreateDXGIFactory1(IID_IDXGIFactory1, (void**)&m_pDXGIFactory1);
+	hr = m_fnCreateDXGIFactory1(IID_IDXGIFactory1, (void**)&m_pDXGIFactory1);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : CreateDXGIFactory1() failed with error {}", HR2Str(hr));
 		return;
@@ -363,11 +365,14 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter)
 	m_hD3D11Lib = LoadLibraryW(L"d3d11.dll");
 	if (!m_hD3D11Lib) {
 		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : failed to load d3d11.dll");
+		hr = E_FAIL;
 		return;
 	}
 	m_fnD3D11CreateDevice = (PFN_D3D11_CREATE_DEVICE)GetProcAddress(m_hD3D11Lib, "D3D11CreateDevice");
 	if (!m_fnD3D11CreateDevice) {
 		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : failed to get D3D11CreateDevice()");
+		hr = E_FAIL;
+		return;
 	}
 
 	// set default ProcAmp ranges and values

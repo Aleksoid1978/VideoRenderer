@@ -250,23 +250,26 @@ inline bool HookFunc(T** ppSystemFunction, PVOID pHookFunction)
 
 // CDX9VideoProcessor
 
-CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter)
+CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr)
 	: CVideoProcessor(pFilter)
 	, m_Font3D(L"Consolas", 14)
 {
 	m_nCurrentAdapter = D3DADAPTER_DEFAULT;
 	m_pDisplayMode = &m_DisplayMode;
 
-	HRESULT hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
-	if (!m_pD3DEx) {
+	hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
+	if (!m_pD3DEx || FAILED(hr)) {
 		DLog(L"CDX9VideoProcessor::CDX9VideoProcessor() : failed to call Direct3DCreate9Ex()");
+		hr = E_FAIL;
 		return;
 	}
 
 	hr = DXVA2CreateDirect3DDeviceManager9(&m_nResetTocken, &m_pD3DDeviceManager);
-	if (!m_pD3DDeviceManager) {
+	if (!m_pD3DDeviceManager || FAILED(hr)) {
 		DLog(L"CDX9VideoProcessor::CDX9VideoProcessor() : failed to call DXVA2CreateDirect3DDeviceManager9()");
+		hr = E_FAIL;
 		m_pD3DEx.Release();
+		return;
 	}
 
 	// set default ProcAmp ranges and values
