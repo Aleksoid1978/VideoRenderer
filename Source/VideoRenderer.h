@@ -98,11 +98,8 @@ private:
 	int m_Stepping = 0;
 	REFERENCE_TIME m_rtStartTime = 0;
 
-	// DXVA2 VideoProcessor
-	CDX9VideoProcessor m_DX9_VP;
-
-	// D3D11 VideoProcessor
-	CDX11VideoProcessor m_DX11_VP;
+	// VideoProcessor
+	CVideoProcessor* m_VideoProcessor = nullptr;
 
 	CMediaType m_inputMT;
 
