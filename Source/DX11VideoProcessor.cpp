@@ -2326,6 +2326,12 @@ void CDX11VideoProcessor::SetDither(bool value)
 	UpdatePostScaleTexures(m_windowRect.Size());
 }
 
+void CDX11VideoProcessor::SetSwapEffect(int value)
+{
+	m_pDXGISwapChain1.Release();
+	m_iSwapEffect = value;
+}
+
 void CDX11VideoProcessor::SetRotation(int value)
 {
 	m_iRotation = value;

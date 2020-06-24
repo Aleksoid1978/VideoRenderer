@@ -1287,7 +1287,6 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 		m_Sets.iSwapEffect = setings.iSwapEffect;
 		if (m_hWnd) {
 			if (m_bUsedD3D11) {
-				m_DX11_VP.ReleaseSwapChain();
 				m_DX11_VP.SetSwapEffect(m_Sets.iSwapEffect);
 			} else {
 				m_DX9_VP.SetSwapEffect(m_Sets.iSwapEffect);

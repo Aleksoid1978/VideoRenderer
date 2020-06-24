@@ -1676,6 +1676,11 @@ void CDX9VideoProcessor::SetDither(bool value)
 	UpdatePostScaleTexures(m_windowRect.Size());
 }
 
+void CDX9VideoProcessor::SetSwapEffect(int value)
+{
+	m_iSwapEffect = value;
+}
+
 void CDX9VideoProcessor::SetRotation(int value)
 {
 	m_iRotation = value;

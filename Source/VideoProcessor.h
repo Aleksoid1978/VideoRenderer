@@ -115,19 +115,33 @@ protected:
 	CVideoProcessor(CMpcVideoRenderer* pFilter) : m_pFilter(pFilter) {}
 
 public:
+	virtual HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr) = 0;
+
+	virtual IDirect3DDeviceManager9* GetDeviceManager9() = 0;
+	UINT GetCurrentAdapter() { return m_nCurrentAdapter; }
+
+	virtual BOOL VerifyMediaType(const CMediaType* pmt) = 0;
+	virtual BOOL InitMediaType(const CMediaType* pmt) = 0;
+
+	virtual BOOL GetAlignmentSize(const CMediaType& mt, SIZE& Size) = 0;
+
+	virtual HRESULT ProcessSample(IMediaSample* pSample) = 0;
+	virtual HRESULT Render(int field) = 0;
+	virtual HRESULT FillBlack() = 0;
+
 	void Start() { m_rtStart = 0; }
+	virtual void Flush() = 0;
+	virtual HRESULT Reset() = 0;
 
 	ColorFormat_t GetColorFormat() { return m_srcParams.cformat; }
 
 	void GetSourceRect(CRect& sourceRect) { sourceRect = m_srcRect; }
 	void GetVideoRect(CRect& videoRect) { videoRect = m_videoRect; }
+	virtual void SetVideoRect(const CRect& videoRect) = 0;
+	virtual HRESULT SetWindowRect(const CRect& windowRect) = 0;
 
 	HRESULT GetVideoSize(long *pWidth, long *pHeight);
-
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
-
-	int GetRotation() { return m_iRotation; }
-	int GetFlip() { return m_bFlip; }
 
 	// Settings
 	void SetTexFormat(int value);
@@ -135,7 +149,24 @@ public:
 	void SetDeintDouble(bool value)                          { m_bDeintDouble = value; }
 	void SetShowStats(bool value)                            { m_bShowStats   = value; }
 	void SetInterpolateAt50pct(bool value)                   { m_bInterpolateAt50pct = value; }
-	void SetSwapEffect(int value)                            { m_iSwapEffect = value; }
+	virtual void SetVPScaling(bool value)    = 0;
+	virtual void SetChromaScaling(int value) = 0;
+	virtual void SetUpscaling(int value)     = 0;
+	virtual void SetDownscaling(int value)   = 0;
+	virtual void SetDither(bool value)       = 0;
+	virtual void SetSwapEffect(int value)    = 0;
+
+	int GetRotation() { return m_iRotation; }
+	virtual void SetRotation(int value) = 0;
+	int GetFlip() { return m_bFlip; }
+	void SetFlip(bool value) { m_bFlip = value; }
+
+	virtual void ClearPostScaleShaders() = 0;
+	virtual HRESULT AddPostScaleShader(const std::wstring& name, const std::string& srcCode) = 0;
+
+	virtual HRESULT GetCurentImage(long *pDIBImage) = 0;
+	virtual HRESULT GetDisplayedImage(BYTE **ppDib, unsigned *pSize) = 0;
+	virtual HRESULT GetVPInfo(std::wstring& str) = 0;
 
 	bool CheckGraphPlacement();
 	void CalcGraphParams();

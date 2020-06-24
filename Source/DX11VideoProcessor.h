@@ -129,7 +129,7 @@ public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter);
 	~CDX11VideoProcessor();
 
-	HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr);
+	HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr) override;
 	bool Initialized();
 
 private:
@@ -148,44 +148,45 @@ private:
 public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, const bool bFromDecoder = false);
 	HRESULT InitSwapChain();
-	void ReleaseSwapChain() { m_pDXGISwapChain1.Release(); }
 
-	BOOL VerifyMediaType(const CMediaType* pmt);
-	BOOL InitMediaType(const CMediaType* pmt);
+	BOOL VerifyMediaType(const CMediaType* pmt) override;
+	BOOL InitMediaType(const CMediaType* pmt) override;
 
 	HRESULT InitializeD3D11VP(const FmtConvParams_t& params, const UINT width, const UINT height);
 	HRESULT InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height);
 	void UpdatFrameProperties(); // use this after receiving modified frame from hardware decoder
 
-	BOOL GetAlignmentSize(const CMediaType& mt, SIZE& Size);
+	BOOL GetAlignmentSize(const CMediaType& mt, SIZE& Size) override;
 
-	HRESULT ProcessSample(IMediaSample* pSample);
+	HRESULT ProcessSample(IMediaSample* pSample) override;
 	HRESULT CopySample(IMediaSample* pSample);
 	// Render: 1 - render first fied or progressive frame, 2 - render second fied, 0 or other - forced repeat of render.
-	HRESULT Render(int field);
-	HRESULT FillBlack();
+	HRESULT Render(int field) override;
+	HRESULT FillBlack() override;
 
-	void SetVideoRect(const CRect& videoRect);
-	HRESULT SetWindowRect(const CRect& windowRect);
+	void SetVideoRect(const CRect& videoRect)      override;
+	HRESULT SetWindowRect(const CRect& windowRect) override;
+	HRESULT Reset() override { return S_OK; }
 
-	HRESULT GetCurentImage(long *pDIBImage);
-	HRESULT GetDisplayedImage(BYTE **ppDib, unsigned* pSize);
-	HRESULT GetVPInfo(std::wstring& str);
+	IDirect3DDeviceManager9* GetDeviceManager9() override { return GetDevMan9(); }
+	HRESULT GetCurentImage(long *pDIBImage) override;
+	HRESULT GetDisplayedImage(BYTE **ppDib, unsigned* pSize) override;
+	HRESULT GetVPInfo(std::wstring& str) override;
 
 	// Settings
-	void SetVPScaling(bool value);
-	void SetChromaScaling(int value);
-	void SetUpscaling(int value);
-	void SetDownscaling(int value);
-	void SetDither(bool value);
+	void SetVPScaling(bool value)    override;
+	void SetChromaScaling(int value) override;
+	void SetUpscaling(int value)     override;
+	void SetDownscaling(int value)   override;
+	void SetDither(bool value)       override;
+	void SetSwapEffect(int value)    override;
 
-	void SetRotation(int value);
-	void SetFlip(bool value) { m_bFlip = value; }
+	void SetRotation(int value) override;
 
-	void Flush();
+	void Flush() override;;
 
-	void ClearPostScaleShaders();
-	HRESULT AddPostScaleShader(const std::wstring& name, const std::string& srcCode);
+	void ClearPostScaleShaders() override;
+	HRESULT AddPostScaleShader(const std::wstring& name, const std::string& srcCode) override;
 
 private:
 	void UpdateTexures(SIZE texsize);

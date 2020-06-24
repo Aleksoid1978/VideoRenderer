@@ -35,11 +35,10 @@ protected:
 	D3DFORMAT m_srcDXVA2Format = D3DFMT_UNKNOWN;
 	D3DPRESENT_PARAMETERS m_d3dpp = {};
 
-public:
 	CDX9Device();
 	~CDX9Device();
 
-	IDirect3DDeviceManager9* GetDeviceManager9() { return m_pD3DDeviceManager; }
+	IDirect3DDeviceManager9* GetDevMan9() { return m_pD3DDeviceManager; }
 
 	HRESULT InitDX9Device(const HWND hwnd, bool* pChangeDevice = nullptr);
 	void ReleaseDX9Device();
