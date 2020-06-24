@@ -494,17 +494,17 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 			}
 		}
 
-		HRESULT hr2 = m_StatsBackground.InitDeviceObjects(m_pD3DDevEx);
-		if (S_OK == hr2) {
-			hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
-		}
-		if (S_OK == hr2) {
+		HRESULT hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
+		DLogIf(FAILED(hr2), L"m_Font3D.InitDeviceObjects() failed with error {}", HR2Str(hr2));
+		if (SUCCEEDED(hr2)) {
+			hr2 = m_StatsBackground.InitDeviceObjects(m_pD3DDevEx);
 			hr2 = m_Rect3D.InitDeviceObjects(m_pD3DDevEx);
-
 			hr2 = m_Underlay.InitDeviceObjects(m_pD3DDevEx);
 			hr2 = m_Lines.InitDeviceObjects(m_pD3DDevEx);
 			hr2 = m_SyncLine.InitDeviceObjects(m_pD3DDevEx);
+			DLogIf(FAILED(hr2), L"Geometric primitives InitDeviceObjects() failed with error {}", HR2Str(hr2));
 		}
+		ASSERT(S_OK == hr2);
 
 		HRESULT hr3 = m_TexDither.Create(m_pD3DDevEx, D3DFMT_A16B16G16R16F, dither_size, dither_size, D3DUSAGE_DYNAMIC);
 		if (S_OK == hr3) {
