@@ -129,7 +129,7 @@ public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr);
 	~CDX11VideoProcessor() override;
 
-	UINT Type() override { return 11; }
+	UINT Type() override { return VP_DX11; }
 
 	HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr) override;
 	bool Initialized();

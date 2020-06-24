@@ -24,6 +24,11 @@
 #include "DisplayConfig.h"
 #include "FrameStats.h"
 
+enum : UINT {
+	VP_DX9 = 9,
+	VP_DX11 = 11
+};
+
 class CMpcVideoRenderer;
 
 class CVideoProcessor

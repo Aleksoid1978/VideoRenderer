@@ -512,7 +512,7 @@ void CMpcVideoRenderer::UpdateDiplayInfo()
 
 void CMpcVideoRenderer::OnDisplayModeChange(const bool bReset/* = false*/)
 {
-	if (bReset && m_VideoProcessor->Type() == 9) {
+	if (bReset && m_VideoProcessor->Type() == VP_DX9) {
 		CAutoLock cRendererLock(&m_RendererLock);
 
 		m_VideoProcessor->Reset();
@@ -562,7 +562,7 @@ STDMETHODIMP CMpcVideoRenderer::Run(REFERENCE_TIME rtStart)
 	CAutoLock cVideoLock(&m_InterfaceLock);
 	m_filterState = State_Running;
 
-	if (m_VideoProcessor->Type() == 11) {
+	if (m_VideoProcessor->Type() == VP_DX11) {
 		if (!m_bCheckSubInvAlpha) {
 			// only one check for XySubFilter in the graph after playback starts
 			m_bCheckSubInvAlpha = true;
@@ -1019,7 +1019,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 
 	CAutoLock cRendererLock(&m_RendererLock);
 
-	if (m_VideoProcessor->Type() == 9 && (m_Sets.bExclusiveFS || m_bIsFullscreen)) {
+	if (m_VideoProcessor->Type() == VP_DX9 && (m_Sets.bExclusiveFS || m_bIsFullscreen)) {
 		const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 		MONITORINFO mi = { mi.cbSize = sizeof(mi) };
 		::GetMonitorInfoW(hMon, &mi);

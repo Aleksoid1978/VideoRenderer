@@ -114,7 +114,7 @@ public:
 	CDX9VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr);
 	~CDX9VideoProcessor() override;
 
-	UINT Type() override { return 9; }
+	UINT Type() override { return VP_DX9; }
 
 	HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr) override;
 	bool Initialized();
