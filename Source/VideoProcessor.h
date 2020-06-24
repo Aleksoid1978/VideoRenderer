@@ -24,7 +24,7 @@
 #include "DisplayConfig.h"
 #include "FrameStats.h"
 
-enum : UINT {
+enum : int {
 	VP_DX9 = 9,
 	VP_DX11 = 11
 };
@@ -122,7 +122,7 @@ protected:
 public:
 	virtual ~CVideoProcessor() = default;
 
-	virtual UINT Type() = 0;
+	virtual int Type() = 0;
 
 	virtual HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr) = 0;
 
