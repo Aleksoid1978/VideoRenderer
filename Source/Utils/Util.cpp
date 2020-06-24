@@ -85,7 +85,7 @@ std::wstring HR2Str(const HRESULT hr)
 		UNPACK_VALUE(D3DERR_WASSTILLDRAWING);
 #endif
 	default:
-		str = fmt::format(L"{:#010x}", hr);
+		str = fmt::format(L"{:#010x}", (uint32_t)hr);
 	};
 #undef UNPACK_VALUE
 #undef UNPACK_HR_WIN32
