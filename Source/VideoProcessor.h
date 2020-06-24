@@ -117,6 +117,8 @@ protected:
 public:
 	virtual ~CVideoProcessor() = default;
 
+	virtual UINT Type() = 0;
+
 	virtual HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr) = 0;
 
 	virtual IDirect3DDeviceManager9* GetDeviceManager9() = 0;

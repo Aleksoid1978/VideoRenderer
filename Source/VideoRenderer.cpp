@@ -180,10 +180,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 	}
 
-	m_bUsedD3D11 = m_Sets.bUseD3D11 && IsWindows7SP1OrGreater();
 	HRESULT hr = S_FALSE;
 
-	if (m_bUsedD3D11) {
+	if (m_Sets.bUseD3D11 && IsWindows7SP1OrGreater()) {
 		m_VideoProcessor = new CDX11VideoProcessor(this, hr);
 		if (SUCCEEDED(hr)) {
 			// configure the video processor
@@ -204,7 +203,6 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 		if (FAILED(hr)) {
 			SAFE_DELETE(m_VideoProcessor);
-			m_bUsedD3D11 = false;
 		}
 		DLogIf(S_OK == hr, L"Direct3D11 initialization successfully!");
 	}
@@ -514,7 +512,7 @@ void CMpcVideoRenderer::UpdateDiplayInfo()
 
 void CMpcVideoRenderer::OnDisplayModeChange(const bool bReset/* = false*/)
 {
-	if (bReset && !m_bUsedD3D11) {
+	if (bReset && m_VideoProcessor->Type() == 9) {
 		CAutoLock cRendererLock(&m_RendererLock);
 
 		m_VideoProcessor->Reset();
@@ -564,7 +562,7 @@ STDMETHODIMP CMpcVideoRenderer::Run(REFERENCE_TIME rtStart)
 	CAutoLock cVideoLock(&m_InterfaceLock);
 	m_filterState = State_Running;
 
-	if (m_bUsedD3D11) {
+	if (m_VideoProcessor->Type() == 11) {
 		if (!m_bCheckSubInvAlpha) {
 			// only one check for XySubFilter in the graph after playback starts
 			m_bCheckSubInvAlpha = true;
@@ -1021,7 +1019,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 
 	CAutoLock cRendererLock(&m_RendererLock);
 
-	if (!m_bUsedD3D11 && (m_Sets.bExclusiveFS || m_bIsFullscreen)) {
+	if (m_VideoProcessor->Type() == 9 && (m_Sets.bExclusiveFS || m_bIsFullscreen)) {
 		const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 		MONITORINFO mi = { mi.cbSize = sizeof(mi) };
 		::GetMonitorInfoW(hMon, &mi);
@@ -1244,11 +1242,7 @@ STDMETHODIMP CMpcVideoRenderer::GetInt(LPCSTR field, int* value)
 
 	if (!strcmp(field, "renderType")) {
 		if (m_inputMT.IsValid()) {
-			if (m_bUsedD3D11) {
-				*value = 11; // Direct3D 11
-			} else {
-				*value = 9; // Direct3D 9
-			}
+			*value = m_VideoProcessor->Type();
 		} else {
 			*value = 0; // not initialized
 		}

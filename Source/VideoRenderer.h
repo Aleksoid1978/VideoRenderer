@@ -79,8 +79,6 @@ private:
 	// Options
 	Settings_t m_Sets;
 
-	bool m_bUsedD3D11 = false; // current state
-
 	FILTER_STATE m_filterState = State_Stopped;
 	bool m_bFlushing = false;
 	bool m_bValidBuffer = false;
