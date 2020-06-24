@@ -115,6 +115,8 @@ protected:
 	CVideoProcessor(CMpcVideoRenderer* pFilter) : m_pFilter(pFilter) {}
 
 public:
+	virtual ~CVideoProcessor() = default;
+
 	virtual HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr) = 0;
 
 	virtual IDirect3DDeviceManager9* GetDeviceManager9() = 0;

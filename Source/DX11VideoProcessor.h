@@ -127,7 +127,7 @@ private:
 
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter);
-	~CDX11VideoProcessor();
+	~CDX11VideoProcessor() override;
 
 	HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr) override;
 	bool Initialized();
