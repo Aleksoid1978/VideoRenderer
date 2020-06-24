@@ -288,9 +288,11 @@ public:
 			{ D2D1_DEBUG_LEVEL_INFORMATION },
 #endif
 			&m_pD2D1Factory);
+		DLogIf(FAILED(hr), L"D2D1CreateFactory() failed with error {}", HR2Str(hr));
 
 		if (SUCCEEDED(hr)) {
 			hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(m_pDWriteFactory), reinterpret_cast<IUnknown**>(&m_pDWriteFactory));
+			DLogIf(FAILED(hr), L"DWriteCreateFactory() failed with error {}", HR2Str(hr));
 		}
 
 		if (SUCCEEDED(hr)) {
@@ -301,6 +303,7 @@ public:
 				IID_IWICImagingFactory,
 				(LPVOID*)&m_pWICFactory
 			);
+			DLogIf(FAILED(hr), L"CoCreateInstance(WICImagingFactory) failed with error {}", HR2Str(hr));
 		}
 	}
 
