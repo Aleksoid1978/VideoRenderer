@@ -1,6 +1,9 @@
 v0.4.8
 ------------------------
-...
+Now DirectWrite is used instead of GDI+ to generate statistics font.
+Optimized statistics drawing.
+Fixed input stream frame rate calculation.
+Reduced unnecessary initialization of DirectX objects.
 
 v0.4.7.1356 - 2020.06.21
 ------------------------

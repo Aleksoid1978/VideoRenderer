@@ -297,7 +297,7 @@ public:
 
 		if (SUCCEEDED(hr)) {
 			hr = CoCreateInstance(
-				CLSID_WICImagingFactory1,
+				CLSID_WICImagingFactory1, // we use CLSID_WICImagingFactory1 to support Windows 7 without Platform Update
 				nullptr,
 				CLSCTX_INPROC_SERVER,
 				IID_IWICImagingFactory,
