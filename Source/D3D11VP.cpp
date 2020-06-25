@@ -281,25 +281,23 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 		return hr;
 	}
 
-	if (1) {
-		m_VPCaps = {};
-		hr = m_pVideoProcessorEnum->GetVideoProcessorCaps(&m_VPCaps);
-		if (FAILED(hr)) {
-			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : GetVideoProcessorCaps() failed with error {}", HR2Str(hr));
-			return hr;
-		}
+	for (UINT i = 0; i < std::size(m_VPFilters); i++) {
+		auto& filter = m_VPFilters[i];
+		filter.support = m_VPCaps.FilterCaps & (1 << i);
+		HRESULT hr2 = E_FAIL;
+		if (filter.support) {
+			hr2 = m_pVideoProcessorEnum->GetVideoProcessorFilterRange((D3D11_VIDEO_PROCESSOR_FILTER)i, &filter.range);
+			DLogIf(SUCCEEDED(hr2) ,L"CDX11VideoProcessor::InitializeD3D11VP() : FilterRange({}) : {:5d}, {:3d}, {:4d}, {:f}",
+				i, filter.range.Minimum, filter.range.Default, filter.range.Maximum, filter.range.Multiplier);
 
-		for (UINT i = 0; i < std::size(m_VPFilterRange); i++) {
-			if (m_VPCaps.FilterCaps & (1 << i)) {
-				hr = m_pVideoProcessorEnum->GetVideoProcessorFilterRange((D3D11_VIDEO_PROCESSOR_FILTER)i, &m_VPFilterRange[i]);
-				if (FAILED(hr)) {
-					DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : GetVideoProcessorFilterRange({}) failed with error {}", i, HR2Str(hr));
-					m_VPCaps.FilterCaps = 0;
-					break;
-				}
-				DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : FilterRange({}) : {:5d}, {:4d}, {:3d}, {:f}",
-					i, m_VPFilterRange[i].Minimum, m_VPFilterRange[i].Maximum, m_VPFilterRange[i].Default, m_VPFilterRange[i].Multiplier);
+			if (i == D3D11_VIDEO_PROCESSOR_FILTER_NOISE_REDUCTION || i == D3D11_VIDEO_PROCESSOR_FILTER_EDGE_ENHANCEMENT) {
+				filter.value = filter.range.Default; // disable it
 			}
+		}
+		if (FAILED(hr2)) {
+			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : GetVideoProcessorFilterRange({}) failed with error {}", i, HR2Str(hr2));
+			filter.support = 0;
+			m_VPFilters[i].range = {};
 		}
 	}
 
@@ -444,10 +442,10 @@ void CD3D11VP::SetRotation(D3D11_VIDEO_PROCESSOR_ROTATION rotation)
 
 void CD3D11VP::SetProcAmpValues(DXVA2_ProcAmpValues *pValues)
 {
-	m_VPFilterLevels[0] = ValueDXVA2toD3D11(pValues->Brightness, m_VPFilterRange[0]);
-	m_VPFilterLevels[1] = ValueDXVA2toD3D11(pValues->Contrast,   m_VPFilterRange[1]);
-	m_VPFilterLevels[2] = ValueDXVA2toD3D11(pValues->Hue,        m_VPFilterRange[2]);
-	m_VPFilterLevels[3] = ValueDXVA2toD3D11(pValues->Saturation, m_VPFilterRange[3]);
+	m_VPFilters[0].value = ValueDXVA2toD3D11(pValues->Brightness, m_VPFilters[0].range);
+	m_VPFilters[1].value = ValueDXVA2toD3D11(pValues->Contrast,   m_VPFilters[1].range);
+	m_VPFilters[2].value = ValueDXVA2toD3D11(pValues->Hue,        m_VPFilters[2].range);
+	m_VPFilters[3].value = ValueDXVA2toD3D11(pValues->Saturation, m_VPFilters[3].range);
 	m_bUpdateFilters = true;
 }
 
@@ -460,14 +458,11 @@ HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAM
 		m_pVideoContext->VideoProcessorSetStreamFrameFormat(m_pVideoProcessor, 0, sampleFormat);
 
 		if (m_bUpdateFilters) {
-			BOOL bEnable0 = (m_VPFilterLevels[0] != m_VPFilterRange[0].Default);
-			BOOL bEnable1 = (m_VPFilterLevels[1] != m_VPFilterRange[1].Default);
-			BOOL bEnable2 = (m_VPFilterLevels[2] != m_VPFilterRange[2].Default);
-			BOOL bEnable3 = (m_VPFilterLevels[3] != m_VPFilterRange[3].Default);
-			m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_BRIGHTNESS, bEnable0, m_VPFilterLevels[0]);
-			m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_CONTRAST,   bEnable1, m_VPFilterLevels[1]);
-			m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_HUE,        bEnable2, m_VPFilterLevels[2]);
-			m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, D3D11_VIDEO_PROCESSOR_FILTER_SATURATION, bEnable3, m_VPFilterLevels[3]);
+			for (UINT i = 0; i < std::size(m_VPFilters); i++) {
+				auto& filter = m_VPFilters[i];
+				BOOL bEnable = (filter.support && filter.value != filter.range.Default);
+				m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, (D3D11_VIDEO_PROCESSOR_FILTER)i, bEnable, filter.value);
+			}
 			m_bUpdateFilters = false;
 		}
 	}
