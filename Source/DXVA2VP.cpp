@@ -146,6 +146,41 @@ BOOL CDXVA2VP::CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& vi
 		return FALSE;
 	}
 
+#ifdef _DEBUG
+	{
+		std::wstring dbgstr = L"VideoProcessorCaps:";
+		dbgstr.append(L"\n  VP Operations         :");
+		if (m_DXVA2VPcaps.VideoProcessorOperations&DXVA2_VideoProcess_YUV2RGB)            { dbgstr.append(L" YUV2RGB,"); }
+		if (m_DXVA2VPcaps.VideoProcessorOperations&DXVA2_VideoProcess_StretchX)           { dbgstr.append(L" StretchX,"); }
+		if (m_DXVA2VPcaps.VideoProcessorOperations&DXVA2_VideoProcess_StretchY)           { dbgstr.append(L" StretchY,"); }
+		if (m_DXVA2VPcaps.VideoProcessorOperations&DXVA2_VideoProcess_AlphaBlend)         { dbgstr.append(L" AlphaBlend,"); }
+		if (m_DXVA2VPcaps.VideoProcessorOperations&DXVA2_VideoProcess_SubRects)           { dbgstr.append(L" SubRects,"); }
+		if (m_DXVA2VPcaps.VideoProcessorOperations&DXVA2_VideoProcess_SubStreamsExtended) { dbgstr.append(L" SubStreamsExtended,"); }
+		if (m_DXVA2VPcaps.VideoProcessorOperations&DXVA2_VideoProcess_YUV2RGBExtended)    { dbgstr.append(L" YUV2RGBExtended,"); }
+		if (m_DXVA2VPcaps.VideoProcessorOperations&DXVA2_VideoProcess_AlphaBlendExtended) { dbgstr.append(L" AlphaBlendExtended,"); }
+		if (m_DXVA2VPcaps.VideoProcessorOperations&DXVA2_VideoProcess_Constriction)       { dbgstr.append(L" Constriction,"); }
+		if (m_DXVA2VPcaps.VideoProcessorOperations&DXVA2_VideoProcess_NoiseFilter)        { dbgstr.append(L" NoiseFilter,"); }
+		if (m_DXVA2VPcaps.VideoProcessorOperations&DXVA2_VideoProcess_DetailFilter)       { dbgstr.append(L" DetailFilter,"); }
+		if (m_DXVA2VPcaps.VideoProcessorOperations&DXVA2_VideoProcess_PlanarAlpha)        { dbgstr.append(L" PlanarAlpha,"); }
+		if (m_DXVA2VPcaps.VideoProcessorOperations&DXVA2_VideoProcess_LinearScaling)      { dbgstr.append(L" LinearScaling,"); }
+		if (m_DXVA2VPcaps.VideoProcessorOperations&DXVA2_VideoProcess_GammaCompensated)   { dbgstr.append(L" GammaCompensated,"); }
+		if (m_DXVA2VPcaps.VideoProcessorOperations&DXVA2_VideoProcess_MaintainsOriginalFieldData) { dbgstr.append(L" MaintainsOriginalFieldData"); }
+		str_trim_end(dbgstr, ',');
+		dbgstr.append(L"\n  Deinterlace Technology:");
+		if (m_DXVA2VPcaps.DeinterlaceTechnology&DXVA2_DeinterlaceTech_BOBLineReplicate)       { dbgstr.append(L" BOBLineReplicate,"); }
+		if (m_DXVA2VPcaps.DeinterlaceTechnology&DXVA2_DeinterlaceTech_BOBVerticalStretch)     { dbgstr.append(L" BOBVerticalStretch,"); }
+		if (m_DXVA2VPcaps.DeinterlaceTechnology&DXVA2_DeinterlaceTech_BOBVerticalStretch4Tap) { dbgstr.append(L" BOBVerticalStretch4Tap,"); }
+		if (m_DXVA2VPcaps.DeinterlaceTechnology&DXVA2_DeinterlaceTech_MedianFiltering)        { dbgstr.append(L" MedianFiltering,"); }
+		if (m_DXVA2VPcaps.DeinterlaceTechnology&DXVA2_DeinterlaceTech_EdgeFiltering)          { dbgstr.append(L" EdgeFiltering,"); }
+		if (m_DXVA2VPcaps.DeinterlaceTechnology&DXVA2_DeinterlaceTech_FieldAdaptive)          { dbgstr.append(L" FieldAdaptive,"); }
+		if (m_DXVA2VPcaps.DeinterlaceTechnology&DXVA2_DeinterlaceTech_PixelAdaptive)          { dbgstr.append(L" PixelAdaptive,"); }
+		if (m_DXVA2VPcaps.DeinterlaceTechnology&DXVA2_DeinterlaceTech_MotionVectorSteered)    { dbgstr.append(L" MotionVectorSteered,"); }
+		if (m_DXVA2VPcaps.DeinterlaceTechnology&DXVA2_DeinterlaceTech_InverseTelecine)        { dbgstr.append(L" InverseTelecine"); }
+		str_trim_end(dbgstr, ',');
+		DLog(dbgstr);
+		}
+#endif
+
 	// Query ProcAmp ranges.
 	for (UINT i = 0; i < std::size(m_DXVA2ProcAmpRanges); i++) {
 		if (m_DXVA2VPcaps.ProcAmpControlCaps & (1 << i)) {
