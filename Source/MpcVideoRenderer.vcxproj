@@ -69,7 +69,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CPUInfo.cpp" />
     <ClCompile Include="csputils.cpp" />
     <ClCompile Include="CustomAllocator.cpp" />
     <ClCompile Include="D3D11VP.cpp" />
@@ -93,6 +92,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Times.cpp" />
+    <ClCompile Include="Utils\CPUInfo.cpp" />
     <ClCompile Include="Utils\StringUtil.cpp" />
     <ClCompile Include="Utils\Util.cpp" />
     <ClCompile Include="VideoProcessor.cpp" />
@@ -100,7 +100,6 @@
     <ClCompile Include="VideoRendererInputPin.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CPUInfo.h" />
     <ClInclude Include="csputils.h" />
     <ClInclude Include="CustomAllocator.h" />
     <ClInclude Include="D3D11VP.h" />
@@ -126,6 +125,7 @@
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Times.h" />
+    <ClInclude Include="Utils\CPUInfo.h" />
     <ClInclude Include="Utils\StringUtil.h" />
     <ClInclude Include="Utils\Util.h" />
     <ClInclude Include="VideoProcessor.h" />
