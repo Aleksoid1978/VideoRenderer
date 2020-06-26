@@ -448,7 +448,6 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	D3D_FEATURE_LEVEL featureLevels[] = {
 		D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0,
 		D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0,
-		//D3D_FEATURE_LEVEL_9_3 // necessary changes and testing
 	};
 	D3D_FEATURE_LEVEL featurelevel;
 
@@ -765,10 +764,16 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	CheckPointer(pDevice, E_POINTER);
 	CheckPointer(pContext, E_POINTER);
 
-	m_pDevice = pDevice;
-	m_pDeviceContext = pContext;
+	HRESULT hr = pDevice->QueryInterface (__uuidof(ID3D11Device1), (void**)&m_pDevice);
+	if (FAILED(hr)) {
+		return hr;
+	}
+	hr = pContext->QueryInterface (__uuidof(ID3D11DeviceContext1), (void**)&m_pDeviceContext);
+	if (FAILED(hr)) {
+		return hr;
+	}
 
-	HRESULT hr = m_D3D11VP.InitVideoDevice(m_pDevice, m_pDeviceContext);
+	hr = m_D3D11VP.InitVideoDevice(m_pDevice, m_pDeviceContext);
 	DLogIf(FAILED(hr), L"CDX11VideoProcessor::SetDevice() : InitVideoDevice failed with error {}", HR2Str(hr));
 
 	D3D11_SAMPLER_DESC SampDesc = {};

@@ -42,17 +42,17 @@ private:
 	friend class CVideoRendererInputPin;
 
 	// Direct3D 11
-	CComPtr<ID3D11Device>        m_pDevice;
-	CComPtr<ID3D11DeviceContext> m_pDeviceContext;
-	ID3D11SamplerState*          m_pSamplerPoint = nullptr;
-	ID3D11SamplerState*          m_pSamplerLinear = nullptr;
-	ID3D11SamplerState*          m_pSamplerDither = nullptr;
-	CComPtr<ID3D11BlendState>    m_pAlphaBlendState;
-	CComPtr<ID3D11BlendState>    m_pAlphaBlendStateInv;
-	ID3D11Buffer*                m_pFullFrameVertexBuffer = nullptr;
-	CComPtr<ID3D11VertexShader>  m_pVS_Simple;
-	CComPtr<ID3D11PixelShader>   m_pPS_Simple;
-	CComPtr<ID3D11InputLayout>   m_pVSimpleInputLayout;
+	CComPtr<ID3D11Device1>        m_pDevice;
+	CComPtr<ID3D11DeviceContext1> m_pDeviceContext;
+	ID3D11SamplerState*           m_pSamplerPoint = nullptr;
+	ID3D11SamplerState*           m_pSamplerLinear = nullptr;
+	ID3D11SamplerState*           m_pSamplerDither = nullptr;
+	CComPtr<ID3D11BlendState>     m_pAlphaBlendState;
+	CComPtr<ID3D11BlendState>     m_pAlphaBlendStateInv;
+	ID3D11Buffer*                 m_pFullFrameVertexBuffer = nullptr;
+	CComPtr<ID3D11VertexShader>   m_pVS_Simple;
+	CComPtr<ID3D11PixelShader>    m_pPS_Simple;
+	CComPtr<ID3D11InputLayout>    m_pVSimpleInputLayout;
 
 	Tex11Video_t m_TexSrcVideo; // for copy of frame
 	Tex2D_t m_TexD3D11VPOutput;
