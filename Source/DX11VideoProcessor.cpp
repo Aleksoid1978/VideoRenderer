@@ -1009,13 +1009,6 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 			}
 
 			if (m_pTextureSubPic) {
-				ID3D11RenderTargetView* pRenderTargetView;
-				if (S_OK == m_pDevice->CreateRenderTargetView(m_pTextureSubPic, nullptr, &pRenderTargetView)) {
-					const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-					m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
-					pRenderTargetView->Release();
-				}
-
 				D3D11_TEXTURE2D_DESC texdesc = {};
 				m_pTextureSubPic->GetDesc(&texdesc);
 				if (texdesc.BindFlags & D3D11_BIND_SHADER_RESOURCE) {
