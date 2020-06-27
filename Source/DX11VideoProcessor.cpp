@@ -437,7 +437,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	}
 	m_nCurrentAdapter = currentAdapter;
 
-	if (m_bUseNativeExternalDecoder && m_pDXGISwapChain1) {
+	if (m_bDecoderDevice && m_pDXGISwapChain1) {
 		return S_OK;
 	}
 
@@ -452,7 +452,6 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	D3D_FEATURE_LEVEL featurelevel;
 
 	ID3D11Device *pDevice = nullptr;
-	ID3D11DeviceContext *pDeviceContext = nullptr;
 
 	UINT flags = 0;
 #ifdef _DEBUG
@@ -475,7 +474,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 		D3D11_SDK_VERSION,
 		&pDevice,
 		&featurelevel,
-		&pDeviceContext);
+		nullptr);
 	SAFE_RELEASE(pDXGIAdapter);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::Init() : D3D11CreateDevice() failed with error {}", HR2Str(hr));
@@ -484,8 +483,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 
 	DLog(L"CDX11VideoProcessor::Init() : D3D11CreateDevice() successfully with feature level {}.{}", (featurelevel >> 12), (featurelevel >> 8) & 0xF);
 
-	hr = SetDevice(pDevice, pDeviceContext);
-	pDeviceContext->Release();
+	hr = SetDevice(pDevice, nullptr, false);
 	pDevice->Release();
 
 	if (S_OK == hr) {
@@ -753,7 +751,7 @@ HRESULT CDX11VideoProcessor::MemCopyToTexSrcVideo(const BYTE* srcData, const int
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, const bool bFromDecoder/* = false*/)
+HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, const bool bDecoderDevice)
 {
 	DLog(L"CDX11VideoProcessor::SetDevice()");
 
@@ -762,15 +760,18 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	ReleaseDevice();
 
 	CheckPointer(pDevice, E_POINTER);
-	CheckPointer(pContext, E_POINTER);
 
 	HRESULT hr = pDevice->QueryInterface (__uuidof(ID3D11Device1), (void**)&m_pDevice);
 	if (FAILED(hr)) {
 		return hr;
 	}
-	hr = pContext->QueryInterface (__uuidof(ID3D11DeviceContext1), (void**)&m_pDeviceContext);
-	if (FAILED(hr)) {
-		return hr;
+	if (pContext) {
+		hr = pContext->QueryInterface (__uuidof(ID3D11DeviceContext1), (void**)&m_pDeviceContext);
+		if (FAILED(hr)) {
+			return hr;
+		}
+	} else {
+		m_pDevice->GetImmediateContext1(&m_pDeviceContext);
 	}
 
 	hr = m_D3D11VP.InitVideoDevice(m_pDevice, m_pDeviceContext);
@@ -943,7 +944,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		}
 	}
 
-	m_bUseNativeExternalDecoder = bFromDecoder;
+	m_bDecoderDevice = bDecoderDevice;
 
 	m_pFilter->OnDisplayModeChange();
 	UpdateStatsStatic();

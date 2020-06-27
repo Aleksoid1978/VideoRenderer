@@ -123,7 +123,7 @@ private:
 	CD3D11Lines     m_Lines;
 	CD3D11Polyline  m_SyncLine;
 
-	bool m_bUseNativeExternalDecoder = false;
+	bool m_bDecoderDevice = false;
 
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr);
@@ -148,7 +148,7 @@ private:
 	HRESULT MemCopyToTexSrcVideo(const BYTE* srcData, const int srcPitch);
 
 public:
-	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, const bool bFromDecoder = false);
+	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, const bool bDecoderDevice);
 	HRESULT InitSwapChain();
 
 	BOOL VerifyMediaType(const CMediaType* pmt) override;
