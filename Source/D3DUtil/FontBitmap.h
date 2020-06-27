@@ -278,6 +278,7 @@ private:
 	CComPtr<IWICBitmap>     m_pWICBitmap;
 	CComPtr<IWICBitmapLock> m_pWICBitmapLock;
 	std::vector<RECT> m_charCoords;
+	SIZE m_MaxCharMetric = {};
 
 public:
 	CFontBitmapDWrite()
@@ -371,8 +372,9 @@ public:
 		}
 
 		if (S_OK == hr) {
-			UINT stepX = (UINT)ceil(maxWidth) + 2;
-			UINT stepY = (UINT)ceil(maxHeight);
+			m_MaxCharMetric = { (LONG)ceil(maxWidth), (LONG)ceil(maxHeight) };
+			UINT stepX = m_MaxCharMetric.cx + 2;
+			UINT stepY = m_MaxCharMetric.cy;
 			UINT bmWidth = 128;
 			UINT bmHeight = 128;
 			UINT columns = bmWidth / stepX;
@@ -471,6 +473,11 @@ public:
 		}
 
 		return 0;
+	}
+
+	SIZE GetMaxCharMetric()
+	{
+		return m_MaxCharMetric;
 	}
 
 	HRESULT GetFloatCoords(FloatRect* pTexCoords, const UINT lenght)

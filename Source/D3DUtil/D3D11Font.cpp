@@ -218,8 +218,9 @@ HRESULT CD3D11Font::CreateFontBitmap(const WCHAR* strFontName, const DWORD dwHei
 		return hr;
 	}
 
-	m_uTexWidth  = fontBitmap.GetWidth();
-	m_uTexHeight = fontBitmap.GetHeight();
+	m_MaxCharMetric = fontBitmap.GetMaxCharMetric();
+	m_uTexWidth     = fontBitmap.GetWidth();
+	m_uTexHeight    = fontBitmap.GetHeight();
 	EXECUTE_ASSERT(S_OK == fontBitmap.GetFloatCoords((FloatRect*)&m_fTexCoords, std::size(m_Characters)));
 
 	SAFE_RELEASE(m_pShaderResource);
@@ -260,6 +261,11 @@ HRESULT CD3D11Font::CreateFontBitmap(const WCHAR* strFontName, const DWORD dwHei
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateShaderResourceView(m_pTexture, &srvDesc, &m_pShaderResource));
 
 	return hr;
+}
+
+SIZE CD3D11Font::GetMaxCharMetric()
+{
+	return m_MaxCharMetric;
 }
 
 HRESULT CD3D11Font::GetTextExtent(const WCHAR* strText, SIZE* pSize)

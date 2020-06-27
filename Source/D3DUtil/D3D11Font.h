@@ -32,6 +32,7 @@ class CD3D11Font
 
 	WCHAR m_Characters[128];
 	FloatRect m_fTexCoords[128] = {};
+	SIZE m_MaxCharMetric = {};
 
 	D3DCOLOR m_Color = D3DCOLOR_XRGB(255, 255, 255);
 
@@ -62,6 +63,8 @@ public:
 	void InvalidateDeviceObjects();
 
 	HRESULT CreateFontBitmap(const WCHAR* strFontName, const DWORD dwHeight, const DWORD dwFlags);
+
+	SIZE GetMaxCharMetric();
 
 	// Function to get extent of text
 	HRESULT GetTextExtent(const WCHAR* strText, SIZE* pSize);

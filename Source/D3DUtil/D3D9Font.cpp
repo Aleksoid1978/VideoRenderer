@@ -202,8 +202,9 @@ HRESULT CD3D9Font::CreateFontBitmap(const WCHAR* strFontName, const DWORD dwHeig
 		return hr;
 	}
 
-	m_uTexWidth  = fontBitmap.GetWidth();
-	m_uTexHeight = fontBitmap.GetHeight();
+	m_MaxCharMetric = fontBitmap.GetMaxCharMetric();
+	m_uTexWidth     = fontBitmap.GetWidth();
+	m_uTexHeight    = fontBitmap.GetHeight();
 	if (m_uTexWidth > m_D3DCaps.MaxTextureWidth || m_uTexHeight > m_D3DCaps.MaxTextureHeight) {
 		return E_FAIL;
 	}
@@ -248,6 +249,11 @@ HRESULT CD3D9Font::CreateFontBitmap(const WCHAR* strFontName, const DWORD dwHeig
 	}
 
 	return hr;
+}
+
+SIZE CD3D9Font::GetMaxCharMetric()
+{
+	return m_MaxCharMetric;
 }
 
 // Get the dimensions of a text string

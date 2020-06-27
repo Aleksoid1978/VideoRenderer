@@ -38,6 +38,7 @@ class CD3D9Font
 
 	WCHAR m_Characters[128];
 	FloatRect m_fTexCoords[128] = {};
+	SIZE m_MaxCharMetric = {};
 
 	IDirect3DDevice9*       m_pd3dDevice    = nullptr; // A D3DDevice used for rendering
 	IDirect3DTexture9*      m_pTexture      = nullptr; // The d3d texture for this font
@@ -61,6 +62,8 @@ public:
 	void InvalidateDeviceObjects();
 
 	HRESULT CreateFontBitmap(const WCHAR* strFontName, const DWORD dwHeight, const DWORD dwFlags);
+
+	SIZE GetMaxCharMetric();
 
 	// Function to get extent of text
 	HRESULT GetTextExtent(const WCHAR* strText, SIZE* pSize);
