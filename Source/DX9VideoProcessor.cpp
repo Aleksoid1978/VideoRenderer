@@ -252,7 +252,6 @@ inline bool HookFunc(T** ppSystemFunction, PVOID pHookFunction)
 
 CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr)
 	: CVideoProcessor(pFilter)
-	, m_Font3D(L"Consolas", 14)
 {
 	m_nCurrentAdapter = D3DADAPTER_DEFAULT;
 	m_pDisplayMode = &m_DisplayMode;
@@ -496,6 +495,10 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 
 		HRESULT hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
 		DLogIf(FAILED(hr2), L"m_Font3D.InitDeviceObjects() failed with error {}", HR2Str(hr2));
+		if (SUCCEEDED(hr2)) {
+			hr2 = m_Font3D.CreateFontBitmap(L"Consolas", 14, 0);
+			DLogIf(FAILED(hr2), L"m_Font3D.CreateFontBitmap() failed with error {}", HR2Str(hr2));
+		}
 		if (SUCCEEDED(hr2)) {
 			hr2 = m_StatsBackground.InitDeviceObjects(m_pD3DDevEx);
 			hr2 = m_Rect3D.InitDeviceObjects(m_pD3DDevEx);

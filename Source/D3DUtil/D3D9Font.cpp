@@ -1,5 +1,5 @@
 /*
- * (C) 2019 see Authors.txt
+ * (C) 2019-2020 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -45,13 +45,8 @@ inline auto Char2Index(WCHAR ch)
 // CD3D9Font
 
 // Font class constructor
-CD3D9Font::CD3D9Font(const WCHAR* strFontName, const DWORD dwHeight, const DWORD dwFlags)
-	: m_dwFontHeight(dwHeight)
-	, m_dwFontFlags(dwFlags)
+CD3D9Font::CD3D9Font()
 {
-	wcsncpy_s(m_strFontName, strFontName, std::size(m_strFontName));
-	m_strFontName[std::size(m_strFontName) - 1] = '\0';
-
 	UINT idx = 0;
 	for (WCHAR ch = 0x0020; ch < 0x007F; ch++) {
 		m_Characters[idx++] = ch;
@@ -81,70 +76,13 @@ HRESULT CD3D9Font::InitDeviceObjects(IDirect3DDevice9* pd3dDevice)
 	m_pd3dDevice = pd3dDevice;
 	m_pd3dDevice->AddRef();
 
-	D3DCAPS9 d3dCaps;
-	m_pd3dDevice->GetDeviceCaps(&d3dCaps);
-
-	// Assume we will draw fonts into texture without scaling unless the
-	// required texture size is found to be larger than the device max
-	m_fTextScale  = 1.0f;
-
-	CFontBitmap fontBitmap;
-
-	hr = fontBitmap.Initialize(m_strFontName, m_dwFontHeight, m_dwFontFlags, m_Characters, std::size(m_Characters));
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	m_uTexWidth  = fontBitmap.GetWidth();
-	m_uTexHeight = fontBitmap.GetHeight();
-	if (m_uTexWidth > d3dCaps.MaxTextureWidth || m_uTexHeight > d3dCaps.MaxTextureHeight) {
-		return E_FAIL;
-	}
-
-	hr = fontBitmap.GetFloatCoords((FloatRect*)&m_fTexCoords, std::size(m_Characters));
-	if (FAILED(hr)) {
-		return hr;
-	}
+	m_pd3dDevice->GetDeviceCaps(&m_D3DCaps);
 
 	// Create vertex buffer for the letters
 	const UINT vertexBufferSize = sizeof(Font9Vertex) * MAX_NUM_VERTICES;
 	hr = m_pd3dDevice->CreateVertexBuffer(vertexBufferSize, D3DUSAGE_WRITEONLY|D3DUSAGE_DYNAMIC, 0, D3DPOOL_DEFAULT, &m_pVertexBuffer, nullptr);
 	if (FAILED(hr)) {
 		return hr;
-	}
-
-	// Create a new texture for the font
-	hr = m_pd3dDevice->CreateTexture(m_uTexWidth, m_uTexHeight, 1,
-									 D3DUSAGE_DYNAMIC, D3DFMT_A8L8,
-									 D3DPOOL_DEFAULT, &m_pTexture, nullptr);
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	// Lock the surface and write the alpha values for the set pixels
-	D3DLOCKED_RECT d3dlr;
-	hr = m_pTexture->LockRect(0, &d3dlr, nullptr, D3DLOCK_DISCARD);
-	if (S_OK == hr) {
-		BYTE* pSrc = nullptr;
-		UINT uStride = 0;
-		hr = fontBitmap.Lock(&pSrc, uStride);
-		if (S_OK == hr) {
-			BYTE* pDst = (BYTE*)d3dlr.pBits;
-			for (UINT y = 0; y < m_uTexHeight; y++) {
-				uint32_t* pSrc32 = (uint32_t*)pSrc;
-				uint16_t* pDst16 = (uint16_t*)pDst;
-
-				for (UINT x = 0; x < m_uTexWidth; x++) {
-					*pDst16++ = A8R8G8B8toA8L8(*pSrc32++);
-				}
-				pSrc += uStride;
-				pDst += d3dlr.Pitch;
-			}
-			fontBitmap.Unlock();
-		}
-		m_pTexture->UnlockRect(0);
-
-		hr = CreateStateBlocks();
 	}
 
 	return hr;
@@ -157,16 +95,14 @@ HRESULT CD3D9Font::CreateStateBlocks()
 	IDirect3D9* pd3d9 = nullptr;
 	HRESULT hr = m_pd3dDevice->GetDirect3D(&pd3d9);
 	if (SUCCEEDED(hr)) {
-		D3DCAPS9 Caps;
 		D3DDISPLAYMODE Mode;
 		IDirect3DSurface9* pSurf = nullptr;
 		D3DSURFACE_DESC Desc;
-		m_pd3dDevice->GetDeviceCaps(&Caps);
 		m_pd3dDevice->GetDisplayMode(0, &Mode);
 		hr = m_pd3dDevice->GetRenderTarget(0, &pSurf);
 		if (SUCCEEDED(hr)) {
 			pSurf->GetDesc(&Desc);
-			hr = pd3d9->CheckDeviceFormat(Caps.AdapterOrdinal, Caps.DeviceType, Mode.Format,
+			hr = pd3d9->CheckDeviceFormat(m_D3DCaps.AdapterOrdinal, m_D3DCaps.DeviceType, Mode.Format,
 				D3DUSAGE_RENDERTARGET | D3DUSAGE_QUERY_POSTPIXELSHADER_BLENDING, D3DRTYPE_SURFACE,
 				Desc.Format);
 			if (FAILED(hr)) {
@@ -243,6 +179,75 @@ void CD3D9Font::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pTexture);
 
 	SAFE_RELEASE(m_pd3dDevice);
+}
+
+HRESULT CD3D9Font::CreateFontBitmap(const WCHAR* strFontName, const DWORD dwHeight, const DWORD dwFlags)
+{
+	if (!m_pd3dDevice) {
+		return E_ABORT;
+	}
+
+	if (dwHeight == m_dwFontHeight && dwFlags == m_dwFontFlags && m_strFontName.compare(strFontName) == 0) {
+		return S_FALSE;
+	}
+
+	m_strFontName  = strFontName;
+	m_dwFontHeight = dwHeight;
+	m_dwFontFlags  = dwFlags;
+
+	CFontBitmap fontBitmap;
+
+	HRESULT hr = fontBitmap.Initialize(m_strFontName.c_str(), m_dwFontHeight, 0, m_Characters, std::size(m_Characters));
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	m_uTexWidth  = fontBitmap.GetWidth();
+	m_uTexHeight = fontBitmap.GetHeight();
+	if (m_uTexWidth > m_D3DCaps.MaxTextureWidth || m_uTexHeight > m_D3DCaps.MaxTextureHeight) {
+		return E_FAIL;
+	}
+	EXECUTE_ASSERT(S_OK == fontBitmap.GetFloatCoords((FloatRect*)&m_fTexCoords, std::size(m_Characters)));
+
+	SAFE_RELEASE(m_pTexture);
+
+	// Create a new texture for the font
+	hr = m_pd3dDevice->CreateTexture(m_uTexWidth, m_uTexHeight, 1,
+		D3DUSAGE_DYNAMIC, D3DFMT_A8L8,
+		D3DPOOL_DEFAULT, &m_pTexture, nullptr);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	// Lock the surface and write the alpha values for the set pixels
+	D3DLOCKED_RECT d3dlr;
+	hr = m_pTexture->LockRect(0, &d3dlr, nullptr, D3DLOCK_DISCARD);
+	if (S_OK == hr) {
+		BYTE* pSrc = nullptr;
+		UINT uStride = 0;
+		hr = fontBitmap.Lock(&pSrc, uStride);
+		if (S_OK == hr) {
+			BYTE* pDst = (BYTE*)d3dlr.pBits;
+			for (UINT y = 0; y < m_uTexHeight; y++) {
+				uint32_t* pSrc32 = (uint32_t*)pSrc;
+				uint16_t* pDst16 = (uint16_t*)pDst;
+
+				for (UINT x = 0; x < m_uTexWidth; x++) {
+					*pDst16++ = A8R8G8B8toA8L8(*pSrc32++);
+				}
+				pSrc += uStride;
+				pDst += d3dlr.Pitch;
+			}
+			fontBitmap.Unlock();
+		}
+		m_pTexture->UnlockRect(0);
+	}
+
+	if (S_OK == hr) {
+		hr = CreateStateBlocks();
+	}
+
+	return hr;
 }
 
 // Get the dimensions of a text string
