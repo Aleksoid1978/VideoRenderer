@@ -1,5 +1,5 @@
 /*
- * (C) 2019 see Authors.txt
+ * (C) 2019-2020 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -26,9 +26,9 @@
 class CD3D11Font
 {
 	// Font properties
-	WCHAR m_strFontName[80];
-	DWORD m_dwFontHeight;
-	DWORD m_dwFontFlags;
+	std::wstring m_strFontName;
+	DWORD m_dwFontHeight = 0;
+	DWORD m_dwFontFlags  = 0;
 
 	WCHAR m_Characters[128];
 	FloatRect m_fTexCoords[128] = {};
@@ -55,12 +55,14 @@ class CD3D11Font
 
 public:
 	// Constructor / destructor
-	CD3D11Font(const WCHAR* strFontName, DWORD dwHeight, DWORD dwFlags = 0L);
+	CD3D11Font();
 	~CD3D11Font();
 
 	// Initializing and destroying device-dependent objects
 	HRESULT InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 	void InvalidateDeviceObjects();
+
+	HRESULT CreateFontBitmap(const WCHAR* strFontName, const DWORD dwHeight, const DWORD dwFlags);
 
 	// Function to get extent of text
 	HRESULT GetTextExtent(const WCHAR* strText, SIZE* pSize);

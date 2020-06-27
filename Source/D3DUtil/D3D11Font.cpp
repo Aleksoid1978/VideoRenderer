@@ -1,5 +1,5 @@
 /*
- * (C) 2019 see Authors.txt
+ * (C) 2019-2020 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -50,13 +50,8 @@ inline auto Char2Index(WCHAR ch)
 	return 0x007F - 32;
 }
 
-CD3D11Font::CD3D11Font(const WCHAR* strFontName, DWORD dwHeight, DWORD dwFlags)
-	: m_dwFontHeight(dwHeight)
-	, m_dwFontFlags(dwFlags)
+CD3D11Font::CD3D11Font()
 {
-	wcsncpy_s(m_strFontName, strFontName, std::size(m_strFontName));
-	m_strFontName[std::size(m_strFontName) - 1] = '\0';
-
 	UINT idx = 0;
 	for (WCHAR ch = 0x0020; ch < 0x007F; ch++) {
 		m_Characters[idx++] = ch;
@@ -86,18 +81,6 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 	m_pDeviceContext = pDeviceContext;
 	m_pDeviceContext->AddRef();
 
-	HRESULT hr = S_OK;
-	CFontBitmap fontBitmap;
-
-	hr = fontBitmap.Initialize(m_strFontName, m_dwFontHeight, 0, m_Characters, std::size(m_Characters));
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	m_uTexWidth  = fontBitmap.GetWidth();
-	m_uTexHeight = fontBitmap.GetHeight();
-	EXECUTE_ASSERT(S_OK == fontBitmap.GetFloatCoords((FloatRect*)&m_fTexCoords, std::size(m_Characters)));
-
 	LPVOID data;
 	DWORD size;
 	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VSH11_SIMPLE));
@@ -112,40 +95,6 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PSH11_FONT));
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPixelShader));
 
-	D3D11_TEXTURE2D_DESC texDesc;
-	texDesc.Width = m_uTexWidth;
-	texDesc.Height = m_uTexHeight;
-	texDesc.MipLevels = 1;
-	texDesc.ArraySize = 1;
-	texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	texDesc.SampleDesc.Count = 1;
-	texDesc.SampleDesc.Quality = 0;
-	texDesc.Usage = D3D11_USAGE_IMMUTABLE;
-	texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	texDesc.CPUAccessFlags = 0;
-	texDesc.MiscFlags = 0;
-
-	BYTE* pData = nullptr;
-	UINT uPitch = 0;
-	hr = fontBitmap.Lock(&pData, uPitch);
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	D3D11_SUBRESOURCE_DATA subresData = { pData, uPitch, 0 };
-	hr = pDevice->CreateTexture2D(&texDesc, &subresData, &m_pTexture);
-	fontBitmap.Unlock();
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-	srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = 1;
-	srvDesc.Texture2D.MostDetailedMip = 0;
-	EXECUTE_ASSERT(S_OK == m_pDevice->CreateShaderResourceView(m_pTexture, &srvDesc, &m_pShaderResource));
-
 	// create the vertex array
 	std::vector<Font11Vertex> vertices;
 	vertices.resize(MAX_NUM_VERTICES);
@@ -159,7 +108,7 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 	vertexBufferDesc.StructureByteStride = 0;
 	D3D11_SUBRESOURCE_DATA vertexData = { vertices.data(), 0, 0 };
 
-	hr = m_pDevice->CreateBuffer(&vertexBufferDesc, &vertexData, &m_pVertexBuffer);
+	HRESULT hr = m_pDevice->CreateBuffer(&vertexBufferDesc, &vertexData, &m_pVertexBuffer);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -232,8 +181,8 @@ HRESULT CD3D11Font::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 
 void CD3D11Font::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(m_pTexture);
 	SAFE_RELEASE(m_pShaderResource);
+	SAFE_RELEASE(m_pTexture);
 
 	SAFE_RELEASE(m_pVertexShader);
 	SAFE_RELEASE(m_pPixelShader);
@@ -246,6 +195,71 @@ void CD3D11Font::InvalidateDeviceObjects()
 
 	SAFE_RELEASE(m_pDeviceContext);
 	SAFE_RELEASE(m_pDevice);
+}
+
+HRESULT CD3D11Font::CreateFontBitmap(const WCHAR* strFontName, const DWORD dwHeight, const DWORD dwFlags)
+{
+	if (!m_pDevice) {
+		return E_ABORT;
+	}
+
+	if (dwHeight == m_dwFontHeight && dwFlags == m_dwFontFlags && m_strFontName.compare(strFontName) == 0) {
+		return S_FALSE;
+	}
+
+	m_strFontName  = strFontName;
+	m_dwFontHeight = dwHeight;
+	m_dwFontFlags  = dwFlags;
+
+	CFontBitmap fontBitmap;
+
+	HRESULT hr = fontBitmap.Initialize(m_strFontName.c_str(), m_dwFontHeight, 0, m_Characters, std::size(m_Characters));
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	m_uTexWidth  = fontBitmap.GetWidth();
+	m_uTexHeight = fontBitmap.GetHeight();
+	EXECUTE_ASSERT(S_OK == fontBitmap.GetFloatCoords((FloatRect*)&m_fTexCoords, std::size(m_Characters)));
+
+	SAFE_RELEASE(m_pShaderResource);
+	SAFE_RELEASE(m_pTexture);
+
+	D3D11_TEXTURE2D_DESC texDesc;
+	texDesc.Width = m_uTexWidth;
+	texDesc.Height = m_uTexHeight;
+	texDesc.MipLevels = 1;
+	texDesc.ArraySize = 1;
+	texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.SampleDesc.Quality = 0;
+	texDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	texDesc.CPUAccessFlags = 0;
+	texDesc.MiscFlags = 0;
+
+	BYTE* pData = nullptr;
+	UINT uPitch = 0;
+	hr = fontBitmap.Lock(&pData, uPitch);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	D3D11_SUBRESOURCE_DATA subresData = { pData, uPitch, 0 };
+	hr = m_pDevice->CreateTexture2D(&texDesc, &subresData, &m_pTexture);
+	fontBitmap.Unlock();
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateShaderResourceView(m_pTexture, &srvDesc, &m_pShaderResource));
+
+	return hr;
 }
 
 HRESULT CD3D11Font::GetTextExtent(const WCHAR* strText, SIZE* pSize)
