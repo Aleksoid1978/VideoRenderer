@@ -28,7 +28,6 @@
 // Font rendering flags
 #define D3DFONT_CENTERED_X  0x0001
 #define D3DFONT_CENTERED_Y  0x0002
-#define D3DFONT_FILTERED    0x0008
 
 class CD3D9Font
 {
@@ -46,7 +45,6 @@ class CD3D9Font
 	D3DCAPS9 m_D3DCaps = {};
 	UINT  m_uTexWidth  = 0;                   // Texture dimensions
 	UINT  m_uTexHeight = 0;
-	float m_fTextScale = 1.0f;
 
 	// Stateblocks for setting and restoring render states
 	IDirect3DStateBlock9* m_pStateBlockSaved    = nullptr;

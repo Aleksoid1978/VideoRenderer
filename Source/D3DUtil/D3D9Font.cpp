@@ -303,12 +303,6 @@ HRESULT CD3D9Font::Draw2DText(float sx, float sy, const D3DCOLOR color, const WC
 	m_pd3dDevice->SetPixelShader(nullptr);
 	m_pd3dDevice->SetStreamSource(0, m_pVertexBuffer, 0, sizeof(Font9Vertex));
 
-	// Set filter states
-	if (dwFlags & D3DFONT_FILTERED) {
-		m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-		m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-	}
-
 	const float fLineHeight = (m_fTexCoords[0].bottom - m_fTexCoords[0].top)*m_uTexHeight;
 
 	// Center the text block in the viewport
@@ -330,7 +324,7 @@ HRESULT CD3D9Font::Draw2DText(float sx, float sy, const D3DCOLOR color, const WC
 			const float tx1 = m_fTexCoords[idx].left;
 			const float tx2 = m_fTexCoords[idx].right;
 
-			const float w = (tx2 - tx1) *  m_uTexWidth / m_fTextScale;
+			const float w = (tx2 - tx1) *  m_uTexWidth;
 
 			xFinal += w;
 		}
@@ -362,8 +356,8 @@ HRESULT CD3D9Font::Draw2DText(float sx, float sy, const D3DCOLOR color, const WC
 
 		const auto tex = m_fTexCoords[Char2Index(c)];
 
-		const float w = (tex.right - tex.left) *  m_uTexWidth / m_fTextScale;
-		const float h = (tex.bottom - tex.top) * m_uTexHeight / m_fTextScale;
+		const float w = (tex.right - tex.left) * m_uTexWidth;
+		const float h = (tex.bottom - tex.top) * m_uTexHeight;
 
 		if (c != 0x0020 && c != 0x00A0) { // Space and No-Break Space
 			const float left   = sx - 0.5f;

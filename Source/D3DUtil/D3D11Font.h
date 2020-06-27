@@ -51,7 +51,6 @@ class CD3D11Font
 
 	UINT  m_uTexWidth = 0;                   // Texture dimensions
 	UINT  m_uTexHeight = 0;
-	float m_fTextScale = 1.0f;
 
 public:
 	// Constructor / destructor
