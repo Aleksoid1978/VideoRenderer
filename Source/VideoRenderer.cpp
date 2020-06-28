@@ -32,6 +32,7 @@
 #define OPT_REGKEY_VIDEORENDERER L"Software\\MPC-BE Filters\\MPC Video Renderer"
 #define OPT_UseD3D11             L"UseD3D11"
 #define OPT_ShowStatistics       L"ShowStatistics"
+#define OPT_ResizeStatistics     L"ResizeStatistics"
 #define OPT_TextureFormat        L"TextureFormat"
 #define OPT_VPEnableNV12         L"VPEnableNV12"
 #define OPT_VPEnableP01x         L"VPEnableP01x"
@@ -123,6 +124,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ShowStatistics, dw)) {
 			m_Sets.bShowStats = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ResizeStatistics, dw)) {
+			m_Sets.iResizeStats = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_TextureFormat, dw)) {
 			switch (dw) {
@@ -1119,6 +1123,11 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 		m_Sets.bShowStats = setings.bShowStats;
 	}
 
+	if (setings.iResizeStats != m_Sets.iResizeStats) {
+		// TODO
+		m_Sets.iResizeStats = setings.iResizeStats;
+	}
+
 	if (setings.bDeintDouble != m_Sets.bDeintDouble) {
 		m_VideoProcessor->SetDeintDouble(setings.bDeintDouble);
 		m_Sets.bDeintDouble = setings.bDeintDouble;
@@ -1189,6 +1198,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 	if (ERROR_SUCCESS == key.Create(HKEY_CURRENT_USER, OPT_REGKEY_VIDEORENDERER)) {
 		key.SetDWORDValue(OPT_UseD3D11,            m_Sets.bUseD3D11);
 		key.SetDWORDValue(OPT_ShowStatistics,      m_Sets.bShowStats);
+		key.SetDWORDValue(OPT_ResizeStatistics,    m_Sets.iResizeStats);
 		key.SetDWORDValue(OPT_TextureFormat,       m_Sets.iTextureFmt);
 		key.SetDWORDValue(OPT_VPEnableNV12,        m_Sets.VPFmts.bNV12);
 		key.SetDWORDValue(OPT_VPEnableP01x,        m_Sets.VPFmts.bP01x);

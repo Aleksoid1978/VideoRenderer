@@ -100,6 +100,8 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK11, m_SetsPP.bExclusiveFS ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK12, m_SetsPP.bExclusiveDelay ? BST_CHECKED : BST_UNCHECKED);
 
+	SendDlgItemMessageW(IDC_COMBO6, CB_SETCURSEL, m_SetsPP.iResizeStats, 0);
+
 	SendDlgItemMessageW(IDC_COMBO5, CB_SETCURSEL, m_SetsPP.iChromaScaling, 0);
 	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, m_SetsPP.iUpscaling, 0);
 	SendDlgItemMessageW(IDC_COMBO3, CB_SETCURSEL, m_SetsPP.iDownscaling, 0);
@@ -160,6 +162,11 @@ HRESULT CVRMainPPage::OnActivate()
 	}
 	EnableControls();
 	GetDlgItem(IDC_CHECK12).EnableWindow(m_SetsPP.bExclusiveFS);
+
+	SendDlgItemMessageW(IDC_COMBO6, CB_ADDSTRING, 0, (LPARAM)L"Fixed font size");
+	SendDlgItemMessageW(IDC_COMBO6, CB_ADDSTRING, 0, (LPARAM)L"Increase for a large window");
+	SendDlgItemMessageW(IDC_COMBO6, CB_ADDSTRING, 0, (LPARAM)L"Increase by DPI");
+	GetDlgItem(IDC_COMBO6).ShowWindow(SW_HIDE); // TODO
 
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"Auto 8/10-bit Integer",  0);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"8-bit Integer",          8);
@@ -274,6 +281,14 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 		}
 
 		if (HIWORD(wParam) == CBN_SELCHANGE) {
+			if (nID == IDC_COMBO6) {
+				lValue = SendDlgItemMessageW(IDC_COMBO6, CB_GETCURSEL, 0, 0);
+				if (lValue != m_SetsPP.iResizeStats) {
+					m_SetsPP.iResizeStats = lValue;
+					SetDirty();
+					return (LRESULT)1;
+				}
+			}
 			if (nID == IDC_COMBO1) {
 				lValue = ComboBox_GetCurItemData(m_hWnd, IDC_COMBO1);
 				if (lValue != m_SetsPP.iTextureFmt) {

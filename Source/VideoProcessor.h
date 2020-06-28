@@ -105,9 +105,9 @@ protected:
 	D3DDISPLAYMODEEX* m_pDisplayMode = nullptr;
 	const wchar_t* m_strShaderX = nullptr;
 	const wchar_t* m_strShaderY = nullptr;
-	const int m_StatsFontH = 14;
-	const RECT m_StatsRect = { 10, 10, 10 + 5 + 63*8 + 3, 10 + 5 + 16*17 + 3 };
-	const POINT m_StatsTextPoint = { m_StatsRect.left + 5, m_StatsRect.top + 5};
+	int m_StatsFontH = 14;
+	RECT m_StatsRect = { 10, 10, 10 + 5 + 63*8 + 3, 10 + 5 + 16*17 + 3 };
+	const POINT m_StatsTextPoint = { 10 + 5, 10 + 5};
 
 	// Graph of a function
 	CMovingAverage<int> m_Syncs = CMovingAverage<int>(120);

@@ -71,6 +71,7 @@ struct VPEnableFormats_t {
 struct Settings_t {
 	bool bUseD3D11;
 	bool bShowStats;
+	int  iResizeStats;
 	int  iTextureFmt;
 	VPEnableFormats_t VPFmts;
 	bool bDeintDouble;
@@ -91,6 +92,7 @@ struct Settings_t {
 	void SetDefault() {
 		bUseD3D11           = false;
 		bShowStats          = false;
+		iResizeStats        = 0;
 		iTextureFmt         = TEXFMT_AUTOINT;
 		VPFmts.bNV12        = true;
 		VPFmts.bP01x        = true;
