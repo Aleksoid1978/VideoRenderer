@@ -187,7 +187,7 @@ HRESULT CD3D9Font::CreateFontBitmap(const WCHAR* strFontName, const DWORD dwHeig
 		return E_ABORT;
 	}
 
-	if (dwHeight == m_dwFontHeight && dwFlags == m_dwFontFlags && m_strFontName.compare(strFontName) == 0) {
+	if (m_pTexture && dwHeight == m_dwFontHeight && dwFlags == m_dwFontFlags && m_strFontName.compare(strFontName) == 0) {
 		return S_FALSE;
 	}
 
