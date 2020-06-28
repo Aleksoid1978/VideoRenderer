@@ -126,7 +126,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			m_Sets.bShowStats = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ResizeStatistics, dw)) {
-			m_Sets.iResizeStats = !!dw;
+			m_Sets.iResizeStats = discard((int)dw, 0, 0, 1);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_TextureFormat, dw)) {
 			switch (dw) {
@@ -1124,7 +1124,7 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 	}
 
 	if (setings.iResizeStats != m_Sets.iResizeStats) {
-		// TODO
+		m_VideoProcessor->SetResizeStats(setings.iResizeStats);
 		m_Sets.iResizeStats = setings.iResizeStats;
 	}
 

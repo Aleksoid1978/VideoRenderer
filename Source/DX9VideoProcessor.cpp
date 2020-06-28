@@ -495,10 +495,12 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 
 		HRESULT hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
 		DLogIf(FAILED(hr2), L"m_Font3D.InitDeviceObjects() failed with error {}", HR2Str(hr2));
+		/*
 		if (SUCCEEDED(hr2)) {
 			hr2 = m_Font3D.CreateFontBitmap(L"Consolas", m_StatsFontH, 0);
 			DLogIf(FAILED(hr2), L"m_Font3D.CreateFontBitmap() failed with error {}", HR2Str(hr2));
 		}
+		*/
 		if (SUCCEEDED(hr2)) {
 			hr2 = m_StatsBackground.InitDeviceObjects(m_pD3DDevEx);
 			hr2 = m_Rect3D.InitDeviceObjects(m_pD3DDevEx);
@@ -850,7 +852,13 @@ void CDX9VideoProcessor::UpdateRenderRect()
 void CDX9VideoProcessor::SetGraphSize()
 {
 	if (m_pD3DDevEx && !m_windowRect.IsRectEmpty()) {
-		m_StatsBackground.Set(m_StatsRect, D3DCOLOR_ARGB(80, 0, 0, 0));
+		CalcStatsFont();
+		if (S_OK == m_Font3D.CreateFontBitmap(L"Consolas", m_StatsFontH, 0)) {
+			SIZE charSize = m_Font3D.GetMaxCharMetric();
+			m_StatsRect.right  = m_StatsRect.left + 63 * charSize.cx + 5 + 3;
+			m_StatsRect.bottom = m_StatsRect.top + 16 * charSize.cy + 5 + 3;
+			m_StatsBackground.Set(m_StatsRect, D3DCOLOR_ARGB(80, 0, 0, 0));
+		}
 
 		CalcGraphParams();
 		m_Underlay.Set(m_GraphRect, D3DCOLOR_ARGB(80, 0, 0, 0));

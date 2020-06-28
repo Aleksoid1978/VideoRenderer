@@ -691,6 +691,12 @@ void CDX11VideoProcessor::SetGraphSize()
 	if (m_pDeviceContext && !m_windowRect.IsRectEmpty()) {
 		SIZE rtSize = m_windowRect.Size();
 
+		CalcStatsFont();
+		if (S_OK == m_Font3D.CreateFontBitmap(L"Consolas", m_StatsFontH, 0)) {
+			SIZE charSize = m_Font3D.GetMaxCharMetric();
+			m_StatsRect.right  = m_StatsRect.left + 63 * charSize.cx + 5 + 3;
+			m_StatsRect.bottom = m_StatsRect.top + 16 * charSize.cy + 5 + 3;
+		}
 		m_StatsBackground.Set(m_StatsRect, rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
 
 		CalcGraphParams();
@@ -898,10 +904,12 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	HRESULT hr2 = m_Font3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
 	DLogIf(FAILED(hr2), L"m_Font3D.InitDeviceObjects() failed with error {}", HR2Str(hr2));
+	/*
 	if (SUCCEEDED(hr2)) {
 		hr2 = m_Font3D.CreateFontBitmap(L"Consolas", m_StatsFontH, 0);
 		DLogIf(FAILED(hr2), L"m_Font3D.CreateFontBitmap() failed with error {}", HR2Str(hr2));
 	}
+	*/
 	if (SUCCEEDED(hr2)) {
 		hr2 = m_StatsBackground.InitDeviceObjects(m_pDevice, m_pDeviceContext);
 		hr2 = m_Rect3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);

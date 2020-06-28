@@ -41,6 +41,7 @@ protected:
 
 	// Settings
 	bool m_bShowStats          = false;
+	int  m_iResizeStats        = 0;
 	int  m_iTexFormat          = TEXFMT_AUTOINT;
 	VPEnableFormats_t m_VPFormats = {true, true, true, true};
 	bool m_bDeintDouble        = true;
@@ -156,6 +157,7 @@ public:
 	void SetVPEnableFmts(const VPEnableFormats_t& VPFormats) { m_VPFormats = VPFormats; }
 	void SetDeintDouble(bool value)                          { m_bDeintDouble = value; }
 	void SetShowStats(bool value)                            { m_bShowStats   = value; }
+	void SetResizeStats(int value)                           { m_iResizeStats = value; }
 	void SetInterpolateAt50pct(bool value)                   { m_bInterpolateAt50pct = value; }
 	virtual void SetVPScaling(bool value)    = 0;
 	virtual void SetChromaScaling(int value) = 0;
@@ -176,6 +178,7 @@ public:
 	virtual HRESULT GetDisplayedImage(BYTE **ppDib, unsigned *pSize) = 0;
 	virtual HRESULT GetVPInfo(std::wstring& str) = 0;
 
+	void CalcStatsFont();
 	bool CheckGraphPlacement();
 	void CalcGraphParams();
 
