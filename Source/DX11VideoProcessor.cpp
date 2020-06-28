@@ -899,7 +899,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	HRESULT hr2 = m_Font3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
 	DLogIf(FAILED(hr2), L"m_Font3D.InitDeviceObjects() failed with error {}", HR2Str(hr2));
 	if (SUCCEEDED(hr2)) {
-		hr2 = m_Font3D.CreateFontBitmap(L"Consolas", 14, 0);
+		hr2 = m_Font3D.CreateFontBitmap(L"Consolas", m_StatsFontH, 0);
 		DLogIf(FAILED(hr2), L"m_Font3D.CreateFontBitmap() failed with error {}", HR2Str(hr2));
 	}
 	if (SUCCEEDED(hr2)) {
@@ -2567,7 +2567,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 
 		m_StatsBackground.Draw(pRenderTargetView, rtSize);
 
-		hr = m_Font3D.Draw2DText(pRenderTargetView, rtSize, m_StatsTextRect.left, m_StatsTextRect.top, D3DCOLOR_XRGB(255, 255, 255), str.c_str());
+		hr = m_Font3D.Draw2DText(pRenderTargetView, rtSize, m_StatsTextPoint.x, m_StatsTextPoint.y, D3DCOLOR_XRGB(255, 255, 255), str.c_str());
 		static int col = m_StatsRect.right;
 		if (--col < m_StatsRect.left) {
 			col = m_StatsRect.right;
