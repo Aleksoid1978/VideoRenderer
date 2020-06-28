@@ -191,6 +191,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (SUCCEEDED(hr)) {
 			// configure the video processor
 			m_VideoProcessor->SetShowStats(m_Sets.bShowStats);
+			m_VideoProcessor->SetResizeStats(m_Sets.iResizeStats);
 			m_VideoProcessor->SetTexFormat(m_Sets.iTextureFmt);
 			m_VideoProcessor->SetVPEnableFmts(m_Sets.VPFmts);
 			m_VideoProcessor->SetDeintDouble(m_Sets.bDeintDouble);
@@ -216,6 +217,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (SUCCEEDED(hr)) {
 			// configure the video processor
 			m_VideoProcessor->SetShowStats(m_Sets.bShowStats);
+			m_VideoProcessor->SetResizeStats(m_Sets.iResizeStats);
 			m_VideoProcessor->SetTexFormat(m_Sets.iTextureFmt);
 			m_VideoProcessor->SetVPEnableFmts(m_Sets.VPFmts);
 			m_VideoProcessor->SetDeintDouble(m_Sets.bDeintDouble);
