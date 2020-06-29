@@ -2541,19 +2541,19 @@ STDMETHODIMP CDX9VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpVa
 		return MF_E_TRANSFORM_TYPE_NOT_SET;
 	}
 
-	if (dwFlags&DXVA2_ProcAmp_Mask) {
+	if (dwFlags & DXVA2_ProcAmp_Mask) {
 		CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
-		if (dwFlags&DXVA2_ProcAmp_Brightness) {
+		if (dwFlags & DXVA2_ProcAmp_Brightness) {
 			m_DXVA2ProcAmpValues.Brightness.ll = std::clamp(pValues->Brightness.ll, m_DXVA2ProcAmpRanges[0].MinValue.ll, m_DXVA2ProcAmpRanges[0].MaxValue.ll);
 		}
-		if (dwFlags&DXVA2_ProcAmp_Contrast) {
+		if (dwFlags & DXVA2_ProcAmp_Contrast) {
 			m_DXVA2ProcAmpValues.Contrast.ll = std::clamp(pValues->Contrast.ll, m_DXVA2ProcAmpRanges[1].MinValue.ll, m_DXVA2ProcAmpRanges[1].MaxValue.ll);
 		}
-		if (dwFlags&DXVA2_ProcAmp_Hue) {
+		if (dwFlags & DXVA2_ProcAmp_Hue) {
 			m_DXVA2ProcAmpValues.Hue.ll = std::clamp(pValues->Hue.ll, m_DXVA2ProcAmpRanges[2].MinValue.ll, m_DXVA2ProcAmpRanges[2].MaxValue.ll);
 		}
-		if (dwFlags&DXVA2_ProcAmp_Saturation) {
+		if (dwFlags & DXVA2_ProcAmp_Saturation) {
 			m_DXVA2ProcAmpValues.Saturation.ll = std::clamp(pValues->Saturation.ll, m_DXVA2ProcAmpRanges[3].MinValue.ll, m_DXVA2ProcAmpRanges[3].MaxValue.ll);
 		}
 
