@@ -164,7 +164,7 @@ HRESULT CVRMainPPage::OnActivate()
 	GetDlgItem(IDC_CHECK12).EnableWindow(m_SetsPP.bExclusiveFS);
 
 	SendDlgItemMessageW(IDC_COMBO6, CB_ADDSTRING, 0, (LPARAM)L"Fixed font size");
-	SendDlgItemMessageW(IDC_COMBO6, CB_ADDSTRING, 0, (LPARAM)L"Increase for a large window");
+	SendDlgItemMessageW(IDC_COMBO6, CB_ADDSTRING, 0, (LPARAM)L"Increase font by window");
 	//SendDlgItemMessageW(IDC_COMBO6, CB_ADDSTRING, 0, (LPARAM)L"Increase by DPI"); // TODO
 
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"Auto 8/10-bit Integer",  0);
