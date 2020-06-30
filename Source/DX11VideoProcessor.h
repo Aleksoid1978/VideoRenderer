@@ -143,7 +143,7 @@ private:
 
 	void UpdateRenderRect();
 
-	void SetGraphSize();
+	void SetGraphSize() override;
 
 	HRESULT MemCopyToTexSrcVideo(const BYTE* srcData, const int srcPitch);
 

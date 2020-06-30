@@ -74,6 +74,12 @@ void CVideoProcessor::SetTexFormat(int value)
 	}
 }
 
+void CVideoProcessor::SetResizeStats(int value)
+{
+	m_iResizeStats = value;
+	SetGraphSize();
+}
+
 void CVideoProcessor::CalcStatsFont()
 {
 	if (m_iResizeStats == 1) {

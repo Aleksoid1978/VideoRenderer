@@ -157,7 +157,7 @@ public:
 	void SetVPEnableFmts(const VPEnableFormats_t& VPFormats) { m_VPFormats = VPFormats; }
 	void SetDeintDouble(bool value)                          { m_bDeintDouble = value; }
 	void SetShowStats(bool value)                            { m_bShowStats   = value; }
-	void SetResizeStats(int value)                           { m_iResizeStats = value; }
+	void SetResizeStats(int value);
 	void SetInterpolateAt50pct(bool value)                   { m_bInterpolateAt50pct = value; }
 	virtual void SetVPScaling(bool value)    = 0;
 	virtual void SetChromaScaling(int value) = 0;
@@ -181,6 +181,7 @@ public:
 	void CalcStatsFont();
 	bool CheckGraphPlacement();
 	void CalcGraphParams();
+	virtual void SetGraphSize() = 0;
 
 	void SetDisplayInfo(const DisplayConfig_t& displayConfig, const bool primary, const bool fullscreen);
 

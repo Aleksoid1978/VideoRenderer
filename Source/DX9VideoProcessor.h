@@ -132,7 +132,7 @@ private:
 
 	void UpdateRenderRect();
 
-	void SetGraphSize();
+	void SetGraphSize() override;
 
 public:
 	BOOL VerifyMediaType(const CMediaType* pmt) override;
