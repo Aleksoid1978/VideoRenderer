@@ -88,93 +88,9 @@ HRESULT CD3D9Font::InitDeviceObjects(IDirect3DDevice9* pd3dDevice)
 	return hr;
 }
 
-// TODO: need a description
-HRESULT CD3D9Font::CreateStateBlocks()
-{
-	bool bSupportsAlphaBlend = true;
-	IDirect3D9* pd3d9 = nullptr;
-	HRESULT hr = m_pd3dDevice->GetDirect3D(&pd3d9);
-	if (SUCCEEDED(hr)) {
-		D3DDISPLAYMODE Mode;
-		IDirect3DSurface9* pSurf = nullptr;
-		D3DSURFACE_DESC Desc;
-		m_pd3dDevice->GetDisplayMode(0, &Mode);
-		hr = m_pd3dDevice->GetRenderTarget(0, &pSurf);
-		if (SUCCEEDED(hr)) {
-			pSurf->GetDesc(&Desc);
-			hr = pd3d9->CheckDeviceFormat(m_D3DCaps.AdapterOrdinal, m_D3DCaps.DeviceType, Mode.Format,
-				D3DUSAGE_RENDERTARGET | D3DUSAGE_QUERY_POSTPIXELSHADER_BLENDING, D3DRTYPE_SURFACE,
-				Desc.Format);
-			if (FAILED(hr)) {
-				bSupportsAlphaBlend = false;
-			}
-			SAFE_RELEASE(pSurf);
-		}
-		SAFE_RELEASE(pd3d9);
-	}
-
-	// Create the state blocks for rendering text
-	for (UINT which = 0; which < 2; which++) {
-		m_pd3dDevice->BeginStateBlock();
-		m_pd3dDevice->SetTexture(0, m_pTexture);
-
-		if (D3DFONT_ZENABLE & m_dwFontFlags) {
-			m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
-		} else {
-			m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
-		}
-
-		if (bSupportsAlphaBlend) {
-			m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-			m_pd3dDevice->SetRenderState(D3DRS_SRCBLEND,         D3DBLEND_ONE); // pre-multiplied src
-			m_pd3dDevice->SetRenderState(D3DRS_DESTBLEND,        D3DBLEND_INVSRCALPHA);
-		} else {
-			m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-		}
-		m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE,  TRUE);
-		m_pd3dDevice->SetRenderState(D3DRS_ALPHAREF,         0x08);
-		m_pd3dDevice->SetRenderState(D3DRS_ALPHAFUNC,        D3DCMP_GREATEREQUAL);
-		m_pd3dDevice->SetRenderState(D3DRS_FILLMODE,         D3DFILL_SOLID);
-		m_pd3dDevice->SetRenderState(D3DRS_CULLMODE,         D3DCULL_CCW);
-		m_pd3dDevice->SetRenderState(D3DRS_STENCILENABLE,    FALSE);
-		m_pd3dDevice->SetRenderState(D3DRS_CLIPPING,         TRUE);
-		m_pd3dDevice->SetRenderState(D3DRS_CLIPPLANEENABLE,  FALSE);
-		m_pd3dDevice->SetRenderState(D3DRS_VERTEXBLEND,      D3DVBF_DISABLE);
-		m_pd3dDevice->SetRenderState(D3DRS_INDEXEDVERTEXBLENDENABLE, FALSE);
-		m_pd3dDevice->SetRenderState(D3DRS_FOGENABLE,        FALSE);
-		m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,
-									 D3DCOLORWRITEENABLE_RED  | D3DCOLORWRITEENABLE_GREEN |
-									 D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA);
-		m_pd3dDevice->SetTextureStageState(0, D3DTSS_COLOROP,   D3DTOP_MODULATE);
-		m_pd3dDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-		m_pd3dDevice->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
-		m_pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE);
-		m_pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
-		m_pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
-		m_pd3dDevice->SetTextureStageState(0, D3DTSS_TEXCOORDINDEX, 0);
-		m_pd3dDevice->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE);
-		m_pd3dDevice->SetTextureStageState(1, D3DTSS_COLOROP,   D3DTOP_DISABLE);
-		m_pd3dDevice->SetTextureStageState(1, D3DTSS_ALPHAOP,   D3DTOP_DISABLE);
-		m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
-		m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-		m_pd3dDevice->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
-
-		if ( which==0 ) {
-			m_pd3dDevice->EndStateBlock(&m_pStateBlockSaved);
-		} else {
-			m_pd3dDevice->EndStateBlock(&m_pStateBlockDrawText);
-		}
-	}
-
-	return S_OK;
-}
-
 // Destroys all device-dependent objects
 void CD3D9Font::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(m_pStateBlockSaved);
-	SAFE_RELEASE(m_pStateBlockDrawText);
-
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pTexture);
 
@@ -244,10 +160,6 @@ HRESULT CD3D9Font::CreateFontBitmap(const WCHAR* strFontName, const DWORD dwHeig
 		m_pTexture->UnlockRect(0);
 	}
 
-	if (S_OK == hr) {
-		hr = CreateStateBlocks();
-	}
-
 	return hr;
 }
 
@@ -303,8 +215,42 @@ HRESULT CD3D9Font::Draw2DText(float sx, float sy, const D3DCOLOR color, const WC
 	}
 
 	// Setup renderstate
-	m_pStateBlockSaved->Capture();
-	m_pStateBlockDrawText->Apply();
+	{
+		m_pd3dDevice->SetTexture(0, m_pTexture);
+
+		if (D3DFONT_ZENABLE & m_dwFontFlags) {
+			m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
+		} else {
+			m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
+		}
+		m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+		m_pd3dDevice->SetRenderState(D3DRS_SRCBLEND,         D3DBLEND_ONE); // pre-multiplied src
+		m_pd3dDevice->SetRenderState(D3DRS_DESTBLEND,        D3DBLEND_INVSRCALPHA);
+		m_pd3dDevice->SetRenderState(D3DRS_FILLMODE,         D3DFILL_SOLID);
+		m_pd3dDevice->SetRenderState(D3DRS_CULLMODE,         D3DCULL_CCW);
+		m_pd3dDevice->SetRenderState(D3DRS_STENCILENABLE,    FALSE);
+		m_pd3dDevice->SetRenderState(D3DRS_CLIPPING,         TRUE);
+		m_pd3dDevice->SetRenderState(D3DRS_CLIPPLANEENABLE,  FALSE);
+		m_pd3dDevice->SetRenderState(D3DRS_VERTEXBLEND,      D3DVBF_DISABLE);
+		m_pd3dDevice->SetRenderState(D3DRS_INDEXEDVERTEXBLENDENABLE, FALSE);
+		m_pd3dDevice->SetRenderState(D3DRS_FOGENABLE,        FALSE);
+		m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,
+									 D3DCOLORWRITEENABLE_RED  | D3DCOLORWRITEENABLE_GREEN |
+									 D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA);
+		m_pd3dDevice->SetTextureStageState(0, D3DTSS_COLOROP,   D3DTOP_MODULATE);
+		m_pd3dDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+		m_pd3dDevice->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+		m_pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE);
+		m_pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+		m_pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+		m_pd3dDevice->SetTextureStageState(0, D3DTSS_TEXCOORDINDEX, 0);
+		m_pd3dDevice->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE);
+		m_pd3dDevice->SetTextureStageState(1, D3DTSS_COLOROP,   D3DTOP_DISABLE);
+		m_pd3dDevice->SetTextureStageState(1, D3DTSS_ALPHAOP,   D3DTOP_DISABLE);
+		m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+		m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+		m_pd3dDevice->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+	}
 	m_pd3dDevice->SetFVF(D3DFVF_XYZRHW|D3DFVF_DIFFUSE|D3DFVF_TEX1);
 	m_pd3dDevice->SetPixelShader(nullptr);
 	m_pd3dDevice->SetStreamSource(0, m_pVertexBuffer, 0, sizeof(Font9Vertex));
@@ -397,9 +343,6 @@ HRESULT CD3D9Font::Draw2DText(float sx, float sy, const D3DCOLOR color, const WC
 	if (uNumTriangles > 0) {
 		m_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLELIST, 0, uNumTriangles);
 	}
-
-	// Restore the modified renderstates
-	m_pStateBlockSaved->Apply();
 
 	return S_OK;
 }
