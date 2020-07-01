@@ -344,5 +344,7 @@ HRESULT CD3D9Font::Draw2DText(float sx, float sy, const D3DCOLOR color, const WC
 		m_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLELIST, 0, uNumTriangles);
 	}
 
+	m_pd3dDevice->SetTexture(0, nullptr);
+
 	return S_OK;
 }
