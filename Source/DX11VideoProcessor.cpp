@@ -904,12 +904,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	HRESULT hr2 = m_Font3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
 	DLogIf(FAILED(hr2), L"m_Font3D.InitDeviceObjects() failed with error {}", HR2Str(hr2));
-	/*
-	if (SUCCEEDED(hr2)) {
-		hr2 = m_Font3D.CreateFontBitmap(L"Consolas", m_StatsFontH, 0);
-		DLogIf(FAILED(hr2), L"m_Font3D.CreateFontBitmap() failed with error {}", HR2Str(hr2));
-	}
-	*/
 	if (SUCCEEDED(hr2)) {
 		hr2 = m_StatsBackground.InitDeviceObjects(m_pDevice, m_pDeviceContext);
 		hr2 = m_Rect3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);

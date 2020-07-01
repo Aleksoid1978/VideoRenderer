@@ -22,9 +22,6 @@
 
 #include "D3DCommon.h"
 
-// Font creation flags
-#define D3DFONT_ZENABLE     0x0004
-
 // Font rendering flags
 #define D3DFONT_CENTERED_X  0x0001
 #define D3DFONT_CENTERED_Y  0x0002

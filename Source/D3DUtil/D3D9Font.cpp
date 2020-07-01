@@ -218,11 +218,7 @@ HRESULT CD3D9Font::Draw2DText(float sx, float sy, const D3DCOLOR color, const WC
 	{
 		m_pd3dDevice->SetTexture(0, m_pTexture);
 
-		if (D3DFONT_ZENABLE & m_dwFontFlags) {
-			m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
-		} else {
-			m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
-		}
+		m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
 		m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
 		m_pd3dDevice->SetRenderState(D3DRS_SRCBLEND,         D3DBLEND_ONE); // pre-multiplied src
 		m_pd3dDevice->SetRenderState(D3DRS_DESTBLEND,        D3DBLEND_INVSRCALPHA);
