@@ -44,6 +44,11 @@ class CD3D9Font
 	UINT  m_uTexWidth  = 0;                   // Texture dimensions
 	UINT  m_uTexHeight = 0;
 
+	// Stateblocks for setting and restoring render states
+	IDirect3DStateBlock9* m_pStateBlockSaved = nullptr;
+	IDirect3DStateBlock9* m_pStateBlockDrawText = nullptr;
+	HRESULT CreateStateBlocks();
+
 public:
 	// Constructor / destructor
 	CD3D9Font();
