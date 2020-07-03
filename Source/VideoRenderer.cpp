@@ -47,7 +47,6 @@
 #define OPT_Dither               L"Dither"
 #define OPT_SwapEffect           L"SwapEffect"
 #define OPT_ExclusiveFullscreen  L"ExclusiveFullscreen"
-#define OPT_ExclusiveDelay       L"ExclusiveDelay"
 
 static const wchar_t g_szClassName[] = L"VRWindow";
 
@@ -178,9 +177,6 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ExclusiveFullscreen, dw)) {
 			m_Sets.bExclusiveFS = !!dw;
-		}
-		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ExclusiveDelay, dw)) {
-			m_Sets.bExclusiveDelay = !!dw;
 		}
 	}
 
@@ -1215,7 +1211,6 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_Dither,              m_Sets.bUseDither);
 		key.SetDWORDValue(OPT_SwapEffect,          m_Sets.iSwapEffect);
 		key.SetDWORDValue(OPT_ExclusiveFullscreen, m_Sets.bExclusiveFS);
-		key.SetDWORDValue(OPT_ExclusiveDelay,      m_Sets.bExclusiveDelay);
 	}
 
 	return S_OK;
