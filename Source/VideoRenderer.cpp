@@ -823,7 +823,7 @@ void CMpcVideoRenderer::SwitchFullScreen()
 	m_bIsFullscreen = true;
 
 	if (m_hWnd) {
-		Init(false);
+		Init(m_VideoProcessor->Type() == VP_DX9 ? false : true);
 		Redraw();
 
 		if (m_hWndParentMain) {
@@ -913,7 +913,7 @@ HRESULT CMpcVideoRenderer::Init(const bool bCreateWindow/* = false*/)
 		}
 	}
 
-	m_hWnd = m_bIsFullscreen ? m_hWndParentMain : m_hWndWindow;
+	m_hWnd = m_bIsFullscreen && m_VideoProcessor->Type() == VP_DX9 ? m_hWndParentMain : m_hWndWindow;
 	bool bChangeDevice = false;
 
 	hr = m_VideoProcessor->Init(m_hWnd, &bChangeDevice);
@@ -972,7 +972,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 
 	CAutoLock cRendererLock(&m_RendererLock);
 
-	if (m_VideoProcessor->Type() == VP_DX9 && (m_Sets.bExclusiveFS || m_bIsFullscreen)) {
+	if (m_Sets.bExclusiveFS || m_bIsFullscreen) {
 		const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 		MONITORINFO mi = { mi.cbSize = sizeof(mi) };
 		::GetMonitorInfoW(hMon, &mi);
@@ -985,7 +985,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 			m_bIsFullscreen = false;
 
 			if (m_hWnd) {
-				Init(false);
+				Init(m_VideoProcessor->Type() == VP_DX9 ? false : true);
 				Redraw();
 
 				if (m_hWndParentMain) {

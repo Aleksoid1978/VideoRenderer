@@ -381,6 +381,9 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr
 
 CDX11VideoProcessor::~CDX11VideoProcessor()
 {
+	if (m_pDXGISwapChain1) {
+		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
+	}
 	m_pDXGISwapChain1.Release();
 	m_pDXGIFactory2.Release();
 
@@ -428,7 +431,8 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 		}
 
 		SAFE_RELEASE(pDXGIAdapter);
-		if (!m_pDXGISwapChain1) {
+
+		if (!m_pDXGISwapChain1 || m_bIsFullscreen != m_pFilter->m_bIsFullscreen) {
 			InitSwapChain();
 			UpdateStatsStatic();
 		}
@@ -440,6 +444,9 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 		return S_OK;
 	}
 
+	if (m_pDXGISwapChain1) {
+		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
+	}
 	m_pDXGISwapChain1.Release();
 	m_pDXGIFactory2.Release();
 	ReleaseDevice();
@@ -760,6 +767,9 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 {
 	DLog(L"CDX11VideoProcessor::SetDevice()");
 
+	if (m_pDXGISwapChain1) {
+		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
+	}
 	m_pDXGISwapChain1.Release();
 	m_pDXGIFactory2.Release();
 	ReleaseDevice();
@@ -960,34 +970,75 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 HRESULT CDX11VideoProcessor::InitSwapChain()
 {
-	DLog(L"CDX11VideoProcessor::InitSwapChain()");
+	DLog(L"CDX11VideoProcessor::InitSwapChain() - {}", m_pFilter->m_bIsFullscreen ? L"fullscreen" : L"window");
 	CheckPointer(m_pDXGIFactory2, E_FAIL);
 
+	if (m_pDXGISwapChain1) {
+		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
+	}
 	m_pDXGISwapChain1.Release();
 
-	DXGI_SWAP_CHAIN_DESC1 desc1 = {};
-	desc1.Width  = m_windowRect.Width();
-	desc1.Height = m_windowRect.Height();
-	desc1.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // the most common swap chain format
-	desc1.SampleDesc.Count = 1;
-	desc1.SampleDesc.Quality = 0;
-	desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	if (m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) {
-		desc1.BufferCount = 2;
-		desc1.Scaling = DXGI_SCALING_NONE;
-#if VER_PRODUCTBUILD >= 10000
-		desc1.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-#else
-		desc1.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-#endif
-	} else { // default SWAPEFFECT_Discard
-		desc1.BufferCount = 1;
-		desc1.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-	}
-	desc1.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-	HRESULT hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc1, nullptr, nullptr, &m_pDXGISwapChain1);
+	HRESULT hr = S_OK;
+	m_bIsFullscreen = m_pFilter->m_bIsFullscreen;
+	if (m_bIsFullscreen) {
+		MONITORINFOEXW mi = { sizeof(mi) };
+		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST), &mi);
+		const CRect rc(mi.rcMonitor);
 
-	DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd() failed with error {}", HR2Str(hr));
+		DXGI_SWAP_CHAIN_DESC1 desc1 = {};
+		desc1.Width = rc.Width();
+		desc1.Height = rc.Height();
+		desc1.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+		desc1.SampleDesc.Count = 1;
+		desc1.SampleDesc.Quality = 0;
+		desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		if (IsWindows8OrGreater()) {
+			desc1.BufferCount = 2;
+			desc1.Scaling = DXGI_SCALING_NONE;
+#if VER_PRODUCTBUILD >= 10000
+			desc1.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+#else
+			desc1.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+#endif
+		} else { // default SWAPEFFECT_Discard
+			desc1.BufferCount = 1;
+			desc1.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+		}
+		desc1.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+
+		DXGI_SWAP_CHAIN_FULLSCREEN_DESC fullscreenDesc = {};
+		fullscreenDesc.RefreshRate.Numerator = 0;
+		fullscreenDesc.RefreshRate.Denominator = 1;
+		fullscreenDesc.Windowed = FALSE;
+
+		SetWindowLongPtrW(m_hWnd, GWL_STYLE, GetWindowLongPtrW(m_hWnd, GWL_STYLE) & (~WS_CHILD));
+		hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc1, &fullscreenDesc, nullptr, &m_pDXGISwapChain1);
+		SetWindowLongPtrW(m_hWnd, GWL_STYLE, GetWindowLongPtrW(m_hWnd, GWL_STYLE) | WS_CHILD);
+		DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd(fullscreen) failed with error %s", HR2Str(hr));
+	} else {
+		DXGI_SWAP_CHAIN_DESC1 desc1 = {};
+		desc1.Width = m_windowRect.Width();
+		desc1.Height = m_windowRect.Height();
+		desc1.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+		desc1.SampleDesc.Count = 1;
+		desc1.SampleDesc.Quality = 0;
+		desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		if (m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) {
+			desc1.BufferCount = 2;
+			desc1.Scaling = DXGI_SCALING_NONE;
+#if VER_PRODUCTBUILD >= 10000
+			desc1.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+#else
+			desc1.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+#endif
+		} else { // default SWAPEFFECT_Discard
+			desc1.BufferCount = 1;
+			desc1.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+		}
+		desc1.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+		hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc1, nullptr, nullptr, &m_pDXGISwapChain1);
+		DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd() failed with error %s", HR2Str(hr));
+	}
 
 	if (m_pDXGISwapChain1) {
 		m_pShaderResourceSubPic.Release();
@@ -2095,7 +2146,7 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 	const UINT w = m_windowRect.Width();
 	const UINT h = m_windowRect.Height();
 
-	if (m_pDXGISwapChain1) {
+	if (m_pDXGISwapChain1 && !m_bIsFullscreen) {
 		hr = m_pDXGISwapChain1->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
 	}
 

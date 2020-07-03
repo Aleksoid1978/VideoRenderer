@@ -4,6 +4,7 @@ Now DirectWrite is used instead of GDI+ to generate statistics font.
 Optimized statistics drawing.
 Fixed input stream frame rate calculation.
 Reduced unnecessary initialization of DirectX objects.
+Added support for exclusive full screen in DX11 mode.
 
 v0.4.7.1356 - 2020.06.21
 ------------------------

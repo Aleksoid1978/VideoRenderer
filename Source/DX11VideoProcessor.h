@@ -124,6 +124,7 @@ private:
 	CD3D11Polyline  m_SyncLine;
 
 	bool m_bDecoderDevice = false;
+	bool m_bIsFullscreen = false;
 
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr);
