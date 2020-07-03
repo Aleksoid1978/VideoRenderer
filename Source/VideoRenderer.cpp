@@ -92,7 +92,11 @@ static LRESULT CALLBACK ParentWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM
 				return 0;
 			}
 			break;
-
+		case WM_RBUTTONUP:
+			if (pThis->m_bIsFullscreen) {
+				// block context menu in exclusive full screen
+				return 0;
+			}
 	}
 
 	return CallWindowProcW(pfnOldProc, hWnd, Msg, wParam, lParam);
