@@ -83,7 +83,6 @@ struct Settings_t {
 	bool bUseDither;
 	int  iSwapEffect;
 	bool bExclusiveFS;
-	bool bExclusiveDelay;
 
 	Settings_t() {
 		SetDefault();
@@ -107,7 +106,6 @@ struct Settings_t {
 		bUseDither          = true;
 		iSwapEffect         = SWAPEFFECT_Discard;
 		bExclusiveFS        = false;
-		bExclusiveDelay     = false;
 	}
 };
 

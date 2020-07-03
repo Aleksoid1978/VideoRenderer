@@ -240,8 +240,6 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 {
 	DLog(L"CMpcVideoRenderer::~CMpcVideoRenderer()");
 
-	EndFullScreenTimer();
-
 	if (m_hWndWindow) {
 		::SendMessageW(m_hWndWindow, WM_CLOSE, 0, 0);
 	}
@@ -819,55 +817,8 @@ STDMETHODIMP CMpcVideoRenderer::GetPreferredAspectRatio(long *plAspectX, long *p
 	return m_VideoProcessor->GetAspectRatio(plAspectX, plAspectY);
 }
 
-static VOID CALLBACK TimerCallbackFunc(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
+void CMpcVideoRenderer::SwitchFullScreen()
 {
-	if (auto pRenderer = (CMpcVideoRenderer*)lpParameter) {
-		pRenderer->SwitchFullScreen(true);
-	}
-}
-
-BOOL CMpcVideoRenderer::StartFullScreenTimer()
-{
-	BOOL ret = FALSE;
-	if (!m_hFullScreenTimerHandle) {
-		ret = CreateTimerQueueTimer(
-			&m_hFullScreenTimerHandle,
-			nullptr,
-			TimerCallbackFunc,
-			this,
-			2000,
-			0,
-			WT_EXECUTEINTIMERTHREAD);
-	}
-
-	return ret;
-}
-
-void CMpcVideoRenderer::EndFullScreenTimer()
-{
-	if (m_hFullScreenTimerHandle) {
-		DeleteTimerQueueTimer(nullptr, m_hFullScreenTimerHandle, INVALID_HANDLE_VALUE);
-		m_hFullScreenTimerHandle = nullptr;
-	}
-}
-
-void CMpcVideoRenderer::SwitchFullScreen(const bool bCheck)
-{
-	if (bCheck) {
-		if (m_bIsFullscreen) {
-			return;
-		}
-
-		const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
-		MONITORINFO mi = { mi.cbSize = sizeof(mi) };
-		::GetMonitorInfoW(hMon, &mi);
-		const CRect rcMonitor(mi.rcMonitor);
-
-		if (m_windowRect.Width() != rcMonitor.Width() || m_windowRect.Height() != rcMonitor.Height()) {
-			return;
-		}
-	}
-
 	DLog(L"CMpcVideoRenderer::SwitchFullScreen() : Switch to fullscreen");
 	m_bIsFullscreen = true;
 
@@ -1027,14 +978,8 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 		::GetMonitorInfoW(hMon, &mi);
 		const CRect rcMonitor(mi.rcMonitor);
 
-		EndFullScreenTimer();
-
 		if (!m_bIsFullscreen && m_windowRect.Width() == rcMonitor.Width() && m_windowRect.Height() == rcMonitor.Height()) {
-			if (m_Sets.bExclusiveDelay) {
-				StartFullScreenTimer();
-			} else {
-				SwitchFullScreen(false);
-			}
+			SwitchFullScreen();
 		} else if (m_bIsFullscreen && (m_windowRect.Width() != rcMonitor.Width() || m_windowRect.Height() != rcMonitor.Height())) {
 			DLog(L"CMpcVideoRenderer::SetWindowPosition() : Switch from fullscreen");
 			m_bIsFullscreen = false;
@@ -1110,9 +1055,8 @@ STDMETHODIMP_(void) CMpcVideoRenderer::GetSettings(Settings_t& setings)
 
 STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 {
-	m_Sets.bUseD3D11       = setings.bUseD3D11;
-	m_Sets.bExclusiveFS    = setings.bExclusiveFS;
-	m_Sets.bExclusiveDelay = setings.bExclusiveDelay;
+	m_Sets.bUseD3D11    = setings.bUseD3D11;
+	m_Sets.bExclusiveFS = setings.bExclusiveFS;
 
 	CAutoLock cRendererLock(&m_RendererLock);
 
