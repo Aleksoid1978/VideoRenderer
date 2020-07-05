@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2019 see Authors.txt
+* (C) 2018-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -36,11 +36,23 @@ CDX9Device::CDX9Device()
 	DXVA2CreateDirect3DDeviceManager9(&m_nResetTocken, &m_pD3DDeviceManager);
 	if (!m_pD3DDeviceManager) {
 		m_pD3DEx.Release();
+		return;
 	}
+
+	m_evInit.Reset();
+	m_evQuit.Reset();
+	m_evThreadFinishJob.Reset();
+
+	m_deviceThread = std::thread([this] { DeviceThreadFunc(); });
 }
 
 CDX9Device::~CDX9Device()
 {
+	if (m_deviceThread.joinable()) {
+		m_evQuit.Set();
+		m_deviceThread.join();
+	}
+
 	ReleaseDX9Device();
 
 	m_pD3DDeviceManager.Release();
@@ -49,13 +61,31 @@ CDX9Device::~CDX9Device()
 	m_pD3DEx.Release();
 }
 
-HRESULT CDX9Device::InitDX9Device(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
+void CDX9Device::DeviceThreadFunc()
 {
-	DLog(L"CDX9Device::InitDX9Device()");
+	HANDLE hEvts[] = { m_evInit, m_evQuit };
+
+	for (;;) {
+		const auto dwObject = WaitForMultipleObjects(std::size(hEvts), hEvts, FALSE, INFINITE);
+		m_hrThread = E_FAIL;
+		switch (dwObject) {
+			case WAIT_OBJECT_0:
+				m_hrThread = InitDX9DeviceInternal(&m_bChangeDeviceThread);
+				m_evThreadFinishJob.Set();
+				break;
+			default:
+				return;
+		}
+	}
+}
+
+HRESULT CDX9Device::InitDX9DeviceInternal(bool* pChangeDevice)
+{
+	DLog(L"CDX9Device::InitDX9DeviceInternal()");
 
 	CheckPointer(m_pD3DEx, E_FAIL);
 
-	const UINT currentAdapter = GetAdapter(hwnd, m_pD3DEx);
+	const UINT currentAdapter = GetAdapter(m_hDX9Wnd, m_pD3DEx);
 	bool bTryToReset = (currentAdapter == m_nCurrentAdapter9) && m_pD3DDevEx;
 	if (!bTryToReset) {
 		ReleaseDX9Device();
@@ -69,7 +99,7 @@ HRESULT CDX9Device::InitDX9Device(const HWND hwnd, bool* pChangeDevice/* = nullp
 
 	ZeroMemory(&m_d3dpp, sizeof(m_d3dpp));
 	m_d3dpp.Windowed = TRUE;
-	m_d3dpp.hDeviceWindow = hwnd;
+	m_d3dpp.hDeviceWindow = m_hDX9Wnd;
 	m_d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
 	m_d3dpp.Flags = D3DPRESENTFLAG_VIDEO;
 	m_d3dpp.BackBufferCount = 1;
@@ -85,7 +115,7 @@ HRESULT CDX9Device::InitDX9Device(const HWND hwnd, bool* pChangeDevice/* = nullp
 	if (!bTryToReset) {
 		ReleaseDX9Device();
 		hr = m_pD3DEx->CreateDeviceEx(
-			m_nCurrentAdapter9, D3DDEVTYPE_HAL, hwnd,
+			m_nCurrentAdapter9, D3DDEVTYPE_HAL, m_hDX9Wnd,
 			D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS,
 			&m_d3dpp, nullptr, &m_pD3DDevEx);
 		DLog(L"    => CreateDeviceEx() : {}", HR2Str(hr));
@@ -100,7 +130,7 @@ HRESULT CDX9Device::InitDX9Device(const HWND hwnd, bool* pChangeDevice/* = nullp
 
 	while (hr == D3DERR_DEVICELOST) {
 		DLog(L"    => D3DERR_DEVICELOST. Trying to Reset.");
-		hr = m_pD3DDevEx->CheckDeviceState(hwnd);
+		hr = m_pD3DDevEx->CheckDeviceState(m_hDX9Wnd);
 	}
 	if (hr == D3DERR_DEVICENOTRESET) {
 		DLog(L"    => D3DERR_DEVICENOTRESET");
@@ -116,6 +146,23 @@ HRESULT CDX9Device::InitDX9Device(const HWND hwnd, bool* pChangeDevice/* = nullp
 	}
 
 	return hr;
+}
+
+HRESULT CDX9Device::InitDX9Device(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
+{
+	CheckPointer(m_pD3DEx, E_FAIL);
+
+	m_hDX9Wnd = hwnd;
+
+	m_bChangeDeviceThread = false;
+	m_evInit.Set();
+	WaitForSingleObject(m_evThreadFinishJob, INFINITE);
+
+	if (pChangeDevice) {
+		*pChangeDevice = m_bChangeDeviceThread;
+	}
+
+	return m_hrThread;
 }
 
 void CDX9Device::ReleaseDX9Device()
