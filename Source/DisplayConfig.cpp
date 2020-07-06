@@ -106,12 +106,12 @@ bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig
 	// them in a loop until the correct buffer size is chosen
 	do {
 		res = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &num_paths, &num_modes);
-		if (res == ERROR_SUCCESS) {
+		if (ERROR_SUCCESS == res) {
 			paths.resize(num_paths);
 			modes.resize(num_modes);
 			res = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &num_paths, paths.data(), &num_modes, modes.data(), nullptr);
 		}
-	} while (res == ERROR_INSUFFICIENT_BUFFER);
+	} while (ERROR_INSUFFICIENT_BUFFER == res);
 
 	if (res == ERROR_SUCCESS) {
 		// num_paths and num_modes could decrease in a loop
@@ -123,7 +123,8 @@ bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig
 			DISPLAYCONFIG_SOURCE_DEVICE_NAME source = {
 				{DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME, sizeof(source), path.sourceInfo.adapterId, path.sourceInfo.id}, {},
 			};
-			if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS) {
+			res = DisplayConfigGetDeviceInfo(&source.header);
+			if (ERROR_SUCCESS == res) {
 				if (wcscmp(displayName, source.viewGdiDeviceName) == 0) {
 					if (path.sourceInfo.modeInfoIdx != DISPLAYCONFIG_PATH_MODE_IDX_INVALID) {
 						const auto& mode = modes[path.sourceInfo.modeInfoIdx];
@@ -154,7 +155,8 @@ bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig
 					DISPLAYCONFIG_TARGET_DEVICE_NAME name= {
 						{DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME, sizeof(name), path.sourceInfo.adapterId, path.targetInfo.id}, {},
 					};
-					if (DisplayConfigGetDeviceInfo(&name.header) == ERROR_SUCCESS) {
+					res = DisplayConfigGetDeviceInfo(&name.header);
+					if (ERROR_SUCCESS == res) {
 						memcpy(displayConfig.monitorName, name.monitorFriendlyDeviceName, sizeof(displayConfig.monitorName));
 					} else {
 						ZeroMemory(displayConfig.monitorName, sizeof(displayConfig.monitorName));
