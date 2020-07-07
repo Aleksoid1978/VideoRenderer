@@ -126,6 +126,8 @@ bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig
 			res = DisplayConfigGetDeviceInfo(&source.header);
 			if (ERROR_SUCCESS == res) {
 				if (wcscmp(displayName, source.viewGdiDeviceName) == 0) {
+					displayConfig = {};
+
 					if (path.sourceInfo.modeInfoIdx != DISPLAYCONFIG_PATH_MODE_IDX_INVALID) {
 						const auto& mode = modes[path.sourceInfo.modeInfoIdx];
 						if (mode.infoType == DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE) {
@@ -138,6 +140,16 @@ bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig
 						if (mode.infoType == DISPLAYCONFIG_MODE_INFO_TYPE_TARGET) {
 							displayConfig.refreshRate      = mode.targetMode.targetVideoSignalInfo.vSyncFreq;
 							displayConfig.scanLineOrdering = mode.targetMode.targetVideoSignalInfo.scanLineOrdering;
+						}
+
+						DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {
+							{DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO, sizeof(color_info), mode.adapterId, mode.id}, {}
+						};
+						res = DisplayConfigGetDeviceInfo(&color_info.header);
+						if (ERROR_SUCCESS == res) {
+							displayConfig.colorEncoding = color_info.colorEncoding;
+							displayConfig.bitsPerChannel = color_info.bitsPerColorChannel;
+							displayConfig.advancedColorValue = color_info.value;
 						}
 					}
 
@@ -220,6 +232,16 @@ bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs)
 				if (mode.infoType == DISPLAYCONFIG_MODE_INFO_TYPE_TARGET) {
 					dc.refreshRate      = mode.targetMode.targetVideoSignalInfo.vSyncFreq;
 					dc.scanLineOrdering = mode.targetMode.targetVideoSignalInfo.scanLineOrdering;
+				}
+
+				DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {
+							{DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO, sizeof(color_info), mode.adapterId, mode.id}, {}
+				};
+				res = DisplayConfigGetDeviceInfo(&color_info.header);
+				if (ERROR_SUCCESS == res) {
+					dc.colorEncoding = color_info.colorEncoding;
+					dc.bitsPerChannel = color_info.bitsPerColorChannel;
+					dc.advancedColorValue = color_info.value;
 				}
 			}
 

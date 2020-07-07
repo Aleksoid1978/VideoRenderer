@@ -420,6 +420,28 @@ HRESULT CVRInfoPPage::OnActivate()
 			double freq = (double)dc.refreshRate.Numerator / (double)dc.refreshRate.Denominator;
 			strInfo += fmt::format(L"\r\n{} - {:.3f} Hz", dc.displayName, freq);
 
+			if (dc.bitsPerChannel) {
+				const wchar_t* colenc = nullptr;
+				switch (dc.colorEncoding) {
+				case DISPLAYCONFIG_COLOR_ENCODING_RGB:
+					colenc = L"RGB";
+					break;
+				case DISPLAYCONFIG_COLOR_ENCODING_YCBCR444:
+					colenc = L"YCbCr444";
+					break;
+				case DISPLAYCONFIG_COLOR_ENCODING_YCBCR422:
+					colenc = L"YCbCr422";
+					break;
+				case DISPLAYCONFIG_COLOR_ENCODING_YCBCR420:
+					colenc = L"YCbCr420";
+					break;
+				}
+				if (colenc) {
+					strInfo += fmt::format(L" {}", colenc);
+				}
+				strInfo += fmt::format(L" {}-bit", dc.bitsPerChannel);
+			}
+
 			const wchar_t* output = nullptr;
 			switch (dc.outputTechnology) {
 			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HD15:
@@ -434,6 +456,9 @@ HRESULT CVRInfoPPage::OnActivate()
 			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EXTERNAL:
 			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EMBEDDED:
 				output = L"DisplayPort";
+				break;
+			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_INTERNAL:
+				output = L"Internal";
 				break;
 			}
 			if (output) {

@@ -21,6 +21,9 @@
 struct DisplayConfig_t {
 	UINT32 width;
 	UINT32 height;
+	UINT32 bitsPerChannel;
+	DISPLAYCONFIG_COLOR_ENCODING colorEncoding;
+	UINT32 advancedColorValue;
 	DISPLAYCONFIG_RATIONAL                refreshRate;
 	DISPLAYCONFIG_SCANLINE_ORDERING       scanLineOrdering;
 	DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY outputTechnology;
