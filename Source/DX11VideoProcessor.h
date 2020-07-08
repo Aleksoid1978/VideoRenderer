@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <ntverp.h>
 #include <DXGI1_2.h>
 #include <dxva2api.h>
 #include <strmif.h>
