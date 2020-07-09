@@ -827,11 +827,11 @@ void CDX9VideoProcessor::UpdateRenderRect()
 	const int k = m_bInterpolateAt50pct ? 2 : 1;
 	int w1, h1;
 	if (m_iRotation == 90 || m_iRotation == 270) {
-		w1 = m_srcRect.Height();
-		h1 = m_srcRect.Width();
+		w1 = m_srcRectHeight;
+		h1 = m_srcRectWidth;
 	} else {
-		w1 = m_srcRect.Width();
-		h1 = m_srcRect.Height();
+		w1 = m_srcRectWidth;
+		h1 = m_srcRectHeight;
 	}
 	m_strShaderX = (w1 == w2) ? nullptr
 		: (w1 > k * w2)
@@ -1471,7 +1471,7 @@ HRESULT CDX9VideoProcessor::Reset()
 
 HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 {
-	CSize framesize(m_srcRect.Width(), m_srcRect.Height());
+	CSize framesize(m_srcRectWidth, m_srcRectHeight);
 	if (m_srcAnamorphic) {
 		framesize.cx = MulDiv(framesize.cy, m_srcAspectRatioX, m_srcAspectRatioY);
 	}
@@ -2463,16 +2463,14 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	}
 	str.append(m_strStatsStatic2);
 
-	const int srcW = m_srcRect.Width();
-	const int srcH = m_srcRect.Height();
 	const int dstW = m_videoRect.Width();
 	const int dstH = m_videoRect.Height();
 	if (m_iRotation) {
-		str += fmt::format(L"\nScaling       : {}x{} r{}°> {}x{}", srcW, srcH, m_iRotation, dstW, dstH);
+		str += fmt::format(L"\nScaling       : {}x{} r{}°> {}x{}", m_srcRectWidth, m_srcRectHeight, m_iRotation, dstW, dstH);
 	} else {
-		str += fmt::format(L"\nScaling       : {}x{} -> {}x{}", srcW, srcH, dstW, dstH);
+		str += fmt::format(L"\nScaling       : {}x{} -> {}x{}", m_srcRectWidth, m_srcRectHeight, dstW, dstH);
 	}
-	if (srcW != dstW || srcH != dstH) {
+	if (m_srcRectWidth != dstW || m_srcRectHeight != dstH) {
 		if (m_DXVA2VP.IsReady() && m_bVPScaling) {
 			str.append(L" DXVA2");
 		} else {
