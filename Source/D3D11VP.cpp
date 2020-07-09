@@ -417,7 +417,7 @@ HRESULT CD3D11VP::SetColorSpace(const DXVA2_ExtendedFormat exFmt)
 {
 	CheckPointer(m_pVideoContext, E_ABORT);
 
-#if 0 && VER_PRODUCTBUILD >= 10000
+#if 0
 	CComPtr<ID3D11VideoContext1> pVideoContext1;
 	if (S_OK == m_pVideoContext->QueryInterface(IID_PPV_ARGS(&pVideoContext1))) {
 		DLog(L"CD3D11VP::SetColorSpace() : used ID3D11VideoContext1");

@@ -995,11 +995,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		if (IsWindows8OrGreater()) {
 			desc1.BufferCount = 2;
 			desc1.Scaling = DXGI_SCALING_NONE;
-#if VER_PRODUCTBUILD >= 10000
 			desc1.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-#else
-			desc1.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-#endif
 		} else { // default SWAPEFFECT_Discard
 			desc1.BufferCount = 1;
 			desc1.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
@@ -1026,11 +1022,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		if (m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) {
 			desc1.BufferCount = 2;
 			desc1.Scaling = DXGI_SCALING_NONE;
-#if VER_PRODUCTBUILD >= 10000
 			desc1.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-#else
-			desc1.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-#endif
 		} else { // default SWAPEFFECT_Discard
 			desc1.BufferCount = 1;
 			desc1.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
@@ -2503,11 +2495,9 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 			case DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL:
 				m_strStatsPresent.append(L"Flip sequential");
 				break;
-#if VER_PRODUCTBUILD >= 10000
 			case DXGI_SWAP_EFFECT_FLIP_DISCARD:
 				m_strStatsPresent.append(L"Flip discard");
 				break;
-#endif
 			}
 		}
 	} else {
