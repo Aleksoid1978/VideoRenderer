@@ -64,6 +64,7 @@ protected:
 	UINT  m_srcLines        = 0;
 	DWORD m_srcAspectRatioX = 0;
 	DWORD m_srcAspectRatioY = 0;
+	bool  m_srcAnamorphic   = false;
 	CRect m_srcRect;
 	DXVA2_ExtendedFormat m_decExFmt = {};
 	DXVA2_ExtendedFormat m_srcExFmt = {};
