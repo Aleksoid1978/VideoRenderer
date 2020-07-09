@@ -2451,6 +2451,9 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		m_strStatsStatic1 = fmt::format(L"MPC VR {}, Direct3D 11", _CRT_WIDE(MPCVR_VERSION_STR));
 
 		m_strStatsStatic2 = fmt::format(L"{} {}x{}", m_srcParams.str, m_srcRectWidth, m_srcRectHeight);
+		if (m_srcAnamorphic) {
+			m_strStatsStatic2 += fmt::format(L" ({}:{})", m_srcAspectRatioX, m_srcAspectRatioY);
+		}
 		if (m_srcParams.CSType == CS_YUV) {
 			LPCSTR strs[6] = {};
 			GetExtendedFormatString(strs, m_srcExFmt, m_srcParams.CSType);
@@ -2569,14 +2572,10 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	const int srcH = m_srcRect.Height();
 	const int dstW = m_videoRect.Width();
 	const int dstH = m_videoRect.Height();
-	str += fmt::format(L"\nScaling       : {}x{}", srcW, srcH);
-	if (m_srcAnamorphic) {
-		str += fmt::format(L" ({}:{})", m_srcAspectRatioX, m_srcAspectRatioY);
-	}
 	if (m_iRotation) {
-		str += fmt::format(L" r{}°> {}x{}", m_iRotation, dstW, dstH);
+		str += fmt::format(L"\nScaling       : {}x{} r{}°> {}x{}", srcW, srcH, m_iRotation, dstW, dstH);
 	} else {
-		str += fmt::format(L" -> {}x{}", dstW, dstH);
+		str += fmt::format(L"\nScaling       : {}x{} -> {}x{}", srcW, srcH, dstW, dstH);
 	}
 	if (srcW != dstW || srcH != dstH) {
 		if (m_D3D11VP.IsReady() && m_bVPScaling) {
