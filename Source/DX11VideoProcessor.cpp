@@ -1723,11 +1723,11 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	}
 #endif
 	m_RenderStats.substicks = tick2 - tick1; // after DrawStats to relate to paintticks
-	uint64_t tick5 = GetPreciseTick();
-	m_RenderStats.paintticks = tick5 - tick1;
+	uint64_t tick3 = GetPreciseTick();
+	m_RenderStats.paintticks = tick3 - tick1;
 
 	hr = m_pDXGISwapChain1->Present(1, 0);
-	m_RenderStats.presentticks = GetPreciseTick() - tick5;
+	m_RenderStats.presentticks = GetPreciseTick() - tick3;
 
 	return hr;
 }
@@ -2602,7 +2602,9 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		m_RenderStats.paintticks   * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.substicks    * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
-#if 0
+	str += fmt::format(L"\nSync offset   : {:+3} ms", (m_RenderStats.syncoffset + 5000) / 10000);
+
+#if TEST_TICKS
 	str += fmt::format(L"\n1:{:6.3f}, 2:{:6.3f}, 3:{:6.3f}, 4:{:6.3f}, 5:{:6.3f}, 6:{:6.3f} ms",
 		m_RenderStats.t1 * 1000 / GetPreciseTicksPerSecond(),
 		m_RenderStats.t2 * 1000 / GetPreciseTicksPerSecond(),
@@ -2610,8 +2612,6 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		m_RenderStats.t4 * 1000 / GetPreciseTicksPerSecond(),
 		m_RenderStats.t5 * 1000 / GetPreciseTicksPerSecond(),
 		m_RenderStats.t6 * 1000 / GetPreciseTicksPerSecond());
-#else
-	str += fmt::format(L"\nSync offset   : {:+3} ms", (m_RenderStats.syncoffset + 5000) / 10000);
 #endif
 
 	ID3D11RenderTargetView* pRenderTargetView = nullptr;

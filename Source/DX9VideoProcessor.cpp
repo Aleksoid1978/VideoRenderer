@@ -1390,6 +1390,7 @@ HRESULT CDX9VideoProcessor::Render(int field)
 	} else {
 		hr = m_pD3DDevEx->PresentEx(nullptr, nullptr, nullptr, nullptr, 0);
 	}
+	m_RenderStats.presentticks = GetPreciseTick() - tick2;
 
 #ifdef _DEBUG
 	if (FAILED(hr) || hr == S_PRESENT_OCCLUDED || hr == S_PRESENT_MODE_CHANGED) {
@@ -2492,10 +2493,13 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 
 	str += fmt::format(L"\nFrames: {:5}, skipped: {}/{}, failed: {}",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
-	str += fmt::format(L"\nTimes(ms): Copy{:3}, Paint{:3}",
-		m_RenderStats.copyticks  * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.paintticks * 1000 / GetPreciseTicksPerSecondI());
-#if 0
+	str += fmt::format(L"\nTimes(ms): Copy{:3}, Paint{:3}, Present{:3}",
+		m_RenderStats.copyticks    * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.paintticks   * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
+	str += fmt::format(L"\nSync offset   : {:+3} ms", (m_RenderStats.syncoffset + 5000) / 10000);
+
+#if TEST_TICKS
 	str += fmt::format(L"\n1:{:6.3f}, 2:{:6.3f}, 3:{:6.3f}, 4:{:6.3f}, 5:{:6.3f}, 6:{:6.3f} ms",
 		m_RenderStats.t1 * 1000 / GetPreciseTicksPerSecond(),
 		m_RenderStats.t2 * 1000 / GetPreciseTicksPerSecond(),
@@ -2503,8 +2507,6 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 		m_RenderStats.t4 * 1000 / GetPreciseTicksPerSecond(),
 		m_RenderStats.t5 * 1000 / GetPreciseTicksPerSecond(),
 		m_RenderStats.t6 * 1000 / GetPreciseTicksPerSecond());
-#else
-	str += fmt::format(L"\nSync offset   : {:+3} ms", (m_RenderStats.syncoffset + 5000) / 10000);
 #endif
 
 	HRESULT hr = S_OK;
