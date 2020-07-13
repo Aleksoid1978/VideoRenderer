@@ -7,6 +7,8 @@ Reduced unnecessary initialization of DirectX objects.
 Added the ability to increase statistics for a large window size.
 Removed "Switch to exclusive mode after a short delay" setting.
 Added support for exclusive full screen in DX11 mode.
+Compilation in Visual Studio 2017 now requires the Windows 10 SDK.
+Added support for Swap effect "Discard" in an exclusive full screen for DX11 mode.
 Recommended version of MPC-BE 1.5.5.5369 or later.
 
 v0.4.7.1356 - 2020.06.21
