@@ -68,7 +68,7 @@ HRESULT Dump4ByteSurface(IDirect3DSurface9* pSurface, const wchar_t* filename)
 			hr = pSurfaceShared->LockRect(&lr, nullptr, D3DLOCK_READONLY);
 
 			if (SUCCEEDED(hr)) {
-				hr = SaveARGB32toBMP((BYTE*)lr.pBits, lr.Pitch, desc.Width, desc.Height, filename);
+				hr = SaveToBMP((BYTE*)lr.pBits, lr.Pitch, desc.Width, desc.Height, 32, filename);
 				pSurfaceShared->UnlockRect();
 			}
 		}

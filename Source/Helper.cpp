@@ -571,14 +571,17 @@ BITMAPINFOHEADER* GetBIHfromVIHs(const AM_MEDIA_TYPE* pmt)
 	return nullptr;
 }
 
-HRESULT SaveARGB32toBMP(BYTE* src, const UINT src_pitch, const UINT width, const UINT height, const wchar_t* filename)
+HRESULT SaveToBMP(BYTE* src, const UINT src_pitch, const UINT width, const UINT height, const UINT bitdepth, const wchar_t* filename)
 {
 	if (!src || !filename) {
 		return E_POINTER;
 	}
 
-	const UINT bitdepth = 32;
-	const UINT tablecolors = /*(bitdepth == 8) ? 256 :*/ 0; // not used yet
+	if (!src_pitch || !width || !height || (bitdepth != 8 && bitdepth != 32)) {
+		return E_ABORT;
+	}
+
+	const UINT tablecolors = (bitdepth == 8) ? 256 : 0;
 	const UINT dst_pitch = width * bitdepth / 8;
 	const UINT len = dst_pitch * height;
 

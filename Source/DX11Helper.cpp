@@ -112,40 +112,59 @@ UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAda
 	return 0;
 }
 
-HRESULT Dump4ByteTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D* pTexture2D, const wchar_t* filename)
+HRESULT DumpTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D* pTexture2D, const wchar_t* filename)
 {
-	HRESULT hr = S_OK;
 	D3D11_TEXTURE2D_DESC desc;
 	pTexture2D->GetDesc(&desc);
 
-	if (desc.Format == DXGI_FORMAT_B8G8R8X8_UNORM || desc.Format == DXGI_FORMAT_B8G8R8A8_UNORM || desc.Format == DXGI_FORMAT_AYUV) {
-		CComPtr<ID3D11Texture2D> pTexture2DShared;
-
-		if (desc.CPUAccessFlags & D3D11_CPU_ACCESS_WRITE) {
-			pTexture2DShared = pTexture2D;
-		} else {
-			ID3D11Device *pDevice;
-			pTexture2D->GetDevice(&pDevice);
-			D3D11_TEXTURE2D_DESC desc2 = CreateTex2DDesc(desc.Format, desc.Width, desc.Height, Tex2D_StagingRead);
-
-			hr = pDevice->CreateTexture2D(&desc2, nullptr, &pTexture2DShared);
-			pDevice->Release();
-
-			pDeviceContext->CopyResource(pTexture2DShared, pTexture2D);
-		}
-
-		if (SUCCEEDED(hr)) {
-			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-			hr = pDeviceContext->Map(pTexture2DShared, 0, D3D11_MAP_READ, 0, &mappedResource);
-
-			if (SUCCEEDED(hr)) {
-				hr = SaveARGB32toBMP((BYTE*)mappedResource.pData, mappedResource.RowPitch, desc.Width, desc.Height, filename);
-				pDeviceContext->Unmap(pTexture2DShared, 0);
-			}
-		}
-
-		return hr;
+	if (desc.Format != DXGI_FORMAT_B8G8R8X8_UNORM
+			&& desc.Format != DXGI_FORMAT_B8G8R8A8_UNORM
+			&& desc.Format != DXGI_FORMAT_AYUV
+			&& desc.Format != DXGI_FORMAT_NV12) {
+		return E_INVALIDARG;
 	}
 
-	return E_FAIL;
+	HRESULT hr = S_OK;
+	CComPtr<ID3D11Texture2D> pTexture2DShared;
+
+	if (desc.CPUAccessFlags & D3D11_CPU_ACCESS_READ) {
+		pTexture2DShared = pTexture2D;
+	} else {
+		ID3D11Device* pDevice;
+		pTexture2D->GetDevice(&pDevice);
+		D3D11_TEXTURE2D_DESC desc2 = CreateTex2DDesc(desc.Format, desc.Width, desc.Height, Tex2D_StagingRead);
+
+		hr = pDevice->CreateTexture2D(&desc2, nullptr, &pTexture2DShared);
+		pDevice->Release();
+
+		pDeviceContext->CopyResource(pTexture2DShared, pTexture2D);
+	}
+
+	if (SUCCEEDED(hr)) {
+		D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+		hr = pDeviceContext->Map(pTexture2DShared, 0, D3D11_MAP_READ, 0, &mappedResource);
+
+		if (SUCCEEDED(hr)) {
+			UINT width = desc.Width;
+			UINT height = desc.Height;
+			UINT bitdepth = 8;
+
+			switch (desc.Format) {
+			case DXGI_FORMAT_B8G8R8X8_UNORM:
+			case DXGI_FORMAT_B8G8R8A8_UNORM:
+			case DXGI_FORMAT_AYUV:
+				bitdepth = 32;
+				break;
+			case DXGI_FORMAT_NV12:
+				height = height * 3 / 2;
+				break;
+			}
+
+			hr = SaveToBMP((BYTE*)mappedResource.pData, mappedResource.RowPitch, desc.Width, desc.Height, bitdepth, filename);
+
+			pDeviceContext->Unmap(pTexture2DShared, 0);
+		}
+	}
+
+	return hr;
 }
