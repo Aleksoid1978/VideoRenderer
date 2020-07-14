@@ -1195,8 +1195,9 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 			D3DSURFACE_DESC desc;
 			hr = pSurface->GetDesc(&desc);
 			if (FAILED(hr) || desc.Format != m_srcDXVA2Format) {
-				return E_FAIL;
+				return E_UNEXPECTED;
 			}
+
 			if (desc.Width != m_srcWidth || desc.Height != m_srcHeight) {
 				if (m_DXVA2VP.IsReady()) {
 					hr = InitializeDXVA2VP(m_srcParams, desc.Width, desc.Height);

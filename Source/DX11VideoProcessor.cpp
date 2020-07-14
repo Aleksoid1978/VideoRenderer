@@ -1521,7 +1521,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		D3D11_TEXTURE2D_DESC desc = {};
 		pD3D11Texture2D->GetDesc(&desc);
 		if (desc.Format != m_srcDXGIFormat) {
-			return hr;
+			return E_UNEXPECTED;
 		}
 
 		if (desc.Width != m_srcWidth || desc.Height != m_srcHeight) {
@@ -1551,7 +1551,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			D3DSURFACE_DESC desc = {};
 			hr = pSurface9->GetDesc(&desc);
 			if (FAILED(hr) || desc.Format != m_srcDXVA2Format) {
-				return E_FAIL;
+				return E_UNEXPECTED;
 			}
 
 			if (desc.Width != m_srcWidth || desc.Height != m_srcHeight) {

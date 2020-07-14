@@ -101,7 +101,7 @@ HRESULT CD3D11VP::InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pC
 					input.append(DXGIFormatToString((DXGI_FORMAT)fmt));
 				}
 				if (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT) {
-					input.append(L"\n  ");
+					output.append(L"\n  ");
 					output.append(DXGIFormatToString((DXGI_FORMAT)fmt));
 				}
 			}
