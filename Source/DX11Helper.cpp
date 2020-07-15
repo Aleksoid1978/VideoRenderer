@@ -160,7 +160,7 @@ HRESULT DumpTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D* pTex
 				break;
 			}
 
-			hr = SaveToBMP((BYTE*)mappedResource.pData, mappedResource.RowPitch, desc.Width, desc.Height, bitdepth, filename);
+			hr = SaveToBMP((BYTE*)mappedResource.pData, mappedResource.RowPitch, width, height, bitdepth, filename);
 
 			pDeviceContext->Unmap(pTexture2DShared, 0);
 		}
