@@ -137,7 +137,8 @@ HRESULT DumpTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D* pTex
 		hr = pDevice->CreateTexture2D(&desc2, nullptr, &pTexture2DShared);
 		pDevice->Release();
 
-		pDeviceContext->CopyResource(pTexture2DShared, pTexture2D);
+		//pDeviceContext->CopyResource(pTexture2DShared, pTexture2D);
+		pDeviceContext->CopySubresourceRegion(pTexture2DShared, 0, 0, 0, 0, pTexture2D, 0, nullptr);
 	}
 
 	if (SUCCEEDED(hr)) {
