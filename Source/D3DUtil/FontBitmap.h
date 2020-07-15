@@ -24,7 +24,7 @@
 
 #ifndef FONTBITMAP_MODE
 #define FONTBITMAP_MODE 2
-// 0 - GDI, 1 - GDI+, 2 - DirectWrite
+// 0 - GDI, 1 - GDI+ (no longer supported), 2 - DirectWrite
 #endif
 
 #define DUMP_BITMAP 0
@@ -69,6 +69,7 @@ private:
 	UINT m_bmWidth = 0;
 	UINT m_bmHeight = 0;
 	std::vector<RECT> m_charCoords;
+	SIZE m_MaxCharMetric = {};
 
 public:
 	CFontBitmapGDI()
@@ -125,8 +126,9 @@ public:
 		}
 
 		if (S_OK == hr) {
-			UINT stepX = maxWidth + 2;
-			UINT stepY = maxHeight;
+			m_MaxCharMetric = { maxWidth, maxHeight };
+			UINT stepX = m_MaxCharMetric.cx + 2;
+			UINT stepY = m_MaxCharMetric.cy;
 			UINT bmWidth = 128;
 			UINT bmHeight = 128;
 			UINT columns = bmWidth / stepX;
@@ -205,7 +207,7 @@ public:
 
 #if _DEBUG && DUMP_BITMAP
 		if (S_OK == hr) {
-			SaveARGB32toBMP((BYTE*)m_pBitmapBits, m_bmWidth * 4, m_bmWidth, m_bmHeight, L"c:\\temp\\font_gdi_bitmap.bmp");
+			SaveToBMP((BYTE*)m_pBitmapBits, m_bmWidth * 4, m_bmWidth, m_bmHeight, 32, L"c:\\temp\\font_gdi_bitmap.bmp");
 		}
 #endif
 
@@ -220,6 +222,11 @@ public:
 	UINT GetHeight()
 	{
 		return m_bmHeight;
+	}
+
+	SIZE GetMaxCharMetric()
+	{
+		return m_MaxCharMetric;
 	}
 
 	HRESULT GetFloatCoords(FloatRect* pTexCoords, const UINT lenght)
