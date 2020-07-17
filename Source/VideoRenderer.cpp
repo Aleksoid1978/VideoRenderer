@@ -1123,6 +1123,8 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 			m_VideoProcessor->SetTexFormat(m_Sets.iTextureFmt);
 			m_VideoProcessor->SetVPEnableFmts(m_Sets.VPFmts);
 			BOOL ret = m_VideoProcessor->InitMediaType(&m_inputMT);
+
+			m_bValidBuffer = false;
 		}
 	}
 
@@ -1133,9 +1135,18 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 
 			if (!m_bIsFullscreen) {
 				Init(true);
-				Redraw();
 			}
 		}
+	}
+
+	if (m_State == State_Paused) {
+		if (!m_bValidBuffer && m_pMediaSample) {
+			m_bInReceive = FALSE;
+
+			CAutoLock cSampleLock(&m_RendererLock);
+			DoRenderSample(m_pMediaSample);
+		}
+		Redraw();
 	}
 }
 
