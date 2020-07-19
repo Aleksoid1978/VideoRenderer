@@ -242,6 +242,22 @@ static BOOL WINAPI pNewSetWindowPos(
 	return pOrigSetWindowPos(hWnd, hWndInsertAfter, X, Y, cx, cy, uFlags);
 }
 
+typedef BOOL(WINAPI* pShowWindow)(
+	_In_ HWND hWnd,
+	_In_ int nCmdShow);
+
+pShowWindow pOrigShowWindow = nullptr;
+static BOOL WINAPI pNewShowWindow(
+	_In_ HWND hWnd,
+	_In_ int nCmdShow)
+{
+	if (bInitVP) {
+		DLog(L"Blocking call ShowWindow() function during initialization VP");
+		return FALSE;
+	}
+	return pOrigShowWindow(hWnd, nCmdShow);
+}
+
 template <typename T>
 inline bool HookFunc(T** ppSystemFunction, PVOID pHookFunction)
 {
@@ -278,6 +294,7 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr)
 	pOrigSystemParametersInfoA = nullptr;
 	pOrigSetWindowLongA = nullptr;
 	pOrigSetWindowPos = nullptr;
+	pOrigShowWindow = nullptr;
 
 	m_evInit.Reset();
 	m_evResize.Reset();
@@ -304,6 +321,7 @@ CDX9VideoProcessor::~CDX9VideoProcessor()
 	MH_RemoveHook(SystemParametersInfoA);
 	MH_RemoveHook(SetWindowLongA);
 	MH_RemoveHook(SetWindowPos);
+	MH_RemoveHook(ShowWindow);
 }
 
 void CDX9VideoProcessor::DeviceThreadFunc()
@@ -350,6 +368,10 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 		pOrigSetWindowPos = SetWindowPos;
 		ret = HookFunc(&pOrigSetWindowPos, pNewSetWindowPos);
 		DLogIf(!ret, L"CMpcVideoRenderer::InitInternal() : hook for SetWindowPos() fail");
+
+		pOrigShowWindow = ShowWindow;
+		ret = HookFunc(&pOrigShowWindow, pNewShowWindow);
+		DLogIf(!ret, L"CMpcVideoRenderer::InitInternal() : hook for ShowWindow() fail");
 
 		MH_EnableHook(MH_ALL_HOOKS);
 	}
