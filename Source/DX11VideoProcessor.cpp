@@ -1524,6 +1524,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			return E_UNEXPECTED;
 		}
 
+#if 0 // dirty fix for issue #16. disable reinitialization code.
 		if (desc.Width != m_srcWidth || desc.Height != m_srcHeight) {
 			if (m_D3D11VP.IsReady()) {
 				hr = InitializeD3D11VP(m_srcParams, desc.Width, desc.Height);
@@ -1535,6 +1536,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 			UpdatFrameProperties();
 		}
+#endif
 
 		// here should be used CopySubresourceRegion instead of CopyResource
 		if (m_D3D11VP.IsReady()) {
