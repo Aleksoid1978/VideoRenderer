@@ -648,7 +648,6 @@ void CDX9VideoProcessor::ReleaseVP()
 	m_strCorrection = nullptr;
 
 	m_TexSrcVideo.Release();
-	m_TexDxvaOutput.Release();
 	m_TexConvertOutput.Release();
 	m_TexResize.Release();
 	m_TexsPostScale.Release();
@@ -1786,14 +1785,12 @@ void CDX9VideoProcessor::UpdateTexures(SIZE texsize)
 
 	if (m_DXVA2VP.IsReady()) {
 		if (m_bVPScaling) {
-			hr = m_TexDxvaOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, texsize.cx, texsize.cy, D3DUSAGE_RENDERTARGET);
+			hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, texsize.cx, texsize.cy, D3DUSAGE_RENDERTARGET);
 		} else {
-			hr = m_TexDxvaOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, m_srcWidth, m_srcHeight, D3DUSAGE_RENDERTARGET);
+			hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, m_srcWidth, m_srcHeight, D3DUSAGE_RENDERTARGET);
 		}
-		m_TexConvertOutput.Release();
 	}
 	else {
-		m_TexDxvaOutput.Release();
 		hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, m_srcWidth, m_srcHeight, D3DUSAGE_RENDERTARGET);
 	}
 }
@@ -2103,14 +2100,13 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 
 	if (m_DXVA2VP.IsReady()) {
 		if (m_bVPScaling) {
-			RECT rect = { 0, 0, m_TexDxvaOutput.Width, m_TexDxvaOutput.Height };
-			hr = DxvaVPPass(m_TexDxvaOutput.pSurface, rSrc, rect, second);
+			RECT rect = { 0, 0, m_TexConvertOutput.Width, m_TexConvertOutput.Height };
+			hr = DxvaVPPass(m_TexConvertOutput.pSurface, rSrc, rect, second);
 			rSrc = rect;
 		} else {
-			hr = DxvaVPPass(m_TexDxvaOutput.pSurface, rSrc, rSrc, second);
+			hr = DxvaVPPass(m_TexConvertOutput.pSurface, rSrc, rSrc, second);
 		}
-
-		pInputTexture = m_TexDxvaOutput.pTexture;
+		pInputTexture = m_TexConvertOutput.pTexture;
 	}
 	else if (m_PSConvColorData.bEnable) {
 		ConvertColorPass(m_TexConvertOutput.pSurface);

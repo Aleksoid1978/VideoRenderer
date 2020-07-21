@@ -518,7 +518,6 @@ void CDX11VideoProcessor::ReleaseVP()
 	}
 
 	m_TexSrcVideo.Release();
-	m_TexD3D11VPOutput.Release();
 	m_TexConvertOutput.Release();
 	m_TexResize.Release();
 	m_TexsPostScale.Release();
@@ -1774,14 +1773,12 @@ void CDX11VideoProcessor::UpdateTexures(SIZE texsize)
 
 	if (m_D3D11VP.IsReady()) {
 		if (m_bVPScaling) {
-			hr = m_TexD3D11VPOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, texsize.cx, texsize.cy, Tex2D_DefaultShaderRTarget);
+			hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, texsize.cx, texsize.cy, Tex2D_DefaultShaderRTarget);
 		} else {
-			hr = m_TexD3D11VPOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, m_srcWidth, m_srcHeight, Tex2D_DefaultShaderRTarget);
+			hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, m_srcWidth, m_srcHeight, Tex2D_DefaultShaderRTarget);
 		}
-		m_TexConvertOutput.Release();
 	}
 	else {
-		m_TexD3D11VPOutput.Release();
 		hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_InternalTexFmt, m_srcWidth, m_srcHeight, Tex2D_DefaultShaderRTarget);
 	}
 }
@@ -2036,15 +2033,13 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 
 	if (m_D3D11VP.IsReady()) {
 		if (m_bVPScaling) {
-			RECT rect = { 0, 0, m_TexD3D11VPOutput.desc.Width, m_TexD3D11VPOutput.desc.Height };
-			hr = D3D11VPPass(m_TexD3D11VPOutput.pTexture, rSrc, rect, second);
+			RECT rect = { 0, 0, m_TexConvertOutput.desc.Width, m_TexConvertOutput.desc.Height };
+			hr = D3D11VPPass(m_TexConvertOutput.pTexture, rSrc, rect, second);
 			rSrc = rect;
+		} else {
+			hr = D3D11VPPass(m_TexConvertOutput.pTexture, rSrc, rSrc, second);
 		}
-		else {
-			hr = D3D11VPPass(m_TexD3D11VPOutput.pTexture, rSrc, rSrc, second);
-		}
-
-		pInputTexture = &m_TexD3D11VPOutput;
+		pInputTexture = &m_TexConvertOutput;
 	}
 	else if (m_PSConvColorData.bEnable) {
 		ConvertColorPass(m_TexConvertOutput.pTexture);

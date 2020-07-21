@@ -54,7 +54,6 @@ private:
 	CComPtr<ID3D11InputLayout>    m_pVSimpleInputLayout;
 
 	Tex11Video_t m_TexSrcVideo; // for copy of frame
-	Tex2D_t m_TexD3D11VPOutput;
 	Tex2D_t m_TexConvertOutput;
 	Tex2D_t m_TexResize;        // for intermediate result of two-pass resize
 	CTex2DRing m_TexsPostScale;
