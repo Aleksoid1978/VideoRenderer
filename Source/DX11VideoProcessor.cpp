@@ -1774,14 +1774,8 @@ void CDX11VideoProcessor::UpdateTexures(SIZE texsize)
 
 	if (m_D3D11VP.IsReady()) {
 		if (m_bVPScaling) {
-			if (m_iRotation == 90 || m_iRotation == 270) {
-				hr = m_TexD3D11VPOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, texsize.cx, texsize.cy, Tex2D_DefaultShaderRTarget);
-			}
-			else {
-				hr = m_TexD3D11VPOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, texsize.cx, texsize.cy, Tex2D_DefaultShaderRTarget);
-			}
-		}
-		else {
+			hr = m_TexD3D11VPOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, texsize.cx, texsize.cy, Tex2D_DefaultShaderRTarget);
+		} else {
 			hr = m_TexD3D11VPOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, m_srcWidth, m_srcHeight, Tex2D_DefaultShaderRTarget);
 		}
 		m_TexConvertOutput.Release();
