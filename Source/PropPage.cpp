@@ -266,6 +266,7 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			if (nID == IDC_BUTTON1) {
 				m_SetsPP.SetDefault();
 				SetControls();
+				EnableControls();
 				SetDirty();
 				return (LRESULT)1;
 			}
