@@ -68,7 +68,13 @@ private:
 	CComPtr<ID3D11PixelShader> m_pPSConvertColor;
 	struct {
 		bool bEnable = false;
+		ID3D11Buffer* pVertexBuffer = nullptr;
 		ID3D11Buffer* pConstants = nullptr;
+		void Release() {
+			bEnable = false;
+			SAFE_RELEASE(pVertexBuffer);
+			SAFE_RELEASE(pConstants);
+		}
 	} m_PSConvColorData;
 	CComPtr<ID3D11PixelShader> m_pShaderUpscaleX;
 	CComPtr<ID3D11PixelShader> m_pShaderUpscaleY;

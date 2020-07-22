@@ -522,7 +522,7 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_TexResize.Release();
 	m_TexsPostScale.Release();
 
-	SAFE_RELEASE(m_PSConvColorData.pConstants);
+	m_PSConvColorData.Release();
 
 	m_D3D11VP.ReleaseVideoProcessor();
 	m_strCorrection = nullptr;
@@ -1373,6 +1373,9 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
 	}
 
+	SAFE_RELEASE(m_PSConvColorData.pVertexBuffer);
+	EXECUTE_ASSERT(S_OK == CreateVertexBuffer(m_pDevice, &m_PSConvColorData.pVertexBuffer, m_srcWidth, m_srcHeight, m_srcRect, 0, false));
+
 	DLog(L"CDX11VideoProcessor::InitializeTexVP() completed successfully");
 
 	return S_OK;
@@ -1775,11 +1778,11 @@ void CDX11VideoProcessor::UpdateTexures(SIZE texsize)
 		if (m_bVPScaling) {
 			hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, texsize.cx, texsize.cy, Tex2D_DefaultShaderRTarget);
 		} else {
-			hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, m_srcWidth, m_srcHeight, Tex2D_DefaultShaderRTarget);
+			hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, m_srcRectWidth, m_srcRectHeight, Tex2D_DefaultShaderRTarget);
 		}
 	}
 	else {
-		hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_InternalTexFmt, m_srcWidth, m_srcHeight, Tex2D_DefaultShaderRTarget);
+		hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_InternalTexFmt, m_srcRectWidth, m_srcRectHeight, Tex2D_DefaultShaderRTarget);
 	}
 }
 
@@ -1854,15 +1857,11 @@ HRESULT CDX11VideoProcessor::ConvertColorPass(ID3D11Texture2D* pRenderTarget)
 		return hr;
 	}
 
-	UINT width = (m_srcParams.cformat == CF_YUY2)
-		? m_TexSrcVideo.desc.Width * 2
-		: m_TexSrcVideo.desc.Width;
-
 	D3D11_VIEWPORT VP;
 	VP.TopLeftX = 0;
 	VP.TopLeftY = 0;
-	VP.Width = (FLOAT)width;
-	VP.Height = (FLOAT)m_TexSrcVideo.desc.Height;
+	VP.Width = (FLOAT)m_TexConvertOutput.desc.Width;
+	VP.Height = (FLOAT)m_TexConvertOutput.desc.Height;
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
 
@@ -1883,7 +1882,7 @@ HRESULT CDX11VideoProcessor::ConvertColorPass(ID3D11Texture2D* pRenderTarget)
 	m_pDeviceContext->PSSetSamplers(1, 1, (m_srcParams.Subsampling == 444) ? &m_pSamplerPoint : &m_pSamplerLinear);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pFullFrameVertexBuffer, &Stride, &Offset);
+	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_PSConvColorData.pVertexBuffer, &Stride, &Offset);
 
 	// Draw textured quad onto render target
 	m_pDeviceContext->Draw(4, 0);
@@ -2032,18 +2031,15 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 	Tex2D_t* pInputTexture = nullptr;
 
 	if (m_D3D11VP.IsReady()) {
-		if (m_bVPScaling) {
-			RECT rect = { 0, 0, m_TexConvertOutput.desc.Width, m_TexConvertOutput.desc.Height };
-			hr = D3D11VPPass(m_TexConvertOutput.pTexture, rSrc, rect, second);
-			rSrc = rect;
-		} else {
-			hr = D3D11VPPass(m_TexConvertOutput.pTexture, rSrc, rSrc, second);
-		}
+		RECT rect = { 0, 0, m_TexConvertOutput.desc.Width, m_TexConvertOutput.desc.Height };
+		hr = D3D11VPPass(m_TexConvertOutput.pTexture, rSrc, rect, second);
 		pInputTexture = &m_TexConvertOutput;
+		rSrc = rect;
 	}
 	else if (m_PSConvColorData.bEnable) {
 		ConvertColorPass(m_TexConvertOutput.pTexture);
 		pInputTexture = &m_TexConvertOutput;
+		rSrc.SetRect(0, 0, m_TexConvertOutput.desc.Width, m_TexConvertOutput.desc.Height);
 	}
 	else {
 		pInputTexture = &m_TexSrcVideo;
