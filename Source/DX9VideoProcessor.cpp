@@ -1787,11 +1787,11 @@ void CDX9VideoProcessor::UpdateTexures(SIZE texsize)
 		if (m_bVPScaling) {
 			hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, texsize.cx, texsize.cy, D3DUSAGE_RENDERTARGET);
 		} else {
-			hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, m_srcWidth, m_srcHeight, D3DUSAGE_RENDERTARGET);
+			hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, m_srcRectWidth, m_srcRectHeight, D3DUSAGE_RENDERTARGET);
 		}
 	}
 	else {
-		hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, m_srcWidth, m_srcHeight, D3DUSAGE_RENDERTARGET);
+		hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, m_srcRectWidth, m_srcRectHeight, D3DUSAGE_RENDERTARGET);
 	}
 }
 
@@ -1843,17 +1843,12 @@ HRESULT CDX9VideoProcessor::UpdateChromaScalingShader()
 			pShaderCode->Release();
 		}
 
-		float w = (float)m_TexSrcVideo.Width;
-		float h = (float)m_TexSrcVideo.Height;
-		const float dx = 1.0f / w;
-		const float dy = 1.0f / h;
+		const float dx = 1.0f / m_TexSrcVideo.Width;
+		const float dy = 1.0f / m_TexSrcVideo.Height;
 		float sx = 0.0f;
 		float sy = 0.0f;
 
-		if (m_srcParams.cformat == CF_YUY2) {
-			w *= 2;
-		}
-		else if (m_iChromaScaling == CHROMA_Bilinear) {
+		if (m_srcParams.cformat != CF_YUY2 && m_iChromaScaling == CHROMA_Bilinear) {
 			if (m_srcParams.Subsampling == 420) {
 				switch (m_srcExFmt.VideoChromaSubsampling) {
 				case DXVA2_VideoChromaSubsampling_Cosited:
@@ -1873,13 +1868,39 @@ HRESULT CDX9VideoProcessor::UpdateChromaScalingShader()
 			}
 		}
 
-		w -= 0.5f;
-		h -= 0.5f;
+		FloatRect fr = {
+			-0.5f,
+			-0.5f,
+			(float)m_srcRectWidth  - 0.5f,
+			(float)m_srcRectHeight - 0.5f
+		};
 
-		m_PSConvColorData.VertexData[0] = { {-0.5f, -0.5f, 0.5f, 2.0f}, {{0, 0}, {0 + sx, 0 + sy}} };
-		m_PSConvColorData.VertexData[1] = { {    w, -0.5f, 0.5f, 2.0f}, {{1, 0}, {1 + sx, 0 + sy}} };
-		m_PSConvColorData.VertexData[2] = { {-0.5f,     h, 0.5f, 2.0f}, {{0, 1}, {0 + sx, 1 + sy}} };
-		m_PSConvColorData.VertexData[3] = { {    w,     h, 0.5f, 2.0f}, {{1, 1}, {1 + sx, 1 + sy}} };
+		m_PSConvColorData.VertexData[0].Pos = { fr.left , fr.top   , 0.5f, 2.0f };
+		m_PSConvColorData.VertexData[1].Pos = { fr.right, fr.top   , 0.5f, 2.0f };
+		m_PSConvColorData.VertexData[2].Pos = { fr.left , fr.bottom, 0.5f, 2.0f };
+		m_PSConvColorData.VertexData[3].Pos = { fr.right, fr.bottom, 0.5f, 2.0f };
+
+		fr = {
+			(float)m_srcRect.left   * dx,
+			(float)m_srcRect.top    * dy,
+			(float)m_srcRect.right  * dx,
+			(float)m_srcRect.bottom * dy
+		};
+
+		m_PSConvColorData.VertexData[0].Tex[0] = { fr.left , fr.top };
+		m_PSConvColorData.VertexData[1].Tex[0] = { fr.right, fr.top };
+		m_PSConvColorData.VertexData[2].Tex[0] = { fr.left , fr.bottom };
+		m_PSConvColorData.VertexData[3].Tex[0] = { fr.right, fr.bottom };
+
+		fr.left   += sx;
+		fr.top    += sy;
+		fr.right  += sx;
+		fr.bottom += sy;
+
+		m_PSConvColorData.VertexData[0].Tex[1] = { fr.left , fr.top };
+		m_PSConvColorData.VertexData[1].Tex[1] = { fr.right, fr.top };
+		m_PSConvColorData.VertexData[2].Tex[1] = { fr.left , fr.bottom };
+		m_PSConvColorData.VertexData[3].Tex[1] = { fr.right, fr.bottom };
 	}
 
 	return hr;
@@ -2099,18 +2120,15 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 	IDirect3DTexture9* pInputTexture = nullptr;
 
 	if (m_DXVA2VP.IsReady()) {
-		if (m_bVPScaling) {
-			RECT rect = { 0, 0, m_TexConvertOutput.Width, m_TexConvertOutput.Height };
-			hr = DxvaVPPass(m_TexConvertOutput.pSurface, rSrc, rect, second);
-			rSrc = rect;
-		} else {
-			hr = DxvaVPPass(m_TexConvertOutput.pSurface, rSrc, rSrc, second);
-		}
+		RECT rect = { 0, 0, m_TexConvertOutput.Width, m_TexConvertOutput.Height };
+		hr = DxvaVPPass(m_TexConvertOutput.pSurface, rSrc, rect, second);
 		pInputTexture = m_TexConvertOutput.pTexture;
+		rSrc = rect;
 	}
 	else if (m_PSConvColorData.bEnable) {
 		ConvertColorPass(m_TexConvertOutput.pSurface);
 		pInputTexture = m_TexConvertOutput.pTexture;
+		rSrc.SetRect(0, 0, m_TexConvertOutput.Width, m_TexConvertOutput.Height);
 	}
 	else {
 		pInputTexture = m_TexSrcVideo.pTexture;
