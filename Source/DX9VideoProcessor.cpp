@@ -1354,7 +1354,8 @@ HRESULT CDX9VideoProcessor::Render(int field)
 
 	hr = m_pD3DDevEx->EndScene();
 
-	const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
+	const SIZE windowSize = m_windowRect.Size();
+	const CRect rSrcPri(CPoint(0, 0), windowSize);
 	const CRect rDstPri(m_windowRect);
 
 	if (m_pFilter->m_pSubCallBack) {
@@ -1376,10 +1377,10 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		D3DSURFACE_DESC desc;
 		pBackBuffer->GetDesc(&desc);
 		RECT rDst = {
-			m_AlphaBitmapNRectDest.left * desc.Width,
-			m_AlphaBitmapNRectDest.top * desc.Height,
-			m_AlphaBitmapNRectDest.right * desc.Width,
-			m_AlphaBitmapNRectDest.bottom * desc.Height
+			m_AlphaBitmapNRectDest.left   * windowSize.cx,
+			m_AlphaBitmapNRectDest.top    * windowSize.cy,
+			m_AlphaBitmapNRectDest.right  * windowSize.cx,
+			m_AlphaBitmapNRectDest.bottom * windowSize.cy
 		};
 		hr = AlphaBlt(m_pD3DDevEx, &m_AlphaBitmapRectSrc, &rDst, m_TexAlphaBitmap.pTexture, D3DTEXF_LINEAR);
 	}
@@ -1388,20 +1389,19 @@ HRESULT CDX9VideoProcessor::Render(int field)
 	{ // Tearing test
 		static int nTearingPos = 0;
 
-		const SIZE szWindow = m_windowRect.Size();
 		RECT rcTearing;
-
 		rcTearing.left = nTearingPos;
 		rcTearing.top = 0;
 		rcTearing.right = rcTearing.left + 4;
-		rcTearing.bottom = szWindow.cy;
+		rcTearing.bottom = windowSize.cy;
+
 		m_pD3DDevEx->ColorFill(pBackBuffer, &rcTearing, D3DCOLOR_XRGB(255, 0, 0));
 
-		rcTearing.left = (rcTearing.right + 15) % szWindow.cx;
+		rcTearing.left = (rcTearing.right + 15) % windowSize.cx;
 		rcTearing.right = rcTearing.left + 4;
 		m_pD3DDevEx->ColorFill(pBackBuffer, &rcTearing, D3DCOLOR_XRGB(255, 0, 0));
 
-		nTearingPos = (nTearingPos + 7) % szWindow.cx;
+		nTearingPos = (nTearingPos + 7) % windowSize.cx;
 	}
 #endif
 	uint64_t tick2 = GetPreciseTick();
