@@ -20,6 +20,7 @@
 
 #include "stdafx.h"
 #include <memory>
+#include <wincodec.h>
 #include "Utils/CPUInfo.h"
 #include "../Include/Version.h"
 #include "Helper.h"
@@ -625,6 +626,84 @@ HRESULT SaveToBMP(BYTE* src, const UINT src_pitch, const UINT width, const UINT 
 	}
 
 	return E_FAIL;
+}
+
+HRESULT SaveToPNG(BYTE* src, const UINT src_pitch, const UINT width, const UINT height, const UINT bitdepth, const wchar_t* filename)
+{
+	if (!src || !filename) {
+		return E_POINTER;
+	}
+
+	if (!src_pitch || !width || !height) {
+		return E_ABORT;
+	}
+
+	WICPixelFormatGUID format = {};
+	if (bitdepth == 32) {
+		format = GUID_WICPixelFormat32bppPBGRA;
+	}
+	else if (bitdepth == 8) {
+		format = GUID_WICPixelFormat8bppGray;
+	}
+	else {
+		return E_ABORT;
+	}
+
+	CComPtr<IWICImagingFactory> pWICFactory;
+	CComPtr<IWICBitmap> pBitmat;
+	CComPtr<IWICBitmapEncoder> pEncoder;
+	CComPtr<IWICBitmapFrameEncode> pFrame;
+	CComPtr<IWICStream> pStream;
+
+	GUID wicFormat = GUID_ContainerFormatPng;
+	UINT bufferSize = src_pitch * height;
+
+	HRESULT hr = CoCreateInstance(
+		CLSID_WICImagingFactory1, // we use CLSID_WICImagingFactory1 to support Windows 7 without Platform Update
+		nullptr,
+		CLSCTX_INPROC_SERVER,
+		IID_IWICImagingFactory,
+		(LPVOID*)&pWICFactory
+	);
+
+	if (SUCCEEDED(hr)) {
+		hr = pWICFactory->CreateBitmapFromMemory(width, height, format, src_pitch, bufferSize, src, &pBitmat);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = pWICFactory->CreateEncoder(wicFormat, nullptr, &pEncoder);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = pWICFactory->CreateStream(&pStream);
+	};
+	if (SUCCEEDED(hr)) {
+		hr = pStream->InitializeFromFilename(filename, GENERIC_WRITE);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = pEncoder->Initialize(pStream, WICBitmapEncoderNoCache);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = pEncoder->CreateNewFrame(&pFrame, nullptr);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = pFrame->Initialize(nullptr);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = pFrame->SetSize(width, height);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = pFrame->SetPixelFormat(&format);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = pFrame->WriteSource(pBitmat, nullptr);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = pFrame->Commit();
+	}
+	if (SUCCEEDED(hr)) {
+		hr = pEncoder->Commit();
+	}
+
+	return hr;
 }
 
 DXVA2_ExtendedFormat SpecifyExtendedFormat(DXVA2_ExtendedFormat exFormat, const FmtConvParams_t& fmtParams, const UINT width, const UINT height)
