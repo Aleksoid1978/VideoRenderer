@@ -26,7 +26,8 @@ HRESULT CompileShader(const std::string& srcCode, const D3D_SHADER_MACRO* pDefin
 
 HRESULT GetShaderConvertColor(
 	const bool bDX11,
-	const UINT texW, UINT texH,
+	const long texW, long texH,
+	const RECT rect,
 	const FmtConvParams_t& fmtParams,
 	const DXVA2_ExtendedFormat exFmt,
 	const int chromaScaling,

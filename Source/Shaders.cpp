@@ -86,7 +86,8 @@ const char code_HLG[] =
 
 HRESULT GetShaderConvertColor(
 	const bool bDX11,
-	const UINT texW, UINT texH,
+	const long texW, long texH,
+	const RECT rect,
 	const FmtConvParams_t& fmtParams,
 	const DXVA2_ExtendedFormat exFmt,
 	const int chromaScaling,
@@ -127,9 +128,9 @@ HRESULT GetShaderConvertColor(
 	DLog(L"GetShaderConvertColor() frame consists of {} planes", planes);
 
 	code += fmt::format("#define w {}\n", (fmtParams.cformat == CF_YUY2) ? texW * 2 : texW);
-	code += fmt::format("#define dx {:.15f}\n", 1.0 / texW);
+	code += fmt::format("#define dx (1.0/{})\n", texW);
 	code += fmt::format("static const float2 wh = {{{}, {}}};\n", (fmtParams.cformat == CF_YUY2) ? texW*2 : texW, texH);
-	code += fmt::format("static const float2 dxdy = {{{:.15f}, {:.15f}}};\n", 1.0 / texW, 1.0 / texH);
+	code += fmt::format("static const float2 dxdy = {{1.0/{}, 1.0/{}}};\n", texW, texH);
 
 	if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 		code.append("#define CATMULLROM_05(c0,c1,c2,c3) (9*(c1+c2)-(c0+c3))*0.0625\n");
@@ -355,7 +356,7 @@ HRESULT GetShaderConvertColor(
 			code.append("float colorY = tex2D(sY, t0).r;\n"
 				"float2 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
-				code.append("float2 pos = t0 * (wh*0.5);"
+				code.append("float2 pos = t0 * (wh*0.5);\n"
 					"float2 t = frac(pos);\n"
 					"pos -= t;\n");
 				code += fmt::format("t = t{};\n", strChromaPos2);
@@ -410,7 +411,7 @@ HRESULT GetShaderConvertColor(
 			code.append("float colorY = tex2D(sY, t0).r;\n"
 				"float2 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
-				code.append("float2 pos = t0 * (wh*0.5);"
+				code.append("float2 pos = t0 * (wh*0.5);\n"
 					"float2 t = frac(pos);\n"
 					"pos -= t;\n");
 				code += fmt::format("t = t{};\n", strChromaPos2);
