@@ -1938,7 +1938,7 @@ HRESULT CDX9VideoProcessor::ConvertColorPass(IDirect3DSurface9* pRenderTarget)
 	hr = m_pD3DDevEx->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
 
 	if (m_TexSrcVideo.Plane2.pTexture) {
-		DWORD dwMagFilter = (m_srcParams.Subsampling == 444) ? D3DTEXF_POINT : D3DTEXF_LINEAR;
+		DWORD dwMagFilter = (m_srcParams.Subsampling == 444 || m_iChromaScaling == CHROMA_Nearest) ? D3DTEXF_POINT : D3DTEXF_LINEAR;
 
 		hr = m_pD3DDevEx->SetTexture(1, m_TexSrcVideo.Plane2.pTexture);
 		FVF = D3DFVF_TEX2;
@@ -2420,7 +2420,18 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 		} else {
 			m_strStatsStatic2.append(L"Shaders");
 			if (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422) {
-				m_strStatsStatic2 += fmt::format(L", Chroma scaling: {}", (m_iChromaScaling == CHROMA_CatmullRom) ? L"Catmull-Rom" : L"Bilinear");
+				m_strStatsStatic2.append(L", Chroma scaling: ");
+				switch (m_iChromaScaling) {
+				case CHROMA_Nearest:
+					m_strStatsStatic2.append(L"Nearest-neighbor");
+					break;
+				case CHROMA_Bilinear:
+					m_strStatsStatic2.append(L"Bilinear");
+					break;
+				case CHROMA_CatmullRom:
+					m_strStatsStatic2.append(L"Catmull-Rom");
+					break;
+				}
 			}
 		}
 		m_strStatsStatic2 += fmt::format(L"\nInternalFormat: {}", D3DFormatToString(m_InternalTexFmt));

@@ -30,7 +30,8 @@ enum :int {
 };
 
 enum :int {
-	CHROMA_Bilinear = 0,
+	CHROMA_Nearest = 0,
+	CHROMA_Bilinear,
 	CHROMA_CatmullRom,
 	CHROMA_COUNT,
 };

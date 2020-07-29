@@ -40,7 +40,7 @@
 #define OPT_VPEnableOther        L"VPEnableOther"
 #define OPT_DoubleFrateDeint     L"DoubleFramerateDeinterlace"
 #define OPT_VPScaling            L"VPScaling"
-#define OPT_ChromaScaling        L"ChromaScaling"
+#define OPT_ChromaUpsampling     L"ChromaUpsampling"
 #define OPT_Upscaling            L"Upscaling"
 #define OPT_Downscaling          L"Downscaling"
 #define OPT_InterpolateAt50pct   L"InterpolateAt50pct"
@@ -162,8 +162,8 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPScaling, dw)) {
 			m_Sets.bVPScaling = !!dw;
 		}
-		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ChromaScaling, dw)) {
-			m_Sets.iChromaScaling = discard((int)dw, (int)CHROMA_Bilinear, (int)CHROMA_Bilinear, (int)CHROMA_CatmullRom);
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ChromaUpsampling, dw)) {
+			m_Sets.iChromaScaling = discard((int)dw, (int)CHROMA_Bilinear, (int)CHROMA_Nearest, (int)CHROMA_CatmullRom);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_Upscaling, dw)) {
 			m_Sets.iUpscaling = discard((int)dw, (int)UPSCALE_CatmullRom, (int)UPSCALE_Nearest, (int)UPSCALE_Lanczos3);
@@ -1164,7 +1164,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_VPEnableOther,       m_Sets.VPFmts.bOther);
 		key.SetDWORDValue(OPT_DoubleFrateDeint,    m_Sets.bDeintDouble);
 		key.SetDWORDValue(OPT_VPScaling,           m_Sets.bVPScaling);
-		key.SetDWORDValue(OPT_ChromaScaling,       m_Sets.iChromaScaling);
+		key.SetDWORDValue(OPT_ChromaUpsampling,    m_Sets.iChromaScaling);
 		key.SetDWORDValue(OPT_Upscaling,           m_Sets.iUpscaling);
 		key.SetDWORDValue(OPT_Downscaling,         m_Sets.iDownscaling);
 		key.SetDWORDValue(OPT_InterpolateAt50pct,  m_Sets.bInterpolateAt50pct);
