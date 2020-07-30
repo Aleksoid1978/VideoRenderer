@@ -1887,6 +1887,11 @@ HRESULT CDX9VideoProcessor::UpdateChromaScalingShader()
 			(float)m_srcRect.bottom * dy
 		};
 
+		if (m_srcParams.cformat == CF_YUY2) {
+			fr.left  /= 2;
+			fr.right /= 2;
+		}
+
 		m_PSConvColorData.VertexData[0].Tex[0] = { fr.left , fr.top };
 		m_PSConvColorData.VertexData[1].Tex[0] = { fr.right, fr.top };
 		m_PSConvColorData.VertexData[2].Tex[0] = { fr.left , fr.bottom };
