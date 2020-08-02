@@ -129,8 +129,9 @@ HRESULT GetShaderConvertColor(
 
 	code += fmt::format("#define w {}\n", (fmtParams.cformat == CF_YUY2) ? texW * 2 : texW);
 	code += fmt::format("#define dx (1.0/{})\n", texW);
+	code += fmt::format("#define dy (1.0/{})\n", texH);
 	code += fmt::format("static const float2 wh = {{{}, {}}};\n", (fmtParams.cformat == CF_YUY2) ? texW*2 : texW, texH);
-	code += fmt::format("static const float2 dxdy = {{1.0/{}, 1.0/{}}};\n", texW, texH);
+	code += fmt::format("static const float2 dxdy2 = {{2.0/{}, 2.0/{}}};\n", texW, texH);
 
 	if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 		code.append("#define CATMULLROM_05(c0,c1,c2,c3) (9*(c1+c2)-(c0+c3))*0.0625\n");
@@ -141,7 +142,7 @@ HRESULT GetShaderConvertColor(
 	if (fmtParams.Subsampling == 420) {
 		switch (exFmt.VideoChromaSubsampling) {
 		case DXVA2_VideoChromaSubsampling_Cosited:
-			strChromaPos = "+dxdy*0.5";
+			strChromaPos = "+float2(dx*0.5,dy*0.5)";
 			strChromaPos2 = "+float2(-0.25,-0.25)";
 			DLog(L"GetShaderConvertColor() set chroma location Co-sited");
 			break;
@@ -232,11 +233,11 @@ HRESULT GetShaderConvertColor(
 					}
 				}
 				code.append(
-					"float2 Q0 = c00 * w0.y + c01 * w1.y + c02 * w2.y + c03 * w3.y;\n"
-					"float2 Q1 = c10 * w0.y + c11 * w1.y + c12 * w2.y + c13 * w3.y;\n"
-					"float2 Q2 = c20 * w0.y + c21 * w1.y + c22 * w2.y + c23 * w3.y;\n"
-					"float2 Q3 = c30 * w0.y + c31 * w1.y + c32 * w2.y + c33 * w3.y;\n"
-					"colorUV = Q0 * w0.x + Q1 * w1.x + Q2 * w2.x + Q3 * w3.x;\n");
+					"float2 Q0 = c00 * w0.x + c10 * w1.x + c20 * w2.x + c30 * w3.x;\n"
+					"float2 Q1 = c01 * w0.x + c11 * w1.x + c21 * w2.x + c31 * w3.x;\n"
+					"float2 Q2 = c02 * w0.x + c12 * w1.x + c22 * w2.x + c32 * w3.x;\n"
+					"float2 Q3 = c03 * w0.x + c13 * w1.x + c23 * w2.x + c33 * w3.x;\n"
+					"colorUV = Q0 * w0.y + Q1 * w1.y + Q2 * w2.y + Q3 * w3.y;\n");
 			}
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 				code.append(
@@ -275,11 +276,11 @@ HRESULT GetShaderConvertColor(
 					}
 				}
 				code.append(
-					"float2 Q0 = c00 * w0.y + c01 * w1.y + c02 * w2.y + c03 * w3.y;\n"
-					"float2 Q1 = c10 * w0.y + c11 * w1.y + c12 * w2.y + c13 * w3.y;\n"
-					"float2 Q2 = c20 * w0.y + c21 * w1.y + c22 * w2.y + c23 * w3.y;\n"
-					"float2 Q3 = c30 * w0.y + c31 * w1.y + c32 * w2.y + c33 * w3.y;\n"
-					"colorUV = Q0 * w0.x + Q1 * w1.x + Q2 * w2.x + Q3 * w3.x;\n");
+					"float2 Q0 = c00 * w0.x + c10 * w1.x + c20 * w2.x + c30 * w3.x;\n"
+					"float2 Q1 = c01 * w0.x + c11 * w1.x + c21 * w2.x + c31 * w3.x;\n"
+					"float2 Q2 = c02 * w0.x + c12 * w1.x + c22 * w2.x + c32 * w3.x;\n"
+					"float2 Q3 = c03 * w0.x + c13 * w1.x + c23 * w2.x + c33 * w3.x;\n"
+					"colorUV = Q0 * w0.y + Q1 * w1.y + Q2 * w2.y + Q3 * w3.y;\n");
 			}
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 				code.append(
@@ -369,18 +370,18 @@ HRESULT GetShaderConvertColor(
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
 						if (fmtParams.cformat == CF_NV12) {
-							code += fmt::format("float2 c{}{} = tex2D(sUV, (pos + float2({}+0.5, {}+0.5))*dxdy*2).ra;\n", x, y, x - 1, y - 1);
+							code += fmt::format("float2 c{}{} = tex2D(sUV, (pos + float2({}+0.5, {}+0.5))*dxdy2).ra;\n", x, y, x - 1, y - 1);
 						} else {
-							code += fmt::format("float2 c{}{} = tex2D(sUV, (pos + float2({}+0.5, {}+0.5))*dxdy*2).rg;\n", x, y, x - 1, y - 1);
+							code += fmt::format("float2 c{}{} = tex2D(sUV, (pos + float2({}+0.5, {}+0.5))*dxdy2).rg;\n", x, y, x - 1, y - 1);
 						}
 					}
 				}
 				code.append(
-					"float2 Q0 = c00 * w0.y + c01 * w1.y + c02 * w2.y + c03 * w3.y;\n"
-					"float2 Q1 = c10 * w0.y + c11 * w1.y + c12 * w2.y + c13 * w3.y;\n"
-					"float2 Q2 = c20 * w0.y + c21 * w1.y + c22 * w2.y + c23 * w3.y;\n"
-					"float2 Q3 = c30 * w0.y + c31 * w1.y + c32 * w2.y + c33 * w3.y;\n"
-					"colorUV = Q0 * w0.x + Q1 * w1.x + Q2 * w2.x + Q3 * w3.x;\n");
+					"float2 Q0 = c00 * w0.x + c10 * w1.x + c20 * w2.x + c30 * w3.x;\n"
+					"float2 Q1 = c01 * w0.x + c11 * w1.x + c21 * w2.x + c31 * w3.x;\n"
+					"float2 Q2 = c02 * w0.x + c12 * w1.x + c22 * w2.x + c32 * w3.x;\n"
+					"float2 Q3 = c03 * w0.x + c13 * w1.x + c23 * w2.x + c33 * w3.x;\n"
+					"colorUV = Q0 * w0.y + Q1 * w1.y + Q2 * w2.y + Q3 * w3.y;\n");
 			}
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 				code.append(
@@ -424,16 +425,16 @@ HRESULT GetShaderConvertColor(
 					"float2 c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33;\n");
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
-						code += fmt::format("c{}{}[0] = tex2D(sU, (pos + float2({}+0.5, {}+0.5))*dxdy*2).r;\n", x, y, x-1, y-1);
-						code += fmt::format("c{}{}[1] = tex2D(sV, (pos + float2({}+0.5, {}+0.5))*dxdy*2).r;\n", x, y, x-1, y-1);
+						code += fmt::format("c{}{}[0] = tex2D(sU, (pos + float2({}+0.5, {}+0.5))*dxdy2).r;\n", x, y, x-1, y-1);
+						code += fmt::format("c{}{}[1] = tex2D(sV, (pos + float2({}+0.5, {}+0.5))*dxdy2).r;\n", x, y, x-1, y-1);
 					}
 				}
 				code.append(
-					"float2 Q0 = c00 * w0.y + c01 * w1.y + c02 * w2.y + c03 * w3.y;\n"
-					"float2 Q1 = c10 * w0.y + c11 * w1.y + c12 * w2.y + c13 * w3.y;\n"
-					"float2 Q2 = c20 * w0.y + c21 * w1.y + c22 * w2.y + c23 * w3.y;\n"
-					"float2 Q3 = c30 * w0.y + c31 * w1.y + c32 * w2.y + c33 * w3.y;\n"
-					"colorUV = Q0 * w0.x + Q1 * w1.x + Q2 * w2.x + Q3 * w3.x;\n");
+					"float2 Q0 = c00 * w0.x + c10 * w1.x + c20 * w2.x + c30 * w3.x;\n"
+					"float2 Q1 = c01 * w0.x + c11 * w1.x + c21 * w2.x + c31 * w3.x;\n"
+					"float2 Q2 = c02 * w0.x + c12 * w1.x + c22 * w2.x + c32 * w3.x;\n"
+					"float2 Q3 = c03 * w0.x + c13 * w1.x + c23 * w2.x + c33 * w3.x;\n"
+					"colorUV = Q0 * w0.y + Q1 * w1.y + Q2 * w2.y + Q3 * w3.y;\n");
 			}
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 				code.append(
