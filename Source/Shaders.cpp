@@ -84,6 +84,21 @@ const char code_HLG[] =
 		"return x;\n"
 	"}\n";
 
+const char code_CatmullRom_weights[] =
+	"float2 t2 = t * t;\n"
+	"float2 t3 = t * t2;\n"
+	"float2 w0 = t2 - (t3 + t) / 2;\n"
+	"float2 w1 = t3 * 1.5 + 1 - t2 * 2.5;\n"
+	"float2 w2 = t2 * 2 + t / 2 - t3 * 1.5;\n"
+	"float2 w3 = (t3 - t2) / 2;\n";
+
+const char code_Bicubic_UV[] =
+	"float2 Q0 = c00 * w0.x + c10 * w1.x + c20 * w2.x + c30 * w3.x;\n"
+	"float2 Q1 = c01 * w0.x + c11 * w1.x + c21 * w2.x + c31 * w3.x;\n"
+	"float2 Q2 = c02 * w0.x + c12 * w1.x + c22 * w2.x + c32 * w3.x;\n"
+	"float2 Q3 = c03 * w0.x + c13 * w1.x + c23 * w2.x + c33 * w3.x;\n"
+	"colorUV = Q0 * w0.y + Q1 * w1.y + Q2 * w2.y + Q3 * w3.y;\n";
+
 HRESULT GetShaderConvertColor(
 	const bool bDX11,
 	const long texW, long texH,
@@ -221,23 +236,13 @@ HRESULT GetShaderConvertColor(
 				"float2 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
 				code += fmt::format("float2 t = frac(input.Tex * (wh*0.5)){};\n", strChromaPos2); // Very strange, but it works.
-				code.append("float2 t2 = t * t;\n"
-					"float2 t3 = t * t2;\n"
-					"float2 w0 = t2 - (t3 + t) / 2;\n"
-					"float2 w1 = t3 * 1.5 + 1 - t2 * 2.5;\n"
-					"float2 w2 = t2 * 2 + t / 2 - t3 * 1.5;\n"
-					"float2 w3 = (t3 - t2) / 2;\n");
+				code.append(code_CatmullRom_weights);
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
 						code += fmt::format("float2 c{}{} = texUV.Sample(samp, input.Tex, int2({}, {})).rg;\n", x, y, x-1, y-1);
 					}
 				}
-				code.append(
-					"float2 Q0 = c00 * w0.x + c10 * w1.x + c20 * w2.x + c30 * w3.x;\n"
-					"float2 Q1 = c01 * w0.x + c11 * w1.x + c21 * w2.x + c31 * w3.x;\n"
-					"float2 Q2 = c02 * w0.x + c12 * w1.x + c22 * w2.x + c32 * w3.x;\n"
-					"float2 Q3 = c03 * w0.x + c13 * w1.x + c23 * w2.x + c33 * w3.x;\n"
-					"colorUV = Q0 * w0.y + Q1 * w1.y + Q2 * w2.y + Q3 * w3.y;\n");
+				code.append(code_Bicubic_UV);
 			}
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 				code.append(
@@ -262,25 +267,15 @@ HRESULT GetShaderConvertColor(
 				"float2 colorUV;\n");
 			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
 				code += fmt::format("float2 t = frac(input.Tex * (wh*0.5)){};\n", strChromaPos2); // I don't know why, but it works.
-				code.append("float2 t2 = t * t;\n"
-					"float2 t3 = t * t2;\n"
-					"float2 w0 = t2 - (t3 + t) / 2;\n"
-					"float2 w1 = t3 * 1.5 + 1 - t2 * 2.5;\n"
-					"float2 w2 = t2 * 2 + t / 2 - t3 * 1.5;\n"
-					"float2 w3 = (t3 - t2) / 2;\n"
-					"float2 c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33;\n");
+				code.append(code_CatmullRom_weights);
+				code.append("float2 c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33;\n");
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
 						code += fmt::format("c{}{}[0] = texU.Sample(samp, input.Tex, int2({}, {})).r;\n", x, y, x-1, y-1);
 						code += fmt::format("c{}{}[1] = texV.Sample(samp, input.Tex, int2({}, {})).r;\n", x, y, x-1, y-1);
 					}
 				}
-				code.append(
-					"float2 Q0 = c00 * w0.x + c10 * w1.x + c20 * w2.x + c30 * w3.x;\n"
-					"float2 Q1 = c01 * w0.x + c11 * w1.x + c21 * w2.x + c31 * w3.x;\n"
-					"float2 Q2 = c02 * w0.x + c12 * w1.x + c22 * w2.x + c32 * w3.x;\n"
-					"float2 Q3 = c03 * w0.x + c13 * w1.x + c23 * w2.x + c33 * w3.x;\n"
-					"colorUV = Q0 * w0.y + Q1 * w1.y + Q2 * w2.y + Q3 * w3.y;\n");
+				code.append(code_Bicubic_UV);
 			}
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 				code.append(
@@ -361,12 +356,7 @@ HRESULT GetShaderConvertColor(
 					"float2 t = frac(pos);\n"
 					"pos -= t;\n");
 				code += fmt::format("t = t{};\n", strChromaPos2);
-				code.append("float2 t2 = t * t;\n"
-					"float2 t3 = t * t2;\n"
-					"float2 w0 = t2 - (t3 + t) / 2;\n"
-					"float2 w1 = t3 * 1.5 + 1 - t2 * 2.5;\n"
-					"float2 w2 = t2 * 2 + t / 2 - t3 * 1.5;\n"
-					"float2 w3 = (t3 - t2) / 2;\n");
+				code.append(code_CatmullRom_weights);
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
 						if (fmtParams.cformat == CF_NV12) {
@@ -376,12 +366,7 @@ HRESULT GetShaderConvertColor(
 						}
 					}
 				}
-				code.append(
-					"float2 Q0 = c00 * w0.x + c10 * w1.x + c20 * w2.x + c30 * w3.x;\n"
-					"float2 Q1 = c01 * w0.x + c11 * w1.x + c21 * w2.x + c31 * w3.x;\n"
-					"float2 Q2 = c02 * w0.x + c12 * w1.x + c22 * w2.x + c32 * w3.x;\n"
-					"float2 Q3 = c03 * w0.x + c13 * w1.x + c23 * w2.x + c33 * w3.x;\n"
-					"colorUV = Q0 * w0.y + Q1 * w1.y + Q2 * w2.y + Q3 * w3.y;\n");
+				code.append(code_Bicubic_UV);
 			}
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 				code.append(
@@ -416,25 +401,15 @@ HRESULT GetShaderConvertColor(
 					"float2 t = frac(pos);\n"
 					"pos -= t;\n");
 				code += fmt::format("t = t{};\n", strChromaPos2);
-				code.append("float2 t2 = t * t;\n"
-					"float2 t3 = t * t2;\n"
-					"float2 w0 = t2 - (t3 + t) / 2;\n"
-					"float2 w1 = t3 * 1.5 + 1 - t2 * 2.5;\n"
-					"float2 w2 = t2 * 2 + t / 2 - t3 * 1.5;\n"
-					"float2 w3 = (t3 - t2) / 2;\n"
-					"float2 c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33;\n");
+				code.append(code_CatmullRom_weights);
+				code.append("float2 c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33;\n");
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
 						code += fmt::format("c{}{}[0] = tex2D(sU, (pos + float2({}+0.5, {}+0.5))*dxdy2).r;\n", x, y, x-1, y-1);
 						code += fmt::format("c{}{}[1] = tex2D(sV, (pos + float2({}+0.5, {}+0.5))*dxdy2).r;\n", x, y, x-1, y-1);
 					}
 				}
-				code.append(
-					"float2 Q0 = c00 * w0.x + c10 * w1.x + c20 * w2.x + c30 * w3.x;\n"
-					"float2 Q1 = c01 * w0.x + c11 * w1.x + c21 * w2.x + c31 * w3.x;\n"
-					"float2 Q2 = c02 * w0.x + c12 * w1.x + c22 * w2.x + c32 * w3.x;\n"
-					"float2 Q3 = c03 * w0.x + c13 * w1.x + c23 * w2.x + c33 * w3.x;\n"
-					"colorUV = Q0 * w0.y + Q1 * w1.y + Q2 * w2.y + Q3 * w3.y;\n");
+				code.append(code_Bicubic_UV);
 			}
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 				code.append(
