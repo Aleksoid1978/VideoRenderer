@@ -232,9 +232,14 @@ HRESULT GetShaderConvertColor(
 			}
 			break;
 		case 2:
-			code.append("float colorY = texY.Sample(samp, input.Tex).r;\n"
-				"float2 colorUV;\n");
-			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
+			code.append(
+				"float colorY = texY.Sample(samp, input.Tex).r;\n"
+				"float2 colorUV;\n"
+			);
+			if (chromaScaling == CHROMA_Nearest || fmtParams.Subsampling == 444) {
+				code += fmt::format("colorUV = texUV.Sample(samp, input.Tex{}).rg;\n", strChromaPos);
+			}
+			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
 				code += fmt::format("float2 t = frac(input.Tex * (wh*0.5)){};\n", strChromaPos2); // Very strange, but it works.
 				code.append(code_CatmullRom_weights);
 				for (int y = 0; y < 4; y++) {
@@ -257,15 +262,21 @@ HRESULT GetShaderConvertColor(
 						"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
 					"}\n");
 			}
-			else { // CHROMA_Bilinear or YUV 4:4:4
+			else { // CHROMA_Bilinear
 				code += fmt::format("colorUV = texUV.Sample(sampL, input.Tex{}).rg;\n", strChromaPos);
 			}
 			code.append("float4 color = float4(colorY, colorUV, 0);\n");
 			break;
 		case 3:
-			code.append("float colorY = texY.Sample(samp, input.Tex).r;\n"
-				"float2 colorUV;\n");
-			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
+			code.append(
+				"float colorY = texY.Sample(samp, input.Tex).r;\n"
+				"float2 colorUV;\n"
+			);
+			if (chromaScaling == CHROMA_Nearest || fmtParams.Subsampling == 444) {
+				code += fmt::format("colorUV[0] = texU.Sample(samp, input.Tex{}).r;\n", strChromaPos);
+				code += fmt::format("colorUV[1] = texV.Sample(samp, input.Tex{}).r;\n", strChromaPos);
+			}
+			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
 				code += fmt::format("float2 t = frac(input.Tex * (wh*0.5)){};\n", strChromaPos2); // I don't know why, but it works.
 				code.append(code_CatmullRom_weights);
 				code.append("float2 c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33;\n");
@@ -296,7 +307,7 @@ HRESULT GetShaderConvertColor(
 						"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
 					"}\n");
 			}
-			else { // CHROMA_Bilinear or YUV 4:4:4
+			else { // CHROMA_Bilinear
 				code += fmt::format("colorUV[0] = texU.Sample(sampL, input.Tex{}).r;\n", strChromaPos);
 				code += fmt::format("colorUV[1] = texV.Sample(sampL, input.Tex{}).r;\n", strChromaPos);
 			}
