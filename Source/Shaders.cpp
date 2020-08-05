@@ -338,9 +338,12 @@ HRESULT GetShaderConvertColor(
 
 		switch (planes) {
 		case 1:
-			code.append("\nfloat4 main(float2 tex : TEXCOORD0) : COLOR\n"
-				"{\n");
-			code.append("float4 color = tex2D(s0, tex);\n");
+			code.append(
+				"\n"
+				"float4 main(float2 tex : TEXCOORD0) : COLOR\n"
+				"{\n"
+				"float4 color = tex2D(s0, tex);\n"
+			);
 			if (fmtParams.cformat == CF_YUY2) {
 				code.append("if (fmod(tex.x*w, 2) < 1.0) {\n"
 					"color = float4(color[2], color[1], color[3], 0);\n"
@@ -359,10 +362,17 @@ HRESULT GetShaderConvertColor(
 			}
 			break;
 		case 2:
-			code.append("\nfloat4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n{\n");
-			code.append("float colorY = tex2D(sY, t0).r;\n"
-				"float2 colorUV;\n");
-			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
+			code.append(
+				"\n"
+				"float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n"
+				"{\n"
+				"float colorY = tex2D(sY, t0).r;\n"
+				"float2 colorUV;\n"
+			);
+			if (chromaScaling == CHROMA_Nearest || fmtParams.Subsampling == 444) {
+				code.append("colorUV = tex2D(sUV, t0).rg;\n");
+			}
+			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
 				code.append("float2 pos = t0 * (wh*0.5);\n"
 					"float2 t = frac(pos);\n"
 					"pos -= t;\n");
@@ -393,7 +403,7 @@ HRESULT GetShaderConvertColor(
 						"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
 					"}\n");
 			}
-			else { // CHROMA_Bilinear or YUV 4:4:4
+			else { // CHROMA_Bilinear
 				if (fmtParams.cformat == CF_NV12) {
 					code.append("colorUV = tex2D(sUV, t1).ra;\n");
 				} else {
@@ -403,11 +413,20 @@ HRESULT GetShaderConvertColor(
 			code.append("float4 color = float4(colorY, colorUV, 0);\n");
 			break;
 		case 3:
-			code.append("\nfloat4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n"
-				"{\n");
-			code.append("float colorY = tex2D(sY, t0).r;\n"
-				"float2 colorUV;\n");
-			if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
+			code.append(
+				"\n"
+				"float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n"
+				"{\n"
+				"float colorY = tex2D(sY, t0).r;\n"
+				"float2 colorUV;\n"
+			);
+			if (chromaScaling == CHROMA_Nearest || fmtParams.Subsampling == 444) {
+				code.append(
+					"colorUV[0] = tex2D(sU, t0).r;\n"
+					"colorUV[1] = tex2D(sV, t0).r;\n"
+				);
+			}
+			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
 				code.append("float2 pos = t0 * (wh*0.5);\n"
 					"float2 t = frac(pos);\n"
 					"pos -= t;\n");
@@ -443,8 +462,10 @@ HRESULT GetShaderConvertColor(
 					"}\n");
 			}
 			else { // CHROMA_Bilinear or YUV 4:4:4
-				code.append("colorUV[0] = tex2D(sU, t1).r;\n"
-					"colorUV[1] = tex2D(sV, t1).r;\n");
+				code.append(
+					"colorUV[0] = tex2D(sU, t1).r;\n"
+					"colorUV[1] = tex2D(sV, t1).r;\n"
+				);
 			}
 			code.append("float4 color = float4(colorY, colorUV, 0);\n");
 			break;
