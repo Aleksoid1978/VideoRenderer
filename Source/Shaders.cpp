@@ -237,7 +237,7 @@ HRESULT GetShaderConvertColor(
 				"float2 colorUV;\n"
 			);
 			if (chromaScaling == CHROMA_Nearest || fmtParams.Subsampling == 444) {
-				code += fmt::format("colorUV = texUV.Sample(samp, input.Tex{}).rg;\n", strChromaPos);
+				code.append("colorUV = texUV.Sample(samp, input.Tex).rg;\n");
 			}
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
 				code += fmt::format("float2 t = frac(input.Tex * (wh*0.5)){};\n", strChromaPos2); // Very strange, but it works.
@@ -273,8 +273,10 @@ HRESULT GetShaderConvertColor(
 				"float2 colorUV;\n"
 			);
 			if (chromaScaling == CHROMA_Nearest || fmtParams.Subsampling == 444) {
-				code += fmt::format("colorUV[0] = texU.Sample(samp, input.Tex{}).r;\n", strChromaPos);
-				code += fmt::format("colorUV[1] = texV.Sample(samp, input.Tex{}).r;\n", strChromaPos);
+				code.append(
+					"colorUV[0] = texU.Sample(samp, input.Tex).r;\n"
+					"colorUV[1] = texV.Sample(samp, input.Tex).r;\n"
+				);
 			}
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
 				code += fmt::format("float2 t = frac(input.Tex * (wh*0.5)){};\n", strChromaPos2); // I don't know why, but it works.
