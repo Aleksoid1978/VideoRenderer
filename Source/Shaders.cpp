@@ -152,29 +152,29 @@ HRESULT GetShaderConvertColor(
 		code.append("#define CATMULLROM_05(c0,c1,c2,c3) (9*(c1+c2)-(c0+c3))*0.0625\n");
 	}
 
-	char* strChromaPos = nullptr;
+	char* strChromaPos = "";
 	char* strChromaPos2 = "";
 	if (fmtParams.Subsampling == 420) {
 		switch (exFmt.VideoChromaSubsampling) {
 		case DXVA2_VideoChromaSubsampling_Cosited:
-			strChromaPos = "+=float2(dx*0.5,dy*0.5)";
+			strChromaPos = "+float2(dx*0.5,dy*0.5)";
 			strChromaPos2 = "+float2(-0.25,-0.25)";
 			DLog(L"GetShaderConvertColor() set chroma location Co-sited");
 			break;
 		case DXVA2_VideoChromaSubsampling_MPEG1:
-			//strChromaPos = nullptr;
+			//strChromaPos = "";
 			strChromaPos2 = "+float2(-0.5,-0.5)";
 			DLog(L"GetShaderConvertColor() set chroma location MPEG-1");
 			break;
 		case DXVA2_VideoChromaSubsampling_MPEG2:
 		default:
-			strChromaPos = "+=float2(dx*0.5,0)";
+			strChromaPos = "+float2(dx*0.5,0)";
 			strChromaPos2 = "+float2(-0.25,-0.5)";
 			DLog(L"GetShaderConvertColor() set chroma location MPEG-2");
 		}
 	}
 	else if (fmtParams.Subsampling == 422) {
-		strChromaPos = "+=float2(dx*0.5,0)";
+		strChromaPos = "+float2(dx*0.5,0)";
 		DLog(L"GetShaderConvertColor() set chroma location for YUV 4:2:2");
 	}
 
@@ -263,11 +263,9 @@ HRESULT GetShaderConvertColor(
 					"}\n");
 			}
 			else { // CHROMA_Bilinear
-				if (strChromaPos) {
-					code += fmt::format("input.Tex{};\n", strChromaPos);
-				}
+				code += fmt::format("float2 pos = input.Tex{};\n", strChromaPos);
 				code.append(
-					"colorUV = texUV.Sample(sampL, input.Tex).rg;\n"
+					"colorUV = texUV.Sample(sampL, pos).rg;\n"
 				);
 			}
 			code.append("float4 color = float4(colorY, colorUV, 0);\n");
@@ -315,12 +313,11 @@ HRESULT GetShaderConvertColor(
 					"}\n");
 			}
 			else { // CHROMA_Bilinear
-				if (strChromaPos) {
-					code += fmt::format("input.Tex{};\n", strChromaPos);
-				}
+				code += fmt::format("float2 pos = input.Tex{};\n", strChromaPos);
+
 				code.append(
-					"colorUV[0] = texU.Sample(sampL, input.Tex).r;\n"
-					"colorUV[1] = texV.Sample(sampL, input.Tex).r;\n"
+					"colorUV[0] = texU.Sample(sampL, pos).r;\n"
+					"colorUV[1] = texV.Sample(sampL, pos).r;\n"
 				);
 			}
 			code.append("float4 color = float4(colorY, colorUV, 0);\n");
