@@ -1229,6 +1229,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 					return hr;
 				}
 				UpdatFrameProperties();
+				UpdateStatsStatic();
 			}
 
 			if (m_DXVA2VP.IsReady()) {
@@ -2386,7 +2387,11 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 	if (m_srcParams.cformat) {
 		m_strStatsStatic1 = fmt::format(L"MPC VR {}, Direct3D 9Ex", _CRT_WIDE(MPCVR_VERSION_STR));
 
-		m_strStatsStatic2 = fmt::format(L"{} {}x{}", m_srcParams.str, m_srcRectWidth, m_srcRectHeight);
+		m_strStatsStatic2.assign(m_srcParams.str);
+		if (m_srcWidth != m_srcRectWidth || m_srcHeight != m_srcRectHeight) {
+			m_strStatsStatic2 += fmt::format(L" {}x{} ->", m_srcWidth, m_srcHeight);
+		}
+		m_strStatsStatic2 += fmt::format(L" {}x{}", m_srcRectWidth, m_srcRectHeight);
 		if (m_srcAnamorphic) {
 			m_strStatsStatic2 += fmt::format(L" ({}:{})", m_srcAspectRatioX, m_srcAspectRatioY);
 		}
