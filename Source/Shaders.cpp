@@ -25,6 +25,8 @@
 #include "IVideoRenderer.h"
 #include "Shaders.h"
 
+#define CLAMP_IN_RECT 0
+
 HRESULT CompileShader(const std::string& srcCode, const D3D_SHADER_MACRO* pDefines, LPCSTR pTarget, ID3DBlob** ppShaderBlob)
 {
 	//ASSERT(*ppShaderBlob == nullptr);
@@ -178,6 +180,31 @@ HRESULT GetShaderConvertColor(
 		DLog(L"GetShaderConvertColor() set chroma location for YUV 4:2:2");
 	}
 
+#if CLAMP_IN_RECT
+	std::string boundary_check;
+	if (rect.right < texW && rect.bottom < texH) {
+		boundary_check = fmt::format("all(pos < float2(({}-0.501)/{},({}-0.501)/{}))", rect.right, texW, rect.bottom, texH);
+	}
+	else if (rect.right < texW) {
+		boundary_check = fmt::format("pos.x < ({}-0.501)/{}", rect.right, texW);
+	}
+	else if (rect.bottom < texH) {
+		boundary_check = fmt::format("pos.y < ({}-0.501)/{}", rect.bottom, texH);
+	}
+	if (boundary_check.size() && (rect.left > 0 || rect.top > 0)) {
+		boundary_check.append(" && ");
+	}
+	if (rect.left > 0 && rect.top > 0) {
+		boundary_check += fmt::format("all(pos > float2(({}+0.501)/{},({}+0.501)/{}))", rect.left, texW, rect.top, texH);
+	}
+	else if (rect.left > 0) {
+		boundary_check += fmt::format("pos.x > ({}+0.501)/{}", rect.left, texW);
+	}
+	else if (rect.top > 0) {
+		boundary_check += fmt::format("pos.y > ({}+0.501)/{}", rect.top, texH);
+	}
+#endif
+
 	if (bDX11) {
 		switch (planes) {
 		case 1:
@@ -264,9 +291,23 @@ HRESULT GetShaderConvertColor(
 			}
 			else { // CHROMA_Bilinear
 				code += fmt::format("float2 pos = input.Tex{};\n", strChromaPos);
-				code.append(
-					"colorUV = texUV.Sample(sampL, pos).rg;\n"
-				);
+#if CLAMP_IN_RECT
+				if (boundary_check.size()) {
+					code += fmt::format("if ({})", boundary_check);
+					code.append(
+						" {\n"
+						"colorUV = texUV.Sample(sampL, pos).rg;\n"
+						"} else {\n"
+						"colorUV = texUV.Sample(samp, input.Tex).rg;\n"
+						"}\n"
+					);
+				} else
+#endif
+				{
+					code.append(
+						"colorUV = texUV.Sample(sampL, pos).rg;\n"
+					);
+				}
 			}
 			code.append("float4 color = float4(colorY, colorUV, 0);\n");
 			break;
@@ -314,11 +355,26 @@ HRESULT GetShaderConvertColor(
 			}
 			else { // CHROMA_Bilinear
 				code += fmt::format("float2 pos = input.Tex{};\n", strChromaPos);
-
-				code.append(
-					"colorUV[0] = texU.Sample(sampL, pos).r;\n"
-					"colorUV[1] = texV.Sample(sampL, pos).r;\n"
-				);
+#if CLAMP_IN_RECT
+				if (boundary_check.size()) {
+					code += fmt::format("if ({})", boundary_check);
+					code.append(
+						" {\n"
+						"colorUV[0] = texU.Sample(sampL, pos).r;\n"
+						"colorUV[1] = texV.Sample(sampL, pos).r;\n"
+						"} else {\n"
+						"colorUV[0] = texU.Sample(samp, input.Tex).r;\n"
+						"colorUV[1] = texV.Sample(samp, input.Tex).r;\n"
+						"}\n"
+					);
+				} else
+#endif
+				{
+					code.append(
+						"colorUV[0] = texU.Sample(sampL, pos).r;\n"
+						"colorUV[1] = texV.Sample(sampL, pos).r;\n"
+					);
+				}
 			}
 			code.append("float4 color = float4(colorY, colorUV, 0);\n");
 			break;
