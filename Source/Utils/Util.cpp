@@ -21,14 +21,6 @@
 #include "stdafx.h"
 #include "Util.h"
 
-#ifndef _WIN32_WINNT_WINTHRESHOLD
-#define _WIN32_WINNT_WINTHRESHOLD 0x0A00
-VERSIONHELPERAPI IsWindows10OrGreater()
-{
-	return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_WINTHRESHOLD), LOBYTE(_WIN32_WINNT_WINTHRESHOLD), 0);
-}
-#endif
-
 LPCWSTR GetWindowsVersion()
 {
 	if (IsWindows10OrGreater()) {

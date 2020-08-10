@@ -526,7 +526,7 @@ HRESULT GetShaderConvertColor(
 						"colorUV = CATMULLROM_05(c0,c1,c2,c3);\n"
 					"}\n");
 			}
-			else { // CHROMA_Bilinear or YUV 4:4:4
+			else { // CHROMA_Bilinear
 				code.append(
 					"colorUV[0] = tex2D(sU, t1).r;\n"
 					"colorUV[1] = tex2D(sV, t1).r;\n"
