@@ -925,8 +925,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	HRESULT hr3 = m_TexDither.Create(m_pDevice, DXGI_FORMAT_R16G16B16A16_FLOAT, dither_size, dither_size, Tex2D_DynamicShaderWrite);
 	if (S_OK == hr3) {
-		LPVOID data;
-		DWORD size;
 		hr3 = GetDataFromResource(data, size, IDF_DITHER_32X32_FLOAT16);
 		if (S_OK == hr3) {
 			D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -2753,8 +2751,6 @@ STDMETHODIMP CDX11VideoProcessor::UpdateAlphaBitmapParameters(const MFVideoAlpha
 {
 	CheckPointer(pBmpParms, E_POINTER);
 	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
-
-	HRESULT hr = S_FALSE;
 
 	if (m_bAlphaBitmapEnable) {
 		if (pBmpParms->dwFlags & MFVideoAlphaBitmap_SrcRect) {

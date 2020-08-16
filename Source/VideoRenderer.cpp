@@ -66,7 +66,7 @@ static void RemoveParentWndProc(HWND hWnd)
 static LRESULT CALLBACK ParentWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	auto pfnOldProc = (WNDPROC)GetPropW(hWnd, g_pszOldParentWndProc);
-	auto pThis = (CMpcVideoRenderer*)GetPropW(hWnd, g_pszThis);
+	auto pThis = static_cast<CMpcVideoRenderer*>(GetPropW(hWnd, g_pszThis));
 
 	switch (Msg) {
 		case WM_DESTROY:
@@ -839,7 +839,7 @@ void CMpcVideoRenderer::SwitchFullScreen()
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	CMpcVideoRenderer* pThis = (CMpcVideoRenderer*)GetWindowLongPtrW(hwnd, 0);
+	CMpcVideoRenderer* pThis = reinterpret_cast <CMpcVideoRenderer*>(GetWindowLongPtrW(hwnd, 0));
 	if (!pThis) {
 		if ((uMsg != WM_NCCREATE)
 				|| (nullptr == (pThis = (CMpcVideoRenderer*)((LPCREATESTRUCTW)lParam)->lpCreateParams))) {
