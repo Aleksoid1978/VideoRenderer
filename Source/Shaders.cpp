@@ -435,7 +435,11 @@ HRESULT GetShaderConvertColor(
 				"float2 colorUV;\n"
 			);
 			if (chromaScaling == CHROMA_Nearest || fmtParams.Subsampling == 444) {
-				code.append("colorUV = tex2D(sUV, t0).rg;\n");
+				if (fmtParams.cformat == CF_NV12) {
+					code.append("colorUV = tex2D(sUV, t0).ra;\n");
+				} else {
+					code.append("colorUV = tex2D(sUV, t0).rg;\n");
+				}
 			}
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
 				code.append("float2 pos = t0 * (wh*0.5);\n"
