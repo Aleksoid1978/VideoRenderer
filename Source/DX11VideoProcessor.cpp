@@ -1524,20 +1524,20 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			return E_UNEXPECTED;
 		}
 
-		if (m_iChromaScaling == CHROMA_Nearest) { // dirty fix for issue #16. disable reinitialization code for ChromaUpsampling = Bilinear or CatmullRom.
-			if (desc.Width != m_srcWidth || desc.Height != m_srcHeight) {
-				if (m_D3D11VP.IsReady()) {
-					hr = InitializeD3D11VP(m_srcParams, desc.Width, desc.Height);
-				} else {
-					hr = InitializeTexVP(m_srcParams, desc.Width, desc.Height);
-				}
-				if (FAILED(hr)) {
-					return hr;
-				}
-				UpdatFrameProperties();
-				UpdateStatsStatic();
+#if 0 // fix for issue #16. disable reinitialization code.
+		if (desc.Width != m_srcWidth || desc.Height != m_srcHeight) {
+			if (m_D3D11VP.IsReady()) {
+				hr = InitializeD3D11VP(m_srcParams, desc.Width, desc.Height);
+			} else {
+				hr = InitializeTexVP(m_srcParams, desc.Width, desc.Height);
 			}
+			if (FAILED(hr)) {
+				return hr;
+			}
+			UpdatFrameProperties();
+			UpdateStatsStatic();
 		}
+#endif
 
 		// here should be used CopySubresourceRegion instead of CopyResource
 		if (m_D3D11VP.IsReady()) {
