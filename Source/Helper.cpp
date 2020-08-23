@@ -620,25 +620,48 @@ HRESULT SaveToBMP(BYTE* src, const UINT src_pitch, const UINT width, const UINT 
 	return E_FAIL;
 }
 
-HRESULT SaveToPNG(BYTE* src, const UINT src_pitch, const UINT width, const UINT height, const UINT bitdepth, const wchar_t* filename)
+HRESULT SaveToImage(BYTE* src, const UINT pitch, const UINT width, const UINT height, const UINT bitdepth, const std::wstring_view& filename)
 {
-	if (!src || !filename) {
+	if (!src) {
 		return E_POINTER;
 	}
 
-	if (!src_pitch || !width || !height) {
-		return E_ABORT;
+	if (!pitch || !width || !height || !filename.length()) {
+		return E_INVALIDARG;
 	}
 
 	WICPixelFormatGUID format = {};
 	if (bitdepth == 32) {
 		format = GUID_WICPixelFormat32bppPBGRA;
 	}
+	else if (bitdepth == 24) {
+		format = GUID_WICPixelFormat24bppBGR;
+	}
 	else if (bitdepth == 8) {
 		format = GUID_WICPixelFormat8bppGray;
 	}
 	else {
-		return E_ABORT;
+		return E_INVALIDARG;
+	}
+
+	GUID wicFormat = {};
+	std::wstring ext;
+	ext.assign(filename, filename.find_last_of(L"."));
+	str_tolower(ext);
+	if (ext == L".bmp") {
+		wicFormat = GUID_ContainerFormatBmp;
+	}
+	else if (ext == L".png") {
+		wicFormat = GUID_ContainerFormatPng;
+	}
+	else if (ext == L".jpg" || ext == L".jpeg") {
+		wicFormat = GUID_ContainerFormatJpeg;
+	}
+	else if (ext == L".tif" || ext == L".tiff") {
+		wicFormat = GUID_ContainerFormatTiff;
+	}
+	else {
+		return E_INVALIDARG;
 	}
 
 	CComPtr<IWICImagingFactory> pWICFactory;
@@ -647,8 +670,7 @@ HRESULT SaveToPNG(BYTE* src, const UINT src_pitch, const UINT width, const UINT 
 	CComPtr<IWICBitmapFrameEncode> pFrame;
 	CComPtr<IWICStream> pStream;
 
-	GUID wicFormat = GUID_ContainerFormatPng;
-	UINT bufferSize = src_pitch * height;
+	UINT bufferSize = pitch * height;
 
 	HRESULT hr = CoCreateInstance(
 		CLSID_WICImagingFactory1, // we use CLSID_WICImagingFactory1 to support Windows 7 without Platform Update
@@ -659,7 +681,7 @@ HRESULT SaveToPNG(BYTE* src, const UINT src_pitch, const UINT width, const UINT 
 	);
 
 	if (SUCCEEDED(hr)) {
-		hr = pWICFactory->CreateBitmapFromMemory(width, height, format, src_pitch, bufferSize, src, &pBitmat);
+		hr = pWICFactory->CreateBitmapFromMemory(width, height, format, pitch, bufferSize, src, &pBitmat);
 	}
 	if (SUCCEEDED(hr)) {
 		hr = pWICFactory->CreateEncoder(wicFormat, nullptr, &pEncoder);
@@ -668,7 +690,7 @@ HRESULT SaveToPNG(BYTE* src, const UINT src_pitch, const UINT width, const UINT 
 		hr = pWICFactory->CreateStream(&pStream);
 	};
 	if (SUCCEEDED(hr)) {
-		hr = pStream->InitializeFromFilename(filename, GENERIC_WRITE);
+		hr = pStream->InitializeFromFilename(filename.data(), GENERIC_WRITE);
 	}
 	if (SUCCEEDED(hr)) {
 		hr = pEncoder->Initialize(pStream, WICBitmapEncoderNoCache);
