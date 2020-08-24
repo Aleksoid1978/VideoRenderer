@@ -1,4 +1,4 @@
-v0.4.8
+v0.4.9.1460 - 2020.08.24
 ------------------------
 Now DirectWrite is used instead of GDI+ to generate statistics font.
 Optimized statistics drawing.
