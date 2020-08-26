@@ -632,7 +632,7 @@ HRESULT SaveToImage(BYTE* src, const UINT pitch, const UINT width, const UINT he
 
 	WICPixelFormatGUID format = {};
 	if (bitdepth == 32) {
-		format = GUID_WICPixelFormat32bppPBGRA;
+		format = GUID_WICPixelFormat32bppBGR;
 	}
 	else if (bitdepth == 24) {
 		format = GUID_WICPixelFormat24bppBGR;
@@ -665,12 +665,9 @@ HRESULT SaveToImage(BYTE* src, const UINT pitch, const UINT width, const UINT he
 	}
 
 	CComPtr<IWICImagingFactory> pWICFactory;
-	CComPtr<IWICBitmap> pBitmat;
 	CComPtr<IWICBitmapEncoder> pEncoder;
 	CComPtr<IWICBitmapFrameEncode> pFrame;
 	CComPtr<IWICStream> pStream;
-
-	UINT bufferSize = pitch * height;
 
 	HRESULT hr = CoCreateInstance(
 		CLSID_WICImagingFactory1, // we use CLSID_WICImagingFactory1 to support Windows 7 without Platform Update
@@ -681,16 +678,13 @@ HRESULT SaveToImage(BYTE* src, const UINT pitch, const UINT width, const UINT he
 	);
 
 	if (SUCCEEDED(hr)) {
-		hr = pWICFactory->CreateBitmapFromMemory(width, height, format, pitch, bufferSize, src, &pBitmat);
-	}
-	if (SUCCEEDED(hr)) {
-		hr = pWICFactory->CreateEncoder(wicFormat, nullptr, &pEncoder);
-	}
-	if (SUCCEEDED(hr)) {
 		hr = pWICFactory->CreateStream(&pStream);
 	};
 	if (SUCCEEDED(hr)) {
 		hr = pStream->InitializeFromFilename(filename.data(), GENERIC_WRITE);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = pWICFactory->CreateEncoder(wicFormat, nullptr, &pEncoder);
 	}
 	if (SUCCEEDED(hr)) {
 		hr = pEncoder->Initialize(pStream, WICBitmapEncoderNoCache);
@@ -708,7 +702,7 @@ HRESULT SaveToImage(BYTE* src, const UINT pitch, const UINT width, const UINT he
 		hr = pFrame->SetPixelFormat(&format);
 	}
 	if (SUCCEEDED(hr)) {
-		hr = pFrame->WriteSource(pBitmat, nullptr);
+		hr = pFrame->WritePixels(height, pitch, pitch * height, src);
 	}
 	if (SUCCEEDED(hr)) {
 		hr = pFrame->Commit();
