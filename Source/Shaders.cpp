@@ -243,7 +243,7 @@ HRESULT GetShaderConvertColor(
 			code.append("float4 color = tex.Sample(samp, input.Tex);\n");
 			if (fmtParams.cformat == CF_YUY2) {
 				code.append("if (fmod(input.Tex.x*w, 2) < 1.0) {\n"
-					"color = float4(color[0], color[1], color[3], 0);\n"
+					"color = float4(color[0], color[1], color[3], 1);\n"
 					"} else {\n");
 				if (chromaScaling == CHROMA_CatmullRom) {
 					code.append("float2 c0 = tex.Sample(samp, input.Tex, int2(-1, 0)).yw;\n"
@@ -254,7 +254,7 @@ HRESULT GetShaderConvertColor(
 				} else { // linear
 					code.append("float2 chroma = (color.yw + tex.Sample(samp, input.Tex, int2(1, 0)).yw) * 0.5;\n");
 				}
-				code.append("color = float4(color[2], chroma, 0);\n"
+				code.append("color = float4(color[2], chroma, 1);\n"
 					"}\n");
 			}
 			break;
@@ -309,7 +309,7 @@ HRESULT GetShaderConvertColor(
 					);
 				}
 			}
-			code.append("float4 color = float4(colorY, colorUV, 0);\n");
+			code.append("float4 color = float4(colorY, colorUV, 1);\n");
 			break;
 		case 3:
 			code.append(
@@ -376,7 +376,7 @@ HRESULT GetShaderConvertColor(
 					);
 				}
 			}
-			code.append("float4 color = float4(colorY, colorUV, 0);\n");
+			code.append("float4 color = float4(colorY, colorUV, 1);\n");
 			break;
 		}
 	}
@@ -411,7 +411,7 @@ HRESULT GetShaderConvertColor(
 			);
 			if (fmtParams.cformat == CF_YUY2) {
 				code.append("if (fmod(tex.x*w, 2) < 1.0) {\n"
-					"color = float4(color[2], color[1], color[3], 0);\n"
+					"color = float4(color[2], color[1], color[3], 1);\n"
 					"} else {\n");
 				if (chromaScaling == CHROMA_CatmullRom) {
 					code.append("float2 c0 = tex2D(s0, tex + float2(-dx, 0)).yw;\n"
@@ -422,7 +422,7 @@ HRESULT GetShaderConvertColor(
 				} else { // linear
 					code.append("float2 chroma = (color.yw + tex2D(s0, tex + float2(dx, 0)).yw) * 0.5;\n");
 				}
-				code.append("color = float4(color[0], chroma, 0);\n"
+				code.append("color = float4(color[0], chroma, 1);\n"
 					"}\n");
 			}
 			break;
@@ -479,7 +479,7 @@ HRESULT GetShaderConvertColor(
 					code.append("colorUV = tex2D(sUV, t1).rg;\n");
 				}
 			}
-			code.append("float4 color = float4(colorY, colorUV, 0);\n");
+			code.append("float4 color = float4(colorY, colorUV, 1);\n");
 			break;
 		case 3:
 			code.append(
@@ -536,7 +536,7 @@ HRESULT GetShaderConvertColor(
 					"colorUV[1] = tex2D(sV, t1).r;\n"
 				);
 			}
-			code.append("float4 color = float4(colorY, colorUV, 0);\n");
+			code.append("float4 color = float4(colorY, colorUV, 1);\n");
 			break;
 		}
 	}
