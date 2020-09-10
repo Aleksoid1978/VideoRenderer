@@ -4,6 +4,7 @@
 #define DISPLAY_LUMINANCE_PEAK 80.0
 
 #include "hdr_tone_mapping.hlsl"
+#include "colorspace_gamut_conversion.hlsl"
 
 inline float3 inverse_HLG(float3 x)
 {
@@ -26,6 +27,9 @@ inline float4 correct_HLG(float4 pixel)
 
     // HDR tone mapping
     pixel.rgb = ToneMappingHable(pixel.rgb);
+
+    // Colorspace Gamut Conversion
+    pixel.rgb = Colorspace_Gamut_Conversion_2020_to_709(pixel.rgb);
 
     // Peak luminance
     pixel.rgb = pixel.rgb * (SRC_LUMINANCE_PEAK / DISPLAY_LUMINANCE_PEAK);
