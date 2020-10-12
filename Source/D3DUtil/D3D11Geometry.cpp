@@ -231,6 +231,7 @@ void CD3D11Dots::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pPixelShader);
 	SAFE_RELEASE(m_pInputLayout);
 	SAFE_RELEASE(m_pVertexShader);
+	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pDeviceContext);
 	SAFE_RELEASE(m_pDevice);
 }
