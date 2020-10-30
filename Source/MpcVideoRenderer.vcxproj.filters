@@ -102,6 +102,9 @@
     <ClCompile Include="Utils\CPUInfo.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
+    <ClCompile Include="MediaSampleSideData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -196,6 +199,9 @@
     </ClInclude>
     <ClInclude Include="Utils\CPUInfo.h">
       <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaSampleSideData.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -85,6 +85,7 @@
     <ClCompile Include="DX9VideoProcessor.cpp" />
     <ClCompile Include="DXVA2VP.cpp" />
     <ClCompile Include="Helper.cpp" />
+    <ClCompile Include="MediaSampleSideData.cpp" />
     <ClCompile Include="PropPage.cpp" />
     <ClCompile Include="renbase2.cpp" />
     <ClCompile Include="Shaders.cpp" />
@@ -119,6 +120,7 @@
     <ClInclude Include="FrameStats.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="IVideoRenderer.h" />
+    <ClInclude Include="MediaSampleSideData.h" />
     <ClInclude Include="PropPage.h" />
     <ClInclude Include="renbase2.h" />
     <ClInclude Include="resource.h" />

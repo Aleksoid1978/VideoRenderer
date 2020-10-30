@@ -23,7 +23,7 @@
 #include "Helper.h"
 
 CCustomMediaSample::CCustomMediaSample(LPCTSTR pName, CBaseAllocator *pAllocator, HRESULT *phr, LPBYTE pBuffer, LONG length)
-	: CMediaSample(pName, pAllocator, phr, pBuffer, length)
+	: CMediaSampleSideData(pName, pAllocator, phr, pBuffer, length)
 {
 }
 

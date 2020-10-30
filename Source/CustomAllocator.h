@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2019 see Authors.txt
+* (C) 2018-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -20,11 +20,15 @@
 
 #pragma once
 
-class CCustomMediaSample : public CMediaSample
+#include "MediaSampleSideData.h"
+
+class CCustomMediaSample : public CMediaSampleSideData
 {
 public:
-	CCustomMediaSample(LPCTSTR pName, CBaseAllocator *pAllocator, HRESULT *phr, LPBYTE pBuffer = NULL, LONG length = 0);
+	CCustomMediaSample(LPCTSTR pName, CBaseAllocator *pAllocator, HRESULT *phr, LPBYTE pBuffer, LONG length);
 	~CCustomMediaSample() = default;
+
+	STDMETHODIMP_(ULONG) AddRef() { return __super::AddRef(); }
 };
 
 class CCustomAllocator : public CMemAllocator
