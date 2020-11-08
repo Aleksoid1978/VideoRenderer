@@ -582,7 +582,7 @@ HRESULT SaveToBMP(BYTE* src, const UINT src_pitch, const UINT width, const UINT 
 
 	if (dib) {
 		BITMAPINFOHEADER* bih = (BITMAPINFOHEADER*)dib.get();
-		memset(bih, 0, sizeof(BITMAPINFOHEADER));
+		ZeroMemory(bih, sizeof(BITMAPINFOHEADER));
 		bih->biSize = sizeof(BITMAPINFOHEADER);
 		bih->biWidth = width;
 		bih->biHeight = -(LONG)height;

@@ -2160,7 +2160,7 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	const CRect imageRect(0, 0, w, h);
 
 	BITMAPINFOHEADER* pBIH = (BITMAPINFOHEADER*)pDIBImage;
-	memset(pBIH, 0, sizeof(BITMAPINFOHEADER));
+	ZeroMemory(pBIH, sizeof(BITMAPINFOHEADER));
 	pBIH->biSize      = sizeof(BITMAPINFOHEADER);
 	pBIH->biWidth     = w;
 	pBIH->biHeight    = h;

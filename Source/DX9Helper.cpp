@@ -1,5 +1,5 @@
 /*
-* (C) 2019 see Authors.txt
+* (C) 2019-2020 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -126,7 +126,7 @@ HRESULT DumpDX9Surface(IDirect3DSurface9* pSurface, const wchar_t* filename)
 	}
 
 	BITMAPINFOHEADER* bih = (BITMAPINFOHEADER*)dib.get();
-	memset(bih, 0, sizeof(BITMAPINFOHEADER));
+	ZeroMemory(bih, sizeof(BITMAPINFOHEADER));
 	bih->biSize = sizeof(BITMAPINFOHEADER);
 	bih->biWidth = desc.Width;
 	bih->biHeight = desc.Height;
