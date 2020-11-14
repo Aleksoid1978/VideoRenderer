@@ -84,6 +84,16 @@ DEFINE_GUID(MEDIASUBTYPE_LAV_RAWVIDEO, 0xd80fa03c, 0x35c1, 0x4fa1, 0x8c, 0x8e, 0
 #define VIDEOTRANSFUNC_HLG        16
 #define VIDEOTRANSFUNC_10_rel     17
 
+// A byte that is not initialized to std::vector when using the resize method.
+struct NoInitByte
+{
+	uint8_t value;
+	NoInitByte() {
+		// do nothing
+		static_assert(sizeof(*this) == sizeof (value), "invalid size");
+	}
+};
+
 template <typename T>
 // If the specified value is out of range, set to default values.
 inline T discard(T const& val, T const& def, T const& lo, T const& hi)
