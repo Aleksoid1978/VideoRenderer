@@ -462,4 +462,3 @@ HRESULT CDXVA2VP::Process(IDirect3DSurface9* pRenderTarget, const DXVA2_SampleFo
 
 	return hr;
 }
-

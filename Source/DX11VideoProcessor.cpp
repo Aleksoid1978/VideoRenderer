@@ -345,8 +345,8 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr
 
 	m_hDXGILib = LoadLibraryW(L"dxgi.dll");
 	if (!m_hDXGILib) {
+		hr = HRESULT_FROM_WIN32(GetLastError());
 		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : failed to load dxgi.dll");
-		hr = E_FAIL;
 		return;
 	}
 	m_fnCreateDXGIFactory1 = (PFNCREATEDXGIFACTORY1)GetProcAddress(m_hDXGILib, "CreateDXGIFactory1");
@@ -363,8 +363,8 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr
 
 	m_hD3D11Lib = LoadLibraryW(L"d3d11.dll");
 	if (!m_hD3D11Lib) {
+		hr = HRESULT_FROM_WIN32(GetLastError());
 		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : failed to load d3d11.dll");
-		hr = E_FAIL;
 		return;
 	}
 	m_fnD3D11CreateDevice = (PFN_D3D11_CREATE_DEVICE)GetProcAddress(m_hD3D11Lib, "D3D11CreateDevice");
