@@ -1,5 +1,5 @@
 @ECHO OFF
-REM (C) 2018-2019 see Authors.txt
+REM (C) 2018-2020 see Authors.txt
 REM
 REM This file is part of MPC-BE.
 REM
@@ -78,11 +78,17 @@ FOR /F "tokens=3,4 delims= " %%A IN (
   'FINDSTR /I /L /C:"define MPCVR_REV_HASH" "revision.h"') DO (SET "REVHASH=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
   'FINDSTR /I /L /C:"define MPCVR_REV_NUM" "revision.h"') DO (SET "REVNUM=%%A")
+FOR /F "tokens=3,4 delims= " %%A IN (
+  'FINDSTR /I /L /C:"define MPCVR_REV_BRANCH" "revision.h"') DO (SET "REVBRANCH=%%A")
 
 IF /I "%RELEASE%" == "1" (
   SET "PCKG_NAME=MPCVideoRenderer-v%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%%SUFFIX%"
 ) ELSE (
-  SET "PCKG_NAME=MPCVideoRenderer-v%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%_git%REVDATE%-%REVHASH%%SUFFIX%"
+  IF /I "%REVBRANCH%" == "master" (
+    SET "PCKG_NAME=MPCVideoRenderer-v%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%_git%REVDATE%-%REVHASH%%SUFFIX%"
+  ) ELSE (
+    SET "PCKG_NAME=MPCVideoRenderer-v%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%.%REVBRANCH%_git%REVDATE%-%REVHASH%%SUFFIX%"
+  )
 )
 
 CALL :SubDetectSevenzipPath
