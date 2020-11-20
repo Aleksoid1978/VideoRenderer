@@ -59,12 +59,12 @@ std::wstring MediaType2Str(const CMediaType *pmt)
 		return L"no media type";
 	}
 
-	const auto FmtConvParams = GetFmtConvParams(pmt->subtype);
+	const auto& FmtParams = GetFmtConvParams(pmt->subtype);
 
 	std::wstring str(L"MajorType : ");
 	str.append((pmt->majortype == MEDIATYPE_Video) ? L"Video" : L"unknown");
 
-	str += fmt::format(L"\nSubType   : {}", FmtConvParams.str);
+	str += fmt::format(L"\nSubType   : {}", FmtParams.str);
 
 	str.append(L"\nFormatType: ");
 	if (pmt->formattype == FORMAT_VideoInfo2) {

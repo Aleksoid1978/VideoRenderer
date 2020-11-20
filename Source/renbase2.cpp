@@ -770,7 +770,7 @@ BOOL CBaseVideoRenderer2::ScheduleSample(IMediaSample *pMediaSample)
 		if (m_pClock && SUCCEEDED(m_pClock->GetTime(&StartTime))) {
 			StartTime -= m_tStart;
 		} else {
-			StartTime = m_tRenderStart * 10000;
+			StartTime = m_tRenderStart * 10000ll;
 		}
 	}
 	m_FrameStats.Add(StartTime); // do it for every input frame

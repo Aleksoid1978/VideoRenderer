@@ -892,8 +892,8 @@ void CDX9VideoProcessor::SetGraphSize()
 
 BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 {
-	const auto FmtConvParams = GetFmtConvParams(pmt->subtype);
-	if (FmtConvParams.DXVA2Format == D3DFMT_UNKNOWN && FmtConvParams.D3DFormat == D3DFMT_UNKNOWN) {
+	const auto& FmtParams = GetFmtConvParams(pmt->subtype);
+	if (FmtParams.DXVA2Format == D3DFMT_UNKNOWN && FmtParams.D3DFormat == D3DFMT_UNKNOWN) {
 		return FALSE;
 	}
 
@@ -906,10 +906,10 @@ BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 		return FALSE;
 	}
 
-	if (FmtConvParams.Subsampling == 420 && ((pBIH->biWidth & 1) || (pBIH->biHeight & 1))) {
+	if (FmtParams.Subsampling == 420 && ((pBIH->biWidth & 1) || (pBIH->biHeight & 1))) {
 		return FALSE;
 	}
-	if (FmtConvParams.Subsampling == 422 && (pBIH->biWidth & 1)) {
+	if (FmtParams.Subsampling == 422 && (pBIH->biWidth & 1)) {
 		return FALSE;
 	}
 
@@ -978,9 +978,9 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	ReleaseVP();
 
-	auto FmtConvParams = GetFmtConvParams(pmt->subtype);
+	auto FmtParams = GetFmtConvParams(pmt->subtype);
 	bool disableDXVA2 = false;
-	switch (FmtConvParams.cformat) {
+	switch (FmtParams.cformat) {
 	case CF_NV12: disableDXVA2 = !m_VPFormats.bNV12; break;
 	case CF_P010:
 	case CF_P016: disableDXVA2 = !m_VPFormats.bP01x;  break;
@@ -988,7 +988,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	default:      disableDXVA2 = !m_VPFormats.bOther; break;
 	}
 	if (disableDXVA2) {
-		FmtConvParams.DXVA2Format = D3DFMT_UNKNOWN;
+		FmtParams.DXVA2Format = D3DFMT_UNKNOWN;
 	}
 	const GUID SubType = pmt->subtype;
 	const BITMAPINFOHEADER* pBIH = nullptr;
@@ -1000,7 +1000,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_srcRect = vih2->rcSource;
 		m_srcAspectRatioX = vih2->dwPictAspectRatioX;
 		m_srcAspectRatioY = vih2->dwPictAspectRatioY;
-		if (FmtConvParams.CSType == CS_YUV && (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT))) {
+		if (FmtParams.CSType == CS_YUV && (vih2->dwControlFlags & (AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT))) {
 			m_decExFmt.value = vih2->dwControlFlags;
 			m_decExFmt.SampleFormat = AMCONTROL_USED | AMCONTROL_COLORINFO_PRESENT; // ignore other flags
 		}
@@ -1027,9 +1027,9 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
 	}
 
-	m_srcLines = biHeight * FmtConvParams.PitchCoeff / 2;
-	m_srcPitch = biWidth * FmtConvParams.Packsize;
-	switch (FmtConvParams.cformat) {
+	m_srcLines = biHeight * FmtParams.PitchCoeff / 2;
+	m_srcPitch = biWidth * FmtParams.Packsize;
+	switch (FmtParams.cformat) {
 	case CF_Y8:
 	case CF_NV12:
 	case CF_RGB24:
@@ -1056,7 +1056,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_srcRectWidth  = m_srcRect.Width();
 	m_srcRectHeight = m_srcRect.Height();
 
-	m_srcExFmt = SpecifyExtendedFormat(m_decExFmt, FmtConvParams, m_srcRectWidth, m_srcRectHeight);
+	m_srcExFmt = SpecifyExtendedFormat(m_decExFmt, FmtParams, m_srcRectWidth, m_srcRectHeight);
 
 	const auto frm_gcd = std::gcd(m_srcRectWidth, m_srcRectHeight);
 	const auto srcFrameARX = m_srcRectWidth / frm_gcd;
@@ -1083,7 +1083,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	switch (m_iTexFormat) {
 	case TEXFMT_AUTOINT:
-		m_InternalTexFmt = (FmtConvParams.CDepth > 8) ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
+		m_InternalTexFmt = (FmtParams.CDepth > 8) ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
 		break;
 	case TEXFMT_8INT:    m_InternalTexFmt = D3DFMT_X8R8G8B8;      break;
 	case TEXFMT_10INT:   m_InternalTexFmt = D3DFMT_A2R10G10B10;   break;
@@ -1093,7 +1093,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	// DXVA2 Video Processor
-	if (FmtConvParams.DXVA2Format != D3DFMT_UNKNOWN && S_OK == InitializeDXVA2VP(FmtConvParams, origW, origH)) {
+	if (FmtParams.DXVA2Format != D3DFMT_UNKNOWN && S_OK == InitializeDXVA2VP(FmtParams, origW, origH)) {
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_ST2084));
 			m_strCorrection = L"ST 2084 correction";
@@ -1120,7 +1120,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	ReleaseVP();
 
 	// Tex Video Processor
-	if (FmtConvParams.D3DFormat != D3DFMT_UNKNOWN && S_OK == InitializeTexVP(FmtConvParams, origW, origH)) {
+	if (FmtParams.D3DFormat != D3DFMT_UNKNOWN && S_OK == InitializeTexVP(FmtParams, origW, origH)) {
 		SetShaderConvertColorParams();
 		UpdateTexures(m_videoRect.Size());
 		UpdatePostScaleTexures(m_windowRect.Size());
