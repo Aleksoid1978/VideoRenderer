@@ -19,6 +19,7 @@
  */
 
 #include "stdafx.h"
+#include <atomic>
 #include <evr.h> // for MR_VIDEO_ACCELERATION_SERVICE, because the <mfapi.h> does not contain it
 #include <Mferror.h>
 #include "Helper.h"
@@ -48,7 +49,7 @@
 #define OPT_SwapEffect           L"SwapEffect"
 #define OPT_ExclusiveFullscreen  L"ExclusiveFullscreen"
 
-static int g_nInstance = 0;
+static std::atomic_int g_nInstance = 0;
 static const wchar_t g_szClassName[] = L"VRWindow";
 
 LPCWSTR g_pszOldParentWndProc = L"OldParentWndProc";
