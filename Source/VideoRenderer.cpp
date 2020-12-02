@@ -48,10 +48,12 @@
 #define OPT_SwapEffect           L"SwapEffect"
 #define OPT_ExclusiveFullscreen  L"ExclusiveFullscreen"
 
+static int g_nInstance = 0;
 static const wchar_t g_szClassName[] = L"VRWindow";
 
-LPCTSTR g_pszOldParentWndProc = L"OldParentWndProc";
-LPCTSTR g_pszThis = L"This";
+LPCWSTR g_pszOldParentWndProc = L"OldParentWndProc";
+LPCWSTR g_pszThis = L"This";
+
 static void RemoveParentWndProc(HWND hWnd)
 {
 	DLog(L"RemoveParentWndProc()");
@@ -110,6 +112,13 @@ static LRESULT CALLBACK ParentWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM
 CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	: CBaseVideoRenderer2(__uuidof(this), L"MPC Video Renderer", pUnk, phr)
 {
+	g_nInstance++; // always increment this counter in the constructor
+
+	if (g_nInstance > 1) {
+		*phr = E_ABORT;
+		return;
+	}
+
 	DLog(L"CMpcVideoRenderer::CMpcVideoRenderer()");
 	DLog(L"Windows {}", GetWindowsVersion());
 	DLog(GetNameAndVersion());
@@ -260,6 +269,8 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 	}
 
 	SAFE_DELETE(m_VideoProcessor);
+
+	g_nInstance--; // always decrement this counter in the destructor
 }
 
 void CMpcVideoRenderer::NewSegment(REFERENCE_TIME startTime)
