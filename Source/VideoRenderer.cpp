@@ -112,14 +112,15 @@ static LRESULT CALLBACK ParentWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM
 CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	: CBaseVideoRenderer2(__uuidof(this), L"MPC Video Renderer", pUnk, phr)
 {
-	g_nInstance++; // always increment this counter in the constructor
+	DLog(L"CMpcVideoRenderer::CMpcVideoRenderer()");
 
-	if (g_nInstance > 1) {
+	auto nPrevInstance = g_nInstance++; // always increment g_nInstance in the constructor
+	if (nPrevInstance > 0) {
 		*phr = E_ABORT;
+		DLog(L"Previous copy of CMpcVideoRenderer found! Initialization aborted.");
 		return;
 	}
 
-	DLog(L"CMpcVideoRenderer::CMpcVideoRenderer()");
 	DLog(L"Windows {}", GetWindowsVersion());
 	DLog(GetNameAndVersion());
 
@@ -270,7 +271,7 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 
 	SAFE_DELETE(m_VideoProcessor);
 
-	g_nInstance--; // always decrement this counter in the destructor
+	g_nInstance--; // always decrement g_nInstance in the destructor
 }
 
 void CMpcVideoRenderer::NewSegment(REFERENCE_TIME startTime)
