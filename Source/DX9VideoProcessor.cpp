@@ -117,10 +117,9 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, const RECT* pSrc, const RECT* pDst, 
 
 	CRect src(*pSrc), dst(*pDst);
 
-	HRESULT hr;
-
 	D3DSURFACE_DESC desc;
-	if (FAILED(pTexture->GetLevelDesc(0, &desc))) {
+	HRESULT hr = pTexture->GetLevelDesc(0, &desc);
+	if (FAILED(hr)) {
 		return E_FAIL;
 	}
 
@@ -1434,8 +1433,6 @@ HRESULT CDX9VideoProcessor::FillBlack()
 	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
 	m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
 
-	hr = m_pD3DDevEx->EndScene();
-
 	if (m_bShowStats) {
 		hr = DrawStats(pBackBuffer);
 	}
@@ -1452,6 +1449,8 @@ HRESULT CDX9VideoProcessor::FillBlack()
 		};
 		hr = AlphaBlt(m_pD3DDevEx, &m_AlphaBitmapRectSrc, &rDst, m_TexAlphaBitmap.pTexture, D3DTEXF_LINEAR);
 	}
+
+	hr = m_pD3DDevEx->EndScene();
 
 	const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 	const CRect rDstPri(m_windowRect);
