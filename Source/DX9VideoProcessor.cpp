@@ -2582,10 +2582,8 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 
 	HRESULT hr = S_OK;
 	hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-	hr = m_pD3DDevEx->BeginScene();
 
 	m_StatsBackground.Draw();
-
 	hr = m_Font3D.Draw2DText(m_StatsTextPoint.x, m_StatsTextPoint.y, D3DCOLOR_XRGB(255, 255, 255), str.c_str());
 	static int col = m_StatsRect.right;
 	if (--col < m_StatsRect.left) {
@@ -2599,13 +2597,14 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 		m_Lines.Draw();
 
 		m_SyncLine.ClearPoints();
-		m_SyncLine.AddGFPoints(m_GraphRect.left, m_Xstep, m_Yaxis, m_Yscale,
-			m_Syncs.Data(), m_Syncs.OldestIndex(), m_Syncs.Size(), D3DCOLOR_XRGB(100, 200, 100));
+		m_SyncLine.AddGFPoints(
+			m_GraphRect.left, m_Xstep,
+			m_Yaxis, m_Yscale,
+			m_Syncs.Data(), m_Syncs.OldestIndex(), m_Syncs.Size(),
+			D3DCOLOR_XRGB(100, 200, 100));
 		m_SyncLine.UpdateVertexBuffer();
 		m_SyncLine.Draw();
 	}
-
-	m_pD3DDevEx->EndScene();
 
 	return hr;
 }
