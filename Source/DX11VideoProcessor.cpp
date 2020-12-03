@@ -1758,6 +1758,24 @@ HRESULT CDX11VideoProcessor::FillBlack()
 	float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
 
+	if (m_bShowStats) {
+		hr = DrawStats(pBackBuffer);
+	}
+
+	if (m_bAlphaBitmapEnable) {
+		D3D11_TEXTURE2D_DESC desc;
+		pBackBuffer->GetDesc(&desc);
+		D3D11_VIEWPORT VP = {
+			m_AlphaBitmapNRectDest.left * desc.Width,
+			m_AlphaBitmapNRectDest.top * desc.Height,
+			(m_AlphaBitmapNRectDest.right - m_AlphaBitmapNRectDest.left) * desc.Width,
+			(m_AlphaBitmapNRectDest.bottom - m_AlphaBitmapNRectDest.top) * desc.Height,
+			0.0f,
+			1.0f
+		};
+		hr = AlphaBlt(m_TexAlphaBitmap.pShaderResource, pBackBuffer, m_pAlphaBitmapVertex, &VP, m_pSamplerLinear);
+	}
+
 	hr = m_pDXGISwapChain1->Present(1, 0);
 
 	pRenderTargetView->Release();

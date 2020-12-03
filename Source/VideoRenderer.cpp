@@ -1287,7 +1287,7 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 		m_VideoProcessor->SetShowStats(m_Sets.bShowStats);
 
 		SaveSettings();
-		if (m_filterState == State_Paused) {
+		if (m_filterState != State_Running) {
 			Redraw();
 		}
 		return S_OK;

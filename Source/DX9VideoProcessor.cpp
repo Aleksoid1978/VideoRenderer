@@ -1436,6 +1436,23 @@ HRESULT CDX9VideoProcessor::FillBlack()
 
 	hr = m_pD3DDevEx->EndScene();
 
+	if (m_bShowStats) {
+		hr = DrawStats(pBackBuffer);
+	}
+
+	if (m_bAlphaBitmapEnable) {
+		D3DSURFACE_DESC desc;
+		pBackBuffer->GetDesc(&desc);
+		const SIZE windowSize = m_windowRect.Size();
+		RECT rDst = {
+			m_AlphaBitmapNRectDest.left * windowSize.cx,
+			m_AlphaBitmapNRectDest.top * windowSize.cy,
+			m_AlphaBitmapNRectDest.right * windowSize.cx,
+			m_AlphaBitmapNRectDest.bottom * windowSize.cy
+		};
+		hr = AlphaBlt(m_pD3DDevEx, &m_AlphaBitmapRectSrc, &rDst, m_TexAlphaBitmap.pTexture, D3DTEXF_LINEAR);
+	}
+
 	const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 	const CRect rDstPri(m_windowRect);
 
