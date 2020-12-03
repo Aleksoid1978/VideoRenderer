@@ -49,6 +49,7 @@ std::wstring HR2Str(const HRESULT hr)
 	switch (hr) {
 		// common HRESULT values https://docs.microsoft.com/en-us/windows/desktop/seccrypto/common-hresult-values
 		UNPACK_VALUE(S_OK);
+#ifdef _WINERROR_
 		UNPACK_VALUE(S_FALSE);
 		UNPACK_VALUE(E_NOTIMPL);
 		UNPACK_VALUE(E_NOINTERFACE);
@@ -65,6 +66,7 @@ std::wstring HR2Str(const HRESULT hr)
 		UNPACK_HR_WIN32(ERROR_MOD_NOT_FOUND);
 		UNPACK_HR_WIN32(ERROR_INVALID_WINDOW_HANDLE);
 		UNPACK_HR_WIN32(ERROR_CLASS_ALREADY_EXISTS);
+#endif
 #ifdef _D3D9_H_
 		// some D3DERR values https://docs.microsoft.com/en-us/windows/desktop/direct3d9/d3derr
 		UNPACK_VALUE(S_PRESENT_OCCLUDED);
@@ -77,6 +79,7 @@ std::wstring HR2Str(const HRESULT hr)
 		UNPACK_VALUE(D3DERR_INVALIDCALL);
 		UNPACK_VALUE(D3DERR_OUTOFVIDEOMEMORY);
 		UNPACK_VALUE(D3DERR_WASSTILLDRAWING);
+		UNPACK_VALUE(D3DERR_NOTAVAILABLE);
 #endif
 	default:
 		str = fmt::format(L"{:#010x}", (uint32_t)hr);
