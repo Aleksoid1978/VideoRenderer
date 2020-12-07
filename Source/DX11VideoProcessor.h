@@ -22,6 +22,7 @@
 
 #include <DXGI1_2.h>
 #include <dxva2api.h>
+#include <dxgi1_5.h>
 #include <strmif.h>
 #include "IVideoRenderer.h"
 #include "DX11Helper.h"
@@ -87,6 +88,8 @@ private:
 
 	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
+	CComPtr<IDXGISwapChain4> m_pDXGISwapChain4;
+	DXGI_COLOR_SPACE_TYPE m_currentSwapChainColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 
 	// Input parameters
 	DXGI_FORMAT m_srcDXGIFormat = DXGI_FORMAT_UNKNOWN;
@@ -129,6 +132,7 @@ private:
 
 	bool m_bDecoderDevice = false;
 	bool m_bIsFullscreen = false;
+	bool m_bHdrSupport = false;
 
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr);

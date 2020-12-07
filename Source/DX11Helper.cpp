@@ -22,6 +22,7 @@
 
 #include "stdafx.h"
 #include <d3d11.h>
+#include <dxgi1_6.h>
 #include "Helper.h"
 #include "DX11Helper.h"
 
@@ -79,9 +80,10 @@ D3D11_TEXTURE2D_DESC CreateTex2DDesc(const DXGI_FORMAT format, const UINT width,
 	return desc;
 }
 
-UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAdapter)
+UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAdapter, bool& bHdrSupport)
 {
 	*ppDXGIAdapter = nullptr;
+	bHdrSupport = false;
 
 	CheckPointer(pDXGIFactory, 0);
 
@@ -96,6 +98,14 @@ UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAda
 			DXGI_OUTPUT_DESC desc = {};
 			if (SUCCEEDED(pDXGIOutput->GetDesc(&desc))) {
 				if (desc.Monitor == hMonitor) {
+					CComPtr<IDXGIOutput6> pDXGIOutput6;
+					if (SUCCEEDED(pDXGIOutput->QueryInterface(IID_PPV_ARGS(&pDXGIOutput6)))) {
+						DXGI_OUTPUT_DESC1 desc1 = {};
+						if (SUCCEEDED(pDXGIOutput6->GetDesc1(&desc1))) {
+							bHdrSupport = (desc1.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020 || desc1.ColorSpace == DXGI_COLOR_SPACE_RGB_STUDIO_G2084_NONE_P2020);
+						}
+					}
+
 					SAFE_RELEASE(pDXGIOutput);
 					*ppDXGIAdapter = pDXGIAdapter;
 					return i;

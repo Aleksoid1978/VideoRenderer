@@ -108,6 +108,7 @@ HRESULT GetShaderConvertColor(
 	const FmtConvParams_t& fmtParams,
 	const DXVA2_ExtendedFormat exFmt,
 	const int chromaScaling,
+	const bool bHdrSupport,
 	ID3DBlob** ppCode)
 {
 	DLog(L"GetShaderConvertColor() started for {} {}x{} extfmt:{:#010x} chroma:{}", fmtParams.str, texW, texH, exFmt.value, chromaScaling);
@@ -117,7 +118,7 @@ HRESULT GetShaderConvertColor(
 	LPVOID data;
 	DWORD size;
 
-	bool isHDR = (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG);
+	bool isHDR = ((exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && !bHdrSupport) || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG);
 
 	if (isHDR) {
 		hr = GetDataFromResource(data, size, IDF_HLSL_HDR_TONE_MAPPING);

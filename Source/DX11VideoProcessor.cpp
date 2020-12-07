@@ -384,6 +384,7 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 	if (m_pDXGISwapChain1) {
 		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
 	}
+	m_pDXGISwapChain4.Release();
 	m_pDXGISwapChain1.Release();
 	m_pDXGIFactory2.Release();
 
@@ -409,7 +410,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	m_hWnd = hwnd;
 
 	IDXGIAdapter* pDXGIAdapter = nullptr;
-	const UINT currentAdapter = GetAdapter(hwnd, m_pDXGIFactory1, &pDXGIAdapter);
+	const UINT currentAdapter = GetAdapter(hwnd, m_pDXGIFactory1, &pDXGIAdapter, m_bHdrSupport);
 	CheckPointer(pDXGIAdapter, E_FAIL);
 	if (m_nCurrentAdapter == currentAdapter) {
 		if (hwnd) {
@@ -447,6 +448,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	if (m_pDXGISwapChain1) {
 		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
 	}
+	m_pDXGISwapChain4.Release();
 	m_pDXGISwapChain1.Release();
 	m_pDXGIFactory2.Release();
 	ReleaseDevice();
@@ -769,18 +771,19 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	if (m_pDXGISwapChain1) {
 		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
 	}
+	m_pDXGISwapChain4.Release();
 	m_pDXGISwapChain1.Release();
 	m_pDXGIFactory2.Release();
 	ReleaseDevice();
 
 	CheckPointer(pDevice, E_POINTER);
 
-	HRESULT hr = pDevice->QueryInterface (__uuidof(ID3D11Device1), (void**)&m_pDevice);
+	HRESULT hr = pDevice->QueryInterface(IID_PPV_ARGS(&m_pDevice));
 	if (FAILED(hr)) {
 		return hr;
 	}
 	if (pContext) {
-		hr = pContext->QueryInterface (__uuidof(ID3D11DeviceContext1), (void**)&m_pDeviceContext);
+		hr = pContext->QueryInterface(IID_PPV_ARGS(&m_pDeviceContext));
 		if (FAILED(hr)) {
 			return hr;
 		}
@@ -973,7 +976,10 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	if (m_pDXGISwapChain1) {
 		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
 	}
+	m_pDXGISwapChain4.Release();
 	m_pDXGISwapChain1.Release();
+
+	const auto format = (m_bHdrSupport && m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
 	HRESULT hr = S_OK;
 	m_bIsFullscreen = m_pFilter->m_bIsFullscreen;
@@ -985,12 +991,12 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		DXGI_SWAP_CHAIN_DESC1 desc1 = {};
 		desc1.Width = rc.Width();
 		desc1.Height = rc.Height();
-		desc1.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+		desc1.Format = format;
 		desc1.SampleDesc.Count = 1;
 		desc1.SampleDesc.Quality = 0;
 		desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		if(m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) {
-			desc1.BufferCount = 2;
+			desc1.BufferCount = format == DXGI_FORMAT_R10G10B10A2_UNORM ? 6 : 2;
 			desc1.Scaling = DXGI_SCALING_NONE;
 			desc1.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 		} else { // default SWAPEFFECT_Discard
@@ -1012,12 +1018,12 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		DXGI_SWAP_CHAIN_DESC1 desc1 = {};
 		desc1.Width = m_windowRect.Width();
 		desc1.Height = m_windowRect.Height();
-		desc1.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+		desc1.Format = format;
 		desc1.SampleDesc.Count = 1;
 		desc1.SampleDesc.Quality = 0;
 		desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		if (m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) {
-			desc1.BufferCount = 2;
+			desc1.BufferCount = format == DXGI_FORMAT_R10G10B10A2_UNORM ? 6 : 2;
 			desc1.Scaling = DXGI_SCALING_NONE;
 			desc1.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 		} else { // default SWAPEFFECT_Discard
@@ -1030,6 +1036,9 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	}
 
 	if (m_pDXGISwapChain1) {
+		m_currentSwapChainColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+		m_pDXGISwapChain1->QueryInterface(IID_PPV_ARGS(&m_pDXGISwapChain4));
+
 		m_pShaderResourceSubPic.Release();
 		m_pTextureSubPic.Release();
 
@@ -1235,7 +1244,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		// D3D11 VP does not work correctly if RGB32 with odd frame width (source or target) on Nvidia adapters
 
 		if (S_OK == InitializeD3D11VP(FmtParams, origW, origH)) {
-			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && !m_bHdrSupport) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_ST2084));
 				m_strCorrection = L"ST 2084 correction";
 			}
@@ -1730,6 +1739,22 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	uint64_t tick3 = GetPreciseTick();
 	m_RenderStats.paintticks = tick3 - tick1;
 
+	if (m_pDXGISwapChain4
+			&& m_bHdrSupport && m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+		const DXGI_COLOR_SPACE_TYPE colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
+		if (m_currentSwapChainColorSpace != colorSpace) {
+			UINT colorSpaceSupport = 0;
+			if (SUCCEEDED(m_pDXGISwapChain4->CheckColorSpaceSupport(colorSpace, &colorSpaceSupport))
+					&& (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) == DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) {
+				hr = m_pDXGISwapChain4->SetColorSpace1(colorSpace);
+				DLogIf(L"CCDX11VideoProcessor::Render() : SetColorSpace1() failed with error {}", HR2Str(hr));
+				if (SUCCEEDED(hr)) {
+					m_currentSwapChainColorSpace = colorSpace;
+				}
+			}
+		}
+	}
+
 	hr = m_pDXGISwapChain1->Present(1, 0);
 	m_RenderStats.presentticks = GetPreciseTick() - tick3;
 
@@ -1844,7 +1869,7 @@ HRESULT CDX11VideoProcessor::UpdateChromaScalingShader()
 	m_pPSConvertColor.Release();
 	ID3DBlob* pShaderCode = nullptr;
 
-	HRESULT hr = GetShaderConvertColor(true, m_TexSrcVideo.desc.Width, m_TexSrcVideo.desc.Height, m_srcRect, m_srcParams, m_srcExFmt, m_iChromaScaling, &pShaderCode);
+	HRESULT hr = GetShaderConvertColor(true, m_TexSrcVideo.desc.Width, m_TexSrcVideo.desc.Height, m_srcRect, m_srcParams, m_srcExFmt, m_iChromaScaling, m_bHdrSupport, &pShaderCode);
 	if (S_OK == hr) {
 		hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
 		pShaderCode->Release();
@@ -2455,6 +2480,9 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
 		m_strStatsStatic1 = fmt::format(L"MPC VR {}, Direct3D 11", _CRT_WIDE(MPCVR_VERSION_STR));
+		if (m_bHdrSupport) {
+			m_strStatsStatic1 += L", Windows HDR passthrough";
+		}
 
 		m_strStatsStatic2.assign(m_srcParams.str);
 		if (m_srcWidth != m_srcRectWidth || m_srcHeight != m_srcRectHeight) {

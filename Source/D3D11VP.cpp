@@ -175,9 +175,9 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 	}
 #ifdef _DEBUG
 	std::wstring dbgstr = L"VideoProcessorCaps:";
-	dbgstr +=fmt::format(L"\n  Device YCbCr matrix conversion: {}", (m_VPCaps.DeviceCaps  & D3D11_VIDEO_PROCESSOR_DEVICE_CAPS_YCbCr_MATRIX_CONVERSION) ? L"supported" : L"NOT supported");
-	dbgstr +=fmt::format(L"\n  Device YUV nominal range      : {}", (m_VPCaps.DeviceCaps  & D3D11_VIDEO_PROCESSOR_DEVICE_CAPS_NOMINAL_RANGE) ? L"supported" : L"NOT supported");
-	dbgstr +=fmt::format(L"\n  Feature LEGACY                : {}", (m_VPCaps.FeatureCaps & D3D11_VIDEO_PROCESSOR_FEATURE_CAPS_LEGACY) ? L"Yes" : L"No");
+	dbgstr += fmt::format(L"\n  Device YCbCr matrix conversion: {}", (m_VPCaps.DeviceCaps  & D3D11_VIDEO_PROCESSOR_DEVICE_CAPS_YCbCr_MATRIX_CONVERSION) ? L"supported" : L"NOT supported");
+	dbgstr += fmt::format(L"\n  Device YUV nominal range      : {}", (m_VPCaps.DeviceCaps  & D3D11_VIDEO_PROCESSOR_DEVICE_CAPS_NOMINAL_RANGE) ? L"supported" : L"NOT supported");
+	dbgstr += fmt::format(L"\n  Feature LEGACY                : {}", (m_VPCaps.FeatureCaps & D3D11_VIDEO_PROCESSOR_FEATURE_CAPS_LEGACY) ? L"Yes" : L"No");
 	dbgstr.append(L"\n  Filter capabilities           :");
 	if (m_VPCaps.FilterCaps & D3D11_VIDEO_PROCESSOR_FILTER_CAPS_BRIGHTNESS) { dbgstr.append(L" Brightness,"); }
 	if (m_VPCaps.FilterCaps & D3D11_VIDEO_PROCESSOR_FILTER_CAPS_CONTRAST)   { dbgstr.append(L" Contrast,"); }
@@ -188,8 +188,8 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 	if (m_VPCaps.FilterCaps & D3D11_VIDEO_PROCESSOR_FILTER_CAPS_ANAMORPHIC_SCALING) { dbgstr.append(L" Anamorphic scaling,"); }
 	if (m_VPCaps.FilterCaps & D3D11_VIDEO_PROCESSOR_FILTER_CAPS_STEREO_ADJUSTMENT)  { dbgstr.append(L" Stereo adjustment"); }
 	str_trim_end(dbgstr, ',');
-	dbgstr +=fmt::format(L"\n  InputFormat interlaced RGB    : {}", (m_VPCaps.InputFormatCaps & D3D11_VIDEO_PROCESSOR_FORMAT_CAPS_RGB_INTERLACED) ? L"supported" : L"NOT supported");
-	dbgstr +=fmt::format(L"\n  InputFormat RGB ProcAmp       : {}", (m_VPCaps.InputFormatCaps & D3D11_VIDEO_PROCESSOR_FORMAT_CAPS_RGB_PROCAMP) ? L"supported" : L"NOT supported");
+	dbgstr += fmt::format(L"\n  InputFormat interlaced RGB    : {}", (m_VPCaps.InputFormatCaps & D3D11_VIDEO_PROCESSOR_FORMAT_CAPS_RGB_INTERLACED) ? L"supported" : L"NOT supported");
+	dbgstr += fmt::format(L"\n  InputFormat RGB ProcAmp       : {}", (m_VPCaps.InputFormatCaps & D3D11_VIDEO_PROCESSOR_FORMAT_CAPS_RGB_PROCAMP) ? L"supported" : L"NOT supported");
 	dbgstr.append(L"\n  AutoStream image processing   :");
 	if (m_VPCaps.AutoStreamCaps & D3D11_VIDEO_PROCESSOR_AUTO_STREAM_CAPS_DENOISE)             { dbgstr.append(L" Denoise,"); }
 	if (m_VPCaps.AutoStreamCaps & D3D11_VIDEO_PROCESSOR_AUTO_STREAM_CAPS_DERINGING)           { dbgstr.append(L" Deringing,"); }
