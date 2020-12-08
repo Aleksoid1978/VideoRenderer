@@ -530,7 +530,7 @@ void CMpcVideoRenderer::UpdateDiplayInfo()
 
 void CMpcVideoRenderer::OnDisplayModeChange(const bool bReset/* = false*/)
 {
-	if (bReset && m_VideoProcessor->Type() == VP_DX9) {
+	if (bReset && !m_VideoProcessor->IsInit()) {
 		CAutoLock cRendererLock(&m_RendererLock);
 
 		m_VideoProcessor->Reset();
@@ -545,6 +545,12 @@ void CMpcVideoRenderer::OnWindowMove()
 	if (GetActive()) {
 		const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 		if (hMon != m_hMon) {
+			if (m_VideoProcessor->Type() == VP_DX11) {
+				CAutoLock cRendererLock(&m_RendererLock);
+
+				m_VideoProcessor->Reset();
+			}
+
 			m_hMon = hMon;
 			UpdateDiplayInfo();
 		}

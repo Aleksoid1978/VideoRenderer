@@ -381,6 +381,26 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr
 
 CDX11VideoProcessor::~CDX11VideoProcessor()
 {
+	if (!m_hdrOutputDevice.empty()) {
+		DisplayConfig_t displayConfig = {};
+		if (GetDisplayConfig(m_hdrOutputDevice.c_str(), displayConfig)) {
+			DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
+			color_info.value = displayConfig.advancedColorValue;
+
+			if (color_info.advancedColorSupported && color_info.advancedColorEnabled) {
+				DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
+				setColorState.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
+				setColorState.header.size = sizeof(setColorState);
+				setColorState.header.adapterId.HighPart = displayConfig.modeTarget.adapterId.HighPart;
+				setColorState.header.adapterId.LowPart = displayConfig.modeTarget.adapterId.LowPart;
+				setColorState.header.id = displayConfig.modeTarget.id;
+				setColorState.enableAdvancedColor = FALSE;
+				const auto ret = DisplayConfigSetDeviceInfo(&setColorState.header);
+				DLogIf(ERROR_SUCCESS != ret, L"CDX11VideoProcessor::~CDX11VideoProcessor() : DisplayConfigSetDeviceInfo(HDR off) failed with error {}", ret);
+			}
+		}
+	}
+
 	if (m_pDXGISwapChain1) {
 		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
 	}
@@ -407,12 +427,27 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 
 	CheckPointer(m_fnD3D11CreateDevice, E_FAIL);
 
+	m_bIsInit = true;
 	m_hWnd = hwnd;
 
+	MONITORINFOEXW mi = { sizeof(mi) };
+	GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
+	DisplayConfig_t displayConfig = {};
+
+	bool bHdrSupport = false;
+	if (GetDisplayConfig(mi.szDevice, displayConfig)) {
+		DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
+		color_info.value = displayConfig.advancedColorValue;
+		bHdrSupport = color_info.advancedColorSupported && color_info.advancedColorEnabled;
+	}
+	const auto bHdrChange = m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && (bHdrSupport != m_bHdrSupport);
+	m_bHdrSupport = bHdrSupport;
+
 	IDXGIAdapter* pDXGIAdapter = nullptr;
-	const UINT currentAdapter = GetAdapter(hwnd, m_pDXGIFactory1, &pDXGIAdapter, m_bHdrSupport);
+	const UINT currentAdapter = GetAdapter(hwnd, m_pDXGIFactory1, &pDXGIAdapter);
 	CheckPointer(pDXGIAdapter, E_FAIL);
 	if (m_nCurrentAdapter == currentAdapter) {
+		SAFE_RELEASE(pDXGIAdapter);
 		if (hwnd) {
 			HRESULT hr = InitDX9Device(hwnd, pChangeDevice);
 			ASSERT(S_OK == hr);
@@ -431,17 +466,18 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 			}
 		}
 
-		SAFE_RELEASE(pDXGIAdapter);
-
-		if (!m_pDXGISwapChain1 || m_bIsFullscreen != m_pFilter->m_bIsFullscreen) {
+		if (!m_pDXGISwapChain1 || m_bIsFullscreen != m_pFilter->m_bIsFullscreen || bHdrChange) {
 			InitSwapChain();
 			UpdateStatsStatic();
 		}
+
+		m_bIsInit = false;
 		return S_OK;
 	}
 	m_nCurrentAdapter = currentAdapter;
 
 	if (m_bDecoderDevice && m_pDXGISwapChain1) {
+		m_bIsInit = false;
 		return S_OK;
 	}
 
@@ -486,6 +522,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	SAFE_RELEASE(pDXGIAdapter);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::Init() : D3D11CreateDevice() failed with error {}", HR2Str(hr));
+		m_bIsInit = false;
 		return hr;
 	}
 
@@ -500,6 +537,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 		}
 	}
 
+	m_bIsInit = false;
 	return hr;
 }
 
@@ -1237,6 +1275,64 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	case TEXFMT_16FLOAT: m_InternalTexFmt = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
 	default:
 		ASSERT(FALSE);
+	}
+
+	if (m_bHdrCreate) {
+		if (!m_bHdrSupport && m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+			MONITORINFOEXW mi = { sizeof(mi) };
+			GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
+			DisplayConfig_t displayConfig = {};
+
+			if (GetDisplayConfig(mi.szDevice, displayConfig)) {
+				DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
+				color_info.value = displayConfig.advancedColorValue;
+
+				if (color_info.advancedColorSupported && !color_info.advancedColorEnabled) {
+					DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
+					setColorState.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
+					setColorState.header.size = sizeof(setColorState);
+					setColorState.header.adapterId.HighPart = displayConfig.modeTarget.adapterId.HighPart;
+					setColorState.header.adapterId.LowPart = displayConfig.modeTarget.adapterId.LowPart;
+					setColorState.header.id = displayConfig.modeTarget.id;
+					setColorState.enableAdvancedColor = TRUE;
+					const auto ret = DisplayConfigSetDeviceInfo(&setColorState.header);
+					DLogIf(ERROR_SUCCESS != ret, L"CDX11VideoProcessor::InitMediaType() : DisplayConfigSetDeviceInfo(HDR on) failed with error {}", ret);
+
+					if (ERROR_SUCCESS == ret) {
+						m_hdrOutputDevice = mi.szDevice;
+						Init(m_hWnd);
+					}
+				}
+			}
+		} else if (m_bHdrSupport && m_srcExFmt.VideoTransferFunction != VIDEOTRANSFUNC_2084) {
+			MONITORINFOEXW mi = { sizeof(mi) };
+			GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
+			DisplayConfig_t displayConfig = {};
+
+			if (GetDisplayConfig(mi.szDevice, displayConfig)) {
+				DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
+				color_info.value = displayConfig.advancedColorValue;
+
+				if (color_info.advancedColorSupported && color_info.advancedColorEnabled) {
+					DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
+					setColorState.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
+					setColorState.header.size = sizeof(setColorState);
+					setColorState.header.adapterId.HighPart = displayConfig.modeTarget.adapterId.HighPart;
+					setColorState.header.adapterId.LowPart = displayConfig.modeTarget.adapterId.LowPart;
+					setColorState.header.id = displayConfig.modeTarget.id;
+					setColorState.enableAdvancedColor = FALSE;
+					const auto ret = DisplayConfigSetDeviceInfo(&setColorState.header);
+					DLogIf(ERROR_SUCCESS != ret, L"CDX11VideoProcessor::InitMediaType() : DisplayConfigSetDeviceInfo(HDR off) failed with error {}", ret);
+
+					if (ERROR_SUCCESS == ret) {
+						if (m_hdrOutputDevice == mi.szDevice) {
+							m_hdrOutputDevice.clear();
+						}
+						Init(m_hWnd);
+					}
+				}
+			}
+		}
 	}
 
 	// D3D11 Video Processor
@@ -2238,6 +2334,36 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 	UpdatePostScaleTexures(m_windowRect.Size());
 
 	return hr;
+}
+
+HRESULT CDX11VideoProcessor::Reset()
+{
+	DLog(L"CDX11VideoProcessor::Reset()");
+
+	if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+		MONITORINFOEXW mi = { sizeof(mi) };
+		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
+		DisplayConfig_t displayConfig = {};
+
+		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
+			DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
+			color_info.value = displayConfig.advancedColorValue;
+
+			if (color_info.advancedColorEnabled && !m_bHdrSupport || !color_info.advancedColorEnabled && m_bHdrSupport) {
+				if (!color_info.advancedColorEnabled && m_hdrOutputDevice == mi.szDevice) {
+					m_hdrOutputDevice.clear();
+				}
+				if (m_pFilter->m_inputMT.IsValid()) {
+					Init(m_hWnd);
+					m_bHdrCreate = false;
+					InitMediaType(&m_pFilter->m_inputMT);
+					m_bHdrCreate = true;
+				}
+			}
+		}
+	}
+
+	return S_OK;
 }
 
 HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)

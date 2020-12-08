@@ -141,6 +141,7 @@ bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig
 							displayConfig.refreshRate      = mode.targetMode.targetVideoSignalInfo.vSyncFreq;
 							displayConfig.scanLineOrdering = mode.targetMode.targetVideoSignalInfo.scanLineOrdering;
 						}
+						displayConfig.modeTarget = mode;
 
 						DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {
 							{DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO, sizeof(color_info), mode.adapterId, mode.id}, {}
@@ -233,6 +234,7 @@ bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs)
 					dc.refreshRate      = mode.targetMode.targetVideoSignalInfo.vSyncFreq;
 					dc.scanLineOrdering = mode.targetMode.targetVideoSignalInfo.scanLineOrdering;
 				}
+				dc.modeTarget = mode;
 
 				DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {
 							{DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO, sizeof(color_info), mode.adapterId, mode.id}, {}
