@@ -702,7 +702,7 @@ void CDX11VideoProcessor::SetGraphSize()
 		CalcStatsFont();
 		if (S_OK == m_Font3D.CreateFontBitmap(L"Consolas", m_StatsFontH, 0)) {
 			SIZE charSize = m_Font3D.GetMaxCharMetric();
-			m_StatsRect.right  = m_StatsRect.left + 63 * charSize.cx + 5 + 3;
+			m_StatsRect.right  = m_StatsRect.left + 69 * charSize.cx + 5 + 3;
 			m_StatsRect.bottom = m_StatsRect.top + 16 * charSize.cy + 5 + 3;
 		}
 		m_StatsBackground.Set(m_StatsRect, rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
@@ -1780,6 +1780,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 				DLogIf(L"CCDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
 
 				m_lastHdr10 = m_hdr10;
+				UpdateStatsStatic();
 			} else if (m_lastHdr10.bValid) {
 				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10);
 				DLogIf(L"CCDX11VideoProcessor::Render() : SetHDRMetaData(lastHdr) failed with error {}", HR2Str(hr));
@@ -1800,6 +1801,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 				DLogIf(L"CCDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
 
 				m_lastHdr10 = m_hdr10;
+				UpdateStatsStatic();
 			}
 		}
 	}
@@ -2531,6 +2533,9 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		m_strStatsStatic1 = fmt::format(L"MPC VR {}, Direct3D 11", _CRT_WIDE(MPCVR_VERSION_STR));
 		if (m_bHdrSupport) {
 			m_strStatsStatic1 += L", Windows HDR passthrough";
+			if (m_lastHdr10.bValid) {
+				m_strStatsStatic1 += fmt::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance / 10000);
+			}
 		}
 
 		m_strStatsStatic2.assign(m_srcParams.str);
