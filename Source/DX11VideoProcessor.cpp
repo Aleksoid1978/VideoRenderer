@@ -1516,6 +1516,38 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	HRESULT hr = S_OK;
 	m_FieldDrawn = 0;
 
+	m_hdr10 = {};
+	if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+		if (CComQIPtr<IMediaSideData> pMediaSideData = pSample) {
+			MediaSideDataHDR* hdr = nullptr;
+			size_t size = 0;
+			hr = pMediaSideData->GetSideData(IID_MediaSideDataHDR, (const BYTE**)&hdr, &size);
+			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataHDR)) {
+				m_hdr10.bValid = true;
+
+				m_hdr10.hdr10.RedPrimary[0]   = static_cast<UINT16>(hdr->display_primaries_x[2] * 50000.0);
+				m_hdr10.hdr10.RedPrimary[1]   = static_cast<UINT16>(hdr->display_primaries_y[2] * 50000.0);
+				m_hdr10.hdr10.GreenPrimary[0] = static_cast<UINT16>(hdr->display_primaries_x[1] * 50000.0);
+				m_hdr10.hdr10.GreenPrimary[1] = static_cast<UINT16>(hdr->display_primaries_y[1] * 50000.0);
+				m_hdr10.hdr10.BluePrimary[0]  = static_cast<UINT16>(hdr->display_primaries_x[0] * 50000.0);
+				m_hdr10.hdr10.BluePrimary[1]  = static_cast<UINT16>(hdr->display_primaries_y[0] * 50000.0);
+				m_hdr10.hdr10.WhitePoint[0]   = static_cast<UINT16>(hdr->white_point_x * 50000.0);
+				m_hdr10.hdr10.WhitePoint[1]   = static_cast<UINT16>(hdr->white_point_y * 50000.0);
+
+				m_hdr10.hdr10.MaxMasteringLuminance = static_cast<UINT>(hdr->max_display_mastering_luminance * 10000.0);
+				m_hdr10.hdr10.MinMasteringLuminance = static_cast<UINT>(hdr->min_display_mastering_luminance * 10000.0);
+			}
+
+			MediaSideDataHDRContentLightLevel* hdrCLL = nullptr;
+			size = 0;
+			hr = pMediaSideData->GetSideData(IID_MediaSideDataHDRContentLightLevel, (const BYTE**)&hdrCLL, &size);
+			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataHDRContentLightLevel)) {
+				m_hdr10.hdr10.MaxContentLightLevel      = hdrCLL->MaxCLL;
+				m_hdr10.hdr10.MaxFrameAverageLightLevel = hdrCLL->MaxFALL;
+			}
+		}
+	}
+
 	if (CComQIPtr<IMediaSampleD3D11> pMSD3D11 = pSample) {
 		m_iSrcFromGPU = 11;
 
@@ -1743,6 +1775,16 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			&& m_bHdrSupport && m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 		const DXGI_COLOR_SPACE_TYPE colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
 		if (m_currentSwapChainColorSpace != colorSpace) {
+			if (m_hdr10.bValid) {
+				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10);
+				DLogIf(L"CCDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
+
+				m_lastHdr10 = m_hdr10;
+			} else if (m_lastHdr10.bValid) {
+				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10);
+				DLogIf(L"CCDX11VideoProcessor::Render() : SetHDRMetaData(lastHdr) failed with error {}", HR2Str(hr));
+			}
+
 			UINT colorSpaceSupport = 0;
 			if (SUCCEEDED(m_pDXGISwapChain4->CheckColorSpaceSupport(colorSpace, &colorSpaceSupport))
 					&& (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) == DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) {
@@ -1751,6 +1793,13 @@ HRESULT CDX11VideoProcessor::Render(int field)
 				if (SUCCEEDED(hr)) {
 					m_currentSwapChainColorSpace = colorSpace;
 				}
+			}
+		} else if (m_hdr10.bValid) {
+			if (memcmp(&m_hdr10.hdr10, &m_lastHdr10.hdr10, sizeof(m_hdr10.hdr10)) != 0) {
+				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10);
+				DLogIf(L"CCDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
+
+				m_lastHdr10 = m_hdr10;
 			}
 		}
 	}

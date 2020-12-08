@@ -134,6 +134,13 @@ private:
 	bool m_bIsFullscreen = false;
 	bool m_bHdrSupport = false;
 
+	struct HDRMetadata {
+		DXGI_HDR_METADATA_HDR10 hdr10 = {};
+		bool bValid = false;
+	};
+	HDRMetadata m_hdr10 = {};
+	HDRMetadata m_lastHdr10 = {};
+
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr);
 	~CDX11VideoProcessor() override;
