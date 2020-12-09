@@ -1011,6 +1011,8 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	return hr;
 }
 
+#define HDRFormat(fmt) (fmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || fmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG)
+
 HRESULT CDX11VideoProcessor::InitSwapChain()
 {
 	DLog(L"CDX11VideoProcessor::InitSwapChain() - {}", m_pFilter->m_bIsFullscreen ? L"fullscreen" : L"window");
@@ -1022,7 +1024,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	m_pDXGISwapChain4.Release();
 	m_pDXGISwapChain1.Release();
 
-	const auto format = (m_bHdrSupport && m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
+	const auto format = (m_bHdrSupport && HDRFormat(m_srcExFmt)) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
 	HRESULT hr = S_OK;
 	m_bIsFullscreen = m_pFilter->m_bIsFullscreen;
@@ -1284,7 +1286,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	if (m_bHdrCreate && m_srcVideoTransferFunction != m_srcExFmt.VideoTransferFunction) {
 		m_bIsInitHDR = true;
-		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+		if (HDRFormat(m_srcExFmt)) {
 			MONITORINFOEXW mi = { sizeof(mi) };
 			GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 			DisplayConfig_t displayConfig = {};
@@ -1314,7 +1316,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 					}
 				}
 			}
-		} else if (m_srcExFmt.VideoTransferFunction != VIDEOTRANSFUNC_2084) {
+		} else {
 			MONITORINFOEXW mi = { sizeof(mi) };
 			GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 			DisplayConfig_t displayConfig = {};
@@ -1357,7 +1359,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_ST2084));
 				m_strCorrection = L"ST 2084 correction";
 			}
-			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
+			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG && !m_bHdrSupport) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_HLG));
 				m_strCorrection = L"HLG correction";
 			}
@@ -1626,7 +1628,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	m_FieldDrawn = 0;
 
 	m_hdr10 = {};
-	if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+	if (HDRFormat(m_srcExFmt)) {
 		if (CComQIPtr<IMediaSideData> pMediaSideData = pSample) {
 			MediaSideDataHDR* hdr = nullptr;
 			size_t size = 0;
@@ -1881,7 +1883,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	m_RenderStats.paintticks = tick3 - tick1;
 
 	if (m_pDXGISwapChain4
-			&& m_bHdrSupport && m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+			&& m_bHdrSupport && HDRFormat(m_srcExFmt)) {
 		const DXGI_COLOR_SPACE_TYPE colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
 		if (m_currentSwapChainColorSpace != colorSpace) {
 			if (m_hdr10.bValid) {
@@ -1893,6 +1895,24 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			} else if (m_lastHdr10.bValid) {
 				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10);
 				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(lastHdr) failed with error {}", HR2Str(hr));
+			} else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
+				// from xbmc/Kodi
+				// Windows 10 doesn't support HLG HDR passthrough
+				// It's used HDR10 with dummy metadata and shaders to convert HLG transfer to PQ transfer
+
+				DXGI_HDR_METADATA_HDR10 hdr10 = {};
+				hdr10.RedPrimary[0]   = 34000; // Display P3 primaries
+				hdr10.RedPrimary[1]   = 16000;
+				hdr10.GreenPrimary[0] = 13250;
+				hdr10.GreenPrimary[1] = 34500;
+				hdr10.BluePrimary[0]  = 7500;
+				hdr10.BluePrimary[1]  = 3000;
+				hdr10.WhitePoint[0]   = 15635;
+				hdr10.WhitePoint[1]   = 16450;
+				hdr10.MaxMasteringLuminance = 1000 * 10000; // 1000 nits
+				hdr10.MinMasteringLuminance = 100; // 0.01 nits
+				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &hdr10);
+				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(HLG hdr) failed with error {}", HR2Str(hr));
 			}
 
 			UINT colorSpaceSupport = 0;
@@ -2354,7 +2374,7 @@ HRESULT CDX11VideoProcessor::Reset()
 {
 	DLog(L"CDX11VideoProcessor::Reset()");
 
-	if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+	if (HDRFormat(m_srcExFmt)) {
 		MONITORINFOEXW mi = { sizeof(mi) };
 		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 		DisplayConfig_t displayConfig = {};

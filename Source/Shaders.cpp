@@ -118,7 +118,7 @@ HRESULT GetShaderConvertColor(
 	LPVOID data;
 	DWORD size;
 
-	bool isHDR = ((exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && !bHdrSupport) || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG);
+	bool isHDR = (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) && !bHdrSupport;
 
 	if (isHDR) {
 		hr = GetDataFromResource(data, size, IDF_HLSL_HDR_TONE_MAPPING);
