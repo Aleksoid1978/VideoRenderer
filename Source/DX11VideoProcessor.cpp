@@ -1887,32 +1887,31 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		const DXGI_COLOR_SPACE_TYPE colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
 		if (m_currentSwapChainColorSpace != colorSpace) {
 			if (m_hdr10.bValid) {
-				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10);
+				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10.hdr10);
 				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
 
 				m_lastHdr10 = m_hdr10;
 				UpdateStatsStatic();
 			} else if (m_lastHdr10.bValid) {
-				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10);
+				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_lastHdr10.hdr10);
 				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(lastHdr) failed with error {}", HR2Str(hr));
-			} else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
-				// from xbmc/Kodi
-				// Windows 10 doesn't support HLG HDR passthrough
-				// It's used HDR10 with dummy metadata and shaders to convert HLG transfer to PQ transfer
+			} else {
+				m_lastHdr10.bValid = true;
 
-				DXGI_HDR_METADATA_HDR10 hdr10 = {};
-				hdr10.RedPrimary[0]   = 34000; // Display P3 primaries
-				hdr10.RedPrimary[1]   = 16000;
-				hdr10.GreenPrimary[0] = 13250;
-				hdr10.GreenPrimary[1] = 34500;
-				hdr10.BluePrimary[0]  = 7500;
-				hdr10.BluePrimary[1]  = 3000;
-				hdr10.WhitePoint[0]   = 15635;
-				hdr10.WhitePoint[1]   = 16450;
-				hdr10.MaxMasteringLuminance = 1000 * 10000; // 1000 nits
-				hdr10.MinMasteringLuminance = 100; // 0.01 nits
-				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &hdr10);
-				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(HLG hdr) failed with error {}", HR2Str(hr));
+				m_lastHdr10.hdr10.RedPrimary[0]   = 34000; // Display P3 primaries
+				m_lastHdr10.hdr10.RedPrimary[1]   = 16000;
+				m_lastHdr10.hdr10.GreenPrimary[0] = 13250;
+				m_lastHdr10.hdr10.GreenPrimary[1] = 34500;
+				m_lastHdr10.hdr10.BluePrimary[0]  = 7500;
+				m_lastHdr10.hdr10.BluePrimary[1]  = 3000;
+				m_lastHdr10.hdr10.WhitePoint[0]   = 15635;
+				m_lastHdr10.hdr10.WhitePoint[1]   = 16450;
+				m_lastHdr10.hdr10.MaxMasteringLuminance = 1000 * 10000; // 1000 nits
+				m_lastHdr10.hdr10.MinMasteringLuminance = 100;          // 0.01 nits
+				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_lastHdr10.hdr10);
+				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(Display P3 standard) failed with error {}", HR2Str(hr));
+
+				UpdateStatsStatic();
 			}
 
 			UINT colorSpaceSupport = 0;
@@ -1926,7 +1925,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			}
 		} else if (m_hdr10.bValid) {
 			if (memcmp(&m_hdr10.hdr10, &m_lastHdr10.hdr10, sizeof(m_hdr10.hdr10)) != 0) {
-				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10);
+				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10.hdr10);
 				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
 
 				m_lastHdr10 = m_hdr10;
