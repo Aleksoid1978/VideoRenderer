@@ -389,7 +389,7 @@ static bool ToggleHDR(const DisplayConfig_t& displayConfig, const BOOL bEnableAd
 	setColorState.header.id = displayConfig.modeTarget.id;
 	setColorState.enableAdvancedColor = bEnableAdvancedColor;
 	const auto ret = DisplayConfigSetDeviceInfo(&setColorState.header);
-	DLogIf(ERROR_SUCCESS != ret, L"ToggleHDR() : DisplayConfigSetDeviceInfo({}) failed with error {}", bEnableAdvancedColor, ret);
+	DLogIf(ERROR_SUCCESS != ret, L"ToggleHDR() : DisplayConfigSetDeviceInfo({}) failed with error {}", bEnableAdvancedColor, HR2Str(HRESULT_FROM_WIN32(ret)));
 
 	return ret == ERROR_SUCCESS;
 }
