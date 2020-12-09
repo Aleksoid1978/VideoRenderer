@@ -134,11 +134,10 @@ private:
 	bool m_bIsFullscreen = false;
 	bool m_bHdrSupport = false;
 	bool m_bHdrCreate = true;
+	bool m_bIsInitHDR = false;
 	std::wstring m_hdrOutputDevice;
 
 	UINT m_srcVideoTransferFunction = 0;
-
-	bool m_bIsInit = false;
 
 	struct HDRMetadata {
 		DXGI_HDR_METADATA_HDR10 hdr10 = {};
@@ -191,7 +190,7 @@ public:
 	void SetVideoRect(const CRect& videoRect)      override;
 	HRESULT SetWindowRect(const CRect& windowRect) override;
 	HRESULT Reset() override;
-	bool IsInit() const override { return m_bIsInit; }
+	bool IsInit() const override { return m_bIsInitHDR; }
 
 	IDirect3DDeviceManager9* GetDeviceManager9() override { return GetDevMan9(); }
 	HRESULT GetCurentImage(long *pDIBImage) override;

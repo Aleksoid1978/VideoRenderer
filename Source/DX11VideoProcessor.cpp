@@ -427,7 +427,6 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 
 	CheckPointer(m_fnD3D11CreateDevice, E_FAIL);
 
-	m_bIsInit = true;
 	m_hWnd = hwnd;
 
 	MONITORINFOEXW mi = { sizeof(mi) };
@@ -439,6 +438,10 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 		DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
 		color_info.value = displayConfig.advancedColorValue;
 		m_bHdrSupport = color_info.advancedColorSupported && color_info.advancedColorEnabled;
+	}
+
+	if (m_bIsFullscreen != m_pFilter->m_bIsFullscreen) {
+		m_srcVideoTransferFunction = 0;
 	}
 
 	IDXGIAdapter* pDXGIAdapter = nullptr;
@@ -469,13 +472,11 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 			UpdateStatsStatic();
 		}
 
-		m_bIsInit = false;
 		return S_OK;
 	}
 	m_nCurrentAdapter = currentAdapter;
 
 	if (m_bDecoderDevice && m_pDXGISwapChain1) {
-		m_bIsInit = false;
 		return S_OK;
 	}
 
@@ -520,7 +521,6 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	SAFE_RELEASE(pDXGIAdapter);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::Init() : D3D11CreateDevice() failed with error {}", HR2Str(hr));
-		m_bIsInit = false;
 		return hr;
 	}
 
@@ -535,7 +535,6 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 		}
 	}
 
-	m_bIsInit = false;
 	return hr;
 }
 
@@ -1276,6 +1275,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	if (m_bHdrCreate && m_srcVideoTransferFunction != m_srcExFmt.VideoTransferFunction) {
+		m_bIsInitHDR = true;
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 			MONITORINFOEXW mi = { sizeof(mi) };
 			GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
@@ -1304,6 +1304,9 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 					}
 
 					if (ERROR_SUCCESS == ret) {
+						if (m_pDXGISwapChain1) {
+							m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
+						}
 						m_pDXGISwapChain4.Release();
 						m_pDXGISwapChain1.Release();
 
@@ -1335,6 +1338,10 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 						if (m_hdrOutputDevice == mi.szDevice) {
 							m_hdrOutputDevice.clear();
 						}
+
+						if (m_pDXGISwapChain1) {
+							m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
+						}
 						m_pDXGISwapChain4.Release();
 						m_pDXGISwapChain1.Release();
 
@@ -1343,6 +1350,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 				}
 			}
 		}
+		m_bIsInitHDR = false;
 	}
 
 	m_srcVideoTransferFunction = m_srcExFmt.VideoTransferFunction;
@@ -2367,6 +2375,9 @@ HRESULT CDX11VideoProcessor::Reset()
 					m_hdrOutputDevice.clear();
 				}
 				if (m_pFilter->m_inputMT.IsValid()) {
+					if (m_pDXGISwapChain1) {
+						m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
+					}
 					m_pDXGISwapChain4.Release();
 					m_pDXGISwapChain1.Release();
 					if (m_iSwapEffect == SWAPEFFECT_Discard && !color_info.advancedColorEnabled) {
