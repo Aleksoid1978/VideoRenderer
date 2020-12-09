@@ -136,6 +136,8 @@ private:
 	bool m_bHdrCreate = true;
 	std::wstring m_hdrOutputDevice;
 
+	UINT m_srcVideoTransferFunction = 0;
+
 	bool m_bIsInit = false;
 
 	struct HDRMetadata {

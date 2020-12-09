@@ -434,14 +434,12 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 	DisplayConfig_t displayConfig = {};
 
-	bool bHdrSupport = false;
+	m_bHdrSupport = false;
 	if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 		DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
 		color_info.value = displayConfig.advancedColorValue;
-		bHdrSupport = color_info.advancedColorSupported && color_info.advancedColorEnabled;
+		m_bHdrSupport = color_info.advancedColorSupported && color_info.advancedColorEnabled;
 	}
-	const auto bHdrChange = m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && (bHdrSupport != m_bHdrSupport);
-	m_bHdrSupport = bHdrSupport;
 
 	IDXGIAdapter* pDXGIAdapter = nullptr;
 	const UINT currentAdapter = GetAdapter(hwnd, m_pDXGIFactory1, &pDXGIAdapter);
@@ -466,7 +464,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 			}
 		}
 
-		if (!m_pDXGISwapChain1 || m_bIsFullscreen != m_pFilter->m_bIsFullscreen || bHdrChange) {
+		if (!m_pDXGISwapChain1 || m_bIsFullscreen != m_pFilter->m_bIsFullscreen) {
 			InitSwapChain();
 			UpdateStatsStatic();
 		}
@@ -1033,7 +1031,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		desc1.SampleDesc.Count = 1;
 		desc1.SampleDesc.Quality = 0;
 		desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		if(m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) {
+		if((m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) || format == DXGI_FORMAT_R10G10B10A2_UNORM) {
 			desc1.BufferCount = format == DXGI_FORMAT_R10G10B10A2_UNORM ? 6 : 2;
 			desc1.Scaling = DXGI_SCALING_NONE;
 			desc1.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
@@ -1060,7 +1058,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		desc1.SampleDesc.Count = 1;
 		desc1.SampleDesc.Quality = 0;
 		desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		if (m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) {
+		if ((m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) || format == DXGI_FORMAT_R10G10B10A2_UNORM) {
 			desc1.BufferCount = format == DXGI_FORMAT_R10G10B10A2_UNORM ? 6 : 2;
 			desc1.Scaling = DXGI_SCALING_NONE;
 			desc1.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
@@ -1277,8 +1275,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		ASSERT(FALSE);
 	}
 
-	if (m_bHdrCreate) {
-		if (!m_bHdrSupport && m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+	if (m_bHdrCreate && m_srcVideoTransferFunction != m_srcExFmt.VideoTransferFunction) {
+		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 			MONITORINFOEXW mi = { sizeof(mi) };
 			GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 			DisplayConfig_t displayConfig = {};
@@ -1287,24 +1285,33 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 				DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
 				color_info.value = displayConfig.advancedColorValue;
 
-				if (color_info.advancedColorSupported && !color_info.advancedColorEnabled) {
-					DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
-					setColorState.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
-					setColorState.header.size = sizeof(setColorState);
-					setColorState.header.adapterId.HighPart = displayConfig.modeTarget.adapterId.HighPart;
-					setColorState.header.adapterId.LowPart = displayConfig.modeTarget.adapterId.LowPart;
-					setColorState.header.id = displayConfig.modeTarget.id;
-					setColorState.enableAdvancedColor = TRUE;
-					const auto ret = DisplayConfigSetDeviceInfo(&setColorState.header);
-					DLogIf(ERROR_SUCCESS != ret, L"CDX11VideoProcessor::InitMediaType() : DisplayConfigSetDeviceInfo(HDR on) failed with error {}", ret);
+				if (color_info.advancedColorSupported) {
+					LONG ret = ERROR_SUCCESS;
+					if (!color_info.advancedColorEnabled) {
+						DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
+						setColorState.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
+						setColorState.header.size = sizeof(setColorState);
+						setColorState.header.adapterId.HighPart = displayConfig.modeTarget.adapterId.HighPart;
+						setColorState.header.adapterId.LowPart = displayConfig.modeTarget.adapterId.LowPart;
+						setColorState.header.id = displayConfig.modeTarget.id;
+						setColorState.enableAdvancedColor = TRUE;
+						ret = DisplayConfigSetDeviceInfo(&setColorState.header);
+						DLogIf(ERROR_SUCCESS != ret, L"CDX11VideoProcessor::InitMediaType() : DisplayConfigSetDeviceInfo(HDR on) failed with error {}", ret);
+
+						if (ERROR_SUCCESS == ret) {
+							m_hdrOutputDevice = mi.szDevice;
+						}
+					}
 
 					if (ERROR_SUCCESS == ret) {
-						m_hdrOutputDevice = mi.szDevice;
+						m_pDXGISwapChain4.Release();
+						m_pDXGISwapChain1.Release();
+
 						Init(m_hWnd);
 					}
 				}
 			}
-		} else if (m_bHdrSupport && m_srcExFmt.VideoTransferFunction != VIDEOTRANSFUNC_2084) {
+		} else if (m_srcExFmt.VideoTransferFunction != VIDEOTRANSFUNC_2084) {
 			MONITORINFOEXW mi = { sizeof(mi) };
 			GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 			DisplayConfig_t displayConfig = {};
@@ -1328,12 +1335,17 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 						if (m_hdrOutputDevice == mi.szDevice) {
 							m_hdrOutputDevice.clear();
 						}
+						m_pDXGISwapChain4.Release();
+						m_pDXGISwapChain1.Release();
+
 						Init(m_hWnd);
 					}
 				}
 			}
 		}
 	}
+
+	m_srcVideoTransferFunction = m_srcExFmt.VideoTransferFunction;
 
 	// D3D11 Video Processor
 	if (FmtParams.VP11Format != DXGI_FORMAT_UNKNOWN && !(m_VendorId == PCIV_NVIDIA && FmtParams.CSType == CS_RGB)) {
@@ -1873,20 +1885,20 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		if (m_currentSwapChainColorSpace != colorSpace) {
 			if (m_hdr10.bValid) {
 				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10);
-				DLogIf(L"CCDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
+				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
 
 				m_lastHdr10 = m_hdr10;
 				UpdateStatsStatic();
 			} else if (m_lastHdr10.bValid) {
 				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10);
-				DLogIf(L"CCDX11VideoProcessor::Render() : SetHDRMetaData(lastHdr) failed with error {}", HR2Str(hr));
+				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(lastHdr) failed with error {}", HR2Str(hr));
 			}
 
 			UINT colorSpaceSupport = 0;
 			if (SUCCEEDED(m_pDXGISwapChain4->CheckColorSpaceSupport(colorSpace, &colorSpaceSupport))
 					&& (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) == DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) {
 				hr = m_pDXGISwapChain4->SetColorSpace1(colorSpace);
-				DLogIf(L"CCDX11VideoProcessor::Render() : SetColorSpace1() failed with error {}", HR2Str(hr));
+				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetColorSpace1() failed with error {}", HR2Str(hr));
 				if (SUCCEEDED(hr)) {
 					m_currentSwapChainColorSpace = colorSpace;
 				}
@@ -1894,7 +1906,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		} else if (m_hdr10.bValid) {
 			if (memcmp(&m_hdr10.hdr10, &m_lastHdr10.hdr10, sizeof(m_hdr10.hdr10)) != 0) {
 				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10);
-				DLogIf(L"CCDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
+				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
 
 				m_lastHdr10 = m_hdr10;
 				UpdateStatsStatic();
@@ -1903,6 +1915,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	}
 
 	hr = m_pDXGISwapChain1->Present(1, 0);
+	DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : Present() failed with error {}", HR2Str(hr));
 	m_RenderStats.presentticks = GetPreciseTick() - tick3;
 
 	return hr;
@@ -2354,7 +2367,13 @@ HRESULT CDX11VideoProcessor::Reset()
 					m_hdrOutputDevice.clear();
 				}
 				if (m_pFilter->m_inputMT.IsValid()) {
-					Init(m_hWnd);
+					m_pDXGISwapChain4.Release();
+					m_pDXGISwapChain1.Release();
+					if (m_iSwapEffect == SWAPEFFECT_Discard && !color_info.advancedColorEnabled) {
+						m_pFilter->Init(true);
+					} else {
+						Init(m_hWnd);
+					}
 					m_bHdrCreate = false;
 					InitMediaType(&m_pFilter->m_inputMT);
 					m_bHdrCreate = true;
@@ -2598,6 +2617,10 @@ void CDX11VideoProcessor::SetDither(bool value)
 
 void CDX11VideoProcessor::SetSwapEffect(int value)
 {
+	if (m_pDXGISwapChain1) {
+		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
+	}
+	m_pDXGISwapChain4.Release();
 	m_pDXGISwapChain1.Release();
 	m_iSwapEffect = value;
 }
