@@ -423,46 +423,14 @@ HRESULT CVRInfoPPage::OnActivate()
 			strInfo += fmt::format(L"\r\n{} - {:.3f} Hz", dc.displayName, freq);
 
 			if (dc.bitsPerChannel) {
-				const wchar_t* colenc = nullptr;
-				switch (dc.colorEncoding) {
-				case DISPLAYCONFIG_COLOR_ENCODING_RGB:
-					colenc = L"RGB";
-					break;
-				case DISPLAYCONFIG_COLOR_ENCODING_YCBCR444:
-					colenc = L"YCbCr444";
-					break;
-				case DISPLAYCONFIG_COLOR_ENCODING_YCBCR422:
-					colenc = L"YCbCr422";
-					break;
-				case DISPLAYCONFIG_COLOR_ENCODING_YCBCR420:
-					colenc = L"YCbCr420";
-					break;
-				}
+				const wchar_t* colenc = ColorEncodingToString(dc.colorEncoding);
 				if (colenc) {
 					strInfo += fmt::format(L" {}", colenc);
 				}
 				strInfo += fmt::format(L" {}-bit", dc.bitsPerChannel);
 			}
 
-			const wchar_t* output = nullptr;
-			switch (dc.outputTechnology) {
-			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HD15:
-				output = L"VGA";
-				break;
-			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DVI:
-				output = L"DVI";
-				break;
-			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI:
-				output = L"HDMI";
-				break;
-			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EXTERNAL:
-			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EMBEDDED:
-				output = L"DisplayPort";
-				break;
-			case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_INTERNAL:
-				output = L"Internal";
-				break;
-			}
+			const wchar_t* output = OutputTechnologyToString(dc.outputTechnology);
 			if (output) {
 				strInfo += fmt::format(L" {}", output);
 			}

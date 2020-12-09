@@ -38,6 +38,9 @@ bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig
 
 bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs);
 
+const wchar_t* ColorEncodingToString(DISPLAYCONFIG_COLOR_ENCODING colorEncoding);
+const wchar_t* OutputTechnologyToString(DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY outputTechnology);
+
 std::wstring DisplayConfigToString(const DisplayConfig_t& dc);
 
 std::wstring D3DDisplayModeToString(const D3DDISPLAYMODEEX& dm);

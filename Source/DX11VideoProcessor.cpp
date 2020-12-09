@@ -382,12 +382,12 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr
 static bool ToggleHDR(const DisplayConfig_t& displayConfig, const BOOL bEnableAdvancedColor)
 {
 	DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
-	setColorState.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
-	setColorState.header.size = sizeof(setColorState);
-	setColorState.header.adapterId.HighPart = displayConfig.modeTarget.adapterId.HighPart;
-	setColorState.header.adapterId.LowPart = displayConfig.modeTarget.adapterId.LowPart;
-	setColorState.header.id = displayConfig.modeTarget.id;
+	setColorState.header.type         = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
+	setColorState.header.size         = sizeof(setColorState);
+	setColorState.header.adapterId    = displayConfig.modeTarget.adapterId;
+	setColorState.header.id           = displayConfig.modeTarget.id;
 	setColorState.enableAdvancedColor = bEnableAdvancedColor;
+
 	const auto ret = DisplayConfigSetDeviceInfo(&setColorState.header);
 	DLogIf(ERROR_SUCCESS != ret, L"ToggleHDR() : DisplayConfigSetDeviceInfo({}) failed with error {}", bEnableAdvancedColor, HR2Str(HRESULT_FROM_WIN32(ret)));
 

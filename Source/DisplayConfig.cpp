@@ -265,6 +265,40 @@ bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs)
 	return displayConfigs.size() > 0;
 }
 
+const wchar_t* ColorEncodingToString(DISPLAYCONFIG_COLOR_ENCODING colorEncoding)
+{
+	const wchar_t* str;
+
+	switch (colorEncoding) {
+	case DISPLAYCONFIG_COLOR_ENCODING_RGB:      str = L"RGB";      break;
+	case DISPLAYCONFIG_COLOR_ENCODING_YCBCR444: str = L"YCbCr444"; break;
+	case DISPLAYCONFIG_COLOR_ENCODING_YCBCR422: str = L"YCbCr422"; break;
+	case DISPLAYCONFIG_COLOR_ENCODING_YCBCR420: str = L"YCbCr420"; break;
+	default:
+		str = nullptr;
+	}
+
+	return str;
+}
+
+const wchar_t* OutputTechnologyToString(DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY outputTechnology)
+{
+	const wchar_t* str;
+
+	switch (outputTechnology) {
+	case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HD15:                 str = L"VGA";         break;
+	case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DVI:                  str = L"DVI";         break;
+	case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI:                 str = L"HDMI";        break;
+	case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EXTERNAL:
+	case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EMBEDDED: str = L"DisplayPort"; break;
+	case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_INTERNAL:             str = L"Internal";    break;
+	default:
+		str = nullptr;
+	}
+
+	return str;
+}
+
 std::wstring DisplayConfigToString(const DisplayConfig_t& dc)
 {
 	std::wstring str;
@@ -275,27 +309,6 @@ std::wstring DisplayConfigToString(const DisplayConfig_t& dc)
 			str += 'i';
 		}
 		str.append(L" Hz");
-		/*
-		const wchar_t* output = nullptr;
-		switch (dc.outputTechnology) {
-		case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HD15:
-			output = L"VGA";
-			break;
-		case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DVI:
-			output = L"DVI";
-			break;
-		case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI:
-			output = L"HDMI";
-			break;
-		case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EXTERNAL:
-		case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EMBEDDED:
-			output = L"DisplayPort";
-			break;
-		}
-		if (output) {
-			str += fmt::format(L" {}", output);
-		}
-		*/
 	}
 	return str;
 }
