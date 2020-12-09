@@ -379,6 +379,21 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr
 	SetDefaultDXVA2ProcAmpValues(m_DXVA2ProcAmpValues);
 }
 
+static bool ToggleHDR(const DisplayConfig_t& displayConfig, const BOOL bEnableAdvancedColor)
+{
+	DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
+	setColorState.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
+	setColorState.header.size = sizeof(setColorState);
+	setColorState.header.adapterId.HighPart = displayConfig.modeTarget.adapterId.HighPart;
+	setColorState.header.adapterId.LowPart = displayConfig.modeTarget.adapterId.LowPart;
+	setColorState.header.id = displayConfig.modeTarget.id;
+	setColorState.enableAdvancedColor = bEnableAdvancedColor;
+	const auto ret = DisplayConfigSetDeviceInfo(&setColorState.header);
+	DLogIf(ERROR_SUCCESS != ret, L"ToggleHDR() : DisplayConfigSetDeviceInfo({}) failed with error {}", bEnableAdvancedColor, ret);
+
+	return ret == ERROR_SUCCESS;
+}
+
 CDX11VideoProcessor::~CDX11VideoProcessor()
 {
 	if (!m_hdrOutputDevice.empty()) {
@@ -388,15 +403,8 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 			color_info.value = displayConfig.advancedColorValue;
 
 			if (color_info.advancedColorSupported && color_info.advancedColorEnabled) {
-				DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
-				setColorState.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
-				setColorState.header.size = sizeof(setColorState);
-				setColorState.header.adapterId.HighPart = displayConfig.modeTarget.adapterId.HighPart;
-				setColorState.header.adapterId.LowPart = displayConfig.modeTarget.adapterId.LowPart;
-				setColorState.header.id = displayConfig.modeTarget.id;
-				setColorState.enableAdvancedColor = FALSE;
-				const auto ret = DisplayConfigSetDeviceInfo(&setColorState.header);
-				DLogIf(ERROR_SUCCESS != ret, L"CDX11VideoProcessor::~CDX11VideoProcessor() : DisplayConfigSetDeviceInfo(HDR off) failed with error {}", ret);
+				const auto ret = ToggleHDR(displayConfig, FALSE);
+				DLogIf(!ret, L"CDX11VideoProcessor::~CDX11VideoProcessor() : Toggle HDR OFF failed");
 			}
 		}
 	}
@@ -1286,19 +1294,11 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 				color_info.value = displayConfig.advancedColorValue;
 
 				if (color_info.advancedColorSupported) {
-					LONG ret = ERROR_SUCCESS;
+					bool ret = true;
 					if (!color_info.advancedColorEnabled) {
-						DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
-						setColorState.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
-						setColorState.header.size = sizeof(setColorState);
-						setColorState.header.adapterId.HighPart = displayConfig.modeTarget.adapterId.HighPart;
-						setColorState.header.adapterId.LowPart = displayConfig.modeTarget.adapterId.LowPart;
-						setColorState.header.id = displayConfig.modeTarget.id;
-						setColorState.enableAdvancedColor = TRUE;
-						ret = DisplayConfigSetDeviceInfo(&setColorState.header);
-						DLogIf(ERROR_SUCCESS != ret, L"CDX11VideoProcessor::InitMediaType() : DisplayConfigSetDeviceInfo(HDR on) failed with error {}", ret);
-
-						if (ERROR_SUCCESS == ret) {
+						ret = ToggleHDR(displayConfig, TRUE);
+						DLogIf(!ret, L"CDX11VideoProcessor::InitMediaType() : Toggle HDR ON failed");
+						if (ret) {
 							m_hdrOutputDevice = mi.szDevice;
 						}
 					}
@@ -1324,17 +1324,10 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 				color_info.value = displayConfig.advancedColorValue;
 
 				if (color_info.advancedColorSupported && color_info.advancedColorEnabled) {
-					DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
-					setColorState.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
-					setColorState.header.size = sizeof(setColorState);
-					setColorState.header.adapterId.HighPart = displayConfig.modeTarget.adapterId.HighPart;
-					setColorState.header.adapterId.LowPart = displayConfig.modeTarget.adapterId.LowPart;
-					setColorState.header.id = displayConfig.modeTarget.id;
-					setColorState.enableAdvancedColor = FALSE;
-					const auto ret = DisplayConfigSetDeviceInfo(&setColorState.header);
-					DLogIf(ERROR_SUCCESS != ret, L"CDX11VideoProcessor::InitMediaType() : DisplayConfigSetDeviceInfo(HDR off) failed with error {}", ret);
+					const auto ret = ToggleHDR(displayConfig, FALSE);
+					DLogIf(!ret, L"CDX11VideoProcessor::InitMediaType() : Toggle HDR OFF failed");
 
-					if (ERROR_SUCCESS == ret) {
+					if (ret) {
 						if (m_hdrOutputDevice == mi.szDevice) {
 							m_hdrOutputDevice.clear();
 						}
