@@ -1636,10 +1636,10 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 				m_hdr10.hdr10.RedPrimary[0]   = static_cast<UINT16>(hdr->display_primaries_x[2] * 50000.0);
 				m_hdr10.hdr10.RedPrimary[1]   = static_cast<UINT16>(hdr->display_primaries_y[2] * 50000.0);
-				m_hdr10.hdr10.GreenPrimary[0] = static_cast<UINT16>(hdr->display_primaries_x[1] * 50000.0);
-				m_hdr10.hdr10.GreenPrimary[1] = static_cast<UINT16>(hdr->display_primaries_y[1] * 50000.0);
-				m_hdr10.hdr10.BluePrimary[0]  = static_cast<UINT16>(hdr->display_primaries_x[0] * 50000.0);
-				m_hdr10.hdr10.BluePrimary[1]  = static_cast<UINT16>(hdr->display_primaries_y[0] * 50000.0);
+				m_hdr10.hdr10.GreenPrimary[0] = static_cast<UINT16>(hdr->display_primaries_x[0] * 50000.0);
+				m_hdr10.hdr10.GreenPrimary[1] = static_cast<UINT16>(hdr->display_primaries_y[0] * 50000.0);
+				m_hdr10.hdr10.BluePrimary[0]  = static_cast<UINT16>(hdr->display_primaries_x[1] * 50000.0);
+				m_hdr10.hdr10.BluePrimary[1]  = static_cast<UINT16>(hdr->display_primaries_y[1] * 50000.0);
 				m_hdr10.hdr10.WhitePoint[0]   = static_cast<UINT16>(hdr->white_point_x * 50000.0);
 				m_hdr10.hdr10.WhitePoint[1]   = static_cast<UINT16>(hdr->white_point_y * 50000.0);
 
