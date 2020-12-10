@@ -2749,9 +2749,9 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		if (SourceIsHDR()) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
 			if (m_bHdrSupport) {
-				m_strStatsHDR.append(L"passthrough");
+				m_strStatsHDR.append(L"Passthrough");
 				if (m_lastHdr10.bValid) {
-					m_strStatsStatic1 += fmt::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance / 10000);
+					m_strStatsHDR += fmt::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance / 10000);
 				}
 			} else {
 				m_strStatsHDR.append(L"convert to SDR");
@@ -2817,7 +2817,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 
 	std::wstring str = m_strStatsStatic1;
 	str += fmt::format(
-		L"\nDisplay : {}"
+		L"\nDisplay: {}"
 		L"\nGraph. Adapter: {}",
 		m_strStatsDispInfo, m_strAdapterDescription
 	);

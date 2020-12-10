@@ -2465,7 +2465,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 
 		if (SourceIsHDR()) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
-			m_strStatsHDR.append(L"convert to SDR");
+			m_strStatsHDR.append(L"Convert to SDR");
 		} else {
 			m_strStatsHDR.clear();
 		}
@@ -2529,7 +2529,7 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 
 	std::wstring str = m_strStatsStatic1;
 	str += fmt::format(
-		L"\nDisplay : {}"
+		L"\nDisplay: {}"
 		L"\nGraph. Adapter: {}",
 		m_strStatsDispInfo, m_strAdapterDescription
 	);

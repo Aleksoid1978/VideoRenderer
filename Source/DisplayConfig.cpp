@@ -303,8 +303,19 @@ std::wstring DisplayConfigToString(const DisplayConfig_t& dc)
 {
 	std::wstring str;
 	if (dc.width && dc.height && dc.refreshRate.Numerator) {
+		str = fmt::format(L"{} {}x{}", dc.monitorName, dc.width, dc.height);
+
+		const wchar_t* colenc = ColorEncodingToString(dc.colorEncoding);
+		if (colenc) {
+			str += fmt::format(L" {}", colenc);
+		}
+
+		if (dc.bitsPerChannel) {
+			str += fmt::format(L" {}-bit", dc.bitsPerChannel);
+		}
+
 		double freq = (double)dc.refreshRate.Numerator / (double)dc.refreshRate.Denominator;
-		str = fmt::format(L"{} {}x{} {:.3f}", dc.monitorName, dc.width, dc.height, freq);
+		str += fmt::format(L" {:.3f}", freq);
 		if (dc.scanLineOrdering >= DISPLAYCONFIG_SCANLINE_ORDERING_INTERLACED) {
 			str += 'i';
 		}
