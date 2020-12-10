@@ -1010,9 +1010,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	return hr;
 }
 
-#define HDRFormat(fmt)       (fmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || fmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG)
-#define Support10BitOutput() (m_bitsPerChannelSupport >= 10 && (m_InternalTexFmt == DXGI_FORMAT_R10G10B10A2_UNORM || m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT))
-
 HRESULT CDX11VideoProcessor::InitSwapChain()
 {
 	DLog(L"CDX11VideoProcessor::InitSwapChain() - {}", m_pFilter->m_bIsFullscreen ? L"fullscreen" : L"window");
@@ -1020,8 +1017,8 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 
 	ReleaseSwapChain();
 
-	const auto bHdrOutput = m_bHdrSupport && HDRFormat(m_srcExFmt);
-	const auto b10BitOutput = bHdrOutput || Support10BitOutput();
+	const auto bHdrOutput = m_bHdrSupport && SourceIsHDR();
+	const auto b10BitOutput = bHdrOutput || Preferred10BitOutput();
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
 	HRESULT hr = S_OK;
@@ -1284,7 +1281,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	if (m_bHdrCreate && m_srcVideoTransferFunction != m_srcExFmt.VideoTransferFunction) {
 		m_bIsInitHDR = true;
-		if (HDRFormat(m_srcExFmt)) {
+		if (SourceIsHDR()) {
 			MONITORINFOEXW mi = { sizeof(mi) };
 			GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 			DisplayConfig_t displayConfig = {};
@@ -1336,7 +1333,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		m_bIsInitHDR = false;
 	}
 
-	if (Support10BitOutput() && m_SwapChainFmt == DXGI_FORMAT_B8G8R8A8_UNORM) {
+	if (Preferred10BitOutput() && m_SwapChainFmt == DXGI_FORMAT_B8G8R8A8_UNORM) {
 		ReleaseSwapChain();
 		Init(m_hWnd);
 	}
@@ -1621,7 +1618,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	m_FieldDrawn = 0;
 
 	m_hdr10 = {};
-	if (HDRFormat(m_srcExFmt)) {
+	if (SourceIsHDR()) {
 		if (CComQIPtr<IMediaSideData> pMediaSideData = pSample) {
 			MediaSideDataHDR* hdr = nullptr;
 			size_t size = 0;
@@ -1876,7 +1873,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	m_RenderStats.paintticks = tick3 - tick1;
 
 	if (m_pDXGISwapChain4
-			&& m_bHdrSupport && HDRFormat(m_srcExFmt)) {
+			&& m_bHdrSupport && SourceIsHDR()) {
 		const DXGI_COLOR_SPACE_TYPE colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
 		if (m_currentSwapChainColorSpace != colorSpace) {
 			if (m_hdr10.bValid) {
@@ -2366,7 +2363,7 @@ HRESULT CDX11VideoProcessor::Reset()
 {
 	DLog(L"CDX11VideoProcessor::Reset()");
 
-	if (HDRFormat(m_srcExFmt)) {
+	if (SourceIsHDR()) {
 		MONITORINFOEXW mi = { sizeof(mi) };
 		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 		DisplayConfig_t displayConfig = {};

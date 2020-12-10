@@ -173,6 +173,13 @@ private:
 
 	HRESULT MemCopyToTexSrcVideo(const BYTE* srcData, const int srcPitch);
 
+	bool SourceIsHDR() {
+		return m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG;
+	}
+	bool Preferred10BitOutput() {
+		return m_bitsPerChannelSupport >= 10 && (m_InternalTexFmt == DXGI_FORMAT_R10G10B10A2_UNORM || m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT);
+	}
+
 public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, const bool bDecoderDevice);
 	HRESULT InitSwapChain();
