@@ -108,7 +108,7 @@ HRESULT GetShaderConvertColor(
 	const FmtConvParams_t& fmtParams,
 	const DXVA2_ExtendedFormat exFmt,
 	const int chromaScaling,
-	const bool bHdrSupport,
+	const bool bConvertToSdr,
 	ID3DBlob** ppCode)
 {
 	DLog(L"GetShaderConvertColor() started for {} {}x{} extfmt:{:#010x} chroma:{}", fmtParams.str, texW, texH, exFmt.value, chromaScaling);
@@ -118,9 +118,9 @@ HRESULT GetShaderConvertColor(
 	LPVOID data;
 	DWORD size;
 
-	bool isHDR = (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) && !bHdrSupport;
+	bool isHDR = (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG);
 
-	if (isHDR) {
+	if (isHDR && bConvertToSdr) {
 		hr = GetDataFromResource(data, size, IDF_HLSL_HDR_TONE_MAPPING);
 		if (S_OK == hr) {
 			code.append((LPCSTR)data, size);
@@ -544,7 +544,7 @@ HRESULT GetShaderConvertColor(
 	code.append("//convert color\n");
 	code.append("color.rgb = float3(mul(cm_r, color), mul(cm_g, color), mul(cm_b, color)) + cm_c;\n");
 
-	if (isHDR) {
+	if (isHDR && bConvertToSdr) {
 		if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 			code.append(
 				"color = saturate(color);\n" // use saturate(), because pow() can not take negative values

@@ -165,7 +165,6 @@ HRESULT CVRMainPPage::OnActivate()
 	if (1 || !IsWindows10OrGreater()) {
 		GetDlgItem(IDC_STATIC4).EnableWindow(FALSE);
 		GetDlgItem(IDC_CHECK12).EnableWindow(FALSE);
-		GetDlgItem(IDC_CHECK13).EnableWindow(FALSE);
 	}
 
 	EnableControls();
@@ -269,6 +268,16 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			}
 			if (nID == IDC_CHECK11) {
 				m_SetsPP.bExclusiveFS = IsDlgButtonChecked(IDC_CHECK11) == BST_CHECKED;
+				SetDirty();
+				return (LRESULT)1;
+			}
+			if (nID == IDC_CHECK12) {
+				m_SetsPP.bHdrPassthrough = IsDlgButtonChecked(IDC_CHECK12) == BST_CHECKED;
+				SetDirty();
+				return (LRESULT)1;
+			}
+			if (nID == IDC_CHECK13) {
+				m_SetsPP.bConvertToSdr = IsDlgButtonChecked(IDC_CHECK13) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}

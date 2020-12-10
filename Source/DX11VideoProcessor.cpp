@@ -1345,11 +1345,11 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		// D3D11 VP does not work correctly if RGB32 with odd frame width (source or target) on Nvidia adapters
 
 		if (S_OK == InitializeD3D11VP(FmtParams, origW, origH)) {
-			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && !m_bHdrSupport) {
+			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && !m_bHdrSupport && m_bConvertToSdr) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_ST2084));
 				m_strCorrection = L"ST 2084 correction";
 			}
-			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG && !m_bHdrSupport) {
+			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG && !m_bHdrSupport && m_bConvertToSdr) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_HLG));
 				m_strCorrection = L"HLG correction";
 			}
@@ -2039,7 +2039,11 @@ HRESULT CDX11VideoProcessor::UpdateChromaScalingShader()
 	m_pPSConvertColor.Release();
 	ID3DBlob* pShaderCode = nullptr;
 
-	HRESULT hr = GetShaderConvertColor(true, m_TexSrcVideo.desc.Width, m_TexSrcVideo.desc.Height, m_srcRect, m_srcParams, m_srcExFmt, m_iChromaScaling, m_bHdrSupport, &pShaderCode);
+	HRESULT hr = GetShaderConvertColor(true,
+		m_TexSrcVideo.desc.Width, m_TexSrcVideo.desc.Height,
+		m_srcRect, m_srcParams, m_srcExFmt,
+		m_iChromaScaling, !m_bHdrSupport && m_bConvertToSdr,
+		&pShaderCode);
 	if (S_OK == hr) {
 		hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
 		pShaderCode->Release();

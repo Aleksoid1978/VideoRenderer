@@ -1093,11 +1093,11 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// DXVA2 Video Processor
 	if (FmtParams.DXVA2Format != D3DFMT_UNKNOWN && S_OK == InitializeDXVA2VP(FmtParams, origW, origH)) {
-		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && m_bConvertToSdr) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_ST2084));
 			m_strCorrection = L"ST 2084 correction";
 		}
-		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
+		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG && m_bConvertToSdr) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_HLG));
 			m_strCorrection = L"HLG correction";
 		}
@@ -1855,7 +1855,11 @@ HRESULT CDX9VideoProcessor::UpdateChromaScalingShader()
 
 	if (m_TexSrcVideo.pTexture) {
 		ID3DBlob* pShaderCode = nullptr;
-		hr = GetShaderConvertColor(false, m_TexSrcVideo.Width, m_TexSrcVideo.Height, m_srcRect, m_srcParams, m_srcExFmt, m_iChromaScaling, false , &pShaderCode);
+		hr = GetShaderConvertColor(false,
+			m_TexSrcVideo.Width, m_TexSrcVideo.Height,
+			m_srcRect, m_srcParams, m_srcExFmt,
+			m_iChromaScaling, m_bConvertToSdr,
+			&pShaderCode);
 		if (S_OK == hr) {
 			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);
 			pShaderCode->Release();

@@ -31,5 +31,5 @@ HRESULT GetShaderConvertColor(
 	const FmtConvParams_t& fmtParams,
 	const DXVA2_ExtendedFormat exFmt,
 	const int chromaScaling,
-	const bool bHdrSupport,
+	const bool bConvertToSdr,
 	ID3DBlob** ppCode);
