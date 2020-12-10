@@ -102,13 +102,14 @@ protected:
 	std::wstring m_strStatsStatic2;
 	std::wstring m_strStatsDispInfo;
 	std::wstring m_strStatsPostProc;
+	std::wstring m_strStatsHDR;
 	std::wstring m_strStatsPresent;
 	int m_iSrcFromGPU = 0;
 	D3DDISPLAYMODEEX* m_pDisplayMode = nullptr;
 	const wchar_t* m_strShaderX = nullptr;
 	const wchar_t* m_strShaderY = nullptr;
 	int m_StatsFontH = 14;
-	RECT m_StatsRect = { 10, 10, 10 + 5 + 63*8 + 3, 10 + 5 + 16*17 + 3 };
+	RECT m_StatsRect = { 10, 10, 10 + 5 + 63*8 + 3, 10 + 5 + 17*17 + 3 };
 	const POINT m_StatsTextPoint = { 10 + 5, 10 + 5};
 
 	// Graph of a function
@@ -188,6 +189,12 @@ public:
 
 	void SetDisplayInfo(const DisplayConfig_t& displayConfig, const bool primary, const bool fullscreen);
 
+protected:
+	bool SourceIsHDR() {
+		return m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG;
+	}
+
+public:
 	// IUnknown
 	STDMETHODIMP QueryInterface(REFIID riid, void **ppv);
 	STDMETHODIMP_(ULONG) AddRef();

@@ -749,7 +749,7 @@ void CDX11VideoProcessor::SetGraphSize()
 		if (S_OK == m_Font3D.CreateFontBitmap(L"Consolas", m_StatsFontH, 0)) {
 			SIZE charSize = m_Font3D.GetMaxCharMetric();
 			m_StatsRect.right  = m_StatsRect.left + 69 * charSize.cx + 5 + 3;
-			m_StatsRect.bottom = m_StatsRect.top + 16 * charSize.cy + 5 + 3;
+			m_StatsRect.bottom = m_StatsRect.top + 17 * charSize.cy + 5 + 3;
 		}
 		m_StatsBackground.Set(m_StatsRect, rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
 
@@ -2685,12 +2685,6 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
 		m_strStatsStatic1 = fmt::format(L"MPC VR {}, Direct3D 11", _CRT_WIDE(MPCVR_VERSION_STR));
-		if (m_bHdrSupport) {
-			m_strStatsStatic1 += L", Windows HDR passthrough";
-			if (m_lastHdr10.bValid) {
-				m_strStatsStatic1 += fmt::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance / 10000);
-			}
-		}
 
 		m_strStatsStatic2.assign(m_srcParams.str);
 		if (m_srcWidth != m_srcRectWidth || m_srcHeight != m_srcRectHeight) {
@@ -2752,6 +2746,20 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		}
 		m_strStatsStatic2 += fmt::format(L"\nInternalFormat: {}", DXGIFormatToString(m_InternalTexFmt));
 
+		if (SourceIsHDR()) {
+			m_strStatsHDR.assign(L"\nHDR processing: ");
+			if (m_bHdrSupport) {
+				m_strStatsHDR.append(L"passthrough");
+				if (m_lastHdr10.bValid) {
+					m_strStatsStatic1 += fmt::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance / 10000);
+				}
+			} else {
+				m_strStatsHDR.append(L"convert to SDR");
+			}
+		} else {
+			m_strStatsHDR.clear();
+		}
+
 		DXGI_SWAP_CHAIN_DESC1 swapchain_desc;
 		if (m_pDXGISwapChain1 && S_OK == m_pDXGISwapChain1->GetDesc1(&swapchain_desc)) {
 			m_strStatsPresent.assign(L"\nPresentation  : ");
@@ -2776,6 +2784,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		m_strStatsStatic1 = L"Error";
 		m_strStatsStatic2.clear();
 		m_strStatsPostProc.clear();
+		m_strStatsHDR.clear();
 		m_strStatsPresent.clear();
 	}
 }
@@ -2852,6 +2861,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	}
 
 	str.append(m_strStatsPostProc);
+	str.append(m_strStatsHDR);
 	str.append(m_strStatsPresent);
 
 	str += fmt::format(L"\nFrames: {:5}, skipped: {}/{}, failed: {}",

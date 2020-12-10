@@ -870,7 +870,7 @@ void CDX9VideoProcessor::SetGraphSize()
 		if (S_OK == m_Font3D.CreateFontBitmap(L"Consolas", m_StatsFontH, 0)) {
 			SIZE charSize = m_Font3D.GetMaxCharMetric();
 			m_StatsRect.right  = m_StatsRect.left + 63 * charSize.cx + 5 + 3;
-			m_StatsRect.bottom = m_StatsRect.top + 16 * charSize.cy + 5 + 3;
+			m_StatsRect.bottom = m_StatsRect.top + 17 * charSize.cy + 5 + 3;
 			m_StatsBackground.Set(m_StatsRect, D3DCOLOR_ARGB(80, 0, 0, 0));
 		}
 
@@ -2463,6 +2463,13 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 		}
 		m_strStatsStatic2 += fmt::format(L"\nInternalFormat: {}", D3DFormatToString(m_InternalTexFmt));
 
+		if (SourceIsHDR()) {
+			m_strStatsHDR.assign(L"\nHDR processing: ");
+			m_strStatsHDR.append(L"convert to SDR");
+		} else {
+			m_strStatsHDR.clear();
+		}
+
 		if (m_d3dpp.SwapEffect) {
 			m_strStatsPresent.assign(L"\nPresentation  : ");
 			switch (m_d3dpp.SwapEffect) {
@@ -2489,6 +2496,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 		m_strStatsStatic1 = L"Error";
 		m_strStatsStatic2.clear();
 		m_strStatsPostProc.clear();
+		m_strStatsHDR.clear();
 		m_strStatsPresent.clear();
 	}
 }
@@ -2562,6 +2570,7 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	}
 
 	str.append(m_strStatsPostProc);
+	str.append(m_strStatsHDR);
 	str.append(m_strStatsPresent);
 
 	str += fmt::format(L"\nFrames: {:5}, skipped: {}/{}, failed: {}",
