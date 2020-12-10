@@ -49,7 +49,7 @@
 #define OPT_SwapEffect           L"SwapEffect"
 #define OPT_ExclusiveFullscreen  L"ExclusiveFullscreen"
 #define OPT_HdrPassthrough       L"HdrPassthrough"
-#define OPT_onvertToSdr          L"ÑonvertToSdr"
+#define OPT_ConvertToSdr         L"ÑonvertToSdr"
 
 static std::atomic_int g_nInstance = 0;
 static const wchar_t g_szClassName[] = L"VRWindow";
@@ -195,6 +195,12 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ExclusiveFullscreen, dw)) {
 			m_Sets.bExclusiveFS = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrPassthrough, dw)) {
+			m_Sets.bHdrPassthrough = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ConvertToSdr, dw)) {
+			m_Sets.bConvertToSdr = !!dw;
 		}
 	}
 
@@ -1192,6 +1198,8 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_Dither,              m_Sets.bUseDither);
 		key.SetDWORDValue(OPT_SwapEffect,          m_Sets.iSwapEffect);
 		key.SetDWORDValue(OPT_ExclusiveFullscreen, m_Sets.bExclusiveFS);
+		key.SetDWORDValue(OPT_HdrPassthrough,      m_Sets.bHdrPassthrough);
+		key.SetDWORDValue(OPT_ConvertToSdr,        m_Sets.bConvertToSdr);
 	}
 
 	return S_OK;
