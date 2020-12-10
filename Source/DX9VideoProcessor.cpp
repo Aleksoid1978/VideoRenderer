@@ -2482,6 +2482,8 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 				m_strStatsPresent.append(L"FlipEx");
 				break;
 			}
+			m_strStatsPresent.append(L", ");
+			m_strStatsPresent.append(D3DFormatToString(m_d3dpp.BackBufferFormat));
 		}
 	} else {
 		m_strStatsStatic1 = L"Error";

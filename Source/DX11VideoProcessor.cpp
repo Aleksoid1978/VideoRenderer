@@ -2769,6 +2769,8 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 				m_strStatsPresent.append(L"Flip discard");
 				break;
 			}
+			m_strStatsPresent.append(L", ");
+			m_strStatsPresent.append(DXGIFormatToString(swapchain_desc.Format));
 		}
 	} else {
 		m_strStatsStatic1 = L"Error";
