@@ -162,7 +162,7 @@ HRESULT CVRMainPPage::OnActivate()
 		GetDlgItem(IDC_CHECK1).EnableWindow(FALSE);
 		m_SetsPP.bUseD3D11 = false;
 	}
-	if (1 || !IsWindows10OrGreater()) {
+	if (!IsWindows10OrGreater()) {
 		GetDlgItem(IDC_STATIC4).EnableWindow(FALSE);
 		GetDlgItem(IDC_CHECK12).EnableWindow(FALSE);
 	}

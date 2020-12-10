@@ -1062,6 +1062,9 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 	m_Sets.bUseD3D11    = setings.bUseD3D11;
 	m_Sets.bExclusiveFS = setings.bExclusiveFS;
 
+	m_Sets.bHdrPassthrough = setings.bHdrPassthrough;
+	m_Sets.bConvertToSdr = setings.bConvertToSdr;
+
 	CAutoLock cRendererLock(&m_RendererLock);
 
 	if (setings.bShowStats != m_Sets.bShowStats) {
@@ -1082,11 +1085,6 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 	if (setings.bVPScaling != m_Sets.bVPScaling) {
 		m_VideoProcessor->SetVPScaling(setings.bVPScaling);
 		m_Sets.bVPScaling = setings.bVPScaling;
-	}
-
-	if (setings.bConvertToSdr != m_Sets.bConvertToSdr) { // TODO
-		m_VideoProcessor->SetConvertToSDR(setings.bConvertToSdr);
-		m_Sets.bConvertToSdr = setings.bConvertToSdr;
 	}
 
 	if (setings.iChromaScaling != m_Sets.iChromaScaling) {
