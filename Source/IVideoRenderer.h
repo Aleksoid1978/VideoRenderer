@@ -33,17 +33,16 @@ enum :int {
 	CHROMA_Nearest = 0,
 	CHROMA_Bilinear,
 	CHROMA_CatmullRom,
-	CHROMA_COUNT,
+	CHROMA_COUNT
 };
 
 enum :int {
 	UPSCALE_Nearest = 0,
-	//UPSCALE_Bilinear,
 	UPSCALE_Mitchell,
 	UPSCALE_CatmullRom,
 	UPSCALE_Lanczos2,
 	UPSCALE_Lanczos3,
-	UPSCALE_COUNT,
+	UPSCALE_COUNT
 };
 
 enum :int {
@@ -51,15 +50,15 @@ enum :int {
 	DOWNSCALE_Bilinear,
 	DOWNSCALE_Hamming,
 	DOWNSCALE_Bicubic,
-	DOWNSCALE_Bicubic_sharp,
+	DOWNSCALE_BicubicSharp,
 	DOWNSCALE_Lanczos,
-	DOWNSCALE_COUNT,
+	DOWNSCALE_COUNT
 };
 
 enum :int {
 	SWAPEFFECT_Discard = 0,
 	SWAPEFFECT_Flip,
-	SWAPEFFECT_COUNT,
+	SWAPEFFECT_COUNT
 };
 
 struct VPEnableFormats_t {
@@ -84,6 +83,8 @@ struct Settings_t {
 	bool bUseDither;
 	int  iSwapEffect;
 	bool bExclusiveFS;
+	bool bHdrPassthrough;
+	bool bConvertToSdr;
 
 	Settings_t() {
 		SetDefault();
@@ -107,6 +108,8 @@ struct Settings_t {
 		bUseDither          = true;
 		iSwapEffect         = SWAPEFFECT_Discard;
 		bExclusiveFS        = false;
+		bHdrPassthrough     = true;
+		bool bConvertToSdr  = true;
 	}
 };
 

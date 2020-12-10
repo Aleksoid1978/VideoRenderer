@@ -48,6 +48,8 @@
 #define OPT_Dither               L"Dither"
 #define OPT_SwapEffect           L"SwapEffect"
 #define OPT_ExclusiveFullscreen  L"ExclusiveFullscreen"
+#define OPT_HdrPassthrough       L"HdrPassthrough"
+#define OPT_onvertToSdr          L"ÑonvertToSdr"
 
 static std::atomic_int g_nInstance = 0;
 static const wchar_t g_szClassName[] = L"VRWindow";

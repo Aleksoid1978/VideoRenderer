@@ -72,30 +72,32 @@
 #define IDF_PSH11_CONVOL_LANCZOS_X      860
 #define IDF_PSH11_CONVOL_LANCZOS_Y      861
 #define IDF_PSH11_FINAL_PASS            870
-#define IDC_STATIC1                     1001
-#define IDC_STATIC2                     1002
-#define IDC_STATIC3                     1003
-#define IDC_CHECK1                      1004
-#define IDC_CHECK2                      1005
-#define IDC_CHECK3                      1006
-#define IDC_CHECK4                      1007
-#define IDC_CHECK5                      1008
-#define IDC_CHECK6                      1009
-#define IDC_CHECK7                      1010
-#define IDC_CHECK8                      1011
-#define IDC_CHECK9                      1012
-#define IDC_CHECK10                     1013
-#define IDC_CHECK11                     1014
-#define IDC_CHECK12                     1015
-#define IDC_COMBO1                      1016
-#define IDC_COMBO2                      1017
-#define IDC_COMBO3                      1018
-#define IDC_COMBO4                      1019
-#define IDC_COMBO5                      1020
-#define IDC_COMBO6                      1021
-#define IDC_EDIT1                       1022
-#define IDC_EDIT2                       1023
-#define IDC_BUTTON1                     1024
+#define IDC_EDIT1                       1001
+#define IDC_EDIT2                       1002
+#define IDC_STATIC1                     1011
+#define IDC_STATIC2                     1012
+#define IDC_STATIC3                     1013
+#define IDC_STATIC4                     1014
+#define IDC_CHECK1                      1021
+#define IDC_CHECK2                      1022
+#define IDC_CHECK3                      1023
+#define IDC_CHECK4                      1024
+#define IDC_CHECK5                      1025
+#define IDC_CHECK6                      1026
+#define IDC_CHECK7                      1027
+#define IDC_CHECK8                      1028
+#define IDC_CHECK9                      1029
+#define IDC_CHECK10                     1030
+#define IDC_CHECK11                     1031
+#define IDC_CHECK12                     1032
+#define IDC_CHECK13                     1033
+#define IDC_COMBO1                      1041
+#define IDC_COMBO2                      1042
+#define IDC_COMBO3                      1043
+#define IDC_COMBO4                      1044
+#define IDC_COMBO5                      1045
+#define IDC_COMBO6                      1046
+#define IDC_BUTTON1                     1051
 
 // Next default values for new objects
 // 
@@ -103,7 +105,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        104
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1025
+#define _APS_NEXT_CONTROL_VALUE         1052
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
