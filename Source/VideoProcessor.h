@@ -52,6 +52,8 @@ protected:
 	bool m_bInterpolateAt50pct = true;
 	bool m_bUseDither          = true;
 	int  m_iSwapEffect         = SWAPEFFECT_Discard;
+	bool m_bHdrPassthrough     = true;
+	bool m_bConvertToSdr       = true;
 
 	// Input parameters
 	FmtConvParams_t m_srcParams = {};
@@ -169,6 +171,8 @@ public:
 	virtual void SetDownscaling(int value)   = 0;
 	virtual void SetDither(bool value)       = 0;
 	virtual void SetSwapEffect(int value)    = 0;
+	void SetHdrPassthrough(bool value) { m_bHdrPassthrough = value; } // TODO
+	void SetConvertToSDR(bool value)   { m_bConvertToSdr = value; }   // TODO
 
 	int GetRotation() { return m_iRotation; }
 	virtual void SetRotation(int value) = 0;

@@ -49,7 +49,7 @@
 #define OPT_SwapEffect           L"SwapEffect"
 #define OPT_ExclusiveFullscreen  L"ExclusiveFullscreen"
 #define OPT_HdrPassthrough       L"HdrPassthrough"
-#define OPT_ConvertToSdr         L"ÑonvertToSdr"
+#define OPT_ConvertToSdr         L"ConvertToSdr"
 
 static std::atomic_int g_nInstance = 0;
 static const wchar_t g_szClassName[] = L"VRWindow";
@@ -222,6 +222,8 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			m_VideoProcessor->SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
 			m_VideoProcessor->SetDither(m_Sets.bUseDither);
 			m_VideoProcessor->SetSwapEffect(m_Sets.iSwapEffect);
+			m_VideoProcessor->SetHdrPassthrough(m_Sets.bHdrPassthrough);
+			m_VideoProcessor->SetConvertToSDR(m_Sets.bConvertToSdr);
 
 			hr = m_VideoProcessor->Init(m_hWnd);
 		}
@@ -248,6 +250,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			m_VideoProcessor->SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
 			m_VideoProcessor->SetDither(m_Sets.bUseDither);
 			m_VideoProcessor->SetSwapEffect(m_Sets.iSwapEffect);
+			m_VideoProcessor->SetConvertToSDR(m_Sets.bConvertToSdr);
 
 			hr = m_VideoProcessor->Init(::GetForegroundWindow());
 		}
@@ -1110,6 +1113,11 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 	if (setings.bVPScaling != m_Sets.bVPScaling) {
 		m_VideoProcessor->SetVPScaling(setings.bVPScaling);
 		m_Sets.bVPScaling = setings.bVPScaling;
+	}
+
+	if (setings.bConvertToSdr != m_Sets.bConvertToSdr) { // TODO
+		m_VideoProcessor->SetConvertToSDR(setings.bConvertToSdr);
+		m_Sets.bConvertToSdr = setings.bConvertToSdr;
 	}
 
 	if (setings.iChromaScaling != m_Sets.iChromaScaling) {
