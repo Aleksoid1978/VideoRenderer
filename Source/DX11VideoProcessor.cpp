@@ -337,9 +337,24 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(
 
 // CDX11VideoProcessor
 
-CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr)
+CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Settings_t& config, HRESULT& hr)
 	: CVideoProcessor(pFilter)
 {
+	m_bShowStats          = config.bShowStats;
+	m_iResizeStats        = config.iResizeStats;
+	m_VPFormats           = config.VPFmts;
+	m_bDeintDouble        = config.bDeintDouble;
+	m_bVPScaling          = config.bVPScaling;
+	m_iChromaScaling      = config.iChromaScaling;
+	m_iUpscaling          = config.iUpscaling;
+	m_iDownscaling        = config.iDownscaling;
+	m_bInterpolateAt50pct = config.bInterpolateAt50pct;
+	m_bUseDither          = config.bUseDither;
+	m_iSwapEffect         = config.iSwapEffect;
+	m_bHdrPassthrough     = config.bHdrPassthrough;
+	m_bConvertToSdr       = config.bConvertToSdr;
+	SetTexFormat(config.iTextureFmt);
+
 	m_nCurrentAdapter = -1;
 	m_pDisplayMode = &m_DisplayMode;
 
@@ -1461,7 +1476,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 	// set default ProcAmp ranges
 	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
 
-	HRESULT hr2 = UpdateChromaScalingShader();
+	HRESULT hr2 = UpdateConvertColorShader();
 	if (FAILED(hr2)) {
 		ASSERT(0);
 		UINT resid = 0;
@@ -2034,7 +2049,7 @@ void CDX11VideoProcessor::UpdateDownscalingShaders()
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, s_Downscaling11ResIDs[m_iDownscaling].shaderY));
 }
 
-HRESULT CDX11VideoProcessor::UpdateChromaScalingShader()
+HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 {
 	m_pPSConvertColor.Release();
 	ID3DBlob* pShaderCode = nullptr;
@@ -2589,7 +2604,7 @@ void CDX11VideoProcessor::SetChromaScaling(int value)
 	m_iChromaScaling = value;
 
 	if (m_pDevice) {
-		EXECUTE_ASSERT(S_OK == UpdateChromaScalingShader());
+		EXECUTE_ASSERT(S_OK == UpdateConvertColorShader());
 		UpdateStatsStatic();
 	}
 }

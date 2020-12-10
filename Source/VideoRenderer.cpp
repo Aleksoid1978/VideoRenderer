@@ -207,24 +207,8 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	HRESULT hr = S_FALSE;
 
 	if (m_Sets.bUseD3D11 && IsWindows7SP1OrGreater()) {
-		m_VideoProcessor = new CDX11VideoProcessor(this, hr);
+		m_VideoProcessor = new CDX11VideoProcessor(this, m_Sets, hr);
 		if (SUCCEEDED(hr)) {
-			// configure the video processor
-			m_VideoProcessor->SetShowStats(m_Sets.bShowStats);
-			m_VideoProcessor->SetResizeStats(m_Sets.iResizeStats);
-			m_VideoProcessor->SetTexFormat(m_Sets.iTextureFmt);
-			m_VideoProcessor->SetVPEnableFmts(m_Sets.VPFmts);
-			m_VideoProcessor->SetDeintDouble(m_Sets.bDeintDouble);
-			m_VideoProcessor->SetVPScaling(m_Sets.bVPScaling);
-			m_VideoProcessor->SetChromaScaling(m_Sets.iChromaScaling);
-			m_VideoProcessor->SetUpscaling(m_Sets.iUpscaling);
-			m_VideoProcessor->SetDownscaling(m_Sets.iDownscaling);
-			m_VideoProcessor->SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
-			m_VideoProcessor->SetDither(m_Sets.bUseDither);
-			m_VideoProcessor->SetSwapEffect(m_Sets.iSwapEffect);
-			m_VideoProcessor->SetHdrPassthrough(m_Sets.bHdrPassthrough);
-			m_VideoProcessor->SetConvertToSDR(m_Sets.bConvertToSdr);
-
 			hr = m_VideoProcessor->Init(m_hWnd);
 		}
 
@@ -235,23 +219,8 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	}
 
 	if (!m_VideoProcessor) {
-		m_VideoProcessor = new CDX9VideoProcessor(this, hr);
+		m_VideoProcessor = new CDX9VideoProcessor(this, m_Sets, hr);
 		if (SUCCEEDED(hr)) {
-			// configure the video processor
-			m_VideoProcessor->SetShowStats(m_Sets.bShowStats);
-			m_VideoProcessor->SetResizeStats(m_Sets.iResizeStats);
-			m_VideoProcessor->SetTexFormat(m_Sets.iTextureFmt);
-			m_VideoProcessor->SetVPEnableFmts(m_Sets.VPFmts);
-			m_VideoProcessor->SetDeintDouble(m_Sets.bDeintDouble);
-			m_VideoProcessor->SetVPScaling(m_Sets.bVPScaling);
-			m_VideoProcessor->SetChromaScaling(m_Sets.iChromaScaling);
-			m_VideoProcessor->SetUpscaling(m_Sets.iUpscaling);
-			m_VideoProcessor->SetDownscaling(m_Sets.iDownscaling);
-			m_VideoProcessor->SetInterpolateAt50pct(m_Sets.bInterpolateAt50pct);
-			m_VideoProcessor->SetDither(m_Sets.bUseDither);
-			m_VideoProcessor->SetSwapEffect(m_Sets.iSwapEffect);
-			m_VideoProcessor->SetConvertToSDR(m_Sets.bConvertToSdr);
-
 			hr = m_VideoProcessor->Init(::GetForegroundWindow());
 		}
 

@@ -151,7 +151,7 @@ private:
 	HDRMetadata m_lastHdr10 = {};
 
 public:
-	CDX11VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr);
+	CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Settings_t& config, HRESULT& hr);
 	~CDX11VideoProcessor() override;
 
 	int Type() override { return VP_DX11; }
@@ -226,7 +226,7 @@ private:
 	void UpdatePostScaleTexures(SIZE texsize);
 	void UpdateUpscalingShaders();
 	void UpdateDownscalingShaders();
-	HRESULT UpdateChromaScalingShader();
+	HRESULT UpdateConvertColorShader();
 
 	HRESULT D3D11VPPass(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
 	HRESULT ConvertColorPass(ID3D11Texture2D* pRenderTarget);

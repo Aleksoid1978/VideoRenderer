@@ -110,7 +110,7 @@ private:
 	void ResizeInternal();
 
 public:
-	CDX9VideoProcessor(CMpcVideoRenderer* pFilter, HRESULT& hr);
+	CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Settings_t& config, HRESULT& hr);
 	~CDX9VideoProcessor() override;
 
 	int Type() override { return VP_DX9; }
@@ -174,7 +174,7 @@ private:
 	void UpdatePostScaleTexures(SIZE texsize);
 	void UpdateUpscalingShaders();
 	void UpdateDownscalingShaders();
-	HRESULT UpdateChromaScalingShader();
+	HRESULT UpdateConvertColorShader();
 
 	HRESULT DxvaVPPass(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
 	HRESULT ConvertColorPass(IDirect3DSurface9* pRenderTarget);
