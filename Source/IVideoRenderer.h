@@ -109,7 +109,7 @@ struct Settings_t {
 		iSwapEffect         = SWAPEFFECT_Discard;
 		bExclusiveFS        = false;
 		bHdrPassthrough     = true;
-		bool bConvertToSdr  = true;
+		bConvertToSdr       = true;
 	}
 };
 
