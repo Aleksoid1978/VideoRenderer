@@ -2754,7 +2754,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 					m_strStatsHDR += fmt::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance / 10000);
 				}
 			} else {
-				m_strStatsHDR.append(L"convert to SDR");
+				m_strStatsHDR.append(L"Convert to SDR");
 			}
 		} else {
 			m_strStatsHDR.clear();
