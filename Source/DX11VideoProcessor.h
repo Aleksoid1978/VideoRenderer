@@ -100,6 +100,10 @@ private:
 	// intermediate texture format
 	DXGI_FORMAT m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
 
+	// swap chain format
+	DXGI_FORMAT m_SwapChainFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
+	UINT32 m_bitsPerChannelSupport = 8;
+
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 
 	HMODULE m_hDXGILib = nullptr;
@@ -158,6 +162,7 @@ public:
 private:
 	void ReleaseVP();
 	void ReleaseDevice();
+	void ReleaseSwapChain();
 
 	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();

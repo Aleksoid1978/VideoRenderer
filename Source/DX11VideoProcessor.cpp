@@ -409,11 +409,7 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 		}
 	}
 
-	if (m_pDXGISwapChain1) {
-		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
-	}
-	m_pDXGISwapChain4.Release();
-	m_pDXGISwapChain1.Release();
+	ReleaseSwapChain();
 	m_pDXGIFactory2.Release();
 
 	ReleaseDevice();
@@ -436,16 +432,18 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	CheckPointer(m_fnD3D11CreateDevice, E_FAIL);
 
 	m_hWnd = hwnd;
+	m_bHdrSupport = false;
+	m_bitsPerChannelSupport = 8;
 
 	MONITORINFOEXW mi = { sizeof(mi) };
 	GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 	DisplayConfig_t displayConfig = {};
 
-	m_bHdrSupport = false;
 	if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 		DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
 		color_info.value = displayConfig.advancedColorValue;
 		m_bHdrSupport = color_info.advancedColorSupported && color_info.advancedColorEnabled;
+		m_bitsPerChannelSupport = displayConfig.bitsPerChannel;
 	}
 
 	if (m_bIsFullscreen != m_pFilter->m_bIsFullscreen) {
@@ -488,11 +486,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 		return S_OK;
 	}
 
-	if (m_pDXGISwapChain1) {
-		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
-	}
-	m_pDXGISwapChain4.Release();
-	m_pDXGISwapChain1.Release();
+	ReleaseSwapChain();
 	m_pDXGIFactory2.Release();
 	ReleaseDevice();
 
@@ -649,6 +643,15 @@ void CDX11VideoProcessor::ReleaseDevice()
 #endif
 
 	m_pDevice.Release();
+}
+
+void CDX11VideoProcessor::ReleaseSwapChain()
+{
+	if (m_pDXGISwapChain1) {
+		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
+	}
+	m_pDXGISwapChain4.Release();
+	m_pDXGISwapChain1.Release();
 }
 
 HRESULT CDX11VideoProcessor::CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid)
@@ -811,11 +814,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 {
 	DLog(L"CDX11VideoProcessor::SetDevice()");
 
-	if (m_pDXGISwapChain1) {
-		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
-	}
-	m_pDXGISwapChain4.Release();
-	m_pDXGISwapChain1.Release();
+	ReleaseSwapChain();
 	m_pDXGIFactory2.Release();
 	ReleaseDevice();
 
@@ -1011,20 +1010,19 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	return hr;
 }
 
-#define HDRFormat(fmt) (fmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || fmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG)
+#define HDRFormat(fmt)       (fmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || fmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG)
+#define Support10BitOutput() (m_bitsPerChannelSupport >= 10 && (m_InternalTexFmt == DXGI_FORMAT_R10G10B10A2_UNORM || m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT))
 
 HRESULT CDX11VideoProcessor::InitSwapChain()
 {
 	DLog(L"CDX11VideoProcessor::InitSwapChain() - {}", m_pFilter->m_bIsFullscreen ? L"fullscreen" : L"window");
 	CheckPointer(m_pDXGIFactory2, E_FAIL);
 
-	if (m_pDXGISwapChain1) {
-		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
-	}
-	m_pDXGISwapChain4.Release();
-	m_pDXGISwapChain1.Release();
+	ReleaseSwapChain();
 
-	const auto format = (m_bHdrSupport && HDRFormat(m_srcExFmt)) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
+	const auto bHdrOutput = m_bHdrSupport && HDRFormat(m_srcExFmt);
+	const auto b10BitOutput = bHdrOutput || Support10BitOutput();
+	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
 	HRESULT hr = S_OK;
 	m_bIsFullscreen = m_pFilter->m_bIsFullscreen;
@@ -1036,12 +1034,12 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		DXGI_SWAP_CHAIN_DESC1 desc1 = {};
 		desc1.Width = rc.Width();
 		desc1.Height = rc.Height();
-		desc1.Format = format;
+		desc1.Format = m_SwapChainFmt;
 		desc1.SampleDesc.Count = 1;
 		desc1.SampleDesc.Quality = 0;
 		desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		if((m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) || format == DXGI_FORMAT_R10G10B10A2_UNORM) {
-			desc1.BufferCount = format == DXGI_FORMAT_R10G10B10A2_UNORM ? 6 : 2;
+		if((m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) || bHdrOutput) {
+			desc1.BufferCount = bHdrOutput ? 6 : 2;
 			desc1.Scaling = DXGI_SCALING_NONE;
 			desc1.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 		} else { // default SWAPEFFECT_Discard
@@ -1063,12 +1061,12 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		DXGI_SWAP_CHAIN_DESC1 desc1 = {};
 		desc1.Width = m_windowRect.Width();
 		desc1.Height = m_windowRect.Height();
-		desc1.Format = format;
+		desc1.Format = m_SwapChainFmt;
 		desc1.SampleDesc.Count = 1;
 		desc1.SampleDesc.Quality = 0;
 		desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		if ((m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) || format == DXGI_FORMAT_R10G10B10A2_UNORM) {
-			desc1.BufferCount = format == DXGI_FORMAT_R10G10B10A2_UNORM ? 6 : 2;
+		if ((m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) || bHdrOutput) {
+			desc1.BufferCount = bHdrOutput ? 6 : 2;
 			desc1.Scaling = DXGI_SCALING_NONE;
 			desc1.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 		} else { // default SWAPEFFECT_Discard
@@ -1305,13 +1303,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 						}
 					}
 
-					if (ERROR_SUCCESS == ret) {
-						if (m_pDXGISwapChain1) {
-							m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
-						}
-						m_pDXGISwapChain4.Release();
-						m_pDXGISwapChain1.Release();
-
+					if (ret) {
+						ReleaseSwapChain();
 						Init(m_hWnd);
 					}
 				}
@@ -1334,18 +1327,18 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 							m_hdrOutputDevice.clear();
 						}
 
-						if (m_pDXGISwapChain1) {
-							m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
-						}
-						m_pDXGISwapChain4.Release();
-						m_pDXGISwapChain1.Release();
-
+						ReleaseSwapChain();
 						Init(m_hWnd);
 					}
 				}
 			}
 		}
 		m_bIsInitHDR = false;
+	}
+
+	if (Support10BitOutput() && m_SwapChainFmt == DXGI_FORMAT_B8G8R8A8_UNORM) {
+		ReleaseSwapChain();
+		Init(m_hWnd);
 	}
 
 	m_srcVideoTransferFunction = m_srcExFmt.VideoTransferFunction;
@@ -2011,7 +2004,7 @@ void CDX11VideoProcessor::UpdateTexures(SIZE texsize)
 
 void CDX11VideoProcessor::UpdatePostScaleTexures(SIZE texsize)
 {
-	m_bFinalPass = (m_bUseDither && m_InternalTexFmt != DXGI_FORMAT_B8G8R8A8_UNORM && m_TexDither.pTexture && m_pPSFinalPass);
+	m_bFinalPass = (m_bUseDither && m_InternalTexFmt != m_SwapChainFmt && m_TexDither.pTexture && m_pPSFinalPass);
 
 	UINT numPostScaleShaders = m_pPostScaleShaders.size();
 	if (m_pPSCorrection) {
@@ -2387,11 +2380,7 @@ HRESULT CDX11VideoProcessor::Reset()
 					m_hdrOutputDevice.clear();
 				}
 				if (m_pFilter->m_inputMT.IsValid()) {
-					if (m_pDXGISwapChain1) {
-						m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
-					}
-					m_pDXGISwapChain4.Release();
-					m_pDXGISwapChain1.Release();
+					ReleaseSwapChain();
 					if (m_iSwapEffect == SWAPEFFECT_Discard && !color_info.advancedColorEnabled) {
 						m_pFilter->Init(true);
 					} else {
@@ -2640,11 +2629,7 @@ void CDX11VideoProcessor::SetDither(bool value)
 
 void CDX11VideoProcessor::SetSwapEffect(int value)
 {
-	if (m_pDXGISwapChain1) {
-		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
-	}
-	m_pDXGISwapChain4.Release();
-	m_pDXGISwapChain1.Release();
+	ReleaseSwapChain();
 	m_iSwapEffect = value;
 }
 
