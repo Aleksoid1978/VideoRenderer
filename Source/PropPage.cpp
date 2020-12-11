@@ -95,8 +95,9 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK3, m_SetsPP.bDeintDouble     ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling       ? BST_CHECKED : BST_UNCHECKED);
 
-	CheckDlgButton(IDC_CHECK12, m_SetsPP.bHdrPassthrough ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK13, m_SetsPP.bConvertToSdr   ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK12, m_SetsPP.bHdrPassthrough  ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK12, m_SetsPP.bHdrToggleDiplay ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr    ? BST_CHECKED : BST_UNCHECKED);
 
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK10, m_SetsPP.bUseDither      ? BST_CHECKED : BST_UNCHECKED);
@@ -163,8 +164,9 @@ HRESULT CVRMainPPage::OnActivate()
 		m_SetsPP.bUseD3D11 = false;
 	}
 	if (!IsWindows10OrGreater()) {
-		GetDlgItem(IDC_STATIC4).EnableWindow(FALSE);
 		GetDlgItem(IDC_CHECK12).EnableWindow(FALSE);
+		GetDlgItem(IDC_CHECK13).EnableWindow(FALSE);
+		GetDlgItem(IDC_STATIC4).EnableWindow(FALSE);
 	}
 
 	EnableControls();
@@ -277,7 +279,12 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				return (LRESULT)1;
 			}
 			if (nID == IDC_CHECK13) {
-				m_SetsPP.bConvertToSdr = IsDlgButtonChecked(IDC_CHECK13) == BST_CHECKED;
+				m_SetsPP.bHdrToggleDiplay = IsDlgButtonChecked(IDC_CHECK13) == BST_CHECKED;
+				SetDirty();
+				return (LRESULT)1;
+			}
+			if (nID == IDC_CHECK14) {
+				m_SetsPP.bConvertToSdr = IsDlgButtonChecked(IDC_CHECK14) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}

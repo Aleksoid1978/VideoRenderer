@@ -91,6 +91,7 @@
 #define IDC_CHECK11                     1031
 #define IDC_CHECK12                     1032
 #define IDC_CHECK13                     1033
+#define IDC_CHECK14                     1034
 #define IDC_COMBO1                      1041
 #define IDC_COMBO2                      1042
 #define IDC_COMBO3                      1043

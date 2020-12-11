@@ -49,6 +49,7 @@
 #define OPT_SwapEffect           L"SwapEffect"
 #define OPT_ExclusiveFullscreen  L"ExclusiveFullscreen"
 #define OPT_HdrPassthrough       L"HdrPassthrough"
+#define OPT_HdrToggleDiplay      L"HdrToggleDiplay"
 #define OPT_ConvertToSdr         L"ConvertToSdr"
 
 static std::atomic_int g_nInstance = 0;
@@ -199,6 +200,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrPassthrough, dw)) {
 			m_Sets.bHdrPassthrough = !!dw;
 		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrToggleDiplay, dw)) {
+
+		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ConvertToSdr, dw)) {
 			m_Sets.bConvertToSdr = !!dw;
 		}
@@ -206,6 +210,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	if (!IsWindows10OrGreater()) {
 		m_Sets.bHdrPassthrough = false;
+		m_Sets.bHdrToggleDiplay = false;
 	}
 
 	HRESULT hr = S_FALSE;
@@ -1066,8 +1071,9 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 	m_Sets.bUseD3D11    = setings.bUseD3D11;
 	m_Sets.bExclusiveFS = setings.bExclusiveFS;
 
-	m_Sets.bHdrPassthrough = setings.bHdrPassthrough;
-	m_Sets.bConvertToSdr = setings.bConvertToSdr;
+	m_Sets.bHdrPassthrough  = setings.bHdrPassthrough;
+	m_Sets.bHdrToggleDiplay = setings.bHdrToggleDiplay;
+	m_Sets.bConvertToSdr    = setings.bConvertToSdr;
 
 	CAutoLock cRendererLock(&m_RendererLock);
 
@@ -1178,6 +1184,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_SwapEffect,          m_Sets.iSwapEffect);
 		key.SetDWORDValue(OPT_ExclusiveFullscreen, m_Sets.bExclusiveFS);
 		key.SetDWORDValue(OPT_HdrPassthrough,      m_Sets.bHdrPassthrough);
+		key.SetDWORDValue(OPT_HdrToggleDiplay,     m_Sets.bHdrToggleDiplay);
 		key.SetDWORDValue(OPT_ConvertToSdr,        m_Sets.bConvertToSdr);
 	}
 

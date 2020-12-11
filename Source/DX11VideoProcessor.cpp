@@ -352,6 +352,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_bUseDither          = config.bUseDither;
 	m_iSwapEffect         = config.iSwapEffect;
 	m_bHdrPassthrough     = config.bHdrPassthrough;
+	m_bHdrToggleDiplay    = config.bHdrToggleDiplay;
 	m_bConvertToSdr       = config.bConvertToSdr;
 	SetTexFormat(config.iTextureFmt);
 

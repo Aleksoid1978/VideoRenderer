@@ -280,6 +280,7 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Setting
 	m_bUseDither          = config.bUseDither;
 	m_iSwapEffect         = config.iSwapEffect;
 	m_bHdrPassthrough     = false;
+	m_bHdrToggleDiplay    = false;
 	m_bConvertToSdr       = config.bConvertToSdr;
 	SetTexFormat(config.iTextureFmt);
 
