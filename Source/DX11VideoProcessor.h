@@ -136,7 +136,7 @@ private:
 
 	bool m_bDecoderDevice = false;
 	bool m_bIsFullscreen = false;
-	bool m_bHdrSupport = false;
+	bool m_bHdrPassthroughSupport = false;
 	bool m_bHdrCreate = true;
 	bool m_bIsInitHDR = false;
 	std::wstring m_hdrOutputDevice;

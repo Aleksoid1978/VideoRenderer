@@ -447,7 +447,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	CheckPointer(m_fnD3D11CreateDevice, E_FAIL);
 
 	m_hWnd = hwnd;
-	m_bHdrSupport = false;
+	m_bHdrPassthroughSupport = false;
 	m_bitsPerChannelSupport = 8;
 
 	MONITORINFOEXW mi = { sizeof(mi) };
@@ -457,7 +457,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 		DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
 		color_info.value = displayConfig.advancedColorValue;
-		m_bHdrSupport = color_info.advancedColorSupported && color_info.advancedColorEnabled;
+		m_bHdrPassthroughSupport = color_info.advancedColorSupported && color_info.advancedColorEnabled;
 		m_bitsPerChannelSupport = displayConfig.bitsPerChannel;
 	}
 
@@ -1032,7 +1032,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 
 	ReleaseSwapChain();
 
-	const auto bHdrOutput = m_bHdrSupport && m_bHdrPassthrough && SourceIsHDR();
+	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR();
 	const auto b10BitOutput = bHdrOutput || Preferred10BitOutput();
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
@@ -1092,7 +1092,9 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 
 	if (m_pDXGISwapChain1) {
 		m_currentSwapChainColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
-		m_pDXGISwapChain1->QueryInterface(IID_PPV_ARGS(&m_pDXGISwapChain4));
+		if (bHdrOutput) {
+			m_pDXGISwapChain1->QueryInterface(IID_PPV_ARGS(&m_pDXGISwapChain4));
+		}
 
 		m_pShaderResourceSubPic.Release();
 		m_pTextureSubPic.Release();
@@ -1360,11 +1362,11 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		// D3D11 VP does not work correctly if RGB32 with odd frame width (source or target) on Nvidia adapters
 
 		if (S_OK == InitializeD3D11VP(FmtParams, origW, origH)) {
-			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && !(m_bHdrSupport && m_bHdrPassthrough) && m_bConvertToSdr) {
+			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && !(m_bHdrPassthroughSupport && m_bHdrPassthrough) && m_bConvertToSdr) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_ST2084));
 				m_strCorrection = L"ST 2084 correction";
 			}
-			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG && !(m_bHdrSupport && m_bHdrPassthrough) && m_bConvertToSdr) {
+			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG && !(m_bHdrPassthroughSupport && m_bHdrPassthrough) && m_bConvertToSdr) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_HLG));
 				m_strCorrection = L"HLG correction";
 			}
@@ -1887,8 +1889,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	uint64_t tick3 = GetPreciseTick();
 	m_RenderStats.paintticks = tick3 - tick1;
 
-	if (m_pDXGISwapChain4
-			&& m_bHdrSupport && m_bHdrPassthrough && SourceIsHDR()) {
+	if (m_pDXGISwapChain4) {
 		const DXGI_COLOR_SPACE_TYPE colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
 		if (m_currentSwapChainColorSpace != colorSpace) {
 			if (m_hdr10.bValid) {
@@ -2057,7 +2058,7 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 	HRESULT hr = GetShaderConvertColor(true,
 		m_TexSrcVideo.desc.Width, m_TexSrcVideo.desc.Height,
 		m_srcRect, m_srcParams, m_srcExFmt,
-		m_iChromaScaling, !(m_bHdrSupport && m_bHdrPassthrough) && m_bConvertToSdr,
+		m_iChromaScaling, !(m_bHdrPassthroughSupport && m_bHdrPassthrough) && m_bConvertToSdr,
 		&pShaderCode);
 	if (S_OK == hr) {
 		hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
@@ -2391,7 +2392,7 @@ HRESULT CDX11VideoProcessor::Reset()
 			DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
 			color_info.value = displayConfig.advancedColorValue;
 
-			if (color_info.advancedColorEnabled && !m_bHdrSupport || !color_info.advancedColorEnabled && m_bHdrSupport) {
+			if (color_info.advancedColorEnabled && !m_bHdrPassthroughSupport || !color_info.advancedColorEnabled && m_bHdrPassthroughSupport) {
 				if (!color_info.advancedColorEnabled && m_hdrOutputDevice == mi.szDevice) {
 					m_hdrOutputDevice.clear();
 				}
@@ -2767,7 +2768,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 
 		if (SourceIsHDR()) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
-			if (m_bHdrSupport && m_bHdrPassthrough) {
+			if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
 				m_strStatsHDR.append(L"Passthrough");
 				if (m_lastHdr10.bValid) {
 					m_strStatsHDR += fmt::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance / 10000);
