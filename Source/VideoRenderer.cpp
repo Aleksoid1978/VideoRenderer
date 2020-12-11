@@ -204,6 +204,10 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 	}
 
+	if (!IsWindows10OrGreater()) {
+		m_Sets.bHdrPassthrough = false;
+	}
+
 	HRESULT hr = S_FALSE;
 
 	if (m_Sets.bUseD3D11 && IsWindows7SP1OrGreater()) {
