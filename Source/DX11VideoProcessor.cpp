@@ -2590,6 +2590,11 @@ HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 	return S_OK;
 }
 
+void CDX11VideoProcessor::Configure(const Settings_t& config)
+{
+	// TODO
+}
+
 void CDX11VideoProcessor::SetVPScaling(bool value)
 {
 	m_bVPScaling = value;

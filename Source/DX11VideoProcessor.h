@@ -207,6 +207,7 @@ public:
 	HRESULT GetVPInfo(std::wstring& str) override;
 
 	// Settings
+	void Configure(const Settings_t& config);
 	void SetVPScaling(bool value)    override;
 	void SetChromaScaling(int value) override;
 	void SetUpscaling(int value)     override;

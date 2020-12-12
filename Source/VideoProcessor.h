@@ -160,6 +160,7 @@ public:
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
 
 	// Settings
+	virtual void Configure(const Settings_t& config) = 0;
 	void SetTexFormat(int value);
 	void SetVPEnableFmts(const VPEnableFormats_t& VPFormats) { m_VPFormats = VPFormats; }
 	void SetDeintDouble(bool value)                          { m_bDeintDouble = value; }
@@ -172,7 +173,7 @@ public:
 	virtual void SetDownscaling(int value)   = 0;
 	virtual void SetDither(bool value)       = 0;
 	virtual void SetSwapEffect(int value)    = 0;
-	void SetHdr(bool passthrough, bool ToggleDisplay) { m_bHdrPassthrough = passthrough; m_bHdrToggleDisplay = ToggleDisplay; } // TODO
+	void SetHdr(bool passthrough, bool toggleDisplay) { m_bHdrPassthrough = passthrough; m_bHdrToggleDisplay = toggleDisplay; } // TODO
 	void SetConvertToSDR(bool value)   { m_bConvertToSdr = value; } // TODO
 
 	int GetRotation() { return m_iRotation; }

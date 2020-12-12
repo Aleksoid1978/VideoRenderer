@@ -1695,6 +1695,11 @@ HRESULT CDX9VideoProcessor::GetVPInfo(std::wstring& str)
 	return S_OK;
 }
 
+void CDX9VideoProcessor::Configure(const Settings_t& config)
+{
+	// TODO
+}
+
 void CDX9VideoProcessor::SetVPScaling(bool value)
 {
 	m_bVPScaling = value;
