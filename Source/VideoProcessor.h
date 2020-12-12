@@ -53,7 +53,7 @@ protected:
 	bool m_bUseDither          = true;
 	int  m_iSwapEffect         = SWAPEFFECT_Discard;
 	bool m_bHdrPassthrough     = true;
-	bool m_bHdrToggleDisplay    = true;
+	bool m_bHdrToggleDisplay   = true;
 	bool m_bConvertToSdr       = true;
 
 	// Input parameters

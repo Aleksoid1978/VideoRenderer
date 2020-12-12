@@ -353,7 +353,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_bUseDither          = config.bUseDither;
 	m_iSwapEffect         = config.iSwapEffect;
 	m_bHdrPassthrough     = config.bHdrPassthrough;
-	m_bHdrToggleDisplay    = config.bHdrToggleDisplay;
+	m_bHdrToggleDisplay   = config.bHdrToggleDisplay;
 	m_bConvertToSdr       = config.bConvertToSdr;
 
 	m_nCurrentAdapter = -1;

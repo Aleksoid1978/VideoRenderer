@@ -281,7 +281,7 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Setting
 	m_bUseDither          = config.bUseDither;
 	m_iSwapEffect         = config.iSwapEffect;
 	m_bHdrPassthrough     = false;
-	m_bHdrToggleDisplay    = false;
+	m_bHdrToggleDisplay   = false;
 	m_bConvertToSdr       = config.bConvertToSdr;
 
 	m_nCurrentAdapter = D3DADAPTER_DEFAULT;
@@ -854,6 +854,20 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 	}
 }
 
+void CDX9VideoProcessor::UpdateTexParams()
+{
+	switch (m_iTexFormat) {
+	case TEXFMT_AUTOINT:
+		m_InternalTexFmt = (m_srcParams.CDepth > 8) ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
+		break;
+	case TEXFMT_8INT:    m_InternalTexFmt = D3DFMT_X8R8G8B8;      break;
+	case TEXFMT_10INT:   m_InternalTexFmt = D3DFMT_A2R10G10B10;   break;
+	case TEXFMT_16FLOAT: m_InternalTexFmt = D3DFMT_A16B16G16R16F; break;
+	default:
+		ASSERT(FALSE);
+	}
+}
+
 void CDX9VideoProcessor::UpdateRenderRect()
 {
 	m_renderRect.IntersectRect(m_videoRect, m_windowRect);
@@ -1096,16 +1110,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_pPSConvertColor.Release();
 	m_PSConvColorData.bEnable = false;
 
-	switch (m_iTexFormat) {
-	case TEXFMT_AUTOINT:
-		m_InternalTexFmt = (FmtParams.CDepth > 8) ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
-		break;
-	case TEXFMT_8INT:    m_InternalTexFmt = D3DFMT_X8R8G8B8;      break;
-	case TEXFMT_10INT:   m_InternalTexFmt = D3DFMT_A2R10G10B10;   break;
-	case TEXFMT_16FLOAT: m_InternalTexFmt = D3DFMT_A16B16G16R16F; break;
-	default:
-		ASSERT(FALSE);
-	}
+	UpdateTexParams();
 
 	// DXVA2 Video Processor
 	if (FmtParams.DXVA2Format != D3DFMT_UNKNOWN && S_OK == InitializeDXVA2VP(FmtParams, origW, origH)) {
@@ -1720,6 +1725,7 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	if (config.iTexFormat != m_iTexFormat) {
 		m_iTexFormat = config.iTexFormat;
 		changeTextures = true;
+		changeVP = true; // temporary solution
 	}
 
 	if (m_srcParams.cformat == CF_NV12) {
@@ -1739,6 +1745,7 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	if (config.bVPScaling != m_bVPScaling) {
 		m_bVPScaling = config.bVPScaling;
 		changeTextures = true;
+		changeVP = true; // temporary solution
 	}
 	if (config.iChromaScaling != m_iChromaScaling) {
 		m_iChromaScaling = config.iChromaScaling;
@@ -1785,6 +1792,7 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (changeTextures) {
+		UpdateTexParams();
 		// TODO...
 	}
 
