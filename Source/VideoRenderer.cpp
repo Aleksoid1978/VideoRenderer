@@ -49,7 +49,7 @@
 #define OPT_SwapEffect           L"SwapEffect"
 #define OPT_ExclusiveFullscreen  L"ExclusiveFullscreen"
 #define OPT_HdrPassthrough       L"HdrPassthrough"
-#define OPT_HdrToggleDiplay      L"HdrToggleDiplay"
+#define OPT_HdrToggleDisplay     L"HdrToggleDisplay"
 #define OPT_ConvertToSdr         L"ConvertToSdr"
 
 static std::atomic_int g_nInstance = 0;
@@ -200,8 +200,8 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrPassthrough, dw)) {
 			m_Sets.bHdrPassthrough = !!dw;
 		}
-		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrToggleDiplay, dw)) {
-			m_Sets.bHdrToggleDiplay = !!dw;
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrToggleDisplay, dw)) {
+			m_Sets.bHdrToggleDisplay = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ConvertToSdr, dw)) {
 			m_Sets.bConvertToSdr = !!dw;
@@ -210,7 +210,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	if (!IsWindows10OrGreater()) {
 		m_Sets.bHdrPassthrough = false;
-		m_Sets.bHdrToggleDiplay = false;
+		m_Sets.bHdrToggleDisplay = false;
 	}
 
 	HRESULT hr = S_FALSE;
@@ -500,7 +500,7 @@ HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 	return NOERROR;
 }
 
-void CMpcVideoRenderer::UpdateDiplayInfo()
+void CMpcVideoRenderer::UpdateDisplayInfo()
 {
 	const HMONITOR hMonPrimary = MonitorFromPoint(CPoint(0, 0), MONITOR_DEFAULTTOPRIMARY);
 
@@ -526,7 +526,7 @@ void CMpcVideoRenderer::OnDisplayModeChange(const bool bReset/* = false*/)
 	}
 
 	m_hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
-	UpdateDiplayInfo();
+	UpdateDisplayInfo();
 }
 
 void CMpcVideoRenderer::OnWindowMove()
@@ -541,7 +541,7 @@ void CMpcVideoRenderer::OnWindowMove()
 			}
 
 			m_hMon = hMon;
-			UpdateDiplayInfo();
+			UpdateDisplayInfo();
 		}
 	}
 }
@@ -1072,7 +1072,7 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 	m_Sets.bExclusiveFS = setings.bExclusiveFS;
 
 	m_Sets.bHdrPassthrough  = setings.bHdrPassthrough;
-	m_Sets.bHdrToggleDiplay = setings.bHdrToggleDiplay;
+	m_Sets.bHdrToggleDisplay = setings.bHdrToggleDisplay;
 	m_Sets.bConvertToSdr    = setings.bConvertToSdr;
 
 	CAutoLock cRendererLock(&m_RendererLock);
@@ -1184,7 +1184,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_SwapEffect,          m_Sets.iSwapEffect);
 		key.SetDWORDValue(OPT_ExclusiveFullscreen, m_Sets.bExclusiveFS);
 		key.SetDWORDValue(OPT_HdrPassthrough,      m_Sets.bHdrPassthrough);
-		key.SetDWORDValue(OPT_HdrToggleDiplay,     m_Sets.bHdrToggleDiplay);
+		key.SetDWORDValue(OPT_HdrToggleDisplay,    m_Sets.bHdrToggleDisplay);
 		key.SetDWORDValue(OPT_ConvertToSdr,        m_Sets.bConvertToSdr);
 	}
 

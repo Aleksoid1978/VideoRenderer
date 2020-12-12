@@ -128,7 +128,7 @@ public:
 	HRESULT BeginFlush() override;
 	HRESULT EndFlush() override;
 
-	void UpdateDiplayInfo();
+	void UpdateDisplayInfo();
 	void OnDisplayModeChange(const bool bReset = false);
 	void OnWindowMove();
 

@@ -53,7 +53,7 @@ protected:
 	bool m_bUseDither          = true;
 	int  m_iSwapEffect         = SWAPEFFECT_Discard;
 	bool m_bHdrPassthrough     = true;
-	bool m_bHdrToggleDiplay    = true;
+	bool m_bHdrToggleDisplay    = true;
 	bool m_bConvertToSdr       = true;
 
 	// Input parameters
@@ -172,7 +172,7 @@ public:
 	virtual void SetDownscaling(int value)   = 0;
 	virtual void SetDither(bool value)       = 0;
 	virtual void SetSwapEffect(int value)    = 0;
-	void SetHdr(bool passthrough, bool toggleDiplay) { m_bHdrPassthrough = passthrough; m_bHdrToggleDiplay = toggleDiplay; } // TODO
+	void SetHdr(bool passthrough, bool ToggleDisplay) { m_bHdrPassthrough = passthrough; m_bHdrToggleDisplay = ToggleDisplay; } // TODO
 	void SetConvertToSDR(bool value)   { m_bConvertToSdr = value; } // TODO
 
 	int GetRotation() { return m_iRotation; }

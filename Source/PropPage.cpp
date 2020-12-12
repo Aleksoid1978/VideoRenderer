@@ -96,7 +96,7 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling       ? BST_CHECKED : BST_UNCHECKED);
 
 	CheckDlgButton(IDC_CHECK12, m_SetsPP.bHdrPassthrough  ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK12, m_SetsPP.bHdrToggleDiplay ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK13, m_SetsPP.bHdrToggleDisplay ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr    ? BST_CHECKED : BST_UNCHECKED);
 
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
@@ -279,7 +279,7 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				return (LRESULT)1;
 			}
 			if (nID == IDC_CHECK13) {
-				m_SetsPP.bHdrToggleDiplay = IsDlgButtonChecked(IDC_CHECK13) == BST_CHECKED;
+				m_SetsPP.bHdrToggleDisplay = IsDlgButtonChecked(IDC_CHECK13) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}
