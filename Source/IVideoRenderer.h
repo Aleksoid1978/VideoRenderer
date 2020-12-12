@@ -75,7 +75,7 @@ struct Settings_t {
 	int  iTextureFmt;
 	VPEnableFormats_t VPFmts;
 	bool bDeintDouble;
-	int  bVPScaling;
+	bool bVPScaling;
 	int  iChromaScaling;
 	int  iUpscaling;
 	int  iDownscaling;
