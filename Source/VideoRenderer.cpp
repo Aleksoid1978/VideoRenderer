@@ -1068,85 +1068,91 @@ STDMETHODIMP_(void) CMpcVideoRenderer::GetSettings(Settings_t& setings)
 
 STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 {
-	m_Sets.bUseD3D11    = setings.bUseD3D11;
-	m_Sets.bExclusiveFS = setings.bExclusiveFS;
-
-	m_Sets.bHdrPassthrough  = setings.bHdrPassthrough;
-	m_Sets.bHdrToggleDisplay = setings.bHdrToggleDisplay;
-	m_Sets.bConvertToSdr    = setings.bConvertToSdr;
-
 	CAutoLock cRendererLock(&m_RendererLock);
 
-	if (setings.bShowStats != m_Sets.bShowStats) {
-		m_VideoProcessor->SetShowStats(setings.bShowStats);
-		m_Sets.bShowStats = setings.bShowStats;
+	if (m_VideoProcessor->Type() == VP_DX9) {
+		m_Sets = setings;
+		m_VideoProcessor->Configure(setings);
 	}
+	else {
+		m_Sets.bUseD3D11    = setings.bUseD3D11;
+		m_Sets.bExclusiveFS = setings.bExclusiveFS;
 
-	if (setings.iResizeStats != m_Sets.iResizeStats) {
-		m_VideoProcessor->SetResizeStats(setings.iResizeStats);
-		m_Sets.iResizeStats = setings.iResizeStats;
-	}
+		m_Sets.bHdrPassthrough  = setings.bHdrPassthrough;
+		m_Sets.bHdrToggleDisplay = setings.bHdrToggleDisplay;
+		m_Sets.bConvertToSdr    = setings.bConvertToSdr;
 
-	if (setings.bDeintDouble != m_Sets.bDeintDouble) {
-		m_VideoProcessor->SetDeintDouble(setings.bDeintDouble);
-		m_Sets.bDeintDouble = setings.bDeintDouble;
-	}
-
-	if (setings.bVPScaling != m_Sets.bVPScaling) {
-		m_VideoProcessor->SetVPScaling(setings.bVPScaling);
-		m_Sets.bVPScaling = setings.bVPScaling;
-	}
-
-	if (setings.iChromaScaling != m_Sets.iChromaScaling) {
-		m_VideoProcessor->SetChromaScaling(setings.iChromaScaling);
-		m_Sets.iChromaScaling = setings.iChromaScaling;
-	}
-
-	if (setings.iUpscaling != m_Sets.iUpscaling) {
-		m_VideoProcessor->SetUpscaling(setings.iUpscaling);
-		m_Sets.iUpscaling = setings.iUpscaling;
-	}
-
-	if (setings.iDownscaling != m_Sets.iDownscaling) {
-		m_VideoProcessor->SetDownscaling(setings.iDownscaling);
-		m_Sets.iDownscaling = setings.iDownscaling;
-	}
-
-	if (setings.bInterpolateAt50pct != m_Sets.bInterpolateAt50pct) {
-		m_VideoProcessor->SetInterpolateAt50pct(setings.bInterpolateAt50pct);
-		m_Sets.bInterpolateAt50pct = setings.bInterpolateAt50pct;
-	}
-
-	if (setings.bUseDither != m_Sets.bUseDither) {
-		m_VideoProcessor->SetDither(setings.bUseDither);
-		m_Sets.bUseDither = setings.bUseDither;
-	}
-
-	if (m_Sets.iTexFormat != setings.iTexFormat
-		|| setings.VPFmts.bNV12  != m_Sets.VPFmts.bNV12
-		|| setings.VPFmts.bP01x  != m_Sets.VPFmts.bP01x
-		|| setings.VPFmts.bYUY2  != m_Sets.VPFmts.bYUY2
-		|| setings.VPFmts.bOther != m_Sets.VPFmts.bOther) {
-
-		m_Sets.iTexFormat = setings.iTexFormat;
-		m_Sets.VPFmts      = setings.VPFmts;
-
-		if (m_inputMT.IsValid()) {
-			m_VideoProcessor->SetTexFormat(m_Sets.iTexFormat);
-			m_VideoProcessor->SetVPEnableFmts(m_Sets.VPFmts);
-			BOOL ret = m_VideoProcessor->InitMediaType(&m_inputMT);
-
-			m_bValidBuffer = false;
+		if (setings.bShowStats != m_Sets.bShowStats) {
+			m_VideoProcessor->SetShowStats(setings.bShowStats);
+			m_Sets.bShowStats = setings.bShowStats;
 		}
-	}
 
-	if (m_Sets.iSwapEffect != setings.iSwapEffect) {
-		m_Sets.iSwapEffect = setings.iSwapEffect;
-		if (m_hWnd) {
-			m_VideoProcessor->SetSwapEffect(m_Sets.iSwapEffect);
+		if (setings.iResizeStats != m_Sets.iResizeStats) {
+			m_VideoProcessor->SetResizeStats(setings.iResizeStats);
+			m_Sets.iResizeStats = setings.iResizeStats;
+		}
 
-			if (!m_bIsFullscreen) {
-				Init(true);
+		if (setings.bDeintDouble != m_Sets.bDeintDouble) {
+			m_VideoProcessor->SetDeintDouble(setings.bDeintDouble);
+			m_Sets.bDeintDouble = setings.bDeintDouble;
+		}
+
+		if (setings.bVPScaling != m_Sets.bVPScaling) {
+			m_VideoProcessor->SetVPScaling(setings.bVPScaling);
+			m_Sets.bVPScaling = setings.bVPScaling;
+		}
+
+		if (setings.iChromaScaling != m_Sets.iChromaScaling) {
+			m_VideoProcessor->SetChromaScaling(setings.iChromaScaling);
+			m_Sets.iChromaScaling = setings.iChromaScaling;
+		}
+
+		if (setings.iUpscaling != m_Sets.iUpscaling) {
+			m_VideoProcessor->SetUpscaling(setings.iUpscaling);
+			m_Sets.iUpscaling = setings.iUpscaling;
+		}
+
+		if (setings.iDownscaling != m_Sets.iDownscaling) {
+			m_VideoProcessor->SetDownscaling(setings.iDownscaling);
+			m_Sets.iDownscaling = setings.iDownscaling;
+		}
+
+		if (setings.bInterpolateAt50pct != m_Sets.bInterpolateAt50pct) {
+			m_VideoProcessor->SetInterpolateAt50pct(setings.bInterpolateAt50pct);
+			m_Sets.bInterpolateAt50pct = setings.bInterpolateAt50pct;
+		}
+
+		if (setings.bUseDither != m_Sets.bUseDither) {
+			m_VideoProcessor->SetDither(setings.bUseDither);
+			m_Sets.bUseDither = setings.bUseDither;
+		}
+
+		if (m_Sets.iTexFormat != setings.iTexFormat
+			|| setings.VPFmts.bNV12  != m_Sets.VPFmts.bNV12
+			|| setings.VPFmts.bP01x  != m_Sets.VPFmts.bP01x
+			|| setings.VPFmts.bYUY2  != m_Sets.VPFmts.bYUY2
+			|| setings.VPFmts.bOther != m_Sets.VPFmts.bOther) {
+
+			m_Sets.iTexFormat = setings.iTexFormat;
+			m_Sets.VPFmts      = setings.VPFmts;
+
+			if (m_inputMT.IsValid()) {
+				m_VideoProcessor->SetTexFormat(m_Sets.iTexFormat);
+				m_VideoProcessor->SetVPEnableFmts(m_Sets.VPFmts);
+				BOOL ret = m_VideoProcessor->InitMediaType(&m_inputMT);
+
+				m_bValidBuffer = false;
+			}
+		}
+
+		if (m_Sets.iSwapEffect != setings.iSwapEffect) {
+			m_Sets.iSwapEffect = setings.iSwapEffect;
+			if (m_hWnd) {
+				m_VideoProcessor->SetSwapEffect(m_Sets.iSwapEffect);
+
+				if (!m_bIsFullscreen) {
+					Init(true);
+				}
 			}
 		}
 	}

@@ -1702,7 +1702,6 @@ HRESULT CDX9VideoProcessor::GetVPInfo(std::wstring& str)
 
 void CDX9VideoProcessor::Configure(const Settings_t& config)
 {
-	// TODO
 	bool changeDevice            = false;
 	bool changeVP                = false;
 	bool changeTextures          = false;
@@ -1716,6 +1715,8 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	m_bShowStats          = config.bShowStats;
 	m_bDeintDouble        = config.bDeintDouble;
 	m_bInterpolateAt50pct = config.bInterpolateAt50pct;
+
+	// checking what needs to be changed
 
 	if (config.iResizeStats != m_iResizeStats) {
 		m_iResizeStats = config.iResizeStats;
@@ -1772,13 +1773,14 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	if (config.bConvertToSdr != m_bConvertToSdr) {
 		m_bConvertToSdr = config.bConvertToSdr;
 		if (m_DXVA2VP.IsReady()) {
-			changeNumTextures = true; // TODO: see VP scaling
+			changeNumTextures = true;
+			changeVP = true; // temporary solution
 		} else {
 			changeConvertShader = true;
 		}
 	}
 
-	////////////////////////////
+	// apply new settings
 
 	if (changeDevice) {
 		m_pFilter->Init(true);
