@@ -458,7 +458,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 		DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
 		color_info.value = displayConfig.advancedColorValue;
-		m_bHdrPassthroughSupport = color_info.advancedColorSupported && color_info.advancedColorEnabled;
+		m_bHdrPassthroughSupport = color_info.advancedColorSupported && (color_info.advancedColorEnabled || !m_bHdrToggleDisplay);
 		m_bitsPerChannelSupport = displayConfig.bitsPerChannel;
 	}
 
@@ -1310,7 +1310,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 				if (color_info.advancedColorSupported) {
 					bool ret = true;
-					if (!color_info.advancedColorEnabled) {
+					if (m_bHdrToggleDisplay && !color_info.advancedColorEnabled) {
 						ret = ToggleHDR(displayConfig, TRUE);
 						DLogIf(!ret, L"CDX11VideoProcessor::InitMediaType() : Toggle HDR ON failed");
 						if (ret) {
@@ -1324,7 +1324,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 					}
 				}
 			}
-		} else {
+		} else if (m_bHdrToggleDisplay) {
 			MONITORINFOEXW mi = { sizeof(mi) };
 			GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 			DisplayConfig_t displayConfig = {};
