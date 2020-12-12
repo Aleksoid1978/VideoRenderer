@@ -86,7 +86,7 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK1, m_SetsPP.bUseD3D11        ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK2, m_SetsPP.bShowStats       ? BST_CHECKED : BST_UNCHECKED);
 
-	ComboBox_SelectByItemData(m_hWnd, IDC_COMBO1, m_SetsPP.iTextureFmt);
+	ComboBox_SelectByItemData(m_hWnd, IDC_COMBO1, m_SetsPP.iTexFormat);
 
 	CheckDlgButton(IDC_CHECK7, m_SetsPP.VPFmts.bNV12     ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK8, m_SetsPP.VPFmts.bP01x     ? BST_CHECKED : BST_UNCHECKED);
@@ -309,8 +309,8 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			}
 			if (nID == IDC_COMBO1) {
 				lValue = ComboBox_GetCurItemData(m_hWnd, IDC_COMBO1);
-				if (lValue != m_SetsPP.iTextureFmt) {
-					m_SetsPP.iTextureFmt = lValue;
+				if (lValue != m_SetsPP.iTexFormat) {
+					m_SetsPP.iTexFormat = lValue;
 					SetDirty();
 					return (LRESULT)1;
 				}

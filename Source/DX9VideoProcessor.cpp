@@ -270,6 +270,7 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Setting
 {
 	m_bShowStats          = config.bShowStats;
 	m_iResizeStats        = config.iResizeStats;
+	m_iTexFormat          = config.iTexFormat;
 	m_VPFormats           = config.VPFmts;
 	m_bDeintDouble        = config.bDeintDouble;
 	m_bVPScaling          = config.bVPScaling;
@@ -282,7 +283,6 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Setting
 	m_bHdrPassthrough     = false;
 	m_bHdrToggleDisplay    = false;
 	m_bConvertToSdr       = config.bConvertToSdr;
-	SetTexFormat(config.iTextureFmt);
 
 	m_nCurrentAdapter = D3DADAPTER_DEFAULT;
 	m_pDisplayMode = &m_DisplayMode;
@@ -1717,8 +1717,8 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 		changeResizeStats = true;
 	}
 
-	if (config.iTextureFmt != m_iTexFormat) {
-		m_iTexFormat = config.iTextureFmt;
+	if (config.iTexFormat != m_iTexFormat) {
+		m_iTexFormat = config.iTexFormat;
 		changeTextures = true;
 	}
 

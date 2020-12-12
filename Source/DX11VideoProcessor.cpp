@@ -342,6 +342,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 {
 	m_bShowStats          = config.bShowStats;
 	m_iResizeStats        = config.iResizeStats;
+	m_iTexFormat          = config.iTexFormat;
 	m_VPFormats           = config.VPFmts;
 	m_bDeintDouble        = config.bDeintDouble;
 	m_bVPScaling          = config.bVPScaling;
@@ -354,7 +355,6 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_bHdrPassthrough     = config.bHdrPassthrough;
 	m_bHdrToggleDisplay    = config.bHdrToggleDisplay;
 	m_bConvertToSdr       = config.bConvertToSdr;
-	SetTexFormat(config.iTextureFmt);
 
 	m_nCurrentAdapter = -1;
 	m_pDisplayMode = &m_DisplayMode;

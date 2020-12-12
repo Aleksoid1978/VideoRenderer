@@ -72,7 +72,7 @@ struct Settings_t {
 	bool bUseD3D11;
 	bool bShowStats;
 	int  iResizeStats;
-	int  iTextureFmt;
+	int  iTexFormat;
 	VPEnableFormats_t VPFmts;
 	bool bDeintDouble;
 	bool bVPScaling;
@@ -95,7 +95,7 @@ struct Settings_t {
 		bUseD3D11           = false;
 		bShowStats          = false;
 		iResizeStats        = 0;
-		iTextureFmt         = TEXFMT_AUTOINT;
+		iTexFormat          = TEXFMT_AUTOINT;
 		VPFmts.bNV12        = true;
 		VPFmts.bP01x        = true;
 		VPFmts.bYUY2        = true;

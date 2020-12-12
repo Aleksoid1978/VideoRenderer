@@ -152,10 +152,10 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			case TEXFMT_8INT:
 			case TEXFMT_10INT:
 			case TEXFMT_16FLOAT:
-				m_Sets.iTextureFmt = dw;
+				m_Sets.iTexFormat = dw;
 				break;
 			default:
-				m_Sets.iTextureFmt = TEXFMT_AUTOINT;
+				m_Sets.iTexFormat = TEXFMT_AUTOINT;
 			}
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableNV12, dw)) {
@@ -1122,17 +1122,17 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
 		m_Sets.bUseDither = setings.bUseDither;
 	}
 
-	if (m_Sets.iTextureFmt != setings.iTextureFmt
+	if (m_Sets.iTexFormat != setings.iTexFormat
 		|| setings.VPFmts.bNV12  != m_Sets.VPFmts.bNV12
 		|| setings.VPFmts.bP01x  != m_Sets.VPFmts.bP01x
 		|| setings.VPFmts.bYUY2  != m_Sets.VPFmts.bYUY2
 		|| setings.VPFmts.bOther != m_Sets.VPFmts.bOther) {
 
-		m_Sets.iTextureFmt = setings.iTextureFmt;
+		m_Sets.iTexFormat = setings.iTexFormat;
 		m_Sets.VPFmts      = setings.VPFmts;
 
 		if (m_inputMT.IsValid()) {
-			m_VideoProcessor->SetTexFormat(m_Sets.iTextureFmt);
+			m_VideoProcessor->SetTexFormat(m_Sets.iTexFormat);
 			m_VideoProcessor->SetVPEnableFmts(m_Sets.VPFmts);
 			BOOL ret = m_VideoProcessor->InitMediaType(&m_inputMT);
 
@@ -1169,7 +1169,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_UseD3D11,            m_Sets.bUseD3D11);
 		key.SetDWORDValue(OPT_ShowStatistics,      m_Sets.bShowStats);
 		key.SetDWORDValue(OPT_ResizeStatistics,    m_Sets.iResizeStats);
-		key.SetDWORDValue(OPT_TextureFormat,       m_Sets.iTextureFmt);
+		key.SetDWORDValue(OPT_TextureFormat,       m_Sets.iTexFormat);
 		key.SetDWORDValue(OPT_VPEnableNV12,        m_Sets.VPFmts.bNV12);
 		key.SetDWORDValue(OPT_VPEnableP01x,        m_Sets.VPFmts.bP01x);
 		key.SetDWORDValue(OPT_VPEnableYUY2,        m_Sets.VPFmts.bYUY2);
