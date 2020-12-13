@@ -2852,7 +2852,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 			} else if (m_bConvertToSdr) {
 				m_strStatsHDR.append(L"Convert to SDR");
 			} else {
-				m_strStatsHDR.clear();
+				m_strStatsHDR.append(L"Not used");
 			}
 		} else {
 			m_strStatsHDR.clear();

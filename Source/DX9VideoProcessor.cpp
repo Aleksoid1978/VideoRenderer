@@ -2552,7 +2552,11 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 
 		if (SourceIsHDR()) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
-			m_strStatsHDR.append(L"Convert to SDR");
+			if (m_bConvertToSdr) {
+				m_strStatsHDR.append(L"Convert to SDR");
+			} else {
+				m_strStatsHDR.append(L"Not used");
+			}
 		} else {
 			m_strStatsHDR.clear();
 		}
