@@ -23,7 +23,16 @@ struct DisplayConfig_t {
 	UINT32 height;
 	UINT32 bitsPerChannel;
 	DISPLAYCONFIG_COLOR_ENCODING colorEncoding;
-	UINT32 advancedColorValue;
+	union {
+		struct {
+			UINT32 advancedColorSupported : 1;    // A type of advanced color is supported
+			UINT32 advancedColorEnabled : 1;    // A type of advanced color is enabled
+			UINT32 wideColorEnforced : 1;    // Wide color gamut is enabled
+			UINT32 advancedColorForceDisabled : 1;    // Advanced color is force disabled due to system/OS policy
+			UINT32 reserved : 28;
+		};
+		UINT32 value;
+	} advancedColor;
 	DISPLAYCONFIG_RATIONAL                refreshRate;
 	DISPLAYCONFIG_SCANLINE_ORDERING       scanLineOrdering;
 	DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY outputTechnology;

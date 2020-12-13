@@ -150,7 +150,7 @@ bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig
 						if (ERROR_SUCCESS == res) {
 							displayConfig.colorEncoding = color_info.colorEncoding;
 							displayConfig.bitsPerChannel = color_info.bitsPerColorChannel;
-							displayConfig.advancedColorValue = color_info.value;
+							displayConfig.advancedColor.value = color_info.value;
 						}
 					}
 
@@ -243,7 +243,7 @@ bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs)
 				if (ERROR_SUCCESS == res) {
 					dc.colorEncoding = color_info.colorEncoding;
 					dc.bitsPerChannel = color_info.bitsPerColorChannel;
-					dc.advancedColorValue = color_info.value;
+					dc.advancedColor.value = color_info.value;
 				}
 			}
 

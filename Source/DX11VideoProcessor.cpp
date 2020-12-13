@@ -415,10 +415,9 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 	if (!m_hdrOutputDevice.empty()) {
 		DisplayConfig_t displayConfig = {};
 		if (GetDisplayConfig(m_hdrOutputDevice.c_str(), displayConfig)) {
-			DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
-			color_info.value = displayConfig.advancedColorValue;
+			const auto& ac = displayConfig.advancedColor;
 
-			if (color_info.advancedColorSupported && color_info.advancedColorEnabled) {
+			if (ac.advancedColorSupported && ac.advancedColorEnabled) {
 				const auto ret = ToggleHDR(displayConfig, FALSE);
 				DLogIf(!ret, L"CDX11VideoProcessor::~CDX11VideoProcessor() : Toggle HDR OFF failed");
 			}
@@ -456,9 +455,8 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	DisplayConfig_t displayConfig = {};
 
 	if (GetDisplayConfig(mi.szDevice, displayConfig)) {
-		DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
-		color_info.value = displayConfig.advancedColorValue;
-		m_bHdrPassthroughSupport = color_info.advancedColorSupported && (color_info.advancedColorEnabled || !m_bHdrToggleDisplay);
+		const auto& ac = displayConfig.advancedColor;
+		m_bHdrPassthroughSupport = ac.advancedColorSupported && (ac.advancedColorEnabled || !m_bHdrToggleDisplay);
 		m_bitsPerChannelSupport = displayConfig.bitsPerChannel;
 	}
 
@@ -1305,12 +1303,11 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			DisplayConfig_t displayConfig = {};
 
 			if (GetDisplayConfig(mi.szDevice, displayConfig)) {
-				DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
-				color_info.value = displayConfig.advancedColorValue;
+				const auto& ac = displayConfig.advancedColor;
 
-				if (color_info.advancedColorSupported) {
+				if (ac.advancedColorSupported) {
 					bool ret = true;
-					if (m_bHdrToggleDisplay && !color_info.advancedColorEnabled) {
+					if (m_bHdrToggleDisplay && !ac.advancedColorEnabled) {
 						ret = ToggleHDR(displayConfig, TRUE);
 						DLogIf(!ret, L"CDX11VideoProcessor::InitMediaType() : Toggle HDR ON failed");
 						if (ret) {
@@ -1330,10 +1327,9 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			DisplayConfig_t displayConfig = {};
 
 			if (GetDisplayConfig(mi.szDevice, displayConfig)) {
-				DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
-				color_info.value = displayConfig.advancedColorValue;
+				const auto& ac = displayConfig.advancedColor;
 
-				if (color_info.advancedColorSupported && color_info.advancedColorEnabled) {
+				if (ac.advancedColorSupported && ac.advancedColorEnabled) {
 					const auto ret = ToggleHDR(displayConfig, FALSE);
 					DLogIf(!ret, L"CDX11VideoProcessor::InitMediaType() : Toggle HDR OFF failed");
 
@@ -2390,16 +2386,15 @@ HRESULT CDX11VideoProcessor::Reset()
 		DisplayConfig_t displayConfig = {};
 
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
-			DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {};
-			color_info.value = displayConfig.advancedColorValue;
+			const auto& ac = displayConfig.advancedColor;
 
-			if (color_info.advancedColorEnabled && !m_bHdrPassthroughSupport || !color_info.advancedColorEnabled && m_bHdrPassthroughSupport) {
-				if (!color_info.advancedColorEnabled && m_hdrOutputDevice == mi.szDevice) {
+			if (ac.advancedColorEnabled && !m_bHdrPassthroughSupport || !ac.advancedColorEnabled && m_bHdrPassthroughSupport) {
+				if (!ac.advancedColorEnabled && m_hdrOutputDevice == mi.szDevice) {
 					m_hdrOutputDevice.clear();
 				}
 				if (m_pFilter->m_inputMT.IsValid()) {
 					ReleaseSwapChain();
-					if (m_iSwapEffect == SWAPEFFECT_Discard && !color_info.advancedColorEnabled) {
+					if (m_iSwapEffect == SWAPEFFECT_Discard && !ac.advancedColorEnabled) {
 						m_pFilter->Init(true);
 					} else {
 						Init(m_hWnd);
