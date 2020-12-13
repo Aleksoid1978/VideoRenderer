@@ -8,6 +8,7 @@ Added displaying statistics and the ability to display AlphaBitmap (OSD) when pl
 Added support for HDR passthrough for DX11 mode in Windows 10.
 Added the ability to switch the display to HDR mode for DX11 mode in Windows 10.
 Added the ability to manually disable conversion HDR to SDR.
+Added display information in statistics.
 
 v0.4.9.1460 - 2020.08.24
 ------------------------
