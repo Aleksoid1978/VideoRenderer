@@ -2593,7 +2593,136 @@ HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 
 void CDX11VideoProcessor::Configure(const Settings_t& config)
 {
-	// TODO
+	bool changeWindow            = false;
+	bool changeDevice            = false;
+	bool changeVP                = false;
+	bool changeTextures          = false;
+	bool changeConvertShader     = false;
+	bool changeUpscalingShader   = false;
+	bool changeDowndcalingShader = false;
+	bool changeNumTextures       = false;
+	bool changeResizeStats       = false;
+
+	// settings that do not require preparation
+	m_bShowStats          = config.bShowStats;
+	m_bDeintDouble        = config.bDeintDouble;
+	m_bInterpolateAt50pct = config.bInterpolateAt50pct;
+
+	// checking what needs to be changed
+
+	if (config.iResizeStats != m_iResizeStats) {
+		m_iResizeStats = config.iResizeStats;
+		changeResizeStats = true;
+	}
+
+	if (config.iTexFormat != m_iTexFormat) {
+		m_iTexFormat = config.iTexFormat;
+		changeTextures = true;
+		changeVP = true; // temporary solution
+	}
+
+	if (m_srcParams.cformat == CF_NV12) {
+		changeVP = config.VPFmts.bNV12 != m_VPFormats.bNV12;
+	}
+	else if (m_srcParams.cformat == CF_P010 || m_srcParams.cformat == CF_P016) {
+		changeVP = config.VPFmts.bP01x != m_VPFormats.bP01x;
+	}
+	else if (m_srcParams.cformat == CF_YUY2) {
+		changeVP = config.VPFmts.bYUY2 != m_VPFormats.bYUY2;
+	}
+	else {
+		changeVP = config.VPFmts.bOther != m_VPFormats.bOther;
+	}
+	m_VPFormats = config.VPFmts;
+
+	if (config.bVPScaling != m_bVPScaling) {
+		m_bVPScaling = config.bVPScaling;
+		changeTextures = true;
+		changeVP = true; // temporary solution
+	}
+	if (config.iChromaScaling != m_iChromaScaling) {
+		m_iChromaScaling = config.iChromaScaling;
+		changeConvertShader = m_PSConvColorData.bEnable && (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422);
+	}
+
+	if (config.iUpscaling != m_iUpscaling) {
+		m_iUpscaling = config.iUpscaling;
+		changeUpscalingShader = true;
+	}
+	if (config.iDownscaling != m_iDownscaling) {
+		m_iDownscaling = config.iDownscaling;
+		changeDowndcalingShader = true;
+	}
+
+	if (config.bUseDither != m_bUseDither) {
+		m_bUseDither = config.bUseDither;
+		changeNumTextures = m_InternalTexFmt != D3DFMT_X8R8G8B8;
+	}
+
+	if (config.iSwapEffect != m_iSwapEffect) {
+		m_iSwapEffect = config.iSwapEffect;
+		changeWindow = !m_pFilter->m_bIsFullscreen;
+	}
+
+	if (config.bHdrPassthrough != m_bHdrPassthrough) {
+		m_bHdrPassthrough = config.bHdrPassthrough;
+		//changeWindow = true; // TODO
+	}
+
+	if (config.bHdrToggleDisplay != m_bHdrToggleDisplay) {
+		m_bHdrToggleDisplay = config.bHdrToggleDisplay;
+		//changeWindow = true; // TODO
+	}
+
+	if (config.bConvertToSdr != m_bConvertToSdr) {
+		m_bConvertToSdr = config.bConvertToSdr;
+		if (m_D3D11VP.IsReady()) {
+			changeNumTextures = true;
+			changeVP = true; // temporary solution
+		}
+		else {
+			changeConvertShader = true;
+		}
+	}
+
+	// apply new settings
+
+	if (changeWindow) {
+		ReleaseSwapChain();
+		m_pFilter->Init(true);
+		return;
+	}
+
+	if (changeVP) {
+		InitMediaType(&m_pFilter->m_inputMT);
+		m_pFilter->m_bValidBuffer = false;
+		return; // need some test
+	}
+
+	if (changeTextures) {
+		UpdateTexParams();
+		// TODO...
+	}
+
+	if (changeConvertShader) {
+		UpdateConvertColorShader();
+		UpdateStatsStatic();
+	}
+
+	if (changeUpscalingShader) {
+		UpdateUpscalingShaders();
+	}
+	if (changeDowndcalingShader) {
+		UpdateDownscalingShaders();
+	}
+
+	if (changeNumTextures) {
+		UpdatePostScaleTexures(m_windowRect.Size());
+	}
+
+	if (changeResizeStats) {
+		SetGraphSize();
+	}
 }
 
 void CDX11VideoProcessor::SetVPScaling(bool value)

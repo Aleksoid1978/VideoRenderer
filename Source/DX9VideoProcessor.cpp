@@ -1702,6 +1702,7 @@ HRESULT CDX9VideoProcessor::GetVPInfo(std::wstring& str)
 
 void CDX9VideoProcessor::Configure(const Settings_t& config)
 {
+	bool changeWindow            = false;
 	bool changeDevice            = false;
 	bool changeVP                = false;
 	bool changeTextures          = false;
@@ -1766,10 +1767,12 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 		m_bUseDither = config.bUseDither;
 		changeNumTextures = m_InternalTexFmt != D3DFMT_X8R8G8B8;
 	}
+
 	if (config.iSwapEffect != m_iSwapEffect) {
 		m_iSwapEffect = config.iSwapEffect;
-		changeDevice = !m_pFilter->m_bIsFullscreen;
+		changeWindow = !m_pFilter->m_bIsFullscreen;
 	}
+
 	if (config.bConvertToSdr != m_bConvertToSdr) {
 		m_bConvertToSdr = config.bConvertToSdr;
 		if (m_DXVA2VP.IsReady()) {
@@ -1782,7 +1785,7 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 
 	// apply new settings
 
-	if (changeDevice) {
+	if (changeWindow) {
 		m_pFilter->Init(true);
 		return;
 	}
