@@ -167,6 +167,7 @@ private:
 	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
 
+	void UpdateTexParams();
 	void UpdateRenderRect();
 
 	void SetGraphSize() override;
