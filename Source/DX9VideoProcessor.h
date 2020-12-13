@@ -129,7 +129,7 @@ private:
 	HRESULT CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
 
-	void UpdateTexParams();
+	void UpdateTexParams(int cdepth);
 	void UpdateRenderRect();
 
 	void SetGraphSize() override;

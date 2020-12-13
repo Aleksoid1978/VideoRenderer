@@ -729,11 +729,11 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants));
 }
 
-void CDX11VideoProcessor::UpdateTexParams()
+void CDX11VideoProcessor::UpdateTexParams(int cdepth)
 {
 	switch (m_iTexFormat) {
 	case TEXFMT_AUTOINT:
-		m_InternalTexFmt = (m_srcParams.CDepth > 8) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
+		m_InternalTexFmt = (cdepth > 8) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 		break;
 	case TEXFMT_8INT:    m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM;     break;
 	case TEXFMT_10INT:   m_InternalTexFmt = DXGI_FORMAT_R10G10B10A2_UNORM;  break;
@@ -1298,7 +1298,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_pPSConvertColor.Release();
 	m_PSConvColorData.bEnable = false;
 
-	UpdateTexParams();
+	UpdateTexParams(FmtParams.CDepth);
 
 	if (m_bHdrCreate && m_srcVideoTransferFunction != m_srcExFmt.VideoTransferFunction) {
 		m_bIsInitHDR = true;
@@ -2700,7 +2700,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (changeTextures) {
-		UpdateTexParams();
+		UpdateTexParams(m_srcParams.CDepth);
 		// TODO...
 	}
 

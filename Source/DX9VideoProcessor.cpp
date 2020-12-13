@@ -854,11 +854,11 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 	}
 }
 
-void CDX9VideoProcessor::UpdateTexParams()
+void CDX9VideoProcessor::UpdateTexParams(int cdepth)
 {
 	switch (m_iTexFormat) {
 	case TEXFMT_AUTOINT:
-		m_InternalTexFmt = (m_srcParams.CDepth > 8) ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
+		m_InternalTexFmt = (cdepth > 8) ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
 		break;
 	case TEXFMT_8INT:    m_InternalTexFmt = D3DFMT_X8R8G8B8;      break;
 	case TEXFMT_10INT:   m_InternalTexFmt = D3DFMT_A2R10G10B10;   break;
@@ -1110,7 +1110,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_pPSConvertColor.Release();
 	m_PSConvColorData.bEnable = false;
 
-	UpdateTexParams();
+	UpdateTexParams(FmtParams.CDepth);
 
 	// DXVA2 Video Processor
 	if (FmtParams.DXVA2Format != D3DFMT_UNKNOWN && S_OK == InitializeDXVA2VP(FmtParams, origW, origH)) {
@@ -1797,7 +1797,7 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (changeTextures) {
-		UpdateTexParams();
+		UpdateTexParams(m_srcParams.CDepth);
 		// TODO...
 	}
 
