@@ -2706,7 +2706,6 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 	if (changeConvertShader) {
 		UpdateConvertColorShader();
-		UpdateStatsStatic();
 	}
 
 	if (changeUpscalingShader) {
@@ -2723,67 +2722,8 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	if (changeResizeStats) {
 		SetGraphSize();
 	}
-}
 
-void CDX11VideoProcessor::SetVPScaling(bool value)
-{
-	m_bVPScaling = value;
-	UpdateTexures(m_videoRect.Size());
-}
-
-void CDX11VideoProcessor::SetChromaScaling(int value)
-{
-	if (value < 0 || value >= CHROMA_COUNT) {
-		DLog(L"CDX11VideoProcessor::SetChromaScaling() unknown value {}", value);
-		ASSERT(FALSE);
-		return;
-	}
-	m_iChromaScaling = value;
-
-	if (m_pDevice) {
-		EXECUTE_ASSERT(S_OK == UpdateConvertColorShader());
-		UpdateStatsStatic();
-	}
-}
-
-void CDX11VideoProcessor::SetUpscaling(int value)
-{
-	if (value < 0 || value >= UPSCALE_COUNT) {
-		DLog(L"CDX11VideoProcessor::SetUpscaling() unknown value {}", value);
-		ASSERT(FALSE);
-		return;
-	}
-	m_iUpscaling = value;
-
-	if (m_pDevice) {
-		UpdateUpscalingShaders();
-	}
-};
-
-void CDX11VideoProcessor::SetDownscaling(int value)
-{
-	if (value < 0 || value >= DOWNSCALE_COUNT) {
-		DLog(L"CDX11VideoProcessor::SetDownscaling() unknown value {}", value);
-		ASSERT(FALSE);
-		return;
-	}
-	m_iDownscaling = value;
-
-	if (m_pDevice) {
-		UpdateDownscalingShaders();
-	}
-};
-
-void CDX11VideoProcessor::SetDither(bool value)
-{
-	m_bUseDither = value;
-	UpdatePostScaleTexures(m_windowRect.Size());
-}
-
-void CDX11VideoProcessor::SetSwapEffect(int value)
-{
-	ReleaseSwapChain();
-	m_iSwapEffect = value;
+	UpdateStatsStatic();
 }
 
 void CDX11VideoProcessor::SetRotation(int value)

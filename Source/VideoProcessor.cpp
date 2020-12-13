@@ -58,28 +58,6 @@ HRESULT CVideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
 	return S_OK;
 }
 
-void CVideoProcessor::SetTexFormat(int value)
-{
-	switch (value) {
-	case TEXFMT_AUTOINT:
-	case TEXFMT_8INT:
-	case TEXFMT_10INT:
-	case TEXFMT_16FLOAT:
-		m_iTexFormat = value;
-		break;
-	default:
-		DLog(L"CVideoProcessor::SetTexFormat() unknown value {}", value);
-		ASSERT(FALSE);
-		return;
-	}
-}
-
-void CVideoProcessor::SetResizeStats(int value)
-{
-	m_iResizeStats = value;
-	SetGraphSize();
-}
-
 void CVideoProcessor::CalcStatsFont()
 {
 	if (m_iResizeStats == 1) {

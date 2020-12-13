@@ -1803,7 +1803,6 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 
 	if (changeConvertShader) {
 		UpdateConvertColorShader();
-		UpdateStatsStatic();
 	}
 
 	if (changeUpscalingShader) {
@@ -1820,67 +1819,8 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	if (changeResizeStats) {
 		SetGraphSize();
 	}
-}
 
-void CDX9VideoProcessor::SetVPScaling(bool value)
-{
-	m_bVPScaling = value;
-	UpdateTexures(m_videoRect.Size());
-}
-
-void CDX9VideoProcessor::SetChromaScaling(int value)
-{
-	if (value < 0 || value >= CHROMA_COUNT) {
-		DLog(L"CDX9VideoProcessor::SetChromaScaling() unknown value {}", value);
-		ASSERT(FALSE);
-		return;
-	}
-	m_iChromaScaling = value;
-
-	if (m_pD3DDevEx) {
-		EXECUTE_ASSERT(S_OK == UpdateConvertColorShader());
-		UpdateStatsStatic();
-	}
-}
-
-void CDX9VideoProcessor::SetUpscaling(int value)
-{
-	if (value < 0 || value >= UPSCALE_COUNT) {
-		DLog(L"CDX9VideoProcessor::SetUpscaling() unknown value {}", value);
-		ASSERT(FALSE);
-		return;
-	}
-	m_iUpscaling = value;
-
-	if (m_pD3DDevEx) {
-		UpdateUpscalingShaders();
-	}
-};
-
-void CDX9VideoProcessor::SetDownscaling(int value)
-{
-	if (value < 0 || value >= DOWNSCALE_COUNT) {
-		DLog(L"CDX9VideoProcessor::SetDownscaling() unknown value {}", value);
-		ASSERT(FALSE);
-		return;
-	}
-
-	m_iDownscaling = value;
-
-	if (m_pD3DDevEx) {
-		UpdateDownscalingShaders();
-	}
-};
-
-void CDX9VideoProcessor::SetDither(bool value)
-{
-	m_bUseDither = value;
-	UpdatePostScaleTexures(m_windowRect.Size());
-}
-
-void CDX9VideoProcessor::SetSwapEffect(int value)
-{
-	m_iSwapEffect = value;
+	UpdateStatsStatic();
 }
 
 void CDX9VideoProcessor::SetRotation(int value)
