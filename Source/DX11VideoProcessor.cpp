@@ -2387,8 +2387,9 @@ HRESULT CDX11VideoProcessor::Reset()
 
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 			const auto& ac = displayConfig.advancedColor;
+			const auto bHdrPassthroughSupport = ac.advancedColorSupported && (ac.advancedColorEnabled || !m_bHdrToggleDisplay);
 
-			if (ac.advancedColorEnabled && !m_bHdrPassthroughSupport || !ac.advancedColorEnabled && m_bHdrPassthroughSupport) {
+			if (bHdrPassthroughSupport && !m_bHdrPassthroughSupport || !ac.advancedColorEnabled && m_bHdrPassthroughSupport) {
 				if (!ac.advancedColorEnabled && m_hdrOutputDevice == mi.szDevice) {
 					m_hdrOutputDevice.clear();
 				}
