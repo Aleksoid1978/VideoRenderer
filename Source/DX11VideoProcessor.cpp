@@ -2596,6 +2596,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	bool changeWindow            = false;
 	bool changeDevice            = false;
 	bool changeVP                = false;
+	bool changeHDR               = false;
 	bool changeTextures          = false;
 	bool changeConvertShader     = false;
 	bool changeUpscalingShader   = false;
@@ -2666,22 +2667,23 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 	if (config.bHdrPassthrough != m_bHdrPassthrough) {
 		m_bHdrPassthrough = config.bHdrPassthrough;
-		//changeWindow = true; // TODO
+		changeHDR = true;
 	}
 
 	if (config.bHdrToggleDisplay != m_bHdrToggleDisplay) {
 		m_bHdrToggleDisplay = config.bHdrToggleDisplay;
-		//changeWindow = true; // TODO
+		changeHDR = true;
 	}
 
 	if (config.bConvertToSdr != m_bConvertToSdr) {
 		m_bConvertToSdr = config.bConvertToSdr;
-		if (m_D3D11VP.IsReady()) {
-			changeNumTextures = true;
-			changeVP = true; // temporary solution
-		}
-		else {
-			changeConvertShader = true;
+		if (SourceIsHDR()) {
+			if (m_D3D11VP.IsReady()) {
+				changeNumTextures = true;
+				changeVP = true; // temporary solution
+			} else {
+				changeConvertShader = true;
+			}
 		}
 	}
 
@@ -2690,7 +2692,26 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	if (changeWindow) {
 		ReleaseSwapChain();
 		m_pFilter->Init(true);
+
+		if (changeHDR && (SourceIsHDR()) || m_bHdrToggleDisplay) {
+			m_srcVideoTransferFunction = 0;
+			InitMediaType(&m_pFilter->m_inputMT);
+		}
 		return;
+	}
+
+	if (changeHDR) {
+		if (SourceIsHDR() || m_bHdrToggleDisplay) {
+			if (m_iSwapEffect == SWAPEFFECT_Discard) {
+				ReleaseSwapChain();
+				m_pFilter->Init(true);
+			}
+
+			m_srcVideoTransferFunction = 0;
+			InitMediaType(&m_pFilter->m_inputMT);
+
+			return;
+		}
 	}
 
 	if (changeVP) {

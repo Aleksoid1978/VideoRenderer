@@ -1775,11 +1775,13 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 
 	if (config.bConvertToSdr != m_bConvertToSdr) {
 		m_bConvertToSdr = config.bConvertToSdr;
-		if (m_DXVA2VP.IsReady()) {
-			changeNumTextures = true;
-			changeVP = true; // temporary solution
-		} else {
-			changeConvertShader = true;
+		if (SourceIsHDR()) {
+			if (m_DXVA2VP.IsReady()) {
+				changeNumTextures = true;
+				changeVP = true; // temporary solution
+			} else {
+				changeConvertShader = true;
+			}
 		}
 	}
 
