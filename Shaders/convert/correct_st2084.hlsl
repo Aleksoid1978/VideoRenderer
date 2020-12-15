@@ -1,10 +1,10 @@
 // Convert HDR to SDR for SMPTE ST 2084
 
-#define ST2084_m1 ((2610.0 / 4096.0) / 4.0)
-#define ST2084_m2 ((2523.0 / 4096.0) * 128.0)
-#define ST2084_c1 ( 3424.0 / 4096.0)
-#define ST2084_c2 ((2413.0 / 4096.0) * 32.0)
-#define ST2084_c3 ((2392.0 / 4096.0) * 32.0)
+static const float ST2084_m1 =  2610.0f / (4096.0f * 4.0f);
+static const float ST2084_m2 = (2523.0f / 4096.0f) * 128.0f;
+static const float ST2084_c1 =  3424.0f / 4096.0f;
+static const float ST2084_c2 = (2413.0f / 4096.0f) * 32.0f;
+static const float ST2084_c3 = (2392.0f / 4096.0f) * 32.0f;
 
 #define SRC_LUMINANCE_PEAK     10000.0
 #define DISPLAY_LUMINANCE_PEAK 125.0

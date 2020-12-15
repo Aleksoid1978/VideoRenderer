@@ -1,10 +1,6 @@
 // Convert HDR to SDR for ARIB STD-B67 (HLG)
 
-#define SRC_LUMINANCE_PEAK     1000.0
-#define DISPLAY_LUMINANCE_PEAK 80.0
-
-#include "hdr_tone_mapping.hlsl"
-#include "colorspace_gamut_conversion.hlsl"
+#include "correct_st2084.hlsl"
 
 inline float3 inverse_HLG(float3 x)
 {
@@ -19,24 +15,24 @@ inline float3 inverse_HLG(float3 x)
     return x;
 }
 
+float3 transfer_PQ(float3 x)
+{
+    x = pow(x / 1000.0f, ST2084_m1);
+    x = (ST2084_c1 + ST2084_c2 * x) / (1.0f + ST2084_c3 * x);
+    x = pow(x, ST2084_m2);
+    return x;
+}
+
 inline float4 correct_HLG(float4 pixel)
 {
     // HLG to Linear
     pixel.rgb = inverse_HLG(pixel.rgb);
-    pixel.rgb /= 12.0;
+    float3 ootf_2020 = float3(0.2627f, 0.6780f, 0.0593f);
+    float ootf_ys = 2000.0f * dot(ootf_2020, pixel.rgb);
+    pixel.rgb *= pow(ootf_ys, 0.2f);
 
-    // HDR tone mapping
-    pixel.rgb = ToneMappingHable(pixel.rgb);
+    // Linear to PQ
+    pixel.rgb = transfer_PQ(pixel.rgb);
 
-    // Colorspace Gamut Conversion
-    pixel.rgb = Colorspace_Gamut_Conversion_2020_to_709(pixel.rgb);
-
-    // Peak luminance
-    pixel.rgb = pixel.rgb * (SRC_LUMINANCE_PEAK / DISPLAY_LUMINANCE_PEAK);
-
-    // Linear to sRGB
-    pixel.rgb = saturate(pixel.rgb);
-    pixel.rgb = pow(pixel.rgb, 1.0 / 2.2);
-
-    return pixel;
+    return correct_ST2084(pixel);
 }
