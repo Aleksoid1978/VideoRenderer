@@ -54,11 +54,11 @@
       <ShaderModel>4.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
-    <FxCompile Include="d3d11\ps_correction_hlg.hlsl">
+    <FxCompile Include="d3d11\ps_convert_hlg_to_sdr.hlsl">
       <ShaderModel>4.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
-    <FxCompile Include="d3d11\ps_correction_st2084.hlsl">
+    <FxCompile Include="d3d11\ps_convert_pq_to_sdr.hlsl">
       <ShaderModel>4.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
@@ -114,11 +114,11 @@
       <ShaderModel>3.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
-    <FxCompile Include="d3d9\correction_hlg.hlsl">
+    <FxCompile Include="d3d9\convert_hlg_to_sdr.hlsl">
       <ShaderModel>3.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
-    <FxCompile Include="d3d9\correction_st2084.hlsl">
+    <FxCompile Include="d3d9\convert_pq_to_sdr.hlsl">
       <ShaderModel>3.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
