@@ -2,10 +2,6 @@
     #define C_YUY2 0
 #endif
 
-#ifndef C_HDR
-    #define C_HDR 0
-#endif
-
 Texture2D tex : register(t0);
 SamplerState samp : register(s0);
 
@@ -25,12 +21,6 @@ cbuffer PS_TEX_DIMENSIONS : register(b4)
     float dx;
     float dy;
 };
-#endif
-
-#if (C_HDR == 1)
-#include "../convert/correct_st2084.hlsl"
-#elif (C_HDR == 2)
-#include "../convert/correct_hlg.hlsl"
 #endif
 
 struct PS_INPUT
@@ -65,12 +55,6 @@ float4 main(PS_INPUT input) : SV_Target
 #endif
 
     color.rgb = float3(mul(cm_r, color.rgb), mul(cm_g, color.rgb), mul(cm_b, color.rgb)) + cm_c;
-
-#if (C_HDR == 1)
-    color = correct_ST2084(color);
-#elif (C_HDR == 2)
-    color = correct_HLG(color);
-#endif
 
     return color;
 }

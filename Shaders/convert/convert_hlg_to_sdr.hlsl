@@ -1,7 +1,5 @@
 // Convert HDR to SDR for ARIB STD-B67 (HLG)
 
-#include "correct_st2084.hlsl"
-
 inline float3 inverse_HLG(float3 x)
 {
     const float B67_a = 0.17883277;
@@ -23,7 +21,7 @@ float3 transfer_PQ(float3 x)
     return x;
 }
 
-inline float4 correct_HLG(float4 pixel)
+inline float4 convert_HLG_to_SDR(float4 pixel)
 {
     // HLG to Linear
     pixel.rgb = inverse_HLG(pixel.rgb);
@@ -34,5 +32,5 @@ inline float4 correct_HLG(float4 pixel)
     // Linear to PQ
     pixel.rgb = transfer_PQ(pixel.rgb);
 
-    return correct_ST2084(pixel);
+    return convert_PQ_to_SDR(pixel);
 }

@@ -2,10 +2,6 @@
     #define C_YUY2 0
 #endif
 
-#ifndef C_HDR
-    #define C_HDR 0
-#endif
-
 sampler s0 : register(s0);
 
 float3 cm_r : register(c0);
@@ -20,13 +16,6 @@ float4 p4 : register(c4);
 #define dx     (p4[2])
 #define dy     (p4[3])
 #endif
-
-#if (C_HDR == 1)
-#include "../convert/correct_st2084.hlsl"
-#elif (C_HDR == 2)
-#include "../convert/correct_hlg.hlsl"
-#endif
-
 
 float4 main(float2 tex : TEXCOORD0) : COLOR
 {
@@ -56,12 +45,6 @@ float4 main(float2 tex : TEXCOORD0) : COLOR
 #endif
 
     color.rgb = float3(mul(cm_r, color.rgb), mul(cm_g, color.rgb), mul(cm_b, color.rgb)) + cm_c;
-
-#if (C_HDR == 1)
-    color = correct_ST2084(color);
-#elif (C_HDR == 2)
-    color = correct_HLG(color);
-#endif
 
     return color;
 }

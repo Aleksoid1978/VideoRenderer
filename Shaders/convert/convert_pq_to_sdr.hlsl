@@ -9,12 +9,9 @@ static const float ST2084_c3 = (2392.0f / 4096.0f) * 32.0f;
 #define SRC_LUMINANCE_PEAK     10000.0
 #define DISPLAY_LUMINANCE_PEAK 125.0
 
-#include "hdr_tone_mapping.hlsl"
-#include "colorspace_gamut_conversion.hlsl"
-
 //#pragma warning(disable: 3571) // fix warning X3571 in pow()
 
-inline float4 correct_ST2084(float4 pixel)
+inline float4 convert_PQ_to_SDR(float4 pixel)
 {
     pixel = saturate(pixel); // use saturate(), because pow() can not take negative values
 
