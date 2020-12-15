@@ -1939,11 +1939,13 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 	HRESULT hr = S_OK;
 
 	if (m_TexSrcVideo.pTexture) {
+		int convertType = m_bConvertToSdr ? SHADER_CONVERT_TO_SDR : SHADER_CONVERT_NONE;
+
 		ID3DBlob* pShaderCode = nullptr;
 		hr = GetShaderConvertColor(false,
 			m_TexSrcVideo.Width, m_TexSrcVideo.Height,
 			m_srcRect, m_srcParams, m_srcExFmt,
-			m_iChromaScaling, m_bConvertToSdr,
+			m_iChromaScaling, convertType,
 			&pShaderCode);
 		if (S_OK == hr) {
 			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);

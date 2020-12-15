@@ -2057,10 +2057,14 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 	m_pPSConvertColor.Release();
 	ID3DBlob* pShaderCode = nullptr;
 
+	int convertType = (m_bConvertToSdr && !(m_bHdrPassthroughSupport && m_bHdrPassthrough)) ? SHADER_CONVERT_TO_SDR
+		: (m_bHdrPassthroughSupport && m_bHdrPassthrough && m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? SHADER_CONVERT_TO_PQ
+		: SHADER_CONVERT_NONE;
+
 	HRESULT hr = GetShaderConvertColor(true,
 		m_TexSrcVideo.desc.Width, m_TexSrcVideo.desc.Height,
 		m_srcRect, m_srcParams, m_srcExFmt,
-		m_iChromaScaling, !(m_bHdrPassthroughSupport && m_bHdrPassthrough) && m_bConvertToSdr,
+		m_iChromaScaling, convertType,
 		&pShaderCode);
 	if (S_OK == hr) {
 		hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);

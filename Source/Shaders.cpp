@@ -108,7 +108,7 @@ HRESULT GetShaderConvertColor(
 	const FmtConvParams_t& fmtParams,
 	const DXVA2_ExtendedFormat exFmt,
 	const int chromaScaling,
-	const bool bConvertToSdr,
+	const int convertType,
 	ID3DBlob** ppCode)
 {
 	DLog(L"GetShaderConvertColor() started for {} {}x{} extfmt:{:#010x} chroma:{}", fmtParams.str, texW, texH, exFmt.value, chromaScaling);
@@ -118,9 +118,10 @@ HRESULT GetShaderConvertColor(
 	LPVOID data;
 	DWORD size;
 
-	bool isHDR = (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG);
+	bool bConvertHDRtoSDR = (convertType == SHADER_CONVERT_TO_SDR && (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG));
+	bool bConvertHLGtoPQ = (convertType == SHADER_CONVERT_TO_PQ && exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG);
 
-	if (isHDR && bConvertToSdr) {
+	if (bConvertHDRtoSDR) {
 		hr = GetDataFromResource(data, size, IDF_HLSL_HDR_TONE_MAPPING);
 		if (S_OK == hr) {
 			code.append((LPCSTR)data, size);
@@ -142,6 +143,13 @@ HRESULT GetShaderConvertColor(
 				code.append(code_HLG);
 				DLog(L"GetShaderConvertColor() add code for HDR HLG");
 			}
+		}
+	}
+	else if (bConvertHLGtoPQ) {
+		hr = GetDataFromResource(data, size, IDF_HLSL_CONVERT_HLG_TO_PQ);
+		if (S_OK == hr) {
+			code.append((LPCSTR)data, size);
+			code += '\n';
 		}
 	}
 
@@ -548,7 +556,7 @@ HRESULT GetShaderConvertColor(
 	code.append("//convert color\n");
 	code.append("color.rgb = float3(mul(cm_r, color), mul(cm_g, color), mul(cm_b, color)) + cm_c;\n");
 
-	if (isHDR && bConvertToSdr) {
+	if (bConvertHDRtoSDR) {
 		if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 			code.append(
 				"color = saturate(color);\n" // use saturate(), because pow() can not take negative values
@@ -580,6 +588,11 @@ HRESULT GetShaderConvertColor(
 		code.append(
 			"color.rgb = saturate(color.rgb);\n"
 			"color.rgb = pow(color.rgb, 1.0 / 2.2);\n"
+		);
+	}
+	else if (bConvertHLGtoPQ) {
+		code.append(
+			"color = convert_HLG_to_PQ(color);\n"
 		);
 	}
 

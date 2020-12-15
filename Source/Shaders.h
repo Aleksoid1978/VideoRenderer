@@ -22,6 +22,12 @@
 
 #include <d3dcommon.h>
 
+enum :int {
+	SHADER_CONVERT_NONE = 0,
+	SHADER_CONVERT_TO_SDR,
+	SHADER_CONVERT_TO_PQ,
+};
+
 HRESULT CompileShader(const std::string& srcCode, const D3D_SHADER_MACRO* pDefines, LPCSTR pTarget, ID3DBlob** ppCode);
 
 HRESULT GetShaderConvertColor(
@@ -31,5 +37,5 @@ HRESULT GetShaderConvertColor(
 	const FmtConvParams_t& fmtParams,
 	const DXVA2_ExtendedFormat exFmt,
 	const int chromaScaling,
-	const bool bConvertToSdr,
+	const int convertType,
 	ID3DBlob** ppCode);

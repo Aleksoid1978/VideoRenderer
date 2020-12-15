@@ -31,6 +31,9 @@
     <None Include="convert\correct_st2084.hlsl">
       <FileType>Document</FileType>
     </None>
+    <None Include="convert\convert_hlg_to_pq.hlsl">
+      <FileType>Document</FileType>
+    </None>
     <FxCompile Include="d3d11\ps_convert_color.hlsl">
       <ShaderModel>4.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>

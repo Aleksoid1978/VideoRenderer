@@ -24,7 +24,7 @@ IDF_DITHER_32X32_FLOAT16        FILE                    "res\\dither32x32float16
 
 IDF_HLSL_HDR_TONE_MAPPING       FILE                    "..\\Shaders\\convert\\hdr_tone_mapping.hlsl"
 IDF_HLSL_COLORSPACE_GAMUT_CONV  FILE                    "..\\Shaders\\convert\\colorspace_gamut_conversion.hlsl"
-
+IDF_HLSL_CONVERT_HLG_TO_PQ      FILE                    "..\\Shaders\\convert\\convert_hlg_to_pq.hlsl"
 IDF_SHADER_CONVERT_COLOR        FILE                    "..\\_bin\\shaders\\convert_color.cso"
 IDF_SHADER_CONVERT_YUY2         FILE                    "..\\_bin\\shaders\\convert_yuy2.cso"
 IDF_SHADER_CONVERT_BIPLANAR     FILE                    "..\\_bin\\shaders\\convert_biplanar.cso"
