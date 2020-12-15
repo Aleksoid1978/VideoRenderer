@@ -1365,13 +1365,13 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 		if (S_OK == InitializeD3D11VP(FmtParams, origW, origH)) {
 			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && !(m_bHdrPassthroughSupport && m_bHdrPassthrough) && m_bConvertToSdr) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_ST2084));
-				m_strCorrection = L"ST 2084 correction";
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CONVERT_PQ_TO_SDR));
+				m_strCorrection = L"PQ to SDR";
 			}
 			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
 				if (m_bConvertToSdr && !(m_bHdrPassthroughSupport && m_bHdrPassthrough)) {
-					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_HLG));
-					m_strCorrection = L"HLG correction";
+					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CONVERT_HLG_TO_SDR));
+					m_strCorrection = L"HLG to SDR";
 				}
 				else if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
 					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CONVERT_HLG_TO_PQ));
