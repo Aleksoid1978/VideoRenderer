@@ -125,16 +125,20 @@ HRESULT GetShaderConvertColor(
 		if (S_OK == hr) {
 			code.append((LPCSTR)data, size);
 			code += '\n';
+		}
 
+		hr = GetDataFromResource(data, size, IDF_HLSL_COLORSPACE_GAMUT_CONV);
+		if (S_OK == hr) {
+			code.append((LPCSTR)data, size);
+			code += '\n';
+		}
+
+		if (S_OK == hr) {
 			if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-				hr = GetDataFromResource(data, size, IDF_HLSL_COLORSPACE_GAMUT_CONV);
-				if (S_OK == hr) {
-					code.append((LPCSTR)data, size);
-					code += '\n';
-					code.append(code_ST2084);
-					DLog(L"GetShaderConvertColor() add code for HDR ST2084");
-				}
-			} else { // if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG)
+				code.append(code_ST2084);
+				DLog(L"GetShaderConvertColor() add code for HDR ST2084");
+			}
+			else { // if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG)
 				code.append(code_HLG);
 				DLog(L"GetShaderConvertColor() add code for HDR HLG");
 			}
@@ -566,6 +570,8 @@ HRESULT GetShaderConvertColor(
 				"color.rgb /= 12.0;\n"
 				// HDR tone mapping
 				"color.rgb = ToneMappingHable(color.rgb);\n"
+				// Colorspace Gamut Conversion
+				"color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);\n"
 				// Peak luminance
 				"color.rgb = color.rgb * (SRC_LUMINANCE_PEAK / DISPLAY_LUMINANCE_PEAK);\n"
 			);
