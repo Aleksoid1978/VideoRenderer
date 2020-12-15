@@ -66,6 +66,8 @@ IDF_PSH11_CONVERT_PLANAR        FILE                    "..\\_bin\\shaders\\ps_c
 IDF_PSH11_CORRECTION_ST2084     FILE                    "..\\_bin\\shaders\\ps_correction_st2084.cso"
 IDF_PSH11_CORRECTION_HLG        FILE                    "..\\_bin\\shaders\\ps_correction_hlg.cso"
 IDF_PSH11_CORRECTION_YCGCO      FILE                    "..\\_bin\\shaders\\ps_correction_ycgco.cso"
+IDF_PSH11_CONVERT_HLG_TO_PQ     FILE                    "..\\_bin\\shaders\\ps_convert_hlg_to_pq.cso"
+
 IDF_PSH11_INTERP_MITCHELL4_X    FILE                    "..\\_bin\\shaders\\ps_resizer_mitchell4_x.cso"
 IDF_PSH11_INTERP_MITCHELL4_Y    FILE                    "..\\_bin\\shaders\\ps_resizer_mitchell4_y.cso"
 IDF_PSH11_INTERP_CATMULL4_X     FILE                    "..\\_bin\\shaders\\ps_resizer_catmull4_x.cso"

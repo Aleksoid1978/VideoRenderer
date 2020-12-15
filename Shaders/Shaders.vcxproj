@@ -42,6 +42,10 @@
       <ShaderModel>4.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
+    <FxCompile Include="d3d11\ps_convert_hlg_to_pq.hlsl">
+      <ShaderModel>4.0</ShaderModel>
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="d3d11\ps_convert_planar.hlsl">
       <ShaderModel>4.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
