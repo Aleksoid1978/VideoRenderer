@@ -66,6 +66,10 @@
       <ShaderModel>4.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
+    <FxCompile Include="d3d11\ps_fix_bt2020_pq.hlsl">
+      <ShaderModel>4.0</ShaderModel>
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="d3d11\ps_fix_ycgco.hlsl">
       <ShaderModel>4.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
@@ -127,6 +131,10 @@
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="d3d9\fix_bt2020.hlsl">
+      <ShaderModel>3.0</ShaderModel>
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="d3d9\fix_bt2020_pq.hlsl">
       <ShaderModel>3.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
