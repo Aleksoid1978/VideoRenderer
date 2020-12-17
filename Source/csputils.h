@@ -75,6 +75,15 @@ enum mp_csp_light {
     MP_CSP_LIGHT_COUNT
 };
 
+// These constants are based on the ICC specification (Table 23) and match
+// up with the API of LittleCMS, which treats them as integers.
+enum mp_render_intent {
+    MP_INTENT_PERCEPTUAL = 0,
+    MP_INTENT_RELATIVE_COLORIMETRIC = 1,
+    MP_INTENT_SATURATION = 2,
+    MP_INTENT_ABSOLUTE_COLORIMETRIC = 3
+};
+
 struct mp_colorspace {
     enum mp_csp space;
     enum mp_csp_levels levels;
@@ -112,6 +121,14 @@ struct mp_csp_params {
 struct mp_csp_col_xy {
     float x, y;
 };
+
+static inline float mp_xy_X(struct mp_csp_col_xy xy) {
+    return xy.x / xy.y;
+}
+
+static inline float mp_xy_Z(struct mp_csp_col_xy xy) {
+    return (1 - xy.x - xy.y) / xy.y;
+}
 
 struct mp_csp_primaries {
     struct mp_csp_col_xy red, green, blue, white;
