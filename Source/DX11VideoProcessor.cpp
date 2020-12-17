@@ -1379,8 +1379,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 				}
 			}
 			else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CORRECTION_YCGCO));
-				m_strCorrection = L"YCoCg correction";
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_FIX_YCGCO));
+				m_strCorrection = L"Fix YCoCg";
 			}
 			DLogIf(m_pPSCorrection, L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection created");
 

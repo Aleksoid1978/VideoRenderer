@@ -1123,8 +1123,8 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 			m_strCorrection = L"HLG to SDR";
 		}
 		else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CORRECTION_YCGCO));
-			m_strCorrection = L"YCoCg correction";
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_FIX_YCGCO));
+			m_strCorrection = L"Fix YCoCg";
 		}
 		DLogIf(m_pPSCorrection, L"CDX9VideoProcessor::InitMediaType() m_pPSCorrection created");
 
