@@ -1377,6 +1377,10 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CONVERT_HLG_TO_PQ));
 					m_strCorrection = L"HLG to PQ";
 				}
+				else {
+					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_FIX_BT2020));
+					m_strCorrection = L"Fix BT.2020";
+				}
 			}
 			else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_FIX_YCGCO));

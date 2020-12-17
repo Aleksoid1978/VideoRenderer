@@ -1118,9 +1118,15 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CONVERT_PQ_TO_SDR));
 			m_strCorrection = L"PQ to SDR";
 		}
-		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG && m_bConvertToSdr) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CONVERT_HLG_TO_SDR));
-			m_strCorrection = L"HLG to SDR";
+		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
+			if (m_bConvertToSdr) {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CONVERT_HLG_TO_SDR));
+				m_strCorrection = L"HLG to SDR";
+			}
+			else {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_FIX_BT2020));
+				m_strCorrection = L"Fix BT.2020";
+			}
 		}
 		else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_FIX_YCGCO));

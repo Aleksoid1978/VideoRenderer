@@ -11,9 +11,15 @@ struct PS_INPUT
 
 float4 main(PS_INPUT input) : SV_Target
 {
-    float4 color = tex.Sample(samp, input.Tex);
+    float4 pixel = tex.Sample(samp, input.Tex);
 
-    color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);
+    pixel = saturate(pixel);
+    pixel = pow(pixel, 2.2);
 
-    return color;
+    pixel.rgb = Colorspace_Gamut_Conversion_2020_to_709(pixel.rgb);
+
+    pixel = saturate(pixel);
+    pixel = pow(pixel, 1.0 / 2.2);
+
+    return pixel;
 }
