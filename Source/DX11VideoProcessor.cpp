@@ -1365,21 +1365,21 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 		if (S_OK == InitializeD3D11VP(FmtParams, origW, origH)) {
 			bool bTransFunc22 = m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_22
-				|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_709
-				|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_240M; 
+								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_709
+								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_240M;
 
 			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && !(m_bHdrPassthroughSupport && m_bHdrPassthrough) && m_bConvertToSdr) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CONVERT_PQ_TO_SDR));
 				m_strCorrection = L"PQ to SDR";
 			}
 			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
-				if (m_bConvertToSdr && !(m_bHdrPassthroughSupport && m_bHdrPassthrough)) {
-					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CONVERT_HLG_TO_SDR));
-					m_strCorrection = L"HLG to SDR";
-				}
-				else if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
+				if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
 					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CONVERT_HLG_TO_PQ));
 					m_strCorrection = L"HLG to PQ";
+				}
+				else if (m_bConvertToSdr) {
+					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CONVERT_HLG_TO_SDR));
+					m_strCorrection = L"HLG to SDR";
 				}
 				else if (m_srcExFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020) {
 					// HLG compatible with SDR
