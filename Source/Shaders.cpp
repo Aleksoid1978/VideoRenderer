@@ -548,7 +548,7 @@ HRESULT GetShaderConvertColor(
 	else if (bConvertHLGtoPQ) {
 		code.append("color = convert_HLG_to_PQ(color);\n");
 	}
-	else if (bBT2020) {
+	else if (bBT2020 && exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
 		code.append(
 			"color = saturate(color);\n"
 			"color = pow(color, 2.2);\n"
