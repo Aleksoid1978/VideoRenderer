@@ -1301,7 +1301,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	UpdateTexParams(FmtParams.CDepth);
 
 	if (m_bHdrCreate && m_srcVideoTransferFunction != m_srcExFmt.VideoTransferFunction) {
-		m_bIsInitHDR = true;
+		m_bHdrDisplaySwitching = true;
 		if (m_bHdrPassthrough && SourceIsHDR()) {
 			MONITORINFOEXW mi = { sizeof(mi) };
 			GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
@@ -1349,7 +1349,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 				}
 			}
 		}
-		m_bIsInitHDR = false;
+		m_bHdrDisplaySwitching = false;
 	}
 
 	if (Preferred10BitOutput() && m_SwapChainFmt == DXGI_FORMAT_B8G8R8A8_UNORM) {

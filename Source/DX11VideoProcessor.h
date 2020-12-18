@@ -136,9 +136,10 @@ private:
 
 	bool m_bDecoderDevice = false;
 	bool m_bIsFullscreen = false;
+
 	bool m_bHdrPassthroughSupport = false;
-	bool m_bHdrCreate = true;
-	bool m_bIsInitHDR = false;
+	bool m_bHdrCreate             = true;
+	bool m_bHdrDisplaySwitching   = false;
 	std::wstring m_hdrOutputDevice;
 
 	UINT m_srcVideoTransferFunction = 0;
@@ -200,7 +201,7 @@ public:
 	void SetVideoRect(const CRect& videoRect)      override;
 	HRESULT SetWindowRect(const CRect& windowRect) override;
 	HRESULT Reset() override;
-	bool IsInit() const override { return m_bIsInitHDR; }
+	bool IsInit() const override { return m_bHdrDisplaySwitching; }
 
 	IDirect3DDeviceManager9* GetDeviceManager9() override { return GetDevMan9(); }
 	HRESULT GetCurentImage(long *pDIBImage) override;
