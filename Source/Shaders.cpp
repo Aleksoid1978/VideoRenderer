@@ -93,17 +93,20 @@ HRESULT GetShaderConvertColor(
 	LPVOID data;
 	DWORD size;
 
+	bool bBT2020 = (exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_10 || exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_12);
 	bool bConvertHDRtoSDR = (convertType == SHADER_CONVERT_TO_SDR && (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG));
 	bool bConvertHLGtoPQ = (convertType == SHADER_CONVERT_TO_PQ && exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG);
 
-	if (bConvertHDRtoSDR) {
-		hr = GetDataFromResource(data, size, IDF_HLSL_HDR_TONE_MAPPING);
+	if (bBT2020 || bConvertHDRtoSDR) {
+		hr = GetDataFromResource(data, size, IDF_HLSL_COLORSPACE_GAMUT_CONV);
 		if (S_OK == hr) {
 			code.append((LPCSTR)data, size);
 			code += '\n';
 		}
+	}
 
-		hr = GetDataFromResource(data, size, IDF_HLSL_COLORSPACE_GAMUT_CONV);
+	if (bConvertHDRtoSDR) {
+		hr = GetDataFromResource(data, size, IDF_HLSL_HDR_TONE_MAPPING);
 		if (S_OK == hr) {
 			code.append((LPCSTR)data, size);
 			code += '\n';
@@ -544,6 +547,15 @@ HRESULT GetShaderConvertColor(
 	}
 	else if (bConvertHLGtoPQ) {
 		code.append("color = convert_HLG_to_PQ(color);\n");
+	}
+	else if (bBT2020) {
+		code.append(
+			"color = saturate(color);\n"
+			"color = pow(color, 2.2);\n"
+			"color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);\n"
+			"color = saturate(color);\n"
+			"color = pow(color, 1.0/2.2);\n"
+		);
 	}
 
 	code.append("return color;\n}");
