@@ -1364,6 +1364,10 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		// D3D11 VP does not work correctly if RGB32 with odd frame width (source or target) on Nvidia adapters
 
 		if (S_OK == InitializeD3D11VP(FmtParams, origW, origH)) {
+			bool bTransFunc22 = m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_22
+				|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_709
+				|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_240M; 
+
 			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && !(m_bHdrPassthroughSupport && m_bHdrPassthrough) && m_bConvertToSdr) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CONVERT_PQ_TO_SDR));
 				m_strCorrection = L"PQ to SDR";
@@ -1377,7 +1381,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CONVERT_HLG_TO_PQ));
 					m_strCorrection = L"HLG to PQ";
 				}
-				else {
+				else if (m_srcExFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020) {
+					// HLG compatible with SDR
 					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_FIX_BT2020));
 					m_strCorrection = L"Fix BT.2020";
 				}
@@ -1386,6 +1391,11 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_FIX_YCGCO));
 				m_strCorrection = L"Fix YCoCg";
 			}
+			else if (bTransFunc22 && m_srcExFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020) {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_FIX_BT2020));
+				m_strCorrection = L"Fix BT.2020";
+			}
+
 			DLogIf(m_pPSCorrection, L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection created");
 
 			m_pFilter->m_inputMT = *pmt;
@@ -3023,7 +3033,9 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 
 		m_StatsBackground.Draw(pRenderTargetView, rtSize);
 
-		hr = m_Font3D.Draw2DText(pRenderTargetView, rtSize, m_StatsTextPoint.x, m_StatsTextPoint.y, D3DCOLOR_XRGB(255, 255, 255), str.c_str());
+		D3DCOLOR colorText = (m_bHdrPassthroughSupport && m_bHdrPassthrough) ? D3DCOLOR_XRGB(170, 170, 170) : D3DCOLOR_XRGB(255, 255, 255);
+
+		hr = m_Font3D.Draw2DText(pRenderTargetView, rtSize, m_StatsTextPoint.x, m_StatsTextPoint.y, colorText, str.c_str());
 		static int col = m_StatsRect.right;
 		if (--col < m_StatsRect.left) {
 			col = m_StatsRect.right;

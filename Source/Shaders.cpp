@@ -93,11 +93,11 @@ HRESULT GetShaderConvertColor(
 	LPVOID data;
 	DWORD size;
 
-	bool bBT2020 = (exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_10 || exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_12);
+	bool bBT2020Primaries = (exFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020);
 	bool bConvertHDRtoSDR = (convertType == SHADER_CONVERT_TO_SDR && (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG));
 	bool bConvertHLGtoPQ = (convertType == SHADER_CONVERT_TO_PQ && exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG);
 
-	if (bBT2020 || bConvertHDRtoSDR) {
+	if (bBT2020Primaries || bConvertHDRtoSDR) {
 		hr = GetDataFromResource(data, size, IDF_HLSL_COLORSPACE_GAMUT_CONV);
 		if (S_OK == hr) {
 			code.append((LPCSTR)data, size);
@@ -548,10 +548,22 @@ HRESULT GetShaderConvertColor(
 	else if (bConvertHLGtoPQ) {
 		code.append("color = convert_HLG_to_PQ(color);\n");
 	}
-	else if (bBT2020 && exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
+	else if (bBT2020Primaries) {
+		code.append("color = saturate(color);\n");
+
+		switch (exFmt.VideoTransferFunction) {
+		case DXVA2_VideoTransFunc_10:   /*nothing*/                                break;
+		case DXVA2_VideoTransFunc_18:   code.append("color = pow(color, 1.8);\n"); break;
+		case DXVA2_VideoTransFunc_20:   code.append("color = pow(color, 2.0);\n"); break;
+		default:
+		case DXVA2_VideoTransFunc_22:
+		case DXVA2_VideoTransFunc_709:
+		case DXVA2_VideoTransFunc_240M: code.append("color = pow(color, 2.2);\n"); break;
+		case DXVA2_VideoTransFunc_sRGB: code.append("color = pow(color, 2.4);\n"); break;
+		case DXVA2_VideoTransFunc_28:   code.append("color = pow(color, 2.8);\n"); break;
+		case VIDEOTRANSFUNC_26:         code.append("color = pow(color, 2.6);\n"); break;
+		}
 		code.append(
-			"color = saturate(color);\n"
-			"color = pow(color, 2.2);\n"
 			"color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);\n"
 			"color = saturate(color);\n"
 			"color = pow(color, 1.0/2.2);\n"

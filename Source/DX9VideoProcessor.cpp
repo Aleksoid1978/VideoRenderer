@@ -1114,24 +1114,28 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// DXVA2 Video Processor
 	if (FmtParams.DXVA2Format != D3DFMT_UNKNOWN && S_OK == InitializeDXVA2VP(FmtParams, origW, origH)) {
+		bool bTransFunc22 = m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_22
+			|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_709
+			|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_240M
+			|| m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG; // HLG compatible with SDR
+
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && m_bConvertToSdr) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CONVERT_PQ_TO_SDR));
 			m_strCorrection = L"PQ to SDR";
 		}
-		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
-			if (m_bConvertToSdr) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CONVERT_HLG_TO_SDR));
-				m_strCorrection = L"HLG to SDR";
-			}
-			else {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_FIX_BT2020));
-				m_strCorrection = L"Fix BT.2020";
-			}
+		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG && m_bConvertToSdr) {
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CONVERT_HLG_TO_SDR));
+			m_strCorrection = L"HLG to SDR";
 		}
 		else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_FIX_YCGCO));
 			m_strCorrection = L"Fix YCoCg";
 		}
+		else if (bTransFunc22 && m_srcExFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020) {
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_FIX_BT2020));
+			m_strCorrection = L"Fix BT.2020";
+		}
+
 		DLogIf(m_pPSCorrection, L"CDX9VideoProcessor::InitMediaType() m_pPSCorrection created");
 
 		UpdateTexures(m_videoRect.Size());
