@@ -138,11 +138,10 @@ private:
 	bool m_bIsFullscreen = false;
 
 	bool m_bHdrPassthroughSupport = false;
-	bool m_bHdrCreate             = true;
 	bool m_bHdrDisplaySwitching   = false;
+	bool m_bHdrCreate             = true; // need a description or rename
+	UINT m_srcVideoTransferFunction = 0;  // need a description or rename
 	std::wstring m_hdrOutputDevice;
-
-	UINT m_srcVideoTransferFunction = 0;
 
 	struct HDRMetadata {
 		DXGI_HDR_METADATA_HDR10 hdr10 = {};
