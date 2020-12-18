@@ -17,6 +17,8 @@ static float4x4 ycgco_rgb = {
     0.0,  0.0,  0.0, 0.0
 };
 
+static const float4x4 rgb_ycbcr709_ycgco_rgb = mul(ycgco_rgb, rgb_ycbcr709);
+
 struct PS_INPUT
 {
     float4 Pos : SV_POSITION;
@@ -25,10 +27,10 @@ struct PS_INPUT
 
 float4 main(PS_INPUT input) : SV_Target
 {
-    float4 color = tex.Sample(samp, input.Tex); // original pixel
+    float4 pixel = tex.Sample(samp, input.Tex); // original pixel
 
-    color = mul(rgb_ycbcr709, color); // convert RGB to YUV and get original YCgCo
-    color = mul(ycgco_rgb, color); // convert YCgCo to RGB
+    // convert RGB to YUV and get original YCgCo. convert YCgCo to RGB
+    pixel = mul(rgb_ycbcr709_ycgco_rgb, pixel);
 
-    return color;
+    return pixel;
 }
