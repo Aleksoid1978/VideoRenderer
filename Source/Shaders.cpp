@@ -549,25 +549,29 @@ HRESULT GetShaderConvertColor(
 		code.append("color = convert_HLG_to_PQ(color);\n");
 	}
 	else if (bBT2020Primaries) {
-		code.append("color = saturate(color);\n");
-
+		std::string toLinear;
 		switch (exFmt.VideoTransferFunction) {
-		case DXVA2_VideoTransFunc_10:   /*nothing*/                                break;
-		case DXVA2_VideoTransFunc_18:   code.append("color = pow(color, 1.8);\n"); break;
-		case DXVA2_VideoTransFunc_20:   code.append("color = pow(color, 2.0);\n"); break;
-		default:
+		case DXVA2_VideoTransFunc_10:   toLinear = "\\\\nothing\n";                  break;
+		case DXVA2_VideoTransFunc_18:   toLinear = "color = pow(color, 1.8);\n"; break;
+		case DXVA2_VideoTransFunc_20:   toLinear = "color = pow(color, 2.0);\n"; break;
+		case VIDEOTRANSFUNC_HLG: // HLG compatible with SDR
 		case DXVA2_VideoTransFunc_22:
 		case DXVA2_VideoTransFunc_709:
-		case DXVA2_VideoTransFunc_240M: code.append("color = pow(color, 2.2);\n"); break;
-		case DXVA2_VideoTransFunc_sRGB: code.append("color = pow(color, 2.4);\n"); break;
-		case DXVA2_VideoTransFunc_28:   code.append("color = pow(color, 2.8);\n"); break;
-		case VIDEOTRANSFUNC_26:         code.append("color = pow(color, 2.6);\n"); break;
+		case DXVA2_VideoTransFunc_240M: toLinear = "color = pow(color, 2.2);\n"; break;
+		case DXVA2_VideoTransFunc_sRGB: toLinear = "color = pow(color, 2.4);\n"; break;
+		case DXVA2_VideoTransFunc_28:   toLinear = "color = pow(color, 2.8);\n"; break;
+		case VIDEOTRANSFUNC_26:         toLinear = "color = pow(color, 2.6);\n"; break;
 		}
-		code.append(
-			"color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);\n"
-			"color = saturate(color);\n"
-			"color = pow(color, 1.0/2.2);\n"
-		);
+
+		if (toLinear.size()) {
+			code.append("color = saturate(color);\n");
+			code.append(toLinear);
+			code.append(
+				"color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);\n"
+				"color = saturate(color);\n"
+				"color = pow(color, 1.0/2.2);\n"
+			);
+		}
 	}
 
 	code.append("return color;\n}");
