@@ -448,6 +448,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 
 	m_hWnd = hwnd;
 	m_bHdrPassthroughSupport = false;
+	m_bHdrDisplayModeEnabled = false;
 	m_bitsPerChannelSupport = 8;
 
 	MONITORINFOEXW mi = { sizeof(mi) };
@@ -457,6 +458,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 		const auto& ac = displayConfig.advancedColor;
 		m_bHdrPassthroughSupport = ac.advancedColorSupported && (ac.advancedColorEnabled || !m_bHdrToggleDisplay);
+		m_bHdrDisplayModeEnabled = ac.advancedColorEnabled;
 		m_bitsPerChannelSupport = displayConfig.bitsPerChannel;
 	}
 
@@ -1048,6 +1050,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR();
 	const auto b10BitOutput = bHdrOutput || Preferred10BitOutput();
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
+	m_dwStatsTextColor = (m_bHdrDisplayModeEnabled && bHdrOutput) ? D3DCOLOR_XRGB(170, 170, 170) : D3DCOLOR_XRGB(255, 255, 255);
 
 	HRESULT hr = S_OK;
 	m_bIsFullscreen = m_pFilter->m_bIsFullscreen;
@@ -3033,9 +3036,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 
 		m_StatsBackground.Draw(pRenderTargetView, rtSize);
 
-		D3DCOLOR colorText = (m_bHdrPassthroughSupport && m_bHdrPassthrough) ? D3DCOLOR_XRGB(170, 170, 170) : D3DCOLOR_XRGB(255, 255, 255);
-
-		hr = m_Font3D.Draw2DText(pRenderTargetView, rtSize, m_StatsTextPoint.x, m_StatsTextPoint.y, colorText, str.c_str());
+		hr = m_Font3D.Draw2DText(pRenderTargetView, rtSize, m_StatsTextPoint.x, m_StatsTextPoint.y, m_dwStatsTextColor, str.c_str());
 		static int col = m_StatsRect.right;
 		if (--col < m_StatsRect.left) {
 			col = m_StatsRect.right;

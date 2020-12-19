@@ -139,6 +139,7 @@ private:
 
 	bool m_bHdrPassthroughSupport = false;
 	bool m_bHdrDisplaySwitching   = false;
+	bool m_bHdrDisplayModeEnabled = false;
 	bool m_bHdrCreate             = true; // need a description or rename
 	UINT m_srcVideoTransferFunction = 0;  // need a description or rename
 	std::wstring m_hdrOutputDevice;
@@ -149,6 +150,8 @@ private:
 	};
 	HDRMetadata m_hdr10 = {};
 	HDRMetadata m_lastHdr10 = {};
+
+	D3DCOLOR m_dwStatsTextColor = D3DCOLOR_XRGB(255, 255, 255);
 
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Settings_t& config, HRESULT& hr);
