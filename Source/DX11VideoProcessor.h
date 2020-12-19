@@ -140,7 +140,7 @@ private:
 	bool m_bHdrPassthroughSupport = false;
 	bool m_bHdrDisplaySwitching   = false; // switching HDR display in progress
 	bool m_bHdrDisplayModeEnabled = false;
-	boom)m_bNeedSwitchHdrDisplay  = true;
+	bool m_bHdrAllowSwitchDisplay = true;
 	UINT m_srcVideoTransferFunction = 0; // need a description or rename
 	std::wstring m_hdrModeEnabledDisplayName;
 
