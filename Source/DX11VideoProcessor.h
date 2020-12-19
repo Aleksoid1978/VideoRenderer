@@ -128,7 +128,7 @@ private:
 
 	// Statistics
 	CD3D11Rectangle m_StatsBackground;
-	CD3D11Font m_Font3D;
+	CD3D11Font      m_Font3D;
 	CD3D11Rectangle m_Rect3D;
 	CD3D11Rectangle m_Underlay;
 	CD3D11Lines     m_Lines;
@@ -137,12 +137,12 @@ private:
 	bool m_bDecoderDevice = false;
 	bool m_bIsFullscreen = false;
 
-	bool m_bHdrPassthroughSupport = false;
-	bool m_bHdrDisplaySwitching   = false;
-	bool m_bHdrDisplayModeEnabled = false;
-	bool m_bHdrCreate             = true; // need a description or rename
+	bool m_bHdrPassthroughSupport   = false;
+	bool m_bHdrDisplaySwitching     = false;
+	bool m_bHdrDisplayModeEnabled   = false;
+	bool m_bNeedHdrDisplaySwitching = true;
 	UINT m_srcVideoTransferFunction = 0;  // need a description or rename
-	std::wstring m_hdrOutputDevice;
+	std::wstring m_hdrModeEnabledDisplayName;
 
 	struct HDRMetadata {
 		DXGI_HDR_METADATA_HDR10 hdr10 = {};

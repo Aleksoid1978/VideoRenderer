@@ -412,9 +412,9 @@ static bool ToggleHDR(const DisplayConfig_t& displayConfig, const BOOL bEnableAd
 
 CDX11VideoProcessor::~CDX11VideoProcessor()
 {
-	if (!m_hdrOutputDevice.empty()) {
+	if (!m_hdrModeEnabledDisplayName.empty()) {
 		DisplayConfig_t displayConfig = {};
-		if (GetDisplayConfig(m_hdrOutputDevice.c_str(), displayConfig)) {
+		if (GetDisplayConfig(m_hdrModeEnabledDisplayName.c_str(), displayConfig)) {
 			const auto& ac = displayConfig.advancedColor;
 
 			if (ac.advancedColorSupported && ac.advancedColorEnabled) {
@@ -1303,7 +1303,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	UpdateTexParams(FmtParams.CDepth);
 
-	if (m_bHdrCreate && m_srcVideoTransferFunction != m_srcExFmt.VideoTransferFunction) {
+	if (m_bNeedHdrDisplaySwitching && m_srcVideoTransferFunction != m_srcExFmt.VideoTransferFunction) {
 		m_bHdrDisplaySwitching = true;
 		if (m_bHdrPassthrough && SourceIsHDR()) {
 			MONITORINFOEXW mi = { sizeof(mi) };
@@ -1319,7 +1319,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 						ret = ToggleHDR(displayConfig, TRUE);
 						DLogIf(!ret, L"CDX11VideoProcessor::InitMediaType() : Toggle HDR ON failed");
 						if (ret) {
-							m_hdrOutputDevice = mi.szDevice;
+							m_hdrModeEnabledDisplayName = mi.szDevice;
 						}
 					}
 
@@ -1342,8 +1342,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 					DLogIf(!ret, L"CDX11VideoProcessor::InitMediaType() : Toggle HDR OFF failed");
 
 					if (ret) {
-						if (m_hdrOutputDevice == mi.szDevice) {
-							m_hdrOutputDevice.clear();
+						if (m_hdrModeEnabledDisplayName == mi.szDevice) {
+							m_hdrModeEnabledDisplayName.clear();
 						}
 
 						ReleaseSwapChain();
@@ -2422,8 +2422,8 @@ HRESULT CDX11VideoProcessor::Reset()
 			const auto bHdrPassthroughSupport = ac.advancedColorSupported && (ac.advancedColorEnabled || !m_bHdrToggleDisplay);
 
 			if (bHdrPassthroughSupport && !m_bHdrPassthroughSupport || !ac.advancedColorEnabled && m_bHdrPassthroughSupport) {
-				if (!ac.advancedColorEnabled && m_hdrOutputDevice == mi.szDevice) {
-					m_hdrOutputDevice.clear();
+				if (!ac.advancedColorEnabled && m_hdrModeEnabledDisplayName == mi.szDevice) {
+					m_hdrModeEnabledDisplayName.clear();
 				}
 				if (m_pFilter->m_inputMT.IsValid()) {
 					ReleaseSwapChain();
@@ -2432,9 +2432,9 @@ HRESULT CDX11VideoProcessor::Reset()
 					} else {
 						Init(m_hWnd);
 					}
-					m_bHdrCreate = false;
+					m_bNeedHdrDisplaySwitching = false;
 					InitMediaType(&m_pFilter->m_inputMT);
-					m_bHdrCreate = true;
+					m_bNeedHdrDisplaySwitching = true;
 				}
 			}
 		}
