@@ -1,14 +1,15 @@
 v0.4.10
 ------------------------
 Added the OpenConfiguration function to call settings from the command line (Example: rundll32.exe MpcVideoRenderer64.ax,OpenConfiguration).
-Changed shader for HLG.
 Fixed memory leak for Direct3D 11 mode.
 Added limitation of no more than one active renderer instance per process.
 Added displaying statistics and the ability to display AlphaBitmap (OSD) when playback is stopped.
 Added support for HDR passthrough for DX11 mode in Windows 10.
 Added the ability to switch the display to HDR mode for DX11 mode in Windows 10.
 Added the ability to manually disable conversion HDR to SDR.
-Added display information in statistics.
+Fixed display of HLG video in various situations.
+Added support for BT.2020 Primaries for some cases.
+Added various information to statistics.
 
 v0.4.9.1460 - 2020.08.24
 ------------------------
