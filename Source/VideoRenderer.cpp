@@ -688,7 +688,9 @@ STDMETHODIMP CMpcVideoRenderer::QuerySupported(REFGUID PropSet, ULONG Id, ULONG*
 STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject)
 {
 	if (guidService == MR_VIDEO_ACCELERATION_SERVICE) {
-		bool hwdecformat = m_inputMT.subtype == MEDIASUBTYPE_NV12 || m_inputMT.subtype == MEDIASUBTYPE_P010;
+		bool hwdecformat = !m_inputMT.IsValid
+			|| m_inputMT.subtype == MEDIASUBTYPE_NV12
+			|| m_inputMT.subtype == MEDIASUBTYPE_P010;
 
 		if (hwdecformat && riid == __uuidof(IDirect3DDeviceManager9)) {
 			return m_VideoProcessor->GetDeviceManager9()->QueryInterface(riid, ppvObject);
