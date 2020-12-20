@@ -154,7 +154,11 @@ STDMETHODIMP CVideoRendererInputPin::BeginFlush()
 STDMETHODIMP CVideoRendererInputPin::GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject)
 {
 	if (riid == __uuidof(IDirectXVideoMemoryConfiguration)) {
-		return GetInterface((IDirectXVideoMemoryConfiguration*)this, ppvObject);
+		if (m_mt.subtype == MEDIASUBTYPE_NV12 || m_mt.subtype == MEDIASUBTYPE_P010) {
+			return GetInterface((IDirectXVideoMemoryConfiguration*)this, ppvObject);
+		} else {
+			return MF_E_UNSUPPORTED_SERVICE;
+		}
 	}
 
 	return m_pBaseRenderer->GetService(guidService, riid, ppvObject);
