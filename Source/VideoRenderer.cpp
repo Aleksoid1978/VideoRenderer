@@ -688,7 +688,7 @@ STDMETHODIMP CMpcVideoRenderer::QuerySupported(REFGUID PropSet, ULONG Id, ULONG*
 STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject)
 {
 	if (guidService == MR_VIDEO_ACCELERATION_SERVICE) {
-		bool hwdecformat = !m_inputMT.IsValid
+		bool hwdecformat = !m_inputMT.IsValid()
 			|| m_inputMT.subtype == MEDIASUBTYPE_NV12
 			|| m_inputMT.subtype == MEDIASUBTYPE_P010;
 
