@@ -1,3 +1,7 @@
+v0.5.1
+------------------------
+
+
 v0.5.0.1567 - 2020.12.21
 ------------------------
 Added the OpenConfiguration function to call settings from the command line (Example: rundll32.exe MpcVideoRenderer64.ax,OpenConfiguration).

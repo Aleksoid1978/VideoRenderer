@@ -82,7 +82,7 @@ FOR /F "tokens=3,4 delims= " %%A IN (
   'FINDSTR /I /L /C:"define MPCVR_REV_BRANCH" "revision.h"') DO (SET "REVBRANCH=%%A")
 
 IF /I "%RELEASE%" == "1" (
-  SET "PCKG_NAME=MPCVideoRenderer-v%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%%SUFFIX%"
+  SET "PCKG_NAME=MPCVideoRenderer-%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%%SUFFIX%"
 ) ELSE (
   IF /I "%REVBRANCH%" == "master" (
     SET "PCKG_NAME=MPCVideoRenderer-%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%_git%REVDATE%-%REVHASH%%SUFFIX%"
