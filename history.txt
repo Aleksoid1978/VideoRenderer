@@ -1,4 +1,4 @@
-v0.4.10
+v0.5.0.1567 - 2020.12.21
 ------------------------
 Added the OpenConfiguration function to call settings from the command line (Example: rundll32.exe MpcVideoRenderer64.ax,OpenConfiguration).
 Fixed memory leak for Direct3D 11 mode.
@@ -9,7 +9,9 @@ Added the ability to switch the display to HDR mode for DX11 mode in Windows 10.
 Added the ability to manually disable conversion HDR to SDR.
 Fixed display of HLG video in various situations.
 Added support for BT.2020 Primaries for some cases.
+Fixed connections to any input media type when DXVA decoder can be active.
 Added various information to statistics.
+Recommended version of MPC-BE 1.5.6.5832 or later.
 
 v0.4.9.1460 - 2020.08.24
 ------------------------

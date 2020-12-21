@@ -28,7 +28,7 @@
 std::wstring GetVersionStr()
 {
 	std::wstring version = _CRT_WIDE(MPCVR_VERSION_STR);
-#if MPCIS_RELEASE != 1
+#if MPCVR_RELEASE != 1
 	if (strcmp(MPCVR_BRANCH_STR, "master") != 0) {
 		version += fmt::format(L".{}", _CRT_WIDE(MPCVR_BRANCH_STR));
 	}
