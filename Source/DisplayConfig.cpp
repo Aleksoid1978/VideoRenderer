@@ -309,15 +309,6 @@ std::wstring DisplayConfigToString(const DisplayConfig_t& dc)
 			str += 'i';
 		}
 		str.append(L" Hz");
-
-		const wchar_t* colenc = ColorEncodingToString(dc.colorEncoding);
-		if (colenc) {
-			str += fmt::format(L" {}", colenc);
-		}
-
-		if (dc.bitsPerChannel) {
-			str += fmt::format(L" {}-bit", dc.bitsPerChannel);
-		}
 	}
 	return str;
 }

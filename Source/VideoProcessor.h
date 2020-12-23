@@ -112,7 +112,7 @@ protected:
 	const wchar_t* m_strShaderX = nullptr;
 	const wchar_t* m_strShaderY = nullptr;
 	int m_StatsFontH = 14;
-	RECT m_StatsRect = { 10, 10, 10 + 5 + 63*8 + 3, 10 + 5 + 17*17 + 3 };
+	RECT m_StatsRect = { 10, 10, 10 + 5 + 63*8 + 3, 10 + 5 + 18*17 + 3 };
 	const POINT m_StatsTextPoint = { 10 + 5, 10 + 5};
 
 	// Graph of a function
@@ -180,7 +180,7 @@ public:
 	void CalcGraphParams();
 	virtual void SetGraphSize() = 0;
 
-	void SetDisplayInfo(const DisplayConfig_t& displayConfig, const bool primary, const bool fullscreen);
+	void SetDisplayInfo(const DisplayConfig_t& dc, const bool primary, const bool fullscreen);
 
 protected:
 	bool SourceIsHDR() {

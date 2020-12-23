@@ -779,7 +779,7 @@ void CDX11VideoProcessor::SetGraphSize()
 		if (S_OK == m_Font3D.CreateFontBitmap(L"Consolas", m_StatsFontH, 0)) {
 			SIZE charSize = m_Font3D.GetMaxCharMetric();
 			m_StatsRect.right  = m_StatsRect.left + 69 * charSize.cx + 5 + 3;
-			m_StatsRect.bottom = m_StatsRect.top + 17 * charSize.cy + 5 + 3;
+			m_StatsRect.bottom = m_StatsRect.top + 18 * charSize.cy + 5 + 3;
 		}
 		m_StatsBackground.Set(m_StatsRect, rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
 
@@ -2598,7 +2598,7 @@ HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 		str.append(L"Shaders");
 	}
 
-	str += fmt::format(L"\nDisplay: {}", m_strStatsDispInfo);
+	str.append(m_strStatsDispInfo);
 
 	if (m_pPostScaleShaders.size()) {
 		str.append(L"\n\nPost scale pixel shaders:");
@@ -2962,11 +2962,8 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	}
 
 	std::wstring str = m_strStatsStatic1;
-	str += fmt::format(
-		L"\nDisplay: {}"
-		L"\nGraph. Adapter: {}",
-		m_strStatsDispInfo, m_strAdapterDescription
-	);
+	str.append(m_strStatsDispInfo);
+	str += fmt::format(L"\nGraph. Adapter: {}", m_strAdapterDescription);
 
 	str += fmt::format(L"\nFrame rate    : {:7.3f}", m_pFilter->m_FrameStats.GetAverageFps());
 	if (m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {

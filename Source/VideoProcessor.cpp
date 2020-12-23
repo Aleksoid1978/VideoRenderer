@@ -103,19 +103,36 @@ void CVideoProcessor::CalcGraphParams()
 	m_Yaxis = m_GraphRect.bottom - 50 * m_Yscale;
 }
 
-void CVideoProcessor::SetDisplayInfo(const DisplayConfig_t& displayConfig, const bool primary, const bool fullscreen)
+void CVideoProcessor::SetDisplayInfo(const DisplayConfig_t& dc, const bool primary, const bool fullscreen)
 {
-	m_strStatsDispInfo = DisplayConfigToString(displayConfig);
-	if (m_strStatsDispInfo.empty()) {
-		m_strStatsDispInfo = D3DDisplayModeToString(*m_pDisplayMode);
+	m_strStatsDispInfo.assign(L"\nDisplay: ");
+
+	std::wstring str = DisplayConfigToString(dc);
+	if (str.size()) {
+		m_strStatsDispInfo.append(str);
+		str.clear();
+
+		if (dc.bitsPerChannel) { // if bitsPerChannel is not set then colorEncoding and other values are invalid
+			const wchar_t* colenc = ColorEncodingToString(dc.colorEncoding);
+			if (colenc) {
+				str = fmt::format(L"\n  Color: {} {}-bit", colenc, dc.bitsPerChannel);
+				if (dc.advancedColor.advancedColorSupported) {
+					str.append(L" HDR10:");
+					str.append(dc.advancedColor.advancedColorEnabled ? L"on" : L"off");
+				}
+			}
+		}
+	} else {
+		m_strStatsDispInfo.append(D3DDisplayModeToString(*m_pDisplayMode));
 	}
+
 	if (primary) {
 		m_strStatsDispInfo.append(L" [Primary]");
 	}
-	if (fullscreen) {
-		m_strStatsDispInfo.append(L" fullscreen");
-	} else {
-		m_strStatsDispInfo.append(L" windowed");
+	m_strStatsDispInfo.append(fullscreen ? L" fullscreen" : L" windowed");
+
+	if (str.size()) {
+		m_strStatsDispInfo.append(str);
 	}
 }
 
