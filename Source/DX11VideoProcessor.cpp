@@ -2828,31 +2828,31 @@ HRESULT CDX11VideoProcessor::AddPostScaleShader(const std::wstring& name, const 
 void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
-		m_strStatsStatic1 = fmt::format(L"MPC VR {}, Direct3D 11", _CRT_WIDE(MPCVR_VERSION_STR));
+		m_strStatsHeader = fmt::format(L"MPC VR {}, Direct3D 11", _CRT_WIDE(MPCVR_VERSION_STR));
 
 		UpdateStatsInputFmt();
 
-		m_strStatsStatic2.assign(L"\nVideoProcessor: ");
+		m_strStatsVProc.assign(L"\nVideoProcessor: ");
 		if (m_D3D11VP.IsReady()) {
-			m_strStatsStatic2 += fmt::format(L"D3D11 VP, output to {}", DXGIFormatToString(m_D3D11OutputFmt));
+			m_strStatsVProc += fmt::format(L"D3D11 VP, output to {}", DXGIFormatToString(m_D3D11OutputFmt));
 		} else {
-			m_strStatsStatic2.append(L"Shaders");
+			m_strStatsVProc.append(L"Shaders");
 			if (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422) {
-				m_strStatsStatic2.append(L", Chroma scaling: ");
+				m_strStatsVProc.append(L", Chroma scaling: ");
 				switch (m_iChromaScaling) {
 				case CHROMA_Nearest:
-					m_strStatsStatic2.append(L"Nearest-neighbor");
+					m_strStatsVProc.append(L"Nearest-neighbor");
 					break;
 				case CHROMA_Bilinear:
-					m_strStatsStatic2.append(L"Bilinear");
+					m_strStatsVProc.append(L"Bilinear");
 					break;
 				case CHROMA_CatmullRom:
-					m_strStatsStatic2.append(L"Catmull-Rom");
+					m_strStatsVProc.append(L"Catmull-Rom");
 					break;
 				}
 			}
 		}
-		m_strStatsStatic2 += fmt::format(L"\nInternalFormat: {}", DXGIFormatToString(m_InternalTexFmt));
+		m_strStatsVProc += fmt::format(L"\nInternalFormat: {}", DXGIFormatToString(m_InternalTexFmt));
 
 		if (SourceIsHDR()) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
@@ -2891,8 +2891,8 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 			m_strStatsPresent.append(DXGIFormatToString(swapchain_desc.Format));
 		}
 	} else {
-		m_strStatsStatic1 = L"Error";
-		m_strStatsStatic2.clear();
+		m_strStatsHeader = L"Error";
+		m_strStatsVProc.clear();
 		m_strStatsInputFmt.clear();
 		m_strStatsPostProc.clear();
 		m_strStatsHDR.clear();
@@ -2926,7 +2926,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		return E_ABORT;
 	}
 
-	std::wstring str = m_strStatsStatic1;
+	std::wstring str = m_strStatsHeader;
 	str.append(m_strStatsDispInfo);
 	str += fmt::format(L"\nGraph. Adapter: {}", m_strAdapterDescription);
 
@@ -2937,7 +2937,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	str += fmt::format(L",{:7.3f}", m_pFilter->m_DrawStats.GetAverageFps());
 
 	str.append(m_strStatsInputFmt);
-	str.append(m_strStatsStatic2);
+	str.append(m_strStatsVProc);
 
 	const int dstW = m_videoRect.Width();
 	const int dstH = m_videoRect.Height();

@@ -101,9 +101,9 @@ protected:
 
 	// Statistics
 	CRenderStats m_RenderStats;
-	std::wstring m_strStatsStatic1;
+	std::wstring m_strStatsHeader;
 	std::wstring m_strStatsInputFmt;
-	std::wstring m_strStatsStatic2;
+	std::wstring m_strStatsVProc;
 	std::wstring m_strStatsDispInfo;
 	std::wstring m_strStatsPostProc;
 	std::wstring m_strStatsHDR;
