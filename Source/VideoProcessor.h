@@ -102,6 +102,7 @@ protected:
 	// Statistics
 	CRenderStats m_RenderStats;
 	std::wstring m_strStatsStatic1;
+	std::wstring m_strStatsInputFmt;
 	std::wstring m_strStatsStatic2;
 	std::wstring m_strStatsDispInfo;
 	std::wstring m_strStatsPostProc;
@@ -186,6 +187,8 @@ protected:
 	bool SourceIsHDR() {
 		return m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG;
 	}
+
+	void UpdateStatsInputFmt();
 
 public:
 	// IUnknown

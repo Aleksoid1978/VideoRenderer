@@ -2830,45 +2830,9 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 	if (m_srcParams.cformat) {
 		m_strStatsStatic1 = fmt::format(L"MPC VR {}, Direct3D 11", _CRT_WIDE(MPCVR_VERSION_STR));
 
-		m_strStatsStatic2.assign(m_srcParams.str);
-		if (m_srcWidth != m_srcRectWidth || m_srcHeight != m_srcRectHeight) {
-			m_strStatsStatic2 += fmt::format(L" {}x{} ->", m_srcWidth, m_srcHeight);
-		}
-		m_strStatsStatic2 += fmt::format(L" {}x{}", m_srcRectWidth, m_srcRectHeight);
-		if (m_srcAnamorphic) {
-			m_strStatsStatic2 += fmt::format(L" ({}:{})", m_srcAspectRatioX, m_srcAspectRatioY);
-		}
-		if (m_srcParams.CSType == CS_YUV) {
-			LPCSTR strs[6] = {};
-			GetExtendedFormatString(strs, m_srcExFmt, m_srcParams.CSType);
-			m_strStatsStatic2 += fmt::format(L"\n  Range: {}", A2WStr(strs[1]));
-			if (m_decExFmt.NominalRange == DXVA2_NominalRange_Unknown) {
-				m_strStatsStatic2 += L'*';
-			};
-			m_strStatsStatic2 += fmt::format(L", Matrix: {}", A2WStr(strs[2]));
-			if (m_decExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
-				m_strStatsStatic2 += L'*';
-			};
-			m_strStatsStatic2 += fmt::format(L", Lighting: {}", A2WStr(strs[3]));
-			if (m_decExFmt.VideoLighting == DXVA2_VideoLighting_Unknown) {
-				m_strStatsStatic2 += L'*';
-			};
-			m_strStatsStatic2 += fmt::format(L"\n  Primaries: {}", A2WStr(strs[4]));
-			if (m_decExFmt.VideoPrimaries == DXVA2_VideoPrimaries_Unknown) {
-				m_strStatsStatic2 += L'*';
-			};
-			m_strStatsStatic2 += fmt::format(L", Function: {}", A2WStr(strs[5]));
-			if (m_decExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_Unknown) {
-				m_strStatsStatic2 += L'*';
-			};
-			if (m_srcParams.Subsampling == 420) {
-				m_strStatsStatic2 += fmt::format(L"\n  ChromaLocation: {}", A2WStr(strs[0]));
-				if (m_decExFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Unknown) {
-					m_strStatsStatic2 += L'*';
-				};
-			}
-		}
-		m_strStatsStatic2.append(L"\nVideoProcessor: ");
+		UpdateStatsInputFmt();
+
+		m_strStatsStatic2.assign(L"\nVideoProcessor: ");
 		if (m_D3D11VP.IsReady()) {
 			m_strStatsStatic2 += fmt::format(L"D3D11 VP, output to {}", DXGIFormatToString(m_D3D11OutputFmt));
 		} else {
@@ -2929,6 +2893,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 	} else {
 		m_strStatsStatic1 = L"Error";
 		m_strStatsStatic2.clear();
+		m_strStatsInputFmt.clear();
 		m_strStatsPostProc.clear();
 		m_strStatsHDR.clear();
 		m_strStatsPresent.clear();
@@ -2970,13 +2935,8 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		str += L'i';
 	}
 	str += fmt::format(L",{:7.3f}", m_pFilter->m_DrawStats.GetAverageFps());
-	str.append(L"\nInput format  : ");
-	if (m_iSrcFromGPU == 11) {
-		str.append(L"D3D11_");
-	}
-	else if (m_iSrcFromGPU == 9) {
-		str.append(L"DXVA2_");
-	}
+
+	str.append(m_strStatsInputFmt);
 	str.append(m_strStatsStatic2);
 
 	const int dstW = m_videoRect.Width();

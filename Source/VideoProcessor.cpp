@@ -136,6 +136,58 @@ void CVideoProcessor::SetDisplayInfo(const DisplayConfig_t& dc, const bool prima
 	}
 }
 
+void CVideoProcessor::UpdateStatsInputFmt()
+{
+	m_strStatsInputFmt.assign(L"\nInput format  : ");
+
+	if (m_iSrcFromGPU == 9) {
+		m_strStatsInputFmt.append(L"DXVA2_");
+	}
+	else if (m_iSrcFromGPU == 11) {
+		m_strStatsInputFmt.append(L"D3D11_");
+	}
+	m_strStatsInputFmt.append(m_srcParams.str);
+
+	if (m_srcWidth != m_srcRectWidth || m_srcHeight != m_srcRectHeight) {
+		m_strStatsInputFmt += fmt::format(L" {}x{} ->", m_srcWidth, m_srcHeight);
+	}
+	m_strStatsInputFmt += fmt::format(L" {}x{}", m_srcRectWidth, m_srcRectHeight);
+	if (m_srcAnamorphic) {
+		m_strStatsInputFmt += fmt::format(L" ({}:{})", m_srcAspectRatioX, m_srcAspectRatioY);
+	}
+
+	if (m_srcParams.CSType == CS_YUV) {
+		LPCSTR strs[6] = {};
+		GetExtendedFormatString(strs, m_srcExFmt, m_srcParams.CSType);
+		m_strStatsInputFmt += fmt::format(L"\n  Range: {}", A2WStr(strs[1]));
+		if (m_decExFmt.NominalRange == DXVA2_NominalRange_Unknown) {
+			m_strStatsInputFmt += L'*';
+		};
+		m_strStatsInputFmt += fmt::format(L", Matrix: {}", A2WStr(strs[2]));
+		if (m_decExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
+			m_strStatsInputFmt += L'*';
+		};
+		m_strStatsInputFmt += fmt::format(L", Lighting: {}", A2WStr(strs[3]));
+		if (m_decExFmt.VideoLighting == DXVA2_VideoLighting_Unknown) {
+			m_strStatsInputFmt += L'*';
+		};
+		m_strStatsInputFmt += fmt::format(L"\n  Primaries: {}", A2WStr(strs[4]));
+		if (m_decExFmt.VideoPrimaries == DXVA2_VideoPrimaries_Unknown) {
+			m_strStatsInputFmt += L'*';
+		};
+		m_strStatsInputFmt += fmt::format(L", Function: {}", A2WStr(strs[5]));
+		if (m_decExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_Unknown) {
+			m_strStatsInputFmt += L'*';
+		};
+		if (m_srcParams.Subsampling == 420) {
+			m_strStatsInputFmt += fmt::format(L"\n  ChromaLocation: {}", A2WStr(strs[0]));
+			if (m_decExFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Unknown) {
+				m_strStatsInputFmt += L'*';
+			};
+		}
+	}
+}
+
 // IUnknown
 
 STDMETHODIMP CVideoProcessor::QueryInterface(REFIID riid, void **ppv)
