@@ -117,7 +117,7 @@ void CVideoProcessor::SetDisplayInfo(const DisplayConfig_t& dc, const bool prima
 			if (colenc) {
 				str = fmt::format(L"\n  Color: {} {}-bit", colenc, dc.bitsPerChannel);
 				if (dc.advancedColor.advancedColorSupported) {
-					str.append(L" HDR10:");
+					str.append(L" HDR10: ");
 					str.append(dc.advancedColor.advancedColorEnabled ? L"on" : L"off");
 				}
 			}
