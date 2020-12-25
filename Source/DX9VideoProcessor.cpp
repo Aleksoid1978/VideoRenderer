@@ -1237,9 +1237,13 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 
 	HRESULT hr = S_OK;
 	m_FieldDrawn = 0;
+	bool updateStats = false;
 
 	if (CComQIPtr<IMFGetService> pService = pSample) {
-		m_iSrcFromGPU = 9;
+		if (m_iSrcFromGPU != 9) {
+			m_iSrcFromGPU = 9;
+			updateStats = true;
+		}
 
 		CComPtr<IDirect3DSurface9> pSurface;
 		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface)))) {
@@ -1259,7 +1263,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 					return hr;
 				}
 				UpdatFrameProperties();
-				UpdateStatsStatic();
+				updateStats = true;
 			}
 
 			if (m_DXVA2VP.IsReady()) {
@@ -1294,7 +1298,10 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 	else {
-		m_iSrcFromGPU = 0;
+		if (m_iSrcFromGPU != 0) {
+			m_iSrcFromGPU = 0;
+			updateStats = true;
+		}
 
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
@@ -1355,6 +1362,10 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				}
 			}
 		}
+	}
+
+	if (updateStats) {
+		UpdateStatsStatic();
 	}
 
 	m_RenderStats.copyticks = GetPreciseTick() - tick;

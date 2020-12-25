@@ -1658,6 +1658,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 	HRESULT hr = S_OK;
 	m_FieldDrawn = 0;
+	bool updateStats = false;
 
 	m_hdr10 = {};
 	if (m_bHdrPassthrough && SourceIsHDR()) {
@@ -1692,7 +1693,10 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	}
 
 	if (CComQIPtr<IMediaSampleD3D11> pMSD3D11 = pSample) {
-		m_iSrcFromGPU = 11;
+		if (m_iSrcFromGPU != 11) {
+			m_iSrcFromGPU = 11;
+			updateStats = true;
+		}
 
 		CComQIPtr<ID3D11Texture2D> pD3D11Texture2D;
 		UINT ArraySlice = 0;
@@ -1719,7 +1723,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				return hr;
 			}
 			UpdatFrameProperties();
-			UpdateStatsStatic();
+			updateStats = true;
 		}
 #endif
 
@@ -1731,7 +1735,10 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 	else if (CComQIPtr<IMFGetService> pService = pSample) {
-		m_iSrcFromGPU = 9;
+		if (m_iSrcFromGPU != 9) {
+			m_iSrcFromGPU = 9;
+			updateStats = true;
+		}
 
 		CComPtr<IDirect3DSurface9> pSurface9;
 		if (SUCCEEDED(pService->GetService(MR_BUFFER_SERVICE, IID_PPV_ARGS(&pSurface9)))) {
@@ -1751,7 +1758,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					return hr;
 				}
 				UpdatFrameProperties();
-				UpdateStatsStatic();
+				updateStats = true;
 			}
 
 			D3DLOCKED_RECT lr_src;
@@ -1768,7 +1775,10 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 	else {
-		m_iSrcFromGPU = 0;
+		if (m_iSrcFromGPU != 0) {
+			m_iSrcFromGPU = 0;
+			updateStats = true;
+		}
 
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
@@ -1780,6 +1790,10 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				m_pDeviceContext->CopyResource(m_D3D11VP.GetNextInputTexture(m_SampleFormat), m_TexSrcVideo.pTexture);
 			}
 		}
+	}
+
+	if (updateStats) {
+		UpdateStatsStatic();
 	}
 
 	m_RenderStats.copyticks = GetPreciseTick() - tick;
