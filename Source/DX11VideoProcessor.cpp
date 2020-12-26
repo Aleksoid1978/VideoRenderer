@@ -2546,13 +2546,20 @@ HRESULT CDX11VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned* pSize)
 	D3D11_TEXTURE2D_DESC desc;
 	pBackBuffer->GetDesc(&desc);
 
-	D3D11_TEXTURE2D_DESC desc2 = CreateTex2DDesc(DXGI_FORMAT_B8G8R8A8_UNORM, desc.Width, desc.Height, Tex2D_StagingRead);
+	if (desc.Format != DXGI_FORMAT_B8G8R8A8_UNORM) {
+		DLog(L"CDX11VideoProcessor::GetDisplayedImage() backbuffer format not supported");
+		return E_FAIL;
+	}
+
+	D3D11_TEXTURE2D_DESC desc2 = CreateTex2DDesc(desc.Format, desc.Width, desc.Height, Tex2D_StagingRead);
 	CComPtr<ID3D11Texture2D> pTexture2DShared;
 	hr = m_pDevice->CreateTexture2D(&desc2, nullptr, &pTexture2DShared);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::GetDisplayedImage() failed with error {}", HR2Str(hr));
 		return hr;
 	}
+
+	m_pDeviceContext->CopyResource(pTexture2DShared, pBackBuffer);
 
 	*pSize = desc.Width * desc.Height * 4 + sizeof(BITMAPINFOHEADER);
 	BYTE* p = (BYTE*)LocalAlloc(LMEM_FIXED, *pSize); // only this allocator can be used
@@ -2570,8 +2577,6 @@ HRESULT CDX11VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned* pSize)
 	pBIH->biSizeImage = DIBSIZE(*pBIH);
 
 	UINT dst_pitch = pBIH->biSizeImage / desc.Height;
-
-	m_pDeviceContext->CopyResource(pTexture2DShared, pBackBuffer);
 
 	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 	hr = m_pDeviceContext->Map(pTexture2DShared, 0, D3D11_MAP_READ, 0, &mappedResource);
