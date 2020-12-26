@@ -2546,7 +2546,7 @@ HRESULT CDX11VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned* pSize)
 	D3D11_TEXTURE2D_DESC desc;
 	pBackBuffer->GetDesc(&desc);
 
-	if (desc.Format != DXGI_FORMAT_B8G8R8A8_UNORM) {
+	if (desc.Format != DXGI_FORMAT_B8G8R8A8_UNORM && desc.Format != DXGI_FORMAT_R10G10B10A2_UNORM) {
 		DLog(L"CDX11VideoProcessor::GetDisplayedImage() backbuffer format not supported");
 		return E_FAIL;
 	}
@@ -2581,7 +2581,12 @@ HRESULT CDX11VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned* pSize)
 	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 	hr = m_pDeviceContext->Map(pTexture2DShared, 0, D3D11_MAP_READ, 0, &mappedResource);
 	if (SUCCEEDED(hr)) {
-		CopyFrameAsIs(desc.Height, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)mappedResource.pData + mappedResource.RowPitch * (desc.Height - 1), -(int)mappedResource.RowPitch);
+		if (desc2.Format == DXGI_FORMAT_R10G10B10A2_UNORM) {
+			ConvertXRGB10toXRGB8(desc.Height, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)mappedResource.pData + mappedResource.RowPitch * (desc.Height - 1), -(int)mappedResource.RowPitch);
+		}
+		else {
+			CopyFrameAsIs(desc.Height, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)mappedResource.pData + mappedResource.RowPitch * (desc.Height - 1), -(int)mappedResource.RowPitch);
+		}
 		m_pDeviceContext->Unmap(pTexture2DShared, 0);
 		*ppDib = p;
 	} else {

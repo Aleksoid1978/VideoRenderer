@@ -463,6 +463,24 @@ void CopyFrameY410(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src,
 	}
 }
 
+void ConvertXRGB10toXRGB8(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
+{
+	UINT line_pixels = abs(src_pitch) / 4;
+
+	for (UINT y = 0; y < lines; ++y) {
+		uint32_t* src32 = (uint32_t*)src;
+		uint32_t* dst32 = (uint32_t*)dst;
+		for (UINT i = 0; i < line_pixels; i++) {
+			uint32_t t = src32[i];
+			dst32[i] = ((t & 0x000003fc) << 14)
+					 | ((t & 0x000ff000) >> 4)
+					 | ((t & 0x3fc00000) >> 22);
+		}
+		src += src_pitch;
+		dst += dst_pitch;
+	}
+}
+
 void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d)
 {
 	const int sw = s.right - s.left;
