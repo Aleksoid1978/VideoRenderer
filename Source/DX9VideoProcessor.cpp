@@ -1625,9 +1625,15 @@ HRESULT CDX9VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned *pSize)
 	// use the back buffer, because the display profile is applied to the front buffer
 	CComPtr<IDirect3DSurface9> pBackBuffer;
 	CComPtr<IDirect3DSurface9> pDestSurface;
-	if (FAILED(hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer))
-		|| FAILED(hr = m_pD3DDevEx->CreateRenderTarget(width, height, D3DFMT_X8R8G8B8, D3DMULTISAMPLE_NONE, 0, TRUE, &pDestSurface, nullptr))
-		|| FAILED(hr = m_pD3DDevEx->StretchRect(pBackBuffer, m_windowRect, pDestSurface, nullptr, D3DTEXF_NONE))) {
+
+	hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+	if (SUCCEEDED(hr)) {
+		hr = m_pD3DDevEx->CreateRenderTarget(width, height, D3DFMT_X8R8G8B8, D3DMULTISAMPLE_NONE, 0, TRUE, &pDestSurface, nullptr);
+	}
+	if (SUCCEEDED(hr)) {
+		hr = m_pD3DDevEx->StretchRect(pBackBuffer, m_windowRect, pDestSurface, nullptr, D3DTEXF_NONE);
+	}
+	if (FAILED(hr)) {
 		DLog(L"CDX9VideoProcessor::GetDisplayedImage() failed with error {}", HR2Str(hr));
 		return hr;
 	}
