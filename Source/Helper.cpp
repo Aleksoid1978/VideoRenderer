@@ -232,8 +232,9 @@ static const FmtConvParams_t s_FmtConvMapping[] = {
 	{CF_XRGB32, MEDIASUBTYPE_RGB32,  L"RGB32",  D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,       nullptr, DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,        nullptr,       4, 2,        CS_RGB,  444,       8,     &CopyFrameAsIs,           nullptr},
 	{CF_ARGB32, MEDIASUBTYPE_ARGB32, L"ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,       nullptr, DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM,        nullptr,       4, 2,        CS_RGB,  444,       8,     &CopyFrameAsIs,           nullptr},
 	{CF_RGB48,  MEDIASUBTYPE_RGB48,  L"RGB48",  D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16,    &CopyFrameRGB48,          nullptr},
+	{CF_BGR48,  MEDIASUBTYPE_BGR48,  L"BGR48",  D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16,    &CopyFrameBGR48,          nullptr},
 	{CF_B48R,   MEDIASUBTYPE_b48r,   L"b48r",   D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16,    &CopyFrameRGB48,          nullptr},
-	{CF_ARGB64, MEDIASUBTYPE_ARGB64, L"ARGB64", D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_RGB,  444,       16,    &CopyFrameAsIs,           nullptr},
+	{CF_BGRA64, MEDIASUBTYPE_BGRA64, L"ARGB64", D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_RGB,  444,       16,    &CopyFrameBGRA64,         nullptr},
 	{CF_B64A,   MEDIASUBTYPE_b64a,   L"b64a",   D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_RGB,  444,       16,    &CopyFrameB64A,           nullptr},
 	{CF_Y8,     MEDIASUBTYPE_Y8,     L"Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R8_UNORM,              nullptr,       1, 2,        CS_GRAY, 400,       8,     &CopyFrameAsIs,           nullptr},
 	{CF_Y800,   MEDIASUBTYPE_Y800,   L"Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R8_UNORM,              nullptr,       1, 2,        CS_GRAY, 400,       8,     &CopyFrameAsIs,           nullptr},
@@ -390,6 +391,47 @@ void CopyRGB48_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* sr
 			dst128 += 4;
 		}
 
+		src += src_pitch;
+		dst += dst_pitch;
+	}
+}
+
+void CopyFrameBGR48(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
+{
+	UINT line_pixels = abs(src_pitch) / 6;
+
+	for (UINT y = 0; y < lines; ++y) {
+		uint64_t* src64 = (uint64_t*)src;
+		uint64_t* dst64 = (uint64_t*)dst;
+		for (UINT i = 0; i < line_pixels; i += 4) {
+			uint64_t sa = *src64++;
+			uint64_t sb = *src64++;
+			uint64_t sc = *src64++;
+
+			*dst64++ = ((sa & 0xffff) << 32) | (sa & 0xffff0000) | ((sa & 0xffff00000000) >> 32);
+			*dst64++ = ((sa & 0xffff000000000000) >> 16) | ((sb & 0xffff) << 16) | ((sb & 0xffff0000) >> 16);
+			*dst64++ = (sb & 0xffff00000000) | ((sb & 0xffff000000000000) >> 32) | (sc & 0xffff);
+			*dst64++ = ((sc & 0xffff0000) << 16) | ((sc & 0xffff00000000) >> 16) | ((sc & 0xffff000000000000) >> 48);
+		}
+
+		src += src_pitch;
+		dst += dst_pitch;
+	}
+}
+
+void CopyFrameBGRA64(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
+{
+	UINT line_pixels = abs(src_pitch) / 8;
+
+	for (UINT y = 0; y < lines; ++y) {
+		uint64_t* src64 = (uint64_t*)src;
+		uint64_t* dst64 = (uint64_t*)dst;
+		for (UINT i = 0; i < line_pixels; ++i) {
+			dst64[i] =
+				((src64[i] & 0x000000000000ffff) << 32) |
+				((src64[i] & 0x0000ffff00000000) >> 32) |
+				( src64[i] & 0xffff0000ffff0000);
+		}
 		src += src_pitch;
 		dst += dst_pitch;
 	}

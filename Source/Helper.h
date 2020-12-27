@@ -92,8 +92,9 @@ enum ColorFormat_t {
 	CF_XRGB32,
 	CF_ARGB32,
 	CF_RGB48,
+	CF_BGR48,
 	CF_B48R,
-	CF_ARGB64,
+	CF_BGRA64,
 	CF_B64A,
 	CF_Y8,
 	CF_Y800,
@@ -153,6 +154,10 @@ void CopyRGB24_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* sr
 // RGB48, b48r to D3DFMT_A16B16G16R16
 void CopyFrameRGB48(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 void CopyRGB48_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch); // Not faster than CopyFrameRGB48().
+// BGR48 to D3DFMT_A16B16G16R16
+void CopyFrameBGR48(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
+// BGRA64 to D3DFMT_A16B16G16R16
+void CopyFrameBGRA64(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 // b64a to D3DFMT_A16B16G16R16
 void CopyFrameB64A(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 // YV12
