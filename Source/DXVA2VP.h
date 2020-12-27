@@ -64,9 +64,14 @@ public:
 		m_DXVA2Samples.clear();
 	}
 
-	void Resize(const unsigned len, const DXVA2_ExtendedFormat exFmt) {
+	void Resize(const unsigned len, DXVA2_ExtendedFormat exFmt) {
 		Clear();
 		if (len) {
+			// replace values that are not included in the DXVA2 specification to obtain a more stable result for subsequent correction
+			if (exFmt.VideoTransferMatrix > DXVA2_VideoTransferMatrix_SMPTE240M) { exFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT709; }
+			if (exFmt.VideoPrimaries > DXVA2_VideoPrimaries_SMPTE_C) { exFmt.VideoPrimaries = DXVA2_VideoPrimaries_BT709; }
+			if (exFmt.VideoTransferFunction > DXVA2_VideoTransFunc_28) { exFmt.VideoTransferFunction = DXVA2_VideoTransFunc_709; }
+
 			const DXVA2_VideoSample dxva2sample = { 0, 0, exFmt, nullptr, {}, {}, {}, DXVA2_Fixed32OpaqueAlpha(), 0 };
 			m_DXVA2Samples.resize(len, dxva2sample);
 		}
