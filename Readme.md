@@ -27,3 +27,7 @@ Nightly builds - <https://yadi.sk/d/X0EVMKP4TcmnHQ>
 Topic in MPC-BE forum (Russian) - <https://mpc-be.org/forum/index.php?topic=381>
 
 MPC-BE - <https://sourceforge.net/projects/mpcbe/>
+
+## Donate
+
+<https://mpc-be.org/forum/index.php?topic=240>
