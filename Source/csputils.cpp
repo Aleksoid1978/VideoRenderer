@@ -489,3 +489,18 @@ void mp_invert_cmat(struct mp_cmat *out, struct mp_cmat *in)
     out->c[1] = -(out->m[1][0] * in->c[0] + out->m[1][1] * in->c[1] + out->m[1][2] * in->c[2]);
     out->c[2] = -(out->m[2][0] * in->c[0] + out->m[2][1] * in->c[1] + out->m[2][2] * in->c[2]);
 }
+
+
+/////////////////////
+// additional code //
+/////////////////////
+
+void GetColorspaceGamutConversionMatrix(float matrix[3][3], mp_csp_prim csp_in, mp_csp_prim csp_out)
+{
+	float matrix_rgb2xyz_in[3][3];
+	mp_get_rgb2xyz_matrix(mp_get_csp_primaries(csp_in), matrix_rgb2xyz_in);
+
+	mp_get_rgb2xyz_matrix(mp_get_csp_primaries(csp_out), matrix);
+	mp_invert_matrix3x3(matrix);
+	mp_mul_matrix3x3(matrix, matrix_rgb2xyz_in);
+}

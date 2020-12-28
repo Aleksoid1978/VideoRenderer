@@ -163,3 +163,10 @@ void mp_get_csp_matrix(struct mp_csp_params *params, struct mp_cmat *out);
 
 void mp_invert_matrix3x3(float m[3][3]);
 void mp_invert_cmat(struct mp_cmat *out, struct mp_cmat *in);
+
+
+/////////////////////
+// additional code //
+/////////////////////
+
+void GetColorspaceGamutConversionMatrix(float matrix[3][3], mp_csp_prim csp_in, mp_csp_prim csp_out);
