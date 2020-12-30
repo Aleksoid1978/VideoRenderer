@@ -1,9 +1,12 @@
 sampler s0 : register(s0);
 
+#include "../convert/conv_matrix.hlsl"
 #include "../convert/hlg.hlsl"
 #include "../convert/st2084.hlsl"
 #include "../convert/hdr_tone_mapping.hlsl"
 #include "../convert/colorspace_gamut_conversion.hlsl"
+
+static const float4x4 fix_bt2020_matrix = mul(ycbcr2020nc_rgb, rgb_ycbcr709);
 
 #define SRC_LUMINANCE_PEAK     10000.0
 #define DISPLAY_LUMINANCE_PEAK 125.0
@@ -11,6 +14,9 @@ sampler s0 : register(s0);
 float4 main(float2 tex : TEXCOORD0) : COLOR
 {
     float4 color = tex2D(s0, tex); // original pixel
+
+    // Fix incorrect (unsupported) conversion from YCbCr BT.2020 to RGB in DXVA2 VP
+    color = mul(fix_bt2020_matrix, color);
 
     // HLG to PQ
     color = saturate(color);
