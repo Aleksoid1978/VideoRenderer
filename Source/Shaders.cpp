@@ -97,6 +97,22 @@ HRESULT GetShaderConvertColor(
 	bool bConvertHDRtoSDR = (convertType == SHADER_CONVERT_TO_SDR && (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG));
 	bool bConvertHLGtoPQ = (convertType == SHADER_CONVERT_TO_PQ && exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG);
 
+	if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
+		hr = GetDataFromResource(data, size, IDF_HLSL_HLG);
+		if (S_OK == hr) {
+			code.append((LPCSTR)data, size);
+			code += '\n';
+		}
+	}
+
+	if (bConvertHDRtoSDR || bConvertHLGtoPQ) {
+		hr = GetDataFromResource(data, size, IDF_HLSL_ST2084);
+		if (S_OK == hr) {
+			code.append((LPCSTR)data, size);
+			code += '\n';
+		}
+	}
+
 	if (bBT2020Primaries || bConvertHDRtoSDR) {
 		hr = GetDataFromResource(data, size, IDF_HLSL_COLORSPACE_GAMUT_CONV);
 		if (S_OK == hr) {
@@ -107,27 +123,6 @@ HRESULT GetShaderConvertColor(
 
 	if (bConvertHDRtoSDR) {
 		hr = GetDataFromResource(data, size, IDF_HLSL_HDR_TONE_MAPPING);
-		if (S_OK == hr) {
-			code.append((LPCSTR)data, size);
-			code += '\n';
-		}
-
-		hr = GetDataFromResource(data, size, IDF_HLSL_CONVERT_PQ_TO_SDR);
-		if (S_OK == hr) {
-			code.append((LPCSTR)data, size);
-			code += '\n';
-		}
-
-		if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
-			hr = GetDataFromResource(data, size, IDF_HLSL_CONVERT_HLG_TO_SDR);
-			if (S_OK == hr) {
-				code.append((LPCSTR)data, size);
-				code += '\n';
-			}
-		}
-	}
-	else if (bConvertHLGtoPQ) {
-		hr = GetDataFromResource(data, size, IDF_HLSL_CONVERT_HLG_TO_PQ);
 		if (S_OK == hr) {
 			code.append((LPCSTR)data, size);
 			code += '\n';
@@ -538,15 +533,30 @@ HRESULT GetShaderConvertColor(
 	code.append("color.rgb = float3(mul(cm_r, color), mul(cm_g, color), mul(cm_b, color)) + cm_c;\n");
 
 	if (bConvertHDRtoSDR) {
-		if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
-			code.append("color = convert_PQ_to_SDR(color);\n");
+		if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
+			code.append(
+				"color = saturate(color);\n"
+				"color.rgb = HLGtoLinear(color.rgb);\n"
+				"color = LinearToST2084(color, 1000.0);\n"
+			);
 		}
-		else { // if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG)
-			code.append("color = convert_HLG_to_SDR(color);\n");
-		}
+		code.append(
+			"#define SRC_LUMINANCE_PEAK     10000.0\n"
+			"#define DISPLAY_LUMINANCE_PEAK 125.0\n"
+			"color = saturate(color);\n"
+			"color = ST2084ToLinear(color, SRC_LUMINANCE_PEAK/DISPLAY_LUMINANCE_PEAK);\n"
+			"color.rgb = ToneMappingHable(color.rgb);\n"
+			"color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);\n"
+			"color = saturate(color);\n"
+			"color = pow(color, 1.0 / 2.2);\n"
+		);
 	}
 	else if (bConvertHLGtoPQ) {
-		code.append("color = convert_HLG_to_PQ(color);\n");
+		code.append(
+			"color = saturate(color);\n"
+			"color.rgb = HLGtoLinear(color.rgb);\n"
+			"color = LinearToST2084(color, 1000.0);\n"
+		);
 	}
 	else if (bBT2020Primaries) {
 		std::string toLinear;

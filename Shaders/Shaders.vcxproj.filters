@@ -143,15 +143,6 @@
     <None Include="resize\convolution_filters.hlsl">
       <Filter>resize</Filter>
     </None>
-    <None Include="convert\convert_hlg_to_sdr.hlsl">
-      <Filter>convert</Filter>
-    </None>
-    <None Include="convert\convert_pq_to_sdr.hlsl">
-      <Filter>convert</Filter>
-    </None>
-    <None Include="convert\convert_hlg_to_pq.hlsl">
-      <Filter>convert</Filter>
-    </None>
     <None Include="convert\conv_matrix.hlsl">
       <Filter>convert</Filter>
     </None>
