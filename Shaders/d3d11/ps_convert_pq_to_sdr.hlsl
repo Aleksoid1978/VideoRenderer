@@ -24,8 +24,10 @@ float4 main(PS_INPUT input) : SV_Target
     // Fix incorrect (unsupported) conversion from YCbCr BT.2020 to RGB in D3D11 VP
     color = mul(fix_bt2020_matrix, color);
 
-    color = saturate(color); // use saturate(), because pow() can not take negative values
+    // PQ to Linear
+    color = saturate(color);
     color = ST2084ToLinear(color, SRC_LUMINANCE_PEAK/DISPLAY_LUMINANCE_PEAK);
+
     color.rgb = ToneMappingHable(color.rgb);
     color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);
 
