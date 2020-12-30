@@ -114,11 +114,16 @@ HRESULT GetShaderConvertColor(
 	}
 
 	if (bBT2020Primaries || bConvertHDRtoSDR) {
-		hr = GetDataFromResource(data, size, IDF_HLSL_COLORSPACE_GAMUT_CONV);
-		if (S_OK == hr) {
-			code.append((LPCSTR)data, size);
-			code += '\n';
+		float matrix_conv_prim[3][3];
+		GetColorspaceGamutConversionMatrix(matrix_conv_prim, MP_CSP_PRIM_BT_2020, MP_CSP_PRIM_BT_709);
+		code.append("static const float3x3 matrix_conv_prim = {\n");
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				code += fmt::format("{}, ", matrix_conv_prim[i][j]);
+			}
+			code.append("\n");
 		}
+		code.append("};\n");
 	}
 
 	if (bConvertHDRtoSDR) {
@@ -532,6 +537,8 @@ HRESULT GetShaderConvertColor(
 	code.append("//convert color\n");
 	code.append("color.rgb = float3(mul(cm_r, color), mul(cm_g, color), mul(cm_b, color)) + cm_c;\n");
 
+	bool isLinear = false;
+
 	if (bConvertHDRtoSDR) {
 		if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
 			code.append(
@@ -546,10 +553,9 @@ HRESULT GetShaderConvertColor(
 			"color = saturate(color);\n"
 			"color = ST2084ToLinear(color, SRC_LUMINANCE_PEAK/DISPLAY_LUMINANCE_PEAK);\n"
 			"color.rgb = ToneMappingHable(color.rgb);\n"
-			"color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);\n"
-			"color = saturate(color);\n"
-			"color = pow(color, 1.0 / 2.2);\n"
+			"color.rgb = mul(matrix_conv_prim, color.rgb);\n"
 		);
+		isLinear = true;
 	}
 	else if (bConvertHLGtoPQ) {
 		code.append(
@@ -577,11 +583,18 @@ HRESULT GetShaderConvertColor(
 			code.append("color = saturate(color);\n");
 			code.append(toLinear);
 			code.append(
-				"color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);\n"
-				"color = saturate(color);\n"
-				"color = pow(color, 1.0/2.2);\n"
+				"color.rgb = mul(matrix_conv_prim, color.rgb);\n"
 			);
+			isLinear = true;
 		}
+	}
+
+	if (isLinear) {
+		// Linear to sRGB
+		code.append(
+			"color = saturate(color);\n"
+			"color = pow(color, 1.0/2.2);\n"
+		);
 	}
 
 	code.append("return color;\n}");

@@ -10,7 +10,6 @@
 #define IDF_HLSL_ST2084                 501
 #define IDF_HLSL_HLG                    502
 #define IDF_HLSL_HDR_TONE_MAPPING       503
-#define IDF_HLSL_COLORSPACE_GAMUT_CONV  504
 #define IDF_SHADER_CONVERT_COLOR        610
 #define IDF_SHADER_CONVERT_YUY2         613
 #define IDF_SHADER_CONVERT_BIPLANAR     616
