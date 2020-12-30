@@ -9,3 +9,12 @@ inline float3 inverse_HLG(float3 rgb)
         : exp((rgb - B67_c) / B67_a) + B67_b;
     return rgb;
 }
+
+inline float3 HLGtoLinear(float3 rgb)
+{
+    rgb = inverse_HLG(rgb);
+    float3 ootf_2020 = float3(0.2627, 0.6780, 0.0593);
+    float ootf_ys = 2000.0f * dot(ootf_2020, rgb);
+    rgb *= pow(ootf_ys, 0.2f);
+    return rgb;
+}
