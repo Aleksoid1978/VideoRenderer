@@ -1,11 +1,9 @@
-// Fix incorrect display YCgCo after incorrect YUV to RGB conversion in D3D11 Video Processor
-
 Texture2D tex : register(t0);
 SamplerState samp : register(s0);
 
 #include "../convert/conv_matrix.hlsl"
 
-static const float4x4 rgb_ycbcr709_ycgco_rgb = mul(ycgco_rgb, rgb_ycbcr709);
+static const float4x4 fix_ycgco_matrix = mul(ycgco_rgb, rgb_ycbcr709);
 
 struct PS_INPUT
 {
@@ -17,8 +15,8 @@ float4 main(PS_INPUT input) : SV_Target
 {
     float4 pixel = tex.Sample(samp, input.Tex); // original pixel
 
-    // convert RGB to YUV and get original YCgCo. convert YCgCo to RGB
-    pixel = mul(rgb_ycbcr709_ycgco_rgb, pixel);
+    // Fix incorrect (unsupported) conversion from YCgCo to RGB in D3D11 VP
+    pixel = mul(fix_ycgco_matrix, pixel);
 
     return pixel;
 }
