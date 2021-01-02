@@ -413,20 +413,18 @@ HRESULT CD3D11VP::SetRectangles(const RECT* pSrcRect, const RECT* pDstRect)
 	return S_OK;
 }
 
-HRESULT CD3D11VP::SetColorSpace(const DXVA2_ExtendedFormat exFmt)
+HRESULT CD3D11VP::SetColorSpace(const DXVA2_ExtendedFormat exFmt, const bool bHdrPassthrough)
 {
 	CheckPointer(m_pVideoContext, E_ABORT);
 
-#if 0
 	CComPtr<ID3D11VideoContext1> pVideoContext1;
-	if (S_OK == m_pVideoContext->QueryInterface(IID_PPV_ARGS(&pVideoContext1))) {
+	if (bHdrPassthrough && S_OK == m_pVideoContext->QueryInterface(IID_PPV_ARGS(&pVideoContext1))) {
 		DLog(L"CD3D11VP::SetColorSpace() : used ID3D11VideoContext1");
-
+		/*
 		DXGI_COLOR_SPACE_TYPE cstype = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 		if (exFmt.value) {
 			bool fullrange = (exFmt.NominalRange == DXVA2_NominalRange_0_255);
 			bool topleft = (exFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Cosited);
-
 			if (exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_10 || exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_12) {
 				if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
 					cstype = topleft ? DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_TOPLEFT_P2020 : DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020;
@@ -457,9 +455,13 @@ HRESULT CD3D11VP::SetColorSpace(const DXVA2_ExtendedFormat exFmt)
 		pVideoContext1->VideoProcessorSetStreamColorSpace1(m_pVideoProcessor, 0, cstype);
 		pVideoContext1->VideoProcessorSetOutputColorSpace1(m_pVideoProcessor, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
 		DLog(L"ID3D11VideoContext1::VideoProcessorSetStreamColorSpace1({})", cstype);
+		*/
+
+		const auto cstype = (exFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Cosited) ? DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_TOPLEFT_P2020 : DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020;
+		pVideoContext1->VideoProcessorSetStreamColorSpace1(m_pVideoProcessor, 0, cstype);
+		pVideoContext1->VideoProcessorSetOutputColorSpace1(m_pVideoProcessor, DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
 	}
 	else
-#endif
 	{
 		DLog(L"CD3D11VP::SetColorSpace() : used ID3D11VideoContext");
 

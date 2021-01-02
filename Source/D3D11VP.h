@@ -157,7 +157,7 @@ public:
 	void ResetFrameOrder();
 
 	HRESULT SetRectangles(const RECT * pSrcRect, const RECT* pDstRect);
-	HRESULT SetColorSpace(const DXVA2_ExtendedFormat exFmt);
+	HRESULT SetColorSpace(const DXVA2_ExtendedFormat exFmt, const bool bHdrPassthrough);
 	void SetRotation(D3D11_VIDEO_PROCESSOR_ROTATION rotation);
 	void SetProcAmpValues(DXVA2_ProcAmpValues *pValues);
 

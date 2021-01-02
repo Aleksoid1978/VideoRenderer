@@ -1459,7 +1459,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return hr;
 	}
 
-	hr = m_D3D11VP.SetColorSpace(m_srcExFmt);
+	hr = m_D3D11VP.SetColorSpace(m_srcExFmt, m_bHdrDisplayModeEnabled && SourceIsHDR());
 
 	hr = m_TexSrcVideo.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWriteNoSRV);
 	if (FAILED(hr)) {
