@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2020 see Authors.txt
+* (C) 2018-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -695,6 +695,9 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 	csp_params.hue        = DXVA2FixedToFloat(m_DXVA2ProcAmpValues.Hue) / 180 * acos(-1);
 	csp_params.saturation = DXVA2FixedToFloat(m_DXVA2ProcAmpValues.Saturation);
 	csp_params.gray       = m_srcParams.CSType == CS_GRAY;
+
+	// normalization from integer range to [0.0; 1.0] happens in the shader
+	csp_params.input_bits = csp_params.texture_bits = 0;
 
 	m_PSConvColorData.bEnable = m_srcParams.CSType == CS_YUV || csp_params.gray || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
 
