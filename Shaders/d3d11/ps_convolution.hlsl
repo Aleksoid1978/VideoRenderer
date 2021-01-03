@@ -35,7 +35,7 @@ float4 main(PS_INPUT input) : SV_Target
     float ww = 0.0;
     float4 avg = 0;
 
-    [unroll(32)] for (int n = low; n < high; n++) {
+    [loop] for (int n = low; n < high; n++) {
         float w = filter((n - pos + 0.5) * ss);
         ww += w;
 #if (AXIS == 0)
