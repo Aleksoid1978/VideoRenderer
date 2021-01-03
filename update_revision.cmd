@@ -13,16 +13,16 @@ IF NOT EXIST %gitexe% GOTO END
 %gitexe% log -1 --date=format:%%Y.%%m.%%d --pretty=format:"#define MPCVR_REV_DATE %%ad%%n" >> revision.h
 %gitexe% log -1 --pretty=format:"#define MPCVR_REV_HASH %%h%%n" >> revision.h
 
-<nul set /p strTemp=#define MPCVR_REV_NUM >> revision.h
-%gitexe% rev-list --branches=[m]aster --count >> revision.h
-IF %ERRORLEVEL% NEQ 0 (
-ECHO 0 >> revision.h
-)
-
 <nul set /p strTemp=#define MPCVR_REV_BRANCH >> revision.h
 %gitexe% symbolic-ref --short HEAD >> revision.h
 IF %ERRORLEVEL% NEQ 0 (
 ECHO LOCAL >> revision.h
+)
+
+<nul set /p strTemp=#define MPCVR_REV_NUM >> revision.h
+%gitexe% rev-list --count HEAD >> revision.h
+IF %ERRORLEVEL% NEQ 0 (
+ECHO 0 >> revision.h
 )
 
 :END
