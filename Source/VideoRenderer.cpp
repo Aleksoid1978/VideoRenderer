@@ -623,7 +623,7 @@ STDMETHODIMP CMpcVideoRenderer::Stop()
 // IKsPropertySet
 STDMETHODIMP CMpcVideoRenderer::Set(REFGUID PropSet, ULONG Id, LPVOID pInstanceData, ULONG InstanceLength, LPVOID pPropertyData, ULONG DataLength)
 {
-	DLog(L"IKsPropertySet::Set({}, {}, ...)", GUIDtoWString(PropSet), Id);
+	DLog(L"IKsPropertySet::Set({}, {}, {}, {}, {}, {})", GUIDtoWString(PropSet), Id, pInstanceData, InstanceLength, pPropertyData, DataLength);
 
 	if (PropSet == AM_KSPROPSETID_CopyProt) {
 		if (Id == AM_PROPERTY_COPY_MACROVISION || Id == AM_PROPERTY_COPY_DIGITAL_CP) {
@@ -649,7 +649,7 @@ STDMETHODIMP CMpcVideoRenderer::Set(REFGUID PropSet, ULONG Id, LPVOID pInstanceD
 
 STDMETHODIMP CMpcVideoRenderer::Get(REFGUID PropSet, ULONG Id, LPVOID pInstanceData, ULONG InstanceLength, LPVOID pPropertyData, ULONG DataLength, ULONG* pBytesReturned)
 {
-	DLog(L"IKsPropertySet::Get({}, {}, ...)", GUIDtoWString(PropSet), Id);
+	DLog(L"IKsPropertySet::Get({}, {}, {}, {}, ...)", GUIDtoWString(PropSet), Id, pInstanceData, InstanceLength);
 
 	if (PropSet == AM_KSPROPSETID_CopyProt) {
 		if (Id == AM_PROPERTY_COPY_ANALOG_COMPONENT) {
