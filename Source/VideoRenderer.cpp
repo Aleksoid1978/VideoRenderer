@@ -689,7 +689,12 @@ STDMETHODIMP CMpcVideoRenderer::Get(REFGUID PropSet, ULONG Id, LPVOID pInstanceD
 
 	if (PropSet == AM_KSPROPSETID_CopyProt) {
 		if (Id == AM_PROPERTY_COPY_ANALOG_COMPONENT) {
-			return S_FALSE;
+			if (pPropertyData && DataLength >= sizeof(ULONG) && pBytesReturned) {
+				*(ULONG*)pPropertyData = FALSE;
+				*pBytesReturned = sizeof(ULONG);
+				return S_OK;
+			}
+			return E_INVALIDARG;
 		}
 	}
 	else {
