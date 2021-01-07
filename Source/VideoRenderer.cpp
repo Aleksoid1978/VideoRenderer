@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2020 see Authors.txt
+ * (C) 2018-2021 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -620,14 +620,50 @@ STDMETHODIMP CMpcVideoRenderer::Stop()
 	return CBaseVideoRenderer2::Stop();
 }
 
+#if _DEBUG
+std::wstring PropSetAndIdToString(REFGUID PropSet, ULONG Id)
+{
+#define UNPACK_VALUE(VALUE) case VALUE: str += L#VALUE; break;
+	std::wstring str;
+	if (PropSet == AM_KSPROPSETID_CopyProt) {
+		str.assign(L"AM_KSPROPSETID_CopyProt, ");
+		switch (Id) {
+			UNPACK_VALUE(AM_PROPERTY_COPY_MACROVISION);
+			UNPACK_VALUE(AM_PROPERTY_COPY_ANALOG_COMPONENT);
+			UNPACK_VALUE(AM_PROPERTY_COPY_DIGITAL_CP);
+		default:
+			str += std::to_wstring(Id);
+		};
+	}
+	else if (PropSet == AM_KSPROPSETID_FrameStep) {
+		str.assign(L"AM_KSPROPSETID_FrameStep, ");
+		switch (Id) {
+			UNPACK_VALUE(AM_PROPERTY_FRAMESTEP_STEP);
+			UNPACK_VALUE(AM_PROPERTY_FRAMESTEP_CANCEL);
+			UNPACK_VALUE(AM_PROPERTY_FRAMESTEP_CANSTEP);
+			UNPACK_VALUE(AM_PROPERTY_FRAMESTEP_CANSTEPMULTIPLE);
+		default:
+			str += std::to_wstring(Id);
+		};
+	}
+	else {
+		str.assign(GUIDtoWString(PropSet) + L", " + std::to_wstring(Id));
+	}
+	return str;
+#undef UNPACK_VALUE
+}
+
+#endif
+
 // IKsPropertySet
 STDMETHODIMP CMpcVideoRenderer::Set(REFGUID PropSet, ULONG Id, LPVOID pInstanceData, ULONG InstanceLength, LPVOID pPropertyData, ULONG DataLength)
 {
-	DLog(L"IKsPropertySet::Set({}, {}, {}, {}, {}, {})", GUIDtoWString(PropSet), Id, pInstanceData, InstanceLength, pPropertyData, DataLength);
+	DLog(L"IKsPropertySet::Set({}, {}, {}, {}, {})", PropSetAndIdToString(PropSet, Id), pInstanceData, InstanceLength, pPropertyData, DataLength);
 
 	if (PropSet == AM_KSPROPSETID_CopyProt) {
 		if (Id == AM_PROPERTY_COPY_MACROVISION || Id == AM_PROPERTY_COPY_DIGITAL_CP) {
-			DLog(L"Oops, no-no-no, no macrovision please");
+			DLogIf(Id == AM_PROPERTY_COPY_MACROVISION, L"No Macrovision please");
+			DLogIf(Id == AM_PROPERTY_COPY_DIGITAL_CP, L"No Digital CP please");
 			return S_OK;
 		}
 	}
@@ -649,7 +685,7 @@ STDMETHODIMP CMpcVideoRenderer::Set(REFGUID PropSet, ULONG Id, LPVOID pInstanceD
 
 STDMETHODIMP CMpcVideoRenderer::Get(REFGUID PropSet, ULONG Id, LPVOID pInstanceData, ULONG InstanceLength, LPVOID pPropertyData, ULONG DataLength, ULONG* pBytesReturned)
 {
-	DLog(L"IKsPropertySet::Get({}, {}, {}, {}, ...)", GUIDtoWString(PropSet), Id, pInstanceData, InstanceLength);
+	DLog(L"IKsPropertySet::Get({}, {}, {}, {}, {}, ...)", PropSetAndIdToString(PropSet, Id), pInstanceData, InstanceLength, pPropertyData, DataLength);
 
 	if (PropSet == AM_KSPROPSETID_CopyProt) {
 		if (Id == AM_PROPERTY_COPY_ANALOG_COMPONENT) {
@@ -665,7 +701,7 @@ STDMETHODIMP CMpcVideoRenderer::Get(REFGUID PropSet, ULONG Id, LPVOID pInstanceD
 
 STDMETHODIMP CMpcVideoRenderer::QuerySupported(REFGUID PropSet, ULONG Id, ULONG* pTypeSupport)
 {
-	DLog(L"IKsPropertySet::QuerySupported({}, {}, ...)", GUIDtoWString(PropSet), Id);
+	DLog(L"IKsPropertySet::QuerySupported({}, ...)", PropSetAndIdToString(PropSet, Id));
 
 	if (PropSet == AM_KSPROPSETID_CopyProt) {
 		if (Id == AM_PROPERTY_COPY_MACROVISION || Id == AM_PROPERTY_COPY_DIGITAL_CP) {
