@@ -24,6 +24,7 @@
 #include <dxva2api.h>
 #include <dxgi1_5.h>
 #include <strmif.h>
+#include <map>
 #include "IVideoRenderer.h"
 #include "DX11Helper.h"
 #include "D3D11VP.h"
@@ -142,7 +143,8 @@ private:
 	bool m_bHdrDisplayModeEnabled = false;
 	bool m_bHdrAllowSwitchDisplay = true;
 	UINT m_srcVideoTransferFunction = 0; // need a description or rename
-	std::wstring m_hdrModeEnabledDisplayName;
+
+	std::map<std::wstring, BOOL> m_hdrModeSavedState;
 
 	struct HDRMetadata {
 		DXGI_HDR_METADATA_HDR10 hdr10 = {};
