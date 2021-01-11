@@ -4,6 +4,8 @@ Fixed getting the displayed frame when outputting RGB 10-bit.
 Fixed display of BGRA64 format.
 Added support for BGR48 format.
 Added correction after incorrect (unsupported) conversion from YCbCr BT.2020 to RGB after DXVA2 and D3D11 VP.
+Fixed playback of some protected DVD-Videos.
+Improved "Auto display HDR On/Off" option.
 Various additions and fixes in statistics.
 
 v0.5.0.1567 - 2020.12.21
