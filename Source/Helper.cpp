@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2020 see Authors.txt
+* (C) 2018-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -218,11 +218,11 @@ static const FmtConvParams_t s_FmtConvMapping[] = {
 	{CF_NONE,   GUID_NULL,           nullptr,   D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,        nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,               nullptr,       0, 0,        CS_YUV,    0,       0,     nullptr,                  nullptr},
 	{CF_YV12,   MEDIASUBTYPE_YV12,   L"YV12",   D3DFMT_YV12,     D3DFMT_YV12,    &DX9PlanarYV12, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11PlanarYV12,       1, 3,        CS_YUV,  420,       8,     &CopyFrameYV12,           nullptr},
 	{CF_NV12,   MEDIASUBTYPE_NV12,   L"NV12",   D3DFMT_NV12,     D3DFMT_NV12,    &DX9PlanarNV12, DXGI_FORMAT_NV12,           DXGI_FORMAT_NV12,          &DX11PlanarNV12,       1, 3,        CS_YUV,  420,       8,     &CopyFrameAsIs,           nullptr},
-	{CF_P010,   MEDIASUBTYPE_P010,   L"P010",   D3DFMT_P010,     D3DFMT_P010,    &DX9PlanarP01x, DXGI_FORMAT_P010,           DXGI_FORMAT_P010,          &DX11PlanarP01x,       2, 3,        CS_YUV,  420,       10,    &CopyFrameAsIs,           nullptr},
+	{CF_P010,   MEDIASUBTYPE_P010,   L"P010",   D3DFMT_P010,     D3DFMT_P010,    &DX9PlanarP01x, DXGI_FORMAT_P010,           DXGI_FORMAT_P010,          &DX11PlanarP01x,       2, 3,        CS_YUV,  420,       16,    &CopyFrameAsIs,           nullptr},
 	{CF_P016,   MEDIASUBTYPE_P016,   L"P016",   D3DFMT_P016,     D3DFMT_P016,    &DX9PlanarP01x, DXGI_FORMAT_P016,           DXGI_FORMAT_P016,          &DX11PlanarP01x,       2, 3,        CS_YUV,  420,       16,    &CopyFrameAsIs,           nullptr},
 	{CF_YUY2,   MEDIASUBTYPE_YUY2,   L"YUY2",   D3DFMT_YUY2,     D3DFMT_A8R8G8B8,       nullptr, DXGI_FORMAT_YUY2,           DXGI_FORMAT_R8G8B8A8_UNORM,        nullptr,       2, 2,        CS_YUV,  422,       8,     &CopyFrameAsIs,           nullptr},
 	{CF_YV16,   MEDIASUBTYPE_YV16,   L"YV16",   D3DFMT_UNKNOWN,  D3DFMT_YV16,    &DX9PlanarYV16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11PlanarYV16,       1, 4,        CS_YUV,  422,       8,     &CopyFrameAsIs,           nullptr},
-	{CF_P210,   MEDIASUBTYPE_P210,   L"P210",   D3DFMT_P210,     D3DFMT_P210,    &DX9PlanarP21x, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11PlanarP21x,       2, 4,        CS_YUV,  422,       10,    &CopyFrameAsIs,           nullptr},
+	{CF_P210,   MEDIASUBTYPE_P210,   L"P210",   D3DFMT_P210,     D3DFMT_P210,    &DX9PlanarP21x, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11PlanarP21x,       2, 4,        CS_YUV,  422,       16,    &CopyFrameAsIs,           nullptr},
 	{CF_P216,   MEDIASUBTYPE_P216,   L"P216",   D3DFMT_P216,     D3DFMT_P216,    &DX9PlanarP21x, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11PlanarP21x,       2, 4,        CS_YUV,  422,       16,    &CopyFrameAsIs,           nullptr},
 	{CF_YV24,   MEDIASUBTYPE_YV24,   L"YV24",   D3DFMT_UNKNOWN,  D3DFMT_YV24,    &DX9PlanarYV24, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11PlanarYV24,       1, 6,        CS_YUV,  444,       8,     &CopyFrameAsIs,           nullptr},
 	{CF_AYUV,   MEDIASUBTYPE_AYUV,   L"AYUV",   D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,       nullptr, DXGI_FORMAT_AYUV,           DXGI_FORMAT_B8G8R8X8_UNORM,        nullptr,       4, 2,        CS_YUV,  444,       8,     &CopyFrameAsIs,           nullptr},
