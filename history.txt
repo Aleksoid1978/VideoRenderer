@@ -1,3 +1,7 @@
+v0.5.3
+------------------------
+
+
 v0.5.2.1607 - 2021.01.15
 ------------------------
 Fixed getting the displayed frame when outputting RGB 10-bit.
