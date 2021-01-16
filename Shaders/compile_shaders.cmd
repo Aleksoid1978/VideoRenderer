@@ -97,6 +97,8 @@ CALL :SubColorText "0A" "=== Compiling D3D11 shaders ===" & ECHO.
 
 %fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_yuy2.cso"            "d3d11\ps_convert_color.hlsl" /DC_YUY2=3
 
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_final_pass_10.cso"           "d3d11\ps_final_pass.hlsl" /DQUANTIZATION=1023
+
 EXIT /B
 
 :SubColorText
