@@ -1756,7 +1756,6 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	if (config.iTexFormat != m_iTexFormat) {
 		m_iTexFormat = config.iTexFormat;
 		changeTextures = true;
-		changeVP = true; // temporary solution
 	}
 
 	if (m_srcParams.cformat == CF_NV12) {
@@ -1817,7 +1816,7 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	// apply new settings
 
 	if (changeWindow) {
-		m_pFilter->Init(true);
+		EXECUTE_ASSERT(S_OK == m_pFilter->Init(true));
 		return;
 	}
 
@@ -1829,7 +1828,12 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 
 	if (changeTextures) {
 		UpdateTexParams(m_srcParams.CDepth);
-		// TODO...
+		if (m_DXVA2VP.IsReady()) {
+			// update m_DXVA2OutputFmt
+			EXECUTE_ASSERT(S_OK == InitializeDXVA2VP(m_srcParams, m_srcWidth, m_srcHeight));
+		}
+		UpdateTexures(m_videoRect.Size());
+		UpdatePostScaleTexures(m_windowRect.Size());
 	}
 
 	if (changeConvertShader) {
