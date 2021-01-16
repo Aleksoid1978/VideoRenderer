@@ -1929,7 +1929,9 @@ void CDX9VideoProcessor::UpdateTexures(SIZE texsize)
 
 void CDX9VideoProcessor::UpdatePostScaleTexures(SIZE texsize)
 {
-	m_bFinalPass = (m_bUseDither && m_InternalTexFmt != D3DFMT_X8R8G8B8 && m_TexDither.pTexture && m_pPSFinalPass);
+	bool needDither = (m_InternalTexFmt != D3DFMT_X8R8G8B8); // the output is always D3DFMT_X8R8G8B8
+
+	m_bFinalPass = (m_bUseDither && needDither && m_TexDither.pTexture && m_pPSFinalPass);
 
 	UINT numPostScaleShaders = m_pPostScaleShaders.size();
 	if (m_pPSCorrection) {

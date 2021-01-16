@@ -2064,7 +2064,9 @@ void CDX11VideoProcessor::UpdateTexures(SIZE texsize)
 
 void CDX11VideoProcessor::UpdatePostScaleTexures(SIZE texsize)
 {
-	m_bFinalPass = (m_bUseDither && m_SwapChainFmt == DXGI_FORMAT_B8G8R8A8_UNORM && m_InternalTexFmt != m_SwapChainFmt && m_TexDither.pTexture && m_pPSFinalPass);
+	bool needDither = (m_SwapChainFmt == DXGI_FORMAT_B8G8R8A8_UNORM && m_InternalTexFmt != m_SwapChainFmt);
+
+	m_bFinalPass = (m_bUseDither && needDither && m_TexDither.pTexture && m_pPSFinalPass);
 
 	UINT numPostScaleShaders = m_pPostScaleShaders.size();
 	if (m_pPSCorrection) {
