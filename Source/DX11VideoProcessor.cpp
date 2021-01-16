@@ -2715,7 +2715,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 	if (config.bUseDither != m_bUseDither) {
 		m_bUseDither = config.bUseDither;
-		changeNumTextures = m_InternalTexFmt != D3DFMT_X8R8G8B8;
+		changeNumTextures = m_InternalTexFmt != DXGI_FORMAT_B8G8R8A8_UNORM;
 	}
 
 	if (config.iSwapEffect != m_iSwapEffect) {
