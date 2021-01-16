@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2020 see Authors.txt
+ * (C) 2018-2021 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -121,7 +121,7 @@ IVideoRenderer : public IUnknown {
 	STDMETHOD_(bool, GetActive()) PURE;
 
 	STDMETHOD_(void, GetSettings(Settings_t& setings)) PURE;
-	STDMETHOD_(void, SetSettings(const Settings_t setings)) PURE; // use copy of setings here
+	STDMETHOD_(void, SetSettings(const Settings_t& setings)) PURE;
 
 	STDMETHOD(SaveSettings()) PURE;
 };

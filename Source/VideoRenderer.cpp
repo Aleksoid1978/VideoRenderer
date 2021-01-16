@@ -1107,12 +1107,12 @@ STDMETHODIMP_(void) CMpcVideoRenderer::GetSettings(Settings_t& setings)
 	setings = m_Sets;
 }
 
-STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t setings)
+STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t& setings)
 {
 	CAutoLock cRendererLock(&m_RendererLock);
 
 	m_Sets = setings;
-	m_VideoProcessor->Configure(setings);
+	m_VideoProcessor->Configure(m_Sets);
 
 	if (m_State == State_Paused) {
 		if (!m_bValidBuffer && m_pMediaSample) {

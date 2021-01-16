@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2020 see Authors.txt
+* (C) 2018-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -213,7 +213,7 @@ public:
 	HRESULT GetVPInfo(std::wstring& str) override;
 
 	// Settings
-	void Configure(const Settings_t& config);
+	void Configure(const Settings_t& config) override;
 
 	void SetRotation(int value) override;
 

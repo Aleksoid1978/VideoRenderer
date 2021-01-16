@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2020 see Authors.txt
+ * (C) 2018-2021 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -241,7 +241,7 @@ public:
 	STDMETHODIMP_(bool) GetActive();
 
 	STDMETHODIMP_(void) GetSettings(Settings_t& setings);
-	STDMETHODIMP_(void) SetSettings(const Settings_t setings);
+	STDMETHODIMP_(void) SetSettings(const Settings_t& setings);
 
 	STDMETHODIMP SaveSettings();
 
