@@ -1023,11 +1023,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 				m_pDeviceContext->Unmap(m_TexDither.pTexture, 0);
 			}
 		}
-		if (S_OK == hr3) {
-			m_pPSFinalPass.Release();
-			hr3 = CreatePShaderFromResource(&m_pPSFinalPass, IDF_PSH11_FINAL_PASS);
-		}
-
 		if (FAILED(hr3)) {
 			m_TexDither.Release();
 		}
@@ -1157,6 +1152,14 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 					DLogIf(FAILED(hr2), L"CDX11VideoProcessor::InitSwapChain() : SetRenderTarget(Direct3D9) failed with error {}", HR2Str(hr2));
 				}
 			}
+		}
+
+		m_pPSFinalPass.Release();
+		if (m_TexDither.pTexture) {
+			HRESULT hr2 = CreatePShaderFromResource(
+				&m_pPSFinalPass,
+				(m_SwapChainFmt == DXGI_FORMAT_R10G10B10A2_UNORM) ? IDF_PSH11_FINAL_PASS_10 : IDF_PSH11_FINAL_PASS
+			);
 		}
 	}
 
@@ -2064,7 +2067,8 @@ void CDX11VideoProcessor::UpdateTexures(SIZE texsize)
 
 void CDX11VideoProcessor::UpdatePostScaleTexures(SIZE texsize)
 {
-	bool needDither = (m_SwapChainFmt == DXGI_FORMAT_B8G8R8A8_UNORM && m_InternalTexFmt != m_SwapChainFmt);
+	bool needDither = (m_SwapChainFmt == DXGI_FORMAT_B8G8R8A8_UNORM && m_InternalTexFmt != DXGI_FORMAT_B8G8R8A8_UNORM
+		|| m_SwapChainFmt == DXGI_FORMAT_R10G10B10A2_UNORM && m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT);
 
 	m_bFinalPass = (m_bUseDither && needDither && m_TexDither.pTexture && m_pPSFinalPass);
 
