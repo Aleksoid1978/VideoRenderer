@@ -326,6 +326,11 @@ long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_mt)
 			if (IsRectEmpty(&rcSource)) {
 				rcSource = { 0, 0, pBIH->biWidth, abs(pBIH->biHeight) };
 			}
+			RECT& rcTarget = ((VIDEOINFOHEADER*)mt.pbFormat)->rcTarget;
+			if (IsRectEmpty(&rcTarget)) {
+				// CoreAVC Video Decoder does not work correctly with empty rcTarget
+				rcTarget = rcSource;
+			}
 
 			DLog(L"CMpcVideoRenderer::CalcImageSize() buffer size changed from {}x{} to {}x{}", pBIH->biWidth, pBIH->biHeight, Size.cx, Size.cy);
 			// overwrite buffer size
