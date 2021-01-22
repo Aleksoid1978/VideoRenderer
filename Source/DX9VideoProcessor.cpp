@@ -2267,12 +2267,19 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 
 	CRect rSrc = srcRect;
 	IDirect3DTexture9* pInputTexture = nullptr;
+	bool bNeedPostProc = m_pPSCorrection || m_pPostScaleShaders.size();
 
 	if (m_DXVA2VP.IsReady()) {
-		RECT rect = { 0, 0, m_TexConvertOutput.Width, m_TexConvertOutput.Height };
-		hr = DxvaVPPass(m_TexConvertOutput.pSurface, rSrc, rect, second);
-		pInputTexture = m_TexConvertOutput.pTexture;
-		rSrc = rect;
+		if (!bNeedPostProc && m_TexConvertOutput.Format == m_d3dpp.BackBufferFormat) {
+			hr = DxvaVPPass(pRenderTarget, rSrc, dstRect, second);
+			return hr;
+		}
+		else {
+			RECT rect = { 0, 0, m_TexConvertOutput.Width, m_TexConvertOutput.Height };
+			hr = DxvaVPPass(m_TexConvertOutput.pSurface, rSrc, rect, second);
+			pInputTexture = m_TexConvertOutput.pTexture;
+			rSrc = rect;
+		}
 	}
 	else if (m_PSConvColorData.bEnable) {
 		ConvertColorPass(m_TexConvertOutput.pSurface);
@@ -2283,7 +2290,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 		pInputTexture = m_TexSrcVideo.pTexture;
 	}
 
-	if (m_pPSCorrection || m_pPostScaleShaders.size() || m_bFinalPass) {
+	if (bNeedPostProc || m_bFinalPass) {
 		Tex_t* Tex = m_TexsPostScale.GetFirstTex();
 		CRect rect;
 		rect.IntersectRect(dstRect, CRect(0, 0, Tex->Width, Tex->Height));
