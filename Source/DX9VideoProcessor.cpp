@@ -1413,6 +1413,8 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		}
 	}
 
+	hr = m_pD3DDevEx->BeginScene();
+
 	if (m_bShowStats) {
 		hr = DrawStats(pBackBuffer);
 	}
@@ -1448,6 +1450,8 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		nTearingPos = (nTearingPos + 7) % windowSize.cx;
 	}
 #endif
+	hr = m_pD3DDevEx->EndScene();
+
 	uint64_t tick2 = GetPreciseTick();
 	m_RenderStats.paintticks = tick2 - tick1;
 
