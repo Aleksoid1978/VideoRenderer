@@ -2322,7 +2322,8 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 	bool bNeedPostProc = m_pPSCorrection || m_pPostScaleShaders.size();
 
 	if (m_D3D11VP.IsReady()) {
-		if (!bNeedPostProc && m_TexConvertOutput.desc.Format == m_SwapChainFmt) {
+		if (!bNeedPostProc && m_TexConvertOutput.desc.Format == m_SwapChainFmt
+				&& m_TexConvertOutput.desc.Width == dstRect.Width() && m_TexConvertOutput.desc.Height == dstRect.Height()) { // use VPScaling or no scaling
 			hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
 			return hr;
 		}
