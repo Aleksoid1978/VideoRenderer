@@ -2272,21 +2272,24 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 	CRect rSrc = srcRect;
 	IDirect3DTexture9* pInputTexture = nullptr;
 	bool bNeedPostProc = m_pPSCorrection || m_pPostScaleShaders.size();
+	bool bNeedShaderResize = (m_TexConvertOutput.Width != dstRect.Width() || m_TexConvertOutput.Height != dstRect.Height());
+	// bNeedShaderResize == false when no scaling or use VPScaling
 
 	if (m_DXVA2VP.IsReady()) {
-		if (!bNeedPostProc && m_TexConvertOutput.Format == m_d3dpp.BackBufferFormat
-				&& m_TexConvertOutput.Width == dstRect.Width() && m_TexConvertOutput.Height == dstRect.Height()) { // use VPScaling or no scaling
+		if (!bNeedPostProc && !bNeedShaderResize && m_TexConvertOutput.Format == m_d3dpp.BackBufferFormat) {
 			hr = DxvaVPPass(pRenderTarget, rSrc, dstRect, second);
 			return hr;
 		}
-		else {
-			RECT rect = { 0, 0, m_TexConvertOutput.Width, m_TexConvertOutput.Height };
-			hr = DxvaVPPass(m_TexConvertOutput.pSurface, rSrc, rect, second);
-			pInputTexture = m_TexConvertOutput.pTexture;
-			rSrc = rect;
-		}
+		CRect rect(0, 0, m_TexConvertOutput.Width, m_TexConvertOutput.Height);
+		hr = DxvaVPPass(m_TexConvertOutput.pSurface, rSrc, rect, second);
+		pInputTexture = m_TexConvertOutput.pTexture;
+		rSrc = rect;
 	}
 	else if (m_PSConvColorData.bEnable) {
+		if (!bNeedPostProc && !bNeedShaderResize && !m_bUseDither) {
+			hr = ConvertColorPass(pRenderTarget);
+			return hr;
+		}
 		ConvertColorPass(m_TexConvertOutput.pSurface);
 		pInputTexture = m_TexConvertOutput.pTexture;
 		rSrc.SetRect(0, 0, m_TexConvertOutput.Width, m_TexConvertOutput.Height);
