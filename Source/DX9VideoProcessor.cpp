@@ -2286,7 +2286,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 		rSrc = rect;
 	}
 	else if (m_PSConvColorData.bEnable) {
-		if (!bNeedPostProc && !bNeedShaderResize && !m_bUseDither) {
+		if (!bNeedPostProc && !bNeedShaderResize && !m_bFinalPass) {
 			hr = ConvertColorPass(pRenderTarget);
 			return hr;
 		}

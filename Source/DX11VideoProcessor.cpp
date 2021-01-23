@@ -2334,7 +2334,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 		rSrc = rect;
 	}
 	else if (m_PSConvColorData.bEnable) {
-		if (!bNeedPostProc && !bNeedShaderResize && !m_bUseDither) {
+		if (!bNeedPostProc && !bNeedShaderResize && !m_bFinalPass) {
 			hr = ConvertColorPass(pRenderTarget);
 			return hr;
 		}
