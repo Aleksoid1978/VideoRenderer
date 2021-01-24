@@ -1,5 +1,5 @@
 /*
- * (C) 2020 see Authors.txt
+ * (C) 2020-2021 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -78,9 +78,10 @@ protected:
 	CRect m_windowRect;
 	CRect m_renderRect;
 
-	int  m_iRotation  = 0;
-	bool m_bFlip      = false;
-	bool m_bFinalPass = false;
+	int  m_iRotation   = 0;
+	bool m_bFlip       = false;
+	bool m_bFinalPass  = false;
+	bool m_bDitherUsed = false;
 
 	DXVA2_ValueRange m_DXVA2ProcAmpRanges[4] = {};
 	DXVA2_ProcAmpValues m_DXVA2ProcAmpValues = {};
@@ -105,7 +106,7 @@ protected:
 	std::wstring m_strStatsInputFmt;
 	std::wstring m_strStatsVProc;
 	std::wstring m_strStatsDispInfo;
-	std::wstring m_strStatsPostProc;
+	//std::wstring m_strStatsPostProc;
 	std::wstring m_strStatsHDR;
 	std::wstring m_strStatsPresent;
 	int m_iSrcFromGPU = 0;

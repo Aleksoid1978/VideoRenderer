@@ -2080,7 +2080,7 @@ void CDX11VideoProcessor::UpdatePostScaleTexures(SIZE texsize)
 		numPostScaleShaders++;
 	}
 	HRESULT hr = m_TexsPostScale.CheckCreate(m_pDevice, m_InternalTexFmt, texsize.cx, texsize.cy, numPostScaleShaders);
-	UpdateStatsPostProc();
+	//UpdateStatsPostProc();
 }
 
 void CDX11VideoProcessor::UpdateUpscalingShaders()
@@ -2316,6 +2316,7 @@ HRESULT CDX11VideoProcessor::FinalPass(const Tex2D_t& Tex, ID3D11Texture2D* pRen
 HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
 {
 	HRESULT hr = S_OK;
+	m_bDitherUsed = false;
 
 	CRect rSrc = srcRect;
 	Tex2D_t* pInputTexture = nullptr;
@@ -2406,6 +2407,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 			}
 
 			hr = FinalPass(*Tex, pRenderTarget, rect, rect);
+			m_bDitherUsed = true;
 		}
 		else {
 			hr = TextureCopyRect(*Tex, pRenderTarget, rect, rect, pPixelShader, pConstantBuffer, 0, false);
@@ -2847,7 +2849,7 @@ void CDX11VideoProcessor::ClearPostScaleShaders()
 		pScreenShader.shader.Release();
 	}
 	m_pPostScaleShaders.clear();
-	UpdateStatsPostProc();
+	//UpdateStatsPostProc();
 	DLog(L"CDX11VideoProcessor::ClearPostScaleShaders().");
 }
 
@@ -2946,12 +2948,13 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		m_strStatsHeader = L"Error";
 		m_strStatsVProc.clear();
 		m_strStatsInputFmt.clear();
-		m_strStatsPostProc.clear();
+		//m_strStatsPostProc.clear();
 		m_strStatsHDR.clear();
 		m_strStatsPresent.clear();
 	}
 }
 
+/*
 void CDX11VideoProcessor::UpdateStatsPostProc()
 {
 	if (m_strCorrection || m_pPostScaleShaders.size() || m_bFinalPass) {
@@ -2971,6 +2974,7 @@ void CDX11VideoProcessor::UpdateStatsPostProc()
 		m_strStatsPostProc.clear();
 	}
 }
+*/
 
 HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 {
@@ -3015,7 +3019,19 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		}
 	}
 
-	str.append(m_strStatsPostProc);
+	if (m_strCorrection || m_pPostScaleShaders.size() || m_bDitherUsed) {
+		str.append(L"\nPostProcessing:");
+		if (m_strCorrection) {
+			str += fmt::format(L" {},", m_strCorrection);
+		}
+		if (m_pPostScaleShaders.size()) {
+			str += fmt::format(L" shaders[{}],", m_pPostScaleShaders.size());
+		}
+		if (m_bDitherUsed) {
+			str.append(L" dither");
+		}
+		str_trim_end(str, ',');
+	}
 	str.append(m_strStatsHDR);
 	str.append(m_strStatsPresent);
 
