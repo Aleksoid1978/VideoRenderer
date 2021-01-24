@@ -1153,14 +1153,6 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 				}
 			}
 		}
-
-		m_pPSFinalPass.Release();
-		if (m_TexDither.pTexture) {
-			HRESULT hr2 = CreatePShaderFromResource(
-				&m_pPSFinalPass,
-				(m_SwapChainFmt == DXGI_FORMAT_R10G10B10A2_UNORM) ? IDF_PSH11_FINAL_PASS_10 : IDF_PSH11_FINAL_PASS
-			);
-		}
 	}
 
 	return hr;
@@ -2070,14 +2062,21 @@ void CDX11VideoProcessor::UpdatePostScaleTexures(SIZE texsize)
 	bool needDither = (m_SwapChainFmt == DXGI_FORMAT_B8G8R8A8_UNORM && m_InternalTexFmt != DXGI_FORMAT_B8G8R8A8_UNORM
 		|| m_SwapChainFmt == DXGI_FORMAT_R10G10B10A2_UNORM && m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT);
 
-	m_bFinalPass = (m_bUseDither && needDither && m_TexDither.pTexture && m_pPSFinalPass);
+	m_bFinalPass = (m_bUseDither && needDither && m_TexDither.pTexture);
 
 	UINT numPostScaleShaders = m_pPostScaleShaders.size();
 	if (m_pPSCorrection) {
 		numPostScaleShaders++;
 	}
 	if (m_bFinalPass) {
-		numPostScaleShaders++;
+		m_pPSFinalPass.Release();
+		m_bFinalPass = SUCCEEDED(CreatePShaderFromResource(
+			&m_pPSFinalPass,
+			(m_SwapChainFmt == DXGI_FORMAT_R10G10B10A2_UNORM) ? IDF_PSH11_FINAL_PASS_10 : IDF_PSH11_FINAL_PASS
+		));
+		if (m_bFinalPass) {
+			numPostScaleShaders++;
+		}
 	}
 	HRESULT hr = m_TexsPostScale.CheckCreate(m_pDevice, m_InternalTexFmt, texsize.cx, texsize.cy, numPostScaleShaders);
 	//UpdateStatsPostProc();
