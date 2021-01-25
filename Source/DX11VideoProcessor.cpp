@@ -2182,7 +2182,7 @@ HRESULT CDX11VideoProcessor::ConvertColorPass(ID3D11Texture2D* pRenderTarget)
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::ResizeShaderPass(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect)
+HRESULT CDX11VideoProcessor::ResizeShaderPass(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const int rotation)
 {
 	HRESULT hr = S_OK;
 	const int w2 = dstRect.Width();
@@ -2192,7 +2192,7 @@ HRESULT CDX11VideoProcessor::ResizeShaderPass(const Tex2D_t& Tex, ID3D11Texture2
 	int w1, h1;
 	ID3D11PixelShader* resizerX;
 	ID3D11PixelShader* resizerY;
-	if (m_iRotation == 90 || m_iRotation == 270) {
+	if (rotation == 90 || rotation == 270) {
 		w1 = srcRect.Height();
 		h1 = srcRect.Width();
 		resizerX = (w1 == w2) ? nullptr : (w1 > k * w2) ? m_pShaderDownscaleY.p : m_pShaderUpscaleY.p; // use Y scaling here
@@ -2236,22 +2236,22 @@ HRESULT CDX11VideoProcessor::ResizeShaderPass(const Tex2D_t& Tex, ID3D11Texture2
 		CRect resizeRect(dstRect.left, 0, dstRect.right, texHeight);
 
 		// First resize pass
-		hr = TextureResizeShader(Tex, m_TexResize.pTexture, srcRect, resizeRect, resizerX, m_iRotation, m_bFlip);
+		hr = TextureResizeShader(Tex, m_TexResize.pTexture, srcRect, resizeRect, resizerX, rotation, m_bFlip);
 		// Second resize pass
 		hr = TextureResizeShader(m_TexResize, pRenderTarget, resizeRect, dstRect, resizerY, 0, false);
 	}
 	else {
 		if (resizerX) {
 			// one pass resize for width
-			hr = TextureResizeShader(Tex, pRenderTarget, srcRect, dstRect, resizerX, m_iRotation, m_bFlip);
+			hr = TextureResizeShader(Tex, pRenderTarget, srcRect, dstRect, resizerX, rotation, m_bFlip);
 		}
 		else if (resizerY) {
 			// one pass resize for height
-			hr = TextureResizeShader(Tex, pRenderTarget, srcRect, dstRect, resizerY, m_iRotation, m_bFlip);
+			hr = TextureResizeShader(Tex, pRenderTarget, srcRect, dstRect, resizerY, rotation, m_bFlip);
 		}
 		else {
 			// no resize
-			hr = TextureCopyRect(Tex, pRenderTarget, srcRect, dstRect, m_pPS_Simple, nullptr, m_iRotation, m_bFlip);
+			hr = TextureCopyRect(Tex, pRenderTarget, srcRect, dstRect, m_pPS_Simple, nullptr, rotation, m_bFlip);
 		}
 	}
 
@@ -2316,6 +2316,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 {
 	HRESULT hr = S_OK;
 	m_bDitherUsed = false;
+	int rotation = m_iRotation;
 
 	CRect rSrc = srcRect;
 	Tex2D_t* pInputTexture = nullptr;
@@ -2324,7 +2325,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 	// bNeedShaderResize == false when no scaling or use VPScaling
 
 	if (m_D3D11VP.IsReady()) {
-		if (!bNeedShaderResize && !bNeedPostProc && m_TexConvertOutput.desc.Format == m_SwapChainFmt && m_iRotation == 0) {
+		if (!bNeedShaderResize && !bNeedPostProc && m_TexConvertOutput.desc.Format == m_SwapChainFmt) {
 			hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
 			return hr;
 		}
@@ -2332,6 +2333,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 		hr = D3D11VPPass(m_TexConvertOutput.pTexture, rSrc, rect, second);
 		pInputTexture = &m_TexConvertOutput;
 		rSrc = rect;
+		rotation = 0;
 	}
 	else if (m_PSConvColorData.bEnable) {
 		ConvertColorPass(m_TexConvertOutput.pTexture);
@@ -2347,7 +2349,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 		CRect rect;
 		rect.IntersectRect(dstRect, CRect(0, 0, Tex->desc.Width, Tex->desc.Height));
 
-		hr = ResizeShaderPass(*pInputTexture, Tex->pTexture, rSrc, dstRect);
+		hr = ResizeShaderPass(*pInputTexture, Tex->pTexture, rSrc, dstRect, rotation);
 
 		ID3D11PixelShader* pPixelShader = nullptr;
 		ID3D11Buffer* pConstantBuffer = nullptr;
@@ -2409,7 +2411,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 		}
 	}
 	else {
-		hr = ResizeShaderPass(*pInputTexture, pRenderTarget, rSrc, dstRect);
+		hr = ResizeShaderPass(*pInputTexture, pRenderTarget, rSrc, dstRect, rotation);
 	}
 
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::Process() : failed with error {}", HR2Str(hr));
@@ -2827,7 +2829,7 @@ void CDX11VideoProcessor::SetRotation(int value)
 {
 	m_iRotation = value;
 	if (m_D3D11VP.IsReady()) {
-		//m_D3D11VP.SetRotation(m_bVPScaling ? static_cast<D3D11_VIDEO_PROCESSOR_ROTATION>(value / 90) : D3D11_VIDEO_PROCESSOR_ROTATION_IDENTITY);
+		m_D3D11VP.SetRotation(static_cast<D3D11_VIDEO_PROCESSOR_ROTATION>(value / 90));
 	}
 }
 
