@@ -2287,6 +2287,10 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 		rSrc = rect;
 	}
 	else if (m_PSConvColorData.bEnable) {
+		if (!bNeedShaderResize && !bNeedPostProc && !m_bFinalPass && srcRect == dstRect) {
+			hr = ConvertColorPass(pRenderTarget);
+			return hr;
+		}
 		ConvertColorPass(m_TexConvertOutput.pSurface);
 		pInputTexture = m_TexConvertOutput.pTexture;
 		rSrc.SetRect(0, 0, m_TexConvertOutput.Width, m_TexConvertOutput.Height);
