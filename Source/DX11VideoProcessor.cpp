@@ -2324,7 +2324,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 	// bNeedShaderResize == false when no scaling or use VPScaling
 
 	if (m_D3D11VP.IsReady()) {
-		if (!bNeedPostProc && !bNeedShaderResize && m_TexConvertOutput.desc.Format == m_SwapChainFmt && m_iRotation == 0) {
+		if (!bNeedShaderResize && !bNeedPostProc && m_TexConvertOutput.desc.Format == m_SwapChainFmt && m_iRotation == 0) {
 			hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
 			return hr;
 		}
@@ -2334,10 +2334,6 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 		rSrc = rect;
 	}
 	else if (m_PSConvColorData.bEnable) {
-		if (!bNeedPostProc && !bNeedShaderResize && !m_bFinalPass) {
-			hr = ConvertColorPass(pRenderTarget);
-			return hr;
-		}
 		ConvertColorPass(m_TexConvertOutput.pTexture);
 		pInputTexture = &m_TexConvertOutput;
 		rSrc.SetRect(0, 0, m_TexConvertOutput.desc.Width, m_TexConvertOutput.desc.Height);
