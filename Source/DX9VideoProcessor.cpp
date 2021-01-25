@@ -2277,7 +2277,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 	// bNeedShaderResize == false when no scaling or use VPScaling
 
 	if (m_DXVA2VP.IsReady()) {
-		if (!bNeedPostProc && !bNeedShaderResize && m_TexConvertOutput.Format == m_d3dpp.BackBufferFormat) {
+		if (!bNeedPostProc && !bNeedShaderResize && m_TexConvertOutput.Format == m_d3dpp.BackBufferFormat && m_iRotation == 0) {
 			hr = DxvaVPPass(pRenderTarget, rSrc, dstRect, second);
 			return hr;
 		}

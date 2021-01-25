@@ -2324,7 +2324,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 	// bNeedShaderResize == false when no scaling or use VPScaling
 
 	if (m_D3D11VP.IsReady()) {
-		if (!bNeedPostProc && !bNeedShaderResize && m_TexConvertOutput.desc.Format == m_SwapChainFmt) {
+		if (!bNeedPostProc && !bNeedShaderResize && m_TexConvertOutput.desc.Format == m_SwapChainFmt && m_iRotation == 0) {
 			hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
 			return hr;
 		}
