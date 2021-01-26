@@ -1925,6 +1925,9 @@ void CDX9VideoProcessor::UpdateTexures(SIZE texsize)
 
 	if (m_DXVA2VP.IsReady()) {
 		if (m_bVPScaling) {
+			if (m_iRotation == 90 || m_iRotation == 270) {
+				std::swap(texsize.cx, texsize.cy);
+			}
 			hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, texsize.cx, texsize.cy, D3DUSAGE_RENDERTARGET);
 		} else {
 			hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, m_srcRectWidth, m_srcRectHeight, D3DUSAGE_RENDERTARGET);
