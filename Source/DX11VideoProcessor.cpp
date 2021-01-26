@@ -2321,11 +2321,11 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 	CRect rSrc = srcRect;
 	Tex2D_t* pInputTexture = nullptr;
 	bool bNeedPostProc = m_pPSCorrection || m_pPostScaleShaders.size();
-	bool bNeedShaderResize = (m_TexConvertOutput.desc.Width != dstRect.Width() || m_TexConvertOutput.desc.Height != dstRect.Height());
-	// bNeedShaderResize == false when no scaling or use VPScaling
+	bool bNeedShaderTransform = (m_TexConvertOutput.desc.Width != dstRect.Width() || m_TexConvertOutput.desc.Height != dstRect.Height() || m_bFlip);
+	// bNeedShaderTransform == false when no scaling or use VPScaling and no flip
 
 	if (m_D3D11VP.IsReady()) {
-		if (!bNeedShaderResize && !bNeedPostProc && m_TexConvertOutput.desc.Format == m_SwapChainFmt) {
+		if (!bNeedShaderTransform && !bNeedPostProc && m_TexConvertOutput.desc.Format == m_SwapChainFmt) {
 			hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
 			return hr;
 		}
@@ -2336,10 +2336,6 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 		rotation = 0;
 	}
 	else if (m_PSConvColorData.bEnable) {
-		if (!bNeedShaderResize && !bNeedPostProc && !m_bFinalPass && srcRect == dstRect) {
-			hr = ConvertColorPass(pRenderTarget);
-			return hr;
-		}
 		ConvertColorPass(m_TexConvertOutput.pTexture);
 		pInputTexture = &m_TexConvertOutput;
 		rSrc.SetRect(0, 0, m_TexConvertOutput.desc.Width, m_TexConvertOutput.desc.Height);
