@@ -1405,8 +1405,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			DLogIf(m_pPSCorrection, L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection created");
 
 			m_pFilter->m_inputMT = *pmt;
-			UpdateTexures(m_videoRect.Size());
-			UpdatePostScaleTexures(m_windowRect.Size());
+			UpdateTexures();
+			UpdatePostScaleTexures();
 			UpdateStatsStatic();
 
 			if (m_pFilter->m_pSubCallBack) {
@@ -1423,8 +1423,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	if (FmtParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtParams, origW, origH)) {
 		m_pFilter->m_inputMT = *pmt;
 		SetShaderConvertColorParams();
-		UpdateTexures(m_videoRect.Size());
-		UpdatePostScaleTexures(m_windowRect.Size());
+		UpdateTexures();
+		UpdatePostScaleTexures();
 		UpdateStatsStatic();
 
 		if (m_pFilter->m_pSubCallBack) {
@@ -2036,7 +2036,7 @@ HRESULT CDX11VideoProcessor::FillBlack()
 	return hr;
 }
 
-void CDX11VideoProcessor::UpdateTexures(SIZE texsize)
+void CDX11VideoProcessor::UpdateTexures()
 {
 	if (!m_srcWidth || !m_srcHeight) {
 		return;
@@ -2047,6 +2047,7 @@ void CDX11VideoProcessor::UpdateTexures(SIZE texsize)
 
 	if (m_D3D11VP.IsReady()) {
 		if (m_bVPScaling) {
+			CSize texsize = m_videoRect.Size();
 			hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, texsize.cx, texsize.cy, Tex2D_DefaultShaderRTarget);
 		} else {
 			hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, m_srcRectWidth, m_srcRectHeight, Tex2D_DefaultShaderRTarget);
@@ -2057,7 +2058,7 @@ void CDX11VideoProcessor::UpdateTexures(SIZE texsize)
 	}
 }
 
-void CDX11VideoProcessor::UpdatePostScaleTexures(SIZE texsize)
+void CDX11VideoProcessor::UpdatePostScaleTexures()
 {
 	bool needDither = (m_SwapChainFmt == DXGI_FORMAT_B8G8R8A8_UNORM && m_InternalTexFmt != DXGI_FORMAT_B8G8R8A8_UNORM
 		|| m_SwapChainFmt == DXGI_FORMAT_R10G10B10A2_UNORM && m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT);
@@ -2078,7 +2079,7 @@ void CDX11VideoProcessor::UpdatePostScaleTexures(SIZE texsize)
 			numPostScaleShaders++;
 		}
 	}
-	HRESULT hr = m_TexsPostScale.CheckCreate(m_pDevice, m_InternalTexFmt, texsize.cx, texsize.cy, numPostScaleShaders);
+	HRESULT hr = m_TexsPostScale.CheckCreate(m_pDevice, m_InternalTexFmt, m_windowRect.Width(), m_windowRect.Height(), numPostScaleShaders);
 	//UpdateStatsPostProc();
 }
 
@@ -2423,7 +2424,7 @@ void CDX11VideoProcessor::SetVideoRect(const CRect& videoRect)
 {
 	m_videoRect = videoRect;
 	UpdateRenderRect();
-	UpdateTexures(m_videoRect.Size());
+	UpdateTexures();
 }
 
 HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
@@ -2441,7 +2442,7 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 
 	SetGraphSize();
 
-	UpdatePostScaleTexures(m_windowRect.Size());
+	UpdatePostScaleTexures();
 
 	return hr;
 }
@@ -2513,21 +2514,19 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 		return hr;
 	}
 
-	if (m_D3D11VP.IsReady() && (m_pPSCorrection || m_bVPScaling)) {
-		UpdateTexures(imageRect.Size());
-	}
-	if (m_pPSCorrection || m_pPostScaleShaders.size() || m_bFinalPass) {
-		UpdatePostScaleTexures(imageRect.Size());
-	}
+	const auto backupVidRect = m_videoRect;
+	const auto backupWndRect = m_windowRect;
+	m_videoRect  = imageRect;
+	m_windowRect = imageRect;
+	UpdateTexures();
+	UpdatePostScaleTexures();
 
 	hr = Process(pRGB32Texture2D, m_srcRect, imageRect, false);
 
-	if (m_D3D11VP.IsReady() && (m_pPSCorrection || m_bVPScaling)) {
-		UpdateTexures(m_videoRect.Size());
-	}
-	if (m_pPSCorrection || m_pPostScaleShaders.size() || m_bFinalPass) {
-		UpdatePostScaleTexures(m_windowRect.Size());
-	}
+	m_videoRect  = backupVidRect;
+	m_windowRect = backupWndRect;
+	UpdateTexures();
+	UpdatePostScaleTexures();
 
 	if (FAILED(hr)) {
 		return hr;
@@ -2799,8 +2798,8 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 			// update m_D3D11OutputFmt
 			EXECUTE_ASSERT(S_OK == InitializeD3D11VP(m_srcParams, m_srcWidth, m_srcHeight));
 		}
-		UpdateTexures(m_videoRect.Size());
-		UpdatePostScaleTexures(m_windowRect.Size());
+		UpdateTexures();
+		UpdatePostScaleTexures();
 	}
 
 	if (changeConvertShader) {
@@ -2815,7 +2814,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (changeNumTextures) {
-		UpdatePostScaleTexures(m_windowRect.Size());
+		UpdatePostScaleTexures();
 	}
 
 	if (changeResizeStats) {
@@ -2862,7 +2861,7 @@ HRESULT CDX11VideoProcessor::AddPostScaleShader(const std::wstring& name, const 
 			hr = m_pDevice->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPostScaleShaders.back().shader);
 			if (S_OK == hr) {
 				m_pPostScaleShaders.back().name = name;
-				UpdatePostScaleTexures(m_windowRect.Size());
+				UpdatePostScaleTexures();
 				DLog(L"CDX11VideoProcessor::AddPostScaleShader() : \"{}\" pixel shader added successfully.", name);
 			}
 			else {

@@ -223,8 +223,8 @@ public:
 	HRESULT AddPostScaleShader(const std::wstring& name, const std::string& srcCode) override;
 
 private:
-	void UpdateTexures(SIZE texsize);
-	void UpdatePostScaleTexures(SIZE texsize);
+	void UpdateTexures();
+	void UpdatePostScaleTexures();
 	void UpdateUpscalingShaders();
 	void UpdateDownscalingShaders();
 	HRESULT UpdateConvertColorShader();
