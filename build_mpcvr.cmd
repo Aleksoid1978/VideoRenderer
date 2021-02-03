@@ -1,5 +1,5 @@
 @ECHO OFF
-REM (C) 2018-2020 see Authors.txt
+REM (C) 2018-2021 see Authors.txt
 REM
 REM This file is part of MPC-BE.
 REM
@@ -65,23 +65,23 @@ IF /I "%SIGN%" == "True" (
 )
 
 FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_VERSION_MAJOR" "Include\Version.h"') DO (SET "VERMAJOR=%%A")
+  'FINDSTR /I /L /C:"define VER_MAJOR" "Include\Version.h"') DO (SET "VERMAJOR=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_VERSION_MINOR" "Include\Version.h"') DO (SET "VERMINOR=%%A")
+  'FINDSTR /I /L /C:"define VER_MINOR" "Include\Version.h"') DO (SET "VERMINOR=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_VERSION_BUILD" "Include\Version.h"') DO (SET "VERBUILD=%%A")
+  'FINDSTR /I /L /C:"define VER_BUILD" "Include\Version.h"') DO (SET "VERBUILD=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_RELEASE" "Include\Version.h"') DO (SET "RELEASE=%%A")
+  'FINDSTR /I /L /C:"define VER_RELEASE" "Include\Version.h"') DO (SET "VERRELEASE=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_REV_DATE" "revision.h"') DO (SET "REVDATE=%%A")
+  'FINDSTR /I /L /C:"define REV_DATE" "revision.h"') DO (SET "REVDATE=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_REV_HASH" "revision.h"') DO (SET "REVHASH=%%A")
+  'FINDSTR /I /L /C:"define REV_HASH" "revision.h"') DO (SET "REVHASH=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_REV_NUM" "revision.h"') DO (SET "REVNUM=%%A")
+  'FINDSTR /I /L /C:"define REV_NUM" "revision.h"') DO (SET "REVNUM=%%A")
 FOR /F "tokens=3,4 delims= " %%A IN (
-  'FINDSTR /I /L /C:"define MPCVR_REV_BRANCH" "revision.h"') DO (SET "REVBRANCH=%%A")
+  'FINDSTR /I /L /C:"define REV_BRANCH" "revision.h"') DO (SET "REVBRANCH=%%A")
 
-IF /I "%RELEASE%" == "1" (
+IF /I "%VERRELEASE%" == "1" (
   SET "PCKG_NAME=MPCVideoRenderer-%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%%SUFFIX%"
 ) ELSE (
   IF /I "%REVBRANCH%" == "master" (

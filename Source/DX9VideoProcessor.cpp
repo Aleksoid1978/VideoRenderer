@@ -2542,7 +2542,7 @@ HRESULT CDX9VideoProcessor::TextureResizeShader(
 void CDX9VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
-		m_strStatsHeader = fmt::format(L"MPC VR {}, Direct3D 9Ex", _CRT_WIDE(MPCVR_VERSION_STR));
+		m_strStatsHeader = fmt::format(L"MPC VR {}, Direct3D 9Ex", _CRT_WIDE(VERSION_STR));
 
 		UpdateStatsInputFmt();
 

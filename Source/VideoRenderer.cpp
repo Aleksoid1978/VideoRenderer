@@ -1215,10 +1215,10 @@ STDMETHODIMP CMpcVideoRenderer::GetInt64(LPCSTR field, __int64 *value)
 	CheckPointer(value, E_POINTER);
 
 	if (!strcmp(field, "version")) {
-		*value  = ((uint64_t)MPCVR_VERSION_MAJOR << 48)
-				| ((uint64_t)MPCVR_VERSION_MINOR << 32)
-				| ((uint64_t)MPCVR_VERSION_BUILD << 16)
-				| ((uint64_t)MPCVR_REV_NUM);
+		*value  = ((uint64_t)VER_MAJOR << 48)
+				| ((uint64_t)VER_MINOR << 32)
+				| ((uint64_t)VER_BUILD << 16)
+				| ((uint64_t)REV_NUM);
 		return S_OK;
 	}
 

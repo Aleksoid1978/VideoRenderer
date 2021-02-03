@@ -2878,7 +2878,7 @@ HRESULT CDX11VideoProcessor::AddPostScaleShader(const std::wstring& name, const 
 void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
-		m_strStatsHeader = fmt::format(L"MPC VR {}, Direct3D 11", _CRT_WIDE(MPCVR_VERSION_STR));
+		m_strStatsHeader = fmt::format(L"MPC VR {}, Direct3D 11", _CRT_WIDE(VERSION_STR));
 
 		UpdateStatsInputFmt();
 

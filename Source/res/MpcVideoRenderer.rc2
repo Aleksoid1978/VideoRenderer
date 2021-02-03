@@ -102,8 +102,8 @@ IDF_PSH11_FINAL_PASS_10         FILE                    "..\\_bin\\shaders\\ps_f
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION MPCVR_VERSION_NUM
- PRODUCTVERSION MPCVR_VERSION_NUM
+ FILEVERSION VERSION_NUM
+ PRODUCTVERSION VERSION_NUM
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -120,7 +120,7 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "MPC-BE Team"
             VALUE "FileDescription", "MPC Video Renderer"
-            VALUE "FileVersion", MPCVR_VERSION_STR
+            VALUE "FileVersion", VERSION_STR
             VALUE "InternalName", "MpcVideoRenderer"
             VALUE "LegalCopyright", "Copyright 2018-2021"
 #ifdef _WIN64
@@ -130,7 +130,7 @@ BEGIN
             VALUE "OriginalFilename", "MpcVideoRenderer.ax"
 #endif
             VALUE "ProductName", "MPC Video Renderer"
-            VALUE "ProductVersion", MPCVR_VERSION_STR
+            VALUE "ProductVersion", VERSION_STR
         END
     END
     BLOCK "VarFileInfo"
