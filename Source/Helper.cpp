@@ -28,13 +28,13 @@
 std::wstring GetVersionStr()
 {
 	std::wstring version = _CRT_WIDE(VERSION_STR);
-#if MPCVR_RELEASE != 1
+#if VER_RELEASE != 1
 	if (strcmp(BRANCH_STR, "master") != 0) {
 		version += fmt::format(L".{}", _CRT_WIDE(BRANCH_STR));
 	}
 	version += fmt::format(L" (git-{}-{})",
-		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_DATE)),
-		_CRT_WIDE(_CRT_STRINGIZE(MPCVR_REV_HASH))
+		_CRT_WIDE(_CRT_STRINGIZE(REV_DATE)),
+		_CRT_WIDE(_CRT_STRINGIZE(REV_HASH))
 	);
 #endif
 #ifdef _WIN64
