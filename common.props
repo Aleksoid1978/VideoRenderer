@@ -1,12 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <IntDir>$(SolutionDir)_bin\obj\$(Configuration)_$(PlatformName)\$(ProjectName)\</IntDir>
-    <OutDir>$(SolutionDir)_bin\lib\$(Configuration)_$(PlatformName)\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)_bin\Filters_x86_Debug\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)_bin\Filters_x64_Debug\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)_bin\Filters_x86\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)_bin\Filters_x64\</OutDir>
+    <IntDir>$(SolutionDir)_bin\obj\$(Configuration)_$(PlatformShortName)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)_bin\lib\$(Configuration)_$(PlatformShortName)\</OutDir>
+    <OutDir Condition="'$(TargetExt)'!='.lib'And'$(Configuration)'=='Debug'">$(SolutionDir)_bin\Filter_$(PlatformShortName)_Debug\</OutDir>
+    <OutDir Condition="'$(TargetExt)'!='.lib'And'$(Configuration)'=='Release'">$(SolutionDir)_bin\Filter_$(PlatformShortName)\</OutDir>
     <LinkIncremental Condition="$(Configuration.Contains('Debug'))">true</LinkIncremental>
     <LinkIncremental Condition="$(Configuration.Contains('Release'))">false</LinkIncremental>
   </PropertyGroup>
