@@ -2324,6 +2324,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 	bool bNeedPostProc = m_pPSCorrection || m_pPostScaleShaders.size();
 	bool bNeedShaderTransform = (m_TexConvertOutput.desc.Width != dstRect.Width() || m_TexConvertOutput.desc.Height != dstRect.Height() || m_bFlip);
 	// bNeedShaderTransform == false when no scaling or use VPScaling and no flip
+	bNeedShaderTransform |= (dstRect.left < 0 || dstRect.top < 0 || dstRect.right > (long)m_TexConvertOutput.desc.Width || dstRect.bottom > (long)m_TexConvertOutput.desc.Height);
 
 	if (m_D3D11VP.IsReady()) {
 		if (!bNeedShaderTransform && !bNeedPostProc && m_TexConvertOutput.desc.Format == m_SwapChainFmt) {
