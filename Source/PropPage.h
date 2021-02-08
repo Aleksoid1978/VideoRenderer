@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2020 see Authors.txt
+ * (C) 2018-2021 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include "../BaseClasses/streams.h"
 #include "IVideoRenderer.h"
 
 // CVRMainPPage
