@@ -91,7 +91,7 @@ std::wstring MediaType2Str(const CMediaType *pmt)
 const wchar_t* D3DFormatToString(const D3DFORMAT format)
 {
 	switch (format) {
-	case D3DFMT_A8R8G8B8:      return L"A8R8G8B8";      // DXVA-HD
+	case D3DFMT_A8R8G8B8:      return L"A8R8G8B8";
 	case D3DFMT_X8R8G8B8:      return L"X8R8G8B8";
 	case D3DFMT_A2B10G10R10:   return L"A2B10G10R10";
 	case D3DFMT_A8B8G8R8:      return L"A8B8G8R8";      // often not supported
@@ -112,7 +112,9 @@ const wchar_t* D3DFormatToString(const D3DFORMAT format)
 	case D3DFMT_P016:          return L"P016";
 	case D3DFMT_P210:          return L"P210";
 	case D3DFMT_P216:          return L"P216";
-	case D3DFMT_AYUV:          return L"AYUV";          // DXVA-HD
+	case D3DFMT_AYUV:          return L"AYUV";
+	case D3DFMT_Y410:          return L"Y410";
+	case D3DFMT_Y416:          return L"Y416";
 	case FCC('AIP8'):          return L"AIP8";          // DXVA-HD
 	case FCC('AI44'):          return L"AI44";          // DXVA-HD
 	};
