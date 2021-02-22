@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2020 see Authors.txt
+* (C) 2019-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -296,7 +296,7 @@ HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width,
 	hr = m_pDXVA2_VPService->CreateSurface(
 		width, height,
 		0, inputFmt,
-		m_DXVA2VPcaps.InputPool, 0,
+		D3DPOOL_DEFAULT, 0,
 		DXVA2_VideoProcessorRenderTarget,
 		&pTestInputSurface,
 		nullptr
