@@ -287,7 +287,22 @@ HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width,
 	GUID* guids = nullptr;
 	hr = m_pDXVA2_VPService->GetVideoProcessorDeviceGuids(&videodesc, &count, &guids);
 	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : GetVideoProcessorDeviceGuids() failed with error {}", HR2Str(hr));
+		DLog(L"CDXVA2VP::InitVideoProcessor() : GetVideoProcessorDeviceGuids() failed with error {}", HR2Str(hr));
+		return hr;
+	}
+
+	// We check the creation of the input surface, because Y410 surface (Intel) may not be generated for some unknown reason
+	CComPtr<IDirect3DSurface9> pTestInputSurface;
+	hr = m_pDXVA2_VPService->CreateSurface(
+		width, height,
+		0, inputFmt,
+		m_DXVA2VPcaps.InputPool, 0,
+		DXVA2_VideoProcessorRenderTarget,
+		&pTestInputSurface,
+		nullptr
+	);
+	if (FAILED(hr)) {
+		DLog(L"CDXVA2VP::InitVideoProcessor() : Create test input surface failed with error {}", HR2Str(hr));
 		return hr;
 	}
 
