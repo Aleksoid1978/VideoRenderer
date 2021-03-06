@@ -115,6 +115,8 @@ const wchar_t* D3DFormatToString(const D3DFORMAT format)
 	case D3DFMT_AYUV:          return L"AYUV";
 	case D3DFMT_Y410:          return L"Y410";
 	case D3DFMT_Y416:          return L"Y416";
+	case FCC('Y210'):          return L"Y210";          // Intel
+	case FCC('Y216'):          return L"Y216";          // Intel
 	case FCC('AIP8'):          return L"AIP8";          // DXVA-HD
 	case FCC('AI44'):          return L"AI44";          // DXVA-HD
 	};
