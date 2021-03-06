@@ -143,11 +143,15 @@ const wchar_t* DXGIFormatToString(const DXGI_FORMAT format)
 	case DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM: return L"R10G10B10_XR_BIAS_A2_UNORM";
 	case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:        return L"B8G8R8A8_UNORM_SRGB";
 	case DXGI_FORMAT_AYUV:                       return L"AYUV";
+	case DXGI_FORMAT_Y410:                       return L"Y410";
+	case DXGI_FORMAT_Y416:                       return L"Y416";
 	case DXGI_FORMAT_NV12:                       return L"NV12";
 	case DXGI_FORMAT_P010:                       return L"P010";
 	case DXGI_FORMAT_P016:                       return L"P016";
 	case DXGI_FORMAT_420_OPAQUE:                 return L"420_OPAQUE";
 	case DXGI_FORMAT_YUY2:                       return L"YUY2";
+	case DXGI_FORMAT_Y210:                       return L"Y210";
+	case DXGI_FORMAT_Y216:                       return L"Y216";
 	case DXGI_FORMAT_AI44:                       return L"AI44";
 	case DXGI_FORMAT_IA44:                       return L"IA44";
 	case DXGI_FORMAT_P8:                         return L"P8";
