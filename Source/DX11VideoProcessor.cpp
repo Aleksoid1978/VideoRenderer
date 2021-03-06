@@ -2402,7 +2402,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 			if (m_pPSCorrection || m_pPostScaleShaders.size()) {
 				pInputTexture = Tex;
 				Tex = m_TexsPostScale.GetNextTex();
-				hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, nullptr, 0, false);
+				hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, pConstantBuffer, 0, false);
 			}
 
 			hr = FinalPass(*Tex, pRenderTarget, rect, rect);
