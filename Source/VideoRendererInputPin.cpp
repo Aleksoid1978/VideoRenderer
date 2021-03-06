@@ -180,6 +180,7 @@ STDMETHODIMP CVideoRendererInputPin::GetAvailableSurfaceTypeByIndex(DWORD dwType
 STDMETHODIMP CVideoRendererInputPin::SetSurfaceType(DXVA2_SurfaceType dwType)
 {
 	m_bDXVA = (dwType == DXVA2_SurfaceType_DecoderRenderTarget);
+	DLogIf(m_bDXVA, L"CVideoRendererInputPin::SetSurfaceType() set surface type for DXVA2 decoder");
 	return S_OK;
 }
 
@@ -193,6 +194,7 @@ STDMETHODIMP CVideoRendererInputPin::ActivateD3D11Decoding(ID3D11Device *pDevice
 		}
 	}
 	m_bD3D11 = (hr == S_OK);
+	DLog(L"CVideoRendererInputPin::ActivateD3D11Decoding() %s", m_bD3D11 ? L"completed successfully" : L"failed");
 	return hr;
 }
 
