@@ -29,6 +29,7 @@
 #include "../Include/Version.h"
 #include "DX9VideoProcessor.h"
 #include "Shaders.h"
+#include "Utils/CPUInfo.h"
 
 #include "../external/minhook/include/MinHook.h"
 
@@ -580,6 +581,12 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 
 	if (m_pFilter->m_pSubCallBack) {
 		m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
+	}
+
+	if (m_VendorId == PCIV_INTEL && CPUInfo::HaveSSE41()) {
+		m_pCopyGpuFn = CopyGpuFrame_SSE41;
+	} else {
+		m_pCopyGpuFn = CopyFrameAsIs;
 	}
 
 	bInitVP = false;
@@ -1286,12 +1293,12 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 					D3DLOCKED_RECT lr;
 					hr = m_TexSrcVideo.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 					if (S_OK == hr) {
-						CopyFrameAsIs(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, (const BYTE*)lr_src.pBits, lr_src.Pitch);
+						m_pCopyGpuFn(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, (const BYTE*)lr_src.pBits, lr_src.Pitch);
 						hr = m_TexSrcVideo.pSurface->UnlockRect();
 					}
 					hr = m_TexSrcVideo.Plane2.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 					if (S_OK == hr) {
-						CopyFrameAsIs(m_srcHeight/m_srcParams.pDX9Planes->div_chroma_h, (BYTE*)lr.pBits, lr.Pitch, (const BYTE*)lr_src.pBits + lr_src.Pitch * m_srcHeight, lr_src.Pitch);
+						m_pCopyGpuFn(m_srcHeight/m_srcParams.pDX9Planes->div_chroma_h, (BYTE*)lr.pBits, lr.Pitch, (const BYTE*)lr_src.pBits + lr_src.Pitch * m_srcHeight, lr_src.Pitch);
 						hr = m_TexSrcVideo.Plane2.pSurface->UnlockRect();
 					}
 					hr = pSurface->UnlockRect();

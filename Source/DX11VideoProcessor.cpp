@@ -554,13 +554,11 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 		}
 	}
 
-#if 1
 	if (m_VendorId == PCIV_INTEL && CPUInfo::HaveSSE41()) {
 		m_pCopyGpuFn = CopyGpuFrame_SSE41;
 	} else {
 		m_pCopyGpuFn = CopyFrameAsIs;
 	}
-#endif
 
 	return hr;
 }
@@ -1774,7 +1772,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 
 			D3DLOCKED_RECT lr_src;
-			hr = pSurface9->LockRect(&lr_src, nullptr, D3DLOCK_READONLY); // slow
+			hr = pSurface9->LockRect(&lr_src, nullptr, D3DLOCK_READONLY); // may be slow 
 			if (S_OK == hr) {
 				BYTE* srcData = (BYTE*)lr_src.pBits;
 				D3D11_MAPPED_SUBRESOURCE mappedResource = {};

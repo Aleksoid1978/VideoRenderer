@@ -42,8 +42,6 @@ class CDX11VideoProcessor
 private:
 	friend class CVideoRendererInputPin;
 
-	CopyFrameDataFn m_pCopyGpuFn = CopyFrameAsIs;
-
 	// Direct3D 11
 	CComPtr<ID3D11Device1>        m_pDevice;
 	CComPtr<ID3D11DeviceContext1> m_pDeviceContext;

@@ -56,9 +56,11 @@ protected:
 	bool m_bHdrToggleDisplay   = true;
 	bool m_bConvertToSdr       = true;
 
+	CopyFrameDataFn m_pConvertFn = nullptr;
+	CopyFrameDataFn m_pCopyGpuFn = CopyFrameAsIs;
+
 	// Input parameters
 	FmtConvParams_t m_srcParams = {};
-	CopyFrameDataFn m_pConvertFn = nullptr;
 	UINT  m_srcWidth        = 0;
 	UINT  m_srcHeight       = 0;
 	UINT  m_srcRectWidth    = 0;
