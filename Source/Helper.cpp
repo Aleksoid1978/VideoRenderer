@@ -22,6 +22,7 @@
 #include <memory>
 #include <wincodec.h>
 #include "Utils/CPUInfo.h"
+#include "Utils/gpu_memcpy_sse4.h"
 #include "../Include/Version.h"
 #include "Helper.h"
 
@@ -287,6 +288,22 @@ void CopyFrameAsIs(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src,
 
 	for (UINT y = 0; y < lines; ++y) {
 		memcpy(dst, src, linesize);
+		src += src_pitch;
+		dst += dst_pitch;
+	}
+}
+
+void CopyGpuFrame_SSE41(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
+{
+	if (dst_pitch == src_pitch) {
+		gpu_memcpy(dst, src, dst_pitch * lines);
+		return;
+	}
+
+	const UINT linesize = std::min((UINT)abs(src_pitch), dst_pitch);
+
+	for (UINT y = 0; y < lines; ++y) {
+		gpu_memcpy(dst, src, linesize);
 		src += src_pitch;
 		dst += dst_pitch;
 	}

@@ -6,6 +6,7 @@ Fixed frame rotation when using DXVA2 or D3D11 VP.
 Optimization of processing when using only DXVA2 or D3D11 VP.
 Added a check for the ability to create an input surface for DXVA2 VP. This fixes the Y410 format issue on Intel graphics.
 Fixed work of the last post-resize shader in DX11 mode when dithering is active.
+Improved copying speed from DXVA2 decoder surface to D3D11 texture for Intel integrated graphics.
 
 v0.5.2.1607 - 2021.01.15
 ------------------------

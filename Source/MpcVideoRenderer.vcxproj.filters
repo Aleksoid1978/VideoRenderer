@@ -203,6 +203,9 @@
     <ClInclude Include="MediaSampleSideData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Utils\gpu_memcpy_sse4.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MpcVideoRenderer.rc">

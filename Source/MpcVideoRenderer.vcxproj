@@ -119,6 +119,7 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Times.h" />
     <ClInclude Include="Utils\CPUInfo.h" />
+    <ClInclude Include="Utils\gpu_memcpy_sse4.h" />
     <ClInclude Include="Utils\StringUtil.h" />
     <ClInclude Include="Utils\Util.h" />
     <ClInclude Include="VideoProcessor.h" />

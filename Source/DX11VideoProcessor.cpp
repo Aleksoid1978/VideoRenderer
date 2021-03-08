@@ -32,6 +32,7 @@
 #include "DX11VideoProcessor.h"
 #include "../Include/ID3DVideoMemoryConfiguration.h"
 #include "Shaders.h"
+#include "Utils/CPUInfo.h"
 
 static const ScalingShaderResId s_Upscaling11ResIDs[UPSCALE_COUNT] = {
 	{0,                            0,                            L"Nearest-neighbor"  },
@@ -552,6 +553,14 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 			*pChangeDevice = true;
 		}
 	}
+
+#if 1
+	if (m_VendorId == PCIV_INTEL && CPUInfo::HaveSSE41()) {
+		m_pCopyGpuFn = CopyGpuFrame_SSE41;
+	} else {
+		m_pCopyGpuFn = CopyFrameAsIs;
+	}
+#endif
 
 	return hr;
 }
@@ -1767,7 +1776,32 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			D3DLOCKED_RECT lr_src;
 			hr = pSurface9->LockRect(&lr_src, nullptr, D3DLOCK_READONLY); // slow
 			if (S_OK == hr) {
-				hr = MemCopyToTexSrcVideo((BYTE*)lr_src.pBits, lr_src.Pitch);
+				BYTE* srcData = (BYTE*)lr_src.pBits;
+				D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+
+				if (m_TexSrcVideo.pTexture2) {
+					// for Windows 7
+					hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+					if (SUCCEEDED(hr)) {
+						m_pCopyGpuFn(m_srcHeight, (BYTE*)mappedResource.pData, mappedResource.RowPitch, srcData, lr_src.Pitch);
+						m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
+
+						hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture2, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+						if (SUCCEEDED(hr)) {
+							srcData += lr_src.Pitch * m_srcHeight;
+							m_pCopyGpuFn(m_srcHeight / 2, (BYTE*)mappedResource.pData, mappedResource.RowPitch, srcData, lr_src.Pitch);
+							m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture2, 0);
+						}
+					}
+				}
+				else {
+					hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+					if (SUCCEEDED(hr)) {
+						m_pCopyGpuFn(m_srcLines, (BYTE*)mappedResource.pData, mappedResource.RowPitch, srcData, lr_src.Pitch);
+						m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
+					}
+				}
+
 				pSurface9->UnlockRect();
 
 				if (m_D3D11VP.IsReady()) {
