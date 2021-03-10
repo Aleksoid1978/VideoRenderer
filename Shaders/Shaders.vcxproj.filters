@@ -126,10 +126,7 @@
     <FxCompile Include="d3d11\ps_fix_bt2020.hlsl">
       <Filter>d3d11</Filter>
     </FxCompile>
-    <FxCompile Include="d3d9\fix_bt2020_pq.hlsl">
-      <Filter>d3d9</Filter>
-    </FxCompile>
-    <FxCompile Include="d3d11\ps_fix_bt2020_pq.hlsl">
+    <FxCompile Include="d3d11\ps_TEST.hlsl">
       <Filter>d3d11</Filter>
     </FxCompile>
   </ItemGroup>

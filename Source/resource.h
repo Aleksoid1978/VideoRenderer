@@ -18,7 +18,6 @@
 #define IDF_SHADER_CONVERT_HLG_TO_SDR   631
 #define IDF_SHADER_FIX_YCGCO            633
 #define IDF_SHADER_FIX_BT2020           634
-#define IDF_SHADER_FIX_BT2020_PQ        635
 #define IDF_SHADER_INTERP_MITCHELL4_X   640
 #define IDF_SHADER_INTERP_MITCHELL4_Y   641
 #define IDF_SHADER_INTERP_CATMULL4_X    642
@@ -54,7 +53,6 @@
 #define IDF_PSH11_CONVERT_HLG_TO_PQ     832
 #define IDF_PSH11_FIX_YCGCO             833
 #define IDF_PSH11_FIX_BT2020            834
-#define IDF_PSH11_FIX_BT2020_PQ         835
 #define IDF_PSH11_INTERP_MITCHELL4_X    840
 #define IDF_PSH11_INTERP_MITCHELL4_Y    841
 #define IDF_PSH11_INTERP_CATMULL4_X     842
@@ -77,6 +75,7 @@
 #define IDF_PSH11_CONVOL_LANCZOS_Y      861
 #define IDF_PSH11_FINAL_PASS            870
 #define IDF_PSH11_FINAL_PASS_10         871
+#define IDF_PSH11_TEST                  900
 #define IDC_EDIT1                       1001
 #define IDC_EDIT2                       1002
 #define IDC_STATIC1                     1011

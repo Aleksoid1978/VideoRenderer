@@ -34,7 +34,6 @@ IDF_SHADER_CONVERT_PQ_TO_SDR    FILE                    "..\\_bin\\shaders\\conv
 IDF_SHADER_CONVERT_HLG_TO_SDR   FILE                    "..\\_bin\\shaders\\convert_hlg_to_sdr.cso"
 IDF_SHADER_FIX_YCGCO            FILE                    "..\\_bin\\shaders\\fix_ycgco.cso"
 IDF_SHADER_FIX_BT2020           FILE                    "..\\_bin\\shaders\\fix_bt2020.cso"
-//IDF_SHADER_FIX_BT2020_PQ        FILE                    "..\\_bin\\shaders\\fix_bt2020_pq.cso"
 IDF_SHADER_INTERP_MITCHELL4_X   FILE                    "..\\_bin\\shaders\\resizer_mitchell4_x.cso"
 IDF_SHADER_INTERP_MITCHELL4_Y   FILE                    "..\\_bin\\shaders\\resizer_mitchell4_y.cso"
 IDF_SHADER_INTERP_CATMULL4_X    FILE                    "..\\_bin\\shaders\\resizer_catmull4_x.cso"
@@ -70,7 +69,6 @@ IDF_PSH11_CONVERT_PQ_TO_SDR     FILE                    "..\\_bin\\shaders\\ps_c
 IDF_PSH11_CONVERT_HLG_TO_SDR    FILE                    "..\\_bin\\shaders\\ps_convert_hlg_to_sdr.cso"
 IDF_PSH11_FIX_YCGCO             FILE                    "..\\_bin\\shaders\\ps_fix_ycgco.cso"
 IDF_PSH11_FIX_BT2020            FILE                    "..\\_bin\\shaders\\ps_fix_bt2020.cso"
-//IDF_PSH11_FIX_BT2020_PQ         FILE                    "..\\_bin\\shaders\\ps_fix_bt2020_pq.cso"
 IDF_PSH11_CONVERT_HLG_TO_PQ     FILE                    "..\\_bin\\shaders\\ps_convert_hlg_to_pq.cso"
 IDF_PSH11_INTERP_MITCHELL4_X    FILE                    "..\\_bin\\shaders\\ps_resizer_mitchell4_x.cso"
 IDF_PSH11_INTERP_MITCHELL4_Y    FILE                    "..\\_bin\\shaders\\ps_resizer_mitchell4_y.cso"
@@ -94,7 +92,7 @@ IDF_PSH11_CONVOL_LANCZOS_X      FILE                    "..\\_bin\\shaders\\ps_d
 IDF_PSH11_CONVOL_LANCZOS_Y      FILE                    "..\\_bin\\shaders\\ps_downscaler_lanczos_y.cso"
 IDF_PSH11_FINAL_PASS            FILE                    "..\\_bin\\shaders\\ps_final_pass.cso"
 IDF_PSH11_FINAL_PASS_10         FILE                    "..\\_bin\\shaders\\ps_final_pass_10.cso"
-
+//IDF_PSH11_TEST                  FILE                    "..\\_bin\\shaders\\ps_TEST.cso"
 
 /////////////////////////////////////////////////////////////////////////////
 //
