@@ -631,6 +631,10 @@ void CDX11VideoProcessor::ReleaseDevice()
 
 	SAFE_RELEASE(m_pPostScaleConstants);
 
+#if TEST_SHADER
+	m_pPS_TEST.Release();
+#endif
+
 	m_pVSimpleInputLayout.Release();
 	m_pVS_Simple.Release();
 	m_pPS_Simple.Release();
@@ -921,6 +925,10 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateInputLayout(Layout, std::size(Layout), data, size, &m_pVSimpleInputLayout));
 
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_Simple, IDF_PSH11_SIMPLE));
+
+#if TEST_SHADER
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_TEST, IDF_PSH11_TEST));
+#endif
 
 	D3D11_BUFFER_DESC BufferDesc = {};
 	BufferDesc.Usage = D3D11_USAGE_DEFAULT;

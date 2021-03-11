@@ -33,6 +33,8 @@
 #include "DX9Device.h"
 #include "VideoProcessor.h"
 
+#define TEST_SHADER 0
+
 class CVideoRendererInputPin;
 
 class CDX11VideoProcessor
@@ -54,6 +56,10 @@ private:
 	CComPtr<ID3D11VertexShader>   m_pVS_Simple;
 	CComPtr<ID3D11PixelShader>    m_pPS_Simple;
 	CComPtr<ID3D11InputLayout>    m_pVSimpleInputLayout;
+
+#if TEST_SHADER
+	CComPtr<ID3D11PixelShader>    m_pPS_TEST;
+#endif
 
 	Tex11Video_t m_TexSrcVideo; // for copy of frame
 	Tex2D_t m_TexConvertOutput;
