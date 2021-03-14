@@ -2282,11 +2282,9 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 	CRect rSrc = srcRect;
 	IDirect3DTexture9* pInputTexture = nullptr;
 	bool bNeedPostProc = m_pPSCorrection || m_pPostScaleShaders.size();
-	bool bNeedShaderTransform = (m_TexConvertOutput.Width != dstRect.Width() || m_TexConvertOutput.Height != dstRect.Height() || m_iRotation || m_bFlip);
-	// bNeedShaderTransform == false when no scaling or use VPScaling and no rotation and flip
-	bNeedShaderTransform |= (dstRect.left < 0 || dstRect.top < 0 || dstRect.right > (long)m_TexConvertOutput.Width || dstRect.bottom > (long)m_TexConvertOutput.Height);
-
 	if (m_DXVA2VP.IsReady()) {
+		bool bNeedShaderTransform = (m_TexConvertOutput.Width != dstRect.Width() || m_TexConvertOutput.Height != dstRect.Height() || m_iRotation || m_bFlip
+									|| dstRect.left < 0 || dstRect.top < 0 || dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom);
 		if (!bNeedShaderTransform && !bNeedPostProc && m_TexConvertOutput.Format == m_d3dpp.BackBufferFormat) {
 			hr = DxvaVPPass(pRenderTarget, rSrc, dstRect, second);
 			return hr;

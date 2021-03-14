@@ -1780,7 +1780,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 
 			D3DLOCKED_RECT lr_src;
-			hr = pSurface9->LockRect(&lr_src, nullptr, D3DLOCK_READONLY); // may be slow 
+			hr = pSurface9->LockRect(&lr_src, nullptr, D3DLOCK_READONLY); // may be slow
 			if (S_OK == hr) {
 				BYTE* srcData = (BYTE*)lr_src.pBits;
 				D3D11_MAPPED_SUBRESOURCE mappedResource = {};
@@ -2362,11 +2362,9 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 	CRect rSrc = srcRect;
 	Tex2D_t* pInputTexture = nullptr;
 	bool bNeedPostProc = m_pPSCorrection || m_pPostScaleShaders.size();
-	bool bNeedShaderTransform = (m_TexConvertOutput.desc.Width != dstRect.Width() || m_TexConvertOutput.desc.Height != dstRect.Height() || m_bFlip);
-	// bNeedShaderTransform == false when no scaling or use VPScaling and no flip
-	bNeedShaderTransform |= (dstRect.left < 0 || dstRect.top < 0 || dstRect.right > (long)m_TexConvertOutput.desc.Width || dstRect.bottom > (long)m_TexConvertOutput.desc.Height);
-
 	if (m_D3D11VP.IsReady()) {
+		bool bNeedShaderTransform = (m_TexConvertOutput.desc.Width != dstRect.Width() || m_TexConvertOutput.desc.Height != dstRect.Height() || m_bFlip
+									|| dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom);
 		if (!bNeedShaderTransform && !bNeedPostProc && m_TexConvertOutput.desc.Format == m_SwapChainFmt) {
 			hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
 			return hr;
