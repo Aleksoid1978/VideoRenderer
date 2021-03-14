@@ -2286,9 +2286,13 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 		bool bNeedShaderTransform = (m_TexConvertOutput.Width != dstRect.Width() || m_TexConvertOutput.Height != dstRect.Height() || m_iRotation || m_bFlip
 									|| dstRect.left < 0 || dstRect.top < 0 || dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom);
 		if (!bNeedShaderTransform && !bNeedPostProc && m_TexConvertOutput.Format == m_d3dpp.BackBufferFormat) {
+			m_bVPScalingUseShaders = false;
+
 			hr = DxvaVPPass(pRenderTarget, rSrc, dstRect, second);
 			return hr;
 		}
+		m_bVPScalingUseShaders = true;
+
 		CRect rect(0, 0, m_TexConvertOutput.Width, m_TexConvertOutput.Height);
 		hr = DxvaVPPass(m_TexConvertOutput.pSurface, rSrc, rect, second);
 		pInputTexture = m_TexConvertOutput.pTexture;
@@ -2666,7 +2670,7 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 		str += fmt::format(L"\nScaling       : {}x{} -> {}x{}", m_srcRectWidth, m_srcRectHeight, dstW, dstH);
 	}
 	if (m_srcRectWidth != dstW || m_srcRectHeight != dstH) {
-		if (m_DXVA2VP.IsReady() && m_bVPScaling) {
+		if (m_DXVA2VP.IsReady() && m_bVPScaling && !m_bVPScalingUseShaders) {
 			str.append(L" DXVA2");
 		} else {
 			str += L' ';

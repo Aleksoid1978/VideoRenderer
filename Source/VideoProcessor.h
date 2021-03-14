@@ -56,6 +56,8 @@ protected:
 	bool m_bHdrToggleDisplay   = true;
 	bool m_bConvertToSdr       = true;
 
+	bool m_bVPScalingUseShaders = false;
+
 	CopyFrameDataFn m_pConvertFn = nullptr;
 	CopyFrameDataFn m_pCopyGpuFn = CopyFrameAsIs;
 

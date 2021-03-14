@@ -2366,9 +2366,13 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 		bool bNeedShaderTransform = (m_TexConvertOutput.desc.Width != dstRect.Width() || m_TexConvertOutput.desc.Height != dstRect.Height() || m_bFlip
 									|| dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom);
 		if (!bNeedShaderTransform && !bNeedPostProc && m_TexConvertOutput.desc.Format == m_SwapChainFmt) {
+			m_bVPScalingUseShaders = false;
+
 			hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
 			return hr;
 		}
+		m_bVPScalingUseShaders = true;
+
 		CRect rect(0, 0, m_TexConvertOutput.desc.Width, m_TexConvertOutput.desc.Height);
 		hr = D3D11VPPass(m_TexConvertOutput.pTexture, rSrc, rect, second);
 		pInputTexture = &m_TexConvertOutput;
@@ -3038,7 +3042,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		str += fmt::format(L"\nScaling       : {}x{} -> {}x{}", m_srcRectWidth, m_srcRectHeight, dstW, dstH);
 	}
 	if (m_srcRectWidth != dstW || m_srcRectHeight != dstH) {
-		if (m_D3D11VP.IsReady() && m_bVPScaling) {
+		if (m_D3D11VP.IsReady() && m_bVPScaling && !m_bVPScalingUseShaders) {
 			str.append(L" D3D11");
 		} else {
 			str += L' ';
