@@ -30,6 +30,13 @@
 #include "../Include/ISubRender.h"
 #include "../Include/FilterInterfacesImpl.h"
 
+// Set and query D3DFullscreen mode.
+interface __declspec(uuid("8EA1E899-B77D-4777-9F0E-66421BEA50F8"))
+ID3DFullscreenControl :
+public IUnknown {
+	STDMETHOD(SetD3DFullscreen)(bool fEnabled) PURE;
+	STDMETHOD(GetD3DFullscreen)(bool* pfEnabled) PURE;
+};
 
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_YV12},
@@ -70,6 +77,7 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	, public IVideoRenderer
 	, public ISubRender
 	, public CExFilterConfigImpl
+	, public ID3DFullscreenControl
 {
 private:
 	friend class CVideoRendererInputPin;
@@ -110,6 +118,8 @@ private:
 
 	bool m_bSubInvAlpha = false;
 	bool m_bCheckSubInvAlpha = false;
+
+	bool m_bUseD3DFullscreen = false;
 
 	HRESULT Init(const bool bCreateWindow);
 
@@ -258,11 +268,16 @@ public:
 	STDMETHODIMP SetInt(LPCSTR field, int value) override;
 	STDMETHODIMP SetBin(LPCSTR field, LPVOID value, int size) override;
 
+	// ID3DFullscreenControl
+	STDMETHODIMP SetD3DFullscreen(bool bEnabled);
+	STDMETHODIMP GetD3DFullscreen(bool* pbEnabled);
+
 	LRESULT OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	void SwitchFullScreen();
 
 	bool m_bIsFullscreen = false;
+	bool m_bIsD3DFullscreen = false;
 
 private:
 	HRESULT Redraw();
