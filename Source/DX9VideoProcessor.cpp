@@ -2285,7 +2285,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 	if (m_DXVA2VP.IsReady()) {
 		bool bNeedShaderTransform = (m_TexConvertOutput.Width != dstRect.Width() || m_TexConvertOutput.Height != dstRect.Height() || m_iRotation || m_bFlip
 									|| dstRect.left < 0 || dstRect.top < 0 || dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom);
-		if (!bNeedShaderTransform && !bNeedPostProc && m_TexConvertOutput.Format == m_d3dpp.BackBufferFormat) {
+		if (!bNeedShaderTransform && !bNeedPostProc && !m_bFinalPass) {
 			m_bVPScalingUseShaders = false;
 
 			hr = DxvaVPPass(pRenderTarget, rSrc, dstRect, second);
