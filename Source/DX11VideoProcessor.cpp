@@ -493,6 +493,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 		if (!m_pDXGISwapChain1 || m_bIsFullscreen != m_pFilter->m_bIsFullscreen) {
 			InitSwapChain();
 			UpdateStatsStatic();
+			m_pFilter->OnDisplayModeChange();
 		}
 
 		return S_OK;
