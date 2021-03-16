@@ -483,7 +483,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 				m_pD3DDevEx->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ZERO);
 				m_pD3DDevEx->SetRenderState(D3DRS_BLENDOPALPHA, D3DBLENDOP_ADD);
 
-				if (pChangeDevice && m_pFilter->m_pSubCallBack) {
+				if (*pChangeDevice && m_pFilter->m_pSubCallBack) {
 					m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
 					m_pFilter->OnDisplayModeChange();
 				}
@@ -975,7 +975,8 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		}
 	}
 
-	hr = InitDX9Device(m_hWnd);
+	bool changeDevice = false;
+	hr = InitDX9Device(m_hWnd, &changeDevice);
 	ASSERT(S_OK == hr);
 	if (m_pD3DDevEx) {
 		// set a special blend mode for alpha channels for ISubRenderCallback rendering
@@ -984,6 +985,11 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		m_pD3DDevEx->SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_ONE);
 		m_pD3DDevEx->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ZERO);
 		m_pD3DDevEx->SetRenderState(D3DRS_BLENDOPALPHA, D3DBLENDOP_ADD);
+
+		if (changeDevice && m_pFilter->m_pSubCallBack) {
+			m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
+			m_pFilter->OnDisplayModeChange();
+		}
 	}
 
 	if (m_hWnd) {
