@@ -2392,7 +2392,11 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 			m_bVPScalingUseShaders = rSrc.Width() != dstRect.Width() || rSrc.Height() != dstRect.Height();
 		}
 
-		hr = ResizeShaderPass(*pInputTexture, Tex->pTexture, rSrc, dstRect, rotation);
+		if (rSrc != dstRect) {
+			hr = ResizeShaderPass(*pInputTexture, Tex->pTexture, rSrc, dstRect, rotation);
+		} else {
+			Tex = pInputTexture;
+		}
 
 		ID3D11PixelShader* pPixelShader = nullptr;
 		ID3D11Buffer* pConstantBuffer = nullptr;
