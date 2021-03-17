@@ -483,10 +483,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 				m_pD3DDevEx->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ZERO);
 				m_pD3DDevEx->SetRenderState(D3DRS_BLENDOPALPHA, D3DBLENDOP_ADD);
 
-				if (pChangeDevice && *pChangeDevice && m_pFilter->m_pSubCallBack) {
-					m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
-					m_pFilter->OnDisplayModeChange();
-				}
+				SetCallbackDevice(pChangeDevice ? *pChangeDevice : false);
 			}
 		}
 
@@ -657,6 +654,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	}
 	m_pDeviceContext.Release();
 	ReleaseDX9Device();
+	m_bCallbackDeviceIsSet = false;
 
 #if (1 && _DEBUG)
 	if (m_pDevice) {
@@ -987,10 +985,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		m_pD3DDevEx->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ZERO);
 		m_pD3DDevEx->SetRenderState(D3DRS_BLENDOPALPHA, D3DBLENDOP_ADD);
 
-		if (changeDevice && m_pFilter->m_pSubCallBack) {
-			m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
-			m_pFilter->OnDisplayModeChange();
-		}
+		SetCallbackDevice(changeDevice);
 	}
 
 	if (m_hWnd) {
@@ -1430,10 +1425,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			UpdateTexures();
 			UpdatePostScaleTexures();
 			UpdateStatsStatic();
-
-			if (m_pFilter->m_pSubCallBack) {
-				HRESULT hr2 = m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
-			}
+			SetCallbackDevice();
 
 			return TRUE;
 		}
@@ -1448,10 +1440,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		UpdateTexures();
 		UpdatePostScaleTexures();
 		UpdateStatsStatic();
-
-		if (m_pFilter->m_pSubCallBack) {
-			HRESULT hr2 = m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx);
-		}
+		SetCallbackDevice();
 
 		return TRUE;
 	}
@@ -3255,5 +3244,12 @@ STDMETHODIMP CDX11VideoProcessor::UpdateAlphaBitmapParameters(const MFVideoAlpha
 		return ((pBmpParms->dwFlags & validFlags) == validFlags) ? S_OK : S_FALSE;
 	} else {
 		return MF_E_NOT_INITIALIZED;
+	}
+}
+
+void CDX11VideoProcessor::SetCallbackDevice(const bool bChangeDevice/* = false*/)
+{
+	if ((!m_bCallbackDeviceIsSet || bChangeDevice) && m_pD3DDevEx && m_pFilter->m_pSubCallBack) {
+		m_bCallbackDeviceIsSet = SUCCEEDED(m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx));
 	}
 }
