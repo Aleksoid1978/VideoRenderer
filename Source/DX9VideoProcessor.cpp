@@ -2291,7 +2291,6 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 			hr = DxvaVPPass(pRenderTarget, rSrc, dstRect, second);
 			return hr;
 		}
-		m_bVPScalingUseShaders = true;
 
 		CRect rect(0, 0, m_TexConvertOutput.Width, m_TexConvertOutput.Height);
 		hr = DxvaVPPass(m_TexConvertOutput.pSurface, rSrc, rect, second);
@@ -2311,6 +2310,10 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 		Tex_t* Tex = m_TexsPostScale.GetFirstTex();
 		CRect rect;
 		rect.IntersectRect(dstRect, CRect(0, 0, Tex->Width, Tex->Height));
+
+		if (m_DXVA2VP.IsReady()) {
+			m_bVPScalingUseShaders = rSrc.Width() != dstRect.Width() || rSrc.Height() != dstRect.Height();
+		}
 
 		hr = ResizeShaderPass(pInputTexture, Tex->pSurface, rSrc, dstRect);
 

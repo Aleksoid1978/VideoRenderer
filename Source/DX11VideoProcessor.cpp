@@ -2367,7 +2367,6 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 			hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
 			return hr;
 		}
-		m_bVPScalingUseShaders = true;
 
 		CRect rect(0, 0, m_TexConvertOutput.desc.Width, m_TexConvertOutput.desc.Height);
 		hr = D3D11VPPass(m_TexConvertOutput.pTexture, rSrc, rect, second);
@@ -2388,6 +2387,10 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 		Tex2D_t* Tex = m_TexsPostScale.GetFirstTex();
 		CRect rect;
 		rect.IntersectRect(dstRect, CRect(0, 0, Tex->desc.Width, Tex->desc.Height));
+
+		if (m_D3D11VP.IsReady()) {
+			m_bVPScalingUseShaders = rSrc.Width() != dstRect.Width() || rSrc.Height() != dstRect.Height();
+		}
 
 		hr = ResizeShaderPass(*pInputTexture, Tex->pTexture, rSrc, dstRect, rotation);
 
