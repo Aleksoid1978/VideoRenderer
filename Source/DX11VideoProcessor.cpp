@@ -1095,9 +1095,14 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		fullscreenDesc.RefreshRate.Denominator = 1;
 		fullscreenDesc.Windowed = FALSE;
 
-		SetWindowLongPtrW(m_hWnd, GWL_STYLE, GetWindowLongPtrW(m_hWnd, GWL_STYLE) & (~WS_CHILD));
+		const auto style = GetWindowLongPtrW(m_hWnd, GWL_STYLE);
+		if (style & WS_CHILD) {
+			SetWindowLongPtrW(m_hWnd, GWL_STYLE, style & ~WS_CHILD);
+		}
 		hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc1, &fullscreenDesc, nullptr, &m_pDXGISwapChain1);
-		SetWindowLongPtrW(m_hWnd, GWL_STYLE, GetWindowLongPtrW(m_hWnd, GWL_STYLE) | WS_CHILD);
+		if (style & WS_CHILD) {
+			SetWindowLongPtrW(m_hWnd, GWL_STYLE, style);
+		}
 		DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd(fullscreen) failed with error %s", HR2Str(hr));
 	} else {
 		DXGI_SWAP_CHAIN_DESC1 desc1 = {};
