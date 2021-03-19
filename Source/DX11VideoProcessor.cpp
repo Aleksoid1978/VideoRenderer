@@ -34,6 +34,42 @@
 #include "Shaders.h"
 #include "Utils/CPUInfo.h"
 
+#include "../external/minhook/include/MinHook.h"
+
+bool bPresent = false;
+
+typedef BOOL(WINAPI* pSetWindowPos)(
+	_In_ HWND hWnd,
+	_In_opt_ HWND hWndInsertAfter,
+	_In_ int X,
+	_In_ int Y,
+	_In_ int cx,
+	_In_ int cy,
+	_In_ UINT uFlags);
+
+pSetWindowPos pOrigSetWindowPosDX11 = nullptr;
+static BOOL WINAPI pNewSetWindowPosDX11(
+	_In_ HWND hWnd,
+	_In_opt_ HWND hWndInsertAfter,
+	_In_ int X,
+	_In_ int Y,
+	_In_ int cx,
+	_In_ int cy,
+	_In_ UINT uFlags)
+{
+	if (bPresent) {
+		DLog(L"call SetWindowPos() function during Present()");
+		uFlags |= SWP_ASYNCWINDOWPOS;
+	}
+	return pOrigSetWindowPosDX11(hWnd, hWndInsertAfter, X, Y, cx, cy, uFlags);
+}
+
+template <typename T>
+inline bool HookFunc(T** ppSystemFunction, PVOID pHookFunction)
+{
+	return MH_CreateHook(*ppSystemFunction, pHookFunction, reinterpret_cast<LPVOID*>(ppSystemFunction)) == MH_OK;
+}
+
 static const ScalingShaderResId s_Upscaling11ResIDs[UPSCALE_COUNT] = {
 	{0,                            0,                            L"Nearest-neighbor"  },
 	{IDF_PSH11_INTERP_MITCHELL4_X, IDF_PSH11_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
@@ -394,6 +430,12 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	// set default ProcAmp ranges and values
 	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
 	SetDefaultDXVA2ProcAmpValues(m_DXVA2ProcAmpValues);
+
+	pOrigSetWindowPosDX11 = SetWindowPos;
+	auto ret = HookFunc(&pOrigSetWindowPosDX11, pNewSetWindowPosDX11);
+	DLogIf(!ret, L"CDX11VideoProcessor::CDX11VideoProcessor() : hook for SetWindowPos() fail");
+
+	MH_EnableHook(MH_ALL_HOOKS);
 }
 
 static bool ToggleHDR(const DisplayConfig_t& displayConfig, const BOOL bEnableAdvancedColor)
@@ -439,6 +481,8 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 	if (m_hDXGILib) {
 		FreeLibrary(m_hDXGILib);
 	}
+
+	MH_RemoveHook(SetWindowPos);
 }
 
 HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
@@ -2023,7 +2067,9 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		}
 	}
 
+	bPresent = true;
 	hr = m_pDXGISwapChain1->Present(1, 0);
+	bPresent = false;
 	DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : Present() failed with error {}", HR2Str(hr));
 	m_RenderStats.presentticks = GetPreciseTick() - tick3;
 
