@@ -37,6 +37,7 @@
 #include "../external/minhook/include/MinHook.h"
 
 bool bPresent = false;
+bool bCreateSwapChain = false;
 
 typedef BOOL(WINAPI* pSetWindowPos)(
 	_In_ HWND hWnd,
@@ -62,6 +63,24 @@ static BOOL WINAPI pNewSetWindowPosDX11(
 		uFlags |= SWP_ASYNCWINDOWPOS;
 	}
 	return pOrigSetWindowPosDX11(hWnd, hWndInsertAfter, X, Y, cx, cy, uFlags);
+}
+
+typedef LONG(WINAPI* pSetWindowLongA)(
+	_In_ HWND hWnd,
+	_In_ int nIndex,
+	_In_ LONG dwNewLong);
+
+pSetWindowLongA pOrigSetWindowLongADX11 = nullptr;
+static LONG WINAPI pNewSetWindowLongADX11(
+	_In_ HWND hWnd,
+	_In_ int nIndex,
+	_In_ LONG dwNewLong)
+{
+	if (bCreateSwapChain) {
+		DLog(L"Blocking call SetWindowLongA() function during create fullscreen swap chain");
+		return 0L;
+	}
+	return pOrigSetWindowLongADX11(hWnd, nIndex, dwNewLong);
 }
 
 template <typename T>
@@ -434,6 +453,10 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	pOrigSetWindowPosDX11 = SetWindowPos;
 	auto ret = HookFunc(&pOrigSetWindowPosDX11, pNewSetWindowPosDX11);
 	DLogIf(!ret, L"CDX11VideoProcessor::CDX11VideoProcessor() : hook for SetWindowPos() fail");
+
+	pOrigSetWindowLongADX11 = SetWindowLongA;
+	ret = HookFunc(&pOrigSetWindowLongADX11, pNewSetWindowLongADX11);
+	DLogIf(!ret, L"CDX11VideoProcessor::CDX11VideoProcessor() : hook for SetWindowLongA() fail");
 
 	MH_EnableHook(MH_ALL_HOOKS);
 }
@@ -1139,14 +1162,9 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		fullscreenDesc.RefreshRate.Denominator = 1;
 		fullscreenDesc.Windowed = FALSE;
 
-		const auto style = GetWindowLongPtrW(m_hWnd, GWL_STYLE);
-		if (style & WS_CHILD) {
-			SetWindowLongPtrW(m_hWnd, GWL_STYLE, style & ~WS_CHILD);
-		}
+		bCreateSwapChain = true;
 		hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc1, &fullscreenDesc, nullptr, &m_pDXGISwapChain1);
-		if (style & WS_CHILD) {
-			SetWindowLongPtrW(m_hWnd, GWL_STYLE, style);
-		}
+		bCreateSwapChain = false;
 		DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd(fullscreen) failed with error %s", HR2Str(hr));
 	} else {
 		DXGI_SWAP_CHAIN_DESC1 desc1 = {};
