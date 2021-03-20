@@ -101,7 +101,13 @@ static LRESULT CALLBACK ParentWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM
 			break;
 		case WM_RBUTTONUP:
 			if (pThis->m_bIsFullscreen) {
-				// block context menu in exclusive full screen
+				// block context menu in exclusive fullscreen
+				return 0;
+			}
+			break;
+		case WM_SYSCOMMAND:
+			if (pThis->m_bIsFullscreen && wParam == SC_MINIMIZE) {
+				// block minimize in exclusive fullscreen
 				return 0;
 			}
 			break;
