@@ -390,6 +390,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 	CMediaType mt(*pmt);
 
 	auto inputPin = static_cast<CVideoRendererInputPin*>(m_pInputPin);
+	inputPin->ClearNewMediaType();
 	if (!inputPin->FrameInVideoMem()) {
 		CMediaType mtNew(*pmt);
 		long ret = CalcImageSize(mtNew, true);

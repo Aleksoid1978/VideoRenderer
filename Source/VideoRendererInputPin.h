@@ -70,5 +70,6 @@ public:
 	UINT STDMETHODCALLTYPE GetD3D11AdapterIndex();
 
 	void SetNewMediaType(const CMediaType& mt);
+	void ClearNewMediaType();
 };
 

@@ -220,3 +220,8 @@ void CVideoRendererInputPin::SetNewMediaType(const CMediaType& mt)
 		m_pNewMT = new CMediaType(mt);
 	}
 }
+
+void CVideoRendererInputPin::ClearNewMediaType()
+{
+	SAFE_DELETE(m_pNewMT);
+}
