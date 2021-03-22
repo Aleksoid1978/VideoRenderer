@@ -105,12 +105,14 @@ static LRESULT CALLBACK ParentWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM
 				return 0;
 			}
 			break;
+/*
 		case WM_SYSCOMMAND:
 			if (pThis->m_bIsFullscreen && wParam == SC_MINIMIZE) {
 				// block minimize in exclusive fullscreen
 				return 0;
 			}
 			break;
+*/
 	}
 
 	return CallWindowProcW(pfnOldProc, hWnd, Msg, wParam, lParam);
