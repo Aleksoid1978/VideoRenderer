@@ -389,6 +389,10 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 	CAutoLock cVideoLock(&m_InterfaceLock);
 	CAutoLock cRendererLock(&m_RendererLock);
 
+	CSize aspect, framesize;
+	m_VideoProcessor->GetAspectRatio(&aspect.cx, &aspect.cy);
+	m_VideoProcessor->GetVideoSize(&framesize.cx, &framesize.cy);
+
 	CMediaType mt(*pmt);
 
 	auto inputPin = static_cast<CVideoRendererInputPin*>(m_pInputPin);
@@ -412,6 +416,16 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 	if (!m_videoRect.IsRectNull()) {
 		m_VideoProcessor->SetVideoRect(m_videoRect);
+	}
+
+	if (framesize.cx && aspect.cx && m_pSink) {
+		CSize aspectNew, framesizeNew;
+		m_VideoProcessor->GetAspectRatio(&aspectNew.cx, &aspectNew.cy);
+		m_VideoProcessor->GetVideoSize(&framesizeNew.cx, &framesizeNew.cy);
+
+		if (aspectNew != aspect || framesizeNew != framesize) {
+			m_pSink->Notify(EC_VIDEO_SIZE_CHANGED, MAKELPARAM(framesizeNew.cx, framesizeNew.cy), 0);
+		}
 	}
 
 	return S_OK;
