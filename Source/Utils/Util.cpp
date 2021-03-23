@@ -64,6 +64,11 @@ std::wstring HR2Str(const HRESULT hr)
 		// some COM Error Codes (Generic) https://docs.microsoft.com/en-us/windows/win32/com/com-error-codes-1
 		UNPACK_VALUE(REGDB_E_CLASSNOTREG);
 		// some COM Error Codes (UI, Audio, DirectX, Codec) https://docs.microsoft.com/en-us/windows/win32/com/com-error-codes-10
+		UNPACK_VALUE(DXGI_STATUS_OCCLUDED);
+		UNPACK_VALUE(DXGI_STATUS_MODE_CHANGED);
+		UNPACK_VALUE(DXGI_ERROR_INVALID_CALL);
+		UNPACK_VALUE(DXGI_ERROR_DEVICE_REMOVED);
+		UNPACK_VALUE(DXGI_ERROR_DEVICE_RESET);
 		UNPACK_VALUE(WINCODEC_ERR_UNSUPPORTEDPIXELFORMAT);
 		// some System Error Codes https://docs.microsoft.com/en-us/windows/win32/debug/system-error-codes
 		UNPACK_HR_WIN32(ERROR_GEN_FAILURE);
@@ -72,11 +77,6 @@ std::wstring HR2Str(const HRESULT hr)
 		UNPACK_HR_WIN32(ERROR_MOD_NOT_FOUND);
 		UNPACK_HR_WIN32(ERROR_INVALID_WINDOW_HANDLE);
 		UNPACK_HR_WIN32(ERROR_CLASS_ALREADY_EXISTS);
-		UNPACK_VALUE(DXGI_STATUS_OCCLUDED);
-		UNPACK_VALUE(DXGI_STATUS_MODE_CHANGED);
-		UNPACK_VALUE(DXGI_ERROR_DEVICE_RESET);
-		UNPACK_VALUE(DXGI_ERROR_DEVICE_REMOVED);
-		UNPACK_VALUE(DXGI_ERROR_INVALID_CALL);
 #endif
 #ifdef _D3D9_H_
 		// some D3DERR values https://docs.microsoft.com/en-us/windows/desktop/direct3d9/d3derr
