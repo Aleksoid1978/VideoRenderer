@@ -506,6 +506,7 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 	}
 
 	MH_RemoveHook(SetWindowPos);
+	MH_RemoveHook(SetWindowLongA);
 }
 
 HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
