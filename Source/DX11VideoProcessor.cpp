@@ -1169,8 +1169,8 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd(fullscreen) failed with error %s", HR2Str(hr));
 	} else {
 		DXGI_SWAP_CHAIN_DESC1 desc1 = {};
-		desc1.Width = m_windowRect.Width();
-		desc1.Height = m_windowRect.Height();
+		desc1.Width = std::max(8, m_windowRect.Width());
+		desc1.Height = std::max(8, m_windowRect.Height());
 		desc1.Format = m_SwapChainFmt;
 		desc1.SampleDesc.Count = 1;
 		desc1.SampleDesc.Quality = 0;

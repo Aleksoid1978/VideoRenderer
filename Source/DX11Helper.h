@@ -41,6 +41,10 @@ struct Tex2D_t
 	CComPtr<ID3D11ShaderResourceView> pShaderResource;
 
 	HRESULT CheckCreate(ID3D11Device* pDevice, const DXGI_FORMAT format, const UINT width, const UINT height, const Tex2DType type) {
+		if (!width || !height) {
+			return E_FAIL;
+		}
+
 		if (format == desc.Format && width == desc.Width && height == desc.Height) {
 			return S_OK;
 		}
