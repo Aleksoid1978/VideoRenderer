@@ -1166,7 +1166,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		bCreateSwapChain = true;
 		hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc1, &fullscreenDesc, nullptr, &m_pDXGISwapChain1);
 		bCreateSwapChain = false;
-		DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd(fullscreen) failed with error %s", HR2Str(hr));
+		DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd(fullscreen) failed with error {}", HR2Str(hr));
 	} else {
 		DXGI_SWAP_CHAIN_DESC1 desc1 = {};
 		desc1.Width = std::max(8, m_windowRect.Width());
@@ -1185,7 +1185,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		}
 		desc1.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 		hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc1, nullptr, nullptr, &m_pDXGISwapChain1);
-		DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd() failed with error %s", HR2Str(hr));
+		DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd() failed with error {}", HR2Str(hr));
 	}
 
 	if (m_pDXGISwapChain1) {
