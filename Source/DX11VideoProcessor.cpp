@@ -1184,6 +1184,11 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 			desc1.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 		}
 		desc1.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+
+		DLogIf(m_windowRect.Width() < 8 || m_windowRect.Height() < 8,
+			L"CDX11VideoProcessor::InitSwapChain() : Invalid window size {}x{}, use {}x{}",
+			m_windowRect.Width(), m_windowRect.Height(), desc1.Width, desc1.Height);
+
 		hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc1, nullptr, nullptr, &m_pDXGISwapChain1);
 		DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd() failed with error {}", HR2Str(hr));
 	}
