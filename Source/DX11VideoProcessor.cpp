@@ -2434,7 +2434,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 	Tex2D_t* pInputTexture = nullptr;
 	bool bNeedPostProc = m_pPSCorrection || m_pPostScaleShaders.size();
 	if (m_D3D11VP.IsReady()) {
-		if (!(m_VendorId == PCIV_AMDATI && m_iSwapEffect == SWAPEFFECT_Discard)) {
+		if (!(m_iSwapEffect == SWAPEFFECT_Discard && (m_VendorId == PCIV_AMDATI || m_VendorId == PCIV_INTEL))) {
 			bool bNeedShaderTransform = (m_TexConvertOutput.desc.Width != dstRect.Width() || m_TexConvertOutput.desc.Height != dstRect.Height() || m_bFlip
 										|| dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom);
 			if (!bNeedShaderTransform && !bNeedPostProc && !m_bFinalPass) {
