@@ -2429,13 +2429,15 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 	Tex2D_t* pInputTexture = nullptr;
 	bool bNeedPostProc = m_pPSCorrection || m_pPostScaleShaders.size();
 	if (m_D3D11VP.IsReady()) {
-		bool bNeedShaderTransform = (m_TexConvertOutput.desc.Width != dstRect.Width() || m_TexConvertOutput.desc.Height != dstRect.Height() || m_bFlip
-									|| dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom);
-		if (!bNeedShaderTransform && !bNeedPostProc && !m_bFinalPass) {
-			m_bVPScalingUseShaders = false;
+		if (!(m_VendorId == PCIV_AMDATI && m_iSwapEffect == SWAPEFFECT_Discard)) {
+			bool bNeedShaderTransform = (m_TexConvertOutput.desc.Width != dstRect.Width() || m_TexConvertOutput.desc.Height != dstRect.Height() || m_bFlip
+										|| dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom);
+			if (!bNeedShaderTransform && !bNeedPostProc && !m_bFinalPass) {
+				m_bVPScalingUseShaders = false;
 
-			hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
-			return hr;
+				hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
+				return hr;
+			}
 		}
 
 		CRect rect(0, 0, m_TexConvertOutput.desc.Width, m_TexConvertOutput.desc.Height);
