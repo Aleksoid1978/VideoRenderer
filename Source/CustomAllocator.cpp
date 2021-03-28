@@ -156,7 +156,7 @@ HRESULT CCustomAllocator::GetBuffer(IMediaSample** ppBuffer, REFERENCE_TIME* pSt
 	HRESULT hr = __super::GetBuffer(ppBuffer, pStartTime, pEndTime, dwFlags);
 
 	if (SUCCEEDED(hr) && m_pNewMT) {
-		DLog(L"CCustomAllocator::GetBuffer() set new media type for MediaSample");
+		DLog(L"CCustomAllocator::GetBuffer() : Set new media type for MediaSample\n{}", MediaType2Str(m_pNewMT));
 		(*ppBuffer)->SetMediaType(m_pNewMT);
 		SAFE_DELETE(m_pNewMT);
 		m_cbBuffer = 0;
@@ -176,4 +176,9 @@ void CCustomAllocator::SetNewMediaType(const CMediaType& mt)
 	if (const auto pBIH = GetBIHfromVIHs(m_pNewMT); pBIH) {
 		m_cbBuffer = pBIH->biSizeImage ? pBIH->biSizeImage : DIBSIZE(*pBIH);
 	}
+}
+
+void CCustomAllocator::ClearNewMediaType()
+{
+	SAFE_DELETE(m_pNewMT);
 }

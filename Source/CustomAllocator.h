@@ -47,4 +47,5 @@ public:
 	STDMETHODIMP GetBuffer(IMediaSample** ppBuffer, REFERENCE_TIME* pStartTime, REFERENCE_TIME* pEndTime, DWORD dwFlags);
 
 	void SetNewMediaType(const CMediaType& mt);
+	void ClearNewMediaType();
 };

@@ -213,9 +213,9 @@ void CVideoRendererInputPin::SetNewMediaType(const CMediaType& mt)
 	DLog(L"CVideoRendererInputPin::SetNewMediaType()");
 
 	SAFE_DELETE(m_pNewMT);
-	auto pAlloc = static_cast<CCustomAllocator*>(m_pAllocator);
-	if (pAlloc) {
-		pAlloc->SetNewMediaType(mt);
+	auto pCustomAllocator = dynamic_cast<CCustomAllocator*>(m_pAllocator);
+	if (pCustomAllocator) {
+		pCustomAllocator->SetNewMediaType(mt);
 	} else {
 		m_pNewMT = new CMediaType(mt);
 	}
@@ -224,4 +224,8 @@ void CVideoRendererInputPin::SetNewMediaType(const CMediaType& mt)
 void CVideoRendererInputPin::ClearNewMediaType()
 {
 	SAFE_DELETE(m_pNewMT);
+	auto pCustomAllocator = dynamic_cast<CCustomAllocator*>(m_pAllocator);
+	if (pCustomAllocator) {
+		pCustomAllocator->ClearNewMediaType();
+	}
 }
