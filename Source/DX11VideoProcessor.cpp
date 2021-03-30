@@ -1937,6 +1937,8 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		const CRect rDstVid(m_videoRect);
 		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
 
+		m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, m_pFilter->m_bSubInvAlpha ? D3DCOLOR_ARGB(0, 0, 0, 0) : D3DCOLOR_ARGB(255, 0, 0, 0));
+
 		if (CComQIPtr<ISubRenderCallback4> pSubCallBack4 = m_pFilter->m_pSubCallBack) {
 			hrSubPic = pSubCallBack4->RenderEx3(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
 		} else {
@@ -1983,8 +1985,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		VP.MaxDepth = 1.0f;
 		hrSubPic = AlphaBltSub(m_pShaderResourceSubPic, pBackBuffer, rSrcPri, VP);
 		ASSERT(S_OK == hrSubPic);
-
-		hrSubPic = m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, m_pFilter->m_bSubInvAlpha ? D3DCOLOR_ARGB(0, 0, 0, 0) : D3DCOLOR_ARGB(255, 0, 0, 0));
 	}
 
 	if (m_bShowStats) {
