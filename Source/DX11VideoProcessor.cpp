@@ -1937,7 +1937,10 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		const CRect rDstVid(m_videoRect);
 		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
 
-		m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, m_pFilter->m_bSubInvAlpha ? D3DCOLOR_ARGB(0, 0, 0, 0) : D3DCOLOR_ARGB(255, 0, 0, 0));
+		if (m_bSubPicWasRendered) {
+			m_bSubPicWasRendered = false;
+			m_pD3DDevEx->ColorFill(m_pSurface9SubPic, nullptr, m_pFilter->m_bSubInvAlpha ? D3DCOLOR_ARGB(0, 0, 0, 0) : D3DCOLOR_ARGB(255, 0, 0, 0));
+		}
 
 		if (CComQIPtr<ISubRenderCallback4> pSubCallBack4 = m_pFilter->m_pSubCallBack) {
 			hrSubPic = pSubCallBack4->RenderEx3(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
@@ -1946,6 +1949,8 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		}
 
 		if (S_OK == hrSubPic) {
+			m_bSubPicWasRendered = true;
+
 			// flush Direct3D9 for immediate update Direct3D11 texture
 			CComPtr<IDirect3DQuery9> pEventQuery;
 			m_pD3DDevEx->CreateQuery(D3DQUERYTYPE_EVENT, &pEventQuery);

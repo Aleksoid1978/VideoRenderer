@@ -128,6 +128,7 @@ private:
 	CComPtr<IDirect3DSurface9>        m_pSurface9SubPic;
 	CComPtr<ID3D11Texture2D>          m_pTextureSubPic;
 	CComPtr<ID3D11ShaderResourceView> m_pShaderResourceSubPic;
+	bool                              m_bSubPicWasRendered = false;
 
 	// AlphaBitmap
 	Tex2D_t m_TexAlphaBitmap;
