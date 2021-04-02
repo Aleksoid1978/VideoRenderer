@@ -295,8 +295,6 @@ HRESULT CMpcVideoRenderer::EndFlush()
 {
 	DLog(L"CMpcVideoRenderer::EndFlush()");
 
-	m_bValidBuffer = false;
-
 	m_VideoProcessor->Flush();
 
 	HRESULT hr = __super::EndFlush();
@@ -649,6 +647,7 @@ STDMETHODIMP CMpcVideoRenderer::Stop()
 	DLog(L"CMpcVideoRenderer::Stop()");
 
 	m_filterState = State_Stopped;
+	m_bValidBuffer = false;
 
 	return CBaseVideoRenderer2::Stop();
 }
