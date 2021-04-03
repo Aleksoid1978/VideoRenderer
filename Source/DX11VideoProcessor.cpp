@@ -36,7 +36,7 @@
 
 #include "../external/minhook/include/MinHook.h"
 
-bool bPresent = false;
+bool g_bPresent = false;
 bool bCreateSwapChain = false;
 
 typedef BOOL(WINAPI* pSetWindowPos)(
@@ -58,7 +58,7 @@ static BOOL WINAPI pNewSetWindowPosDX11(
 	_In_ int cy,
 	_In_ UINT uFlags)
 {
-	if (bPresent) {
+	if (g_bPresent) {
 		DLog(L"call SetWindowPos() function during Present()");
 		uFlags |= SWP_ASYNCWINDOWPOS;
 	}
@@ -2096,10 +2096,11 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		}
 	}
 
-	bPresent = true;
+	g_bPresent = true;
 	hr = m_pDXGISwapChain1->Present(1, 0);
-	bPresent = false;
+	g_bPresent = false;
 	DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : Present() failed with error {}", HR2Str(hr));
+
 	m_RenderStats.presentticks = GetPreciseTick() - tick3;
 
 	return hr;
@@ -2145,7 +2146,9 @@ HRESULT CDX11VideoProcessor::FillBlack()
 		hr = AlphaBlt(m_TexAlphaBitmap.pShaderResource, pBackBuffer, m_pAlphaBitmapVertex, &VP, m_pSamplerLinear);
 	}
 
+	g_bPresent = true;
 	hr = m_pDXGISwapChain1->Present(1, 0);
+	g_bPresent = false;
 
 	pRenderTargetView->Release();
 
