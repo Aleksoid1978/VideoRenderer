@@ -1135,13 +1135,14 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	m_dwStatsTextColor = (m_bHdrDisplayModeEnabled && bHdrOutput) ? D3DCOLOR_XRGB(170, 170, 170) : D3DCOLOR_XRGB(255, 255, 255);
 
 	HRESULT hr = S_OK;
+	DXGI_SWAP_CHAIN_DESC1 desc1 = {};
 	m_bIsFullscreen = m_pFilter->m_bIsFullscreen;
+
 	if (m_bIsFullscreen) {
 		MONITORINFOEXW mi = { sizeof(mi) };
 		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST), &mi);
 		const CRect rc(mi.rcMonitor);
 
-		DXGI_SWAP_CHAIN_DESC1 desc1 = {};
 		desc1.Width = rc.Width();
 		desc1.Height = rc.Height();
 		desc1.Format = m_SwapChainFmt;
@@ -1167,8 +1168,8 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc1, &fullscreenDesc, nullptr, &m_pDXGISwapChain1);
 		bCreateSwapChain = false;
 		DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd(fullscreen) failed with error {}", HR2Str(hr));
-	} else {
-		DXGI_SWAP_CHAIN_DESC1 desc1 = {};
+	}
+	else {
 		desc1.Width = std::max(8, m_windowRect.Width());
 		desc1.Height = std::max(8, m_windowRect.Height());
 		desc1.Format = m_SwapChainFmt;
@@ -1194,6 +1195,8 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	}
 
 	if (m_pDXGISwapChain1) {
+		m_UsedSwapEffect = desc1.SwapEffect;
+
 		m_currentSwapChainColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 		if (bHdrOutput) {
 			m_pDXGISwapChain1->QueryInterface(IID_PPV_ARGS(&m_pDXGISwapChain4));
@@ -2100,6 +2103,18 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	hr = m_pDXGISwapChain1->Present(1, 0);
 	g_bPresent = false;
 	DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : Present() failed with error {}", HR2Str(hr));
+
+	if (m_UsedSwapEffect == DXGI_SWAP_EFFECT_FLIP_DISCARD) {
+		// experimental
+		D3D11_QUERY_DESC queryDesc = { D3D11_QUERY_EVENT };
+		ID3D11Query* pQuery = nullptr;
+		if (SUCCEEDED(m_pDevice->CreateQuery(&queryDesc, &pQuery))) {
+			m_pDeviceContext->End(pQuery);
+			while (S_FALSE == m_pDeviceContext->GetData(pQuery, nullptr, 0, 0)) {
+			}
+			pQuery->Release();
+		}
+	}
 
 	m_RenderStats.presentticks = GetPreciseTick() - tick3;
 
