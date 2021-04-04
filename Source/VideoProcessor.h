@@ -171,7 +171,7 @@ public:
 
 	int GetRotation() { return m_iRotation; }
 	virtual void SetRotation(int value) = 0;
-	int GetFlip() { return m_bFlip; }
+	bool GetFlip() { return m_bFlip; }
 	void SetFlip(bool value) { m_bFlip = value; }
 
 	virtual void ClearPostScaleShaders() = 0;
@@ -187,6 +187,8 @@ public:
 	virtual void SetGraphSize() = 0;
 
 	void SetDisplayInfo(const DisplayConfig_t& dc, const bool primary, const bool fullscreen);
+
+	bool GetDeinterlace() { return m_bDoubleFrames; }
 
 protected:
 	bool SourceIsHDR() {

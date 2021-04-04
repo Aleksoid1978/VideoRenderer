@@ -1223,6 +1223,12 @@ STDMETHODIMP CMpcVideoRenderer::GetBool(LPCSTR field, bool* value)
 		return S_OK;
 	}
 
+	if (!strcmp(field, "deinterlace")) {
+		CAutoLock cSampleLock(&m_RendererLock);
+		*value = m_VideoProcessor->GetDeinterlace();
+		return S_OK;
+	}
+
 	return E_INVALIDARG;
 }
 
