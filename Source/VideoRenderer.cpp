@@ -52,6 +52,8 @@
 #define OPT_HdrToggleDisplay     L"HdrToggleDisplay"
 #define OPT_ConvertToSdr         L"ConvertToSdr"
 #define OPT_UseD3DFullscreen     L"UseD3DFullscreen"
+// TEST
+#define OPT_TestDX11WaitEvent    L"TestDX11WaitEvent"
 
 static std::atomic_int g_nInstance = 0;
 static const wchar_t g_szClassName[] = L"VRWindow";
@@ -217,6 +219,10 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_UseD3DFullscreen, dw)) {
 			m_bUseD3DFullscreen = !!dw;
+		}
+		// TEST
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_TestDX11WaitEvent, dw)) {
+			m_Sets.bTestDX11WaitEvent = !!dw;
 		}
 	}
 

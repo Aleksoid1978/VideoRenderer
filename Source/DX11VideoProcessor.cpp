@@ -411,6 +411,8 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_bHdrPassthrough     = config.bHdrPassthrough;
 	m_bHdrToggleDisplay   = config.bHdrToggleDisplay;
 	m_bConvertToSdr       = config.bConvertToSdr;
+	// TEST
+	m_bTestDX11WaitEvent  = config.bTestDX11WaitEvent;
 
 	m_nCurrentAdapter = -1;
 	m_pDisplayMode = &m_DisplayMode;
@@ -2104,7 +2106,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	g_bPresent = false;
 	DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : Present() failed with error {}", HR2Str(hr));
 
-	if (m_UsedSwapEffect == DXGI_SWAP_EFFECT_FLIP_DISCARD) {
+	if (m_bTestDX11WaitEvent && m_UsedSwapEffect == DXGI_SWAP_EFFECT_FLIP_DISCARD) {
 		// experimental
 		D3D11_QUERY_DESC queryDesc = { D3D11_QUERY_EVENT };
 		ID3D11Query* pQuery = nullptr;

@@ -86,6 +86,8 @@ struct Settings_t {
 	bool bHdrPassthrough;
 	bool bHdrToggleDisplay;
 	bool bConvertToSdr;
+	// TEST options (read only from registry)
+	bool bTestDX11WaitEvent = false;
 
 	Settings_t() {
 		SetDefault();
@@ -110,7 +112,7 @@ struct Settings_t {
 		iSwapEffect         = SWAPEFFECT_Discard;
 		bExclusiveFS        = false;
 		bHdrPassthrough     = true;
-		bHdrToggleDisplay    = true;
+		bHdrToggleDisplay   = true;
 		bConvertToSdr       = true;
 	}
 };
