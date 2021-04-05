@@ -188,7 +188,7 @@ public:
 
 	void SetDisplayInfo(const DisplayConfig_t& dc, const bool primary, const bool fullscreen);
 
-	bool GetDeinterlace() { return m_bDoubleFrames; }
+	bool GetDoubleRate() { return m_bDoubleFrames; }
 
 protected:
 	bool SourceIsHDR() {

@@ -1223,9 +1223,9 @@ STDMETHODIMP CMpcVideoRenderer::GetBool(LPCSTR field, bool* value)
 		return S_OK;
 	}
 
-	if (!strcmp(field, "deinterlace")) {
+	if (!strcmp(field, "doubleRate")) {
 		CAutoLock cSampleLock(&m_RendererLock);
-		*value = m_VideoProcessor->GetDeinterlace();
+		*value = m_VideoProcessor->GetDoubleRate();
 		return S_OK;
 	}
 
