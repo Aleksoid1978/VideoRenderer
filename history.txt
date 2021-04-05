@@ -11,7 +11,7 @@ Fixed display of the settings window when opened from the command line (rundll32
 Improved stability in DX11 mode.
 Fixed flickering of subtitles in DX11 mode in some situations. 
 Improved compatibility with PotPlayer. 
-Recommended version of MPC-BE 1.5.7.6155 or later.
+Recommended version of MPC-BE 1.5.7.6158 or later.
 
 v0.5.2.1607 - 2021.01.15
 ------------------------
