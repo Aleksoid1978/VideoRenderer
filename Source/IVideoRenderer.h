@@ -86,8 +86,6 @@ struct Settings_t {
 	bool bHdrPassthrough;
 	bool bHdrToggleDisplay;
 	bool bConvertToSdr;
-	// TEST options (read only from registry)
-	bool bTestDX11WaitEvent = false;
 
 	Settings_t() {
 		SetDefault();

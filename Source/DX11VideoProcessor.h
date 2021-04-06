@@ -58,8 +58,6 @@ private:
 	CComPtr<ID3D11InputLayout>    m_pVSimpleInputLayout;
 
 	DXGI_SWAP_EFFECT              m_UsedSwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-	// TEST
-	bool                          m_bTestDX11WaitEvent = false;
 
 #if TEST_SHADER
 	CComPtr<ID3D11PixelShader>    m_pPS_TEST;
