@@ -1004,7 +1004,6 @@ HRESULT CMpcVideoRenderer::Init(const bool bCreateWindow/* = false*/)
 	m_hWnd = m_bIsFullscreen && m_VideoProcessor->Type() == VP_DX9 ? m_hWndParentMain : m_hWndWindow;
 	if (m_bIsD3DFullscreen) {
 		m_hWnd = m_hWndParent;
-		m_bIsFullscreen = true;
 	}
 
 	bool bChangeDevice = false;
@@ -1386,7 +1385,7 @@ STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
 
 STDMETHODIMP CMpcVideoRenderer::SetD3DFullscreen(bool bEnabled)
 {
-	m_bIsD3DFullscreen = bEnabled;
+	m_bIsFullscreen = m_bIsD3DFullscreen = bEnabled;
 	return S_OK;
 }
 
