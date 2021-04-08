@@ -215,9 +215,6 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ConvertToSdr, dw)) {
 			m_Sets.bConvertToSdr = !!dw;
 		}
-		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_UseD3DFullscreen, dw)) {
-			m_bUseD3DFullscreen = !!dw;
-		}
 	}
 
 	if (!IsWindows10OrGreater()) {
@@ -590,7 +587,7 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 		QI(IVideoRenderer)
 		QI(ISubRender)
 		QI(IExFilterConfig)
-		(riid == __uuidof(ID3DFullscreenControl) && m_bUseD3DFullscreen) ? GetInterface((ID3DFullscreenControl*)this, ppv) :
+		(riid == __uuidof(ID3DFullscreenControl) && m_bEnableFullscreenControl) ? GetInterface((ID3DFullscreenControl*)this, ppv) :
 		__super::NonDelegatingQueryInterface(riid, ppv);
 }
 
@@ -1305,6 +1302,11 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 
 	if (!strcmp(field, "lessRedraws")) {
 		m_bForceRedrawing = !value;
+		return S_OK;
+	}
+
+	if (!strcmp(field, "d3dFullscreenControl")) {
+		m_bEnableFullscreenControl = value;
 		return S_OK;
 	}
 
