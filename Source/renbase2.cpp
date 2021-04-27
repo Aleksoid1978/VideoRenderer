@@ -103,7 +103,7 @@ HRESULT CBaseVideoRenderer2::ResetStreamingTimes2()
 
 HRESULT CBaseVideoRenderer2::OnStartStreaming()
 {
-    ResetStreamingTimes();
+    ResetStreamingTimes2();
     return NOERROR;
 } // OnStartStreaming
 

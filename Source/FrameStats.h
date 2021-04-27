@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2020 see Authors.txt
+* (C) 2018-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -78,6 +78,8 @@ public:
 class CFrameStats : public CFrameTimestamps<REFERENCE_TIME, 301>
 {
 private:
+	REFERENCE_TIME m_rtAvgTimePerFrame = 417083;
+
 	inline unsigned GetPrev10Index(unsigned idx) {
 		if (idx < 10) {
 			idx += std::size(m_timestamps);
@@ -97,7 +99,7 @@ public:
 			frame_duration = (m_timestamps[m_frames - 1] - m_timestamps[0]) / (m_frames - 1);
 		}
 		else {
-			return UNITS;
+			return m_rtAvgTimePerFrame;
 		}
 
 		if (m_frames > 10) {
@@ -107,7 +109,7 @@ public:
 			}
 		}
 
-		return frame_duration;
+		return frame_duration > 0 ? frame_duration : m_rtAvgTimePerFrame;
 	}
 
 	double GetAverageFps() {
@@ -115,6 +117,14 @@ public:
 		// temporary hacked output
 		const auto averageFrameDuration = GetAverageFrameDuration();
 		return averageFrameDuration > 0 ? (double)UNITS / averageFrameDuration : 0;
+	}
+
+	void SetAvgTimePerFrame(const REFERENCE_TIME rtAvgTimePerFrame) {
+		m_rtAvgTimePerFrame = rtAvgTimePerFrame;
+		if (!m_rtAvgTimePerFrame) {
+			// if framerate not set - choose 23.976
+			m_rtAvgTimePerFrame = 417083;
+		}
 	}
 };
 
