@@ -581,28 +581,37 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 
 	ID3D11Device *pDevice = nullptr;
 
-	UINT flags = 0;
-#ifdef _DEBUG
-	HMODULE hD3D11SDKLayers = LoadLibraryW(L"D3D11_1SDKLayers.dll");
-	if (hD3D11SDKLayers) {
-		flags |= D3D11_CREATE_DEVICE_DEBUG;
-		FreeLibrary(hD3D11SDKLayers);
-	} else {
-		DLog(L"D3D11_1SDKLayers.dll could not be loaded. D3D11 debugging messages will not be displayed");
-	}
-#endif
-
 	HRESULT hr = m_fnD3D11CreateDevice(
 		pDXGIAdapter,
 		D3D_DRIVER_TYPE_UNKNOWN,
 		nullptr,
-		flags,
+#ifdef _DEBUG
+		D3D11_CREATE_DEVICE_DEBUG,
+#else
+		0,
+#endif
 		featureLevels,
 		std::size(featureLevels),
 		D3D11_SDK_VERSION,
 		&pDevice,
 		&featurelevel,
 		nullptr);
+#ifdef _DEBUG
+	if (hr == DXGI_ERROR_SDK_COMPONENT_MISSING) {
+		DLog(L"WARNING: D3D11 debugging messages will not be displayed");
+		hr = m_fnD3D11CreateDevice(
+			pDXGIAdapter,
+			D3D_DRIVER_TYPE_UNKNOWN,
+			nullptr,
+			0,
+			featureLevels,
+			std::size(featureLevels),
+			D3D11_SDK_VERSION,
+			&pDevice,
+			&featurelevel,
+			nullptr);
+	}
+#endif
 	SAFE_RELEASE(pDXGIAdapter);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::Init() : D3D11CreateDevice() failed with error {}", HR2Str(hr));
