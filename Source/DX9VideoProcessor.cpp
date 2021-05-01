@@ -1058,7 +1058,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		return FALSE;
 	}
 
-	m_pFilter->m_FrameStats.SetAvgTimePerFrame(m_rtAvgTimePerFrame);
+	m_pFilter->m_FrameStats.SetStartFrameDuration(m_rtAvgTimePerFrame);
 
 	UINT biWidth  = pBIH->biWidth;
 	UINT biHeight = labs(pBIH->biHeight);

@@ -78,7 +78,7 @@ public:
 class CFrameStats : public CFrameTimestamps<REFERENCE_TIME, 301>
 {
 private:
-	REFERENCE_TIME m_rtAvgTimePerFrame = 417083;
+	REFERENCE_TIME m_startFrameDuration = 400000;
 
 	inline unsigned GetPrev10Index(unsigned idx) {
 		if (idx < 10) {
@@ -99,7 +99,7 @@ public:
 			frame_duration = (m_timestamps[m_frames - 1] - m_timestamps[0]) / (m_frames - 1);
 		}
 		else {
-			return m_rtAvgTimePerFrame;
+			return m_startFrameDuration;
 		}
 
 		if (m_frames > 10) {
@@ -109,7 +109,7 @@ public:
 			}
 		}
 
-		return frame_duration > 0 ? frame_duration : m_rtAvgTimePerFrame;
+		return frame_duration > 0 ? frame_duration : m_startFrameDuration;
 	}
 
 	double GetAverageFps() {
@@ -119,11 +119,9 @@ public:
 		return averageFrameDuration > 0 ? (double)UNITS / averageFrameDuration : 0;
 	}
 
-	void SetAvgTimePerFrame(const REFERENCE_TIME rtAvgTimePerFrame) {
-		m_rtAvgTimePerFrame = rtAvgTimePerFrame;
-		if (!m_rtAvgTimePerFrame) {
-			// if framerate not set - choose 23.976
-			m_rtAvgTimePerFrame = 417083;
+	void SetStartFrameDuration(const REFERENCE_TIME startFrameDuration) {
+		if (startFrameDuration > 0) {
+			m_startFrameDuration = startFrameDuration;
 		}
 	}
 };
