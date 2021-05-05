@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2020 see Authors.txt
+* (C) 2018-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -22,6 +22,8 @@
 
 #include "MediaSampleSideData.h"
 
+class CVideoRendererInputPin;
+
 class CCustomMediaSample : public CMediaSampleSideData
 {
 public:
@@ -36,11 +38,12 @@ class CCustomAllocator : public CMemAllocator
 protected:
 	HRESULT Alloc();
 
+	CVideoRendererInputPin* m_pVideoRendererInputPin = nullptr;
 	CMediaType* m_pNewMT = nullptr;
 	long m_cbBuffer = 0;
 
 public:
-	CCustomAllocator(LPCTSTR pName, LPUNKNOWN pUnk, HRESULT *phr);
+	CCustomAllocator(LPCTSTR pName, LPUNKNOWN pUnk, CVideoRendererInputPin* pVideoRendererInputPin, HRESULT *phr);
 	~CCustomAllocator();
 
 	STDMETHODIMP SetProperties(__in ALLOCATOR_PROPERTIES* pRequest, __out ALLOCATOR_PROPERTIES* pActual);

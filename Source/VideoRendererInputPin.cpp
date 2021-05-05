@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2020 see Authors.txt
+ * (C) 2018-2021 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -74,22 +74,22 @@ STDMETHODIMP CVideoRendererInputPin::GetAllocator(IMemAllocator **ppAllocator)
 
 	// No allocator yet, so propose our custom allocator.
 	HRESULT hr = S_OK;
-	CCustomAllocator* pAlloc = new(std::nothrow) CCustomAllocator(L"Custom allocator", nullptr, &hr);
-	if (!pAlloc) {
+	m_pCustomAllocator = new(std::nothrow) CCustomAllocator(L"Custom allocator", nullptr, this, &hr);
+	if (!m_pCustomAllocator) {
 		return E_OUTOFMEMORY;
 	}
 	if (FAILED(hr)) {
-		delete pAlloc;
+		SAFE_DELETE(m_pCustomAllocator);
 		return hr;
 	}
 
 	if (m_pNewMT) {
-		pAlloc->SetNewMediaType(*m_pNewMT);
+		m_pCustomAllocator->SetNewMediaType(*m_pNewMT);
 		SAFE_DELETE(m_pNewMT);
 	}
 
 	// Return the IMemAllocator interface to the caller.
-	return pAlloc->QueryInterface(IID_IMemAllocator, (void**)ppAllocator);
+	return m_pCustomAllocator->QueryInterface(IID_IMemAllocator, (void**)ppAllocator);
 }
 
 STDMETHODIMP CVideoRendererInputPin::GetAllocatorRequirements(ALLOCATOR_PROPERTIES* pProps)
@@ -213,9 +213,8 @@ void CVideoRendererInputPin::SetNewMediaType(const CMediaType& mt)
 	DLog(L"CVideoRendererInputPin::SetNewMediaType()");
 
 	SAFE_DELETE(m_pNewMT);
-	auto pCustomAllocator = dynamic_cast<CCustomAllocator*>(m_pAllocator);
-	if (pCustomAllocator) {
-		pCustomAllocator->SetNewMediaType(mt);
+	if (m_pCustomAllocator) {
+		m_pCustomAllocator->SetNewMediaType(mt);
 	} else {
 		m_pNewMT = new CMediaType(mt);
 	}
@@ -224,8 +223,7 @@ void CVideoRendererInputPin::SetNewMediaType(const CMediaType& mt)
 void CVideoRendererInputPin::ClearNewMediaType()
 {
 	SAFE_DELETE(m_pNewMT);
-	auto pCustomAllocator = dynamic_cast<CCustomAllocator*>(m_pAllocator);
-	if (pCustomAllocator) {
-		pCustomAllocator->ClearNewMediaType();
+	if (m_pCustomAllocator) {
+		m_pCustomAllocator->ClearNewMediaType();
 	}
 }

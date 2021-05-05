@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2020 see Authors.txt
+* (C) 2018-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -21,19 +21,25 @@
 #include "stdafx.h"
 #include "CustomAllocator.h"
 #include "Helper.h"
+#include "VideoRendererInputPin.h"
 
 CCustomMediaSample::CCustomMediaSample(LPCTSTR pName, CBaseAllocator *pAllocator, HRESULT *phr, LPBYTE pBuffer, LONG length)
 	: CMediaSampleSideData(pName, pAllocator, phr, pBuffer, length)
 {
 }
 
-CCustomAllocator::CCustomAllocator(LPCTSTR pName, LPUNKNOWN pUnk, HRESULT *phr)
+CCustomAllocator::CCustomAllocator(LPCTSTR pName, LPUNKNOWN pUnk, CVideoRendererInputPin* pVideoRendererInputPin, HRESULT *phr)
 	: CMemAllocator(pName, nullptr, phr)
+	, m_pVideoRendererInputPin(pVideoRendererInputPin)
 {
 }
 
 CCustomAllocator::~CCustomAllocator()
 {
+	if (m_pVideoRendererInputPin && m_pVideoRendererInputPin->m_pCustomAllocator == this) {
+		m_pVideoRendererInputPin->m_pCustomAllocator = nullptr;
+	}
+
 	SAFE_DELETE(m_pNewMT);
 }
 

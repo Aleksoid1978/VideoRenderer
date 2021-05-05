@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2019 see Authors.txt
+ * (C) 2018-2021 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -21,9 +21,11 @@
 #pragma once
 
 #include <d3d11.h>
+#include <mfidl.h>
 #include "../Include/ID3DVideoMemoryConfiguration.h"
 
 class CMpcVideoRenderer;
+class CCustomAllocator;
 
 class CVideoRendererInputPin
 	: public CRendererInputPin
@@ -32,10 +34,13 @@ class CVideoRendererInputPin
 	, public ID3D11DecoderConfiguration
 {
 private:
+	friend class CCustomAllocator;
+
 	CMpcVideoRenderer* m_pBaseRenderer;
 	bool m_bDXVA = false;
 	bool m_bD3D11 = false;
 
+	CCustomAllocator* m_pCustomAllocator = nullptr;
 	CMediaType* m_pNewMT = nullptr;
 
 	CCritSec m_csReceive;
