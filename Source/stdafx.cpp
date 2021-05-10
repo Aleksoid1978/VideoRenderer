@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2019 see Authors.txt
+ * (C) 2018-2021 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -25,5 +25,7 @@
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
 #pragma comment(lib, "windowscodecs.lib")
+#pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "d3d11.lib")
 
 //#pragma comment(lib, "dwmapi.lib")

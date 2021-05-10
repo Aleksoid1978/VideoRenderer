@@ -415,34 +415,9 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_nCurrentAdapter = -1;
 	m_pDisplayMode = &m_DisplayMode;
 
-	m_hDXGILib = LoadLibraryW(L"dxgi.dll");
-	if (!m_hDXGILib) {
-		hr = HRESULT_FROM_WIN32(GetLastError());
-		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : failed to load dxgi.dll");
-		return;
-	}
-	m_fnCreateDXGIFactory1 = (PFNCREATEDXGIFACTORY1)GetProcAddress(m_hDXGILib, "CreateDXGIFactory1");
-	if (!m_fnCreateDXGIFactory1) {
-		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : failed to get CreateDXGIFactory1()");
-		hr = E_FAIL;
-		return;
-	}
-	hr = m_fnCreateDXGIFactory1(IID_IDXGIFactory1, (void**)&m_pDXGIFactory1);
+	hr = CreateDXGIFactory1(IID_IDXGIFactory1, (void**)&m_pDXGIFactory1);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : CreateDXGIFactory1() failed with error {}", HR2Str(hr));
-		return;
-	}
-
-	m_hD3D11Lib = LoadLibraryW(L"d3d11.dll");
-	if (!m_hD3D11Lib) {
-		hr = HRESULT_FROM_WIN32(GetLastError());
-		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : failed to load d3d11.dll");
-		return;
-	}
-	m_fnD3D11CreateDevice = (PFN_D3D11_CREATE_DEVICE)GetProcAddress(m_hD3D11Lib, "D3D11CreateDevice");
-	if (!m_fnD3D11CreateDevice) {
-		DLog(L"CDX11VideoProcessor::CDX11VideoProcessor() : failed to get D3D11CreateDevice()");
-		hr = E_FAIL;
 		return;
 	}
 
@@ -497,14 +472,6 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 
 	m_pDXGIFactory1.Release();
 
-	if (m_hD3D11Lib) {
-		FreeLibrary(m_hD3D11Lib);
-	}
-
-	if (m_hDXGILib) {
-		FreeLibrary(m_hDXGILib);
-	}
-
 	MH_RemoveHook(SetWindowPos);
 	MH_RemoveHook(SetWindowLongA);
 }
@@ -512,8 +479,6 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
 {
 	DLog(L"CDX11VideoProcessor::Init()");
-
-	CheckPointer(m_fnD3D11CreateDevice, E_FAIL);
 
 	m_hWnd = hwnd;
 	m_bHdrPassthroughSupport = false;
@@ -581,7 +546,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 
 	ID3D11Device *pDevice = nullptr;
 
-	HRESULT hr = m_fnD3D11CreateDevice(
+	HRESULT hr = D3D11CreateDevice(
 		pDXGIAdapter,
 		D3D_DRIVER_TYPE_UNKNOWN,
 		nullptr,
@@ -599,7 +564,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 #ifdef _DEBUG
 	if (hr == DXGI_ERROR_SDK_COMPONENT_MISSING) {
 		DLog(L"WARNING: D3D11 debugging messages will not be displayed");
-		hr = m_fnD3D11CreateDevice(
+		hr = D3D11CreateDevice(
 			pDXGIAdapter,
 			D3D_DRIVER_TYPE_UNKNOWN,
 			nullptr,

@@ -115,16 +115,6 @@ private:
 
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 
-	HMODULE m_hDXGILib = nullptr;
-	HMODULE m_hD3D11Lib = nullptr;
-
-	typedef HRESULT(WINAPI *PFNCREATEDXGIFACTORY1)(
-		REFIID riid,
-		void   **ppFactory);
-
-	PFNCREATEDXGIFACTORY1 m_fnCreateDXGIFactory1 = nullptr;
-	PFN_D3D11_CREATE_DEVICE m_fnD3D11CreateDevice = nullptr;
-
 	CComPtr<IDXGIFactory1> m_pDXGIFactory1;
 
 	CComPtr<IDirect3DSurface9>        m_pSurface9SubPic;
