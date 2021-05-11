@@ -405,7 +405,7 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 	if (S_OK == m_pD3DEx->GetAdapterIdentifier(m_nCurrentAdapter, 0, &AdapID9)) {
 		m_VendorId = AdapID9.VendorId;
 		m_strAdapterDescription = fmt::format(L"{} ({:04X}:{:04X})", A2WStr(AdapID9.Description), AdapID9.VendorId, AdapID9.DeviceId);
-		DLog(L"Graphics adapter: {}", m_strAdapterDescription);
+		DLog(L"Graphics D3D9 adapter: {}", m_strAdapterDescription);
 	}
 
 	ZeroMemory(&m_DisplayMode, sizeof(D3DDISPLAYMODEEX));

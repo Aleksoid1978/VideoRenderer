@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2020 see Authors.txt
+* (C) 2018-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -91,6 +91,13 @@ HRESULT CDX9Device::InitDX9DeviceInternal(bool* pChangeDevice)
 		ReleaseDX9Device();
 		m_nCurrentAdapter9 = currentAdapter;
 	}
+
+#ifdef _DEBUG
+	D3DADAPTER_IDENTIFIER9 AdapID9 = {};
+	if (S_OK == m_pD3DEx->GetAdapterIdentifier(m_nCurrentAdapter9, 0, &AdapID9)) {
+		DLog(L"Graphics D3D9 adapter: {} ({:04X}:{:04X})", A2WStr(AdapID9.Description), AdapID9.VendorId, AdapID9.DeviceId);
+	}
+#endif
 
 	ZeroMemory(&m_DisplayMode, sizeof(D3DDISPLAYMODEEX));
 	m_DisplayMode.Size = sizeof(D3DDISPLAYMODEEX);
