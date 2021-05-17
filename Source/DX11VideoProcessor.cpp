@@ -396,21 +396,22 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(
 CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Settings_t& config, HRESULT& hr)
 	: CVideoProcessor(pFilter)
 {
-	m_bShowStats          = config.bShowStats;
-	m_iResizeStats        = config.iResizeStats;
-	m_iTexFormat          = config.iTexFormat;
-	m_VPFormats           = config.VPFmts;
-	m_bDeintDouble        = config.bDeintDouble;
-	m_bVPScaling          = config.bVPScaling;
-	m_iChromaScaling      = config.iChromaScaling;
-	m_iUpscaling          = config.iUpscaling;
-	m_iDownscaling        = config.iDownscaling;
-	m_bInterpolateAt50pct = config.bInterpolateAt50pct;
-	m_bUseDither          = config.bUseDither;
-	m_iSwapEffect         = config.iSwapEffect;
-	m_bHdrPassthrough     = config.bHdrPassthrough;
-	m_bHdrToggleDisplay   = config.bHdrToggleDisplay;
-	m_bConvertToSdr       = config.bConvertToSdr;
+	m_bShowStats           = config.bShowStats;
+	m_iResizeStats         = config.iResizeStats;
+	m_iTexFormat           = config.iTexFormat;
+	m_VPFormats            = config.VPFmts;
+	m_bDeintDouble         = config.bDeintDouble;
+	m_bVPScaling           = config.bVPScaling;
+	m_iChromaScaling       = config.iChromaScaling;
+	m_iUpscaling           = config.iUpscaling;
+	m_iDownscaling         = config.iDownscaling;
+	m_bInterpolateAt50pct  = config.bInterpolateAt50pct;
+	m_bUseDither           = config.bUseDither;
+	m_iSwapEffect          = config.iSwapEffect;
+	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
+	m_bHdrPassthrough      = config.bHdrPassthrough;
+	m_bHdrToggleDisplay    = config.bHdrToggleDisplay;
+	m_bConvertToSdr        = config.bConvertToSdr;
 
 	m_nCurrentAdapter = -1;
 	m_pDisplayMode = &m_DisplayMode;
@@ -718,6 +719,7 @@ void CDX11VideoProcessor::ReleaseSwapChain()
 	if (m_pDXGISwapChain1) {
 		m_pDXGISwapChain1->SetFullscreenState(FALSE, nullptr);
 	}
+	m_pDXGIOutput.Release();
 	m_pDXGISwapChain4.Release();
 	m_pDXGISwapChain1.Release();
 }
@@ -1170,9 +1172,11 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	if (m_pDXGISwapChain1) {
 		m_UsedSwapEffect = desc1.SwapEffect;
 
+		HRESULT hr2 = m_pDXGISwapChain1->GetContainingOutput(&m_pDXGIOutput);
+
 		m_currentSwapChainColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 		if (bHdrOutput) {
-			m_pDXGISwapChain1->QueryInterface(IID_PPV_ARGS(&m_pDXGISwapChain4));
+			hr2 = m_pDXGISwapChain1->QueryInterface(IID_PPV_ARGS(&m_pDXGISwapChain4));
 		}
 
 		m_pShaderResourceSubPic.Release();
@@ -1182,7 +1186,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 
 		if (m_pD3DDevEx) {
 			HANDLE sharedHandle = nullptr;
-			HRESULT hr2 = m_pD3DDevEx->CreateRenderTarget(
+			hr2 = m_pD3DDevEx->CreateRenderTarget(
 				m_d3dpp.BackBufferWidth,
 				m_d3dpp.BackBufferHeight,
 				D3DFMT_A8R8G8B8,
@@ -2074,6 +2078,11 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		}
 	}
 
+	if (m_bVBlankBeforePresent && m_pDXGIOutput) {
+		hr = m_pDXGIOutput->WaitForVBlank();
+		DLogIf(FAILED(hr), L"WaitForVBlank failed with error {}", HR2Str(hr));
+	}
+
 	g_bPresent = true;
 	hr = m_pDXGISwapChain1->Present(1, 0);
 	g_bPresent = false;
@@ -2787,9 +2796,10 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	bool changeResizeStats       = false;
 
 	// settings that do not require preparation
-	m_bShowStats          = config.bShowStats;
-	m_bDeintDouble        = config.bDeintDouble;
-	m_bInterpolateAt50pct = config.bInterpolateAt50pct;
+	m_bShowStats           = config.bShowStats;
+	m_bDeintDouble         = config.bDeintDouble;
+	m_bInterpolateAt50pct  = config.bInterpolateAt50pct;
+	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
 
 	// checking what needs to be changed
 

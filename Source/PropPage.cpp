@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2020 see Authors.txt
+ * (C) 2018-2021 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -95,13 +95,14 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK3, m_SetsPP.bDeintDouble     ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling       ? BST_CHECKED : BST_UNCHECKED);
 
-	CheckDlgButton(IDC_CHECK12, m_SetsPP.bHdrPassthrough  ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK12, m_SetsPP.bHdrPassthrough ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK13, m_SetsPP.bHdrToggleDisplay ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr    ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr   ? BST_CHECKED : BST_UNCHECKED);
 
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK10, m_SetsPP.bUseDither      ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK11, m_SetsPP.bExclusiveFS    ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK15, m_SetsPP.bVBlankBeforePresent ? BST_CHECKED : BST_UNCHECKED);
 
 	SendDlgItemMessageW(IDC_COMBO6, CB_SETCURSEL, m_SetsPP.iResizeStats, 0);
 
@@ -270,6 +271,11 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			}
 			if (nID == IDC_CHECK11) {
 				m_SetsPP.bExclusiveFS = IsDlgButtonChecked(IDC_CHECK11) == BST_CHECKED;
+				SetDirty();
+				return (LRESULT)1;
+			}
+			if (nID == IDC_CHECK15) {
+				m_SetsPP.bVBlankBeforePresent = IsDlgButtonChecked(IDC_CHECK15) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}

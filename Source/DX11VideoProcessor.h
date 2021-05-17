@@ -95,9 +95,10 @@ private:
 	ID3D11Buffer* m_pPostScaleConstants = nullptr;
 	CComPtr<ID3D11PixelShader> m_pPSFinalPass;
 
-	CComPtr<IDXGIFactory2> m_pDXGIFactory2;
+	CComPtr<IDXGIFactory2>   m_pDXGIFactory2;
 	CComPtr<IDXGISwapChain1> m_pDXGISwapChain1;
 	CComPtr<IDXGISwapChain4> m_pDXGISwapChain4;
+	CComPtr<IDXGIOutput>    m_pDXGIOutput;
 	DXGI_COLOR_SPACE_TYPE m_currentSwapChainColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 
 	// Input parameters

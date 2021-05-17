@@ -83,6 +83,7 @@ struct Settings_t {
 	bool bUseDither;
 	int  iSwapEffect;
 	bool bExclusiveFS;
+	bool bVBlankBeforePresent;
 	bool bHdrPassthrough;
 	bool bHdrToggleDisplay;
 	bool bConvertToSdr;
@@ -92,26 +93,27 @@ struct Settings_t {
 	}
 
 	void SetDefault() {
-		bUseD3D11           = false;
-		bShowStats          = false;
-		iResizeStats        = 0;
-		iTexFormat          = TEXFMT_AUTOINT;
-		VPFmts.bNV12        = true;
-		VPFmts.bP01x        = true;
-		VPFmts.bYUY2        = true;
-		VPFmts.bOther       = true;
-		bDeintDouble        = true;
-		bVPScaling          = true;
-		iChromaScaling      = CHROMA_Bilinear;
-		iUpscaling          = UPSCALE_CatmullRom;
-		iDownscaling        = DOWNSCALE_Hamming;
-		bInterpolateAt50pct = true;
-		bUseDither          = true;
-		iSwapEffect         = SWAPEFFECT_Discard;
-		bExclusiveFS        = false;
-		bHdrPassthrough     = true;
-		bHdrToggleDisplay   = true;
-		bConvertToSdr       = true;
+		bUseD3D11            = false;
+		bShowStats           = false;
+		iResizeStats         = 0;
+		iTexFormat           = TEXFMT_AUTOINT;
+		VPFmts.bNV12         = true;
+		VPFmts.bP01x         = true;
+		VPFmts.bYUY2         = true;
+		VPFmts.bOther        = true;
+		bDeintDouble         = true;
+		bVPScaling           = true;
+		iChromaScaling       = CHROMA_Bilinear;
+		iUpscaling           = UPSCALE_CatmullRom;
+		iDownscaling         = DOWNSCALE_Hamming;
+		bInterpolateAt50pct  = true;
+		bUseDither           = true;
+		iSwapEffect          = SWAPEFFECT_Discard;
+		bExclusiveFS         = false;
+		bVBlankBeforePresent = false;
+		bHdrPassthrough      = true;
+		bHdrToggleDisplay    = true;
+		bConvertToSdr        = true;
 	}
 };
 
