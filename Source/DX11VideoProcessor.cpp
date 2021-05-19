@@ -2994,6 +2994,33 @@ HRESULT CDX11VideoProcessor::AddPostScaleShader(const std::wstring& name, const 
 	return hr;
 }
 
+void CDX11VideoProcessor::UpdateStatsPresent()
+{
+	DXGI_SWAP_CHAIN_DESC1 swapchain_desc;
+	if (m_pDXGISwapChain1 && S_OK == m_pDXGISwapChain1->GetDesc1(&swapchain_desc)) {
+		m_strStatsPresent.assign(L"\nPresentation  : ");
+		if (m_bVBlankBeforePresent && m_pDXGIOutput) {
+			m_strStatsPresent.append(L"wait V-Blank, ");
+		}
+		switch (swapchain_desc.SwapEffect) {
+		case DXGI_SWAP_EFFECT_DISCARD:
+			m_strStatsPresent.append(L"Discard");
+			break;
+		case DXGI_SWAP_EFFECT_SEQUENTIAL:
+			m_strStatsPresent.append(L"Sequential");
+			break;
+		case DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL:
+			m_strStatsPresent.append(L"Flip sequential");
+			break;
+		case DXGI_SWAP_EFFECT_FLIP_DISCARD:
+			m_strStatsPresent.append(L"Flip discard");
+			break;
+		}
+		m_strStatsPresent.append(L", ");
+		m_strStatsPresent.append(DXGIFormatToString(swapchain_desc.Format));
+	}
+}
+
 void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
@@ -3039,27 +3066,9 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 			m_strStatsHDR.clear();
 		}
 
-		DXGI_SWAP_CHAIN_DESC1 swapchain_desc;
-		if (m_pDXGISwapChain1 && S_OK == m_pDXGISwapChain1->GetDesc1(&swapchain_desc)) {
-			m_strStatsPresent.assign(L"\nPresentation  : ");
-			switch (swapchain_desc.SwapEffect) {
-			case DXGI_SWAP_EFFECT_DISCARD:
-				m_strStatsPresent.append(L"Discard");
-				break;
-			case DXGI_SWAP_EFFECT_SEQUENTIAL:
-				m_strStatsPresent.append(L"Sequential");
-				break;
-			case DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL:
-				m_strStatsPresent.append(L"Flip sequential");
-				break;
-			case DXGI_SWAP_EFFECT_FLIP_DISCARD:
-				m_strStatsPresent.append(L"Flip discard");
-				break;
-			}
-			m_strStatsPresent.append(L", ");
-			m_strStatsPresent.append(DXGIFormatToString(swapchain_desc.Format));
-		}
-	} else {
+		UpdateStatsPresent();
+	}
+	else {
 		m_strStatsHeader = L"Error";
 		m_strStatsVProc.clear();
 		m_strStatsInputFmt.clear();

@@ -2561,6 +2561,35 @@ HRESULT CDX9VideoProcessor::TextureResizeShader(
 	return hr;
 }
 
+void CDX9VideoProcessor::UpdateStatsPresent()
+{
+	if (m_d3dpp.SwapEffect) {
+		m_strStatsPresent.assign(L"\nPresentation  : ");
+		if (m_bVBlankBeforePresent) {
+			m_strStatsPresent.append(L"wait V-Blank, ");
+		}
+		switch (m_d3dpp.SwapEffect) {
+		case D3DSWAPEFFECT_DISCARD:
+			m_strStatsPresent.append(L"Discard");
+			break;
+		case D3DSWAPEFFECT_FLIP:
+			m_strStatsPresent.append(L"Flip");
+			break;
+		case D3DSWAPEFFECT_COPY:
+			m_strStatsPresent.append(L"Copy");
+			break;
+		case D3DSWAPEFFECT_OVERLAY:
+			m_strStatsPresent.append(L"Overlay");
+			break;
+		case D3DSWAPEFFECT_FLIPEX:
+			m_strStatsPresent.append(L"FlipEx");
+			break;
+		}
+		m_strStatsPresent.append(L", ");
+		m_strStatsPresent.append(D3DFormatToString(m_d3dpp.BackBufferFormat));
+	}
+}
+
 void CDX9VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
@@ -2601,29 +2630,9 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 			m_strStatsHDR.clear();
 		}
 
-		if (m_d3dpp.SwapEffect) {
-			m_strStatsPresent.assign(L"\nPresentation  : ");
-			switch (m_d3dpp.SwapEffect) {
-			case D3DSWAPEFFECT_DISCARD:
-				m_strStatsPresent.append(L"Discard");
-				break;
-			case D3DSWAPEFFECT_FLIP:
-				m_strStatsPresent.append(L"Flip");
-				break;
-			case D3DSWAPEFFECT_COPY:
-				m_strStatsPresent.append(L"Copy");
-				break;
-			case D3DSWAPEFFECT_OVERLAY:
-				m_strStatsPresent.append(L"Overlay");
-				break;
-			case D3DSWAPEFFECT_FLIPEX:
-				m_strStatsPresent.append(L"FlipEx");
-				break;
-			}
-			m_strStatsPresent.append(L", ");
-			m_strStatsPresent.append(D3DFormatToString(m_d3dpp.BackBufferFormat));
-		}
-	} else {
+		UpdateStatsPresent();
+	}
+	else {
 		m_strStatsHeader = L"Error";
 		m_strStatsVProc.clear();
 		m_strStatsInputFmt.clear();
