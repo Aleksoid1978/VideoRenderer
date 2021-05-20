@@ -2566,7 +2566,7 @@ void CDX9VideoProcessor::UpdateStatsPresent()
 	if (m_d3dpp.SwapEffect) {
 		m_strStatsPresent.assign(L"\nPresentation  : ");
 		if (m_bVBlankBeforePresent) {
-			m_strStatsPresent.append(L"wait V-Blank, ");
+			m_strStatsPresent.append(L"wait VBlank, ");
 		}
 		switch (m_d3dpp.SwapEffect) {
 		case D3DSWAPEFFECT_DISCARD:

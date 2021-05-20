@@ -3000,7 +3000,7 @@ void CDX11VideoProcessor::UpdateStatsPresent()
 	if (m_pDXGISwapChain1 && S_OK == m_pDXGISwapChain1->GetDesc1(&swapchain_desc)) {
 		m_strStatsPresent.assign(L"\nPresentation  : ");
 		if (m_bVBlankBeforePresent && m_pDXGIOutput) {
-			m_strStatsPresent.append(L"wait V-Blank, ");
+			m_strStatsPresent.append(L"wait VBlank, ");
 		}
 		switch (swapchain_desc.SwapEffect) {
 		case DXGI_SWAP_EFFECT_DISCARD:
