@@ -3168,6 +3168,24 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
 	str += fmt::format(L"\nSync offset   : {:+3} ms", (m_RenderStats.syncoffset + 5000) / 10000);
 
+#if SYNC_OFFSET_RANGE
+	{
+		const int* p = m_Syncs.Data();
+		const int* const end = p + m_Syncs.Size();
+		int so_min;
+		int so_max = so_min = *(p++);
+		while (p < end) {
+			auto so = *(p++);
+			if (so > so_max) {
+				so_max = so;
+			}
+			else if (so < so_min) {
+				so_min = so;
+			}
+		}
+		str += fmt::format(L", min={:+3}, max={:+3}, range={:3}", (so_min + 5000) / 10000, (so_max + 5000) / 10000, (so_max - so_min + 5000) / 10000);
+	}
+#endif
 #if TEST_TICKS
 	str += fmt::format(L"\n1:{:6.3f}, 2:{:6.3f}, 3:{:6.3f}, 4:{:6.3f}, 5:{:6.3f}, 6:{:6.3f} ms",
 		m_RenderStats.t1 * 1000 / GetPreciseTicksPerSecond(),

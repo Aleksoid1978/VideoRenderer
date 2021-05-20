@@ -22,6 +22,7 @@
 
 #include "Times.h"
 
+#define SYNC_OFFSET_RANGE 0
 #define TEST_TICKS 0
 
 template<typename T, unsigned count> class CFrameTimestamps {
