@@ -1202,7 +1202,12 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 	}
 
 	m_RenderStats.syncoffset = rtClock - rtStart;
-	m_Syncs.Add((int)std::clamp(m_RenderStats.syncoffset, -UNITS, UNITS));
+
+	int so = (int)std::clamp(m_RenderStats.syncoffset, -UNITS, UNITS);
+#if SYNC_OFFSET_EX
+	m_SyncDevs.Add(so - m_Syncs.Last());
+#endif
+	m_Syncs.Add(so);
 
 	if (m_bDoubleFrames) {
 		if (rtEnd < rtClock) {
@@ -1218,7 +1223,12 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 
 		rtStart += rtFrameDur / 2;
 		m_RenderStats.syncoffset = rtClock - rtStart;
-		m_Syncs.Add((int)std::clamp(m_RenderStats.syncoffset, -UNITS, UNITS));
+
+		so = (int)std::clamp(m_RenderStats.syncoffset, -UNITS, UNITS);
+#if SYNC_OFFSET_EX
+		m_SyncDevs.Add(so - m_Syncs.Last());
+#endif
+		m_Syncs.Add(so);
 	}
 
 	return hr;
@@ -2731,22 +2741,15 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
 	str += fmt::format(L"\nSync offset   : {:+3} ms", (m_RenderStats.syncoffset + 5000) / 10000);
 
-#if SYNC_OFFSET_RANGE
+#if SYNC_OFFSET_EX
 	{
-		const int* p = m_Syncs.Data();
-		const int* const end = p + m_Syncs.Size();
-		int so_min;
-		int so_max = so_min = *(p++);
-		while (p < end) {
-			auto so = *(p++);
-			if (so > so_max) {
-				so_max = so;
-			}
-			else if (so < so_min) {
-				so_min = so;
-			}
-		}
-		str += fmt::format(L", min={:+3}, max={:+3}, range={:3}", (so_min + 5000) / 10000, (so_max + 5000) / 10000, (so_max - so_min + 5000) / 10000);
+		const auto [so_min, so_max] = m_Syncs.MinMax();
+		const auto [sod_min, sod_max] = m_SyncDevs.MinMax();
+		str += fmt::format(L", range[{:+3.0f};{:+3.0f}], max change{:+3.0f}/{:+3.0f}",
+			so_min / 10000.0f,
+			so_max / 10000.0f,
+			sod_min / 10000.0f,
+			sod_max / 10000.0f);
 	}
 #endif
 #if TEST_TICKS

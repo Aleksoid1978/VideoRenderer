@@ -124,6 +124,9 @@ protected:
 
 	// Graph of a function
 	CMovingAverage<int> m_Syncs = CMovingAverage<int>(120);
+#if SYNC_OFFSET_EX
+	CMovingAverage<int> m_SyncDevs = CMovingAverage<int>(m_Syncs.Size()-1);
+#endif
 	int m_Xstep  = 4;
 	int m_Yscale = 2;
 	RECT m_GraphRect = {};

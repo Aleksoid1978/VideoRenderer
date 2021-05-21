@@ -22,7 +22,7 @@
 
 #include "Times.h"
 
-#define SYNC_OFFSET_RANGE 0
+#define SYNC_OFFSET_EX 0
 #define TEST_TICKS 0
 
 template<typename T, unsigned count> class CFrameTimestamps {
@@ -177,6 +177,7 @@ template<typename T> class CMovingAverage
 private:
 	std::vector<T> fifo;
 	unsigned oldestIndex = 0;
+	unsigned lastIndex = 0;
 	T        sum         = 0;
 
 public:
@@ -188,14 +189,24 @@ public:
 	void Add(T sample) {
 		sum = sum + sample - fifo[oldestIndex];
 		fifo[oldestIndex] = sample;
+		lastIndex = oldestIndex;
 		oldestIndex++;
 		if (oldestIndex == fifo.size()) {
 			oldestIndex = 0;
 		}
 	}
 
+	T Last() {
+		return fifo[lastIndex];
+	}
+
 	T Average() {
 		return sum / fifo.size();
+	}
+
+	std::pair<T, T> MinMax() {
+		const auto [min_e, max_e] = minmax_element(fifo.begin(), fifo.end());
+		return { *min_e, *max_e };
 	}
 
 	T* Data() {
