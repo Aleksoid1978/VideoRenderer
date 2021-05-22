@@ -1,5 +1,5 @@
 @ECHO OFF
-REM (C) 2015-2019 see Authors.txt
+REM (C) 2015-2021 see Authors.txt
 REM
 REM This file is part of MPC-BE.
 REM
@@ -42,7 +42,10 @@ CALL "%VCVARS%" -no_logo -arch=x86
 TITLE Signing "%*"...
 ECHO. & ECHO Signing "%*"...
 
-FOR /F "delims=" %%A IN (%~dp0signinfo.txt) DO (SET "SIGN_CMD=%%A" && CALL :SIGN %*)
+FOR /F "delims=" %%A IN (%~dp0signinfo.txt) DO (
+  SET "SIGN_CMD=%%A"
+  CALL :SIGN %*
+)
 
 :END
 ENDLOCAL

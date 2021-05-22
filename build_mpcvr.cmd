@@ -16,6 +16,7 @@ REM
 REM You should have received a copy of the GNU General Public License
 REM along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+SETLOCAL
 CD /D %~dp0
 
 SET "MSBUILD_SWITCHES=/nologo /consoleloggerparameters:Verbosity=minimal /maxcpucount /nodeReuse:true"
@@ -58,11 +59,14 @@ CD /D %~dp0
 CALL :SubCompiling x64
 
 IF /I "%SIGN%" == "True" (
-  SETLOCAL ENABLEDELAYEDEXPANSION
   SET FILES="%~dp0_bin\Filter_x86%SUFFIX%\MpcVideoRenderer.ax" "%~dp0_bin\Filter_x64%SUFFIX%\MpcVideoRenderer64.ax"
-  CALL "%~dp0\sign.cmd" !FILES! || (CALL :SubMsg "ERROR" "Problem signing !FILES!" & EXIT /B)
-  CALL :SubMsg "INFO" "!FILES! signed successfully."
-  ENDLOCAL
+  CALL "%~dp0\sign.cmd" %%FILES%%
+  IF %ERRORLEVEL% NEQ 0 (
+    CALL :SubMsg "ERROR" "Problem signing files."
+  ) ELSE (
+    CALL :SubMsg "INFO" "Files signed successfully."
+    PAUSE
+  )
 )
 
 FOR /F "tokens=3,4 delims= " %%A IN (
@@ -114,6 +118,7 @@ IF DEFINED SEVENZIP (
 
 TITLE Compiling MPC Video Renderer [FINISHED]
 TIMEOUT /T 3
+ENDLOCAL
 EXIT
 
 :SubVSPath
@@ -158,6 +163,7 @@ ECHO ------------------------------ & ECHO.
 IF /I "%~1" == "ERROR" (
   ECHO Press any key to close this window...
   PAUSE >NUL
+  ENDLOCAL
   EXIT
 ) ELSE (
   EXIT /B
