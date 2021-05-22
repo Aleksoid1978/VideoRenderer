@@ -65,7 +65,6 @@ IF /I "%SIGN%" == "True" (
     CALL :SubMsg "ERROR" "Problem signing files."
   ) ELSE (
     CALL :SubMsg "INFO" "Files signed successfully."
-    PAUSE
   )
 )
 
