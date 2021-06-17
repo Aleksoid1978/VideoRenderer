@@ -19,6 +19,9 @@ REM along with this program.  If not, see <http://www.gnu.org/licenses/>.
 SETLOCAL
 CD /D %~dp0
 
+SET "TITLE=MPC Video Renderer"
+SET "PROJECT=MpcVideoRenderer"
+
 SET "MSBUILD_SWITCHES=/nologo /consoleloggerparameters:Verbosity=minimal /maxcpucount /nodeReuse:true"
 SET "BUILDTYPE=Build"
 SET "BUILDCFG=Release"
@@ -59,7 +62,7 @@ CD /D %~dp0
 CALL :SubCompiling x64
 
 IF /I "%SIGN%" == "True" (
-  SET FILES="%~dp0_bin\Filter_x86%SUFFIX%\MpcVideoRenderer.ax" "%~dp0_bin\Filter_x64%SUFFIX%\MpcVideoRenderer64.ax"
+  SET FILES="%~dp0_bin\Filter_x86%SUFFIX%\%PROJECT%.ax" "%~dp0_bin\Filter_x64%SUFFIX%\%PROJECT%64.ax"
   CALL "%~dp0\sign.cmd" %%FILES%%
   IF %ERRORLEVEL% NEQ 0 (
     CALL :SubMsg "ERROR" "Problem signing files."
@@ -86,12 +89,12 @@ FOR /F "tokens=3,4 delims= " %%A IN (
   'FINDSTR /I /L /C:"define REV_BRANCH" "revision.h"') DO (SET "REVBRANCH=%%A")
 
 IF /I "%VERRELEASE%" == "1" (
-  SET "PCKG_NAME=MPCVideoRenderer-%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%%SUFFIX%"
+  SET "PCKG_NAME=%PROJECT%-%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%%SUFFIX%"
 ) ELSE (
   IF /I "%REVBRANCH%" == "master" (
-    SET "PCKG_NAME=MPCVideoRenderer-%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%_git%REVDATE%-%REVHASH%%SUFFIX%"
+    SET "PCKG_NAME=%PROJECT%-%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%_git%REVDATE%-%REVHASH%%SUFFIX%"
   ) ELSE (
-    SET "PCKG_NAME=MPCVideoRenderer-%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%.%REVBRANCH%_git%REVDATE%-%REVHASH%%SUFFIX%"
+    SET "PCKG_NAME=%PROJECT%-%VERMAJOR%.%VERMINOR%.%VERBUILD%.%REVNUM%.%REVBRANCH%_git%REVDATE%-%REVHASH%%SUFFIX%"
   )
 )
 
@@ -101,8 +104,8 @@ IF DEFINED SEVENZIP (
 
     TITLE Creating archive %PCKG_NAME%.zip...
     START "7z" /B /WAIT "%SEVENZIP%" a -tzip -mx9 "_bin\%PCKG_NAME%.zip" ^
-.\_bin\Filter_x86%SUFFIX%\MpcVideoRenderer.ax ^
-.\_bin\Filter_x64%SUFFIX%\MpcVideoRenderer64.ax ^
+.\_bin\Filter_x86%SUFFIX%\%PROJECT%.ax ^
+.\_bin\Filter_x64%SUFFIX%\%PROJECT%64.ax ^
 .\distrib\Install_MPCVR_32.cmd ^
 .\distrib\Install_MPCVR_64.cmd ^
 .\distrib\Uninstall_MPCVR_32.cmd ^
@@ -115,7 +118,7 @@ IF DEFINED SEVENZIP (
     CALL :SubMsg "INFO" "%PCKG_NAME%.zip successfully created"
 )
 
-TITLE Compiling MPC Video Renderer [FINISHED]
+TITLE Compiling %TITLE% [FINISHED]
 TIMEOUT /T 3
 ENDLOCAL
 EXIT
@@ -137,15 +140,15 @@ FOR /F "tokens=2*" %%A IN (
 EXIT /B
 
 :SubCompiling
-TITLE Compiling MPC Video Renderer - %BUILDCFG%^|%1...
-MSBuild.exe MpcVideoRenderer.sln %MSBUILD_SWITCHES%^
+TITLE Compiling %TITLE% - %BUILDCFG%^|%1...
+MSBuild.exe %PROJECT%.sln %MSBUILD_SWITCHES%^
  /target:%BUILDTYPE% /p:Configuration="%BUILDCFG%" /p:Platform=%1^
  /flp1:LogFile=%LOG_DIR%\errors_%BUILDCFG%_%1.log;errorsonly;Verbosity=diagnostic^
  /flp2:LogFile=%LOG_DIR%\warnings_%BUILDCFG%_%1.log;warningsonly;Verbosity=diagnostic
 IF %ERRORLEVEL% NEQ 0 (
-  CALL :SubMsg "ERROR" "MpcVideoRenderer.sln %BUILDCFG% %1 - Compilation failed!"
+  CALL :SubMsg "ERROR" "%PROJECT%.sln %BUILDCFG% %1 - Compilation failed!"
 ) ELSE (
-  CALL :SubMsg "INFO" "MpcVideoRenderer.sln %BUILDCFG% %1 compiled successfully"
+  CALL :SubMsg "INFO" "%PROJECT%.sln %BUILDCFG% %1 compiled successfully"
 )
 EXIT /B
 
