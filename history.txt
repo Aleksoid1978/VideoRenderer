@@ -1,3 +1,7 @@
+v0.5.5
+------------------------
+
+
 v0.5.4.1723 - 2021.06.23
 ------------------------
 Fixed dithering when outputting 10-bit for DX11 mode.
