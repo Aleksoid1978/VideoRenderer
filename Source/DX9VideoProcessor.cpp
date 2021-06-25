@@ -1407,6 +1407,10 @@ HRESULT CDX9VideoProcessor::Render(int field)
 
 	CComPtr<IDirect3DSurface9> pBackBuffer;
 	hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+	if (FAILED(hr)) {
+		DLog(L"CDX9VideoProcessor::Render() : GetBackBuffer() failed with error {}", HR2Str(hr));
+		return hr;
+	}
 
 	// fill the BackBuffer with black
 	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
@@ -1502,6 +1506,10 @@ HRESULT CDX9VideoProcessor::FillBlack()
 
 	CComPtr<IDirect3DSurface9> pBackBuffer;
 	hr = m_pD3DDevEx->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+	if (FAILED(hr)) {
+		DLog(L"CDX9VideoProcessor::Render() : FillBlack() failed with error {}", HR2Str(hr));
+		return hr;
+	}
 
 	hr = m_pD3DDevEx->SetRenderTarget(0, pBackBuffer);
 	m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
