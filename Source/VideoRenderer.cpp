@@ -434,6 +434,31 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 {
 	CheckPointer(pSample, E_POINTER);
 
+	if (m_bCheckSubInvAlpha) {
+		m_bCheckSubInvAlpha = true;
+
+		if (m_VideoProcessor->Type() == VP_DX11) {
+			// only one check for XySubFilter in the graph after playback starts
+			m_bSubInvAlpha = false;
+			IEnumFilters* pEnumFilters = nullptr;
+			if (m_pGraph && SUCCEEDED(m_pGraph->EnumFilters(&pEnumFilters))) {
+				for (IBaseFilter* pBaseFilter = nullptr; S_OK == pEnumFilters->Next(1, &pBaseFilter, 0); ) {
+					GUID clsid;
+					if (SUCCEEDED(pBaseFilter->GetClassID(&clsid))
+							&& (clsid == CLSID_XySubFilter || clsid == CLSID_XySubFilter_AutoLoader)) {
+						m_bSubInvAlpha = true;
+					}
+					SAFE_RELEASE(pBaseFilter);
+
+					if (m_bSubInvAlpha) {
+						break;
+					}
+				}
+				SAFE_RELEASE(pEnumFilters);
+			}
+		}
+	}
+
 	HRESULT hr = m_VideoProcessor->ProcessSample(pSample);
 
 	if (SUCCEEDED(hr)) {
@@ -606,30 +631,6 @@ STDMETHODIMP CMpcVideoRenderer::Run(REFERENCE_TIME rtStart)
 
 	CAutoLock cVideoLock(&m_InterfaceLock);
 	m_filterState = State_Running;
-
-	if (m_VideoProcessor->Type() == VP_DX11) {
-		if (!m_bCheckSubInvAlpha) {
-			// only one check for XySubFilter in the graph after playback starts
-			m_bCheckSubInvAlpha = true;
-			m_bSubInvAlpha = false;
-			IEnumFilters *pEnumFilters = nullptr;
-			if (m_pGraph && SUCCEEDED(m_pGraph->EnumFilters(&pEnumFilters))) {
-				for (IBaseFilter *pBaseFilter = nullptr; S_OK == pEnumFilters->Next(1, &pBaseFilter, 0); ) {
-					GUID clsid;
-					if (SUCCEEDED(pBaseFilter->GetClassID(&clsid)) && (clsid == CLSID_XySubFilter || clsid == CLSID_XySubFilter_AutoLoader)) {
-						m_bSubInvAlpha = true;
-					}
-					SAFE_RELEASE(pBaseFilter);
-
-					if (m_bSubInvAlpha) {
-						break;
-					}
-				}
-				SAFE_RELEASE(pEnumFilters);
-			}
-		}
-	}
-	m_VideoProcessor->Start();
 
 	return CBaseVideoRenderer2::Run(rtStart);
 }
