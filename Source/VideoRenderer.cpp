@@ -434,7 +434,7 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 {
 	CheckPointer(pSample, E_POINTER);
 
-	if (m_bCheckSubInvAlpha) {
+	if (!m_bCheckSubInvAlpha) {
 		m_bCheckSubInvAlpha = true;
 
 		if (m_VideoProcessor->Type() == VP_DX11) {
