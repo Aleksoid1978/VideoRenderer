@@ -84,6 +84,7 @@ struct Settings_t {
 	int  iSwapEffect;
 	bool bExclusiveFS;
 	bool bVBlankBeforePresent;
+	bool bReinitByDisplay;
 	bool bHdrPassthrough;
 	bool bHdrToggleDisplay;
 	bool bConvertToSdr;
@@ -111,6 +112,7 @@ struct Settings_t {
 		iSwapEffect          = SWAPEFFECT_Discard;
 		bExclusiveFS         = false;
 		bVBlankBeforePresent = false;
+		bReinitByDisplay     = false;
 		bHdrPassthrough      = true;
 		bHdrToggleDisplay    = true;
 		bConvertToSdr        = true;

@@ -49,6 +49,7 @@
 #define OPT_SwapEffect           L"SwapEffect"
 #define OPT_ExclusiveFullscreen  L"ExclusiveFullscreen"
 #define OPT_VBlankBeforePresent  L"VBlankBeforePresent"
+#define OPT_ReinitByDisplay      L"ReinitWhenChangingDisplay"
 #define OPT_HdrPassthrough       L"HdrPassthrough"
 #define OPT_HdrToggleDisplay     L"HdrToggleDisplay"
 #define OPT_ConvertToSdr         L"ConvertToSdr"
@@ -209,6 +210,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VBlankBeforePresent, dw)) {
 			m_Sets.bVBlankBeforePresent = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ReinitByDisplay, dw)) {
+			m_Sets.bReinitByDisplay = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrPassthrough, dw)) {
 			m_Sets.bHdrPassthrough = !!dw;
@@ -590,10 +594,17 @@ void CMpcVideoRenderer::OnWindowMove()
 	if (GetActive()) {
 		const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 		if (hMon != m_hMon) {
-			if (m_VideoProcessor->Type() == VP_DX11) {
+			if (m_Sets.bReinitByDisplay) {
 				CAutoLock cRendererLock(&m_RendererLock);
 
-				m_VideoProcessor->Reset();
+				Init(true);
+			}
+			else {
+				if (m_VideoProcessor->Type() == VP_DX11) {
+					CAutoLock cRendererLock(&m_RendererLock);
+
+					m_VideoProcessor->Reset();
+				}
 			}
 
 			m_hMon = hMon;
@@ -1187,7 +1198,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_Dither,              m_Sets.bUseDither);
 		key.SetDWORDValue(OPT_SwapEffect,          m_Sets.iSwapEffect);
 		key.SetDWORDValue(OPT_ExclusiveFullscreen, m_Sets.bExclusiveFS);
-		key.SetDWORDValue(OPT_VBlankBeforePresent, m_Sets.bVBlankBeforePresent);
+		key.SetDWORDValue(OPT_ReinitByDisplay,     m_Sets.bReinitByDisplay);
 		key.SetDWORDValue(OPT_HdrPassthrough,      m_Sets.bHdrPassthrough);
 		key.SetDWORDValue(OPT_HdrToggleDisplay,    m_Sets.bHdrToggleDisplay);
 		key.SetDWORDValue(OPT_ConvertToSdr,        m_Sets.bConvertToSdr);
