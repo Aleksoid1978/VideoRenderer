@@ -599,12 +599,10 @@ void CMpcVideoRenderer::OnWindowMove()
 
 				Init(true);
 			}
-			else {
-				if (m_VideoProcessor->Type() == VP_DX11) {
-					CAutoLock cRendererLock(&m_RendererLock);
+			else if (m_VideoProcessor->Type() == VP_DX11) {
+				CAutoLock cRendererLock(&m_RendererLock);
 
-					m_VideoProcessor->Reset();
-				}
+				m_VideoProcessor->Reset();
 			}
 
 			m_hMon = hMon;
