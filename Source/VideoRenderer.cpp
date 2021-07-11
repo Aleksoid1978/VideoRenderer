@@ -1196,6 +1196,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_Dither,              m_Sets.bUseDither);
 		key.SetDWORDValue(OPT_SwapEffect,          m_Sets.iSwapEffect);
 		key.SetDWORDValue(OPT_ExclusiveFullscreen, m_Sets.bExclusiveFS);
+		key.SetDWORDValue(OPT_VBlankBeforePresent, m_Sets.bVBlankBeforePresent);
 		key.SetDWORDValue(OPT_ReinitByDisplay,     m_Sets.bReinitByDisplay);
 		key.SetDWORDValue(OPT_HdrPassthrough,      m_Sets.bHdrPassthrough);
 		key.SetDWORDValue(OPT_HdrToggleDisplay,    m_Sets.bHdrToggleDisplay);

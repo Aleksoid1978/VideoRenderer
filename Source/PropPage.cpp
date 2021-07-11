@@ -129,9 +129,6 @@ void CVRMainPPage::EnableControls()
 		GetDlgItem(IDC_STATIC3).EnableWindow(bEnable);
 		GetDlgItem(IDC_COMBO4).EnableWindow(bEnable);
 	}
-#ifndef _DEBUG
-	GetDlgItem(IDC_CHECK16).EnableWindow(FALSE);
-#endif
 }
 
 HRESULT CVRMainPPage::OnConnect(IUnknown *pUnk)
