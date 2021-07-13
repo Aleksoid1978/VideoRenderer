@@ -420,6 +420,8 @@ HRESULT CVRInfoPPage::OnActivate()
 	// set m_hWnd for CWindow
 	m_hWnd = m_hwnd;
 
+	SetDlgItemTextW(IDC_EDIT2, GetNameAndVersion());
+
 	// init monospace font
 	LOGFONTW lf = {};
 	HDC hdc = GetWindowDC();
@@ -476,8 +478,6 @@ HRESULT CVRInfoPPage::OnActivate()
 #endif
 
 	SetDlgItemTextW(IDC_EDIT1, strInfo.c_str());
-
-	SetDlgItemTextW(IDC_EDIT2, GetNameAndVersion());
 
 	return S_OK;
 }

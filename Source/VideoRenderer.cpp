@@ -1132,7 +1132,7 @@ STDMETHODIMP CMpcVideoRenderer::GetPages(CAUUID* pPages)
 	}
 
 	pPages->pElems[0] = __uuidof(CVRMainPPage);
-	if (GetActive()) {
+	if (pPages->cElems == 3) {
 		pPages->pElems[1] = __uuidof(CVRInfoPPage);
 		pPages->pElems[2] = guidQualityPPage;
 	}
