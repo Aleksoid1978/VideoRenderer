@@ -81,7 +81,7 @@ public:
 		DeleteObject(m_hBitmap);
 	}
 
-	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, DWORD fontFlags, const WCHAR* chars, UINT lenght)
+	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, UINT fontFlags, const WCHAR* chars, UINT lenght)
 	{
 		DeleteObject(m_hBitmap);
 		m_pBitmapBits = nullptr;
@@ -89,16 +89,16 @@ public:
 
 		HRESULT hr = S_OK;
 
-		// Create a font.  By specifying ANTIALIASED_QUALITY, we might get an
+		// Create a font. By specifying ANTIALIASED_QUALITY, we might get an
 		// antialiased font, but this is not guaranteed.
-		int nHeight    = -(int)(fontHeight);
-		DWORD dwBold   = (fontFlags & D3DFONT_BOLD)   ? FW_BOLD : FW_NORMAL;
-		DWORD dwItalic = (fontFlags & D3DFONT_ITALIC) ? TRUE    : FALSE;
-
-		HFONT hFont = CreateFontW(nHeight, 0, 0, 0, dwBold, dwItalic,
-			FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+		HFONT hFont = CreateFontW(
+			fontHeight, 0, 0, 0,
+			(fontFlags & D3DFONT_BOLD)   ? FW_BOLD : FW_NORMAL,
+			(fontFlags & D3DFONT_ITALIC) ? TRUE    : FALSE,
+			FALSE, FALSE,
+			DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
 			CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
-			VARIABLE_PITCH, fontName);
+			DEFAULT_PITCH, fontName);
 
 		HDC hDC = CreateCompatibleDC(nullptr);
 		SetMapMode(hDC, MM_TEXT);
@@ -325,7 +325,7 @@ public:
 		m_pD2D1Factory.Release();
 	}
 
-	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, DWORD fontFlags, const WCHAR* chars, UINT lenght)
+	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, UINT fontFlags, const WCHAR* chars, UINT lenght)
 	{
 		if (!m_pWICFactory) {
 			return E_ABORT;

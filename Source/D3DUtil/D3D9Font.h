@@ -1,5 +1,5 @@
 /*
- * (C) 2019-2020 see Authors.txt
+ * (C) 2019-2021 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -30,8 +30,8 @@ class CD3D9Font
 {
 	// Font properties
 	std::wstring m_strFontName;
-	DWORD m_dwFontHeight = 0;
-	DWORD m_dwFontFlags  = 0;
+	UINT m_fontHeight = 0;
+	UINT m_fontFlags  = 0;
 
 	WCHAR m_Characters[128];
 	FloatRect m_fTexCoords[128] = {};
@@ -58,7 +58,7 @@ public:
 	HRESULT InitDeviceObjects(IDirect3DDevice9* pd3dDevice);
 	void InvalidateDeviceObjects();
 
-	HRESULT CreateFontBitmap(const WCHAR* strFontName, const DWORD dwHeight, const DWORD dwFlags);
+	HRESULT CreateFontBitmap(const WCHAR* strFontName, const UINT fontHeight, const UINT fontFlags);
 
 	SIZE GetMaxCharMetric();
 
@@ -66,5 +66,5 @@ public:
 	HRESULT GetTextExtent(const WCHAR* strText, SIZE* pSize);
 
 	// 2D text drawing function
-	HRESULT Draw2DText(float sx, float sy, const D3DCOLOR color, const WCHAR* strText, const DWORD dwFlags=0L);
+	HRESULT Draw2DText(float sx, float sy, const D3DCOLOR color, const WCHAR* strText, const UINT flags=0L);
 };
