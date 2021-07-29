@@ -1,5 +1,5 @@
 /*
- * (C) 2019-2020 see Authors.txt
+ * (C) 2019-2021 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -197,23 +197,23 @@ void CD3D11Font::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pDevice);
 }
 
-HRESULT CD3D11Font::CreateFontBitmap(const WCHAR* strFontName, const DWORD dwHeight, const DWORD dwFlags)
+HRESULT CD3D11Font::CreateFontBitmap(const WCHAR* strFontName, const UINT fontHeight, const UINT fontFlags)
 {
 	if (!m_pDevice) {
 		return E_ABORT;
 	}
 
-	if (m_pTexture && dwHeight == m_dwFontHeight && dwFlags == m_dwFontFlags && m_strFontName.compare(strFontName) == 0) {
+	if (m_pTexture && fontHeight == m_fontHeight && fontFlags == m_fontFlags && m_strFontName.compare(strFontName) == 0) {
 		return S_FALSE;
 	}
 
 	m_strFontName  = strFontName;
-	m_dwFontHeight = dwHeight;
-	m_dwFontFlags  = dwFlags;
+	m_fontHeight = fontHeight;
+	m_fontFlags  = fontFlags;
 
 	CFontBitmap fontBitmap;
 
-	HRESULT hr = fontBitmap.Initialize(m_strFontName.c_str(), m_dwFontHeight, 0, m_Characters, std::size(m_Characters));
+	HRESULT hr = fontBitmap.Initialize(m_strFontName.c_str(), m_fontHeight, 0, m_Characters, std::size(m_Characters));
 	if (FAILED(hr)) {
 		return hr;
 	}

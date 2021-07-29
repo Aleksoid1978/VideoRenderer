@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2020 see Authors.txt
+* (C) 2019-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -24,7 +24,9 @@
 
 #ifndef FONTBITMAP_MODE
 #define FONTBITMAP_MODE 2
-// 0 - GDI, 1 - GDI+ (no longer supported), 2 - DirectWrite
+// 0 - GDI
+// 1 - GDI+ (no longer supported)
+// 2 - DirectWrite
 #endif
 
 #define DUMP_BITMAP 0
@@ -62,8 +64,6 @@ inline uint16_t X8R8G8B8toA8L8(uint32_t pix)
 class CFontBitmapGDI
 {
 private:
-	HDC     m_hDC     = nullptr;
-
 	HBITMAP m_hBitmap = nullptr;
 	DWORD* m_pBitmapBits = nullptr;
 	UINT m_bmWidth = 0;
@@ -74,17 +74,14 @@ private:
 public:
 	CFontBitmapGDI()
 	{
-		m_hDC = CreateCompatibleDC(nullptr);
-		SetMapMode(m_hDC, MM_TEXT);
 	}
 
 	~CFontBitmapGDI()
 	{
 		DeleteObject(m_hBitmap);
-		DeleteDC(m_hDC);
 	}
 
-	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, DWORD fontFlags, const WCHAR* chars, UINT lenght)
+	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, UINT fontFlags, const WCHAR* chars, UINT lenght)
 	{
 		DeleteObject(m_hBitmap);
 		m_pBitmapBits = nullptr;
@@ -92,18 +89,20 @@ public:
 
 		HRESULT hr = S_OK;
 
-		// Create a font.  By specifying ANTIALIASED_QUALITY, we might get an
+		// Create a font. By specifying ANTIALIASED_QUALITY, we might get an
 		// antialiased font, but this is not guaranteed.
-		int nHeight    = -(int)(fontHeight);
-		DWORD dwBold   = (fontFlags & D3DFONT_BOLD)   ? FW_BOLD : FW_NORMAL;
-		DWORD dwItalic = (fontFlags & D3DFONT_ITALIC) ? TRUE    : FALSE;
-
-		HFONT hFont = CreateFontW(nHeight, 0, 0, 0, dwBold, dwItalic,
-			FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+		HFONT hFont = CreateFontW(
+			fontHeight, 0, 0, 0,
+			(fontFlags & D3DFONT_BOLD)   ? FW_BOLD : FW_NORMAL,
+			(fontFlags & D3DFONT_ITALIC) ? TRUE    : FALSE,
+			FALSE, FALSE,
+			DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
 			CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
-			VARIABLE_PITCH, fontName);
+			DEFAULT_PITCH, fontName);
 
-		HFONT hFontOld = (HFONT)SelectObject(m_hDC, hFont);
+		HDC hDC = CreateCompatibleDC(nullptr);
+		SetMapMode(hDC, MM_TEXT);
+		HFONT hFontOld = (HFONT)SelectObject(hDC, hFont);
 
 		std::vector<SIZE> charSizes;
 		charSizes.reserve(lenght);
@@ -111,7 +110,7 @@ public:
 		LONG maxWidth = 0;
 		LONG maxHeight = 0;
 		for (UINT i = 0; i < lenght; i++) {
-			if (GetTextExtentPoint32W(m_hDC, &chars[i], 1, &size) == FALSE) {
+			if (GetTextExtentPoint32W(hDC, &chars[i], 1, &size) == FALSE) {
 				hr = E_FAIL;
 				break;
 			}
@@ -154,15 +153,15 @@ public:
 			bmi.bmiHeader.biBitCount    = 32;
 
 			// Create a bitmap for the font
-			m_hBitmap = CreateDIBSection(m_hDC, &bmi, DIB_RGB_COLORS, (void**)&m_pBitmapBits, nullptr, 0);
+			m_hBitmap = CreateDIBSection(hDC, &bmi, DIB_RGB_COLORS, (void**)&m_pBitmapBits, nullptr, 0);
 			m_bmWidth = bmWidth;
 			m_bmHeight = bmHeight;
 
-			HGDIOBJ m_hBitmapOld = SelectObject(m_hDC, m_hBitmap);
+			HGDIOBJ m_hBitmapOld = SelectObject(hDC, m_hBitmap);
 
-			SetTextColor(m_hDC, RGB(255, 255, 255));
-			SetBkColor(m_hDC, 0x00000000);
-			SetTextAlign(m_hDC, TA_TOP);
+			SetTextColor(hDC, RGB(255, 255, 255));
+			SetBkColor(hDC, 0x00000000);
+			SetTextAlign(hDC, TA_TOP);
 
 			UINT idx = 0;
 			for (UINT y = 0; y < lines; y++) {
@@ -172,7 +171,7 @@ public:
 					}
 					UINT X = x * stepX + 1;
 					UINT Y = y * stepY;
-					if (ExtTextOutW(m_hDC, X, Y, ETO_OPAQUE, nullptr, &chars[idx], 1, nullptr) == FALSE) {
+					if (ExtTextOutW(hDC, X, Y, ETO_OPAQUE, nullptr, &chars[idx], 1, nullptr) == FALSE) {
 						hr = E_FAIL;
 						break;
 					}
@@ -188,11 +187,12 @@ public:
 			}
 			GdiFlush();
 
-			SelectObject(m_hDC, m_hBitmapOld);
+			SelectObject(hDC, m_hBitmapOld);
 		}
 
-		SelectObject(m_hDC, hFontOld);
+		SelectObject(hDC, hFontOld);
 		DeleteObject(hFont);
+		DeleteDC(hDC);
 
 		// set transparency
 		const UINT nPixels = m_bmWidth * m_bmHeight;
@@ -325,7 +325,7 @@ public:
 		m_pD2D1Factory.Release();
 	}
 
-	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, DWORD fontFlags, const WCHAR* chars, UINT lenght)
+	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, UINT fontFlags, const WCHAR* chars, UINT lenght)
 	{
 		if (!m_pWICFactory) {
 			return E_ABORT;
