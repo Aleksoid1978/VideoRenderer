@@ -28,15 +28,8 @@
 #include "DX9VideoProcessor.h"
 #include "DX11VideoProcessor.h"
 #include "../Include/ISubRender.h"
+#include "../Include/ID3DFullscreenControl.h"
 #include "../Include/FilterInterfacesImpl.h"
-
-// Set and query D3DFullscreen mode.
-interface __declspec(uuid("8EA1E899-B77D-4777-9F0E-66421BEA50F8"))
-ID3DFullscreenControl :
-public IUnknown {
-	STDMETHOD(SetD3DFullscreen)(bool fEnabled) PURE;
-	STDMETHOD(GetD3DFullscreen)(bool* pfEnabled) PURE;
-};
 
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_YV12},
