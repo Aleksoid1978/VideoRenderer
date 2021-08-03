@@ -21,7 +21,7 @@ float4 main(PS_INPUT input) : SV_Target
 {
     float2 pos = (input.Tex) * wh - 0.5;
     float2 t = frac(pos);         // calculate the difference between the output pixel and the original surrounding two pixels
-    pos = (pos - t + 0.5) * dxdy; // adjust sampling matrix to put the ouput pixel in the interval [Q1, Q2)
+    pos = (pos - t + 0.5) * dxdy; // adjust sampling matrix to put the output pixel in the interval [Q1, Q2)
 
     // weights
     float2 t2 = t * t;
