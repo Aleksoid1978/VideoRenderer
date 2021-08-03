@@ -21,7 +21,7 @@ Improved compatibility with PotPlayer.
 Added GetBool("doubleRate") command to get information about doubling frames. This is possible when deinterlacing is used.
 Fixed work of the debug version on systems without Windows SDK.
 Fixed crashes when working with some external filters.
-Added experimental option "Wait for V-Blank before Present". 
+Added experimental option "Wait for V-Blank before Present".
 Recommended version of MPC-BE 1.5.7.6180 or later.
 
 v0.5.2.1607 - 2021.01.15
