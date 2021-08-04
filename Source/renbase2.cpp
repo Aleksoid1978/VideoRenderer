@@ -74,8 +74,8 @@ HRESULT CBaseVideoRenderer2::ResetStreamingTimes()
     m_iTotAcc = 0;
     m_iSumSqAcc = 0;
     m_iSumSqFrameTime = 0;
-    m_trFrame = 0;          // hygeine - not really needed
-    m_trLate = 0;           // hygeine - not really needed
+    m_trFrame = 0;          // hygiene - not really needed
+    m_trLate = 0;           // hygiene - not really needed
     m_iSumFrameTime = 0;
     m_nNormal = 0;
     m_trEarliness = 0;
@@ -281,7 +281,7 @@ STDMETHODIMP CBaseVideoRenderer2::Notify( IBaseFilter * pSelf, Quality q)
 {
     // NOTE:  We are NOT getting any locks here.  We could be called
     // asynchronously and possibly even on a time critical thread of
-    // someone else's - so we do the minumum.  We only set one state
+    // someone else's - so we do the minimum.  We only set one state
     // variable (an integer) and if that happens to be in the middle
     // of another thread reading it they will just get either the new
     // or the old value.  Locking would achieve no more than this.
@@ -535,7 +535,7 @@ HRESULT CBaseVideoRenderer2::ShouldDrawSampleNow(IMediaSample *pMediaSample,
     {
         // We need to see if the frame rate of the file has just changed.
         // This would make comparing our previous frame rate with the current
-        // frame rate inefficent.  Hang on a moment though.  I've seen files
+        // frame rate inefficient.  Hang on a moment though.  I've seen files
         // where the frames vary between 33 and 34 mSec so as to average
         // 30fps.  A minor variation like that won't hurt us.
         int t = m_trDuration/32;
