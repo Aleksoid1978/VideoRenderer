@@ -81,7 +81,7 @@ public:
 		DeleteObject(m_hBitmap);
 	}
 
-	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, UINT fontFlags, const WCHAR* chars, UINT lenght)
+	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, UINT fontFlags, const WCHAR* chars, UINT length)
 	{
 		DeleteObject(m_hBitmap);
 		m_pBitmapBits = nullptr;
@@ -105,11 +105,11 @@ public:
 		HFONT hFontOld = (HFONT)SelectObject(hDC, hFont);
 
 		std::vector<SIZE> charSizes;
-		charSizes.reserve(lenght);
+		charSizes.reserve(length);
 		SIZE size;
 		LONG maxWidth = 0;
 		LONG maxHeight = 0;
-		for (UINT i = 0; i < lenght; i++) {
+		for (UINT i = 0; i < length; i++) {
 			if (GetTextExtentPoint32W(hDC, &chars[i], 1, &size) == FALSE) {
 				hr = E_FAIL;
 				break;
@@ -133,7 +133,7 @@ public:
 			UINT columns = bmWidth / stepX;
 			UINT lines = bmHeight / stepY;
 
-			while (lenght > lines * columns) {
+			while (length > lines * columns) {
 				if (bmWidth <= bmHeight) {
 					bmWidth *= 2;
 				} else {
@@ -166,7 +166,7 @@ public:
 			UINT idx = 0;
 			for (UINT y = 0; y < lines; y++) {
 				for (UINT x = 0; x < columns; x++) {
-					if (idx >= lenght) {
+					if (idx >= length) {
 						break;
 					}
 					UINT X = x * stepX + 1;
@@ -229,11 +229,11 @@ public:
 		return m_MaxCharMetric;
 	}
 
-	HRESULT GetFloatCoords(FloatRect* pTexCoords, const UINT lenght)
+	HRESULT GetFloatCoords(FloatRect* pTexCoords, const UINT length)
 	{
 		ASSERT(pTexCoords);
 
-		if (!m_hBitmap || !m_pBitmapBits || lenght != m_charCoords.size()) {
+		if (!m_hBitmap || !m_pBitmapBits || length != m_charCoords.size()) {
 			return E_ABORT;
 		}
 
@@ -325,7 +325,7 @@ public:
 		m_pD2D1Factory.Release();
 	}
 
-	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, UINT fontFlags, const WCHAR* chars, UINT lenght)
+	HRESULT Initialize(const WCHAR* fontName, const int fontHeight, UINT fontFlags, const WCHAR* chars, UINT length)
 	{
 		if (!m_pWICFactory) {
 			return E_ABORT;
@@ -350,12 +350,12 @@ public:
 		}
 
 		std::vector<SIZE> charSizes;
-		charSizes.reserve(lenght);
+		charSizes.reserve(length);
 		DWRITE_TEXT_METRICS textMetrics;
 		float maxWidth = 0;
 		float maxHeight = 0;
 
-		for (UINT i = 0; i < lenght; i++) {
+		for (UINT i = 0; i < length; i++) {
 			IDWriteTextLayout* pTextLayout;
 			hr = m_pDWriteFactory->CreateTextLayout(&chars[i], 1, pTextFormat, 0, 0, &pTextLayout);
 			if (S_OK == hr) {
@@ -387,7 +387,7 @@ public:
 			UINT columns = bmWidth / stepX;
 			UINT lines = bmHeight / stepY;
 
-			while (lenght > lines * columns) {
+			while (length > lines * columns) {
 				if (bmWidth <= bmHeight) {
 					bmWidth *= 2;
 				} else {
@@ -412,12 +412,12 @@ public:
 				hr = pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &pD2D1Brush);
 			}
 
-			m_charCoords.reserve(lenght);
+			m_charCoords.reserve(length);
 			pD2D1RenderTarget->BeginDraw();
 			UINT idx = 0;
 			for (UINT y = 0; y < lines; y++) {
 				for (UINT x = 0; x < columns; x++) {
-					if (idx >= lenght) {
+					if (idx >= length) {
 						break;
 					}
 					UINT X = x * stepX + 1;
@@ -487,11 +487,11 @@ public:
 		return m_MaxCharMetric;
 	}
 
-	HRESULT GetFloatCoords(FloatRect* pTexCoords, const UINT lenght)
+	HRESULT GetFloatCoords(FloatRect* pTexCoords, const UINT length)
 	{
 		ASSERT(pTexCoords);
 
-		if (!m_pWICBitmap || lenght != m_charCoords.size()) {
+		if (!m_pWICBitmap || length != m_charCoords.size()) {
 			return E_ABORT;
 		}
 
