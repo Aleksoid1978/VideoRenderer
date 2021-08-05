@@ -2688,7 +2688,9 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 		return E_ABORT;
 	}
 
-	std::wstring str = m_strStatsHeader;
+	std::wstring str;
+	str.reserve(700);
+	str.assign(m_strStatsHeader);
 	str.append(m_strStatsDispInfo);
 	str += fmt::format(L"\nGraph. Adapter: {}", m_strAdapterDescription);
 
