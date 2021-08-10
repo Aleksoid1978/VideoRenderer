@@ -438,6 +438,23 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 {
 	CheckPointer(pSample, E_POINTER);
 
+	HRESULT hr = m_VideoProcessor->ProcessSample(pSample);
+
+	if (SUCCEEDED(hr)) {
+		m_bValidBuffer = true;
+	}
+
+	if (m_Stepping && !(--m_Stepping)) {
+		this->NotifyEvent(EC_STEP_COMPLETE, 0, 0);
+	}
+
+	return hr;
+}
+
+HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
+{
+	// override CBaseRenderer::Receive() for the implementation of the search during the pause
+
 	if (!m_bCheckSubInvAlpha) {
 		m_bCheckSubInvAlpha = true;
 
@@ -462,23 +479,6 @@ HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 			}
 		}
 	}
-
-	HRESULT hr = m_VideoProcessor->ProcessSample(pSample);
-
-	if (SUCCEEDED(hr)) {
-		m_bValidBuffer = true;
-	}
-
-	if (m_Stepping && !(--m_Stepping)) {
-		this->NotifyEvent(EC_STEP_COMPLETE, 0, 0);
-	}
-
-	return hr;
-}
-
-HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
-{
-	// îverride CBaseRenderer::Receive() for the implementation of the search during the pause
 
 	if (m_bFlushing) {
 		DLog(L"CMpcVideoRenderer::Receive() - flushing, skip sample");
