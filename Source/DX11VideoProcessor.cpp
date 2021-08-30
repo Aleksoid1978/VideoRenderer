@@ -2100,6 +2100,10 @@ HRESULT CDX11VideoProcessor::Render(int field)
 
 	m_RenderStats.presentticks = GetPreciseTick() - tick3;
 
+	if (hr == DXGI_ERROR_INVALID_CALL && m_pFilter->m_bIsD3DFullscreen) {
+		InitSwapChain();
+	}
+
 	return hr;
 }
 
