@@ -143,7 +143,7 @@ struct FmtConvParams_t {
 };
 
 const FmtConvParams_t& GetFmtConvParams(const ColorFormat_t fmt);
-const FmtConvParams_t& GetFmtConvParams(const GUID subtype);
+const FmtConvParams_t& GetFmtConvParams(const GUID& subtype);
 CopyFrameDataFn GetCopyFunction(const FmtConvParams_t& params);
 
 // YUY2, AYUV, RGB32 to D3DFMT_X8R8G8B8, ARGB32 to D3DFMT_A8R8G8B8
