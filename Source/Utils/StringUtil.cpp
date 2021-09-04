@@ -1,5 +1,5 @@
 /*
-* (C) 2020 see Authors.txt
+* (C) 2020-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -46,20 +46,35 @@ void str_split(const std::wstring& wstr, std::vector<std::wstring>& tokens, wcha
 
 void str_replace(std::string& s, const std::string_view from, const std::string_view to)
 {
+	std::string str;
 	size_t pos = 0;
-	while ((pos = s.find(from, pos)) != std::string::npos) {
-		s.replace(pos, from.length(), to);
-		pos += to.length();
+	size_t pf = 0;
+	while ((pf = s.find(from, pos)) < s.size()) {
+		str.append(s, pos, pf - pos);
+		str.append(to);
+		pos = pf + from.size();
+	}
+	if (str.size()) {
+		str.append(s, pos);
+		s = str;
 	}
 }
 
 void str_replace(std::wstring& s, const std::wstring_view from, const std::wstring_view to)
 {
+	std::wstring str;
 	size_t pos = 0;
-	while ((pos = s.find(from, pos)) != std::string::npos) {
-		s.replace(pos, from.length(), to);
-		pos += to.length();
-	}}
+	size_t pf = 0;
+	while ((pf = s.find(from, pos)) < s.size()) {
+		str.append(s, pos, pf - pos);
+		str.append(to);
+		pos = pf + from.size();
+	}
+	if (str.size()) {
+		str.append(s, pos);
+		s = str;
+	}
+}
 
 std::string ConvertWideToANSI(const std::wstring& wstr)
 {
