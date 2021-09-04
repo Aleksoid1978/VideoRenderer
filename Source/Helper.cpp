@@ -259,7 +259,7 @@ const FmtConvParams_t& GetFmtConvParams(const ColorFormat_t fmt)
 	return s_FmtConvMapping[fmt];
 }
 
-const FmtConvParams_t& GetFmtConvParams(const GUID subtype)
+const FmtConvParams_t& GetFmtConvParams(const GUID& subtype)
 {
 	for (const auto& fe : s_FmtConvMapping) {
 		if (fe.Subtype == subtype) {
