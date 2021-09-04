@@ -105,8 +105,8 @@ inline void str_trim_end(std::wstring& s, const wchar_t ch)
 //
 //
 
-void str_replace(std::string& s, const std::string& from, const std::string& to);
-void str_replace(std::wstring& s, const std::wstring& from, const std::wstring& to);
+void str_replace(std::string& s, const std::string_view from, const std::string_view to);
+void str_replace(std::wstring& s, const std::wstring_view from, const std::wstring_view to);
 
 //
 // simple convert ANSI string to wide character string
