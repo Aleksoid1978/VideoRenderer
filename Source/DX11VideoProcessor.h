@@ -186,6 +186,8 @@ private:
 		return m_bitsPerChannelSupport >= 10 && (m_InternalTexFmt == DXGI_FORMAT_R10G10B10A2_UNORM || m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT);
 	}
 
+	bool HandleHDRToggle();
+
 public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, const bool bDecoderDevice);
 	HRESULT InitSwapChain();

@@ -83,27 +83,30 @@ CVRMainPPage::~CVRMainPPage()
 
 void CVRMainPPage::SetControls()
 {
-	CheckDlgButton(IDC_CHECK1, m_SetsPP.bUseD3D11             ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK2, m_SetsPP.bShowStats            ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK1, m_SetsPP.bUseD3D11                        ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK2, m_SetsPP.bShowStats                       ? BST_CHECKED : BST_UNCHECKED);
 
 	ComboBox_SelectByItemData(m_hWnd, IDC_COMBO1, m_SetsPP.iTexFormat);
 
-	CheckDlgButton(IDC_CHECK7, m_SetsPP.VPFmts.bNV12          ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK8, m_SetsPP.VPFmts.bP01x          ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK9, m_SetsPP.VPFmts.bYUY2          ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK4, m_SetsPP.VPFmts.bOther         ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK3, m_SetsPP.bDeintDouble          ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling            ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK7, m_SetsPP.VPFmts.bNV12                     ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK8, m_SetsPP.VPFmts.bP01x                     ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK9, m_SetsPP.VPFmts.bYUY2                     ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK4, m_SetsPP.VPFmts.bOther                    ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK3, m_SetsPP.bDeintDouble                     ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling                       ? BST_CHECKED : BST_UNCHECKED);
 
-	CheckDlgButton(IDC_CHECK12, m_SetsPP.bHdrPassthrough      ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK13, m_SetsPP.bHdrToggleDisplay    ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr        ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK12, m_SetsPP.bHdrPassthrough                 ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK13, m_SetsPP.bHdrToggleDisplay               ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK17, m_SetsPP.bHdrToggleDisplayFullscreenOnly ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr                   ? BST_CHECKED : BST_UNCHECKED);
 
-	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct   ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK10, m_SetsPP.bUseDither           ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK11, m_SetsPP.bExclusiveFS         ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK15, m_SetsPP.bVBlankBeforePresent ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK16, m_SetsPP.bReinitByDisplay     ? BST_CHECKED : BST_UNCHECKED);
+	GetDlgItem(IDC_CHECK17).EnableWindow(m_SetsPP.bHdrToggleDisplay);
+
+	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct              ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK10, m_SetsPP.bUseDither                      ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK11, m_SetsPP.bExclusiveFS                    ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK15, m_SetsPP.bVBlankBeforePresent            ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK16, m_SetsPP.bReinitByDisplay                ? BST_CHECKED : BST_UNCHECKED);
 
 	SendDlgItemMessageW(IDC_COMBO6, CB_SETCURSEL, m_SetsPP.iResizeStats, 0);
 
@@ -168,6 +171,7 @@ HRESULT CVRMainPPage::OnActivate()
 	if (!IsWindows10OrGreater()) {
 		GetDlgItem(IDC_CHECK12).EnableWindow(FALSE);
 		GetDlgItem(IDC_CHECK13).EnableWindow(FALSE);
+		GetDlgItem(IDC_CHECK17).EnableWindow(FALSE);
 		GetDlgItem(IDC_STATIC4).EnableWindow(FALSE);
 	}
 
@@ -292,6 +296,12 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			}
 			if (nID == IDC_CHECK13) {
 				m_SetsPP.bHdrToggleDisplay = IsDlgButtonChecked(IDC_CHECK13) == BST_CHECKED;
+				GetDlgItem(IDC_CHECK17).EnableWindow(m_SetsPP.bHdrToggleDisplay);
+				SetDirty();
+				return (LRESULT)1;
+			}
+			if (nID == IDC_CHECK17) {
+				m_SetsPP.bHdrToggleDisplayFullscreenOnly = IsDlgButtonChecked(IDC_CHECK17) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}

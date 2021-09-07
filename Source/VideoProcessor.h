@@ -40,22 +40,23 @@ protected:
 	CMpcVideoRenderer* m_pFilter = nullptr;
 
 	// Settings
-	bool m_bShowStats           = false;
-	int  m_iResizeStats         = 0;
-	int  m_iTexFormat           = TEXFMT_AUTOINT;
-	VPEnableFormats_t m_VPFormats = {true, true, true, true};
-	bool m_bDeintDouble         = true;
-	bool m_bVPScaling           = true;
-	int  m_iChromaScaling       = CHROMA_Bilinear;
-	int  m_iUpscaling           = UPSCALE_CatmullRom; // interpolation
-	int  m_iDownscaling         = DOWNSCALE_Hamming;  // convolution
-	bool m_bInterpolateAt50pct  = true;
-	bool m_bUseDither           = true;
-	int  m_iSwapEffect          = SWAPEFFECT_Discard;
-	bool m_bVBlankBeforePresent = false;
-	bool m_bHdrPassthrough      = true;
-	bool m_bHdrToggleDisplay    = true;
-	bool m_bConvertToSdr        = true;
+	bool m_bShowStats                      = false;
+	int  m_iResizeStats                    = 0;
+	int  m_iTexFormat                      = TEXFMT_AUTOINT;
+	VPEnableFormats_t m_VPFormats          = {true, true, true, true};
+	bool m_bDeintDouble                    = true;
+	bool m_bVPScaling                      = true;
+	int  m_iChromaScaling                  = CHROMA_Bilinear;
+	int  m_iUpscaling                      = UPSCALE_CatmullRom; // interpolation
+	int  m_iDownscaling                    = DOWNSCALE_Hamming;  // convolution
+	bool m_bInterpolateAt50pct             = true;
+	bool m_bUseDither                      = true;
+	int  m_iSwapEffect                     = SWAPEFFECT_Discard;
+	bool m_bVBlankBeforePresent            = false;
+	bool m_bHdrPassthrough                 = true;
+	bool m_bHdrToggleDisplay               = true;
+	bool m_bHdrToggleDisplayFullscreenOnly = false;
+	bool m_bConvertToSdr                   = true;
 
 	bool m_bVPScalingUseShaders = false;
 

@@ -98,6 +98,7 @@
 #define IDC_CHECK14                     1034
 #define IDC_CHECK15                     1035
 #define IDC_CHECK16                     1036
+#define IDC_CHECK17                     1037
 #define IDC_COMBO1                      1041
 #define IDC_COMBO2                      1042
 #define IDC_COMBO3                      1043
@@ -107,7 +108,7 @@
 #define IDC_BUTTON1                     1051
 
 // Next default values for new objects
-//
+// 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        104

@@ -396,22 +396,23 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(
 CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Settings_t& config, HRESULT& hr)
 	: CVideoProcessor(pFilter)
 {
-	m_bShowStats           = config.bShowStats;
-	m_iResizeStats         = config.iResizeStats;
-	m_iTexFormat           = config.iTexFormat;
-	m_VPFormats            = config.VPFmts;
-	m_bDeintDouble         = config.bDeintDouble;
-	m_bVPScaling           = config.bVPScaling;
-	m_iChromaScaling       = config.iChromaScaling;
-	m_iUpscaling           = config.iUpscaling;
-	m_iDownscaling         = config.iDownscaling;
-	m_bInterpolateAt50pct  = config.bInterpolateAt50pct;
-	m_bUseDither           = config.bUseDither;
-	m_iSwapEffect          = config.iSwapEffect;
-	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
-	m_bHdrPassthrough      = config.bHdrPassthrough;
-	m_bHdrToggleDisplay    = config.bHdrToggleDisplay;
-	m_bConvertToSdr        = config.bConvertToSdr;
+	m_bShowStats                      = config.bShowStats;
+	m_iResizeStats                    = config.iResizeStats;
+	m_iTexFormat                      = config.iTexFormat;
+	m_VPFormats                       = config.VPFmts;
+	m_bDeintDouble                    = config.bDeintDouble;
+	m_bVPScaling                      = config.bVPScaling;
+	m_iChromaScaling                  = config.iChromaScaling;
+	m_iUpscaling                      = config.iUpscaling;
+	m_iDownscaling                    = config.iDownscaling;
+	m_bInterpolateAt50pct             = config.bInterpolateAt50pct;
+	m_bUseDither                      = config.bUseDither;
+	m_iSwapEffect                     = config.iSwapEffect;
+	m_bVBlankBeforePresent            = config.bVBlankBeforePresent;
+	m_bHdrPassthrough                 = config.bHdrPassthrough;
+	m_bHdrToggleDisplay               = config.bHdrToggleDisplay;
+	m_bHdrToggleDisplayFullscreenOnly = config.bHdrToggleDisplayFullscreenOnly;
+	m_bConvertToSdr                   = config.bConvertToSdr;
 
 	m_nCurrentAdapter = -1;
 	m_pDisplayMode = &m_DisplayMode;
@@ -1104,6 +1105,13 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 
 	ReleaseSwapChain();
 
+	auto bFullscreenChange = m_bIsFullscreen != m_pFilter->m_bIsFullscreen;
+	m_bIsFullscreen = m_pFilter->m_bIsFullscreen;
+
+	if (bFullscreenChange) {
+		HandleHDRToggle();
+	}
+
 	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR();
 	const auto b10BitOutput = bHdrOutput || Preferred10BitOutput();
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -1111,7 +1119,6 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 
 	HRESULT hr = S_OK;
 	DXGI_SWAP_CHAIN_DESC1 desc1 = {};
-	m_bIsFullscreen = m_pFilter->m_bIsFullscreen;
 
 	if (m_bIsFullscreen) {
 		MONITORINFOEXW mi = { sizeof(mi) };
@@ -1254,6 +1261,87 @@ BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 	return TRUE;
 }
 
+bool CDX11VideoProcessor::HandleHDRToggle()
+{
+	m_bHdrDisplaySwitching = true;
+	bool bRet = false;
+	if (m_bHdrPassthrough && SourceIsHDR()) {
+		MONITORINFOEXW mi = { sizeof(mi) };
+		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
+		DisplayConfig_t displayConfig = {};
+
+		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
+			const auto& ac = displayConfig.advancedColor;
+
+			if (ac.advancedColorSupported && m_bHdrToggleDisplay) {
+				const bool bNeedToggleOn  = !ac.advancedColorEnabled && ((m_bHdrToggleDisplayFullscreenOnly && m_bIsFullscreen) || !m_bHdrToggleDisplayFullscreenOnly);
+				const bool bNeedToggleOff = ac.advancedColorEnabled && m_bHdrToggleDisplayFullscreenOnly && !m_bIsFullscreen;
+				DLog(L"HandleHDRToggle() : %d, %d", bNeedToggleOn, bNeedToggleOff);
+				if (bNeedToggleOn) {
+					bRet = ToggleHDR(displayConfig, TRUE);
+					DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR ON failed");
+
+					if (bRet) {
+						std::wstring deviceName(mi.szDevice);
+						const auto& it = m_hdrModeSavedState.find(deviceName);
+						if (it == m_hdrModeSavedState.cend()) {
+							m_hdrModeSavedState[std::move(deviceName)] = FALSE;
+						}
+					}
+				} else if (bNeedToggleOff) {
+					bRet = ToggleHDR(displayConfig, FALSE);
+					DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR OFF failed");
+
+					if (bRet) {
+						std::wstring deviceName(mi.szDevice);
+						const auto& it = m_hdrModeSavedState.find(deviceName);
+						if (it == m_hdrModeSavedState.cend()) {
+							m_hdrModeSavedState[std::move(deviceName)] = TRUE;
+						}
+					}
+				}
+			}
+		}
+	} else if (m_bHdrToggleDisplay) {
+		MONITORINFOEXW mi = { sizeof(mi) };
+		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
+		DisplayConfig_t displayConfig = {};
+
+		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
+			const auto& ac = displayConfig.advancedColor;
+
+			if (ac.advancedColorSupported && ac.advancedColorEnabled) {
+				bRet = ToggleHDR(displayConfig, FALSE);
+				DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR OFF failed");
+
+				if (bRet) {
+					std::wstring deviceName(mi.szDevice);
+					const auto& it = m_hdrModeSavedState.find(deviceName);
+					if (it == m_hdrModeSavedState.cend()) {
+						m_hdrModeSavedState[std::move(deviceName)] = TRUE;
+					}
+				}
+			}
+		}
+	}
+	m_bHdrDisplaySwitching = false;
+
+	if (bRet) {
+		MONITORINFOEXW mi = { sizeof(mi) };
+		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
+		DisplayConfig_t displayConfig = {};
+
+		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
+			const auto& ac = displayConfig.advancedColor;
+			m_bHdrPassthroughSupport = ac.advancedColorSupported && (ac.advancedColorEnabled || !m_bHdrToggleDisplay);
+			m_bHdrDisplayModeEnabled = ac.advancedColorEnabled;
+			m_bitsPerChannelSupport = displayConfig.bitsPerChannel;
+		}
+	}
+
+	return bRet;
+}
+
 BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 {
 	DLog(L"CDX11VideoProcessor::InitMediaType()");
@@ -1373,61 +1461,11 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	UpdateTexParams(FmtParams.CDepth);
 
 	if (m_bHdrAllowSwitchDisplay && m_srcVideoTransferFunction != m_srcExFmt.VideoTransferFunction) {
-		m_bHdrDisplaySwitching = true;
-		if (m_bHdrPassthrough && SourceIsHDR()) {
-			MONITORINFOEXW mi = { sizeof(mi) };
-			GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
-			DisplayConfig_t displayConfig = {};
-
-			if (GetDisplayConfig(mi.szDevice, displayConfig)) {
-				const auto& ac = displayConfig.advancedColor;
-
-				if (ac.advancedColorSupported) {
-					bool ret = true;
-					if (m_bHdrToggleDisplay && !ac.advancedColorEnabled) {
-						ret = ToggleHDR(displayConfig, TRUE);
-						DLogIf(!ret, L"CDX11VideoProcessor::InitMediaType() : Toggle HDR ON failed");
-						if (ret) {
-							std::wstring deviceName(mi.szDevice);
-							const auto& it = m_hdrModeSavedState.find(deviceName);
-							if (it == m_hdrModeSavedState.cend()) {
-								m_hdrModeSavedState[std::move(deviceName)] = FALSE;
-							}
-						}
-					}
-
-					if (ret) {
-						ReleaseSwapChain();
-						Init(m_hWnd);
-					}
-				}
-			}
-		} else if (m_bHdrToggleDisplay) {
-			MONITORINFOEXW mi = { sizeof(mi) };
-			GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
-			DisplayConfig_t displayConfig = {};
-
-			if (GetDisplayConfig(mi.szDevice, displayConfig)) {
-				const auto& ac = displayConfig.advancedColor;
-
-				if (ac.advancedColorSupported && ac.advancedColorEnabled) {
-					const auto ret = ToggleHDR(displayConfig, FALSE);
-					DLogIf(!ret, L"CDX11VideoProcessor::InitMediaType() : Toggle HDR OFF failed");
-
-					if (ret) {
-						std::wstring deviceName(mi.szDevice);
-						const auto& it = m_hdrModeSavedState.find(deviceName);
-						if (it == m_hdrModeSavedState.cend()) {
-							m_hdrModeSavedState[std::move(deviceName)] = TRUE;
-						}
-
-						ReleaseSwapChain();
-						Init(m_hWnd);
-					}
-				}
-			}
+		auto ret = HandleHDRToggle();
+		if (ret) {
+			ReleaseSwapChain();
+			Init(m_hWnd);
 		}
-		m_bHdrDisplaySwitching = false;
 	}
 
 	if (Preferred10BitOutput() && m_SwapChainFmt == DXGI_FORMAT_B8G8R8A8_UNORM) {
@@ -2810,10 +2848,11 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	bool changeResizeStats       = false;
 
 	// settings that do not require preparation
-	m_bShowStats           = config.bShowStats;
-	m_bDeintDouble         = config.bDeintDouble;
-	m_bInterpolateAt50pct  = config.bInterpolateAt50pct;
-	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
+	m_bShowStats                      = config.bShowStats;
+	m_bDeintDouble                    = config.bDeintDouble;
+	m_bInterpolateAt50pct             = config.bInterpolateAt50pct;
+	m_bVBlankBeforePresent            = config.bVBlankBeforePresent;
+	m_bHdrToggleDisplayFullscreenOnly = config.bHdrToggleDisplayFullscreenOnly;
 
 	// checking what needs to be changed
 
