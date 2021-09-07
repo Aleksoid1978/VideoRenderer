@@ -1845,10 +1845,11 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 #endif
 
 		// here should be used CopySubresourceRegion instead of CopyResource
+		D3D11_BOX srcBox = { 0, 0, 0, m_srcWidth, m_srcHeight, 1 };
 		if (m_D3D11VP.IsReady()) {
-			m_pDeviceContext->CopySubresourceRegion(m_D3D11VP.GetNextInputTexture(m_SampleFormat), 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
+			m_pDeviceContext->CopySubresourceRegion(m_D3D11VP.GetNextInputTexture(m_SampleFormat), 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, &srcBox);
 		} else {
-			m_pDeviceContext->CopySubresourceRegion(m_TexSrcVideo.pTexture, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, nullptr);
+			m_pDeviceContext->CopySubresourceRegion(m_TexSrcVideo.pTexture, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, &srcBox);
 		}
 	}
 	else if (CComQIPtr<IMFGetService> pService = pSample) {
