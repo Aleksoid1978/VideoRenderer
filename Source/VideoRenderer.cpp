@@ -52,7 +52,6 @@
 #define OPT_ReinitByDisplay                L"ReinitWhenChangingDisplay"
 #define OPT_HdrPassthrough                 L"HdrPassthrough"
 #define OPT_HdrToggleDisplay               L"HdrToggleDisplay"
-#define OPT_HdrToggleDisplayFullscreenOnly L"HdrToggleDisplayFullscreenOnly"
 #define OPT_ConvertToSdr                   L"ConvertToSdr"
 #define OPT_UseD3DFullscreen               L"UseD3DFullscreen"
 
@@ -219,10 +218,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			m_Sets.bHdrPassthrough = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrToggleDisplay, dw)) {
-			m_Sets.bHdrToggleDisplay = !!dw;
-		}
-		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrToggleDisplayFullscreenOnly, dw)) {
-			m_Sets.bHdrToggleDisplayFullscreenOnly = !!dw;
+			m_Sets.iHdrToggleDisplay = dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ConvertToSdr, dw)) {
 			m_Sets.bConvertToSdr = !!dw;
@@ -231,8 +227,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	if (!IsWindows10OrGreater()) {
 		m_Sets.bHdrPassthrough = false;
-		m_Sets.bHdrToggleDisplay = false;
-		m_Sets.bHdrToggleDisplayFullscreenOnly = false;
+		m_Sets.iHdrToggleDisplay = HDRTD_Off;
 	}
 
 	HRESULT hr = S_FALSE;
@@ -1204,8 +1199,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_VBlankBeforePresent,            m_Sets.bVBlankBeforePresent);
 		key.SetDWORDValue(OPT_ReinitByDisplay,                m_Sets.bReinitByDisplay);
 		key.SetDWORDValue(OPT_HdrPassthrough,                 m_Sets.bHdrPassthrough);
-		key.SetDWORDValue(OPT_HdrToggleDisplay,               m_Sets.bHdrToggleDisplay);
-		key.SetDWORDValue(OPT_HdrToggleDisplayFullscreenOnly, m_Sets.bHdrToggleDisplayFullscreenOnly);
+		key.SetDWORDValue(OPT_HdrToggleDisplay,               m_Sets.iHdrToggleDisplay);
 		key.SetDWORDValue(OPT_ConvertToSdr,                   m_Sets.bConvertToSdr);
 	}
 

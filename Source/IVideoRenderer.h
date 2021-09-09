@@ -61,6 +61,12 @@ enum :int {
 	SWAPEFFECT_COUNT
 };
 
+enum :int {
+	HDRTD_Off = 0,
+	HDRTD_Fullscreen = 1,
+	HDRTD_Always = 2
+};
+
 struct VPEnableFormats_t {
 	bool bNV12;
 	bool bP01x;
@@ -86,8 +92,7 @@ struct Settings_t {
 	bool bVBlankBeforePresent;
 	bool bReinitByDisplay;
 	bool bHdrPassthrough;
-	bool bHdrToggleDisplay;
-	bool bHdrToggleDisplayFullscreenOnly;
+	int  iHdrToggleDisplay;
 	bool bConvertToSdr;
 
 	Settings_t() {
@@ -115,8 +120,7 @@ struct Settings_t {
 		bVBlankBeforePresent            = false;
 		bReinitByDisplay                = false;
 		bHdrPassthrough                 = true;
-		bHdrToggleDisplay               = true;
-		bHdrToggleDisplayFullscreenOnly = false;
+		iHdrToggleDisplay               = HDRTD_Fullscreen;
 		bConvertToSdr                   = true;
 	}
 };

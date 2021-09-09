@@ -283,7 +283,7 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Setting
 	m_iSwapEffect          = config.iSwapEffect;
 	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
 	m_bHdrPassthrough      = false;
-	m_bHdrToggleDisplay    = false;
+	m_iHdrToggleDisplay    = false;
 	m_bConvertToSdr        = config.bConvertToSdr;
 
 	m_nCurrentAdapter = D3DADAPTER_DEFAULT;

@@ -96,11 +96,12 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling                       ? BST_CHECKED : BST_UNCHECKED);
 
 	CheckDlgButton(IDC_CHECK12, m_SetsPP.bHdrPassthrough                 ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK13, m_SetsPP.bHdrToggleDisplay               ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK17, m_SetsPP.bHdrToggleDisplayFullscreenOnly ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK13,
+		m_SetsPP.iHdrToggleDisplay == HDRTD_Off ? BST_UNCHECKED :
+		m_SetsPP.iHdrToggleDisplay == HDRTD_Always ? BST_CHECKED :
+		BST_INDETERMINATE
+	);
 	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr                   ? BST_CHECKED : BST_UNCHECKED);
-
-	GetDlgItem(IDC_CHECK17).EnableWindow(m_SetsPP.bHdrToggleDisplay);
 
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct              ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK10, m_SetsPP.bUseDither                      ? BST_CHECKED : BST_UNCHECKED);
@@ -171,7 +172,6 @@ HRESULT CVRMainPPage::OnActivate()
 	if (!IsWindows10OrGreater()) {
 		GetDlgItem(IDC_CHECK12).EnableWindow(FALSE);
 		GetDlgItem(IDC_CHECK13).EnableWindow(FALSE);
-		GetDlgItem(IDC_CHECK17).EnableWindow(FALSE);
 		GetDlgItem(IDC_STATIC4).EnableWindow(FALSE);
 	}
 
@@ -295,13 +295,11 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				return (LRESULT)1;
 			}
 			if (nID == IDC_CHECK13) {
-				m_SetsPP.bHdrToggleDisplay = IsDlgButtonChecked(IDC_CHECK13) == BST_CHECKED;
-				GetDlgItem(IDC_CHECK17).EnableWindow(m_SetsPP.bHdrToggleDisplay);
-				SetDirty();
-				return (LRESULT)1;
-			}
-			if (nID == IDC_CHECK17) {
-				m_SetsPP.bHdrToggleDisplayFullscreenOnly = IsDlgButtonChecked(IDC_CHECK17) == BST_CHECKED;
+				int btncheck = IsDlgButtonChecked(IDC_CHECK13);
+				m_SetsPP.iHdrToggleDisplay =
+					btncheck == BST_UNCHECKED ? HDRTD_Off :
+					btncheck == BST_CHECKED ? HDRTD_Always :
+					HDRTD_Fullscreen;
 				SetDirty();
 				return (LRESULT)1;
 			}

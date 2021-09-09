@@ -410,8 +410,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_iSwapEffect                     = config.iSwapEffect;
 	m_bVBlankBeforePresent            = config.bVBlankBeforePresent;
 	m_bHdrPassthrough                 = config.bHdrPassthrough;
-	m_bHdrToggleDisplay               = config.bHdrToggleDisplay;
-	m_bHdrToggleDisplayFullscreenOnly = config.bHdrToggleDisplayFullscreenOnly;
+	m_iHdrToggleDisplay               = config.iHdrToggleDisplay;
 	m_bConvertToSdr                   = config.bConvertToSdr;
 
 	m_nCurrentAdapter = -1;
@@ -493,7 +492,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 
 	if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 		const auto& ac = displayConfig.advancedColor;
-		m_bHdrPassthroughSupport = ac.advancedColorSupported && (ac.advancedColorEnabled || !m_bHdrToggleDisplay);
+		m_bHdrPassthroughSupport = ac.advancedColorSupported && (ac.advancedColorEnabled || !m_iHdrToggleDisplay);
 		m_bHdrDisplayModeEnabled = ac.advancedColorEnabled;
 		m_bitsPerChannelSupport = displayConfig.bitsPerChannel;
 	}
@@ -1273,9 +1272,11 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 			const auto& ac = displayConfig.advancedColor;
 
-			if (ac.advancedColorSupported && m_bHdrToggleDisplay) {
-				const bool bNeedToggleOn  = !ac.advancedColorEnabled && ((m_bHdrToggleDisplayFullscreenOnly && m_bIsFullscreen) || !m_bHdrToggleDisplayFullscreenOnly);
-				const bool bNeedToggleOff = ac.advancedColorEnabled && m_bHdrToggleDisplayFullscreenOnly && !m_bIsFullscreen;
+			if (ac.advancedColorSupported && m_iHdrToggleDisplay) {
+				const bool bNeedToggleOn  = !ac.advancedColorEnabled
+					&& (m_iHdrToggleDisplay == HDRTD_Always || m_iHdrToggleDisplay == HDRTD_Fullscreen && m_bIsFullscreen);
+				const bool bNeedToggleOff = ac.advancedColorEnabled
+					&& m_iHdrToggleDisplay == HDRTD_Fullscreen && !m_bIsFullscreen;
 				DLog(L"HandleHDRToggle() : %d, %d", bNeedToggleOn, bNeedToggleOff);
 				if (bNeedToggleOn) {
 					bRet = ToggleHDR(displayConfig, TRUE);
@@ -1302,7 +1303,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 				}
 			}
 		}
-	} else if (m_bHdrToggleDisplay) {
+	} else if (m_iHdrToggleDisplay) {
 		MONITORINFOEXW mi = { sizeof(mi) };
 		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 		DisplayConfig_t displayConfig = {};
@@ -1333,7 +1334,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 			const auto& ac = displayConfig.advancedColor;
-			m_bHdrPassthroughSupport = ac.advancedColorSupported && (ac.advancedColorEnabled || !m_bHdrToggleDisplay);
+			m_bHdrPassthroughSupport = ac.advancedColorSupported && (ac.advancedColorEnabled || !m_iHdrToggleDisplay);
 			m_bHdrDisplayModeEnabled = ac.advancedColorEnabled;
 			m_bitsPerChannelSupport = displayConfig.bitsPerChannel;
 		}
@@ -2629,7 +2630,7 @@ HRESULT CDX11VideoProcessor::Reset()
 
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 			const auto& ac = displayConfig.advancedColor;
-			const auto bHdrPassthroughSupport = ac.advancedColorSupported && (ac.advancedColorEnabled || !m_bHdrToggleDisplay);
+			const auto bHdrPassthroughSupport = ac.advancedColorSupported && (ac.advancedColorEnabled || !m_iHdrToggleDisplay);
 
 			if (bHdrPassthroughSupport && !m_bHdrPassthroughSupport || !ac.advancedColorEnabled && m_bHdrPassthroughSupport) {
 				m_hdrModeSavedState.erase(mi.szDevice);
@@ -2853,7 +2854,6 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	m_bDeintDouble                    = config.bDeintDouble;
 	m_bInterpolateAt50pct             = config.bInterpolateAt50pct;
 	m_bVBlankBeforePresent            = config.bVBlankBeforePresent;
-	m_bHdrToggleDisplayFullscreenOnly = config.bHdrToggleDisplayFullscreenOnly;
 
 	// checking what needs to be changed
 
@@ -2915,9 +2915,11 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		changeHDR = true;
 	}
 
-	if (config.bHdrToggleDisplay != m_bHdrToggleDisplay) {
-		m_bHdrToggleDisplay = config.bHdrToggleDisplay;
-		changeHDR = true;
+	if (config.iHdrToggleDisplay != m_iHdrToggleDisplay) {
+		if (config.iHdrToggleDisplay == HDRTD_Off || m_iHdrToggleDisplay == HDRTD_Off) {
+			changeHDR = true;
+		}
+		m_iHdrToggleDisplay = config.iHdrToggleDisplay;
 	}
 
 	if (config.bConvertToSdr != m_bConvertToSdr) {
@@ -2938,7 +2940,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		ReleaseSwapChain();
 		EXECUTE_ASSERT(S_OK == m_pFilter->Init(true));
 
-		if (changeHDR && (SourceIsHDR()) || m_bHdrToggleDisplay) {
+		if (changeHDR && (SourceIsHDR()) || m_iHdrToggleDisplay) {
 			m_srcVideoTransferFunction = 0;
 			InitMediaType(&m_pFilter->m_inputMT);
 		}
@@ -2946,7 +2948,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (changeHDR) {
-		if (SourceIsHDR() || m_bHdrToggleDisplay) {
+		if (SourceIsHDR() || m_iHdrToggleDisplay) {
 			if (m_iSwapEffect == SWAPEFFECT_Discard) {
 				ReleaseSwapChain();
 				m_pFilter->Init(true);
