@@ -96,12 +96,9 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling                       ? BST_CHECKED : BST_UNCHECKED);
 
 	CheckDlgButton(IDC_CHECK12, m_SetsPP.bHdrPassthrough                 ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK13,
-		m_SetsPP.iHdrToggleDisplay == HDRTD_Off ? BST_UNCHECKED :
-		m_SetsPP.iHdrToggleDisplay == HDRTD_Always ? BST_CHECKED :
-		BST_INDETERMINATE
-	);
 	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr                   ? BST_CHECKED : BST_UNCHECKED);
+
+	SendDlgItemMessageW(IDC_COMBO7, CB_SETCURSEL, m_SetsPP.iHdrToggleDisplay, 0);
 
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct              ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK10, m_SetsPP.bUseDither                      ? BST_CHECKED : BST_UNCHECKED);
@@ -171,8 +168,9 @@ HRESULT CVRMainPPage::OnActivate()
 	}
 	if (!IsWindows10OrGreater()) {
 		GetDlgItem(IDC_CHECK12).EnableWindow(FALSE);
-		GetDlgItem(IDC_CHECK13).EnableWindow(FALSE);
 		GetDlgItem(IDC_STATIC4).EnableWindow(FALSE);
+		GetDlgItem(IDC_STATIC5).EnableWindow(FALSE);
+		GetDlgItem(IDC_COMBO7).EnableWindow(FALSE);
 	}
 
 	EnableControls();
@@ -185,6 +183,10 @@ HRESULT CVRMainPPage::OnActivate()
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"8-bit Integer",          8);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"10-bit Integer",        10);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"16-bit Floating Point", 16);
+
+	SendDlgItemMessageW(IDC_COMBO7, CB_ADDSTRING, 0, (LPARAM)L"not used");
+	SendDlgItemMessageW(IDC_COMBO7, CB_ADDSTRING, 0, (LPARAM)L"used for fullscreen");
+	SendDlgItemMessageW(IDC_COMBO7, CB_ADDSTRING, 0, (LPARAM)L"always used");
 
 	SendDlgItemMessageW(IDC_COMBO5, CB_ADDSTRING, 0, (LPARAM)L"Nearest-neighbor");
 	SendDlgItemMessageW(IDC_COMBO5, CB_ADDSTRING, 0, (LPARAM)L"Bilinear");
@@ -294,15 +296,6 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				SetDirty();
 				return (LRESULT)1;
 			}
-			if (nID == IDC_CHECK13) {
-				int btncheck = IsDlgButtonChecked(IDC_CHECK13);
-				m_SetsPP.iHdrToggleDisplay =
-					btncheck == BST_UNCHECKED ? HDRTD_Off :
-					btncheck == BST_CHECKED ? HDRTD_Always :
-					HDRTD_Fullscreen;
-				SetDirty();
-				return (LRESULT)1;
-			}
 			if (nID == IDC_CHECK14) {
 				m_SetsPP.bConvertToSdr = IsDlgButtonChecked(IDC_CHECK14) == BST_CHECKED;
 				SetDirty();
@@ -331,6 +324,14 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				lValue = ComboBox_GetCurItemData(m_hWnd, IDC_COMBO1);
 				if (lValue != m_SetsPP.iTexFormat) {
 					m_SetsPP.iTexFormat = lValue;
+					SetDirty();
+					return (LRESULT)1;
+				}
+			}
+			if (nID == IDC_COMBO7) {
+				lValue = SendDlgItemMessageW(IDC_COMBO7, CB_GETCURSEL, 0, 0);
+				if (lValue != m_SetsPP.iHdrToggleDisplay) {
+					m_SetsPP.iHdrToggleDisplay = lValue;
 					SetDirty();
 					return (LRESULT)1;
 				}

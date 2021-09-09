@@ -82,6 +82,7 @@
 #define IDC_STATIC2                     1012
 #define IDC_STATIC3                     1013
 #define IDC_STATIC4                     1014
+#define IDC_STATIC5                     1015
 #define IDC_CHECK1                      1021
 #define IDC_CHECK2                      1022
 #define IDC_CHECK3                      1023
@@ -105,6 +106,7 @@
 #define IDC_COMBO4                      1044
 #define IDC_COMBO5                      1045
 #define IDC_COMBO6                      1046
+#define IDC_COMBO7                      1047
 #define IDC_BUTTON1                     1051
 
 // Next default values for new objects
