@@ -120,7 +120,7 @@ struct Settings_t {
 		bVBlankBeforePresent            = false;
 		bReinitByDisplay                = false;
 		bHdrPassthrough                 = true;
-		iHdrToggleDisplay               = HDRTD_Fullscreen;
+		iHdrToggleDisplay               = HDRTD_Always;
 		bConvertToSdr                   = true;
 	}
 };

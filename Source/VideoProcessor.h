@@ -54,7 +54,7 @@ protected:
 	int  m_iSwapEffect                     = SWAPEFFECT_Discard;
 	bool m_bVBlankBeforePresent            = false;
 	bool m_bHdrPassthrough                 = true;
-	int  m_iHdrToggleDisplay               = HDRTD_Fullscreen;
+	int  m_iHdrToggleDisplay               = HDRTD_Always;
 	bool m_bConvertToSdr                   = true;
 
 	bool m_bVPScalingUseShaders = false;

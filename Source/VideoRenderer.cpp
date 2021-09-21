@@ -155,7 +155,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			m_Sets.bShowStats = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ResizeStatistics, dw)) {
-			m_Sets.iResizeStats = discard((int)dw, 0, 0, 1);
+			m_Sets.iResizeStats = discard<int>(dw, 0, 0, 1);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_TextureFormat, dw)) {
 			switch (dw) {
@@ -188,13 +188,13 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			m_Sets.bVPScaling = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ChromaUpsampling, dw)) {
-			m_Sets.iChromaScaling = discard((int)dw, (int)CHROMA_Bilinear, (int)CHROMA_Nearest, (int)CHROMA_CatmullRom);
+			m_Sets.iChromaScaling = discard<int>(dw, CHROMA_Bilinear, CHROMA_Nearest, CHROMA_CatmullRom);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_Upscaling, dw)) {
-			m_Sets.iUpscaling = discard((int)dw, (int)UPSCALE_CatmullRom, (int)UPSCALE_Nearest, (int)UPSCALE_Lanczos3);
+			m_Sets.iUpscaling = discard<int>(dw, UPSCALE_CatmullRom, UPSCALE_Nearest, UPSCALE_Lanczos3);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_Downscaling, dw)) {
-			m_Sets.iDownscaling = discard((int)dw, (int)DOWNSCALE_Hamming, (int)DOWNSCALE_Box, (int)DOWNSCALE_Lanczos);
+			m_Sets.iDownscaling = discard<int>(dw, DOWNSCALE_Hamming, DOWNSCALE_Box, DOWNSCALE_Lanczos);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_InterpolateAt50pct, dw)) {
 			m_Sets.bInterpolateAt50pct = !!dw;
@@ -203,7 +203,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			m_Sets.bUseDither = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_SwapEffect, dw)) {
-			m_Sets.iSwapEffect = discard((int)dw, (int)SWAPEFFECT_Discard, (int)SWAPEFFECT_Discard, (int)SWAPEFFECT_Flip);
+			m_Sets.iSwapEffect = discard<int>(dw, SWAPEFFECT_Discard, SWAPEFFECT_Discard, SWAPEFFECT_Flip);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ExclusiveFullscreen, dw)) {
 			m_Sets.bExclusiveFS = !!dw;
@@ -218,7 +218,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			m_Sets.bHdrPassthrough = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrToggleDisplay, dw)) {
-			m_Sets.iHdrToggleDisplay = discard<int>(dw, HDRTD_Off, HDRTD_Fullscreen, HDRTD_Always);
+			m_Sets.iHdrToggleDisplay = discard<int>(dw, HDRTD_Always, HDRTD_Off, HDRTD_Always);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ConvertToSdr, dw)) {
 			m_Sets.bConvertToSdr = !!dw;
