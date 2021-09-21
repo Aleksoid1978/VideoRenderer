@@ -3012,6 +3012,8 @@ void CDX11VideoProcessor::Flush()
 	if (m_D3D11VP.IsReady()) {
 		m_D3D11VP.ResetFrameOrder();
 	}
+
+	m_rtStart = 0;
 }
 
 void CDX11VideoProcessor::ClearPostScaleShaders()

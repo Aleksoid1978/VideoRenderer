@@ -222,7 +222,7 @@ public:
 
 	void SetRotation(int value) override;
 
-	void Flush() override;;
+	void Flush() override;
 
 	void ClearPostScaleShaders() override;
 	HRESULT AddPostScaleShader(const std::wstring& name, const std::string& srcCode) override;

@@ -1909,6 +1909,8 @@ void CDX9VideoProcessor::Flush()
 			m_DXVA2VP.CleanSamplesData();
 		}
 	}
+
+	m_rtStart = 0;
 }
 
 void CDX9VideoProcessor::ClearPostScaleShaders()
