@@ -1463,6 +1463,9 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	if (m_bHdrAllowSwitchDisplay && m_srcVideoTransferFunction != m_srcExFmt.VideoTransferFunction) {
 		auto ret = HandleHDRToggle();
+		if (!ret && (m_bHdrPassthrough && SourceIsHDR() && !m_pDXGISwapChain4)) {
+			ret = true;
+		}
 		if (ret) {
 			ReleaseSwapChain();
 			Init(m_hWnd);
