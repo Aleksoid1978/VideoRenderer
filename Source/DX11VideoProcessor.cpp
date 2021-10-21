@@ -492,7 +492,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 
 	if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 		const auto& ac = displayConfig.advancedColor;
-		m_bHdrPassthroughSupport = ac.advancedColorSupported && (ac.advancedColorEnabled || !m_iHdrToggleDisplay);
+		m_bHdrPassthroughSupport = ac.advancedColorSupported && ac.advancedColorEnabled;
 		m_bHdrDisplayModeEnabled = ac.advancedColorEnabled;
 		m_bitsPerChannelSupport = displayConfig.bitsPerChannel;
 	}
@@ -1334,7 +1334,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 			const auto& ac = displayConfig.advancedColor;
-			m_bHdrPassthroughSupport = ac.advancedColorSupported && (ac.advancedColorEnabled || !m_iHdrToggleDisplay);
+			m_bHdrPassthroughSupport = ac.advancedColorSupported && ac.advancedColorEnabled;
 			m_bHdrDisplayModeEnabled = ac.advancedColorEnabled;
 			m_bitsPerChannelSupport = displayConfig.bitsPerChannel;
 		}
@@ -1463,7 +1463,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	if (m_bHdrAllowSwitchDisplay && m_srcVideoTransferFunction != m_srcExFmt.VideoTransferFunction) {
 		auto ret = HandleHDRToggle();
-		if (!ret && (m_bHdrPassthrough && SourceIsHDR() && !m_pDXGISwapChain4)) {
+		if (!ret && (m_bHdrPassthrough && m_bHdrPassthroughSupport && SourceIsHDR() && !m_pDXGISwapChain4)) {
 			ret = true;
 		}
 		if (ret) {
@@ -2633,7 +2633,7 @@ HRESULT CDX11VideoProcessor::Reset()
 
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 			const auto& ac = displayConfig.advancedColor;
-			const auto bHdrPassthroughSupport = ac.advancedColorSupported && (ac.advancedColorEnabled || !m_iHdrToggleDisplay);
+			const auto bHdrPassthroughSupport = ac.advancedColorSupported && ac.advancedColorEnabled;
 
 			if (bHdrPassthroughSupport && !m_bHdrPassthroughSupport || !ac.advancedColorEnabled && m_bHdrPassthroughSupport) {
 				m_hdrModeSavedState.erase(mi.szDevice);
