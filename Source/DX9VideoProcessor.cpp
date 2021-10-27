@@ -931,7 +931,7 @@ void CDX9VideoProcessor::SetGraphSize()
 
 BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 {
-	const auto& FmtParams = GetFmtConvParams(pmt->subtype);
+	const auto& FmtParams = GetFmtConvParams(pmt);
 	if (FmtParams.DXVA2Format == D3DFMT_UNKNOWN && FmtParams.D3DFormat == D3DFMT_UNKNOWN) {
 		return FALSE;
 	}
@@ -958,7 +958,7 @@ BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 BOOL CDX9VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 {
 	if (InitMediaType(&mt)) {
-		const auto& FmtParams = GetFmtConvParams(mt.subtype);
+		const auto& FmtParams = GetFmtConvParams(&mt);
 
 		if (FmtParams.cformat == CF_RGB24) {
 			Size.cx = ALIGN(Size.cx, 4);
@@ -1017,7 +1017,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	ReleaseVP();
 
-	auto FmtParams = GetFmtConvParams(pmt->subtype);
+	auto FmtParams = GetFmtConvParams(pmt);
 	bool disableDXVA2 = false;
 	switch (FmtParams.cformat) {
 	case CF_NV12: disableDXVA2 = !m_VPFormats.bNV12; break;

@@ -1236,7 +1236,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 
 BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 {
-	const auto& FmtParams = GetFmtConvParams(pmt->subtype);
+	const auto& FmtParams = GetFmtConvParams(pmt);
 	if (FmtParams.VP11Format == DXGI_FORMAT_UNKNOWN && FmtParams.DX11Format == DXGI_FORMAT_UNKNOWN) {
 		return FALSE;
 	}
@@ -1353,7 +1353,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	ReleaseVP();
 
-	auto FmtParams = GetFmtConvParams(pmt->subtype);
+	auto FmtParams = GetFmtConvParams(pmt);
 	bool disableD3D11VP = false;
 	switch (FmtParams.cformat) {
 	case CF_NV12: disableD3D11VP = !m_VPFormats.bNV12; break;
@@ -1651,7 +1651,7 @@ void CDX11VideoProcessor::UpdatFrameProperties()
 BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 {
 	if (InitMediaType(&mt)) {
-		const auto& FmtParams = GetFmtConvParams(mt.subtype);
+		const auto& FmtParams = GetFmtConvParams(&mt);
 
 		if (FmtParams.cformat == CF_RGB24) {
 			Size.cx = ALIGN(Size.cx, 4);

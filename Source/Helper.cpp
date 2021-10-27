@@ -60,7 +60,7 @@ std::wstring MediaType2Str(const CMediaType *pmt)
 		return L"no media type";
 	}
 
-	const auto& FmtParams = GetFmtConvParams(pmt->subtype);
+	const auto& FmtParams = GetFmtConvParams(pmt);
 
 	std::wstring str(L"MajorType : ");
 	str.append((pmt->majortype == MEDIATYPE_Video) ? L"Video" : L"unknown");
@@ -208,6 +208,57 @@ bool IsDefaultDXVA2ProcAmpValues(const DXVA2_ProcAmpValues& DXVA2ProcAmpValues)
 		&& DXVA2ProcAmpValues.Saturation.ll == s_DefaultDXVA2ProcAmpRanges[3].DefaultValue.ll;
 }
 
+static const struct {
+	GUID          subtype;
+	ColorFormat_t cformat;
+} subtypes_to_cformat[] = {
+	{MEDIASUBTYPE_YV12,   CF_YV12  },
+	{MEDIASUBTYPE_NV12,   CF_NV12  },
+	{MEDIASUBTYPE_P010,   CF_P010  },
+	{MEDIASUBTYPE_P016,   CF_P016  },
+	{MEDIASUBTYPE_YUY2,   CF_YUY2  },
+	{MEDIASUBTYPE_YV16,   CF_YV16  },
+	{MEDIASUBTYPE_P210,   CF_P210  },
+	{MEDIASUBTYPE_P216,   CF_P216  },
+	{MEDIASUBTYPE_YV24,   CF_YV24  },
+	{MEDIASUBTYPE_AYUV,   CF_AYUV  },
+	{MEDIASUBTYPE_Y410,   CF_Y410  },
+	{MEDIASUBTYPE_Y416,   CF_Y416  },
+	{MEDIASUBTYPE_RGB24,  CF_RGB24 },
+	{MEDIASUBTYPE_RGB32,  CF_XRGB32},
+	{MEDIASUBTYPE_ARGB32, CF_ARGB32},
+	{MEDIASUBTYPE_RGB48,  CF_RGB48 },
+	{MEDIASUBTYPE_BGR48,  CF_BGR48 },
+	{MEDIASUBTYPE_b48r,   CF_B48R  },
+	{MEDIASUBTYPE_BGRA64, CF_BGRA64},
+	{MEDIASUBTYPE_b64a,   CF_B64A  },
+	{MEDIASUBTYPE_Y8,     CF_Y8    },
+	{MEDIASUBTYPE_Y800,   CF_Y800  },
+	{MEDIASUBTYPE_Y16,    CF_Y116  },
+};
+
+ColorFormat_t GetColorFormat(const CMediaType* pmt)
+{
+	if (pmt) {
+		GUID subtype;
+		if (pmt->subtype == MEDIASUBTYPE_LAV_RAWVIDEO) {
+			const BITMAPINFOHEADER* pBIH = GetBIHfromVIHs(pmt);
+			if (!pBIH) {
+				return CF_NONE;
+			}
+			subtype = FOURCCMap(pBIH->biCompression);
+		} else {
+			subtype = pmt->subtype;
+		}
+		for (const auto& st2cf : subtypes_to_cformat) {
+			if (st2cf.subtype == subtype) {
+				return st2cf.cformat;
+			}
+		}
+	}
+	return CF_NONE;
+}
+
 static DX9PlanarPrms_t DX9PlanarNV12 = { D3DFMT_L8,  D3DFMT_A8L8,   D3DFMT_UNKNOWN, 2, 2 };
 static DX9PlanarPrms_t DX9PlanarP01x = { D3DFMT_L16, D3DFMT_G16R16, D3DFMT_UNKNOWN, 2, 2 };
 static DX9PlanarPrms_t DX9PlanarP21x = { D3DFMT_L16, D3DFMT_G16R16, D3DFMT_UNKNOWN, 2, 1 };
@@ -259,14 +310,9 @@ const FmtConvParams_t& GetFmtConvParams(const ColorFormat_t fmt)
 	return s_FmtConvMapping[fmt];
 }
 
-const FmtConvParams_t& GetFmtConvParams(const GUID& subtype)
+const FmtConvParams_t& GetFmtConvParams(const CMediaType* pmt)
 {
-	for (const auto& fe : s_FmtConvMapping) {
-		if (fe.Subtype == subtype) {
-			return fe;
-		}
-	}
-	return s_FmtConvMapping[CF_NONE];
+	return s_FmtConvMapping[GetColorFormat(pmt)];
 }
 
 CopyFrameDataFn GetCopyFunction(const FmtConvParams_t& params)
