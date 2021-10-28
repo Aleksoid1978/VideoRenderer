@@ -97,8 +97,7 @@ enum ColorFormat_t {
 	CF_BGRA64,
 	CF_B64A,
 	CF_Y8,
-	CF_Y800,
-	CF_Y116,
+	CF_Y16,
 };
 
 enum ColorSystem_t {

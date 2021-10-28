@@ -227,9 +227,9 @@ static ColorFormat_t fourcc_to_cformat(const DWORD fourcc)
 	case FCC('Y416'): cformat = CF_Y416; break;
 	case FCC('b48r'): cformat = CF_B48R; break;
 	case FCC('b64a'): cformat = CF_B64A; break;
-	case FCC('Y800'): cformat = CF_Y800; break;
+	case FCC('Y800'):
 	case MAKEFOURCC('Y','8',0x20,0x20): cformat = CF_Y8; break;
-	case MAKEFOURCC('Y','1', 0, 16): cformat = CF_Y116;   break;
+	case MAKEFOURCC('Y','1', 0, 16): cformat = CF_Y16;   break;
 	case MAKEFOURCC('R','G','B',48): cformat = CF_RGB48;  break;
 	case MAKEFOURCC('B','G','R',48): cformat = CF_BGR48;  break;
 	case MAKEFOURCC('B','R','A',64): cformat = CF_BGRA64; break;
@@ -246,7 +246,6 @@ ColorFormat_t GetColorFormat(const CMediaType* pmt)
 		if (pmt->subtype == MEDIASUBTYPE_RGB32)  { return CF_XRGB32; }
 		if (pmt->subtype == MEDIASUBTYPE_ARGB32) { return CF_ARGB32; }
 
-		DWORD fourcc;
 		if (memcmp(&pmt->subtype.Data2, &MEDIASUBTYPE_YUY2.Data2, sizeof(GUID) - sizeof(GUID::Data1)) == 0) {
 			return fourcc_to_cformat(pmt->subtype.Data1);
 		}
@@ -298,8 +297,7 @@ static const FmtConvParams_t s_FmtConvMapping[] = {
 	{CF_BGRA64, MEDIASUBTYPE_BGRA64, L"BGRA64", D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_RGB,  444,       16,    &CopyFrameBGRA64,         nullptr},
 	{CF_B64A,   MEDIASUBTYPE_b64a,   L"b64a",   D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_RGB,  444,       16,    &CopyFrameB64A,           nullptr},
 	{CF_Y8,     MEDIASUBTYPE_Y8,     L"Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R8_UNORM,              nullptr,       1, 2,        CS_GRAY, 400,       8,     &CopyFrameAsIs,           nullptr},
-	{CF_Y800,   MEDIASUBTYPE_Y800,   L"Y800",   D3DFMT_UNKNOWN,  D3DFMT_L8,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R8_UNORM,              nullptr,       1, 2,        CS_GRAY, 400,       8,     &CopyFrameAsIs,           nullptr},
-	{CF_Y116,   MEDIASUBTYPE_Y16,    L"Y16",    D3DFMT_UNKNOWN,  D3DFMT_L16,            nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16_UNORM,             nullptr,       2, 2,        CS_GRAY, 400,       16,    &CopyFrameAsIs,           nullptr},
+	{CF_Y16,    MEDIASUBTYPE_Y16,    L"Y16",    D3DFMT_UNKNOWN,  D3DFMT_L16,            nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16_UNORM,             nullptr,       2, 2,        CS_GRAY, 400,       16,    &CopyFrameAsIs,           nullptr},
 };
 // Remarks:
 // 1. The table lists all possible formats. The real situation depends on the capabilities of the graphics card and drivers.
