@@ -208,51 +208,52 @@ bool IsDefaultDXVA2ProcAmpValues(const DXVA2_ProcAmpValues& DXVA2ProcAmpValues)
 		&& DXVA2ProcAmpValues.Saturation.ll == s_DefaultDXVA2ProcAmpRanges[3].DefaultValue.ll;
 }
 
-static const struct {
-	GUID          subtype;
+static ColorFormat_t fourcc_to_cformat(const DWORD fourcc)
+{
 	ColorFormat_t cformat;
-} subtypes_to_cformat[] = {
-	{MEDIASUBTYPE_YV12,   CF_YV12  },
-	{MEDIASUBTYPE_NV12,   CF_NV12  },
-	{MEDIASUBTYPE_P010,   CF_P010  },
-	{MEDIASUBTYPE_P016,   CF_P016  },
-	{MEDIASUBTYPE_YUY2,   CF_YUY2  },
-	{MEDIASUBTYPE_YV16,   CF_YV16  },
-	{MEDIASUBTYPE_P210,   CF_P210  },
-	{MEDIASUBTYPE_P216,   CF_P216  },
-	{MEDIASUBTYPE_YV24,   CF_YV24  },
-	{MEDIASUBTYPE_AYUV,   CF_AYUV  },
-	{MEDIASUBTYPE_Y410,   CF_Y410  },
-	{MEDIASUBTYPE_Y416,   CF_Y416  },
-	{MEDIASUBTYPE_RGB24,  CF_RGB24 },
-	{MEDIASUBTYPE_RGB32,  CF_XRGB32},
-	{MEDIASUBTYPE_ARGB32, CF_ARGB32},
-	{MEDIASUBTYPE_RGB48,  CF_RGB48 },
-	{MEDIASUBTYPE_BGR48,  CF_BGR48 },
-	{MEDIASUBTYPE_b48r,   CF_B48R  },
-	{MEDIASUBTYPE_BGRA64, CF_BGRA64},
-	{MEDIASUBTYPE_b64a,   CF_B64A  },
-	{MEDIASUBTYPE_Y8,     CF_Y8    },
-	{MEDIASUBTYPE_Y800,   CF_Y800  },
-	{MEDIASUBTYPE_Y16,    CF_Y116  },
+
+	switch (fourcc) {
+	case FCC('YV12'): cformat = CF_YV12; break;
+	case FCC('NV12'): cformat = CF_NV12; break;
+	case FCC('P010'): cformat = CF_P010; break;
+	case FCC('P016'): cformat = CF_P016; break;
+	case FCC('YUY2'): cformat = CF_YUY2; break;
+	case FCC('YV16'): cformat = CF_YV16; break;
+	case FCC('P210'): cformat = CF_P210; break;
+	case FCC('P216'): cformat = CF_P216; break;
+	case FCC('YV24'): cformat = CF_YV24; break;
+	case FCC('AYUV'): cformat = CF_AYUV; break;
+	case FCC('Y410'): cformat = CF_Y410; break;
+	case FCC('Y416'): cformat = CF_Y416; break;
+	case FCC('b48r'): cformat = CF_B48R; break;
+	case FCC('b64a'): cformat = CF_B64A; break;
+	case FCC('Y800'): cformat = CF_Y800; break;
+	case MAKEFOURCC('Y','8',0x20,0x20): cformat = CF_Y8; break;
+	case MAKEFOURCC('Y','1', 0, 16): cformat = CF_Y116;   break;
+	case MAKEFOURCC('R','G','B',48): cformat = CF_RGB48;  break;
+	case MAKEFOURCC('B','G','R',48): cformat = CF_BGR48;  break;
+	case MAKEFOURCC('B','R','A',64): cformat = CF_BGRA64; break;
+	default: cformat = CF_NONE;
+	}
+
+	return cformat;
 };
 
 ColorFormat_t GetColorFormat(const CMediaType* pmt)
 {
 	if (pmt) {
-		GUID subtype;
-		if (pmt->subtype == MEDIASUBTYPE_LAV_RAWVIDEO) {
-			const BITMAPINFOHEADER* pBIH = GetBIHfromVIHs(pmt);
-			if (!pBIH) {
-				return CF_NONE;
-			}
-			subtype = FOURCCMap(pBIH->biCompression);
-		} else {
-			subtype = pmt->subtype;
+		if (pmt->subtype == MEDIASUBTYPE_RGB24)  { return CF_RGB24;  }
+		if (pmt->subtype == MEDIASUBTYPE_RGB32)  { return CF_XRGB32; }
+		if (pmt->subtype == MEDIASUBTYPE_ARGB32) { return CF_ARGB32; }
+
+		DWORD fourcc;
+		if (memcmp(&pmt->subtype.Data2, &MEDIASUBTYPE_YUY2.Data2, sizeof(GUID) - sizeof(GUID::Data1)) == 0) {
+			return fourcc_to_cformat(pmt->subtype.Data1);
 		}
-		for (const auto& st2cf : subtypes_to_cformat) {
-			if (st2cf.subtype == subtype) {
-				return st2cf.cformat;
+		else if (pmt->subtype == MEDIASUBTYPE_LAV_RAWVIDEO) {
+			const BITMAPINFOHEADER* pBIH = GetBIHfromVIHs(pmt);
+			if (pBIH) {
+				return fourcc_to_cformat(pBIH->biCompression);
 			}
 		}
 	}
