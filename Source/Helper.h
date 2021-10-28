@@ -123,7 +123,6 @@ struct DX11PlanarPrms_t {
 
 struct FmtConvParams_t {
 	ColorFormat_t     cformat;
-	GUID              Subtype;
 	const wchar_t*    str;
 	D3DFORMAT         DXVA2Format;
 	D3DFORMAT         D3DFormat;
