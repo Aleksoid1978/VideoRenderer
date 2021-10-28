@@ -784,7 +784,11 @@ HRESULT CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const
 		}
 		else if (params.pDX9Planes) {
 			if (params.pDX9Planes->FmtPlane3) {
-				resid = IDF_SHADER_CONVERT_PLANAR;
+				if (params.cformat == CF_YV12 || params.cformat == CF_YV16 || params.cformat == CF_YV24) {
+					resid = IDF_SHADER_CONVERT_PLANAR_YV;
+				} else {
+					resid = IDF_SHADER_CONVERT_PLANAR;
+				}
 			} else {
 				resid = IDF_SHADER_CONVERT_BIPLANAR;
 			}

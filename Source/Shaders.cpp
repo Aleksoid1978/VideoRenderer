@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2020 see Authors.txt
+* (C) 2019-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -205,13 +205,18 @@ HRESULT GetShaderConvertColor(
 			code.append("Texture2D tex : register(t0);\n");
 			break;
 		case 2:
-			code.append("Texture2D texY : register(t0);\n"
-						"Texture2D texUV : register(t1);\n");
+			code.append("Texture2D texY : register(t0);\n");
+			code.append("Texture2D texUV : register(t1);\n");
 			break;
 		case 3:
-			code.append("Texture2D texY : register(t0);\n"
-						"Texture2D texV : register(t1);\n"
-						"Texture2D texU : register(t2);\n");
+			code.append("Texture2D texY : register(t0);\n");
+			if (fmtParams.cformat == CF_YV12 || fmtParams.cformat == CF_YV16 || fmtParams.cformat == CF_YV24) {
+				code.append("Texture2D texV : register(t1);\n");
+				code.append("Texture2D texU : register(t2);\n");
+			} else {
+				code.append("Texture2D texU : register(t1);\n");
+				code.append("Texture2D texV : register(t2);\n");
+			}
 			break;
 		}
 
@@ -380,13 +385,18 @@ HRESULT GetShaderConvertColor(
 			code.append("sampler s0 : register(s0);\n");
 			break;
 		case 2:
-			code.append("sampler sY : register(s0);\n"
-						"sampler sUV : register(s1);\n");
+			code.append("sampler sY : register(s0);\n");
+			code.append("sampler sUV : register(s1);\n");
 			break;
 		case 3:
-			code.append("sampler sY : register(s0);\n"
-						"sampler sV : register(s1);\n"
-						"sampler sU : register(s2);\n");
+			code.append("sampler sY : register(s0);\n");
+			if (fmtParams.cformat == CF_YV12 || fmtParams.cformat == CF_YV16 || fmtParams.cformat == CF_YV24) {
+				code.append("sampler sV : register(s1);\n");
+				code.append("sampler sU : register(s2);\n");
+			} else {
+				code.append("sampler sU : register(s1);\n");
+				code.append("sampler sV : register(s2);\n");
+			}
 			break;
 		}
 

@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2020 see Authors.txt
+* (C) 2018-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -30,13 +30,13 @@
 #define D3DFMT_NV12 (D3DFORMAT)FCC('NV12')
 #define D3DFMT_P010 (D3DFORMAT)FCC('P010')
 #define D3DFMT_P016 (D3DFORMAT)FCC('P016')
-#define D3DFMT_YV16 (D3DFORMAT)FCC('YV16')
 #define D3DFMT_P210 (D3DFORMAT)FCC('P210')
 #define D3DFMT_P216 (D3DFORMAT)FCC('P216')
-#define D3DFMT_YV24 (D3DFORMAT)FCC('YV24')
 #define D3DFMT_AYUV (D3DFORMAT)FCC('AYUV')
 #define D3DFMT_Y410 (D3DFORMAT)FCC('Y410')
 #define D3DFMT_Y416 (D3DFORMAT)FCC('Y416')
+
+#define D3DFMT_PLANAR (D3DFORMAT)0xFFFF
 
 #define DXGI_FORMAT_PLANAR (DXGI_FORMAT)0xFFFF
 
@@ -88,6 +88,7 @@ enum ColorFormat_t {
 	CF_AYUV,
 	CF_Y410,
 	CF_Y416,
+	CF_YUV444P16,
 	CF_RGB24,
 	CF_XRGB32,
 	CF_ARGB32,
@@ -105,7 +106,7 @@ enum ColorSystem_t {
 	CS_GRAY
 };
 
-struct DX9PlanarPrms_t {
+struct DX9PlaneConfig {
 	D3DFORMAT   FmtPlane1;
 	D3DFORMAT   FmtPlane2;
 	D3DFORMAT   FmtPlane3;
@@ -113,7 +114,7 @@ struct DX9PlanarPrms_t {
 	UINT        div_chroma_h;
 };
 
-struct DX11PlanarPrms_t {
+struct DX11PlaneConfig_t {
 	DXGI_FORMAT FmtPlane1;
 	DXGI_FORMAT FmtPlane2;
 	DXGI_FORMAT FmtPlane3;
@@ -122,21 +123,21 @@ struct DX11PlanarPrms_t {
 };
 
 struct FmtConvParams_t {
-	ColorFormat_t     cformat;
-	const wchar_t*    str;
-	D3DFORMAT         DXVA2Format;
-	D3DFORMAT         D3DFormat;
-	DX9PlanarPrms_t*  pDX9Planes;
-	DXGI_FORMAT       VP11Format;
-	DXGI_FORMAT       DX11Format;
-	DX11PlanarPrms_t* pDX11Planes;
-	int               Packsize;
-	int               PitchCoeff;
-	ColorSystem_t     CSType;
-	int               Subsampling;
-	int               CDepth;
-	CopyFrameDataFn   Func;
-	CopyFrameDataFn   FuncSSSE3;
+	ColorFormat_t      cformat;
+	const wchar_t*     str;
+	D3DFORMAT          DXVA2Format;
+	D3DFORMAT          D3DFormat;
+	DX9PlaneConfig*    pDX9Planes;
+	DXGI_FORMAT        VP11Format;
+	DXGI_FORMAT        DX11Format;
+	DX11PlaneConfig_t* pDX11Planes;
+	int                Packsize;
+	int                PitchCoeff;
+	ColorSystem_t      CSType;
+	int                Subsampling;
+	int                CDepth;
+	CopyFrameDataFn    Func;
+	CopyFrameDataFn    FuncSSSE3;
 };
 
 ColorFormat_t GetColorFormat(const CMediaType* pmt);

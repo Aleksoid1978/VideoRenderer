@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2020 see Authors.txt
+* (C) 2019-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -67,7 +67,7 @@ struct Tex9Video_t : Tex_t
 	Tex_t Plane2;
 	Tex_t Plane3;
 
-	HRESULT CreateEx(IDirect3DDevice9Ex* pDevice, const D3DFORMAT format, const DX9PlanarPrms_t* pPlanes, const UINT width, const UINT height, DWORD usage) {
+	HRESULT CreateEx(IDirect3DDevice9Ex* pDevice, const D3DFORMAT format, const DX9PlaneConfig* pPlanes, const UINT width, const UINT height, DWORD usage) {
 		Release();
 
 		HRESULT hr;

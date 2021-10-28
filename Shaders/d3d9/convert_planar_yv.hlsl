@@ -1,6 +1,6 @@
 sampler sY : register(s0);
-sampler sU : register(s1);
-sampler sV : register(s2);
+sampler sV : register(s1);
+sampler sU : register(s2);
 
 float4 cm_r : register(c0);
 float4 cm_g : register(c1);

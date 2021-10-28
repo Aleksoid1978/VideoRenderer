@@ -1623,7 +1623,11 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 		}
 		else if (params.pDX11Planes) {
 			if (params.pDX11Planes->FmtPlane3) {
-				resid = IDF_PSH11_CONVERT_PLANAR;
+				if (params.cformat == CF_YV12 || params.cformat == CF_YV16 || params.cformat == CF_YV24) {
+					resid = IDF_PSH11_CONVERT_PLANAR_YV;
+				} else {
+					resid = IDF_PSH11_CONVERT_PLANAR;
+				}
 			} else {
 				resid = IDF_PSH11_CONVERT_BIPLANAR;
 			}

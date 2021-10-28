@@ -1,6 +1,6 @@
 Texture2D texY : register(t0);
-Texture2D texU : register(t1);
-Texture2D texV : register(t2);
+Texture2D texV : register(t1);
+Texture2D texU : register(t2);
 SamplerState samp : register(s0);
 SamplerState sampL : register(s1);
 
