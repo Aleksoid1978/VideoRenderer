@@ -225,11 +225,11 @@ static ColorFormat_t fourcc_to_cformat(const DWORD fourcc)
 	case FCC('AYUV'): cformat = CF_AYUV; break;
 	case FCC('Y410'): cformat = CF_Y410; break;
 	case FCC('Y416'): cformat = CF_Y416; break;
-	case FCC('b48r'): cformat = CF_B48R; break;
 	case FCC('b64a'): cformat = CF_B64A; break;
 	case FCC('Y800'):
 	case MAKEFOURCC('Y','8',0x20,0x20): cformat = CF_Y8; break;
 	case MAKEFOURCC('Y','1', 0, 16): cformat = CF_Y16;   break;
+	case FCC('b48r'):
 	case MAKEFOURCC('R','G','B',48): cformat = CF_RGB48;  break;
 	case MAKEFOURCC('B','G','R',48): cformat = CF_BGR48;  break;
 	case MAKEFOURCC('B','R','A',64): cformat = CF_BGRA64; break;
@@ -293,7 +293,6 @@ static const FmtConvParams_t s_FmtConvMapping[] = {
 	{CF_ARGB32, MEDIASUBTYPE_ARGB32, L"ARGB32", D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,       nullptr, DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM,        nullptr,       4, 2,        CS_RGB,  444,       8,     &CopyFrameAsIs,           nullptr},
 	{CF_RGB48,  MEDIASUBTYPE_RGB48,  L"RGB48",  D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16,    &CopyFrameRGB48,          nullptr},
 	{CF_BGR48,  MEDIASUBTYPE_BGR48,  L"BGR48",  D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16,    &CopyFrameBGR48,          nullptr},
-	{CF_B48R,   MEDIASUBTYPE_b48r,   L"b48r",   D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16,    &CopyFrameRGB48,          nullptr},
 	{CF_BGRA64, MEDIASUBTYPE_BGRA64, L"BGRA64", D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_RGB,  444,       16,    &CopyFrameBGRA64,         nullptr},
 	{CF_B64A,   MEDIASUBTYPE_b64a,   L"b64a",   D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,   nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_RGB,  444,       16,    &CopyFrameB64A,           nullptr},
 	{CF_Y8,     MEDIASUBTYPE_Y8,     L"Y8",     D3DFMT_UNKNOWN,  D3DFMT_L8,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R8_UNORM,              nullptr,       1, 2,        CS_GRAY, 400,       8,     &CopyFrameAsIs,           nullptr},

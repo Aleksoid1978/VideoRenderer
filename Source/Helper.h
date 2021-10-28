@@ -93,7 +93,6 @@ enum ColorFormat_t {
 	CF_ARGB32,
 	CF_RGB48,
 	CF_BGR48,
-	CF_B48R,
 	CF_BGRA64,
 	CF_B64A,
 	CF_Y8,
