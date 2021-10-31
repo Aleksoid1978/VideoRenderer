@@ -846,7 +846,10 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 
 	csp_params.input_bits = csp_params.texture_bits = m_srcParams.CDepth;
 
-	m_PSConvColorData.bEnable = m_srcParams.CSType == CS_YUV || fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
+	m_PSConvColorData.bEnable =
+		m_srcParams.CSType == CS_YUV ||
+		m_srcParams.cformat == CF_GBRP8 || m_srcParams.cformat == CF_GBRP16 ||
+		fabs(csp_params.brightness) > 1e-4f || fabs(csp_params.contrast - 1.0f) > 1e-4f;
 
 	mp_cmat cmatrix;
 	mp_get_csp_matrix(&csp_params, &cmatrix);
@@ -864,6 +867,12 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 	if (m_srcParams.cformat == CF_Y410 || m_srcParams.cformat == CF_Y416) {
 		for (int i = 0; i < 3; i++) {
 			std::swap(m_PSConvColorData.fConstants[i][0], m_PSConvColorData.fConstants[i][1]);
+		}
+	}
+	else if (m_srcParams.cformat == CF_GBRP8 || m_srcParams.cformat == CF_GBRP16) {
+		for (int i = 0; i < 3; i++) {
+			std::swap(m_PSConvColorData.fConstants[i][0], m_PSConvColorData.fConstants[i][1]);
+			std::swap(m_PSConvColorData.fConstants[i][1], m_PSConvColorData.fConstants[i][2]);
 		}
 	}
 }
