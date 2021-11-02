@@ -119,8 +119,13 @@ struct Settings_t {
 		bExclusiveFS                    = false;
 		bVBlankBeforePresent            = false;
 		bReinitByDisplay                = false;
-		bHdrPassthrough                 = true;
-		iHdrToggleDisplay               = HDRTD_Always;
+		if (IsWindows10OrGreater()) {
+			bHdrPassthrough             = true;
+			iHdrToggleDisplay           = HDRTD_Always;
+		} else {
+			bHdrPassthrough             = false;
+			iHdrToggleDisplay           = HDRTD_Off;
+		}
 		bConvertToSdr                   = true;
 	}
 };
