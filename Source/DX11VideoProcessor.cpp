@@ -3186,11 +3186,13 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	str.append(m_strStatsDispInfo);
 	str += fmt::format(L"\nGraph. Adapter: {}", m_strAdapterDescription);
 
-	str += fmt::format(L"\nFrame rate    : {:7.3f}", m_pFilter->m_FrameStats.GetAverageFps());
-	if (m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) {
-		str += L'i';
-	}
-	str += fmt::format(L",{:7.3f}", m_pFilter->m_DrawStats.GetAverageFps());
+	wchar_t frametype = (m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) ? 'i' : 'p';
+	str += fmt::format(
+		L"\nFrame rate    : {:7.3f}{},{:7.3f}",
+		m_pFilter->m_FrameStats.GetAverageFps(),
+		frametype,
+		m_pFilter->m_DrawStats.GetAverageFps()
+	);
 
 	str.append(m_strStatsInputFmt);
 	str.append(m_strStatsVProc);

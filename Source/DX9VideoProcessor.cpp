@@ -2709,11 +2709,13 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	str.append(m_strStatsDispInfo);
 	str += fmt::format(L"\nGraph. Adapter: {}", m_strAdapterDescription);
 
-	str += fmt::format(L"\nFrame rate    : {:7.3f}", m_pFilter->m_FrameStats.GetAverageFps());
-	if (m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) {
-		str += L'i';
-	}
-	str += fmt::format(L",{:7.3f}", m_pFilter->m_DrawStats.GetAverageFps());
+	wchar_t frametype = (m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) ? 'i' : 'p';
+	str += fmt::format(
+		L"\nFrame rate    : {:7.3f}{},{:7.3f}",
+		m_pFilter->m_FrameStats.GetAverageFps(),
+		frametype,
+		m_pFilter->m_DrawStats.GetAverageFps()
+	);
 
 	str.append(m_strStatsInputFmt);
 	str.append(m_strStatsVProc);
