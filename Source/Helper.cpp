@@ -213,30 +213,32 @@ static ColorFormat_t fourcc_to_cformat(const DWORD fourcc)
 	ColorFormat_t cformat;
 
 	switch (fourcc) {
-	case FCC('YV12'): cformat = CF_YV12; break;
-	case FCC('I420'): cformat = CF_YUV420P8; break;
 	case FCC('NV12'): cformat = CF_NV12; break;
 	case FCC('P010'): cformat = CF_P010; break;
 	case FCC('P016'): cformat = CF_P016; break;
 	case FCC('YUY2'): cformat = CF_YUY2; break;
-	case FCC('YV16'): cformat = CF_YV16; break;
 	case FCC('P210'): cformat = CF_P210; break;
 	case FCC('P216'): cformat = CF_P216; break;
-	case FCC('YV24'): cformat = CF_YV24; break;
-	case FCC('444P'): cformat = CF_YUV444P8; break;
 	case FCC('AYUV'): cformat = CF_AYUV; break;
 	case FCC('Y410'): cformat = CF_Y410; break;
 	case FCC('Y416'): cformat = CF_Y416; break;
-	case FCC('b64a'): cformat = CF_B64A; break;
+	case FCC('YV12'): cformat = CF_YV12; break;
+	case FCC('YV16'): cformat = CF_YV16; break;
+	case FCC('YV24'): cformat = CF_YV24; break;
+	case FCC('I420'): cformat = CF_YUV420P8; break;
+	case FCC('444P'): cformat = CF_YUV444P8; break;
 	case FCC('Y800'):
 	case MAKEFOURCC('Y','8',0x20,0x20): cformat = CF_Y8;        break;
 	case MAKEFOURCC('Y','1',0,16):      cformat = CF_Y16;       break;
+	case MAKEFOURCC('Y','3',11,16):     cformat = CF_YUV420P16; break;
+	case MAKEFOURCC('Y','3',10,16):     cformat = CF_YUV422P16; break;
 	case MAKEFOURCC('Y','3',0,16):      cformat = CF_YUV444P16; break;
 	case MAKEFOURCC('G','3',0,8):       cformat = CF_GBRP8;     break;
 	case MAKEFOURCC('G','3',0,16):      cformat = CF_GBRP16;    break;
 	case FCC('b48r'):
 	case MAKEFOURCC('R','G','B',48):    cformat = CF_RGB48;     break;
 	case MAKEFOURCC('B','G','R',48):    cformat = CF_BGR48;     break;
+	case FCC('b64a'): cformat = CF_B64A; break;
 	case MAKEFOURCC('B','R','A',64):    cformat = CF_BGRA64;    break;
 	default: cformat = CF_NONE;
 	}
@@ -270,6 +272,8 @@ static DX9PlaneConfig DX9PlanesP21x   = { D3DFMT_L16, D3DFMT_G16R16, D3DFMT_UNKN
 static DX9PlaneConfig DX9Planes420P   = { D3DFMT_L8,  D3DFMT_L8,     D3DFMT_L8,      2, 2 };
 static DX9PlaneConfig DX9Planes422P   = { D3DFMT_L8,  D3DFMT_L8,     D3DFMT_L8,      2, 1 };
 static DX9PlaneConfig DX9Planes444P   = { D3DFMT_L8,  D3DFMT_L8,     D3DFMT_L8,      1, 1 };
+static DX9PlaneConfig DX9Planes420P16 = { D3DFMT_L16, D3DFMT_L16,    D3DFMT_L16,     2, 2 };
+static DX9PlaneConfig DX9Planes422P16 = { D3DFMT_L16, D3DFMT_L16,    D3DFMT_L16,     2, 1 };
 static DX9PlaneConfig DX9Planes444P16 = { D3DFMT_L16, D3DFMT_L16,    D3DFMT_L16,     1, 1 };
 
 static DX11PlaneConfig_t DX11PlanesNV12   = { DXGI_FORMAT_R8_UNORM,  DXGI_FORMAT_R8G8_UNORM,   DXGI_FORMAT_UNKNOWN,   2, 2 };
@@ -278,6 +282,8 @@ static DX11PlaneConfig_t DX11PlanesP21x   = { DXGI_FORMAT_R16_UNORM, DXGI_FORMAT
 static DX11PlaneConfig_t DX11Planes420P   = { DXGI_FORMAT_R8_UNORM,  DXGI_FORMAT_R8_UNORM,     DXGI_FORMAT_R8_UNORM,  2, 2 };
 static DX11PlaneConfig_t DX11Planes422P   = { DXGI_FORMAT_R8_UNORM,  DXGI_FORMAT_R8_UNORM,     DXGI_FORMAT_R8_UNORM,  2, 1 };
 static DX11PlaneConfig_t DX11Planes444P   = { DXGI_FORMAT_R8_UNORM,  DXGI_FORMAT_R8_UNORM,     DXGI_FORMAT_R8_UNORM,  1, 1 };
+static DX11PlaneConfig_t DX11Planes420P16 = { DXGI_FORMAT_R16_UNORM, DXGI_FORMAT_R16_UNORM,    DXGI_FORMAT_R16_UNORM, 2, 2 };
+static DX11PlaneConfig_t DX11Planes422P16 = { DXGI_FORMAT_R16_UNORM, DXGI_FORMAT_R16_UNORM,    DXGI_FORMAT_R16_UNORM, 2, 1 };
 static DX11PlaneConfig_t DX11Planes444P16 = { DXGI_FORMAT_R16_UNORM, DXGI_FORMAT_R16_UNORM,    DXGI_FORMAT_R16_UNORM, 1, 1 };
 
 static const FmtConvParams_t s_FmtConvMapping[] = {
@@ -297,16 +303,22 @@ static const FmtConvParams_t s_FmtConvMapping[] = {
 	{CF_AYUV,      L"AYUV",      D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,        nullptr, DXGI_FORMAT_AYUV,           DXGI_FORMAT_B8G8R8X8_UNORM,        nullptr,       4, 2,        CS_YUV,  444,       8,     &CopyFrameAsIs,           nullptr},
 	{CF_Y410,      L"Y410",      D3DFMT_Y410,     D3DFMT_A2B10G10R10,     nullptr, DXGI_FORMAT_Y410,           DXGI_FORMAT_R10G10B10A2_UNORM,     nullptr,       4, 2,        CS_YUV,  444,       10,    &CopyFrameAsIs,           nullptr},
 	{CF_Y416,      L"Y416",      D3DFMT_Y416,     D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_Y416,           DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_YUV,  444,       16,    &CopyFrameAsIs,           nullptr},
+
+	{CF_YUV420P16, L"YUV420P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes420P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes420P16,       2, 3,        CS_YUV,  420,       16,    &CopyFrameAsIs,           nullptr},
+	{CF_YUV422P16, L"YUV422P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes422P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes422P16,       2, 4,        CS_YUV,  422,       16,    &CopyFrameAsIs,           nullptr},
 	{CF_YUV444P16, L"YUV444P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_YUV,  444,       16,    &CopyFrameAsIs,           nullptr},
+
 	{CF_RGB24,     L"RGB24",     D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,        nullptr, DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,        nullptr,       3, 2,        CS_RGB,  444,       8,     &CopyFrameRGB24, &CopyRGB24_SSSE3},
 	{CF_GBRP8,     L"GBRP8",     D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes444P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes444P,       1, 6,        CS_RGB,  444,       8,     &CopyFrameAsIs,           nullptr},
 	{CF_XRGB32,    L"RGB32",     D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,        nullptr, DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,        nullptr,       4, 2,        CS_RGB,  444,       8,     &CopyFrameAsIs,           nullptr},
 	{CF_ARGB32,    L"ARGB32",    D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,        nullptr, DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM,        nullptr,       4, 2,        CS_RGB,  444,       8,     &CopyFrameAsIs,           nullptr},
+
 	{CF_RGB48,     L"RGB48",     D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16,    &CopyFrameRGB48,          nullptr},
 	{CF_BGR48,     L"BGR48",     D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16,    &CopyFrameBGR48,          nullptr},
 	{CF_GBRP16,    L"GBRP16",    D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_RGB,  444,       16,    &CopyFrameAsIs,           nullptr},
 	{CF_BGRA64,    L"BGRA64",    D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_RGB,  444,       16,    &CopyFrameBGRA64,         nullptr},
 	{CF_B64A,      L"b64a",      D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_RGB,  444,       16,    &CopyFrameB64A,           nullptr},
+
 	{CF_Y8,        L"Y8",        D3DFMT_UNKNOWN,  D3DFMT_L8,              nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R8_UNORM,              nullptr,       1, 2,        CS_GRAY, 400,       8,     &CopyFrameAsIs,           nullptr},
 	{CF_Y16,       L"Y16",       D3DFMT_UNKNOWN,  D3DFMT_L16,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16_UNORM,             nullptr,       2, 2,        CS_GRAY, 400,       16,    &CopyFrameAsIs,           nullptr},
 };
@@ -322,7 +334,9 @@ const FmtConvParams_t& GetFmtConvParams(const ColorFormat_t fmt)
 
 const FmtConvParams_t& GetFmtConvParams(const CMediaType* pmt)
 {
-	return s_FmtConvMapping[GetColorFormat(pmt)];
+	const ColorFormat_t fmt = GetColorFormat(pmt);
+	ASSERT(fmt == s_FmtConvMapping[fmt].cformat);
+	return s_FmtConvMapping[fmt];
 }
 
 CopyFrameDataFn GetCopyFunction(const FmtConvParams_t& params)

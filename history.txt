@@ -7,7 +7,7 @@ Fixed the problem with the "Information" tab working when pressing Esc when the 
 The "HdrToggleDisplay" option now has three values: "not used", "used for fullscreen", "always used".
 Fixed HDR Passthrough for various cases.
 Added support for MEDIASUBTYPE_LAV_RAWVIDEO.
-Added support for YUV420P8 ('I420'), YUV444P8 ('444P'), YUV444P16 ('Y3[0][16]'), GBRP8 ('G3[0][8]'), GBRP16 ('G3[0][16]') formats.
+Added support for various YUV and RGB planar formats.
 
 v0.5.4.1723 - 2021.06.23
 ------------------------
