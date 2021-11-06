@@ -99,6 +99,7 @@ enum ColorFormat_t {
 	CF_RGB24,
 	CF_XRGB32,
 	CF_ARGB32,
+	CF_r210,
 	CF_RGB48,
 	CF_BGR48,
 	CF_BGRA64,
@@ -171,6 +172,8 @@ void CopyFrameB64A(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src,
 void CopyFrameYV12(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 // Y410 (not used)
 void CopyFrameY410(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
+// r210
+void CopyFrameR210(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 
 void ConvertXRGB10toXRGB8(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 

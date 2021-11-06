@@ -241,6 +241,7 @@ static ColorFormat_t fourcc_to_cformat(const DWORD fourcc)
 	case MAKEFOURCC('B','G','R',48):    cformat = CF_BGR48;     break;
 	case FCC('b64a'): cformat = CF_B64A; break;
 	case MAKEFOURCC('B','R','A',64):    cformat = CF_BGRA64;    break;
+	case FCC('r210'): cformat = CF_r210; break;
 	default: cformat = CF_NONE;
 	}
 
@@ -318,6 +319,8 @@ static const FmtConvParams_t s_FmtConvMapping[] = {
 	{CF_RGB24,     L"RGB24",     D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,        nullptr, DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,        nullptr,       3, 2,        CS_RGB,  444,       8,     &CopyFrameRGB24, &CopyRGB24_SSSE3},
 	{CF_XRGB32,    L"RGB32",     D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,        nullptr, DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,        nullptr,       4, 2,        CS_RGB,  444,       8,     &CopyFrameAsIs,           nullptr},
 	{CF_ARGB32,    L"ARGB32",    D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,        nullptr, DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM,        nullptr,       4, 2,        CS_RGB,  444,       8,     &CopyFrameAsIs,           nullptr},
+
+	{CF_r210,      L"r210",      D3DFMT_UNKNOWN,  D3DFMT_A2B10G10R10,     nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R10G10B10A2_UNORM,     nullptr,       4, 2,        CS_RGB,  444,       10,    &CopyFrameR210,           nullptr},
 
 	{CF_RGB48,     L"RGB48",     D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16,    &CopyFrameRGB48,          nullptr},
 	{CF_BGR48,     L"BGR48",     D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16,    &CopyFrameBGR48,          nullptr},
@@ -598,6 +601,26 @@ void CopyFrameY410(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src,
 			// U = (t & 0x000003ff); Y = (t & 0x000ffc00) >> 10; V = (t & 0x3ff00000) >> 20; A = (t & 0xC0000000) >> 30;
 			//dst32[i] = (t & 0xC0000000) | ((t & 0x000fffff) << 10) | ((t & 0x3ff00000) >> 20); // to D3DFMT_A2R10G10B10
 			dst32[i] = (t & 0xfff00000) | ((t & 0x000003ff) << 10) | ((t & 0x000ffc00) >> 10); // to D3DFMT_A2B10G10R10
+		}
+		src += src_pitch;
+		dst += dst_pitch;
+	}
+}
+
+void CopyFrameR210(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
+{
+	ASSERT(src_pitch > 0);
+	UINT line_pixels = src_pitch / 4;
+
+	for (UINT y = 0; y < lines; ++y) {
+		uint32_t* src32 = (uint32_t*)src;
+		uint32_t* dst32 = (uint32_t*)dst;
+		for (UINT i = 0; i < line_pixels; i++) {
+			const uint32_t t = src32[i];
+			uint32_t r = ((t & 0x0000003f) << 4) | ((t & 0x0000f000) >> 12);
+			uint32_t g = ((t & 0x00fc0000) >> 8) | ((t & 0x00000f00) << 8);
+			uint32_t b = ((t & 0xff000000) >> 4) | ((t & 0x00030000) << 12);
+			dst32[i] = r | g | b;
 		}
 		src += src_pitch;
 		dst += dst_pitch;
