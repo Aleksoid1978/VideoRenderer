@@ -100,7 +100,11 @@ struct Settings_t {
 	}
 
 	void SetDefault() {
-		bUseD3D11                       = false;
+		if (IsWindows8Point1OrGreater()) {
+			bUseD3D11                   = true;
+		} else {
+			bUseD3D11                   = false;
+		}
 		bShowStats                      = false;
 		iResizeStats                    = 0;
 		iTexFormat                      = TEXFMT_AUTOINT;
