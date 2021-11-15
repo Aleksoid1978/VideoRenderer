@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2020 see Authors.txt
+* (C) 2019-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -509,8 +509,10 @@ HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAM
 		if (m_bUpdateFilters) {
 			for (UINT i = 0; i < std::size(m_VPFilters); i++) {
 				auto& filter = m_VPFilters[i];
-				BOOL bEnable = (filter.support && filter.value != filter.range.Default);
-				m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, (D3D11_VIDEO_PROCESSOR_FILTER)i, bEnable, filter.value);
+				if (filter.support) {
+					BOOL bEnable = (filter.value != filter.range.Default);
+					m_pVideoContext->VideoProcessorSetStreamFilter(m_pVideoProcessor, 0, (D3D11_VIDEO_PROCESSOR_FILTER)i, bEnable, filter.value);
+				}
 			}
 			m_bUpdateFilters = false;
 		}
