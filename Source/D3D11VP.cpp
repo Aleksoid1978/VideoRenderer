@@ -283,22 +283,25 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 
 	for (UINT i = 0; i < std::size(m_VPFilters); i++) {
 		auto& filter = m_VPFilters[i];
-		filter.support = m_VPCaps.FilterCaps & (1 << i);
+		filter.support = m_VPCaps.FilterCaps & (1u << i);
+		m_VPFilters[i].range = {};
+
 		HRESULT hr2 = E_FAIL;
 		if (filter.support) {
 			hr2 = m_pVideoProcessorEnum->GetVideoProcessorFilterRange((D3D11_VIDEO_PROCESSOR_FILTER)i, &filter.range);
+
+			if (FAILED(hr2)) {
+				DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : GetVideoProcessorFilterRange({}) failed with error {}", i, HR2Str(hr2));
+				filter.support = 0;
+			}
 			DLogIf(SUCCEEDED(hr2) ,L"CDX11VideoProcessor::InitializeD3D11VP() : FilterRange({}) : {:5d}, {:3d}, {:4d}, {:f}",
 				i, filter.range.Minimum, filter.range.Default, filter.range.Maximum, filter.range.Multiplier);
 
-			if (i == D3D11_VIDEO_PROCESSOR_FILTER_NOISE_REDUCTION || i == D3D11_VIDEO_PROCESSOR_FILTER_EDGE_ENHANCEMENT) {
+			if (i >= D3D11_VIDEO_PROCESSOR_FILTER_NOISE_REDUCTION) {
 				filter.value = filter.range.Default; // disable it
 			}
 		}
-		if (FAILED(hr2)) {
-			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : GetVideoProcessorFilterRange({}) failed with error {}", i, HR2Str(hr2));
-			filter.support = 0;
-			m_VPFilters[i].range = {};
-		}
+		
 	}
 
 	// Output rate (repeat frames)

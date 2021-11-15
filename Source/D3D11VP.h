@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2020 see Authors.txt
+* (C) 2019-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -130,7 +130,7 @@ private:
 		int support;
 		int value;
 		D3D11_VIDEO_PROCESSOR_FILTER_RANGE range;
-	} m_VPFilters[6] = {};
+	} m_VPFilters[8] = {};
 	bool m_bUpdateFilters = false;
 
 	D3D11_VIDEO_PROCESSOR_ROTATION m_Rotation = D3D11_VIDEO_PROCESSOR_ROTATION_IDENTITY;
