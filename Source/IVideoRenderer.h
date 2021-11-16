@@ -100,7 +100,7 @@ struct Settings_t {
 	}
 
 	void SetDefault() {
-		if (IsWindows8Point1OrGreater()) {
+		if (IsWindows8OrGreater()) {
 			bUseD3D11                   = true;
 		} else {
 			bUseD3D11                   = false;
