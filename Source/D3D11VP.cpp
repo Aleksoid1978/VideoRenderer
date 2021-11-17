@@ -167,6 +167,14 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 		return hr;
 	}
 
+	// check input format
+	UINT uiFlags;
+	hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(inputFmt, &uiFlags);
+	if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT)) {
+		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : {} is not supported for D3D11 VP input.", DXGIFormatToString(inputFmt));
+		return E_INVALIDARG;
+	}
+
 	// get VideoProcessorCaps
 	hr = m_pVideoProcessorEnum->GetVideoProcessorCaps(&m_VPCaps);
 	if (FAILED(hr)) {
@@ -209,13 +217,6 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 	DLog(dbgstr);
 #endif
 
-	// check input format
-	UINT uiFlags;
-	hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(inputFmt, &uiFlags);
-	if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT)) {
-		return E_INVALIDARG;
-	}
-
 	// select output format
 	// always overriding the output format because there are problems with FLOAT
 	if (GetBitDepth(inputFmt) <= 8 && (outputFmt == DXGI_FORMAT_B8G8R8A8_UNORM || outputFmt == DXGI_FORMAT_UNKNOWN)) {
@@ -228,13 +229,15 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 	if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
 		if (outputFmt != DXGI_FORMAT_B8G8R8A8_UNORM) {
 			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() {} is not supported for D3D11 VP output. DXGI_FORMAT_B8G8R8A8_UNORM will be used.", DXGIFormatToString(outputFmt));
+
 			outputFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
 			hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(outputFmt, &uiFlags);
 			if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT)) {
-				DLog(L"CDX11VideoProcessor::InitializeD3D11VP() DXGI_FORMAT_B8G8R8A8_UNORM is not supported for D3D11 VP output.");
-				return E_INVALIDARG;
+				hr = E_INVALIDARG;
 			}
-		} else {
+		}
+
+		if (FAILED(hr)) {
 			DLog(L"CDX11VideoProcessor::InitializeD3D11VP() {} is not supported for D3D11 VP output.", DXGIFormatToString(outputFmt));
 			return E_INVALIDARG;
 		}
