@@ -58,7 +58,7 @@ struct VR_Extradata {
 struct ScalingShaderResId {
 	UINT shaderX;
 	UINT shaderY;
-	wchar_t* const description;
+	const wchar_t* const description;
 };
 
 LPCWSTR GetNameAndVersion();

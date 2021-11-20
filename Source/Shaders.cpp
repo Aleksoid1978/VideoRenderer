@@ -148,8 +148,8 @@ HRESULT GetShaderConvertColor(
 		code.append("#define CATMULLROM_05(c0,c1,c2,c3) (9*(c1+c2)-(c0+c3))*0.0625\n");
 	}
 
-	char* strChromaPos = "";
-	char* strChromaPos2 = "";
+	const char* strChromaPos = "";
+	const char* strChromaPos2 = "";
 	if (fmtParams.Subsampling == 420) {
 		switch (exFmt.VideoChromaSubsampling) {
 		case DXVA2_VideoChromaSubsampling_Cosited:
