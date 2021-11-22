@@ -394,16 +394,14 @@ void CopyFrameRGB24(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src
 		uint32_t* src32 = (uint32_t*)src;
 		uint32_t* dst32 = (uint32_t*)dst;
 		for (UINT i = 0; i < line_pixels; i += 4) {
-			uint32_t sa = src32[0];
-			uint32_t sb = src32[1];
-			uint32_t sc = src32[2];
+			uint32_t sa = *src32++;
+			uint32_t sb = *src32++;
+			uint32_t sc = *src32++;
 
-			dst32[i + 0] = sa;
-			dst32[i + 1] = (sa >> 24) | (sb << 8);
-			dst32[i + 2] = (sb >> 16) | (sc << 16);
-			dst32[i + 3] = sc >> 8;
-
-			src32 += 3;
+			*dst32++ = sa;
+			*dst32++ = (sa >> 24) | (sb << 8);
+			*dst32++ = (sb >> 16) | (sc << 16);
+			*dst32++ = sc >> 8;
 		}
 
 		src += src_pitch;
@@ -423,36 +421,31 @@ void CopyRGB24_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* sr
 
 		UINT i = 0;
 		for (; i < line_pixels16; i += 16) {
-			__m128i sa = _mm_load_si128(src128);
-			__m128i sb = _mm_load_si128(src128 + 1);
-			__m128i sc = _mm_load_si128(src128 + 2);
+			__m128i sa = _mm_load_si128(src128++);
+			__m128i sb = _mm_load_si128(src128++);
+			__m128i sc = _mm_load_si128(src128++);
 
 			__m128i val = _mm_shuffle_epi8(sa, mask);
-			_mm_store_si128(dst128, val);
+			_mm_store_si128(dst128++, val);
 			val = _mm_shuffle_epi8(_mm_alignr_epi8(sb, sa, 12), mask);
-			_mm_store_si128(dst128 + 1, val);
+			_mm_store_si128(dst128++, val);
 			val = _mm_shuffle_epi8(_mm_alignr_epi8(sc, sb, 8), mask);
-			_mm_store_si128(dst128 + 2, val);
+			_mm_store_si128(dst128++, val);
 			val = _mm_shuffle_epi8(_mm_alignr_epi8(sc, sc, 4), mask);
-			_mm_store_si128(dst128 + 3, val);
-
-			src128 += 3;
-			dst128 += 4;
+			_mm_store_si128(dst128++, val);
 		}
 
 		uint32_t* src32 = (uint32_t*)src128;
 		uint32_t* dst32 = (uint32_t*)dst128;
 		for (; i < line_pixels; i += 4) {
-			uint32_t sa = src32[0];
-			uint32_t sb = src32[1];
-			uint32_t sc = src32[2];
+			uint32_t sa = *src32++;
+			uint32_t sb = *src32++;
+			uint32_t sc = *src32++;
 
-			dst32[i + 0] = sa;
-			dst32[i + 1] = (sa >> 24) | (sb << 8);
-			dst32[i + 2] = (sb >> 16) | (sc << 16);
-			dst32[i + 3] = sc >> 8;
-
-			src32 += 3;
+			*dst32++ = sa;
+			*dst32++ = (sa >> 24) | (sb << 8);
+			*dst32++ = (sb >> 16) | (sc << 16);
+			*dst32++ = sc >> 8;
 		}
 
 		src += src_pitch;
