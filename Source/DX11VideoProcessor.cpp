@@ -1420,6 +1420,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	case CF_Y8:
 	case CF_NV12:
 	case CF_RGB24:
+	case CF_BGR48:
 		m_srcPitch = ALIGN(m_srcPitch, 4);
 		break;
 	}
