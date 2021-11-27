@@ -29,13 +29,7 @@
     <ClInclude Include="fmt\include\fmt\format-inl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="fmt\include\fmt\locale.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="fmt\include\fmt\ostream.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="fmt\include\fmt\posix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="fmt\include\fmt\printf.h">
@@ -45,6 +39,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="fmt\include\fmt\os.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fmt\include\fmt\args.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fmt\include\fmt\xchar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
