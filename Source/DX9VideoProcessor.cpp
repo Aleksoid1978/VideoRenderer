@@ -1042,7 +1042,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	if (disableDXVA2) {
 		FmtParams.DXVA2Format = D3DFMT_UNKNOWN;
 	}
-	const GUID SubType = pmt->subtype;
+
 	const BITMAPINFOHEADER* pBIH = nullptr;
 	m_decExFmt.value = 0;
 

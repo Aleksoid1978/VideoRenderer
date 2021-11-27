@@ -1375,7 +1375,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		FmtParams.VP11Format = DXGI_FORMAT_UNKNOWN;
 	}
 
-	const GUID SubType = pmt->subtype;
 	const BITMAPINFOHEADER* pBIH = nullptr;
 	m_decExFmt.value = 0;
 
