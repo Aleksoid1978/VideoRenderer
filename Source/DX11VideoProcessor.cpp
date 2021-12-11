@@ -435,6 +435,24 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	DLogIf(!ret, L"CDX11VideoProcessor::CDX11VideoProcessor() : hook for SetWindowLongA() fail");
 
 	MH_EnableHook(MH_ALL_HOOKS);
+
+	CComPtr<IDXGIAdapter> pDXGIAdapter;
+	for (UINT adapter = 0; m_pDXGIFactory1->EnumAdapters(adapter, &pDXGIAdapter) != DXGI_ERROR_NOT_FOUND; ++adapter) {
+		CComPtr<IDXGIOutput> pDXGIOutput;
+		for (UINT output = 0; pDXGIAdapter->EnumOutputs(output, &pDXGIOutput) != DXGI_ERROR_NOT_FOUND; ++output) {
+			DXGI_OUTPUT_DESC desc{};
+			if (SUCCEEDED(pDXGIOutput->GetDesc(&desc))) {
+				DisplayConfig_t displayConfig = {};
+				if (GetDisplayConfig(desc.DeviceName, displayConfig)) {
+					m_hdrModeStartState[desc.DeviceName] = displayConfig.advancedColor.advancedColorEnabled;
+				}
+			}
+
+			pDXGIOutput.Release();
+		}
+
+		pDXGIAdapter.Release();
+	}
 }
 
 static bool ToggleHDR(const DisplayConfig_t& displayConfig, const BOOL bEnableAdvancedColor)
@@ -1282,10 +1300,16 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 			const auto& ac = displayConfig.advancedColor;
 
 			if (ac.advancedColorSupported && m_iHdrToggleDisplay) {
-				const bool bNeedToggleOn  = !ac.advancedColorEnabled
-					&& (m_iHdrToggleDisplay == HDRTD_Always || m_iHdrToggleDisplay == HDRTD_Fullscreen && m_bIsFullscreen);
-				const bool bNeedToggleOff = ac.advancedColorEnabled
-					&& m_iHdrToggleDisplay == HDRTD_Fullscreen && !m_bIsFullscreen;
+				BOOL bHDREnabled = FALSE;
+				const auto& it = m_hdrModeStartState.find(mi.szDevice);
+				if (it != m_hdrModeStartState.cend()) {
+					bHDREnabled = it->second;
+				}
+
+				const bool bNeedToggleOn  = !ac.advancedColorEnabled &&
+											(m_iHdrToggleDisplay == HDRTD_Always || m_iHdrToggleDisplay == HDRTD_Fullscreen && m_bIsFullscreen);
+				const bool bNeedToggleOff = ac.advancedColorEnabled &&
+											!bHDREnabled && m_iHdrToggleDisplay == HDRTD_Fullscreen && !m_bIsFullscreen;
 				DLog(L"HandleHDRToggle() : %d, %d", bNeedToggleOn, bNeedToggleOff);
 				if (bNeedToggleOn) {
 					bRet = ToggleHDR(displayConfig, TRUE);
@@ -1320,7 +1344,8 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 			const auto& ac = displayConfig.advancedColor;
 
-			if (ac.advancedColorSupported && ac.advancedColorEnabled) {
+			if (ac.advancedColorSupported && ac.advancedColorEnabled &&
+					(m_iHdrToggleDisplay == HDRTD_Always || m_iHdrToggleDisplay == HDRTD_Fullscreen && m_bIsFullscreen)) {
 				bRet = ToggleHDR(displayConfig, FALSE);
 				DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR OFF failed");
 
