@@ -4,7 +4,7 @@ Improved stability in DX9 mode when changing display.
 Fixed display of subtitles in the first frame when using XySubFilter.
 Added experimental option "Reinitialize D3D device when changing display".
 Fixed the problem with the "Information" tab working when pressing Esc when the main text field is active.
-The "HdrToggleDisplay" option now has three values: "not used", "used for fullscreen", "always used".
+The "Auto display HDR On/Off" functionality has been improved. Now this option has three values: "not used", "used for fullscreen", "always used".
 Fixed HDR Passthrough for various cases.
 Added support for MEDIASUBTYPE_LAV_RAWVIDEO.
 Added support for various YUV and RGB planar formats.

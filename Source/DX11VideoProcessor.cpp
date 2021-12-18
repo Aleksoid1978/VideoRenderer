@@ -3367,7 +3367,6 @@ STDMETHODIMP CDX11VideoProcessor::SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpP
 	CheckPointer(pBmpParms, E_POINTER);
 	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
-	CheckPointer(m_pD3DDevEx, E_ABORT);
 	HRESULT hr = S_FALSE;
 
 	if (pBmpParms->GetBitmapFromDC && pBmpParms->bitmap.hdc) {
