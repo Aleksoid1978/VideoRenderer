@@ -3365,7 +3365,7 @@ STDMETHODIMP CDX11VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpV
 STDMETHODIMP CDX11VideoProcessor::SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpParms)
 {
 	CheckPointer(pBmpParms, E_POINTER);
-	m_bAlphaBitmapEnable = false;
+	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 
 	HRESULT hr = S_FALSE;
 
