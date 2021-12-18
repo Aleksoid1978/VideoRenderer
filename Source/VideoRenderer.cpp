@@ -505,12 +505,12 @@ HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 		m_bInReceive = FALSE;
 		{
 			// We must hold both these locks
-			CAutoLock cRendererLock(&m_InterfaceLock);
+			CAutoLock cVideoLock(&m_InterfaceLock);
 			if (m_State == State_Stopped)
 				return NOERROR;
 
 			m_bInReceive = TRUE;
-			CAutoLock cSampleLock(&m_RendererLock);
+			CAutoLock cRendererLock(&m_RendererLock);
 		}
 		Ready();
 	}
@@ -518,7 +518,7 @@ HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 	if (m_State == State_Paused) {
 		m_bInReceive = FALSE;
 
-		CAutoLock cSampleLock(&m_RendererLock);
+		CAutoLock cRendererLock(&m_RendererLock);
 		DoRenderSample(m_pMediaSample);
 	}
 
@@ -539,14 +539,14 @@ HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 	m_bInReceive = FALSE;
 
 	// We must hold both these locks
-	CAutoLock cRendererLock(&m_InterfaceLock);
+	CAutoLock cVideoLock(&m_InterfaceLock);
 
 	// since we gave away the filter wide lock, the sate of the filter could
 	// have chnaged to Stopped
 	if (m_State == State_Stopped)
 		return NOERROR;
 
-	CAutoLock cSampleLock(&m_RendererLock);
+	CAutoLock cRendererLock(&m_RendererLock);
 
 	// Deal with this sample
 
@@ -1168,7 +1168,6 @@ STDMETHODIMP_(void) CMpcVideoRenderer::SetSettings(const Settings_t& setings)
 		if (!m_bValidBuffer && m_pMediaSample) {
 			m_bInReceive = FALSE;
 
-			CAutoLock cSampleLock(&m_RendererLock);
 			DoRenderSample(m_pMediaSample);
 		}
 		Redraw();
@@ -1231,7 +1230,7 @@ STDMETHODIMP CMpcVideoRenderer::GetBool(LPCSTR field, bool* value)
 	}
 
 	if (!strcmp(field, "doubleRate")) {
-		CAutoLock cSampleLock(&m_RendererLock);
+		CAutoLock cRendererLock(&m_RendererLock);
 		*value = m_VideoProcessor->GetDoubleRate();
 		return S_OK;
 	}
