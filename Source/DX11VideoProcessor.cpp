@@ -581,7 +581,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 		&featurelevel,
 		nullptr);
 #ifdef _DEBUG
-	if (hr == DXGI_ERROR_SDK_COMPONENT_MISSING) {
+	if (hr == DXGI_ERROR_SDK_COMPONENT_MISSING || (hr == E_FAIL && !IsWindows8OrGreater())) {
 		DLog(L"WARNING: D3D11 debugging messages will not be displayed");
 		hr = D3D11CreateDevice(
 			pDXGIAdapter,
@@ -3365,7 +3365,7 @@ STDMETHODIMP CDX11VideoProcessor::SetProcAmpValues(DWORD dwFlags, DXVA2_ProcAmpV
 STDMETHODIMP CDX11VideoProcessor::SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpParms)
 {
 	CheckPointer(pBmpParms, E_POINTER);
-	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
+	m_bAlphaBitmapEnable = false;
 
 	HRESULT hr = S_FALSE;
 
