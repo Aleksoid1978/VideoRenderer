@@ -1,4 +1,4 @@
-v0.5.5
+v0.5.6.1807 - 2021.12.20
 ------------------------
 Improved stability in DX9 mode when changing display.
 Fixed display of subtitles in the first frame when using XySubFilter.
