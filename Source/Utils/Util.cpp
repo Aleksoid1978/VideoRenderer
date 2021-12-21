@@ -1,5 +1,5 @@
 /*
-* (C) 2020 see Authors.txt
+* (C) 2020-2021 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -21,9 +21,30 @@
 #include "stdafx.h"
 #include "Util.h"
 
+VERSIONHELPERAPI
+IsWindows11OrGreater() // https://walbourn.github.io/windows-sdk-for-windows-11/
+{
+	OSVERSIONINFOEXW osvi = { sizeof(osvi), 0, 0, 0, 0, {0}, 0, 0 };
+	DWORDLONG const dwlConditionMask = VerSetConditionMask(
+		VerSetConditionMask(
+		VerSetConditionMask(
+			0, VER_MAJORVERSION, VER_GREATER_EQUAL),
+			   VER_MINORVERSION, VER_GREATER_EQUAL),
+			   VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+	osvi.dwMajorVersion = HIBYTE(_WIN32_WINNT_WIN10);
+	osvi.dwMinorVersion = LOBYTE(_WIN32_WINNT_WIN10);
+	osvi.dwBuildNumber = 22000;
+
+	return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_BUILDNUMBER, dwlConditionMask) != FALSE;
+}
+
 LPCWSTR GetWindowsVersion()
 {
-	if (IsWindows10OrGreater()) {
+	if (IsWindows11OrGreater()) {
+		return L"11";
+	}
+	else if (IsWindows10OrGreater()) {
 		return L"10";
 	}
 	else if (IsWindows8Point1OrGreater()) {
