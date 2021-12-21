@@ -3383,25 +3383,10 @@ STDMETHODIMP CDX11VideoProcessor::SetAlphaBitmap(const MFVideoAlphaBitmap *pBmpP
 			return E_INVALIDARG;
 		}
 
-		hr = m_TexAlphaBitmap.CheckCreate(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, bm.bmWidth, bm.bmHeight, Tex2D_DynamicShaderWrite);
+		hr = m_TexAlphaBitmap.CheckCreate(m_pDevice, DXGI_FORMAT_B8G8R8A8_UNORM, bm.bmWidth, bm.bmHeight, Tex2D_DefaultShader);
+		DLogIf(FAILED(hr), L"CDX11VideoProcessor::SetAlphaBitmap() : CheckCreate() failed with error {}", HR2Str(hr));
 		if (S_OK == hr) {
-			D3D11_MAPPED_SUBRESOURCE mr = {};
-			hr = m_pDeviceContext->Map(m_TexAlphaBitmap.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mr);
-			if (S_OK == hr) {
-				if (bm.bmWidthBytes == mr.RowPitch) {
-					memcpy(mr.pData, bm.bmBits, bm.bmWidthBytes * bm.bmHeight);
-				} else {
-					LONG linesize = std::min(bm.bmWidthBytes, (LONG)mr.RowPitch);
-					BYTE* src = (BYTE*)bm.bmBits;
-					BYTE* dst = (BYTE*)mr.pData;
-					for (LONG y = 0; y < bm.bmHeight; ++y) {
-						memcpy(dst, src, linesize);
-						src += bm.bmWidthBytes;
-						dst += mr.RowPitch;
-					}
-				}
-				m_pDeviceContext->Unmap(m_TexAlphaBitmap.pTexture, 0);
-			}
+			m_pDeviceContext->UpdateSubresource(m_TexAlphaBitmap.pTexture, 0, nullptr, bm.bmBits, bm.bmWidthBytes, 0);
 		}
 	} else {
 		return E_INVALIDARG;
