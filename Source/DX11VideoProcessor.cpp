@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2021 see Authors.txt
+* (C) 2018-2022 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -1968,14 +1968,12 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
 		if (size > 0 && S_OK == pSample->GetPointer(&data)) {
-			if (m_D3D11VP.IsReady() && m_srcPitch > 0 && m_pConvertFn == CopyFrameAsIs) {
-				m_pDeviceContext->UpdateSubresource(m_D3D11VP.GetNextInputTexture(m_SampleFormat), 0, nullptr, data, m_srcPitch, 0);
-			} else {
-				hr = MemCopyToTexSrcVideo(data, m_srcPitch);
-				if (m_D3D11VP.IsReady()) {
-					// ID3D11VideoProcessor does not use textures with D3D11_CPU_ACCESS_WRITE flag
-					m_pDeviceContext->CopyResource(m_D3D11VP.GetNextInputTexture(m_SampleFormat), m_TexSrcVideo.pTexture);
-				}
+			// do not use UpdateSubresource for D3D11 VP here
+			// because it can cause green screens and freezes on some configurations
+			hr = MemCopyToTexSrcVideo(data, m_srcPitch);
+			if (m_D3D11VP.IsReady()) {
+				// ID3D11VideoProcessor does not use textures with D3D11_CPU_ACCESS_WRITE flag
+				m_pDeviceContext->CopyResource(m_D3D11VP.GetNextInputTexture(m_SampleFormat), m_TexSrcVideo.pTexture);
 			}
 		}
 	}
