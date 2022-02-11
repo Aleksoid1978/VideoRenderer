@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2021 see Authors.txt
+ * (C) 2018-2022 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -1359,13 +1359,11 @@ STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
 STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
 {
 	if (size > 0) {
-		if (!strcmp(field, "cmd_addPostScaleShader")) {
+		auto ReadShaderData = [&](std::wstring& shaderName, std::string& shaderCode) {
 			BYTE* p = (BYTE*)value;
 			const BYTE* end = p + size;
 			uint32_t chunkcode;
 			int32_t chunksize;
-			std::wstring shaderName;
-			std::string shaderCode;
 
 			while (p + 8 < end) {
 				memcpy(&chunkcode, p, 4);
@@ -1386,6 +1384,13 @@ STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
 				}
 				p += chunksize;
 			}
+		};
+
+		if (!strcmp(field, "cmd_addPostScaleShader")) {
+			std::wstring shaderName;
+			std::string shaderCode;
+
+			ReadShaderData(shaderName, shaderCode);
 
 			if (shaderCode.size()) {
 				CAutoLock cRendererLock(&m_RendererLock);
