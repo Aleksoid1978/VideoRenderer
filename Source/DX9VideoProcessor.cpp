@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2021 see Authors.txt
+* (C) 2018-2022 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -694,6 +694,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 
 	m_DXVA2VP.ReleaseVideoService();
 
+	ClearPreScaleShaders();
 	ClearPostScaleShaders();
 	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
@@ -1927,14 +1928,53 @@ void CDX9VideoProcessor::Flush()
 	m_rtStart = 0;
 }
 
+void CDX9VideoProcessor::ClearPreScaleShaders()
+{
+	for (auto& pExtShader : m_pPreScaleShaders) {
+		pExtShader.shader.Release();
+	}
+	m_pPreScaleShaders.clear();
+	DLog(L"CDX9VideoProcessor::ClearPreScaleShaders().");
+}
+
 void CDX9VideoProcessor::ClearPostScaleShaders()
 {
-	for (auto& pScreenShader : m_pPostScaleShaders) {
-		pScreenShader.shader.Release();
+	for (auto& pExtShader : m_pPostScaleShaders) {
+		pExtShader.shader.Release();
 	}
 	m_pPostScaleShaders.clear();
 	//UpdateStatsPostProc();
 	DLog(L"CDX9VideoProcessor::ClearPostScaleShaders().");
+}
+
+HRESULT CDX9VideoProcessor::AddPreScaleShader(const std::wstring& name, const std::string& srcCode)
+{
+	if (m_DXVA2VP.IsReady() && m_bVPScaling) {
+		return E_ABORT;
+	}
+
+	HRESULT hr = S_FALSE;
+
+	if (m_pD3DDevEx) {
+		ID3DBlob* pShaderCode = nullptr;
+		hr = CompileShader(srcCode, nullptr, "ps_3_0", &pShaderCode);
+		if (S_OK == hr) {
+			m_pPreScaleShaders.emplace_back();
+			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPreScaleShaders.back().shader);
+			if (S_OK == hr) {
+				m_pPreScaleShaders.back().name = name;
+				// UpdatePreScaleTexures();
+				DLog(L"CDX9VideoProcessor::AddPreScaleShader() : \"{}\" pixel shader added successfully.", name);
+			}
+			else {
+				DLog(L"CDX9VideoProcessor::AddPreScaleShader() : create pixel shader \"{}\" FAILED!", name);
+				m_pPreScaleShaders.pop_back();
+			}
+			pShaderCode->Release();
+		}
+	}
+
+	return hr;
 }
 
 HRESULT CDX9VideoProcessor::AddPostScaleShader(const std::wstring& name, const std::string& srcCode)

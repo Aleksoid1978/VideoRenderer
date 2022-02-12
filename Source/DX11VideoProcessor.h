@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2021 see Authors.txt
+* (C) 2018-2022 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -91,6 +91,7 @@ private:
 	CComPtr<ID3D11PixelShader> m_pShaderDownscaleX;
 	CComPtr<ID3D11PixelShader> m_pShaderDownscaleY;
 
+	std::vector<ExternalPixelShader11_t> m_pPreScaleShaders;
 	std::vector<ExternalPixelShader11_t> m_pPostScaleShaders;
 	ID3D11Buffer* m_pPostScaleConstants = nullptr;
 	CComPtr<ID3D11PixelShader> m_pPSFinalPass;
@@ -225,7 +226,10 @@ public:
 
 	void Flush() override;
 
+	void ClearPreScaleShaders() override;
 	void ClearPostScaleShaders() override;
+
+	HRESULT AddPreScaleShader(const std::wstring& name, const std::string& srcCode) override;
 	HRESULT AddPostScaleShader(const std::wstring& name, const std::string& srcCode) override;
 
 private:

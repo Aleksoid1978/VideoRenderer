@@ -1297,6 +1297,13 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 		return S_OK;
 	}
 
+	if (!strcmp(field, "cmd_clearPreScaleShaders") && value) {
+		CAutoLock cRendererLock(&m_RendererLock);
+
+		m_VideoProcessor->ClearPreScaleShaders();
+		return S_OK;
+	}
+
 	if (!strcmp(field, "cmd_clearPostScaleShaders") && value) {
 		CAutoLock cRendererLock(&m_RendererLock);
 
@@ -1385,6 +1392,19 @@ STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
 				p += chunksize;
 			}
 		};
+
+		if (!strcmp(field, "cmd_addPreScaleShader")) {
+			std::wstring shaderName;
+			std::string shaderCode;
+
+			ReadShaderData(shaderName, shaderCode);
+
+			if (shaderCode.size()) {
+				CAutoLock cRendererLock(&m_RendererLock);
+
+				return m_VideoProcessor->AddPreScaleShader(shaderName, shaderCode);
+			}
+		}
 
 		if (!strcmp(field, "cmd_addPostScaleShader")) {
 			std::wstring shaderName;

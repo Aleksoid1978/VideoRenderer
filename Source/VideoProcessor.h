@@ -1,5 +1,5 @@
 /*
- * (C) 2020-2021 see Authors.txt
+ * (C) 2020-2022 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -178,7 +178,10 @@ public:
 	bool GetFlip() { return m_bFlip; }
 	void SetFlip(bool value) { m_bFlip = value; }
 
+	virtual void ClearPreScaleShaders() = 0;
 	virtual void ClearPostScaleShaders() = 0;
+
+	virtual HRESULT AddPreScaleShader(const std::wstring& name, const std::string& srcCode) = 0;
 	virtual HRESULT AddPostScaleShader(const std::wstring& name, const std::string& srcCode) = 0;
 
 	virtual HRESULT GetCurentImage(long *pDIBImage) = 0;

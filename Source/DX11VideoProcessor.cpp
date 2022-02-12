@@ -676,6 +676,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pAlphaBitmapVertex.Release();
 	m_TexAlphaBitmap.Release();
 
+	ClearPreScaleShaders();
 	ClearPostScaleShaders();
 	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
@@ -3058,14 +3059,54 @@ void CDX11VideoProcessor::Flush()
 	m_rtStart = 0;
 }
 
+void CDX11VideoProcessor::ClearPreScaleShaders()
+{
+	for (auto& pExtShader : m_pPreScaleShaders) {
+		pExtShader.shader.Release();
+	}
+	m_pPreScaleShaders.clear();
+	DLog(L"CDX11VideoProcessor::ClearPreScaleShaders().");
+}
+
+
 void CDX11VideoProcessor::ClearPostScaleShaders()
 {
-	for (auto& pScreenShader : m_pPostScaleShaders) {
-		pScreenShader.shader.Release();
+	for (auto& pExtShader : m_pPostScaleShaders) {
+		pExtShader.shader.Release();
 	}
 	m_pPostScaleShaders.clear();
 	//UpdateStatsPostProc();
 	DLog(L"CDX11VideoProcessor::ClearPostScaleShaders().");
+}
+
+HRESULT CDX11VideoProcessor::AddPreScaleShader(const std::wstring& name, const std::string& srcCode)
+{
+	if (m_D3D11VP.IsReady() && m_bVPScaling) {
+		return E_ABORT;
+	}
+
+	HRESULT hr = S_FALSE;
+
+	if (m_pDevice) {
+		ID3DBlob* pShaderCode = nullptr;
+		hr = CompileShader(srcCode, nullptr, "ps_4_0", &pShaderCode);
+		if (S_OK == hr) {
+			m_pPreScaleShaders.emplace_back();
+			hr = m_pDevice->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPreScaleShaders.back().shader);
+			if (S_OK == hr) {
+				m_pPreScaleShaders.back().name = name;
+				//UpdatePretScaleTexures(); //TODO
+				DLog(L"CDX11VideoProcessor::AddPreScaleShader() : \"{}\" pixel shader added successfully.", name);
+			}
+			else {
+				DLog(L"CDX11VideoProcessor::AddPreScaleShader() : create pixel shader \"{}\" FAILED!", name);
+				m_pPreScaleShaders.pop_back();
+			}
+			pShaderCode->Release();
+		}
+	}
+
+	return hr;
 }
 
 HRESULT CDX11VideoProcessor::AddPostScaleShader(const std::wstring& name, const std::string& srcCode)
