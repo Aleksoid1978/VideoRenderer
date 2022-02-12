@@ -3081,55 +3081,59 @@ void CDX11VideoProcessor::ClearPostScaleShaders()
 
 HRESULT CDX11VideoProcessor::AddPreScaleShader(const std::wstring& name, const std::string& srcCode)
 {
-	if (m_D3D11VP.IsReady() && m_bVPScaling) {
+#ifdef _DEBUG
+	if (!m_pDevice) {
 		return E_ABORT;
 	}
 
-	HRESULT hr = S_FALSE;
-
-	if (m_pDevice) {
-		ID3DBlob* pShaderCode = nullptr;
-		hr = CompileShader(srcCode, nullptr, "ps_4_0", &pShaderCode);
+	ID3DBlob* pShaderCode = nullptr;
+	HRESULT hr = CompileShader(srcCode, nullptr, "ps_4_0", &pShaderCode);
+	if (S_OK == hr) {
+		m_pPreScaleShaders.emplace_back();
+		hr = m_pDevice->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPreScaleShaders.back().shader);
 		if (S_OK == hr) {
-			m_pPreScaleShaders.emplace_back();
-			hr = m_pDevice->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPreScaleShaders.back().shader);
-			if (S_OK == hr) {
-				m_pPreScaleShaders.back().name = name;
-				//UpdatePretScaleTexures(); //TODO
-				DLog(L"CDX11VideoProcessor::AddPreScaleShader() : \"{}\" pixel shader added successfully.", name);
-			}
-			else {
-				DLog(L"CDX11VideoProcessor::AddPreScaleShader() : create pixel shader \"{}\" FAILED!", name);
-				m_pPreScaleShaders.pop_back();
-			}
-			pShaderCode->Release();
+			m_pPreScaleShaders.back().name = name;
+			//UpdatePreScaleTexures(); //TODO
+			DLog(L"CDX11VideoProcessor::AddPreScaleShader() : \"{}\" pixel shader added successfully.", name);
 		}
+		else {
+			DLog(L"CDX11VideoProcessor::AddPreScaleShader() : create pixel shader \"{}\" FAILED!", name);
+			m_pPreScaleShaders.pop_back();
+		}
+		pShaderCode->Release();
+	}
+
+	if (S_OK == hr && m_D3D11VP.IsReady() && m_bVPScaling) {
+		return S_FALSE;
 	}
 
 	return hr;
+#else
+	return E_NOTIMPL;
+#endif
 }
 
 HRESULT CDX11VideoProcessor::AddPostScaleShader(const std::wstring& name, const std::string& srcCode)
 {
-	HRESULT hr = S_OK;
+	if (!m_pDevice) {
+		return E_ABORT;
+	}
 
-	if (m_pDevice) {
-		ID3DBlob* pShaderCode = nullptr;
-		hr = CompileShader(srcCode, nullptr, "ps_4_0", &pShaderCode);
+	ID3DBlob* pShaderCode = nullptr;
+	HRESULT hr = CompileShader(srcCode, nullptr, "ps_4_0", &pShaderCode);
+	if (S_OK == hr) {
+		m_pPostScaleShaders.emplace_back();
+		hr = m_pDevice->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPostScaleShaders.back().shader);
 		if (S_OK == hr) {
-			m_pPostScaleShaders.emplace_back();
-			hr = m_pDevice->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPostScaleShaders.back().shader);
-			if (S_OK == hr) {
-				m_pPostScaleShaders.back().name = name;
-				UpdatePostScaleTexures();
-				DLog(L"CDX11VideoProcessor::AddPostScaleShader() : \"{}\" pixel shader added successfully.", name);
-			}
-			else {
-				DLog(L"CDX11VideoProcessor::AddPostScaleShader() : create pixel shader \"{}\" FAILED!", name);
-				m_pPostScaleShaders.pop_back();
-			}
-			pShaderCode->Release();
+			m_pPostScaleShaders.back().name = name;
+			UpdatePostScaleTexures();
+			DLog(L"CDX11VideoProcessor::AddPostScaleShader() : \"{}\" pixel shader added successfully.", name);
 		}
+		else {
+			DLog(L"CDX11VideoProcessor::AddPostScaleShader() : create pixel shader \"{}\" FAILED!", name);
+			m_pPostScaleShaders.pop_back();
+		}
+		pShaderCode->Release();
 	}
 
 	return hr;
