@@ -351,7 +351,7 @@ public:
 
 		std::vector<SIZE> charSizes;
 		charSizes.reserve(length);
-		DWRITE_TEXT_METRICS textMetrics;
+		DWRITE_TEXT_METRICS textMetrics = {};
 		float maxWidth = 0;
 		float maxHeight = 0;
 

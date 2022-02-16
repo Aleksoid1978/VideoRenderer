@@ -100,10 +100,11 @@ public:
 			m_DXVA2Samples[pre].SrcSurface                = m_DXVA2Samples[i].SrcSurface;
 		}
 
-		m_DXVA2Samples.back().Start = start;
-		m_DXVA2Samples.back().End = end;
-		m_DXVA2Samples.back().SampleFormat.SampleFormat = sampleFmt;
-		m_DXVA2Samples.back().SrcSurface = pSurface;
+		auto& sample = m_DXVA2Samples.back();
+		sample.Start = start;
+		sample.End = end;
+		sample.SampleFormat.SampleFormat = sampleFmt;
+		sample.SrcSurface = pSurface;
 	}
 
 	void RotateAndSet(const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt)
@@ -124,9 +125,10 @@ public:
 			m_DXVA2Samples.back().SrcSurface = pSurface;
 		}
 
-		m_DXVA2Samples.back().Start = start;
-		m_DXVA2Samples.back().End = end;
-		m_DXVA2Samples.back().SampleFormat.SampleFormat = sampleFmt;
+		auto& sample = m_DXVA2Samples.back();
+		sample.Start = start;
+		sample.End = end;
+		sample.SampleFormat.SampleFormat = sampleFmt;
 	}
 
 	IDirect3DSurface9** GetSurface()
@@ -169,7 +171,7 @@ private:
 	UINT m_srcWidth    = 0;
 	UINT m_srcHeight   = 0;
 
-	BOOL CreateDXVA2VPDevice(const GUID devguid, const DXVA2_VideoDesc& videodesc, UINT preferredDeintTech, D3DFORMAT& outputFmt);
+	BOOL CreateDXVA2VPDevice(const GUID& devguid, const DXVA2_VideoDesc& videodesc, UINT preferredDeintTech, D3DFORMAT& outputFmt);
 
 public:
 	HRESULT InitVideoService(IDirect3DDevice9* pDevice, DWORD vendorId);

@@ -310,7 +310,6 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 				filter.value = filter.range.Default; // disable it
 			}
 		}
-		
 	}
 
 	// Output rate (repeat frames)
