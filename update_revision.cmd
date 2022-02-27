@@ -5,10 +5,14 @@ CD /D %~dp0
 ECHO #pragma once > revision.h
 
 SET gitexe="git.exe"
-IF NOT EXIST %gitexe% set gitexe="c:\Program Files\Git\bin\git.exe"
-IF NOT EXIST %gitexe% set gitexe="c:\Program Files\Git\cmd\git.exe"
+%gitexe% --version
+IF /I %ERRORLEVEL%==0 GOTO :GitOK
 
-IF NOT EXIST %gitexe% GOTO END
+SET gitexe="c:\Program Files\Git\cmd\git.exe"
+IF NOT EXIST %gitexe% set gitexe="c:\Program Files\Git\bin\git.exe"
+IF NOT EXIST %gitexe% GOTO :END
+
+:GitOK
 
 %gitexe% log -1 --date=format:%%Y.%%m.%%d --pretty=format:"#define REV_DATE %%ad%%n" >> revision.h
 %gitexe% log -1 --pretty=format:"#define REV_HASH %%h%%n" >> revision.h
