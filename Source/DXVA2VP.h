@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2020 see Authors.txt
+* (C) 2019-2022 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -26,6 +26,8 @@ class VideoSampleBuffer
 {
 private:
 	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
+	UINT m_maxSize;
+	DXVA2_ExtendedFormat m_exFmt;
 
 	void ReleaseSurfaces() {
 		for (auto& dxva2sample : m_DXVA2Samples) {
@@ -64,17 +66,43 @@ public:
 		m_DXVA2Samples.clear();
 	}
 
-	void Resize(const unsigned len, DXVA2_ExtendedFormat exFmt) {
+	void SetProps(const UINT maxSize, const DXVA2_ExtendedFormat exFmt) {
 		Clear();
-		if (len) {
-			// replace values that are not included in the DXVA2 specification to obtain a more stable result for subsequent correction
-			if (exFmt.VideoTransferMatrix > DXVA2_VideoTransferMatrix_SMPTE240M) { exFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT709; }
-			if (exFmt.VideoPrimaries > DXVA2_VideoPrimaries_SMPTE_C) { exFmt.VideoPrimaries = DXVA2_VideoPrimaries_BT709; }
-			if (exFmt.VideoTransferFunction > DXVA2_VideoTransFunc_28) { exFmt.VideoTransferFunction = DXVA2_VideoTransFunc_709; }
 
-			const DXVA2_VideoSample dxva2sample = { 0, 0, exFmt, nullptr, {}, {}, {}, DXVA2_Fixed32OpaqueAlpha(), 0 };
-			m_DXVA2Samples.resize(len, dxva2sample);
+		m_maxSize = maxSize;
+		m_exFmt   = exFmt;
+
+		// replace values that are not included in the DXVA2 specification to obtain a more stable result for subsequent correction
+		if (m_exFmt.VideoTransferMatrix > DXVA2_VideoTransferMatrix_SMPTE240M) { m_exFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT709; }
+		if (m_exFmt.VideoPrimaries > DXVA2_VideoPrimaries_SMPTE_C) { m_exFmt.VideoPrimaries = DXVA2_VideoPrimaries_BT709; }
+		if (m_exFmt.VideoTransferFunction > DXVA2_VideoTransFunc_28) { m_exFmt.VideoTransferFunction = DXVA2_VideoTransFunc_709; }
+	}
+
+	DXVA2_VideoSample* GetNextVideoSample()
+	{
+		if (!m_maxSize) {
+			return nullptr;
 		}
+
+		if (m_DXVA2Samples.size() < m_maxSize) {
+			const DXVA2_VideoSample dxva2sample = { 0, 0, m_exFmt, nullptr, {}, {}, {}, DXVA2_Fixed32OpaqueAlpha(), 0 };
+			m_DXVA2Samples.emplace_back(dxva2sample);
+		}
+		else if (m_DXVA2Samples.size() > 1) {
+			IDirect3DSurface9* pSurface = m_DXVA2Samples.front().SrcSurface;
+
+			for (size_t i = 1; i < m_DXVA2Samples.size(); i++) {
+				auto pre = i - 1;
+				m_DXVA2Samples[pre].Start = m_DXVA2Samples[i].Start;
+				m_DXVA2Samples[pre].End = m_DXVA2Samples[i].End;
+				m_DXVA2Samples[pre].SampleFormat.SampleFormat = m_DXVA2Samples[i].SampleFormat.SampleFormat;
+				m_DXVA2Samples[pre].SrcSurface = m_DXVA2Samples[i].SrcSurface;
+			}
+
+			m_DXVA2Samples.back().SrcSurface = pSurface;
+		}
+
+		return &m_DXVA2Samples.back();
 	}
 
 	void SetRects(const CRect& SrcRect, const CRect& DstRect) {
@@ -82,53 +110,6 @@ public:
 			dxva2sample.SrcRect = SrcRect;
 			dxva2sample.DstRect = DstRect;
 		}
-	}
-
-	void Add(IDirect3DSurface9* pSurface, const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt)
-	{
-		ASSERT(m_DXVA2Samples.size());
-		ASSERT(pSurface);
-
-		pSurface->AddRef();
-		SAFE_RELEASE(m_DXVA2Samples.front().SrcSurface);
-
-		for (size_t i = 1; i < m_DXVA2Samples.size(); i++) {
-			auto pre = i - 1;
-			m_DXVA2Samples[pre].Start                     = m_DXVA2Samples[i].Start;
-			m_DXVA2Samples[pre].End                       = m_DXVA2Samples[i].End;
-			m_DXVA2Samples[pre].SampleFormat.SampleFormat = m_DXVA2Samples[i].SampleFormat.SampleFormat;
-			m_DXVA2Samples[pre].SrcSurface                = m_DXVA2Samples[i].SrcSurface;
-		}
-
-		auto& sample = m_DXVA2Samples.back();
-		sample.Start = start;
-		sample.End = end;
-		sample.SampleFormat.SampleFormat = sampleFmt;
-		sample.SrcSurface = pSurface;
-	}
-
-	void RotateAndSet(const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt)
-	{
-		ASSERT(m_DXVA2Samples.size());
-
-		if (m_DXVA2Samples.size() > 1) {
-			IDirect3DSurface9* pSurface = m_DXVA2Samples.front().SrcSurface;
-
-			for (size_t i = 1; i < m_DXVA2Samples.size(); i++) {
-				auto pre = i - 1;
-				m_DXVA2Samples[pre].Start                     = m_DXVA2Samples[i].Start;
-				m_DXVA2Samples[pre].End                       = m_DXVA2Samples[i].End;
-				m_DXVA2Samples[pre].SampleFormat.SampleFormat = m_DXVA2Samples[i].SampleFormat.SampleFormat;
-				m_DXVA2Samples[pre].SrcSurface                = m_DXVA2Samples[i].SrcSurface;
-			}
-
-			m_DXVA2Samples.back().SrcSurface = pSurface;
-		}
-
-		auto& sample = m_DXVA2Samples.back();
-		sample.Start = start;
-		sample.End = end;
-		sample.SampleFormat.SampleFormat = sampleFmt;
 	}
 
 	IDirect3DSurface9** GetSurface()

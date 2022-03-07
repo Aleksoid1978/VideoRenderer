@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2021 see Authors.txt
+* (C) 2019-2022 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -344,7 +344,7 @@ HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width,
 	m_NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
 	ASSERT(m_NumRefSamples <= MAX_DEINTERLACE_SURFACES);
 
-	m_VideoSamples.Resize(m_NumRefSamples, exFmt);
+	m_VideoSamples.SetProps(m_NumRefSamples, exFmt);
 
 	m_BltParams.DestFormat.value = 0; // output to RGB
 	m_BltParams.DestFormat.SampleFormat = DXVA2_SampleProgressiveFrame; // output to progressive RGB
@@ -381,8 +381,13 @@ HRESULT CDXVA2VP::SetInputSurface(IDirect3DSurface9* pSurface, const REFERENCE_T
 {
 	CheckPointer(pSurface, E_POINTER);
 
-	if (m_VideoSamples.Size()) {
-		m_VideoSamples.Add(pSurface, start, end, sampleFmt);
+	DXVA2_VideoSample* videoSample = m_VideoSamples.GetNextVideoSample();
+	if (videoSample) {
+		videoSample->Start = start;
+		videoSample->End = end;
+		videoSample->SampleFormat.SampleFormat = sampleFmt;
+		videoSample->SrcSurface = pSurface;
+
 		return S_OK;
 	}
 
@@ -392,6 +397,9 @@ HRESULT CDXVA2VP::SetInputSurface(IDirect3DSurface9* pSurface, const REFERENCE_T
 IDirect3DSurface9* CDXVA2VP::GetInputSurface()
 {
 	IDirect3DSurface9** ppSurface = m_VideoSamples.GetSurface();
+	if (ppSurface == nullptr) {
+		return nullptr;
+	}
 	if (*ppSurface == nullptr) {
 		HRESULT hr = m_pDXVA2_VPService->CreateSurface(
 			m_srcWidth,
@@ -419,8 +427,11 @@ IDirect3DSurface9* CDXVA2VP::GetInputSurface()
 
 IDirect3DSurface9* CDXVA2VP::GetNextInputSurface(const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt)
 {
-	if (m_VideoSamples.Size()) {
-		m_VideoSamples.RotateAndSet(start, end, sampleFmt);
+	DXVA2_VideoSample* videoSample = m_VideoSamples.GetNextVideoSample();
+	if (videoSample) {
+		videoSample->Start = start;
+		videoSample->End = end;
+		videoSample->SampleFormat.SampleFormat = sampleFmt;
 	}
 
 	return GetInputSurface();
@@ -428,7 +439,7 @@ IDirect3DSurface9* CDXVA2VP::GetNextInputSurface(const REFERENCE_TIME start, con
 
 void CDXVA2VP::ClearInputSurfaces(const DXVA2_ExtendedFormat exFmt)
 {
-	m_VideoSamples.Resize(m_VideoSamples.Size(), exFmt);
+	m_VideoSamples.SetProps(m_VideoSamples.Size(), exFmt);
 }
 
 void CDXVA2VP::CleanSamplesData()
