@@ -386,7 +386,12 @@ HRESULT CDXVA2VP::SetInputSurface(IDirect3DSurface9* pSurface, const REFERENCE_T
 		videoSample->Start = start;
 		videoSample->End = end;
 		videoSample->SampleFormat.SampleFormat = sampleFmt;
+
+		if (videoSample->SrcSurface) {
+			videoSample->SrcSurface->Release();
+		}
 		videoSample->SrcSurface = pSurface;
+		videoSample->SrcSurface->AddRef();
 
 		return S_OK;
 	}
