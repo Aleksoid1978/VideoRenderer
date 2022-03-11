@@ -3272,9 +3272,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	int dstH = m_videoRect.Height();
 	if (m_iRotation) {
 		str += fmt::format(L"\nScaling       : {}x{} r{}\u00B0> {}x{}", m_srcRectWidth, m_srcRectHeight, m_iRotation, dstW, dstH);
-		if (m_iRotation == 90 || m_iRotation == 270) {
-			std::swap(dstW, dstH);
-		}
+		std::swap(dstW, dstH);
 	} else {
 		str += fmt::format(L"\nScaling       : {}x{} -> {}x{}", m_srcRectWidth, m_srcRectHeight, dstW, dstH);
 	}
