@@ -2765,11 +2765,10 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	str.append(m_strStatsInputFmt);
 	str.append(m_strStatsVProc);
 
-	int dstW = m_videoRect.Width();
-	int dstH = m_videoRect.Height();
+	const int dstW = m_videoRect.Width();
+	const int dstH = m_videoRect.Height();
 	if (m_iRotation) {
 		str += fmt::format(L"\nScaling       : {}x{} r{}\u00B0> {}x{}", m_srcRectWidth, m_srcRectHeight, m_iRotation, dstW, dstH);
-		std::swap(dstW, dstH);
 	} else {
 		str += fmt::format(L"\nScaling       : {}x{} -> {}x{}", m_srcRectWidth, m_srcRectHeight, dstW, dstH);
 	}
