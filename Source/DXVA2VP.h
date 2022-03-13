@@ -48,6 +48,10 @@ public:
 		return m_DXVA2Samples.size();
 	}
 
+	const UINT MaxSize() {
+		return m_maxSize;
+	}
+
 	void Clean() {
 		for (auto& dxva2sample : m_DXVA2Samples) {
 			dxva2sample.Start = 0;

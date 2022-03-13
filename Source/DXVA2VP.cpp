@@ -444,7 +444,7 @@ IDirect3DSurface9* CDXVA2VP::GetNextInputSurface(const REFERENCE_TIME start, con
 
 void CDXVA2VP::ClearInputSurfaces(const DXVA2_ExtendedFormat exFmt)
 {
-	m_VideoSamples.SetProps(m_VideoSamples.Size(), exFmt);
+	m_VideoSamples.SetProps(m_VideoSamples.MaxSize(), exFmt);
 }
 
 void CDXVA2VP::CleanSamplesData()
@@ -481,8 +481,6 @@ void CDXVA2VP::GetProcAmpRanges(DXVA2_ValueRange(&PropRanges)[4])
 
 HRESULT CDXVA2VP::Process(IDirect3DSurface9* pRenderTarget, const DXVA2_SampleFormat sampleFormat, const bool second)
 {
-	ASSERT(m_VideoSamples.Size())
-
 	// Initialize VPBlt parameters
 	if (second) {
 		m_BltParams.TargetFrame = (m_VideoSamples.GetFrameStart() + m_VideoSamples.GetFrameEnd()) / 2;
