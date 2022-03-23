@@ -114,7 +114,7 @@ BOOL CDXVA2VP::CreateDXVA2VPDevice(const GUID& devguid, const DXVA2_VideoDesc& v
 	// Query video processor capabilities.
 	hr = m_pDXVA2_VPService->GetVideoProcessorCaps(devguid, &videodesc, outputFmt, &m_DXVA2VPcaps);
 	if (FAILED(hr)) {
-		DLog(L"CDX9VideoProcessor::InitializeDXVA2VP() : GetVideoProcessorCaps() failed with error {}", HR2Str(hr));
+		DLog(L"CDX9VideoProcessor::CreateDXVA2VPDevice() : GetVideoProcessorCaps() failed with error {}", HR2Str(hr));
 		return FALSE;
 	}
 	if (preferredDeintTech) {
