@@ -986,7 +986,7 @@ BOOL CDX9VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 		else {
 			CComPtr<IDirect3DSurface9> pSurface;
 			if (m_DXVA2VP.IsReady()) {
-				pSurface = m_DXVA2VP.GetInputSurface();
+				pSurface = m_DXVA2VP.GetNextInputSurface(0, 0, m_CurrentSampleFmt);
 			} else {
 				pSurface = m_TexSrcVideo.pSurface;
 			}
