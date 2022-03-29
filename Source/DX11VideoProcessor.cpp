@@ -499,6 +499,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 {
 	DLog(L"CDX11VideoProcessor::Init()");
 
+	const bool bWindowChanged = (m_hWnd != hwnd);
 	m_hWnd = hwnd;
 	m_bHdrPassthroughSupport = false;
 	m_bHdrDisplayModeEnabled = false;
@@ -539,7 +540,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 			}
 		}
 
-		if (!m_pDXGISwapChain1 || m_bIsFullscreen != m_pFilter->m_bIsFullscreen) {
+		if (!m_pDXGISwapChain1 || m_bIsFullscreen != m_pFilter->m_bIsFullscreen || bWindowChanged) {
 			InitSwapChain();
 			UpdateStatsStatic();
 			m_pFilter->OnDisplayModeChange();
