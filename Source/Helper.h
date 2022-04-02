@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2021 see Authors.txt
+* (C) 2018-2022 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -82,6 +82,7 @@ enum ColorFormat_t {
 	CF_YUY2,
 	CF_P210,
 	CF_P216,
+	CF_Y210, // experimental
 	CF_AYUV,
 	CF_Y410,
 	CF_Y416,
