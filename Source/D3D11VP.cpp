@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2021 see Authors.txt
+* (C) 2019-2022 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -136,11 +136,13 @@ int GetBitDepth(const DXGI_FORMAT format)
 		return 8;
 	case DXGI_FORMAT_R10G10B10A2_UNORM:
 	case DXGI_FORMAT_P010:
+	case DXGI_FORMAT_Y210:
 	case DXGI_FORMAT_Y410:
 		return 10;
 	case DXGI_FORMAT_R16G16B16A16_UNORM:
 	case DXGI_FORMAT_R16_TYPELESS:
 	case DXGI_FORMAT_P016:
+	case DXGI_FORMAT_Y216:
 	case DXGI_FORMAT_Y416:
 		return 16;
 	}
