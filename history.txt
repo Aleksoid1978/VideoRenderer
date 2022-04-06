@@ -1,3 +1,13 @@
+v0.5.7
+------------------------
+Optimized image overlay through the IMFVideoMixerBitmap interface.
+Fixed processing of the first frames by the DXVA2 video processor on AMD and Intel graphics adapters.
+Fixed rounding errors in HDR metadata.
+Fixed work in DX11 mode when changing the display.
+Added support for Y210 and Y216 formats for DX11 mode.
+Reworked support for YUY2, AYUV, Y410, Y416 formats for Shader video processor in DX11 mode.
+Recommended version of MPC-BE 1.6.2.6991 (0a27de8af) or later.
+
 v0.5.6.1807 - 2021.12.20
 ------------------------
 Improved stability in DX9 mode when changing display.
