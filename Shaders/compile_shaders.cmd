@@ -24,6 +24,8 @@ IF /I %PROCESSOR_ARCHITECTURE%==AMD64 (
   SET fxcfolder=x86
 )
 
+SET fxcexe="%ProgramFiles(x86)%\Windows Kits\10\bin\10.0.19041.0\%fxcfolder%\fxc.exe"
+IF EXIST %fxcexe% GOTO fxc_OK
 SET fxcexe="%ProgramFiles(x86)%\Windows Kits\10\bin\10.0.18362.0\%fxcfolder%\fxc.exe"
 IF EXIST %fxcexe% GOTO fxc_OK
 SET fxcexe="%ProgramFiles(x86)%\Windows Kits\10\bin\10.0.17763.0\%fxcfolder%\fxc.exe"
