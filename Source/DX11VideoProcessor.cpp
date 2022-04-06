@@ -1637,7 +1637,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 
 	DLog(L"CDX11VideoProcessor::InitializeTexVP() started with input surface: {}, {} x {}", DXGIFormatToString(srcDXGIFormat), width, height);
 
-	UINT texW = (params.cformat == CF_YUY2) ? width / 2 : width;
+	const UINT texW = (params.cformat == CF_YUY2) ? width / 2 : width;
 
 	HRESULT hr = m_TexSrcVideo.CreateEx(m_pDevice, srcDXGIFormat, params.pDX11Planes, texW, height, Tex2D_DynamicShaderWrite);
 	if (FAILED(hr)) {
