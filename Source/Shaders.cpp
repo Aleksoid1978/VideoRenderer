@@ -134,6 +134,7 @@ HRESULT GetShaderConvertColor(
 		}
 	}
 
+	const bool packed422 = (fmtParams.cformat == CF_YUY2 || fmtParams.cformat == CF_Y210 || fmtParams.cformat == CF_Y216);
 	int planes = 1;
 	if (bDX11) {
 		if (fmtParams.pDX11Planes) {
@@ -259,7 +260,7 @@ HRESULT GetShaderConvertColor(
 		switch (planes) {
 		case 1:
 			code.append("float4 color = tex.Sample(samp, input.Tex);\n");
-			if (fmtParams.cformat == CF_YUY2) {
+			if (packed422) {
 				code.append("if (fmod(input.Tex.x*w, 2) < 1.0) {\n"
 					"color = float4(color[0], color[1], color[3], 1);\n"
 					"} else {\n");
@@ -432,7 +433,7 @@ HRESULT GetShaderConvertColor(
 				"{\n"
 				"float4 color = tex2D(s0, tex);\n"
 			);
-			if (fmtParams.cformat == CF_YUY2) {
+			if (packed422) {
 				code.append("if (fmod(tex.x*w, 2) < 1.0) {\n"
 					"color = float4(color[2], color[1], color[3], 1);\n"
 					"} else {\n");
