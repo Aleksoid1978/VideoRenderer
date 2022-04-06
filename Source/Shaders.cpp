@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2021 see Authors.txt
+* (C) 2019-2022 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -158,10 +158,10 @@ HRESULT GetShaderConvertColor(
 
 	DLog(L"GetShaderConvertColor() frame consists of {} planes", planes);
 
-	code += fmt::format("#define w {}\n", (fmtParams.cformat == CF_YUY2) ? texW * 2 : texW);
+	code += fmt::format("#define w {}\n", (!bDX11 && fmtParams.cformat == CF_YUY2) ? texW * 2 : texW);
 	code += fmt::format("#define dx (1.0/{})\n", texW);
 	code += fmt::format("#define dy (1.0/{})\n", texH);
-	code += fmt::format("static const float2 wh = {{{}, {}}};\n", (fmtParams.cformat == CF_YUY2) ? texW*2 : texW, texH);
+	code += fmt::format("static const float2 wh = {{{}, {}}};\n", (!bDX11 && fmtParams.cformat == CF_YUY2) ? texW*2 : texW, texH);
 	code += fmt::format("static const float2 dxdy2 = {{2.0/{}, 2.0/{}}};\n", texW, texH);
 
 	if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
