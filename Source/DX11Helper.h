@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2021 see Authors.txt
+* (C) 2019-2022 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -109,7 +109,7 @@ struct Tex11Video_t : Tex2D_t
 					// 1 texture, 2 SRV
 					shaderDesc.Format = pPlanes->FmtPlane1;
 					hr = pDevice->CreateShaderResourceView(pTexture, &shaderDesc, &pShaderResource);
-					if (S_OK == hr) {
+					if (S_OK == hr && pPlanes->FmtPlane2 != DXGI_FORMAT_UNKNOWN) {
 						shaderDesc.Format = pPlanes->FmtPlane2;
 						hr = pDevice->CreateShaderResourceView(pTexture, &shaderDesc, &pShaderResource2);
 					}
