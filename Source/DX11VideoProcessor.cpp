@@ -2880,7 +2880,7 @@ HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 	str += fmt::format(L"\nWindow rect    : {},{},{},{} - {}x{}", m_windowRect.left, m_windowRect.top, m_windowRect.right, m_windowRect.bottom, m_windowRect.Width(), m_windowRect.Height());
 
 	if (m_pDevice) {
-		std::vector<std::pair<const DXGI_FORMAT, UINT>> formats = {
+		std::vector<std::pair<const DXGI_FORMAT, UINT>> formatsYUV = {
 			{ DXGI_FORMAT_NV12,               0 },
 			{ DXGI_FORMAT_P010,               0 },
 			{ DXGI_FORMAT_P016,               0 },
@@ -2890,24 +2890,53 @@ HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 			{ DXGI_FORMAT_AYUV,               0 },
 			{ DXGI_FORMAT_Y410,               0 },
 			{ DXGI_FORMAT_Y416,               0 },
+		};
+		std::vector<std::pair<const DXGI_FORMAT, UINT>> formatsRGB = {
 			{ DXGI_FORMAT_B8G8R8X8_UNORM,     0 },
+			{ DXGI_FORMAT_B8G8R8A8_UNORM,     0 },
 			{ DXGI_FORMAT_R10G10B10A2_UNORM,  0 },
 			{ DXGI_FORMAT_R16G16B16A16_UNORM, 0 },
 		};
-		for (auto& [format, formatSupport] : formats) {
+		for (auto& [format, formatSupport] : formatsYUV) {
+			m_pDevice->CheckFormatSupport(format, &formatSupport);
+		}
+		for (auto& [format, formatSupport] : formatsRGB) {
 			m_pDevice->CheckFormatSupport(format, &formatSupport);
 		}
 
+		int count = 0;
 		str += L"\nD3D11 VP input formats :";
-		for (const auto& [format, formatSupport] : formats) {
+		for (const auto& [format, formatSupport] : formatsYUV) {
+			if (formatSupport & D3D11_FORMAT_SUPPORT_VIDEO_PROCESSOR_INPUT) {
+				str.append(L" ");
+				str.append(DXGIFormatToString(format));
+				count++;
+			}
+		}
+		if (count) {
+			str += L"\n ";
+		}
+		for (const auto& [format, formatSupport] : formatsRGB) {
 			if (formatSupport & D3D11_FORMAT_SUPPORT_VIDEO_PROCESSOR_INPUT) {
 				str.append(L" ");
 				str.append(DXGIFormatToString(format));
 			}
 		}
+
+		count = 0;
 		str += L"\nShader VP input formats:";
-		for (const auto& [format, formatSupport] : formats) {
+		for (const auto& [format, formatSupport] : formatsYUV) {
 			if (formatSupport & (D3D11_FORMAT_SUPPORT_TEXTURE2D|D3D11_FORMAT_SUPPORT_SHADER_SAMPLE)) {
+				str.append(L" ");
+				str.append(DXGIFormatToString(format));
+				count++;
+			}
+		}
+		if (count) {
+			str += L"\n ";
+		}
+		for (const auto& [format, formatSupport] : formatsRGB) {
+			if (formatSupport & (D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_SHADER_SAMPLE)) {
 				str.append(L" ");
 				str.append(DXGIFormatToString(format));
 			}
