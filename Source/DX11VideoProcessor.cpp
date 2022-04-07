@@ -2878,6 +2878,41 @@ HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 	str += fmt::format(L"\nSource rect    : {},{},{},{} - {}x{}", m_srcRect.left, m_srcRect.top, m_srcRect.right, m_srcRect.bottom, m_srcRect.Width(), m_srcRect.Height());
 	str += fmt::format(L"\nVideo rect     : {},{},{},{} - {}x{}", m_videoRect.left, m_videoRect.top, m_videoRect.right, m_videoRect.bottom, m_videoRect.Width(), m_videoRect.Height());
 	str += fmt::format(L"\nWindow rect    : {},{},{},{} - {}x{}", m_windowRect.left, m_windowRect.top, m_windowRect.right, m_windowRect.bottom, m_windowRect.Width(), m_windowRect.Height());
+
+	if (m_pDevice) {
+		std::vector<std::pair<const DXGI_FORMAT, UINT>> formats = {
+			{ DXGI_FORMAT_NV12,               0 },
+			{ DXGI_FORMAT_P010,               0 },
+			{ DXGI_FORMAT_P016,               0 },
+			{ DXGI_FORMAT_YUY2,               0 },
+			{ DXGI_FORMAT_Y210,               0 },
+			{ DXGI_FORMAT_Y216,               0 },
+			{ DXGI_FORMAT_AYUV,               0 },
+			{ DXGI_FORMAT_Y410,               0 },
+			{ DXGI_FORMAT_Y416,               0 },
+			{ DXGI_FORMAT_B8G8R8X8_UNORM,     0 },
+			{ DXGI_FORMAT_R10G10B10A2_UNORM,  0 },
+			{ DXGI_FORMAT_R16G16B16A16_UNORM, 0 },
+		};
+		for (auto& [format, formatSupport] : formats) {
+			m_pDevice->CheckFormatSupport(format, &formatSupport);
+		}
+
+		str += L"\nD3D11 VP input formats :";
+		for (const auto& [format, formatSupport] : formats) {
+			if (formatSupport & D3D11_FORMAT_SUPPORT_VIDEO_PROCESSOR_INPUT) {
+				str.append(L" ");
+				str.append(DXGIFormatToString(format));
+			}
+		}
+		str += L"\nShader VP input formats:";
+		for (const auto& [format, formatSupport] : formats) {
+			if (formatSupport & (D3D11_FORMAT_SUPPORT_TEXTURE2D|D3D11_FORMAT_SUPPORT_SHADER_SAMPLE)) {
+				str.append(L" ");
+				str.append(DXGIFormatToString(format));
+			}
+		}
+	}
 #endif
 
 	return S_OK;
