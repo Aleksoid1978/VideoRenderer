@@ -2905,7 +2905,7 @@ HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 		}
 
 		int count = 0;
-		str += L"\nD3D11 VP input formats :";
+		str += L"\nD3D11 VP input formats  :";
 		for (const auto& [format, formatSupport] : formatsYUV) {
 			if (formatSupport & D3D11_FORMAT_SUPPORT_VIDEO_PROCESSOR_INPUT) {
 				str.append(L" ");
@@ -2924,7 +2924,7 @@ HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 		}
 
 		count = 0;
-		str += L"\nShader VP input formats:";
+		str += L"\nShader Texture2D formats:";
 		for (const auto& [format, formatSupport] : formatsYUV) {
 			if (formatSupport & (D3D11_FORMAT_SUPPORT_TEXTURE2D|D3D11_FORMAT_SUPPORT_SHADER_SAMPLE)) {
 				str.append(L" ");
