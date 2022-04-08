@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2020 see Authors.txt
+* (C) 2019-2022 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -32,6 +32,7 @@ HRESULT CompileShader(const std::string& srcCode, const D3D_SHADER_MACRO* pDefin
 
 HRESULT GetShaderConvertColor(
 	const bool bDX11,
+	const UINT width,
 	const long texW, long texH,
 	const RECT rect,
 	const FmtConvParams_t& fmtParams,

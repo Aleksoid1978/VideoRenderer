@@ -78,6 +78,7 @@ const char code_Bicubic_UV[] =
 
 HRESULT GetShaderConvertColor(
 	const bool bDX11,
+	const UINT width,
 	const long texW, long texH,
 	const RECT rect,
 	const FmtConvParams_t& fmtParams,
@@ -134,7 +135,6 @@ HRESULT GetShaderConvertColor(
 		}
 	}
 
-	const bool packed422 = (fmtParams.cformat == CF_YUY2 || fmtParams.cformat == CF_Y210 || fmtParams.cformat == CF_Y216);
 	int planes = 1;
 	if (bDX11) {
 		if (fmtParams.pDX11Planes) {
@@ -158,10 +158,13 @@ HRESULT GetShaderConvertColor(
 
 	DLog(L"GetShaderConvertColor() frame consists of {} planes", planes);
 
-	code += fmt::format("#define w {}\n", (!bDX11 && fmtParams.cformat == CF_YUY2) ? texW * 2 : texW);
+	const bool packed422 = (fmtParams.cformat == CF_YUY2 || fmtParams.cformat == CF_Y210 || fmtParams.cformat == CF_Y216);
+	const bool fix422 = (packed422 && texW * 2 == width);
+
+	code += fmt::format("#define w {}\n", fix422 ? width : texW);
 	code += fmt::format("#define dx (1.0/{})\n", texW);
 	code += fmt::format("#define dy (1.0/{})\n", texH);
-	code += fmt::format("static const float2 wh = {{{}, {}}};\n", (!bDX11 && fmtParams.cformat == CF_YUY2) ? texW*2 : texW, texH);
+	code += fmt::format("static const float2 wh = {{{}, {}}};\n", fix422 ? width : texW, texH);
 	code += fmt::format("static const float2 dxdy2 = {{2.0/{}, 2.0/{}}};\n", texW, texH);
 
 	if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {

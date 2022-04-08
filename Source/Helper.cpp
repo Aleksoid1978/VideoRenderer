@@ -280,6 +280,8 @@ static DX9PlaneConfig DX9Planes420P16 = { D3DFMT_L16, D3DFMT_L16,    D3DFMT_L16,
 static DX9PlaneConfig DX9Planes422P16 = { D3DFMT_L16, D3DFMT_L16,    D3DFMT_L16,     2, 1 };
 static DX9PlaneConfig DX9Planes444P16 = { D3DFMT_L16, D3DFMT_L16,    D3DFMT_L16,     1, 1 };
 
+static DX9PlaneConfig DX9Plane_ARGB8 = { D3DFMT_A8R8G8B8, D3DFMT_UNKNOWN, D3DFMT_UNKNOWN, 1, 1 }; // YUY2
+
 static DX11PlaneConfig_t DX11PlanesNV12   = { DXGI_FORMAT_R8_UNORM,  DXGI_FORMAT_R8G8_UNORM,   DXGI_FORMAT_UNKNOWN,   2, 2 };
 static DX11PlaneConfig_t DX11PlanesP01x   = { DXGI_FORMAT_R16_UNORM, DXGI_FORMAT_R16G16_UNORM, DXGI_FORMAT_UNKNOWN,   2, 2 };
 static DX11PlaneConfig_t DX11PlanesP21x   = { DXGI_FORMAT_R16_UNORM, DXGI_FORMAT_R16G16_UNORM, DXGI_FORMAT_UNKNOWN,   2, 1 };
@@ -300,7 +302,7 @@ static const FmtConvParams_t s_FmtConvMapping[] = {
 	{CF_NV12,      L"NV12",      D3DFMT_NV12,     D3DFMT_NV12,     &DX9PlanesNV12, DXGI_FORMAT_NV12,           DXGI_FORMAT_NV12,          &DX11PlanesNV12,       1, 3,        CS_YUV,  420,       8,     &CopyFrameAsIs,           nullptr},
 	{CF_P010,      L"P010",      D3DFMT_P010,     D3DFMT_P010,     &DX9PlanesP01x, DXGI_FORMAT_P010,           DXGI_FORMAT_P010,          &DX11PlanesP01x,       2, 3,        CS_YUV,  420,       16,    &CopyFrameAsIs,           nullptr},
 	{CF_P016,      L"P016",      D3DFMT_P016,     D3DFMT_P016,     &DX9PlanesP01x, DXGI_FORMAT_P016,           DXGI_FORMAT_P016,          &DX11PlanesP01x,       2, 3,        CS_YUV,  420,       16,    &CopyFrameAsIs,           nullptr},
-	{CF_YUY2,      L"YUY2",      D3DFMT_YUY2,     D3DFMT_A8R8G8B8,        nullptr, DXGI_FORMAT_YUY2,           DXGI_FORMAT_YUY2,         &DX11Plane_RGBA8,       2, 2,        CS_YUV,  422,       8,     &CopyFrameAsIs,           nullptr},
+	{CF_YUY2,      L"YUY2",      D3DFMT_YUY2,     D3DFMT_YUY2,    &DX9Plane_ARGB8, DXGI_FORMAT_YUY2,           DXGI_FORMAT_YUY2,         &DX11Plane_RGBA8,       2, 2,        CS_YUV,  422,       8,     &CopyFrameAsIs,           nullptr},
 	{CF_P210,      L"P210",      D3DFMT_P210,     D3DFMT_P210,     &DX9PlanesP21x, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11PlanesP21x,       2, 4,        CS_YUV,  422,       16,    &CopyFrameAsIs,           nullptr},
 	{CF_P216,      L"P216",      D3DFMT_P216,     D3DFMT_P216,     &DX9PlanesP21x, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11PlanesP21x,       2, 4,        CS_YUV,  422,       16,    &CopyFrameAsIs,           nullptr},
 	{CF_Y210,      L"Y210",      D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,         nullptr, DXGI_FORMAT_Y210,           DXGI_FORMAT_Y210,        &DX11Plane_RGBA16,       4, 2,        CS_YUV,  422,       10,    &CopyFrameAsIs,           nullptr},

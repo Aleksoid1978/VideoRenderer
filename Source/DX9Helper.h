@@ -73,20 +73,22 @@ struct Tex9Video_t : Tex_t
 		HRESULT hr;
 
 		if (pPlanes) {
+			if (format == D3DFMT_YUY2) {
+				width /= 2;
+			}
 			hr = Create(pDevice, pPlanes->FmtPlane1, width, height, usage);
-			if (S_OK == hr) {
+
+			if (S_OK == hr && pPlanes->FmtPlane2) {
 				const UINT chromaWidth  = width / pPlanes->div_chroma_w;
 				const UINT chromaHeight = height / pPlanes->div_chroma_h;
 				hr = Plane2.Create(pDevice, pPlanes->FmtPlane2, chromaWidth, chromaHeight, usage);
+				
 				if (S_OK == hr && pPlanes->FmtPlane3) {
 					hr = Plane3.Create(pDevice, pPlanes->FmtPlane3, chromaWidth, chromaHeight, usage);
 				}
 			}
 		}
 		else {
-			if (format == D3DFMT_YUY2) {
-				width /= 2;
-			}
 			hr = Create(pDevice, format, width, height, usage);
 		}
 

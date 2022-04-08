@@ -2076,6 +2076,7 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 
 		ID3DBlob* pShaderCode = nullptr;
 		hr = GetShaderConvertColor(false,
+			m_srcWidth,
 			m_TexSrcVideo.Width, m_TexSrcVideo.Height,
 			m_srcRect, m_srcParams, m_srcExFmt,
 			m_iChromaScaling, convertType,

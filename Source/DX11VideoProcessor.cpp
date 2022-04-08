@@ -2320,6 +2320,7 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 		: SHADER_CONVERT_NONE;
 
 	HRESULT hr = GetShaderConvertColor(true,
+		m_srcWidth,
 		m_TexSrcVideo.desc.Width, m_TexSrcVideo.desc.Height,
 		m_srcRect, m_srcParams, m_srcExFmt,
 		m_iChromaScaling, convertType,
