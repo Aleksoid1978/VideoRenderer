@@ -121,9 +121,10 @@ struct Tex11Video_t : Tex2D_t
 			}
 		}
 		else if (pPlanes) {
-			// 2 textures, 2 SRV
 			hr = Create(pDevice, pPlanes->FmtPlane1, width, height, type);
+
 			if (S_OK == hr && pPlanes->FmtPlane2) {
+				// 2 textures, 2 SRV
 				const UINT chromaWidth = width / pPlanes->div_chroma_w;
 				const UINT chromaHeight = height / pPlanes->div_chroma_h;
 				texdesc = CreateTex2DDesc(pPlanes->FmtPlane2, chromaWidth, chromaHeight, type);
