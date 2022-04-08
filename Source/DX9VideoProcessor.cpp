@@ -756,9 +756,7 @@ HRESULT CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const
 
 	DLog(L"CDX9VideoProcessor::InitializeTexVP() started with input surface: {}, {} x {}", D3DFormatToString(d3dformat), width, height);
 
-	const UINT texW = (params.cformat == CF_YUY2) ? width / 2 : width;
-
-	HRESULT hr = m_TexSrcVideo.CreateEx(m_pD3DDevEx, d3dformat, params.pDX9Planes, texW, height, D3DUSAGE_DYNAMIC);
+	HRESULT hr = m_TexSrcVideo.CreateEx(m_pD3DDevEx, d3dformat, params.pDX9Planes, width, height, D3DUSAGE_DYNAMIC);
 	if (FAILED(hr)) {
 		DLog(L"CDX9VideoProcessor::InitializeTexVP() : failed m_TexSrcVideo.Create()");
 		return hr;

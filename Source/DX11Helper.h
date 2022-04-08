@@ -91,7 +91,7 @@ struct Tex11Video_t : Tex2D_t
 	CComPtr<ID3D11ShaderResourceView> pShaderResource2;
 	CComPtr<ID3D11ShaderResourceView> pShaderResource3;
 
-	HRESULT CreateEx(ID3D11Device* pDevice, const DXGI_FORMAT format, const DX11PlaneConfig_t* pPlanes, const UINT width, const UINT height, const Tex2DType type) {
+	HRESULT CreateEx(ID3D11Device* pDevice, const DXGI_FORMAT format, const DX11PlaneConfig_t* pPlanes, UINT width, const UINT height, const Tex2DType type) {
 		Release();
 		D3D11_TEXTURE2D_DESC texdesc = CreateTex2DDesc(format, width, height, type);
 
@@ -121,6 +121,9 @@ struct Tex11Video_t : Tex2D_t
 			}
 		}
 		else if (pPlanes) {
+			if (format == DXGI_FORMAT_YUY2) {
+				width /= 2;
+			}
 			hr = Create(pDevice, pPlanes->FmtPlane1, width, height, type);
 
 			if (S_OK == hr && pPlanes->FmtPlane2) {
