@@ -138,6 +138,9 @@
     <FxCompile Include="examples\ps_resize_onepass_jinc2.hlsl">
       <Filter>examples</Filter>
     </FxCompile>
+    <FxCompile Include="examples\resizer_onepass_jinc2.hlsl">
+      <Filter>examples</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="convert\hdr_tone_mapping.hlsl">

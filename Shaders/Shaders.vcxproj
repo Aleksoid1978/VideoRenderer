@@ -186,6 +186,10 @@
       <ShaderModel>4.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
+    <FxCompile Include="examples\resizer_onepass_jinc2.hlsl">
+      <ShaderModel>3.0</ShaderModel>
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="examples\vs_mpv.hlsl">
       <ShaderModel>4.0</ShaderModel>
       <ShaderType>Vertex</ShaderType>
