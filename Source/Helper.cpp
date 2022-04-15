@@ -398,12 +398,13 @@ void CopyGpuFrame_SSE41(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE*
 
 void CopyFrameRGB24(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
-	UINT line_pixels = abs(src_pitch) / 3;
+	UINT line_pixels  = abs(src_pitch) / 3;
+	UINT line_pixels4 = line_pixels & ~(4u - 1);
 
 	for (UINT y = 0; y < lines; ++y) {
 		uint32_t* src32 = (uint32_t*)src;
 		uint32_t* dst32 = (uint32_t*)dst;
-		for (UINT i = 0; i < line_pixels; i += 4) {
+		for (UINT i = 0; i < line_pixels4; i += 4) {
 			uint32_t sa = *src32++;
 			uint32_t sb = *src32++;
 			uint32_t sc = *src32++;
@@ -421,7 +422,8 @@ void CopyFrameRGB24(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src
 
 void CopyRGB24_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
-	UINT line_pixels = abs(src_pitch) / 3;
+	UINT line_pixels   = abs(src_pitch) / 3;
+	UINT line_pixels4  = line_pixels & ~(4u - 1);
 	UINT line_pixels16 = line_pixels & ~(16u - 1);
 	__m128i mask = _mm_setr_epi8(0, 1, 2, -1, 3, 4, 5, -1, 6, 7, 8, -1, 9, 10, 11, -1);
 
@@ -447,7 +449,7 @@ void CopyRGB24_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* sr
 
 		uint32_t* src32 = (uint32_t*)src128;
 		uint32_t* dst32 = (uint32_t*)dst128;
-		for (; i < line_pixels; i += 4) {
+		for (; i < line_pixels4; i += 4) {
 			uint32_t sa = *src32++;
 			uint32_t sb = *src32++;
 			uint32_t sc = *src32++;
@@ -465,12 +467,13 @@ void CopyRGB24_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* sr
 
 void CopyFrameRGB48(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
-	UINT line_pixels = abs(src_pitch) / 6;
+	UINT line_pixels  = abs(src_pitch) / 6;
+	UINT line_pixels4 = line_pixels & ~(4u - 1);
 
 	for (UINT y = 0; y < lines; ++y) {
 		uint64_t* src64 = (uint64_t*)src;
 		uint64_t* dst64 = (uint64_t*)dst;
-		for (UINT i = 0; i < line_pixels; i += 4) {
+		for (UINT i = 0; i < line_pixels4; i += 4) {
 			uint64_t sa = src64[0];
 			uint64_t sb = src64[1];
 			uint64_t sc = src64[2];
@@ -490,13 +493,15 @@ void CopyFrameRGB48(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src
 
 void CopyRGB48_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
-	UINT line_pixels = abs(src_pitch) / 6;
+	UINT line_pixels  = abs(src_pitch) / 6;
+	UINT line_pixels8 = line_pixels & ~(8u - 1);
+
 	__m128i mask = _mm_setr_epi8(0, 1, 2, 3, 4, 5, -1, -1, 6, 7, 8, 9, 10, 11, -1, -1);
 
 	for (UINT y = 0; y < lines; ++y) {
 		__m128i *src128 = (__m128i*)src;
 		__m128i *dst128 = (__m128i*)dst;
-		for (UINT i = 0; i < line_pixels; i += 8) {
+		for (UINT i = 0; i < line_pixels8; i += 8) {
 			__m128i sa = _mm_load_si128(src128);
 			__m128i sb = _mm_load_si128(src128 + 1);
 			__m128i sc = _mm_load_si128(src128 + 2);
@@ -521,12 +526,13 @@ void CopyRGB48_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* sr
 
 void CopyFrameBGR48(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
-	UINT line_pixels = abs(src_pitch) / 6;
+	UINT line_pixels  = abs(src_pitch) / 6;
+	UINT line_pixels4 = line_pixels & ~(4u - 1);
 
 	for (UINT y = 0; y < lines; ++y) {
 		uint64_t* src64 = (uint64_t*)src;
 		uint64_t* dst64 = (uint64_t*)dst;
-		for (UINT i = 0; i < line_pixels; i += 4) {
+		for (UINT i = 0; i < line_pixels4; i += 4) {
 			uint64_t sa = *src64++;
 			uint64_t sb = *src64++;
 			uint64_t sc = *src64++;
