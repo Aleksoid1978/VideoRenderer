@@ -92,9 +92,10 @@ inline bool HookFunc(T** ppSystemFunction, PVOID pHookFunction)
 static const ScalingShaderResId s_Upscaling11ResIDs[UPSCALE_COUNT] = {
 	{0,                            0,                            L"Nearest-neighbor"  },
 	{IDF_PSH11_INTERP_MITCHELL4_X, IDF_PSH11_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
-	{IDF_PSH11_INTERP_CATMULL4_X,  IDF_PSH11_INTERP_CATMULL4_Y , L"Catmull-Rom"       },
-	{IDF_PSH11_INTERP_LANCZOS2_X,  IDF_PSH11_INTERP_LANCZOS2_Y , L"Lanczos2"          },
-	{IDF_PSH11_INTERP_LANCZOS3_X,  IDF_PSH11_INTERP_LANCZOS3_Y , L"Lanczos3"          },
+	{IDF_PSH11_INTERP_CATMULL4_X,  IDF_PSH11_INTERP_CATMULL4_Y,  L"Catmull-Rom"       },
+	{IDF_PSH11_INTERP_LANCZOS2_X,  IDF_PSH11_INTERP_LANCZOS2_Y,  L"Lanczos2"          },
+	{IDF_PSH11_INTERP_LANCZOS3_X,  IDF_PSH11_INTERP_LANCZOS3_Y,  L"Lanczos3"          },
+	{IDF_PSH11_INTERP_JINC2,       IDF_PSH11_INTERP_JINC2,       L"Jinc2*"            },
 };
 
 static const ScalingShaderResId s_Downscaling11ResIDs[DOWNSCALE_COUNT] = {
@@ -2297,7 +2298,11 @@ void CDX11VideoProcessor::UpdateUpscalingShaders()
 
 	if (m_iUpscaling != UPSCALE_Nearest) {
 		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, s_Upscaling11ResIDs[m_iUpscaling].shaderX));
-		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, s_Upscaling11ResIDs[m_iUpscaling].shaderY));
+		if (m_iUpscaling == UPSCALE_Jinc2) {
+			m_pShaderUpscaleY = m_pShaderUpscaleX;
+		} else {
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, s_Upscaling11ResIDs[m_iUpscaling].shaderY));
+		}
 	}
 }
 
@@ -2422,6 +2427,14 @@ HRESULT CDX11VideoProcessor::ResizeShaderPass(const Tex2D_t& Tex, ID3D11Texture2
 
 		D3D11_TEXTURE2D_DESC desc;
 		pRenderTarget->GetDesc(&desc);
+
+		if (resizerX == resizerY) {
+			// one pass resize
+			hr = TextureResizeShader(Tex, pRenderTarget, srcRect, dstRect, resizerX, rotation, m_bFlip);
+			DLogIf(FAILED(hr), L"CDX11VideoProcessor::ResizeShaderPass() : failed with error {}", HR2Str(hr));
+
+			return hr;
+		}
 
 		// check intermediate texture
 		const UINT texWidth  = desc.Width;

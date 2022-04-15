@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2021 see Authors.txt
+ * (C) 2018-2022 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -42,6 +42,7 @@ enum :int {
 	UPSCALE_CatmullRom,
 	UPSCALE_Lanczos2,
 	UPSCALE_Lanczos3,
+	UPSCALE_Jinc2,
 	UPSCALE_COUNT
 };
 

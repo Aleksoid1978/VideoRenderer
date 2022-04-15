@@ -36,9 +36,10 @@
 static const ScalingShaderResId s_Upscaling9ResIDs[UPSCALE_COUNT] = {
 	{0,                             0,                             L"Nearest-neighbor"  },
 	{IDF_SHADER_INTERP_MITCHELL4_X, IDF_SHADER_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
-	{IDF_SHADER_INTERP_CATMULL4_X,  IDF_SHADER_INTERP_CATMULL4_Y , L"Catmull-Rom"       },
-	{IDF_SHADER_INTERP_LANCZOS2_X,  IDF_SHADER_INTERP_LANCZOS2_Y , L"Lanczos2"          },
-	{IDF_SHADER_INTERP_LANCZOS3_X,  IDF_SHADER_INTERP_LANCZOS3_Y , L"Lanczos3"          },
+	{IDF_SHADER_INTERP_CATMULL4_X,  IDF_SHADER_INTERP_CATMULL4_Y,  L"Catmull-Rom"       },
+	{IDF_SHADER_INTERP_LANCZOS2_X,  IDF_SHADER_INTERP_LANCZOS2_Y,  L"Lanczos2"          },
+	{IDF_SHADER_INTERP_LANCZOS3_X,  IDF_SHADER_INTERP_LANCZOS3_Y,  L"Lanczos3"          },
+	{IDF_SHADER_INTERP_JINC2,       IDF_SHADER_INTERP_JINC2,       L"Jinc2*"            },
 };
 
 static const ScalingShaderResId s_Downscaling9ResIDs[DOWNSCALE_COUNT] = {
@@ -2053,7 +2054,11 @@ void CDX9VideoProcessor::UpdateUpscalingShaders()
 
 	if (m_iUpscaling != UPSCALE_Nearest) {
 		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleX, s_Upscaling9ResIDs[m_iUpscaling].shaderX));
-		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, s_Upscaling9ResIDs[m_iUpscaling].shaderY));
+		if (m_iUpscaling == UPSCALE_Jinc2) {
+			m_pShaderUpscaleY = m_pShaderUpscaleX;
+		} else {
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, s_Upscaling9ResIDs[m_iUpscaling].shaderY));
+		}
 	}
 }
 
@@ -2251,6 +2256,15 @@ HRESULT CDX9VideoProcessor::ResizeShaderPass(IDirect3DTexture9* pTexture, IDirec
 
 		D3DSURFACE_DESC desc;
 		pRenderTarget->GetDesc(&desc);
+
+		if (resizerX == resizerY) {
+			// one pass resize
+			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
+			hr = TextureResizeShader(pTexture, srcRect, dstRect, resizerX, m_iRotation, m_bFlip);
+			DLogIf(FAILED(hr), L"CDX9VideoProcessor::ResizeShaderPass() : failed with error {}", HR2Str(hr));
+
+			return hr;
+		}
 
 		// check intermediate texture
 		const UINT texWidth  = desc.Width;
