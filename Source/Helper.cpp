@@ -404,7 +404,9 @@ void CopyFrameRGB24(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src
 	for (UINT y = 0; y < lines; ++y) {
 		uint32_t* src32 = (uint32_t*)src;
 		uint32_t* dst32 = (uint32_t*)dst;
-		for (UINT i = 0; i < line_pixels4; i += 4) {
+
+		UINT i = 0;
+		for (; i < line_pixels4; i += 4) {
 			uint32_t sa = *src32++;
 			uint32_t sb = *src32++;
 			uint32_t sc = *src32++;
@@ -413,6 +415,18 @@ void CopyFrameRGB24(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src
 			*dst32++ = (sa >> 24) | (sb << 8);
 			*dst32++ = (sb >> 16) | (sc << 16);
 			*dst32++ = sc >> 8;
+		}
+
+		if (i < line_pixels) {
+			if (line_pixels & 1) {
+				*dst32 = *src32;
+			} else {
+				uint32_t sa = *src32++;
+				uint32_t sb = *src32;
+
+				*dst32++ = sa;
+				*dst32 = (sa >> 24) | (sb << 8);
+			}
 		}
 
 		src += src_pitch;
@@ -458,6 +472,18 @@ void CopyRGB24_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* sr
 			*dst32++ = (sa >> 24) | (sb << 8);
 			*dst32++ = (sb >> 16) | (sc << 16);
 			*dst32++ = sc >> 8;
+		}
+
+		if (i < line_pixels) {
+			if (line_pixels & 1) {
+				*dst32 = *src32;
+			} else {
+				uint32_t sa = *src32++;
+				uint32_t sb = *src32;
+
+				*dst32++ = sa;
+				*dst32 = (sa >> 24) | (sb << 8);
+			}
 		}
 
 		src += src_pitch;
