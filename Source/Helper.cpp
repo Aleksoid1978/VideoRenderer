@@ -558,7 +558,9 @@ void CopyFrameBGR48(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src
 	for (UINT y = 0; y < lines; ++y) {
 		uint64_t* src64 = (uint64_t*)src;
 		uint64_t* dst64 = (uint64_t*)dst;
-		for (UINT i = 0; i < line_pixels4; i += 4) {
+
+		UINT i = 0;
+		for (; i < line_pixels4; i += 4) {
 			uint64_t sa = *src64++;
 			uint64_t sb = *src64++;
 			uint64_t sc = *src64++;
@@ -567,6 +569,22 @@ void CopyFrameBGR48(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src
 			*dst64++ = ((sa & 0xffff000000000000) >> 16) | ((sb & 0xffff) << 16) | ((sb & 0xffff0000) >> 16);
 			*dst64++ = (sb & 0xffff00000000) | ((sb & 0xffff000000000000) >> 32) | (sc & 0xffff);
 			*dst64++ = ((sc & 0xffff0000) << 16) | ((sc & 0xffff00000000) >> 16) | ((sc & 0xffff000000000000) >> 48);
+		}
+
+		if (UINT remainder = line_pixels - i) {
+			uint64_t sa = *src64++;
+			*dst64++ = ((sa & 0xffff) << 32) | (sa & 0xffff0000) | ((sa & 0xffff00000000) >> 32);
+
+			if (remainder==2) {
+				uint64_t sb = *(uint32_t*)src64;
+				*dst64 = ((sa & 0xffff000000000000) >> 16) | ((sb & 0xffff) << 16) | ((sb & 0xffff0000) >> 16);
+			}
+			else if (remainder == 3) {
+				uint64_t sb = *src64++;
+				uint64_t sc = *(uint32_t*)src64;
+				*dst64++ = ((sa & 0xffff000000000000) >> 16) | ((sb & 0xffff) << 16) | ((sb & 0xffff0000) >> 16);
+				*dst64 = (sb & 0xffff00000000) | ((sb & 0xffff000000000000) >> 32) | (sc & 0xffff);
+			}
 		}
 
 		src += src_pitch;
