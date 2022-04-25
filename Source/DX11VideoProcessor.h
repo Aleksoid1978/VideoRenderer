@@ -124,6 +124,9 @@ private:
 	CComPtr<ID3D11ShaderResourceView> m_pShaderResourceSubPic;
 	bool                              m_bSubPicWasRendered = false;
 
+	/*subtitles d3d11*/
+	bool                              m_bD3D11Subtitle = false;
+
 	// AlphaBitmap
 	Tex2D_t m_TexAlphaBitmap;
 	CComPtr<ID3D11Buffer> m_pAlphaBitmapVertex;

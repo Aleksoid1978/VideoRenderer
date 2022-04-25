@@ -413,7 +413,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_bHdrPassthrough                 = config.bHdrPassthrough;
 	m_iHdrToggleDisplay               = config.iHdrToggleDisplay;
 	m_bConvertToSdr                   = config.bConvertToSdr;
-
+	m_bD3D11Subtitle                  = config.bD3D11Subtitle;
 	m_nCurrentAdapter = -1;
 	m_pDisplayMode = &m_DisplayMode;
 
@@ -598,6 +598,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 			nullptr);
 	}
 #endif
+	
 	SAFE_RELEASE(pDXGIAdapter);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::Init() : D3D11CreateDevice() failed with error {}", HR2Str(hr));
@@ -953,7 +954,10 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	} else {
 		m_pDevice->GetImmediateContext1(&m_pDeviceContext);
 	}
+	CComQIPtr<ID3D10Multithread> p_mt(m_pDeviceContext);
 
+	//for d3d11 subtitles
+	BOOL multi = p_mt->SetMultithreadProtected(true);
 	hr = m_D3D11VP.InitVideoDevice(m_pDevice, m_pDeviceContext);
 	DLogIf(FAILED(hr), L"CDX11VideoProcessor::SetDevice() : InitVideoDevice failed with error {}", HR2Str(hr));
 
@@ -1225,7 +1229,37 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 
 		m_pSurface9SubPic.Release();
 
-		if (m_pD3DDevEx) {
+		if (m_bD3D11Subtitle) {
+			D3D11_TEXTURE2D_DESC bufferDesc;
+			bufferDesc.ArraySize = 1;
+			bufferDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+			bufferDesc.CPUAccessFlags = 0;
+			bufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+			bufferDesc.Height = m_d3dpp.BackBufferHeight;
+			bufferDesc.MipLevels = 1;
+			bufferDesc.MiscFlags = 0;
+			bufferDesc.SampleDesc = { 1, 0 };
+			bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+			bufferDesc.Width = m_d3dpp.BackBufferWidth;
+			HRESULT hr = m_pDevice->CreateTexture2D(&bufferDesc, 0, &m_pTextureSubPic);
+
+			//Creating a view of the texture to be used when binding it as a render target
+			D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+			renderTargetViewDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+			renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+			renderTargetViewDesc.Texture2D.MipSlice = 0;
+			DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateRenderTargetView failed for subic with error {}", HR2Str(hr));
+
+			//Creating a view of the texture to be used when binding it on a shader to sample
+			D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+			shaderResourceViewDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+			shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+			shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+			shaderResourceViewDesc.Texture2D.MipLevels = 1;
+			hr = m_pDevice->CreateShaderResourceView(m_pTextureSubPic, &shaderResourceViewDesc, &m_pShaderResourceSubPic);
+			DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateShaderResourceView() failed for subpic with error {}", HR2Str(hr));
+		}
+		if (m_pD3DDevEx && !m_bD3D11Subtitle) {
 			HANDLE sharedHandle = nullptr;
 			hr2 = m_pD3DDevEx->CreateRenderTarget(
 				m_d3dpp.BackBufferWidth,
@@ -2012,7 +2046,8 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	uint64_t tick1 = GetPreciseTick();
 
 	HRESULT hrSubPic = E_FAIL;
-	if (m_pFilter->m_pSubCallBack && m_pShaderResourceSubPic) {
+
+	if (m_pFilter->m_pSubCallBack && m_pShaderResourceSubPic && !m_bD3D11Subtitle) {
 		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 		const CRect rDstVid(m_videoRect);
 		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
@@ -2042,6 +2077,46 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		}
 	}
 
+	/*we render directly onto the back buffer with d3d11*/
+	if (m_pFilter->m_pSub11CallBack && m_bD3D11Subtitle) {
+		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
+		const CRect rDstVid(m_videoRect);
+		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
+
+		if (S_OK == hr) {
+			const FLOAT ClearColorInv[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			D3D11_VIEWPORT VP;
+			VP.TopLeftX = 0;
+			VP.TopLeftY = 0;
+			VP.Width = rSrcPri.Width();
+			VP.Height = rSrcPri.Height();
+			VP.MinDepth = 0.0f;
+			VP.MaxDepth = 1.0f;
+			ID3D11RenderTargetView* pRenderTargetView;
+			HRESULT hr = m_pDevice->CreateRenderTargetView(m_pTextureSubPic, nullptr, &pRenderTargetView);
+			m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, m_pFilter->m_bSubInvAlpha ? ClearColorInv : ClearColor);
+			// Set resources
+			m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
+			//m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+			m_pDeviceContext->RSSetViewports(1, &VP);
+			m_pDeviceContext->OMSetBlendState(m_pFilter->m_bSubInvAlpha ? m_pAlphaBlendStateInv : m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
+			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
+			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
+			m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
+			m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+			
+			//everything is set directly on the renderer so we dont have to compile any shaders on the player side
+			//the player will create the vertex buffer and draw
+			hrSubPic = m_pFilter->m_pSub11CallBack->Render11(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
+
+		}
+		
+
+
+
+	}
+
 	uint64_t tick2 = GetPreciseTick();
 
 	if (!m_windowRect.IsRectEmpty()) {
@@ -2058,7 +2133,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2);
 	}
 
-	if (S_OK == hrSubPic) {
+	if (S_OK == hrSubPic ) {//&& !m_bD3D11Subtitle) {
 		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 
 		D3D11_VIEWPORT VP;
@@ -2973,13 +3048,19 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	bool changeDowndcalingShader = false;
 	bool changeNumTextures       = false;
 	bool changeResizeStats       = false;
-
+	bool changeD3D11Subtitle     = false;
 	// settings that do not require preparation
 	m_bShowStats                      = config.bShowStats;
 	m_bDeintDouble                    = config.bDeintDouble;
 	m_bInterpolateAt50pct             = config.bInterpolateAt50pct;
 	m_bVBlankBeforePresent            = config.bVBlankBeforePresent;
 
+
+	if (m_bD3D11Subtitle != config.bD3D11Subtitle) {
+		m_bD3D11Subtitle = config.bD3D11Subtitle;
+		//TODO Change device
+		changeD3D11Subtitle = true;
+	}
 	// checking what needs to be changed
 
 	if (config.iResizeStats != m_iResizeStats) {
@@ -3120,6 +3201,18 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	if (changeResizeStats) {
 		SetGraphSize();
 	}
+
+	if (changeD3D11Subtitle) {
+		if (m_pFilter->m_pSubCallBack)
+			m_pFilter->m_pSubCallBack->SetDevice(nullptr);
+		if (m_pFilter->m_pSub11CallBack)
+			m_pFilter->m_pSub11CallBack->SetDevice(nullptr);
+		m_bCallbackDeviceIsSet = false;
+		ReleaseSwapChain();
+		EXECUTE_ASSERT(S_OK == m_pFilter->Init(true));
+		return;
+	}
+	
 
 	UpdateStatsStatic();
 }
@@ -3564,7 +3657,10 @@ STDMETHODIMP CDX11VideoProcessor::UpdateAlphaBitmapParameters(const MFVideoAlpha
 
 void CDX11VideoProcessor::SetCallbackDevice(const bool bChangeDevice/* = false*/)
 {
-	if ((!m_bCallbackDeviceIsSet || bChangeDevice) && m_pD3DDevEx && m_pFilter->m_pSubCallBack) {
+	if ((!m_bCallbackDeviceIsSet || bChangeDevice) &&  m_bD3D11Subtitle && m_pDevice && m_pFilter->m_pSub11CallBack) {
+		m_bCallbackDeviceIsSet = SUCCEEDED(m_pFilter->m_pSub11CallBack->SetDevice(m_pDevice));
+	}
+	else if ((!m_bCallbackDeviceIsSet || bChangeDevice) && m_pD3DDevEx && !m_bD3D11Subtitle &&m_pFilter->m_pSubCallBack) {
 		m_bCallbackDeviceIsSet = SUCCEEDED(m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx));
 	}
 }

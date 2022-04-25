@@ -95,6 +95,7 @@ struct Settings_t {
 	bool bHdrPassthrough;
 	int  iHdrToggleDisplay;
 	bool bConvertToSdr;
+	bool bD3D11Subtitle;
 
 	Settings_t() {
 		SetDefault();
@@ -132,6 +133,7 @@ struct Settings_t {
 			iHdrToggleDisplay           = HDRTD_Off;
 		}
 		bConvertToSdr                   = true;
+		bD3D11Subtitle                  = false;
 	}
 };
 

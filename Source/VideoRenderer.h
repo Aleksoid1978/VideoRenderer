@@ -77,6 +77,7 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	, public ISpecifyPropertyPages
 	, public IVideoRenderer
 	, public ISubRender
+	, public ISubRender11
 	, public CExFilterConfigImpl
 	, public ID3DFullscreenControl
 {
@@ -112,6 +113,7 @@ private:
 	CMediaType m_inputMT;
 
 	ISubRenderCallback* m_pSubCallBack = nullptr;
+	ISubRender11Callback* m_pSub11CallBack = nullptr;
 
 	CRect m_windowRect, m_videoRect;
 
@@ -258,6 +260,9 @@ public:
 
 	// ISubRender
 	STDMETHODIMP SetCallback(ISubRenderCallback* cb);
+
+	// ISubRender11
+	STDMETHODIMP SetCallback11(ISubRender11Callback* cb);
 
 	// IExFilterConfig
 	STDMETHODIMP GetBool(LPCSTR field, bool* value) override;

@@ -54,6 +54,7 @@
 #define OPT_HdrToggleDisplay               L"HdrToggleDisplay"
 #define OPT_ConvertToSdr                   L"ConvertToSdr"
 #define OPT_UseD3DFullscreen               L"UseD3DFullscreen"
+#define OPT_UseD3D11Subtitle               L"UseD3D11Subtitle"
 
 static std::atomic_int g_nInstance = 0;
 static const wchar_t g_szClassName[] = L"VRWindow";
@@ -222,6 +223,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ConvertToSdr, dw)) {
 			m_Sets.bConvertToSdr = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_UseD3D11Subtitle, dw)) {
+			m_Sets.bD3D11Subtitle = !!dw;
 		}
 	}
 
@@ -614,7 +618,6 @@ void CMpcVideoRenderer::OnWindowMove()
 STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** ppv)
 {
 	CheckPointer(ppv, E_POINTER);
-
 	return
 		QI(IKsPropertySet)
 		QI(IMFGetService)
@@ -624,8 +627,10 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 		QI(ISpecifyPropertyPages)
 		QI(IVideoRenderer)
 		QI(ISubRender)
+		QI(ISubRender11)
 		QI(IExFilterConfig)
 		(riid == __uuidof(ID3DFullscreenControl) && m_bEnableFullscreenControl) ? GetInterface((ID3DFullscreenControl*)this, ppv) :
+		(riid == __uuidof(ISubRender11) && m_Sets.bD3D11Subtitle) ? GetInterface((ISubRender11*)this, ppv) :
 		__super::NonDelegatingQueryInterface(riid, ppv);
 }
 
@@ -1200,6 +1205,8 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_HdrPassthrough,                 m_Sets.bHdrPassthrough);
 		key.SetDWORDValue(OPT_HdrToggleDisplay,               m_Sets.iHdrToggleDisplay);
 		key.SetDWORDValue(OPT_ConvertToSdr,                   m_Sets.bConvertToSdr);
+		key.SetDWORDValue(OPT_UseD3D11Subtitle,               m_Sets.bD3D11Subtitle);
+		
 	}
 
 	return S_OK;
@@ -1209,6 +1216,14 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 STDMETHODIMP CMpcVideoRenderer::SetCallback(ISubRenderCallback* cb)
 {
 	m_pSubCallBack = cb;
+
+	return S_OK;
+}
+
+// ISubRender11
+STDMETHODIMP CMpcVideoRenderer::SetCallback11(ISubRender11Callback* cb)
+{
+	m_pSub11CallBack = cb;
 
 	return S_OK;
 }

@@ -103,6 +103,7 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct              ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK10, m_SetsPP.bUseDither                      ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK11, m_SetsPP.bExclusiveFS                    ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK13, m_SetsPP.bD3D11Subtitle                  ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK15, m_SetsPP.bVBlankBeforePresent            ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK16, m_SetsPP.bReinitByDisplay                ? BST_CHECKED : BST_UNCHECKED);
 
@@ -307,6 +308,11 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				m_SetsPP.SetDefault();
 				SetControls();
 				EnableControls();
+				SetDirty();
+				return (LRESULT)1;
+			}
+			if (nID == IDC_CHECK13) {
+				m_SetsPP.bD3D11Subtitle = IsDlgButtonChecked(IDC_CHECK13) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}
