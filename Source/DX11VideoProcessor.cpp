@@ -2098,7 +2098,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, m_pFilter->m_bSubInvAlpha ? ClearColorInv : ClearColor);
 			// Set resources
 			m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
-			//m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 			m_pDeviceContext->RSSetViewports(1, &VP);
 			m_pDeviceContext->OMSetBlendState(m_pFilter->m_bSubInvAlpha ? m_pAlphaBlendStateInv : m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);

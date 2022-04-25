@@ -1,0 +1,937 @@
+Index: mpc-be.sln
+===================================================================
+--- mpc-be.sln	(revision 6845)
++++ mpc-be.sln	(working copy)
+@@ -378,7 +378,6 @@
+ 		{438286B7-A9F4-411D-BCC5-948C40E37D8F}.Debug|Win32.ActiveCfg = Debug|Win32
+ 		{438286B7-A9F4-411D-BCC5-948C40E37D8F}.Debug|Win32.Build.0 = Debug|Win32
+ 		{438286B7-A9F4-411D-BCC5-948C40E37D8F}.Debug|x64.ActiveCfg = Debug|x64
+-		{438286B7-A9F4-411D-BCC5-948C40E37D8F}.Debug|x64.Build.0 = Debug|x64
+ 		{438286B7-A9F4-411D-BCC5-948C40E37D8F}.Release Filter|Win32.ActiveCfg = Release|Win32
+ 		{438286B7-A9F4-411D-BCC5-948C40E37D8F}.Release Filter|Win32.Build.0 = Release|Win32
+ 		{438286B7-A9F4-411D-BCC5-948C40E37D8F}.Release Filter|x64.ActiveCfg = Release|x64
+Index: src/filters/renderer/VideoRenderers/MPCVRAllocatorPresenter.cpp
+===================================================================
+--- src/filters/renderer/VideoRenderers/MPCVRAllocatorPresenter.cpp	(revision 6845)
++++ src/filters/renderer/VideoRenderers/MPCVRAllocatorPresenter.cpp	(working copy)
+@@ -19,8 +19,10 @@
+  */
+ 
+ #include "stdafx.h"
++#include <d3d11_1.h>
+ #include "MPCVRAllocatorPresenter.h"
+ #include "SubPic/DX9SubPic.h"
++#include "SubPic/DX11SubPic.h"
+ #include "SubPic/SubPicQueueImpl.h"
+ #include "RenderersSettings.h"
+ #include "Variables.h"
+@@ -65,6 +67,7 @@
+ 		   QI(ISubRenderCallback2)
+ 		   QI(ISubRenderCallback3)
+ 		   QI(ISubRenderCallback4)
++       QI(ISubRender11Callback)
+ 		   __super::NonDelegatingQueryInterface(riid, ppv);
+ }
+ 
+@@ -141,6 +144,82 @@
+ 	return AlphaBltSubPic(viewportRect, croppedVideoRect, xOffsetInPixels);
+ }
+ 
++// ISubRender11Callback
++
++HRESULT CMPCVRAllocatorPresenter::SetDevice(ID3D11Device1* pD3DDev)
++{
++	if (!pD3DDev) {
++		// release all resources
++		m_pSubPicQueue.Release();
++		m_pAllocator.Release();
++		return S_OK;
++	}
++
++	CRenderersSettings& rs = GetRenderersSettings();
++
++	CSize screenSize;
++	MONITORINFO mi = { sizeof(MONITORINFO) };
++	if (GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST), &mi)) {
++		screenSize.SetSize(mi.rcMonitor.right - mi.rcMonitor.left, mi.rcMonitor.bottom - mi.rcMonitor.top);
++	}
++	InitMaxSubtitleTextureSize(rs.iSubpicMaxTexWidth, screenSize);
++
++	if (m_pAllocator) {
++		m_pAllocator->ChangeDevice(pD3DDev);
++	}
++	else {
++		m_pAllocator = DNew CDX11SubPicAllocator(pD3DDev, m_maxSubtitleTextureSize, true);
++		if (!m_pAllocator) {
++			return E_FAIL;
++		}
++	}
++
++	HRESULT hr = S_OK;
++	if (!m_pSubPicQueue) {
++		CAutoLock cAutoLock(this);
++		m_pSubPicQueue = rs.nSubpicCount > 0
++			? (ISubPicQueue*)DNew CSubPicQueue(rs.nSubpicCount, !rs.bSubpicAnimationWhenBuffering, rs.bSubpicAllowDrop, m_pAllocator, &hr)
++			: (ISubPicQueue*)DNew CSubPicQueueNoThread(!rs.bSubpicAnimationWhenBuffering, m_pAllocator, &hr);
++	}
++	else {
++		m_pSubPicQueue->Invalidate();
++	}
++
++	if (SUCCEEDED(hr) && m_pSubPicQueue && m_pSubPicProvider) {
++		m_pSubPicQueue->SetSubPicProvider(m_pSubPicProvider);
++	}
++
++	return hr;
++}
++
++HRESULT CMPCVRAllocatorPresenter::Render11(REFERENCE_TIME rtStart,
++	REFERENCE_TIME rtStop,
++	REFERENCE_TIME atpf,
++	RECT croppedVideoRect,
++	RECT originalVideoRect,
++	RECT viewportRect,
++	const double videoStretchFactor,
++	int xOffsetInPixels, DWORD flags)
++{
++	CheckPointer(m_pSubPicQueue, E_UNEXPECTED);
++
++	if (!g_bExternalSubtitleTime) {
++		if (g_bExternalSubtitle && g_dRate != 0.0) {
++			const REFERENCE_TIME sampleTime = rtStart - g_tSegmentStart;
++			SetTime(g_tSegmentStart + sampleTime * g_dRate);
++		}
++		else {
++			SetTime(rtStart);
++		}
++	}
++	if (atpf > 0) {
++		m_fps = 10000000.0 / atpf;
++		m_pSubPicQueue->SetFPS(m_fps);
++	}
++	
++	return AlphaBltSubPic(viewportRect, croppedVideoRect, xOffsetInPixels);
++}
++
+ // ISubPicAllocatorPresenter3
+ 
+ STDMETHODIMP CMPCVRAllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
+@@ -156,6 +235,10 @@
+ 	if (CComQIPtr<ISubRender> pSR = m_pMPCVR.p) {
+ 		VERIFY(SUCCEEDED(pSR->SetCallback(this)));
+ 	}
++	
++	if (CComQIPtr<ISubRender11> pSR11 = m_pMPCVR.p) {
++		VERIFY(SUCCEEDED(pSR11->SetCallback11(this)));
++	}
+ 
+ 	(*ppRenderer = (IUnknown*)(INonDelegatingUnknown*)(this))->AddRef();
+ 
+Index: src/filters/renderer/VideoRenderers/MPCVRAllocatorPresenter.h
+===================================================================
+--- src/filters/renderer/VideoRenderers/MPCVRAllocatorPresenter.h	(revision 6845)
++++ src/filters/renderer/VideoRenderers/MPCVRAllocatorPresenter.h	(working copy)
+@@ -26,7 +26,7 @@
+ 
+ namespace DSObjects
+ {
+-	class CMPCVRAllocatorPresenter : public CSubPicAllocatorPresenterImpl, ISubRenderCallback4
++	class CMPCVRAllocatorPresenter : public CSubPicAllocatorPresenterImpl, ISubRenderCallback4 , ISubRender11Callback
+ 	{
+ 		CComPtr<IUnknown> m_pMPCVR;
+ 
+@@ -66,6 +66,16 @@
+ 							   const double videoStretchFactor = 1.0,
+ 							   int xOffsetInPixels = 0, DWORD flags = 0) override;
+ 
++
++		// ISubRender11Callback
++		STDMETHODIMP SetDevice(ID3D11Device1* pD3DDev);
++
++		STDMETHODIMP Render11(REFERENCE_TIME rtStart, REFERENCE_TIME rtStop,
++			REFERENCE_TIME atpf, RECT croppedVideoRect,
++			RECT originalVideoRect, RECT viewportRect,
++			const double videoStretchFactor = 1.0,
++			int xOffsetInPixels = 0, DWORD flags = 0);
++
+ 		// ISubPicAllocatorPresenter3
+ 		STDMETHODIMP CreateRenderer(IUnknown** ppRenderer) override;
+ 		STDMETHODIMP_(CLSID) GetAPCLSID() override;
+Index: src/SubPic/DX11SubPic.cpp
+===================================================================
+--- src/SubPic/DX11SubPic.cpp	(nonexistent)
++++ src/SubPic/DX11SubPic.cpp	(working copy)
+@@ -0,0 +1,514 @@
++/*
++ * (C) 2022 Ti-BEN
++ * This file is part of MPC-BE.
++ *
++ * MPC-BE is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 3 of the License, or
++ * (at your option) any later version.
++ *
++ * MPC-BE is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ *
++ */
++
++#include "stdafx.h"
++#include "DSUtil/Utils.h"
++#include "DX11SubPic.h"
++
++struct VERTEX {
++	float Pos[3];
++	float TexCoord[2];
++};
++
++HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
++	const UINT srcW, const UINT srcH, const RECT& srcRect)
++{
++	ASSERT(ppVertexBuffer);
++	ASSERT(*ppVertexBuffer == nullptr);
++	
++	/*RECT srcRect;
++	srcRect.left = 0;
++	srcRect.right = 1920;
++	srcRect.bottom = 1080;
++	srcRect.top = 0;
++
++	UINT srcW, srcH;
++	srcW = 1920;
++	srcH = 1080;*/
++	const float src_dx = 1.0f / srcW;
++	const float src_dy = 1.0f / srcH;
++	float src_l = src_dx * srcRect.left;
++	float src_r = src_dx * srcRect.right;
++	const float src_t = src_dy * srcRect.top;
++	const float src_b = src_dy * srcRect.bottom;
++
++	POINT points[4];
++	points[0] = { -1, -1 };
++	points[1] = { -1, +1 };
++	points[2] = { +1, -1 };
++	points[3] = { +1, +1 };
++
++	VERTEX Vertices[4] = {
++		// Vertices for drawing whole texture
++		// 2 ___4
++		//  |\ |
++		// 1|_\|3
++		{ {(float)points[0].x, (float)points[0].y, 0}, {src_l, src_b} },
++		{ {(float)points[1].x, (float)points[1].y, 0}, {src_l, src_t} },
++		{ {(float)points[2].x, (float)points[2].y, 0}, {src_r, src_b} },
++		{ {(float)points[3].x, (float)points[3].y, 0}, {src_r, src_t} },
++	};
++
++	D3D11_BUFFER_DESC BufferDesc = { sizeof(Vertices), D3D11_USAGE_DEFAULT, D3D11_BIND_VERTEX_BUFFER, 0, 0, 0 };
++	D3D11_SUBRESOURCE_DATA InitData = { Vertices, 0, 0 };
++
++	HRESULT hr = pDevice->CreateBuffer(&BufferDesc, &InitData, ppVertexBuffer);
++
++	return hr;
++}
++
++//
++// CDX11SubPic
++//
++
++CDX11SubPic::CDX11SubPic(ID3D11Texture2D* pSurface, CDX11SubPicAllocator *pAllocator, bool bExternalRenderer)
++	: m_pTexture(pSurface), m_pAllocator(pAllocator), m_bExternalRenderer(bExternalRenderer)
++{
++	D3D11_TEXTURE2D_DESC d3dsd;
++	d3dsd = {};
++	m_pTexture->GetDesc(&d3dsd);
++
++	if ( d3dsd.Width > 0 ) {
++		m_maxsize.SetSize(d3dsd.Width, d3dsd.Height);
++		m_rcDirty.SetRect(0, 0, d3dsd.Width, d3dsd.Height);
++	}
++
++	CComPtr<ID3D11Device> pD3DDev;
++
++
++	m_pTexture->GetDevice(&pD3DDev);
++	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
++	srvDesc.Format = d3dsd.Format;
++	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
++	srvDesc.Texture2D.MipLevels = 1;
++	srvDesc.Texture2D.MostDetailedMip = 0;
++	if (!m_pShaderResource)
++		pD3DDev->CreateShaderResourceView(m_pTexture, &srvDesc, (ID3D11ShaderResourceView**)&m_pShaderResource);
++}
++
++CDX11SubPic::~CDX11SubPic()
++{
++	{
++		CAutoLock Lock(&CDX11SubPicAllocator::ms_SurfaceQueueLock);
++		// Add surface to cache
++		if (m_pAllocator) {
++			for (auto it = m_pAllocator->m_AllocatedSurfaces.begin(), end = m_pAllocator->m_AllocatedSurfaces.end(); it != end; ++it) {
++				if (*it == this) {
++					m_pAllocator->m_AllocatedSurfaces.erase(it);
++					break;
++				}
++			}
++			m_pAllocator->m_FreeSurfaces.push_back(m_pTexture);
++		}
++	}
++}
++
++// ISubPic
++
++STDMETHODIMP_(void*) CDX11SubPic::GetObject()
++{
++	return (void*)m_pTexture;
++	/*CComPtr<IDirect3DTexture9> pTexture;
++	if (SUCCEEDED(m_pTexture->GetContainer(IID_IDirect3DTexture9, (void**)&pTexture))) {
++		return (void*)(IDirect3DTexture9*)pTexture;
++	}
++
++	return NULL;*/
++}
++
++
++STDMETHODIMP CDX11SubPic::GetDesc(SubPicDesc& spd)
++{
++	D3D11_TEXTURE2D_DESC d3dsd = {};
++	
++	m_pTexture->GetDesc(&d3dsd);
++	if (!(d3dsd.Width >0)) {
++		return E_FAIL;
++	}
++
++	spd.type = 0;
++	spd.w = m_size.cx;
++	spd.h = m_size.cy;
++	spd.bpp =
++		d3dsd.Format == D3DFMT_A8R8G8B8 ? 32 :
++		d3dsd.Format == D3DFMT_A4R4G4B4 ? 16 : 0;
++	spd.pitch = 0;
++	spd.bits = nullptr;
++	spd.vidrect = m_vidrect;
++
++	return S_OK;
++}
++
++STDMETHODIMP CDX11SubPic::CopyTo(ISubPic* pSubPic)
++{
++	HRESULT hr;
++	if (FAILED(hr = __super::CopyTo(pSubPic))) {
++		return hr;
++	}
++
++	if (m_rcDirty.IsRectEmpty()) {
++		return S_FALSE;
++	}
++
++	CComPtr<ID3D11Device> pD3DDev;
++	CComPtr<ID3D11DeviceContext> pDeviceContext;
++	
++	m_pTexture->GetDevice(&pD3DDev);
++	pD3DDev->GetImmediateContext(&pDeviceContext);
++	if (!m_pTexture || !pD3DDev) {
++		return E_FAIL;
++	}
++
++	ID3D11Texture2D* pSrcTex = (ID3D11Texture2D*)GetObject();
++	
++	
++	D3D11_TEXTURE2D_DESC srcDesc;
++	D3D11_TEXTURE2D_DESC dstDesc;
++	pSrcTex->GetDesc(&srcDesc);
++	
++	ID3D11Texture2D* pDstTex = (ID3D11Texture2D*)pSubPic->GetObject();
++	pDstTex->GetDesc(&dstDesc);
++	D3D11_BOX srcBox = { 0, 0, 0, std::min(srcDesc.Width, dstDesc.Width), std::min(srcDesc.Height, dstDesc.Height), 1 };
++	if (srcDesc.Width != dstDesc.Width || srcDesc.Height != dstDesc.Height)
++		ASSERT(0);
++	//RECT r;
++	//SetRect(&r, 0, 0, std::min(srcDesc.Width, dstDesc.Width), std::min(srcDesc.Height, dstDesc.Height));
++	//POINT p = { 0, 0 };
++	
++	pDeviceContext->CopySubresourceRegion(pDstTex, 0, 0, 0, 0, pSrcTex, 0, &srcBox);
++	//hr = pD3DDev->UpdateSurface(pSrcSurf, &r, pDstSurf, &p);
++
++	return SUCCEEDED(hr) ? S_OK : E_FAIL;
++}
++
++STDMETHODIMP CDX11SubPic::ClearDirtyRect(DWORD color)
++{
++	if (m_rcDirty.IsRectEmpty()) {
++		return S_FALSE;
++	}
++
++	CComPtr<ID3D11Device> pD3DDev;
++	CComPtr<ID3D11DeviceContext> pDeviceContext;
++	ID3D11RenderTargetView* pRenderTargetView;
++	m_pTexture->GetDevice(&pD3DDev);
++	D3D11_TEXTURE2D_DESC desc = {};
++	m_pTexture->GetDesc(&desc);
++
++	pD3DDev->GetImmediateContext(&pDeviceContext);
++	if (!pDeviceContext) {
++		return E_FAIL;
++	}
++	//const FLOAT ClearColorInv[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
++	//ID3D11Texture2D* pSrcTex = (ID3D11Texture2D*)GetObject();
++	//HRESULT hr = pD3DDev->CreateRenderTargetView(pSrcTex, nullptr, &pRenderTargetView);
++	//pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColorInv);
++	SubPicDesc spd;
++	
++#if 1
++	if (SUCCEEDED(Lock(spd))) {
++		int h = desc.Height;
++
++		BYTE* ptr = spd.bits + spd.pitch * 0 + (0 * 32 >> 3);
++		while (h-- > 0) {
++			memset_u32(ptr, color, 4 * desc.Width);
++			ptr += spd.pitch;
++		}
++#else
++	if (SUCCEEDED(Lock(spd))) {
++		int h = m_rcDirty.Height();
++		BYTE* ptr = spd.bits + spd.pitch * m_rcDirty.top + (m_rcDirty.left * spd.bpp >> 3);
++		if (spd.bpp == 16) {
++			while (h-- > 0) {
++				memset_u16(ptr, (unsigned short)color, 2 * m_rcDirty.Width());
++				ptr += spd.pitch;
++			}
++		} else if (spd.bpp == 32) {
++			while (h-- > 0) {
++				memset_u32(ptr, color, 4 * m_rcDirty.Width());
++				ptr += spd.pitch;
++			}
++		}
++#endif
++		Unlock(NULL);
++	}
++
++	//		HRESULT hr = pD3DDev->ColorFill(m_pTexture, m_rcDirty, color);
++
++	m_rcDirty.SetRectEmpty();
++
++	return S_OK;
++}
++
++STDMETHODIMP CDX11SubPic::Lock(SubPicDesc& spd)
++{
++	D3D11_TEXTURE2D_DESC d3dsd = {};
++	CComPtr<ID3D11Device> pD3DDev;
++	CComPtr<ID3D11DeviceContext> pDeviceContext;
++	D3D11_MAPPED_SUBRESOURCE map = {};
++	HRESULT hr = S_OK;
++	m_pTexture->GetDesc(&d3dsd);
++	if (!(d3dsd.Width>0)) {
++		return E_FAIL;
++	}
++	
++	m_pTexture->GetDevice(&pD3DDev);
++	pD3DDev->GetImmediateContext(&pDeviceContext);
++	
++	hr = pDeviceContext->Map(m_pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &map);
++	if (FAILED(hr))
++		return E_FAIL;
++
++	spd.type = 0;
++	spd.w = m_size.cx;
++	spd.h = m_size.cy;
++	spd.bpp =
++		d3dsd.Format == DXGI_FORMAT_B8G8R8A8_UNORM ? 32 :
++		d3dsd.Format == D3DFMT_A4R4G4B4 ? 16 : 0;
++	spd.pitch = map.RowPitch;
++	spd.bits = (BYTE*)map.pData;
++	spd.vidrect = m_vidrect;
++
++	return S_OK;
++}
++
++STDMETHODIMP CDX11SubPic::Unlock(RECT* pDirtyRect)
++{
++	CComPtr<ID3D11Device> pD3DDev;
++	CComPtr<ID3D11DeviceContext> pDeviceContext;
++	D3D11_MAPPED_SUBRESOURCE map = {};
++	HRESULT hr = S_OK;
++
++	m_pTexture->GetDevice(&pD3DDev);
++	pD3DDev->GetImmediateContext(&pDeviceContext);
++
++	pDeviceContext->Unmap(m_pTexture, 0);
++
++	if (pDirtyRect) {
++		m_rcDirty = *pDirtyRect;
++		if (!((CRect*)pDirtyRect)->IsRectEmpty()) {
++			m_rcDirty.InflateRect(1, 1);
++			m_rcDirty.left &= ~127;
++			m_rcDirty.top &= ~63;
++			m_rcDirty.right = (m_rcDirty.right + 127) & ~127;
++			m_rcDirty.bottom = (m_rcDirty.bottom + 63) & ~63;
++			m_rcDirty &= CRect(CPoint(0, 0), m_size);
++		}
++	} else {
++		m_rcDirty = CRect(CPoint(0, 0), m_size);
++	}
++
++	CComPtr<ID3D11Texture2D> pTexture = (ID3D11Texture2D*)GetObject();
++	//TODO don't know the equivalence in d3d11 and d3d12
++	//if (pTexture && !((CRect*)pDirtyRect)->IsRectEmpty()) {
++	//	pTexture->AddDirtyRect(&m_rcDirty);
++	//}
++
++	return S_OK;
++}
++
++STDMETHODIMP CDX11SubPic::AlphaBlt(RECT* pSrc, RECT* pDst, SubPicDesc* pTarget)
++{
++
++	ASSERT(pTarget == NULL);
++
++	if (!pSrc || !pDst) {
++		return E_POINTER;
++	}
++	CRect src(*pSrc), dst(*pDst);
++	CComPtr<ID3D11Device> pD3DDev;
++	CComPtr<ID3D11Texture2D> pTexture = (ID3D11Texture2D*)GetObject();
++	
++	CComPtr<ID3D11DeviceContext> pDeviceContext;
++
++	pTexture->GetDevice(&pD3DDev);
++	pD3DDev->GetImmediateContext(&pDeviceContext);
++	
++	if (!pTexture || !pD3DDev)
++		return E_NOINTERFACE;
++
++
++	do {
++		D3D11_TEXTURE2D_DESC d3dsd = {};
++		pTexture->GetDesc(&d3dsd);
++		if (!(d3dsd.Width)) {
++			break;
++		}
++
++		float w = (float)d3dsd.Width;
++		float h = (float)d3dsd.Height;
++		CRect src2;
++		src2.left = 0;
++		src2.top = 0;
++		src2.right = w;
++		src2.bottom = h;
++
++		UINT Stride = sizeof(VERTEX);
++		UINT Offset = 0;
++		ID3D11Buffer* pVertexBuffer = nullptr;
++
++		CreateVertexBuffer(pD3DDev, &pVertexBuffer, w, h, src2);
++		pDeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &Stride, &Offset);
++		
++		pDeviceContext->PSSetShaderResources(0, 1, &m_pShaderResource);
++		pDeviceContext->Draw(4, 0);
++		pVertexBuffer->Release();
++		return S_OK;
++	} while (0);
++	return E_FAIL;
++
++}
++
++//
++// CDX11SubPicAllocator
++//
++
++CDX11SubPicAllocator::CDX11SubPicAllocator(ID3D11Device1* pD3DDev, SIZE maxsize, bool bExternalRenderer)
++	: CSubPicAllocatorImpl(maxsize, true)
++	, m_pD3DDev(pD3DDev)
++	, m_maxsize(maxsize)
++	, m_bExternalRenderer(bExternalRenderer)
++{
++	m_pD3DDev->GetImmediateContext1(&m_pDeviceContext);
++	if (!m_pDeviceContext)
++		ASSERT(0);
++}
++
++CCritSec CDX11SubPicAllocator::ms_SurfaceQueueLock;
++
++CDX11SubPicAllocator::~CDX11SubPicAllocator()
++{
++	ClearCache();
++}
++
++void CDX11SubPicAllocator::GetStats(int &_nFree, int &_nAlloc)
++{
++	CAutoLock Lock(&ms_SurfaceQueueLock);
++	_nFree = (int)m_FreeSurfaces.size();
++	_nAlloc = (int)m_AllocatedSurfaces.size();
++}
++
++void CDX11SubPicAllocator::ClearCache()
++{
++	{
++		// Clear the allocator of any remaining subpics
++		CAutoLock Lock(&ms_SurfaceQueueLock);
++		for (auto& pSubPic : m_AllocatedSurfaces) {
++			pSubPic->m_pAllocator = NULL;
++		}
++		m_AllocatedSurfaces.clear();
++		m_FreeSurfaces.clear();
++	}
++}
++
++// ISubPicAllocator
++
++STDMETHODIMP CDX11SubPicAllocator::ChangeDevice(IUnknown* pDev)
++{
++	ClearCache();
++	CComQIPtr<ID3D11Device1> pD3DDev = pDev;
++	if (!pD3DDev) {
++		return E_NOINTERFACE;
++	}
++
++	CAutoLock cAutoLock(this);
++	HRESULT hr = S_FALSE;
++	if (m_pD3DDev != pD3DDev) {
++	    ClearCache();
++	    m_pD3DDev = pD3DDev;
++	    hr = __super::ChangeDevice(pDev);
++	}
++
++	return hr;
++}
++
++STDMETHODIMP CDX11SubPicAllocator::SetMaxTextureSize(SIZE MaxTextureSize)
++{
++	CAutoLock cAutoLock(this);
++	if (m_maxsize != MaxTextureSize) {
++		if (m_maxsize.cx < MaxTextureSize.cx || m_maxsize.cy < MaxTextureSize.cy) {
++			ClearCache();
++		}
++		m_maxsize = MaxTextureSize;
++	}
++
++	SetCurSize(MaxTextureSize);
++	SetCurVidRect(CRect(CPoint(0,0), MaxTextureSize));
++
++	return S_OK;
++}
++
++// ISubPicAllocatorImpl
++
++bool CDX11SubPicAllocator::Alloc(bool fStatic, ISubPic** ppSubPic)
++{
++	if (!ppSubPic) {
++		return false;
++	}
++
++	CAutoLock cAutoLock(this);
++
++	*ppSubPic = NULL;
++
++	CComPtr<ID3D11Texture2D> pTexture;
++
++	if (!fStatic) {
++		CAutoLock cAutoLock(&ms_SurfaceQueueLock);
++		if (!m_FreeSurfaces.empty()) {
++			pTexture = m_FreeSurfaces.front();
++			m_FreeSurfaces.pop_front();
++		}
++	}
++
++	if (!pTexture) {
++
++
++		D3D11_TEXTURE2D_DESC texdesc {};
++		texdesc.Usage = D3D11_USAGE_DYNAMIC;
++		texdesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
++		texdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
++		texdesc.MiscFlags = 0;
++		texdesc.Width = m_maxsize.cx;
++		texdesc.Height = m_maxsize.cy;
++		texdesc.MipLevels = 1;
++		texdesc.ArraySize = 1;
++		texdesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
++			;//verify its the good one
++		texdesc.SampleDesc = { 1, 0 };
++		HRESULT hr = m_pD3DDev->CreateTexture2D(&texdesc, nullptr, &pTexture);
++		if (FAILED(hr))
++		{
++			return false;
++		}
++
++	}
++
++	*ppSubPic = DNew CDX11SubPic(pTexture, fStatic ? 0 : this, m_bExternalRenderer);
++	if (!(*ppSubPic)) {
++		return false;
++	}
++
++	(*ppSubPic)->AddRef();
++
++	if (!fStatic) {
++		CAutoLock cAutoLock(&ms_SurfaceQueueLock);
++		m_AllocatedSurfaces.push_front((CDX11SubPic *)*ppSubPic);
++	}
++
++	return true;
++}
+Index: src/SubPic/DX11SubPic.h
+===================================================================
+--- src/SubPic/DX11SubPic.h	(nonexistent)
++++ src/SubPic/DX11SubPic.h	(working copy)
+@@ -0,0 +1,79 @@
++/*
++ * (C) 2022 Ti-BEN
++ * This file is part of MPC-BE.
++ *
++ * MPC-BE is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 3 of the License, or
++ * (at your option) any later version.
++ *
++ * MPC-BE is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ *
++ */
++
++#pragma once
++
++#include "SubPicImpl.h"
++
++// CDX11SubPic
++
++
++class CDX11SubPicAllocator;
++
++class CDX11SubPic : public CSubPicImpl
++{
++	CComPtr<ID3D11Texture2D> m_pTexture;
++	ID3D11ShaderResourceView* m_pShaderResource = nullptr;
++
++protected:
++	STDMETHODIMP_(void*) GetObject(); // returns IDirect3DTexture9*
++
++public:
++	CDX11SubPicAllocator *m_pAllocator;
++	bool m_bExternalRenderer;
++	CDX11SubPic(ID3D11Texture2D* pSurface, CDX11SubPicAllocator *pAllocator, bool bExternalRenderer);
++	~CDX11SubPic();
++
++	// ISubPic
++	STDMETHODIMP GetDesc(SubPicDesc& spd);
++	STDMETHODIMP CopyTo(ISubPic* pSubPic);
++	STDMETHODIMP ClearDirtyRect(DWORD color);
++	STDMETHODIMP Lock(SubPicDesc& spd);
++	STDMETHODIMP Unlock(RECT* pDirtyRect);
++	STDMETHODIMP AlphaBlt(RECT* pSrc, RECT* pDst, SubPicDesc* pTarget);
++
++	void* GetShaderResource();
++};
++
++// CDX11SubPicAllocator
++
++class CDX11SubPicAllocator : public CSubPicAllocatorImpl, public CCritSec
++{
++	CComPtr<ID3D11Device1> m_pD3DDev;
++	CComPtr<ID3D11DeviceContext1> m_pDeviceContext;
++	CSize m_maxsize;
++	bool m_bExternalRenderer;
++
++	bool Alloc(bool fStatic, ISubPic** ppSubPic);
++
++public:
++	static CCritSec ms_SurfaceQueueLock;
++	std::list<CComPtr<ID3D11Texture2D> > m_FreeSurfaces;
++	std::list<CDX11SubPic*> m_AllocatedSurfaces;
++
++	void GetStats(int &_nFree, int &_nAlloc);
++
++	CDX11SubPicAllocator(ID3D11Device1* pD3DDev, SIZE maxsize, bool bExternalRenderer);
++	~CDX11SubPicAllocator();
++	void ClearCache();
++
++	// ISubPicAllocator
++	STDMETHODIMP ChangeDevice(IUnknown* pDev);
++	STDMETHODIMP SetMaxTextureSize(SIZE MaxTextureSize);
++};
+Index: src/SubPic/ISubRender.h
+===================================================================
+--- src/SubPic/ISubRender.h	(revision 6845)
++++ src/SubPic/ISubRender.h	(working copy)
+@@ -25,45 +25,67 @@
+ #include <strmif.h>
+ 
+ interface IDirect3DDevice9;
++interface ID3D11Device1;
++interface ID3D11DeviceContext1;
+ 
+ DECLARE_INTERFACE_IID_(ISubRenderCallback, IUnknown, "CD6D2AA5-20D3-4ebe-A8A9-34D3B00CC253")
+ {
+ 	// NULL means release current device, textures and other resources
+-	STDMETHOD(SetDevice)(IDirect3DDevice9* dev) PURE;
++	STDMETHOD(SetDevice)(IDirect3DDevice9 * dev) PURE;
+ 
+ 	// destination video rectangle, will be inside (0, 0)-(width, height)
+ 	// width,height is the size of the entire output window
+ 	STDMETHOD(Render)(REFERENCE_TIME rtStart,
+-					  int left, int top, int right, int bottom,
+-					  int width, int height) PURE;
++		int left, int top, int right, int bottom,
++		int width, int height) PURE;
+ };
+ 
+ DECLARE_INTERFACE_IID_(ISubRenderCallback2, ISubRenderCallback, "E602585E-C05A-4828-AC69-AF92997F2E0C")
+ {
+ 	STDMETHOD(RenderEx)(REFERENCE_TIME rtStart, REFERENCE_TIME rtStop,
+-						REFERENCE_TIME avgTimePerFrame,
+-						int left, int top, int right, int bottom,
+-						int width, int height) PURE;
++		REFERENCE_TIME avgTimePerFrame,
++		int left, int top, int right, int bottom,
++		int width, int height) PURE;
+ };
+ 
+ DECLARE_INTERFACE_IID_(ISubRenderCallback3, ISubRenderCallback2, "BAC4273A-3EAD-47F5-9710-8488E52AC618")
+ {
+ 	STDMETHOD(RenderEx2)(REFERENCE_TIME rtStart, REFERENCE_TIME rtStop,
+-						 REFERENCE_TIME avgTimePerFrame, RECT croppedVideoRect,
+-						 RECT originalVideoRect, RECT viewportRect,
+-						 const double videoStretchFactor = 1.0) PURE;
++		REFERENCE_TIME avgTimePerFrame, RECT croppedVideoRect,
++		RECT originalVideoRect, RECT viewportRect,
++		const double videoStretchFactor = 1.0) PURE;
+ };
+ 
+ DECLARE_INTERFACE_IID_(ISubRenderCallback4, ISubRenderCallback3, "C89CF1D4-29C5-4A96-8AAC-528EC6F7AF1E")
+ {
+ 	STDMETHOD(RenderEx3)(REFERENCE_TIME rtStart, REFERENCE_TIME rtStop,
+-						 REFERENCE_TIME avgTimePerFrame, RECT croppedVideoRect,
+-						 RECT originalVideoRect, RECT viewportRect,
+-						 const double videoStretchFactor = 1.0,
+-						 int xOffsetInPixels = 0, DWORD flags = 0) PURE;
++		REFERENCE_TIME avgTimePerFrame, RECT croppedVideoRect,
++		RECT originalVideoRect, RECT viewportRect,
++		const double videoStretchFactor = 1.0,
++		int xOffsetInPixels = 0, DWORD flags = 0) PURE;
+ };
+ 
+ DECLARE_INTERFACE_IID_(ISubRender, IUnknown, "9CC7F9F7-3ED1-493c-AF65-527EA1D9947F")
+ {
+-	STDMETHOD(SetCallback)(ISubRenderCallback* cb) PURE;
++	STDMETHOD(SetCallback)(ISubRenderCallback * cb) PURE;
+ };
++
++/*D3D11 render*/
++DECLARE_INTERFACE_IID_(ISubRender11Callback, IUnknown, "1B430F17-4CB2-4C6B-A850-1847F9677C75")
++{
++	// NULL means release current device, textures and other resources
++	STDMETHOD(SetDevice)(ID3D11Device1 * dev) PURE;
++
++	// destination video rectangle, will be inside (0, 0)-(width, height)
++	// width,height is the size of the entire output window
++	STDMETHOD(Render11)(REFERENCE_TIME rtStart, REFERENCE_TIME rtStop,
++		REFERENCE_TIME avgTimePerFrame, RECT croppedVideoRect,
++		RECT originalVideoRect, RECT viewportRect,
++		const double videoStretchFactor = 1.0,
++		int xOffsetInPixels = 0, DWORD flags = 0) PURE;
++};
++
++DECLARE_INTERFACE_IID_(ISubRender11, IUnknown, "524FA4AC-35CF-402B-9015-300FBC432563")
++{
++	STDMETHOD(SetCallback11)(ISubRender11Callback * cb) PURE;
++};
+\ No newline at end of file
+Index: src/SubPic/stdafx.h
+===================================================================
+--- src/SubPic/stdafx.h	(revision 6845)
++++ src/SubPic/stdafx.h	(working copy)
+@@ -34,4 +34,5 @@
+ #include <list>
+ 
+ #include <d3d9.h>
++#include <d3d11_1.h>
+ #include "DSUtil/ds_defines.h"
+Index: src/SubPic/SubPic.vcxproj
+===================================================================
+--- src/SubPic/SubPic.vcxproj	(revision 6845)
++++ src/SubPic/SubPic.vcxproj	(working copy)
+@@ -47,6 +47,7 @@
+   </ItemDefinitionGroup>
+   <ItemGroup>
+     <ClCompile Include="CoordGeom.cpp" />
++    <ClCompile Include="DX11SubPic.cpp" />
+     <ClCompile Include="DX9SubPic.cpp" />
+     <ClCompile Include="MemSubPic.cpp" />
+     <ClCompile Include="stdafx.cpp">
+@@ -61,6 +62,7 @@
+   </ItemGroup>
+   <ItemGroup>
+     <ClInclude Include="CoordGeom.h" />
++    <ClInclude Include="DX11SubPic.h" />
+     <ClInclude Include="DX9SubPic.h" />
+     <ClInclude Include="ISubPic.h" />
+     <ClInclude Include="ISubRender.h" />
+Index: src/SubPic/SubPic.vcxproj.filters
+===================================================================
+--- src/SubPic/SubPic.vcxproj.filters	(revision 6845)
++++ src/SubPic/SubPic.vcxproj.filters	(working copy)
+@@ -41,6 +41,9 @@
+     <ClCompile Include="XySubPicQueueImpl.cpp">
+       <Filter>Source Files</Filter>
+     </ClCompile>
++    <ClCompile Include="DX11SubPic.cpp">
++      <Filter>Source Files</Filter>
++    </ClCompile>
+   </ItemGroup>
+   <ItemGroup>
+     <ClInclude Include="CoordGeom.h">
+@@ -79,5 +82,8 @@
+     <ClInclude Include="XySubPicQueueImpl.h">
+       <Filter>Header Files</Filter>
+     </ClInclude>
++    <ClInclude Include="DX11SubPic.h">
++      <Filter>Header Files</Filter>
++    </ClInclude>
+   </ItemGroup>
+ </Project>
+\ No newline at end of file
+Index: src/SubPic/SubPicAllocatorPresenterImpl.cpp
+===================================================================
+--- src/SubPic/SubPicAllocatorPresenterImpl.cpp	(revision 6845)
++++ src/SubPic/SubPicAllocatorPresenterImpl.cpp	(working copy)
+@@ -26,6 +26,7 @@
+ #include "XySubPicQueueImpl.h"
+ #include "XySubPicProvider.h"
+ #include <dxva2api.h>
++#include "DX11SubPic.h"
+ 
+ CSubPicAllocatorPresenterImpl::CSubPicAllocatorPresenterImpl(HWND hWnd, HRESULT& hr, CString *_pError)
+ 	: CUnknown(L"CSubPicAllocatorPresenterImpl", NULL)
+Index: src/SubPic/SubPicAllocatorPresenterImpl.h
+===================================================================
+--- src/SubPic/SubPicAllocatorPresenterImpl.h	(revision 6845)
++++ src/SubPic/SubPicAllocatorPresenterImpl.h	(working copy)
+@@ -24,7 +24,9 @@
+ #include <atlbase.h>
+ #include "ISubPic.h"
+ #include <SubRenderIntf.h>
++#include <d3d11.h>
+ 
++
+ class CSubPicAllocatorPresenterImpl
+ 	: public CUnknown
+ 	, public CCritSec
+@@ -58,7 +60,6 @@
+ 	void InitMaxSubtitleTextureSize(const int maxWidth, const CSize& desktopSize);
+ 	HRESULT AlphaBltSubPic(const CRect& windowRect, const CRect& videoRect, int xOffsetInPixels = 0);
+ 	HRESULT AlphaBlt(const CRect& windowRect, const CRect& videoRect, ISubPic* pSubPic, SubPicDesc* pTarget = NULL, int xOffsetInPixels = 0, const BOOL bUseSpecialCase = TRUE);
+-
+ public:
+ 	CSubPicAllocatorPresenterImpl(HWND hWnd, HRESULT& hr, CString *_pError);
+ 	virtual ~CSubPicAllocatorPresenterImpl();
