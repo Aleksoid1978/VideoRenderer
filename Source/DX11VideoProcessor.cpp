@@ -2077,7 +2077,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		}
 	}
 
-	/*we render directly onto the back buffer with d3d11*/
 	if (m_pFilter->m_pSub11CallBack && m_bD3D11Subtitle) {
 		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 		const CRect rDstVid(m_videoRect);
