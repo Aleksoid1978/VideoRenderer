@@ -1232,8 +1232,8 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		m_pSurface9SubPic.Release();
 
 #if USE_D3D11_SUBPIC
-		{
-			D3D11_TEXTURE2D_DESC bufferDesc;
+		if (m_pFilter->m_pSub11CallBack) {
+			D3D11_TEXTURE2D_DESC bufferDesc = {};
 			bufferDesc.ArraySize = 1;
 			bufferDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 			bufferDesc.CPUAccessFlags = 0;
@@ -1246,15 +1246,18 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 			bufferDesc.Width = m_d3dpp.BackBufferWidth;
 			HRESULT hr = m_pDevice->CreateTexture2D(&bufferDesc, 0, &m_pTextureSubPic);
 
-			//Creating a view of the texture to be used when binding it as a render target
-			D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+			// Creating a view of the texture to be used when binding it as a render target
+			// TODO
+			/*
+			D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc = {};
 			renderTargetViewDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 			renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 			renderTargetViewDesc.Texture2D.MipSlice = 0;
 			DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateRenderTargetView failed for subic with error {}", HR2Str(hr));
+			*/
 
-			//Creating a view of the texture to be used when binding it on a shader to sample
-			D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+			// Creating a view of the texture to be used when binding it on a shader to sample
+			D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
 			shaderResourceViewDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 			shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 			shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
@@ -1262,7 +1265,8 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 			hr = m_pDevice->CreateShaderResourceView(m_pTextureSubPic, &shaderResourceViewDesc, &m_pShaderResourceSubPic);
 			DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateShaderResourceView() failed for subpic with error {}", HR2Str(hr));
 		}
-#else
+		else
+#endif
 		if (m_pD3DDevEx) {
 			HANDLE sharedHandle = nullptr;
 			hr2 = m_pD3DDevEx->CreateRenderTarget(
@@ -1302,7 +1306,6 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 				}
 			}
 		}
-#endif
 	}
 
 	return hr;
@@ -2058,11 +2061,11 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		const CRect rDstVid(m_videoRect);
 		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
 
+		const FLOAT ClearColorInv[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		ID3D11RenderTargetView* pRenderTargetView;
+		hr = m_pDevice->CreateRenderTargetView(m_pTextureSubPic, nullptr, &pRenderTargetView);
 		if (S_OK == hr) {
-			const FLOAT ClearColorInv[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-			const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-			ID3D11RenderTargetView* pRenderTargetView;
-			HRESULT hr = m_pDevice->CreateRenderTargetView(m_pTextureSubPic, nullptr, &pRenderTargetView);
 			m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, m_pFilter->m_bSubInvAlpha ? ClearColorInv : ClearColor);
 
 			// Set resources
@@ -2077,9 +2080,11 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			//everything is set directly on the renderer so we dont have to compile any shaders on the player side
 			//the player will create the vertex buffer and draw
 			hrSubPic = m_pFilter->m_pSub11CallBack->Render11(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
+
+			pRenderTargetView->Release();
 		}
-	}
-#else
+	} else
+#endif
 	if (m_pFilter->m_pSubCallBack && m_pShaderResourceSubPic) {
 		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 		const CRect rDstVid(m_videoRect);
@@ -2109,7 +2114,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			}
 		}
 	}
-#endif
 
 	uint64_t tick2 = GetPreciseTick();
 
@@ -3637,9 +3641,8 @@ void CDX11VideoProcessor::SetCallbackDevice(const bool bChangeDevice/* = false*/
 	if ((!m_bCallbackDeviceIsSet || bChangeDevice) && m_pDevice && m_pFilter->m_pSub11CallBack) {
 		m_bCallbackDeviceIsSet = SUCCEEDED(m_pFilter->m_pSub11CallBack->SetDevice11(m_pDevice));
 	}
-#else
+#endif
 	if ((!m_bCallbackDeviceIsSet || bChangeDevice) && m_pD3DDevEx && m_pFilter->m_pSubCallBack) {
 		m_bCallbackDeviceIsSet = SUCCEEDED(m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx));
 	}
-#endif
 }
