@@ -2084,7 +2084,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			m_pDeviceContext->OMSetBlendState(m_pFilter->m_bSubInvAlpha ? m_pAlphaBlendStateInv : m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
-			m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
+			m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 			m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 			//everything is set directly on the renderer so we dont have to compile any shaders on the player side
