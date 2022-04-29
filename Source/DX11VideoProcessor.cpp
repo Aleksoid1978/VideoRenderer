@@ -3289,7 +3289,11 @@ void CDX11VideoProcessor::UpdateStatsPresent()
 void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
-		m_strStatsHeader = fmt::format(L"MPC VR {}, Direct3D 11", _CRT_WIDE(VERSION_STR));
+		m_strStatsHeader = fmt::format(L"MPC VR {}"
+#if USE_D3D11_SUBPIC
+			" d3d11subpic"
+#endif
+			", Direct3D 11", _CRT_WIDE(VERSION_STR));
 
 		UpdateStatsInputFmt();
 
@@ -3430,11 +3434,19 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 
 	str += fmt::format(L"\nFrames: {:5}, skipped: {}/{}, failed: {}",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
-	str += fmt::format(L"\nTimes(ms): Copy{:3}, Paint{:3} [DX9Subs{:3}], Present{:3}",
+#if USE_D3D11_SUBPIC
+	str += fmt::format(L"\nTimes(ms): Copy{:3}, Paint{:3}, Present{:3}",
 		m_RenderStats.copyticks    * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.paintticks   * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.substicks    * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
+#else
+	str += fmt::format(L"\nTimes(ms): Copy{:3}, Paint{:3} [DX9Subs{:3}], Present{:3}",
+		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.paintticks * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.substicks * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
+#endif
+
 	str += fmt::format(L"\nSync offset   : {:+3} ms", (m_RenderStats.syncoffset + 5000) / 10000);
 
 #if SYNC_OFFSET_EX
