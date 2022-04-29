@@ -2061,11 +2061,11 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		const CRect rDstVid(m_videoRect);
 		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
 
-		const FLOAT ClearColorInv[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		ID3D11RenderTargetView* pRenderTargetView;
 		hr = m_pDevice->CreateRenderTargetView(m_pTextureSubPic, nullptr, &pRenderTargetView);
 		if (S_OK == hr) {
+			const FLOAT ClearColorInv[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+			const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 			m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, m_pFilter->m_bSubInvAlpha ? ClearColorInv : ClearColor);
 
 			// Set resources
