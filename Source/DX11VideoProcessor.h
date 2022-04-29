@@ -119,7 +119,9 @@ private:
 
 	CComPtr<IDXGIFactory1> m_pDXGIFactory1;
 
+#if !USE_D3D11_SUBPIC
 	CComPtr<IDirect3DSurface9>        m_pSurface9SubPic;
+#endif
 	CComPtr<ID3D11Texture2D>          m_pTextureSubPic;
 	CComPtr<ID3D11ShaderResourceView> m_pShaderResourceSubPic;
 	bool                              m_bSubPicWasRendered = false;

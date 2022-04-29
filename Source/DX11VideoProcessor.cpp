@@ -710,7 +710,9 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pShaderResourceSubPic.Release();
 	m_pTextureSubPic.Release();
 
+#if !USE_D3D11_SUBPIC
 	m_pSurface9SubPic.Release();
+#endif
 
 	if (m_pDeviceContext) {
 		// need ClearState() (see ReleaseVP()) and Flush() for ID3D11DeviceContext when using DXGI_SWAP_EFFECT_DISCARD in Windows 8/8.1
@@ -1229,8 +1231,6 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		m_pShaderResourceSubPic.Release();
 		m_pTextureSubPic.Release();
 
-		m_pSurface9SubPic.Release();
-
 #if USE_D3D11_SUBPIC
 		if (m_pFilter->m_pSub11CallBack) {
 			D3D11_TEXTURE2D_DESC bufferDesc = {};
@@ -1265,8 +1265,9 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 			hr = m_pDevice->CreateShaderResourceView(m_pTextureSubPic, &shaderResourceViewDesc, &m_pShaderResourceSubPic);
 			DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateShaderResourceView() failed for subpic with error {}", HR2Str(hr));
 		}
-		else
-#endif
+#else
+		m_pSurface9SubPic.Release();
+
 		if (m_pD3DDevEx) {
 			HANDLE sharedHandle = nullptr;
 			hr2 = m_pD3DDevEx->CreateRenderTarget(
@@ -1306,6 +1307,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 				}
 			}
 		}
+#endif
 	}
 
 	return hr;
@@ -2083,8 +2085,8 @@ HRESULT CDX11VideoProcessor::Render(int field)
 
 			pRenderTargetView->Release();
 		}
-	} else
-#endif
+	}
+#else
 	if (m_pFilter->m_pSubCallBack && m_pShaderResourceSubPic) {
 		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 		const CRect rDstVid(m_videoRect);
@@ -2114,6 +2116,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			}
 		}
 	}
+#endif
 
 	uint64_t tick2 = GetPreciseTick();
 
@@ -3641,8 +3644,9 @@ void CDX11VideoProcessor::SetCallbackDevice(const bool bChangeDevice/* = false*/
 	if ((!m_bCallbackDeviceIsSet || bChangeDevice) && m_pDevice && m_pFilter->m_pSub11CallBack) {
 		m_bCallbackDeviceIsSet = SUCCEEDED(m_pFilter->m_pSub11CallBack->SetDevice11(m_pDevice));
 	}
-#endif
+#else
 	if ((!m_bCallbackDeviceIsSet || bChangeDevice) && m_pD3DDevEx && m_pFilter->m_pSubCallBack) {
 		m_bCallbackDeviceIsSet = SUCCEEDED(m_pFilter->m_pSubCallBack->SetDevice(m_pD3DDevEx));
 	}
+#endif
 }
