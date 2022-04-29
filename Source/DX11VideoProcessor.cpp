@@ -707,10 +707,9 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pAlphaBlendStateInv.Release();
 	SAFE_RELEASE(m_pFullFrameVertexBuffer);
 
+#if !USE_D3D11_SUBPIC
 	m_pShaderResourceSubPic.Release();
 	m_pTextureSubPic.Release();
-
-#if !USE_D3D11_SUBPIC
 	m_pSurface9SubPic.Release();
 #endif
 
@@ -1228,44 +1227,9 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 			hr2 = m_pDXGISwapChain1->QueryInterface(IID_PPV_ARGS(&m_pDXGISwapChain4));
 		}
 
+#if !USE_D3D11_SUBPIC
 		m_pShaderResourceSubPic.Release();
 		m_pTextureSubPic.Release();
-
-#if USE_D3D11_SUBPIC
-		if (m_pFilter->m_pSub11CallBack) {
-			D3D11_TEXTURE2D_DESC bufferDesc = {};
-			bufferDesc.ArraySize = 1;
-			bufferDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-			bufferDesc.CPUAccessFlags = 0;
-			bufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-			bufferDesc.Height = m_d3dpp.BackBufferHeight;
-			bufferDesc.MipLevels = 1;
-			bufferDesc.MiscFlags = 0;
-			bufferDesc.SampleDesc = { 1, 0 };
-			bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-			bufferDesc.Width = m_d3dpp.BackBufferWidth;
-			HRESULT hr = m_pDevice->CreateTexture2D(&bufferDesc, 0, &m_pTextureSubPic);
-
-			// Creating a view of the texture to be used when binding it as a render target
-			// TODO
-			/*
-			D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc = {};
-			renderTargetViewDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-			renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-			renderTargetViewDesc.Texture2D.MipSlice = 0;
-			DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateRenderTargetView failed for subic with error {}", HR2Str(hr));
-			*/
-
-			// Creating a view of the texture to be used when binding it on a shader to sample
-			D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
-			shaderResourceViewDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-			shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-			shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-			shaderResourceViewDesc.Texture2D.MipLevels = 1;
-			hr = m_pDevice->CreateShaderResourceView(m_pTextureSubPic, &shaderResourceViewDesc, &m_pShaderResourceSubPic);
-			DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateShaderResourceView() failed for subpic with error {}", HR2Str(hr));
-		}
-#else
 		m_pSurface9SubPic.Release();
 
 		if (m_pD3DDevEx) {
@@ -2057,36 +2021,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 
 	HRESULT hrSubPic = E_FAIL;
 
-#if USE_D3D11_SUBPIC
-	if (m_pFilter->m_pSub11CallBack) {
-		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
-		const CRect rDstVid(m_videoRect);
-		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
-
-		ID3D11RenderTargetView* pRenderTargetView;
-		hr = m_pDevice->CreateRenderTargetView(m_pTextureSubPic, nullptr, &pRenderTargetView);
-		if (S_OK == hr) {
-			const FLOAT ClearColorInv[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-			const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-			m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, m_pFilter->m_bSubInvAlpha ? ClearColorInv : ClearColor);
-
-			// Set resources
-			m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
-			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
-			m_pDeviceContext->OMSetBlendState(m_pFilter->m_bSubInvAlpha ? m_pAlphaBlendStateInv : m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
-			m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
-			m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-			//everything is set directly on the renderer so we dont have to compile any shaders on the player side
-			//the player will create the vertex buffer and draw
-			hrSubPic = m_pFilter->m_pSub11CallBack->Render11(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
-
-			pRenderTargetView->Release();
-		}
-	}
-#else
+#if !USE_D3D11_SUBPIC
 	if (m_pFilter->m_pSubCallBack && m_pShaderResourceSubPic) {
 		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 		const CRect rDstVid(m_videoRect);
@@ -2134,6 +2069,32 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2);
 	}
 
+#if USE_D3D11_SUBPIC
+	if (m_pFilter->m_pSub11CallBack) {
+		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
+		const CRect rDstVid(m_videoRect);
+		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
+
+		ID3D11RenderTargetView* pRenderTargetView;
+		hr = m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView);
+		if (S_OK == hr) {
+			// Set resources
+			m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
+			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+			m_pDeviceContext->OMSetBlendState(m_pFilter->m_bSubInvAlpha ? m_pAlphaBlendStateInv : m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
+			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
+			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
+			m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
+			m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+			//everything is set directly on the renderer so we dont have to compile any shaders on the player side
+			//the player will create the vertex buffer and draw
+			hrSubPic = m_pFilter->m_pSub11CallBack->Render11(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
+
+			pRenderTargetView->Release();
+		}
+	}
+#else
 	if (S_OK == hrSubPic) {
 		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 
@@ -2147,6 +2108,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hrSubPic = AlphaBltSub(m_pShaderResourceSubPic, pBackBuffer, rSrcPri, VP);
 		ASSERT(S_OK == hrSubPic);
 	}
+#endif
 
 	if (m_bShowStats) {
 		hr = DrawStats(pBackBuffer);
