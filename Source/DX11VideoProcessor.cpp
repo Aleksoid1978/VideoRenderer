@@ -707,7 +707,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pAlphaBlendStateInv.Release();
 	SAFE_RELEASE(m_pFullFrameVertexBuffer);
 
-#if !USE_D3D11_SUBPIC
+#if !USE_DX11_SUBPIC
 	m_pShaderResourceSubPic.Release();
 	m_pTextureSubPic.Release();
 	m_pSurface9SubPic.Release();
@@ -955,7 +955,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		m_pDevice->GetImmediateContext1(&m_pDeviceContext);
 	}
 
-#if USE_D3D11_SUBPIC
+#if USE_DX11_SUBPIC
 	//for d3d11 subtitles
 	CComQIPtr<ID3D10Multithread> pMultithread(m_pDeviceContext);
 	BOOL multi = pMultithread->SetMultithreadProtected(true);
@@ -1227,7 +1227,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 			hr2 = m_pDXGISwapChain1->QueryInterface(IID_PPV_ARGS(&m_pDXGISwapChain4));
 		}
 
-#if !USE_D3D11_SUBPIC
+#if !USE_DX11_SUBPIC
 		m_pShaderResourceSubPic.Release();
 		m_pTextureSubPic.Release();
 		m_pSurface9SubPic.Release();
@@ -2021,7 +2021,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 
 	HRESULT hrSubPic = E_FAIL;
 
-#if !USE_D3D11_SUBPIC
+#if !USE_DX11_SUBPIC
 	if (m_pFilter->m_pSubCallBack && m_pShaderResourceSubPic) {
 		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 		const CRect rDstVid(m_videoRect);
@@ -2069,7 +2069,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2);
 	}
 
-#if USE_D3D11_SUBPIC
+#if USE_DX11_SUBPIC
 	if (m_pFilter->m_pSub11CallBack) {
 		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 		const CRect rDstVid(m_videoRect);
@@ -3290,8 +3290,8 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
 		m_strStatsHeader = fmt::format(L"MPC VR {}"
-#if USE_D3D11_SUBPIC
-			" d3d11subpic"
+#if USE_DX11_SUBPIC
+			" dx11subpic"
 #endif
 			", Direct3D 11", _CRT_WIDE(VERSION_STR));
 
@@ -3434,7 +3434,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 
 	str += fmt::format(L"\nFrames: {:5}, skipped: {}/{}, failed: {}",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
-#if USE_D3D11_SUBPIC
+#if USE_DX11_SUBPIC
 	str += fmt::format(L"\nTimes(ms): Copy{:3}, Paint{:3}, Present{:3}",
 		m_RenderStats.copyticks    * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.paintticks   * 1000 / GetPreciseTicksPerSecondI(),
@@ -3614,7 +3614,7 @@ STDMETHODIMP CDX11VideoProcessor::UpdateAlphaBitmapParameters(const MFVideoAlpha
 
 void CDX11VideoProcessor::SetCallbackDevice(const bool bChangeDevice/* = false*/)
 {
-#if USE_D3D11_SUBPIC
+#if USE_DX11_SUBPIC
 	if ((!m_bCallbackDeviceIsSet || bChangeDevice) && m_pDevice && m_pFilter->m_pSub11CallBack) {
 		m_bCallbackDeviceIsSet = SUCCEEDED(m_pFilter->m_pSub11CallBack->SetDevice11(m_pDevice));
 	}

@@ -21,7 +21,7 @@
 #pragma once
 
 // EXPERIMENTAL!
-#define USE_D3D11_SUBPIC 0
+#define USE_DX11_SUBPIC 1
 
 #include <mfidl.h>
 #include <dxva2api.h>

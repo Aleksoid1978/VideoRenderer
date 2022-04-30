@@ -624,7 +624,7 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 		QI(ISpecifyPropertyPages)
 		QI(IVideoRenderer)
 		QI(ISubRender)
-#if USE_D3D11_SUBPIC
+#if USE_DX11_SUBPIC
 		QI(ISubRender11)
 #endif
 		QI(IExFilterConfig)
