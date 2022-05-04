@@ -958,7 +958,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 #if USE_DX11_SUBPIC
 	//for d3d11 subtitles
 	CComQIPtr<ID3D10Multithread> pMultithread(m_pDeviceContext);
-	BOOL multi = pMultithread->SetMultithreadProtected(true);
+	pMultithread->SetMultithreadProtected(TRUE);
 #endif
 
 	hr = m_D3D11VP.InitVideoDevice(m_pDevice, m_pDeviceContext);
