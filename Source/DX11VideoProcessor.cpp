@@ -2070,6 +2070,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	}
 
 #if USE_DX11_SUBPIC
+	auto tick_dx11_subpic_begin = GetPreciseTick();
 	if (m_pFilter->m_pSub11CallBack) {
 		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
 		const CRect rDstVid(m_videoRect);
@@ -2093,6 +2094,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			pRenderTargetView->Release();
 		}
 	}
+	auto tick_dx11_subpic_end = GetPreciseTick();
 #else
 	if (S_OK == hrSubPic) {
 		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
@@ -2158,7 +2160,12 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		}
 	}
 #endif
+
+#if USE_DX11_SUBPIC
+	m_RenderStats.substicks = tick_dx11_subpic_end - tick_dx11_subpic_begin;
+#else
 	m_RenderStats.substicks = tick2 - tick1; // after DrawStats to relate to paintticks
+#endif
 	uint64_t tick3 = GetPreciseTick();
 	m_RenderStats.paintticks = tick3 - tick1;
 
@@ -3434,17 +3441,14 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	str += fmt::format(L"\nFrames: {:5}, skipped: {}/{}, failed: {}",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
 #if USE_DX11_SUBPIC
-	str += fmt::format(L"\nTimes(ms): Copy{:3}, Paint{:3}, Present{:3}",
-		m_RenderStats.copyticks    * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.paintticks   * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
+	str += fmt::format(L"\nTimes(ms): Copy{:3}, Paint{:3}, Subtitles{:3}, Present{:3}",
 #else
 	str += fmt::format(L"\nTimes(ms): Copy{:3}, Paint{:3} [DX9Subs{:3}], Present{:3}",
+#endif
 		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.paintticks * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.substicks * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
-#endif
 
 	str += fmt::format(L"\nSync offset   : {:+3} ms", (m_RenderStats.syncoffset + 5000) / 10000);
 
