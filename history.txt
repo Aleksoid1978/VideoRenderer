@@ -6,6 +6,9 @@ Fixed rounding errors in HDR metadata.
 Fixed work in DX11 mode when changing the display.
 Added support for Y210 and Y216 formats for DX11 mode.
 Reworked support for YUY2, AYUV, Y410, Y416 formats for Shader video processor in DX11 mode.
+Added debug information about DXGI formats to the "Information" window.
+Fixed copying of RGB24 and RGB48 with odd width size in some rare situations.
+Added experimental support for image upscaling by the "Jinc2" algorithm.
 Recommended version of MPC-BE 1.6.2.6991 (0a27de8af) or later.
 
 v0.5.6.1807 - 2021.12.20
