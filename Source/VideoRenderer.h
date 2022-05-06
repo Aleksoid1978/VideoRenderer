@@ -81,7 +81,9 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	, public ISpecifyPropertyPages
 	, public IVideoRenderer
 	, public ISubRender
+#if USE_DX11_SUBPIC
 	, public ISubRender11
+#endif
 	, public CExFilterConfigImpl
 	, public ID3DFullscreenControl
 {
@@ -263,10 +265,12 @@ public:
 	STDMETHODIMP SaveSettings();
 
 	// ISubRender
-	STDMETHODIMP SetCallback(ISubRenderCallback* cb);
+	STDMETHODIMP SetCallback(ISubRenderCallback* cb) override;
 
+#if USE_DX11_SUBPIC
 	// ISubRender11
-	STDMETHODIMP SetCallback11(ISubRender11Callback* cb);
+	STDMETHODIMP SetCallback11(ISubRender11Callback* cb) override;
+#endif
 
 	// IExFilterConfig
 	STDMETHODIMP GetBool(LPCSTR field, bool* value) override;

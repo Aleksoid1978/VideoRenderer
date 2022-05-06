@@ -1216,6 +1216,7 @@ STDMETHODIMP CMpcVideoRenderer::SetCallback(ISubRenderCallback* cb)
 	return S_OK;
 }
 
+#if USE_DX11_SUBPIC
 // ISubRender11
 STDMETHODIMP CMpcVideoRenderer::SetCallback11(ISubRender11Callback* cb)
 {
@@ -1223,6 +1224,7 @@ STDMETHODIMP CMpcVideoRenderer::SetCallback11(ISubRender11Callback* cb)
 
 	return S_OK;
 }
+#endif
 
 // IExFilterConfig
 
