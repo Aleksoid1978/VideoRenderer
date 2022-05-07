@@ -623,11 +623,9 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 		QI(IVideoWindow)
 		QI(ISpecifyPropertyPages)
 		QI(IVideoRenderer)
-		QI(ISubRender)
-#if USE_DX11_SUBPIC
-		QI(ISubRender11)
-#endif
 		QI(IExFilterConfig)
+		(riid == __uuidof(ISubRender) && m_VideoProcessor && m_VideoProcessor->Type() == 9) ? GetInterface((ISubRender*)this, ppv) :
+		(riid == __uuidof(ISubRender11) && m_VideoProcessor && m_VideoProcessor->Type() == 11) ? GetInterface((ISubRender11*)this, ppv) :
 		(riid == __uuidof(ID3DFullscreenControl) && m_bEnableFullscreenControl) ? GetInterface((ID3DFullscreenControl*)this, ppv) :
 		__super::NonDelegatingQueryInterface(riid, ppv);
 }
@@ -1208,7 +1206,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 	return S_OK;
 }
 
-// ISubRender
+// ISubRender (DX9)
 STDMETHODIMP CMpcVideoRenderer::SetCallback(ISubRenderCallback* cb)
 {
 	m_pSubCallBack = cb;
@@ -1216,15 +1214,13 @@ STDMETHODIMP CMpcVideoRenderer::SetCallback(ISubRenderCallback* cb)
 	return S_OK;
 }
 
-#if USE_DX11_SUBPIC
-// ISubRender11
+// ISubRender11 (DX11)
 STDMETHODIMP CMpcVideoRenderer::SetCallback11(ISubRender11Callback* cb)
 {
 	m_pSub11CallBack = cb;
 
 	return S_OK;
 }
-#endif
 
 // IExFilterConfig
 
