@@ -1,4 +1,4 @@
-v0.5.7
+v0.5.8 - 2022.05.07
 ------------------------
 Optimized image overlay through the IMFVideoMixerBitmap interface.
 Fixed processing of the first frames by the DXVA2 video processor on AMD and Intel graphics adapters.
