@@ -272,42 +272,6 @@ HRESULT CDX11VideoProcessor::AlphaBlt(
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::AlphaBltSub(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, D3D11_VIEWPORT& viewport)
-{
-	ID3D11RenderTargetView* pRenderTargetView;
-	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
-
-	if (S_OK == hr) {
-		UINT Stride = sizeof(VERTEX);
-		UINT Offset = 0;
-		ID3D11Buffer* pVertexBuffer = nullptr;
-		hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, m_d3dpp.BackBufferWidth, m_d3dpp.BackBufferHeight, srcRect, 0, false);
-
-		if (S_OK == hr) {
-			// Set resources
-			m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
-			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
-			m_pDeviceContext->RSSetViewports(1, &viewport);
-			m_pDeviceContext->OMSetBlendState(m_pFilter->m_bSubInvAlpha ? m_pAlphaBlendStateInv : m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
-			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
-			m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
-			m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint);
-			m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-			m_pDeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &Stride, &Offset);
-
-			// Draw textured quad onto render target
-			m_pDeviceContext->Draw(4, 0);
-
-			pVertexBuffer->Release();
-		}
-		pRenderTargetView->Release();
-	}
-	DLogIf(FAILED(hr), L"CDX11VideoProcessor:AlphaBlt() : CreateRenderTargetView() failed with error {}", HR2Str(hr));
-
-	return hr;
-}
-
 HRESULT CDX11VideoProcessor::TextureCopyRect(
 	const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
 	const CRect& srcRect, const CRect& destRect,
@@ -949,7 +913,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		m_pDevice->GetImmediateContext1(&m_pDeviceContext);
 	}
 
-	//for d3d11 subtitles
+	// for d3d11 subtitles
 	CComQIPtr<ID3D10Multithread> pMultithread(m_pDeviceContext);
 	pMultithread->SetMultithreadProtected(TRUE);
 
@@ -1965,10 +1929,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 
 	uint64_t tick1 = GetPreciseTick();
 
-	HRESULT hrSubPic = E_FAIL;
-
-	uint64_t tick2 = GetPreciseTick();
-
 	if (!m_windowRect.IsRectEmpty()) {
 		// fill the BackBuffer with black
 		ID3D11RenderTargetView* pRenderTargetView;
@@ -1999,9 +1959,9 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
 			m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 
-			//everything is set directly on the renderer so we dont have to compile any shaders on the player side
-			//the player will create the vertex buffer and draw
-			hrSubPic = m_pFilter->m_pSub11CallBack->Render11(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
+			// everything is set directly on the renderer so we dont have to compile any shaders on the player side
+			// the player will create the vertex buffer and draw
+			m_pFilter->m_pSub11CallBack->Render11(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
 
 			pRenderTargetView->Release();
 		}
