@@ -155,7 +155,7 @@ private:
 	D3DCOLOR m_dwStatsTextColor = D3DCOLOR_XRGB(255, 255, 255);
 
 	bool m_bCallbackDeviceIsSet = false;
-	void SetCallbackDevice(const bool bChangeDevice = false);
+	void SetCallbackDevice();
 
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Settings_t& config, HRESULT& hr);

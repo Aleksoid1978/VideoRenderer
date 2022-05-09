@@ -491,19 +491,10 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	if (m_nCurrentAdapter == currentAdapter) {
 		SAFE_RELEASE(pDXGIAdapter);
 		if (hwnd) {
-			HRESULT hr = InitDX9Device(hwnd, pChangeDevice);
-			ASSERT(S_OK == hr);
-			if (m_pD3DDevEx) {
-				// set a special blend mode for alpha channels for ISubRenderCallback rendering
-				// this is necessary for the second alpha blending
-				m_pD3DDevEx->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, TRUE);
-				m_pD3DDevEx->SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_ONE);
-				m_pD3DDevEx->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ZERO);
-				m_pD3DDevEx->SetRenderState(D3DRS_BLENDOPALPHA, D3DBLENDOP_ADD);
-
-				SetCallbackDevice(pChangeDevice ? *pChangeDevice : false);
-			}
+			InitDX9Device(hwnd);
 		}
+
+		SetCallbackDevice();
 
 		if (!m_pDXGISwapChain1 || m_bIsFullscreen != m_pFilter->m_bIsFullscreen || bWindowChanged) {
 			InitSwapChain();
@@ -1016,27 +1007,17 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		}
 	}
 
-	bool changeDevice = false;
-	hr = InitDX9Device(m_hWnd, &changeDevice);
-	ASSERT(S_OK == hr);
-	if (m_pD3DDevEx) {
-		// set a special blend mode for alpha channels for ISubRenderCallback rendering
-		// this is necessary for the second alpha blending
-		m_pD3DDevEx->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, TRUE);
-		m_pD3DDevEx->SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_ONE);
-		m_pD3DDevEx->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_ZERO);
-		m_pD3DDevEx->SetRenderState(D3DRS_BLENDOPALPHA, D3DBLENDOP_ADD);
-
-		SetCallbackDevice(changeDevice);
-	}
-
 	if (m_hWnd) {
+		InitDX9Device(m_hWnd);
+
 		hr = InitSwapChain();
 		if (FAILED(hr)) {
 			ReleaseDevice();
 			return hr;
 		}
 	}
+
+	SetCallbackDevice();
 
 	DXGI_ADAPTER_DESC dxgiAdapterDesc = {};
 	hr = pDXGIAdapter->GetDesc(&dxgiAdapterDesc);
@@ -1482,7 +1463,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			UpdateTexures();
 			UpdatePostScaleTexures();
 			UpdateStatsStatic();
-			SetCallbackDevice();
 
 			return TRUE;
 		}
@@ -1497,7 +1477,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		UpdateTexures();
 		UpdatePostScaleTexures();
 		UpdateStatsStatic();
-		SetCallbackDevice();
 
 		return TRUE;
 	}
@@ -3457,9 +3436,9 @@ STDMETHODIMP CDX11VideoProcessor::UpdateAlphaBitmapParameters(const MFVideoAlpha
 	}
 }
 
-void CDX11VideoProcessor::SetCallbackDevice(const bool bChangeDevice/* = false*/)
+void CDX11VideoProcessor::SetCallbackDevice()
 {
-	if ((!m_bCallbackDeviceIsSet || bChangeDevice) && m_pDevice && m_pFilter->m_pSub11CallBack) {
+	if (!m_bCallbackDeviceIsSet && m_pDevice && m_pFilter->m_pSub11CallBack) {
 		m_bCallbackDeviceIsSet = SUCCEEDED(m_pFilter->m_pSub11CallBack->SetDevice11(m_pDevice));
 	}
 }

@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2020 see Authors.txt
+* (C) 2019-2022 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -36,11 +36,10 @@ private:
 	CAMEvent m_evQuit;
 	CAMEvent m_evThreadFinishJob;
 	HRESULT m_hrThread = E_FAIL;
-	bool m_bChangeDeviceThread = false;
 	std::thread m_deviceThread;
 	void DeviceThreadFunc();
 
-	HRESULT InitDX9DeviceInternal(bool* pChangeDevice);
+	HRESULT InitDX9DeviceInternal();
 
 protected:
 	D3DDISPLAYMODEEX m_DisplayMode = { sizeof(D3DDISPLAYMODEEX) };
@@ -53,6 +52,6 @@ protected:
 
 	IDirect3DDeviceManager9* GetDevMan9() { return m_pD3DDeviceManager; }
 
-	HRESULT InitDX9Device(const HWND hwnd, bool* pChangeDevice = nullptr);
+	HRESULT InitDX9Device(const HWND hwnd);
 	void ReleaseDX9Device();
 };

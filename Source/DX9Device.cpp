@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2021 see Authors.txt
+* (C) 2018-2022 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -70,7 +70,7 @@ void CDX9Device::DeviceThreadFunc()
 		m_hrThread = E_FAIL;
 		switch (dwObject) {
 			case WAIT_OBJECT_0:
-				m_hrThread = InitDX9DeviceInternal(&m_bChangeDeviceThread);
+				m_hrThread = InitDX9DeviceInternal();
 				m_evThreadFinishJob.Set();
 				break;
 			default:
@@ -79,7 +79,7 @@ void CDX9Device::DeviceThreadFunc()
 	}
 }
 
-HRESULT CDX9Device::InitDX9DeviceInternal(bool* pChangeDevice)
+HRESULT CDX9Device::InitDX9DeviceInternal()
 {
 	DLog(L"CDX9Device::InitDX9DeviceInternal()");
 
@@ -148,26 +148,17 @@ HRESULT CDX9Device::InitDX9DeviceInternal(bool* pChangeDevice)
 		hr = m_pD3DDeviceManager->ResetDevice(m_pD3DDevEx, m_nResetTocken);
 	}
 
-	if (pChangeDevice) {
-		*pChangeDevice = !bTryToReset;
-	}
-
 	return hr;
 }
 
-HRESULT CDX9Device::InitDX9Device(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
+HRESULT CDX9Device::InitDX9Device(const HWND hwnd)
 {
 	CheckPointer(m_pD3DEx, E_FAIL);
 
 	m_hDX9Wnd = hwnd;
 
-	m_bChangeDeviceThread = false;
 	m_evInit.Set();
 	WaitForSingleObject(m_evThreadFinishJob, INFINITE);
-
-	if (pChangeDevice) {
-		*pChangeDevice = m_bChangeDeviceThread;
-	}
 
 	return m_hrThread;
 }
