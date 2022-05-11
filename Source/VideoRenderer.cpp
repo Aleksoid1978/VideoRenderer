@@ -455,31 +455,6 @@ HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 {
 	// override CBaseRenderer::Receive() for the implementation of the search during the pause
 
-	if (!m_bCheckSubInvAlpha) {
-		m_bCheckSubInvAlpha = true;
-
-		if (m_VideoProcessor->Type() == VP_DX11) {
-			// only one check for XySubFilter in the graph after playback starts
-			m_bSubInvAlpha = false;
-			IEnumFilters* pEnumFilters = nullptr;
-			if (m_pGraph && SUCCEEDED(m_pGraph->EnumFilters(&pEnumFilters))) {
-				for (IBaseFilter* pBaseFilter = nullptr; S_OK == pEnumFilters->Next(1, &pBaseFilter, 0); ) {
-					GUID clsid;
-					if (SUCCEEDED(pBaseFilter->GetClassID(&clsid))
-							&& (clsid == CLSID_XySubFilter || clsid == CLSID_XySubFilter_AutoLoader)) {
-						m_bSubInvAlpha = true;
-					}
-					SAFE_RELEASE(pBaseFilter);
-
-					if (m_bSubInvAlpha) {
-						break;
-					}
-				}
-				SAFE_RELEASE(pEnumFilters);
-			}
-		}
-	}
-
 	if (m_bFlushing) {
 		DLog(L"CMpcVideoRenderer::Receive() - flushing, skip sample");
 		return S_OK;

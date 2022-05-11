@@ -659,7 +659,6 @@ void CDX11VideoProcessor::ReleaseDevice()
 	SAFE_RELEASE(m_pSamplerLinear);
 	SAFE_RELEASE(m_pSamplerDither);
 	m_pAlphaBlendState.Release();
-	m_pAlphaBlendStateInv.Release();
 	SAFE_RELEASE(m_pFullFrameVertexBuffer);
 
 	if (m_pDeviceContext) {
@@ -939,9 +938,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	bdesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	bdesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBlendState(&bdesc, &m_pAlphaBlendState));
-
-	bdesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBlendState(&bdesc, &m_pAlphaBlendStateInv));
 
 	EXECUTE_ASSERT(S_OK == CreateVertexBuffer(m_pDevice, &m_pFullFrameVertexBuffer, 1, 1, CRect(0, 0, 1, 1), 0, false));
 
@@ -1933,7 +1929,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			// Set resources
 			m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
 			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
-			m_pDeviceContext->OMSetBlendState(m_pFilter->m_bSubInvAlpha ? m_pAlphaBlendStateInv : m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
 			m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);

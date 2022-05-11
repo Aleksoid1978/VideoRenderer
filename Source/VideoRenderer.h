@@ -120,9 +120,6 @@ private:
 
 	bool m_bForceRedrawing = true;
 
-	bool m_bSubInvAlpha = false;
-	bool m_bCheckSubInvAlpha = false;
-
 	bool m_bEnableFullscreenControl = false;
 
 	HRESULT Init(const bool bCreateWindow);
