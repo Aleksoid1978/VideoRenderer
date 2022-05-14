@@ -1,7 +1,7 @@
 v0.6.0
 ------------------------
 DX11 mode uses the new ISubRender11 subtitle rendering interface. Older players will not be able to output subtitles in DX11 mode.
-Recommended version of MPC-BE 1.6.2.7085 (363158fe7) or later.
+Recommended version of MPC-BE 1.6.2.7092 (9cdcf6375) or later.
 
 v0.5.8 - 2022.05.07
 ------------------------
