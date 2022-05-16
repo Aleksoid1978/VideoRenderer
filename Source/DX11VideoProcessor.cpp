@@ -667,7 +667,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_strShaderY = nullptr;
 	m_pPSFinalPass.Release();
 
-	SAFE_RELEASE(m_pPostScaleConstants);
+	m_pPostScaleConstants.Release();
 
 #if TEST_SHADER
 	m_pPS_TEST.Release();
@@ -676,9 +676,9 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pVSimpleInputLayout.Release();
 	m_pVS_Simple.Release();
 	m_pPS_Simple.Release();
-	SAFE_RELEASE(m_pSamplerPoint);
-	SAFE_RELEASE(m_pSamplerLinear);
-	SAFE_RELEASE(m_pSamplerDither);
+	m_pSamplerPoint.Release();
+	m_pSamplerLinear.Release();
+	m_pSamplerDither.Release();
 	m_pAlphaBlendState.Release();
 
 	if (m_pDeviceContext) {

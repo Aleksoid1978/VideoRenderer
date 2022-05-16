@@ -47,9 +47,9 @@ private:
 	// Direct3D 11
 	CComPtr<ID3D11Device1>        m_pDevice;
 	CComPtr<ID3D11DeviceContext1> m_pDeviceContext;
-	ID3D11SamplerState*           m_pSamplerPoint = nullptr;
-	ID3D11SamplerState*           m_pSamplerLinear = nullptr;
-	ID3D11SamplerState*           m_pSamplerDither = nullptr;
+	CComPtr<ID3D11SamplerState>   m_pSamplerPoint;
+	CComPtr<ID3D11SamplerState>   m_pSamplerLinear;
+	CComPtr<ID3D11SamplerState>   m_pSamplerDither;
 	CComPtr<ID3D11BlendState>     m_pAlphaBlendState;
 	CComPtr<ID3D11VertexShader>   m_pVS_Simple;
 	CComPtr<ID3D11PixelShader>    m_pPS_Simple;
@@ -94,7 +94,7 @@ private:
 
 	std::vector<ExternalPixelShader11_t> m_pPreScaleShaders;
 	std::vector<ExternalPixelShader11_t> m_pPostScaleShaders;
-	ID3D11Buffer* m_pPostScaleConstants = nullptr;
+	CComPtr<ID3D11Buffer> m_pPostScaleConstants;
 	CComPtr<ID3D11PixelShader> m_pPSFinalPass;
 
 	CComPtr<IDXGIFactory2>   m_pDXGIFactory2;
