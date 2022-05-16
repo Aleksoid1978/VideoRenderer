@@ -680,7 +680,6 @@ void CDX11VideoProcessor::ReleaseDevice()
 	SAFE_RELEASE(m_pSamplerLinear);
 	SAFE_RELEASE(m_pSamplerDither);
 	m_pAlphaBlendState.Release();
-	SAFE_RELEASE(m_pFullFrameVertexBuffer);
 
 	if (m_pDeviceContext) {
 		// need ClearState() (see ReleaseVP()) and Flush() for ID3D11DeviceContext when using DXGI_SWAP_EFFECT_DISCARD in Windows 8/8.1
@@ -963,8 +962,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	bdesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	bdesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBlendState(&bdesc, &m_pAlphaBlendState));
-
-	EXECUTE_ASSERT(S_OK == CreateVertexBuffer(m_pDevice, &m_pFullFrameVertexBuffer, 1, 1, { 0, 0, 1, 1 }, 0, false));
 
 	LPVOID data;
 	DWORD size;
