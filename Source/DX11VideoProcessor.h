@@ -55,6 +55,9 @@ private:
 	CComPtr<ID3D11VertexShader>   m_pVS_Simple;
 	CComPtr<ID3D11PixelShader>    m_pPS_Simple;
 	CComPtr<ID3D11InputLayout>    m_pVSimpleInputLayout;
+	CComPtr<ID3D11Buffer>         m_pVertexBuffer;
+	CComPtr<ID3D11Buffer>         m_pResizeShaderConstantBuffer;
+	CComPtr<ID3D11Buffer>         m_pFinalPassConstantBuffer;
 
 	DXGI_SWAP_EFFECT              m_UsedSwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
