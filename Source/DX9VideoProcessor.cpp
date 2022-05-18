@@ -894,7 +894,11 @@ void CDX9VideoProcessor::UpdateTexParams(int cdepth)
 void CDX9VideoProcessor::UpdateRenderRect()
 {
 	m_renderRect.IntersectRect(m_videoRect, m_windowRect);
+	UpdateScalingStrings();
+}
 
+void CDX9VideoProcessor::UpdateScalingStrings()
+{
 	const int w2 = m_videoRect.Width();
 	const int h2 = m_videoRect.Height();
 	const int k = m_bInterpolateAt50pct ? 2 : 1;
@@ -2060,6 +2064,8 @@ void CDX9VideoProcessor::UpdateUpscalingShaders()
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderUpscaleY, s_Upscaling9ResIDs[m_iUpscaling].shaderY));
 		}
 	}
+
+	UpdateScalingStrings();
 }
 
 void CDX9VideoProcessor::UpdateDownscalingShaders()
@@ -2069,6 +2075,8 @@ void CDX9VideoProcessor::UpdateDownscalingShaders()
 
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleX, s_Downscaling9ResIDs[m_iDownscaling].shaderX));
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pShaderDownscaleY, s_Downscaling9ResIDs[m_iDownscaling].shaderY));
+
+	UpdateScalingStrings();
 }
 
 HRESULT CDX9VideoProcessor::UpdateConvertColorShader()

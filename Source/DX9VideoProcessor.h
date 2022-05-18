@@ -132,6 +132,7 @@ private:
 
 	void UpdateTexParams(int cdepth);
 	void UpdateRenderRect();
+	void UpdateScalingStrings();
 
 	void SetGraphSize() override;
 
