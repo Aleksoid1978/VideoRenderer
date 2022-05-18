@@ -132,13 +132,9 @@ struct PS_EXTSHADER_CONSTANTS {
 
 static_assert(sizeof(PS_EXTSHADER_CONSTANTS) % 16 == 0);
 
-HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
-	const UINT srcW, const UINT srcH, const RECT& srcRect,
+static void FillVertices(VERTEX (&Vertices)[4], const UINT srcW, const UINT srcH, const RECT& srcRect,
 	const int iRotation, const bool bFlip)
 {
-	ASSERT(ppVertexBuffer);
-	ASSERT(*ppVertexBuffer == nullptr);
-
 	const float src_dx = 1.0f / srcW;
 	const float src_dy = 1.0f / srcH;
 	float src_l = src_dx * srcRect.left;
@@ -171,23 +167,31 @@ HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
 		points[1] = { -1, +1 };
 		points[2] = { +1, -1 };
 		points[3] = { +1, +1 };
-		break;
 	}
 
 	if (bFlip) {
 		std::swap(src_l, src_r);
 	}
 
-	VERTEX Vertices[4] = {
-		// Vertices for drawing whole texture
-		// 2 ___4
-		//  |\ |
-		// 1|_\|3
-		{ {(float)points[0].x, (float)points[0].y, 0}, {src_l, src_b} },
-		{ {(float)points[1].x, (float)points[1].y, 0}, {src_l, src_t} },
-		{ {(float)points[2].x, (float)points[2].y, 0}, {src_r, src_b} },
-		{ {(float)points[3].x, (float)points[3].y, 0}, {src_r, src_t} },
-	};
+	// Vertices for drawing whole texture
+	// 2 ___4
+	//  |\ |
+	// 1|_\|3
+	Vertices[0] = { {(float)points[0].x, (float)points[0].y, 0}, {src_l, src_b} };
+	Vertices[1] = { {(float)points[1].x, (float)points[1].y, 0}, {src_l, src_t} };
+	Vertices[2] = { {(float)points[2].x, (float)points[2].y, 0}, {src_r, src_b} };
+	Vertices[3] = { {(float)points[3].x, (float)points[3].y, 0}, {src_r, src_t} };
+}
+
+static HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
+	const UINT srcW, const UINT srcH, const RECT& srcRect,
+	const int iRotation, const bool bFlip)
+{
+	ASSERT(ppVertexBuffer);
+	ASSERT(*ppVertexBuffer == nullptr);
+
+	VERTEX Vertices[4];
+	FillVertices(Vertices, srcW, srcH, srcRect, iRotation, bFlip);
 
 	D3D11_BUFFER_DESC BufferDesc = { sizeof(Vertices), D3D11_USAGE_DEFAULT, D3D11_BIND_VERTEX_BUFFER, 0, 0, 0 };
 	D3D11_SUBRESOURCE_DATA InitData = { Vertices, 0, 0 };
@@ -198,7 +202,29 @@ HRESULT CreateVertexBuffer(ID3D11Device* pDevice, ID3D11Buffer** ppVertexBuffer,
 	return hr;
 }
 
-void TextureBlt11(
+static HRESULT FillVertexBuffer(ID3D11DeviceContext* pDeviceContext, ID3D11Buffer* pVertexBuffer,
+	const UINT srcW, const UINT srcH, const RECT& srcRect,
+	const int iRotation, const bool bFlip)
+{
+	ASSERT(pVertexBuffer);
+
+	VERTEX Vertices[4];
+	FillVertices(Vertices, srcW, srcH, srcRect, iRotation, bFlip);
+
+	D3D11_MAPPED_SUBRESOURCE mr;
+	HRESULT hr = pDeviceContext->Map(pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mr);
+	if (FAILED(hr)) {
+		DLog(L"FillVertexBuffer() : Map() failed with error {}", HR2Str(hr));
+		return hr;
+	}
+
+	memcpy(mr.pData, &Vertices, sizeof(Vertices));
+	pDeviceContext->Unmap(pVertexBuffer, 0);
+
+	return hr;
+}
+
+static void TextureBlt11(
 	ID3D11DeviceContext* pDeviceContext,
 	ID3D11RenderTargetView* pRenderTargetView, D3D11_VIEWPORT& viewport,
 	ID3D11InputLayout* pInputLayout,
@@ -279,7 +305,6 @@ HRESULT CDX11VideoProcessor::TextureCopyRect(
 	const int iRotation, const bool bFlip)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
-	CComPtr<ID3D11Buffer> pVertexBuffer;
 
 	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
 	if (FAILED(hr)) {
@@ -287,7 +312,7 @@ HRESULT CDX11VideoProcessor::TextureCopyRect(
 		return hr;
 	}
 
-	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, iRotation, bFlip);
+	hr = FillVertexBuffer(m_pDeviceContext, m_pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, iRotation, bFlip);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -300,7 +325,7 @@ HRESULT CDX11VideoProcessor::TextureCopyRect(
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
 
-	TextureBlt11(m_pDeviceContext, pRenderTargetView, VP, m_pVSimpleInputLayout, m_pVS_Simple, pPixelShader, Tex.pShaderResource, m_pSamplerPoint, pConstantBuffer, pVertexBuffer);
+	TextureBlt11(m_pDeviceContext, pRenderTargetView, VP, m_pVSimpleInputLayout, m_pVS_Simple, pPixelShader, Tex.pShaderResource, m_pSamplerPoint, pConstantBuffer, m_pVertexBuffer);
 
 	return hr;
 }
@@ -312,16 +337,14 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(
 	const int iRotation, const bool bFlip)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
-	CComPtr<ID3D11Buffer> pVertexBuffer;
-	CComPtr<ID3D11Buffer> pConstantBuffer;
 
 	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
 	if (FAILED(hr)) {
-		DLog(L"TextureResizeShader() : CreateRenderTargetView() failed with error {}", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::TextureResizeShader() : CreateRenderTargetView() failed with error {}", HR2Str(hr));
 		return hr;
 	}
 
-	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, iRotation, bFlip);
+	hr = FillVertexBuffer(m_pDeviceContext, m_pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, iRotation, bFlip);
 	if (FAILED(hr)) {
 		return hr;
 	}
@@ -330,18 +353,16 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(
 		{(float)Tex.desc.Width, (float)Tex.desc.Height, 1.0f / Tex.desc.Width, 1.0f / Tex.desc.Height},
 		{(float)srcRect.Width() / dstRect.Width(), (float)srcRect.Height() / dstRect.Height(), 0, 0}
 	};
-	D3D11_BUFFER_DESC BufferDesc = {};
-	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	BufferDesc.ByteWidth = sizeof(constants);
-	BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	BufferDesc.CPUAccessFlags = 0;
-	D3D11_SUBRESOURCE_DATA InitData = { &constants, 0, 0 };
 
-	hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &pConstantBuffer);
+	D3D11_MAPPED_SUBRESOURCE mr;
+	hr = m_pDeviceContext->Map(m_pResizeShaderConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mr);
 	if (FAILED(hr)) {
-		DLog(L"TextureResizeShader() : Create constant buffer failed with error {}", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::TextureResizeShader() : Map() failed with error {}", HR2Str(hr));
 		return hr;
 	}
+
+	memcpy(mr.pData, &constants, sizeof(constants));
+	m_pDeviceContext->Unmap(m_pResizeShaderConstantBuffer, 0);
 
 	D3D11_VIEWPORT VP;
 	VP.TopLeftX = (FLOAT)dstRect.left;
@@ -351,7 +372,7 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
 
-	TextureBlt11(m_pDeviceContext, pRenderTargetView, VP, m_pVSimpleInputLayout, m_pVS_Simple, pPixelShader, Tex.pShaderResource, m_pSamplerPoint, pConstantBuffer, pVertexBuffer);
+	TextureBlt11(m_pDeviceContext, pRenderTargetView, VP, m_pVSimpleInputLayout, m_pVS_Simple, pPixelShader, Tex.pShaderResource, m_pSamplerPoint, m_pResizeShaderConstantBuffer, m_pVertexBuffer);
 
 	return hr;
 }
@@ -646,7 +667,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_strShaderY = nullptr;
 	m_pPSFinalPass.Release();
 
-	SAFE_RELEASE(m_pPostScaleConstants);
+	m_pPostScaleConstants.Release();
 
 #if TEST_SHADER
 	m_pPS_TEST.Release();
@@ -655,11 +676,10 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pVSimpleInputLayout.Release();
 	m_pVS_Simple.Release();
 	m_pPS_Simple.Release();
-	SAFE_RELEASE(m_pSamplerPoint);
-	SAFE_RELEASE(m_pSamplerLinear);
-	SAFE_RELEASE(m_pSamplerDither);
+	m_pSamplerPoint.Release();
+	m_pSamplerLinear.Release();
+	m_pSamplerDither.Release();
 	m_pAlphaBlendState.Release();
-	SAFE_RELEASE(m_pFullFrameVertexBuffer);
 
 	if (m_pDeviceContext) {
 		// need ClearState() (see ReleaseVP()) and Flush() for ID3D11DeviceContext when using DXGI_SWAP_EFFECT_DISCARD in Windows 8/8.1
@@ -680,6 +700,10 @@ void CDX11VideoProcessor::ReleaseDevice()
 		SAFE_RELEASE(pDebugDevice);
 	}
 #endif
+
+	m_pVertexBuffer.Release();
+	m_pResizeShaderConstantBuffer.Release();
+	m_pFinalPassConstantBuffer.Release();
 
 	m_pDevice.Release();
 }
@@ -943,8 +967,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	bdesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBlendState(&bdesc, &m_pAlphaBlendState));
 
-	EXECUTE_ASSERT(S_OK == CreateVertexBuffer(m_pDevice, &m_pFullFrameVertexBuffer, 1, 1, CRect(0, 0, 1, 1), 0, false));
-
 	LPVOID data;
 	DWORD size;
 	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VSH11_SIMPLE));
@@ -962,11 +984,16 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_TEST, IDF_PSH11_TEST));
 #endif
 
-	D3D11_BUFFER_DESC BufferDesc = {};
-	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	BufferDesc.ByteWidth = sizeof(PS_EXTSHADER_CONSTANTS);
-	BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	BufferDesc.CPUAccessFlags = 0;
+	D3D11_BUFFER_DESC BufferDesc = { sizeof(VERTEX) * 4, D3D11_USAGE_DYNAMIC, D3D11_BIND_VERTEX_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, nullptr, &m_pVertexBuffer));
+
+	BufferDesc = { sizeof(FLOAT) * 4 * 2, D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, nullptr, &m_pResizeShaderConstantBuffer));
+
+	BufferDesc = { sizeof(FLOAT) * 4, D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, nullptr, &m_pFinalPassConstantBuffer));
+
+	BufferDesc = { sizeof(PS_EXTSHADER_CONSTANTS), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, nullptr, &m_pPostScaleConstants));
 
 	CComPtr<IDXGIDevice> pDXGIDevice;
@@ -2356,34 +2383,28 @@ HRESULT CDX11VideoProcessor::ResizeShaderPass(const Tex2D_t& Tex, ID3D11Texture2
 HRESULT CDX11VideoProcessor::FinalPass(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect)
 {
 	CComPtr<ID3D11RenderTargetView> pRenderTargetView;
-	CComPtr<ID3D11Buffer> pVertexBuffer;
-	CComPtr<ID3D11Buffer> pConstantBuffer;
 
 	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
 	if (FAILED(hr)) {
-		DLog(L"FinalPass() : CreateRenderTargetView() failed with error {}", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::FinalPass() : CreateRenderTargetView() failed with error {}", HR2Str(hr));
 		return hr;
 	}
 
-	hr = CreateVertexBuffer(m_pDevice, &pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, 0, false);
+	hr = FillVertexBuffer(m_pDeviceContext, m_pVertexBuffer, Tex.desc.Width, Tex.desc.Height, srcRect, 0, false);
 	if (FAILED(hr)) {
-		DLog(L"FinalPass() : Create vertex buffer failed with error {}", HR2Str(hr));
 		return hr;
 	}
 
 	const FLOAT constants[4] = { (float)Tex.desc.Width / dither_size, (float)Tex.desc.Height / dither_size, 0, 0 };
-	D3D11_BUFFER_DESC BufferDesc = {};
-	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	BufferDesc.ByteWidth = sizeof(constants);
-	BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	BufferDesc.CPUAccessFlags = 0;
-	D3D11_SUBRESOURCE_DATA InitData = { &constants, 0, 0 };
-
-	hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &pConstantBuffer);
+	D3D11_MAPPED_SUBRESOURCE mr;
+	hr = m_pDeviceContext->Map(m_pFinalPassConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mr);
 	if (FAILED(hr)) {
-		DLog(L"FinalPass() : Create constant buffer failed with error {}", HR2Str(hr));
+		DLog(L"CDX11VideoProcessor::FinalPass() : Map() failed with error {}", HR2Str(hr));
 		return hr;
 	}
+
+	memcpy(mr.pData, &constants, sizeof(constants));
+	m_pDeviceContext->Unmap(m_pFinalPassConstantBuffer, 0);
 
 	D3D11_VIEWPORT VP;
 	VP.TopLeftX = (FLOAT)dstRect.left;
@@ -2397,7 +2418,7 @@ HRESULT CDX11VideoProcessor::FinalPass(const Tex2D_t& Tex, ID3D11Texture2D* pRen
 	m_pDeviceContext->PSSetShaderResources(1, 1, &m_TexDither.pShaderResource.p);
 	m_pDeviceContext->PSSetSamplers(1, 1, &m_pSamplerDither);
 
-	TextureBlt11(m_pDeviceContext, pRenderTargetView, VP, m_pVSimpleInputLayout, m_pVS_Simple, m_pPSFinalPass, Tex.pShaderResource, m_pSamplerPoint, pConstantBuffer, pVertexBuffer);
+	TextureBlt11(m_pDeviceContext, pRenderTargetView, VP, m_pVSimpleInputLayout, m_pVS_Simple, m_pPSFinalPass, Tex.pShaderResource, m_pSamplerPoint, m_pFinalPassConstantBuffer, m_pVertexBuffer);
 
 	ID3D11ShaderResourceView* views[1] = {};
 	m_pDeviceContext->PSSetShaderResources(1, 1, views);

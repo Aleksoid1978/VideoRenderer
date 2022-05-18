@@ -47,14 +47,16 @@ private:
 	// Direct3D 11
 	CComPtr<ID3D11Device1>        m_pDevice;
 	CComPtr<ID3D11DeviceContext1> m_pDeviceContext;
-	ID3D11SamplerState*           m_pSamplerPoint = nullptr;
-	ID3D11SamplerState*           m_pSamplerLinear = nullptr;
-	ID3D11SamplerState*           m_pSamplerDither = nullptr;
+	CComPtr<ID3D11SamplerState>   m_pSamplerPoint;
+	CComPtr<ID3D11SamplerState>   m_pSamplerLinear;
+	CComPtr<ID3D11SamplerState>   m_pSamplerDither;
 	CComPtr<ID3D11BlendState>     m_pAlphaBlendState;
-	ID3D11Buffer*                 m_pFullFrameVertexBuffer = nullptr;
 	CComPtr<ID3D11VertexShader>   m_pVS_Simple;
 	CComPtr<ID3D11PixelShader>    m_pPS_Simple;
 	CComPtr<ID3D11InputLayout>    m_pVSimpleInputLayout;
+	CComPtr<ID3D11Buffer>         m_pVertexBuffer;
+	CComPtr<ID3D11Buffer>         m_pResizeShaderConstantBuffer;
+	CComPtr<ID3D11Buffer>         m_pFinalPassConstantBuffer;
 
 	DXGI_SWAP_EFFECT              m_UsedSwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
@@ -92,7 +94,7 @@ private:
 
 	std::vector<ExternalPixelShader11_t> m_pPreScaleShaders;
 	std::vector<ExternalPixelShader11_t> m_pPostScaleShaders;
-	ID3D11Buffer* m_pPostScaleConstants = nullptr;
+	CComPtr<ID3D11Buffer> m_pPostScaleConstants;
 	CComPtr<ID3D11PixelShader> m_pPSFinalPass;
 
 	CComPtr<IDXGIFactory2>   m_pDXGIFactory2;
