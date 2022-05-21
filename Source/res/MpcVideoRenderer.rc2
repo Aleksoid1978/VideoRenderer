@@ -124,7 +124,7 @@ BEGIN
             VALUE "FileDescription", "MPC Video Renderer"
             VALUE "FileVersion", VERSION_STR
             VALUE "InternalName", "MpcVideoRenderer"
-            VALUE "LegalCopyright", "Copyright 2018-2021"
+            VALUE "LegalCopyright", "Copyright 2018-2022"
 #ifdef _WIN64
 
             VALUE "OriginalFilename", "MpcVideoRenderer64.ax"
