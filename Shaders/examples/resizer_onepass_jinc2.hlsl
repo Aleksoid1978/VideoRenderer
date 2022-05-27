@@ -3,15 +3,9 @@
 sampler s0   : register(s0); // input texture
 float2 dxdy  : register(c0);
 
-#if 1
-#define JINC2_WINDOW_SINC 0.405
-#define JINC2_SINC        0.79
+#define JINC2_WINDOW_SINC 0.416
+#define JINC2_SINC        0.985
 #define JINC2_AR_STRENGTH 0.8
-#else
-#define JINC2_WINDOW_SINC 0.44
-#define JINC2_SINC        0.82
-#define JINC2_AR_STRENGTH 0.5
-#endif
 
 static const float pi = acos(-1);
 static const float wa = JINC2_WINDOW_SINC * pi;
