@@ -18,6 +18,7 @@ struct PS_INPUT
 #define JINC2_WINDOW_SINC 0.416
 #define JINC2_SINC        0.985
 #define JINC2_AR_STRENGTH 0.8
+#define JINC2_AR_ENABLE   1
 
 static const float pi = acos(-1);
 static const float wa = JINC2_WINDOW_SINC * pi;
@@ -87,12 +88,14 @@ float4 main(PS_INPUT input) : SV_Target
     color += mul(weights[3], float4x3(c03, c13, c23, c33));
     color /= dot(mul(weights, float4(1, 1, 1, 1)), 1);
 
+#if JINC2_AR_ENABLE
     // calc min/max samples
     float3 min_sample = min4(c11, c21, c12, c22);
     float3 max_sample = max4(c11, c21, c12, c22);
 
     // Anti-ringing
     color = lerp(color, clamp(color, min_sample, max_sample), JINC2_AR_STRENGTH);
+#endif
 
     return float4(color, 1);
 }
