@@ -1957,7 +1957,11 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		ID3D11RenderTargetView* pRenderTargetView;
 		hr = m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView);
 		if (S_OK == hr) {
+			// Set render target and shaders
 			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+			m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
+			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
+			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
 
 			// call the function for drawing subtitles
 			m_pFilter->m_pSub11CallBack->Render11(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
