@@ -241,7 +241,7 @@ struct ExternalPixelShader11_t
 	CComPtr<ID3D11PixelShader> shader;
 };
 
-inline DirectX::XMFLOAT4 D3DCOLORtoXMFLOAT4(const D3DCOLOR color)
+inline constexpr DirectX::XMFLOAT4 D3DCOLORtoXMFLOAT4(const D3DCOLOR color)
 {
 	return DirectX::XMFLOAT4{
 		(float)((color & 0x00FF0000) >> 16) / 255,
@@ -251,7 +251,7 @@ inline DirectX::XMFLOAT4 D3DCOLORtoXMFLOAT4(const D3DCOLOR color)
 	};
 }
 
-inline D3DCOLOR XMFLOAT4toD3DCOLOR(const DirectX::XMFLOAT4 colorRGBAf)
+inline constexpr D3DCOLOR XMFLOAT4toD3DCOLOR(const DirectX::XMFLOAT4& colorRGBAf)
 {
 	return
 		(D3DCOLOR)std::clamp(int(colorRGBAf.x * 255), 0, 255) << 16 |
