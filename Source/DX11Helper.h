@@ -251,6 +251,15 @@ inline DirectX::XMFLOAT4 D3DCOLORtoXMFLOAT4(const D3DCOLOR color)
 	};
 }
 
+inline D3DCOLOR XMFLOAT4toD3DCOLOR(const DirectX::XMFLOAT4 colorRGBAf)
+{
+	return
+		(D3DCOLOR)std::clamp(int(colorRGBAf.x * 255), 0, 255) << 16 |
+		(D3DCOLOR)std::clamp(int(colorRGBAf.y * 255), 0, 255) <<  8 |
+		(D3DCOLOR)std::clamp(int(colorRGBAf.z * 255), 0, 255)       |
+		(D3DCOLOR)std::clamp(int(colorRGBAf.w * 255), 0, 255) << 24;
+}
+
 UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAdapter);
 
 HRESULT DumpTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D* pTexture2D, const wchar_t* filename);
