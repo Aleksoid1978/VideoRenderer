@@ -263,3 +263,5 @@ inline constexpr D3DCOLOR XMFLOAT4toD3DCOLOR(const DirectX::XMFLOAT4& colorRGBAf
 UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAdapter);
 
 HRESULT DumpTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D* pTexture2D, const wchar_t* filename);
+
+DirectX::XMFLOAT4 TransferPQ(DirectX::XMFLOAT4& colorF);

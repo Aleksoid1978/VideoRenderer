@@ -170,3 +170,38 @@ HRESULT DumpTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D* pTex
 
 	return hr;
 }
+
+DirectX::XMFLOAT4 TransferPQ(DirectX::XMFLOAT4& colorF)
+{
+	// https://github.com/thexai/xbmc/blob/master/system/shaders/guishader_common.hlsl
+	const float ST2084_m1 = 2610.0f / (4096.0f * 4.0f);
+	const float ST2084_m2 = (2523.0f / 4096.0f) * 128.0f;
+	const float ST2084_c1 = 3424.0f / 4096.0f;
+	const float ST2084_c2 = (2413.0f / 4096.0f) * 32.0f;
+	const float ST2084_c3 = (2392.0f / 4096.0f) * 32.0f;
+	const float SDR_peak_lum = 100.0f;
+	const float matx[3][3] = {
+		{0.627402f, 0.329292f, 0.043306f},
+		{0.069095f, 0.919544f, 0.011360f},
+		{0.016394f, 0.088028f, 0.895578f}
+	};
+
+	float c[3] = { colorF.x, colorF.y, colorF.z };
+
+	for (unsigned i = 0; i < 3; i++) {
+		// REC.709 to linear
+		c[i] = pow(c[i], 1.0f / 0.45f);
+		// REC.709 to BT.2020
+		c[i] = matx[i][0] * c[0] + matx[i][1] * c[1] + matx[i][2] * c[2];
+		// linear to PQ
+		c[i] = pow(c[i] / SDR_peak_lum, ST2084_m1);
+		c[i] = (ST2084_c1 + ST2084_c2 * c[i]) / (1.0f + ST2084_c3 * c[i]);
+		c[i] = pow(c[i], ST2084_m2);
+	}
+
+	colorF.x = c[0];
+	colorF.y = c[1];
+	colorF.z = c[2];
+
+	return colorF;
+}
