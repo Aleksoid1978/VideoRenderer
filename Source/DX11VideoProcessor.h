@@ -53,6 +53,7 @@ private:
 	CComPtr<ID3D11BlendState>     m_pAlphaBlendState;
 	CComPtr<ID3D11VertexShader>   m_pVS_Simple;
 	CComPtr<ID3D11PixelShader>    m_pPS_Simple;
+	CComPtr<ID3D11PixelShader>    m_pPS_BitmapToPQ;
 	CComPtr<ID3D11InputLayout>    m_pVSimpleInputLayout;
 	CComPtr<ID3D11Buffer>         m_pVertexBuffer;
 	CComPtr<ID3D11Buffer>         m_pResizeShaderConstantBuffer;

@@ -262,6 +262,10 @@ static void TextureBlt11(
 	pDeviceContext->PSSetShaderResources(0, 1, views);
 }
 
+//
+// CDX11VideoProcessor
+//
+
 HRESULT CDX11VideoProcessor::AlphaBlt(
 	ID3D11ShaderResourceView* pShaderResource,
 	ID3D11Texture2D* pRenderTarget,
@@ -676,6 +680,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pVSimpleInputLayout.Release();
 	m_pVS_Simple.Release();
 	m_pPS_Simple.Release();
+	m_pPS_BitmapToPQ.Release();
 	m_pSamplerPoint.Release();
 	m_pSamplerLinear.Release();
 	m_pSamplerDither.Release();
@@ -979,6 +984,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateInputLayout(Layout, std::size(Layout), data, size, &m_pVSimpleInputLayout));
 
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_Simple, IDF_PSH11_SIMPLE));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_BitmapToPQ, IDF_PSH11_CONVERT_BITMAP_TO_PQ));
 
 #if TEST_SHADER
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_TEST, IDF_PSH11_TEST));
@@ -1961,7 +1967,11 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 			m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
 			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
+#if 0
+			m_pDeviceContext->PSSetShader(m_bHdrDisplayModeEnabled? m_pPS_BitmapToPQ : m_pPS_Simple, nullptr, 0);
+#else
 			m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
+#endif
 
 			// call the function for drawing subtitles
 			m_pFilter->m_pSub11CallBack->Render11(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);

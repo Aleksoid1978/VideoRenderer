@@ -141,6 +141,9 @@
     <FxCompile Include="examples\resizer_onepass_jinc2.hlsl">
       <Filter>examples</Filter>
     </FxCompile>
+    <FxCompile Include="d3d11\ps_convert_bitmap_to_pq.hlsl">
+      <Filter>d3d11</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="convert\hdr_tone_mapping.hlsl">
