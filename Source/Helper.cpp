@@ -31,9 +31,9 @@ std::wstring GetVersionStr()
 	std::wstring version = _CRT_WIDE(VERSION_STR);
 #if VER_RELEASE != 1
 	if (strcmp(BRANCH_STR, "master") != 0) {
-		version += fmt::format(L".{}", _CRT_WIDE(BRANCH_STR));
+		version += std::format(L".{}", _CRT_WIDE(BRANCH_STR));
 	}
-	version += fmt::format(L" (git-{}-{})",
+	version += std::format(L" (git-{}-{})",
 		_CRT_WIDE(_CRT_STRINGIZE(REV_DATE)),
 		_CRT_WIDE(_CRT_STRINGIZE(REV_HASH))
 	);
@@ -65,22 +65,22 @@ std::wstring MediaType2Str(const CMediaType *pmt)
 	std::wstring str(L"MajorType : ");
 	str.append((pmt->majortype == MEDIATYPE_Video) ? L"Video" : L"unknown");
 
-	str += fmt::format(L"\nSubType   : {}", FmtParams.str);
+	str += std::format(L"\nSubType   : {}", FmtParams.str);
 
 	str.append(L"\nFormatType: ");
 	if (pmt->formattype == FORMAT_VideoInfo2) {
 		str.append(L"VideoInfo2");
 		const VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pmt->pbFormat;
-		str += fmt::format(L"\nBimapSize : {} x {}", vih2->bmiHeader.biWidth, vih2->bmiHeader.biHeight);
-		str += fmt::format(L"\nSourceRect: ({}, {}, {}, {})", vih2->rcSource.left, vih2->rcSource.top, vih2->rcSource.right, vih2->rcSource.bottom);
-		str += fmt::format(L"\nSizeImage : {} bytes", vih2->bmiHeader.biSizeImage);
+		str += std::format(L"\nBimapSize : {} x {}", vih2->bmiHeader.biWidth, vih2->bmiHeader.biHeight);
+		str += std::format(L"\nSourceRect: ({}, {}, {}, {})", vih2->rcSource.left, vih2->rcSource.top, vih2->rcSource.right, vih2->rcSource.bottom);
+		str += std::format(L"\nSizeImage : {} bytes", vih2->bmiHeader.biSizeImage);
 	}
 	else if (pmt->formattype == FORMAT_VideoInfo) {
 		str.append(L"VideoInfo");
 		const VIDEOINFOHEADER* vih = (VIDEOINFOHEADER*)pmt->pbFormat;
-		str += fmt::format(L"\nBimapSize : {} x {}", vih->bmiHeader.biWidth, vih->bmiHeader.biHeight);
-		str += fmt::format(L"\nSourceRect: ({}, {}, {}, {})", vih->rcSource.left, vih->rcSource.top, vih->rcSource.right, vih->rcSource.bottom);
-		str += fmt::format(L"\nSizeImage : {} bytes", vih->bmiHeader.biSizeImage);
+		str += std::format(L"\nBimapSize : {} x {}", vih->bmiHeader.biWidth, vih->bmiHeader.biHeight);
+		str += std::format(L"\nSourceRect: ({}, {}, {}, {})", vih->rcSource.left, vih->rcSource.top, vih->rcSource.right, vih->rcSource.bottom);
+		str += std::format(L"\nSizeImage : {} bytes", vih->bmiHeader.biSizeImage);
 	}
 	else {
 		str.append(L"unknown");

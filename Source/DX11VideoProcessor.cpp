@@ -1056,7 +1056,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	hr = pDXGIAdapter->GetDesc(&dxgiAdapterDesc);
 	if (SUCCEEDED(hr)) {
 		m_VendorId = dxgiAdapterDesc.VendorId;
-		m_strAdapterDescription = fmt::format(L"{} ({:04X}:{:04X})", dxgiAdapterDesc.Description, dxgiAdapterDesc.VendorId, dxgiAdapterDesc.DeviceId);
+		m_strAdapterDescription = std::format(L"{} ({:04X}:{:04X})", dxgiAdapterDesc.Description, dxgiAdapterDesc.VendorId, dxgiAdapterDesc.DeviceId);
 		DLog(L"Graphics DXGI adapter: {}", m_strAdapterDescription);
 	}
 
@@ -2760,7 +2760,7 @@ HRESULT CDX11VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned* pSize)
 HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 {
 	str = L"DirectX 11";
-	str += fmt::format(L"\nGraphics adapter: {}", m_strAdapterDescription);
+	str += std::format(L"\nGraphics adapter: {}", m_strAdapterDescription);
 	str.append(L"\nVideoProcessor  : ");
 	if (m_D3D11VP.IsReady()) {
 		D3D11_VIDEO_PROCESSOR_CAPS caps;
@@ -2768,7 +2768,7 @@ HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 		D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS rateConvCaps;
 		m_D3D11VP.GetVPParams(caps, rateConvIndex, rateConvCaps);
 
-		str += fmt::format(L"D3D11, RateConversion_{}", rateConvIndex);
+		str += std::format(L"D3D11, RateConversion_{}", rateConvIndex);
 
 		str.append(L"\nDeinterlaceTech.:");
 		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND)               str.append(L" Blend,");
@@ -2778,7 +2778,7 @@ HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_INVERSE_TELECINE)                str.append(L" Inverse Telecine,");
 		if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_FRAME_RATE_CONVERSION)           str.append(L" Frame Rate Conversion");
 		str_trim_end(str, ',');
-		str += fmt::format(L"\nReference Frames: Past {}, Future {}", rateConvCaps.PastFrames, rateConvCaps.FutureFrames);
+		str += std::format(L"\nReference Frames: Past {}, Future {}", rateConvCaps.PastFrames, rateConvCaps.FutureFrames);
 	} else {
 		str.append(L"Shaders");
 	}
@@ -2788,16 +2788,16 @@ HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 	if (m_pPostScaleShaders.size()) {
 		str.append(L"\n\nPost scale pixel shaders:");
 		for (const auto& pshader : m_pPostScaleShaders) {
-			str += fmt::format(L"\n  {}", pshader.name);
+			str += std::format(L"\n  {}", pshader.name);
 		}
 	}
 
 #ifdef _DEBUG
 	str.append(L"\n\nDEBUG info:");
-	str += fmt::format(L"\nSource tex size: {}x{}", m_srcWidth, m_srcHeight);
-	str += fmt::format(L"\nSource rect    : {},{},{},{} - {}x{}", m_srcRect.left, m_srcRect.top, m_srcRect.right, m_srcRect.bottom, m_srcRect.Width(), m_srcRect.Height());
-	str += fmt::format(L"\nVideo rect     : {},{},{},{} - {}x{}", m_videoRect.left, m_videoRect.top, m_videoRect.right, m_videoRect.bottom, m_videoRect.Width(), m_videoRect.Height());
-	str += fmt::format(L"\nWindow rect    : {},{},{},{} - {}x{}", m_windowRect.left, m_windowRect.top, m_windowRect.right, m_windowRect.bottom, m_windowRect.Width(), m_windowRect.Height());
+	str += std::format(L"\nSource tex size: {}x{}", m_srcWidth, m_srcHeight);
+	str += std::format(L"\nSource rect    : {},{},{},{} - {}x{}", m_srcRect.left, m_srcRect.top, m_srcRect.right, m_srcRect.bottom, m_srcRect.Width(), m_srcRect.Height());
+	str += std::format(L"\nVideo rect     : {},{},{},{} - {}x{}", m_videoRect.left, m_videoRect.top, m_videoRect.right, m_videoRect.bottom, m_videoRect.Width(), m_videoRect.Height());
+	str += std::format(L"\nWindow rect    : {},{},{},{} - {}x{}", m_windowRect.left, m_windowRect.top, m_windowRect.right, m_windowRect.bottom, m_windowRect.Width(), m_windowRect.Height());
 
 	if (m_pDevice) {
 		std::vector<std::pair<const DXGI_FORMAT, UINT>> formatsYUV = {
@@ -3157,13 +3157,13 @@ void CDX11VideoProcessor::UpdateStatsPresent()
 void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
-		m_strStatsHeader = fmt::format(L"MPC VR {}, Direct3D 11", _CRT_WIDE(VERSION_STR));
+		m_strStatsHeader = std::format(L"MPC VR {}, Direct3D 11", _CRT_WIDE(VERSION_STR));
 
 		UpdateStatsInputFmt();
 
 		m_strStatsVProc.assign(L"\nVideoProcessor: ");
 		if (m_D3D11VP.IsReady()) {
-			m_strStatsVProc += fmt::format(L"D3D11 VP, output to {}", DXGIFormatToString(m_D3D11OutputFmt));
+			m_strStatsVProc += std::format(L"D3D11 VP, output to {}", DXGIFormatToString(m_D3D11OutputFmt));
 		} else {
 			m_strStatsVProc.append(L"Shaders");
 			if (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422) {
@@ -3181,14 +3181,14 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 				}
 			}
 		}
-		m_strStatsVProc += fmt::format(L"\nInternalFormat: {}", DXGIFormatToString(m_InternalTexFmt));
+		m_strStatsVProc += std::format(L"\nInternalFormat: {}", DXGIFormatToString(m_InternalTexFmt));
 
 		if (SourceIsHDR()) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
 			if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
 				m_strStatsHDR.append(L"Passthrough");
 				if (m_lastHdr10.bValid) {
-					m_strStatsHDR += fmt::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance / 10000);
+					m_strStatsHDR += std::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance / 10000);
 				}
 			} else if (m_bConvertToSdr) {
 				m_strStatsHDR.append(L"Convert to SDR");
@@ -3217,10 +3217,10 @@ void CDX11VideoProcessor::UpdateStatsPostProc()
 	if (m_strCorrection || m_pPostScaleShaders.size() || m_bFinalPass) {
 		m_strStatsPostProc.assign(L"\nPostProcessing:");
 		if (m_strCorrection) {
-			m_strStatsPostProc += fmt::format(L" {},", m_strCorrection);
+			m_strStatsPostProc += std::format(L" {},", m_strCorrection);
 		}
 		if (m_pPostScaleShaders.size()) {
-			m_strStatsPostProc += fmt::format(L" shaders[{}],", m_pPostScaleShaders.size());
+			m_strStatsPostProc += std::format(L" shaders[{}],", m_pPostScaleShaders.size());
 		}
 		if (m_bFinalPass) {
 			m_strStatsPostProc.append(L" dither");
@@ -3243,10 +3243,10 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	str.reserve(700);
 	str.assign(m_strStatsHeader);
 	str.append(m_strStatsDispInfo);
-	str += fmt::format(L"\nGraph. Adapter: {}", m_strAdapterDescription);
+	str += std::format(L"\nGraph. Adapter: {}", m_strAdapterDescription);
 
 	wchar_t frametype = (m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE) ? 'i' : 'p';
-	str += fmt::format(
+	str += std::format(
 		L"\nFrame rate    : {:7.3f}{},{:7.3f}",
 		m_pFilter->m_FrameStats.GetAverageFps(),
 		frametype,
@@ -3259,9 +3259,9 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	const int dstW = m_videoRect.Width();
 	const int dstH = m_videoRect.Height();
 	if (m_iRotation) {
-		str += fmt::format(L"\nScaling       : {}x{} r{}\u00B0> {}x{}", m_srcRectWidth, m_srcRectHeight, m_iRotation, dstW, dstH);
+		str += std::format(L"\nScaling       : {}x{} r{}\u00B0> {}x{}", m_srcRectWidth, m_srcRectHeight, m_iRotation, dstW, dstH);
 	} else {
-		str += fmt::format(L"\nScaling       : {}x{} -> {}x{}", m_srcRectWidth, m_srcRectHeight, dstW, dstH);
+		str += std::format(L"\nScaling       : {}x{} -> {}x{}", m_srcRectWidth, m_srcRectHeight, dstW, dstH);
 	}
 	if (m_srcRectWidth != dstW || m_srcRectHeight != dstH) {
 		if (m_D3D11VP.IsReady() && m_bVPScaling && !m_bVPScalingUseShaders) {
@@ -3283,10 +3283,10 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	if (m_strCorrection || m_pPostScaleShaders.size() || m_bDitherUsed) {
 		str.append(L"\nPostProcessing:");
 		if (m_strCorrection) {
-			str += fmt::format(L" {},", m_strCorrection);
+			str += std::format(L" {},", m_strCorrection);
 		}
 		if (m_pPostScaleShaders.size()) {
-			str += fmt::format(L" shaders[{}],", m_pPostScaleShaders.size());
+			str += std::format(L" shaders[{}],", m_pPostScaleShaders.size());
 		}
 		if (m_bDitherUsed) {
 			str.append(L" dither");
@@ -3296,20 +3296,20 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	str.append(m_strStatsHDR);
 	str.append(m_strStatsPresent);
 
-	str += fmt::format(L"\nFrames: {:5}, skipped: {}/{}, failed: {}",
+	str += std::format(L"\nFrames: {:5}, skipped: {}/{}, failed: {}",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
-	str += fmt::format(L"\nTimes(ms): Copy{:3}, Paint{:3}, Present{:3}",
+	str += std::format(L"\nTimes(ms): Copy{:3}, Paint{:3}, Present{:3}",
 		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.paintticks * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
 
-	str += fmt::format(L"\nSync offset   : {:+3} ms", (m_RenderStats.syncoffset + 5000) / 10000);
+	str += std::format(L"\nSync offset   : {:+3} ms", (m_RenderStats.syncoffset + 5000) / 10000);
 
 #if SYNC_OFFSET_EX
 	{
 		const auto [so_min, so_max] = m_Syncs.MinMax();
 		const auto [sod_min, sod_max] = m_SyncDevs.MinMax();
-		str += fmt::format(L", range[{:+3.0f};{:+3.0f}], max change{:+3.0f}/{:+3.0f}",
+		str += std::format(L", range[{:+3.0f};{:+3.0f}], max change{:+3.0f}/{:+3.0f}",
 			so_min / 10000.0f,
 			so_max / 10000.0f,
 			sod_min / 10000.0f,
@@ -3317,7 +3317,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	}
 #endif
 #if TEST_TICKS
-	str += fmt::format(L"\n1:{:6.3f}, 2:{:6.3f}, 3:{:6.3f}, 4:{:6.3f}, 5:{:6.3f}, 6:{:6.3f} ms",
+	str += std::format(L"\n1:{:6.3f}, 2:{:6.3f}, 3:{:6.3f}, 4:{:6.3f}, 5:{:6.3f}, 6:{:6.3f} ms",
 		m_RenderStats.t1 * 1000 / GetPreciseTicksPerSecond(),
 		m_RenderStats.t2 * 1000 / GetPreciseTicksPerSecond(),
 		m_RenderStats.t3 * 1000 / GetPreciseTicksPerSecond(),

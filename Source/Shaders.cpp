@@ -120,7 +120,7 @@ HRESULT GetShaderConvertColor(
 		code.append("static const float3x3 matrix_conv_prim = {\n");
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++) {
-				code += fmt::format("{}, ", matrix_conv_prim[i][j]);
+				code += std::format("{}, ", matrix_conv_prim[i][j]);
 			}
 			code.append("\n");
 		}
@@ -161,11 +161,11 @@ HRESULT GetShaderConvertColor(
 	const bool packed422 = (fmtParams.cformat == CF_YUY2 || fmtParams.cformat == CF_Y210 || fmtParams.cformat == CF_Y216);
 	const bool fix422 = (packed422 && texW * 2 == width);
 
-	code += fmt::format("#define w {}\n", fix422 ? width : texW);
-	code += fmt::format("#define dx (1.0/{})\n", texW);
-	code += fmt::format("#define dy (1.0/{})\n", texH);
-	code += fmt::format("static const float2 wh = {{{}, {}}};\n", fix422 ? width : texW, texH);
-	code += fmt::format("static const float2 dxdy2 = {{2.0/{}, 2.0/{}}};\n", texW, texH);
+	code += std::format("#define w {}\n", fix422 ? width : texW);
+	code += std::format("#define dx (1.0/{})\n", texW);
+	code += std::format("#define dy (1.0/{})\n", texH);
+	code += std::format("static const float2 wh = {{{}, {}}};\n", fix422 ? width : texW, texH);
+	code += std::format("static const float2 dxdy2 = {{2.0/{}, 2.0/{}}};\n", texW, texH);
 
 	if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
 		code.append("#define CATMULLROM_05(c0,c1,c2,c3) (9*(c1+c2)-(c0+c3))*0.0625\n");
@@ -200,25 +200,25 @@ HRESULT GetShaderConvertColor(
 #if CLAMP_IN_RECT
 	std::string boundary_check;
 	if (rect.right < texW && rect.bottom < texH) {
-		boundary_check = fmt::format("all(pos < float2(({}-0.501)/{},({}-0.501)/{}))", rect.right, texW, rect.bottom, texH);
+		boundary_check = std::format("all(pos < float2(({}-0.501)/{},({}-0.501)/{}))", rect.right, texW, rect.bottom, texH);
 	}
 	else if (rect.right < texW) {
-		boundary_check = fmt::format("pos.x < ({}-0.501)/{}", rect.right, texW);
+		boundary_check = std::format("pos.x < ({}-0.501)/{}", rect.right, texW);
 	}
 	else if (rect.bottom < texH) {
-		boundary_check = fmt::format("pos.y < ({}-0.501)/{}", rect.bottom, texH);
+		boundary_check = std::format("pos.y < ({}-0.501)/{}", rect.bottom, texH);
 	}
 	if (boundary_check.size() && (rect.left > 0 || rect.top > 0)) {
 		boundary_check.append(" && ");
 	}
 	if (rect.left > 0 && rect.top > 0) {
-		boundary_check += fmt::format("all(pos > float2(({}+0.501)/{},({}+0.501)/{}))", rect.left, texW, rect.top, texH);
+		boundary_check += std::format("all(pos > float2(({}+0.501)/{},({}+0.501)/{}))", rect.left, texW, rect.top, texH);
 	}
 	else if (rect.left > 0) {
-		boundary_check += fmt::format("pos.x > ({}+0.501)/{}", rect.left, texW);
+		boundary_check += std::format("pos.x > ({}+0.501)/{}", rect.left, texW);
 	}
 	else if (rect.top > 0) {
-		boundary_check += fmt::format("pos.y > ({}+0.501)/{}", rect.top, texH);
+		boundary_check += std::format("pos.y > ({}+0.501)/{}", rect.top, texH);
 	}
 #endif
 
@@ -289,11 +289,11 @@ HRESULT GetShaderConvertColor(
 				code.append("colorUV = texUV.Sample(samp, input.Tex).rg;\n");
 			}
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
-				code += fmt::format("float2 t = frac(input.Tex * (wh*0.5)){};\n", strChromaPos2); // Very strange, but it works.
+				code += std::format("float2 t = frac(input.Tex * (wh*0.5)){};\n", strChromaPos2); // Very strange, but it works.
 				code.append(code_CatmullRom_weights);
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
-						code += fmt::format("float2 c{}{} = texUV.Sample(samp, input.Tex, int2({}, {})).rg;\n", x, y, x-1, y-1);
+						code += std::format("float2 c{}{} = texUV.Sample(samp, input.Tex, int2({}, {})).rg;\n", x, y, x-1, y-1);
 					}
 				}
 				code.append(code_Bicubic_UV);
@@ -312,10 +312,10 @@ HRESULT GetShaderConvertColor(
 					"}\n");
 			}
 			else { // CHROMA_Bilinear
-				code += fmt::format("float2 pos = input.Tex{};\n", strChromaPos);
+				code += std::format("float2 pos = input.Tex{};\n", strChromaPos);
 #if CLAMP_IN_RECT
 				if (boundary_check.size()) {
-					code += fmt::format("if ({})", boundary_check);
+					code += std::format("if ({})", boundary_check);
 					code.append(
 						" {\n"
 						"colorUV = texUV.Sample(sampL, pos).rg;\n"
@@ -345,13 +345,13 @@ HRESULT GetShaderConvertColor(
 				);
 			}
 			else if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 420) {
-				code += fmt::format("float2 t = frac(input.Tex * (wh*0.5)){};\n", strChromaPos2); // I don't know why, but it works.
+				code += std::format("float2 t = frac(input.Tex * (wh*0.5)){};\n", strChromaPos2); // I don't know why, but it works.
 				code.append(code_CatmullRom_weights);
 				code.append("float2 c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33;\n");
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
-						code += fmt::format("c{}{}[0] = texU.Sample(samp, input.Tex, int2({}, {})).r;\n", x, y, x-1, y-1);
-						code += fmt::format("c{}{}[1] = texV.Sample(samp, input.Tex, int2({}, {})).r;\n", x, y, x-1, y-1);
+						code += std::format("c{}{}[0] = texU.Sample(samp, input.Tex, int2({}, {})).r;\n", x, y, x-1, y-1);
+						code += std::format("c{}{}[1] = texV.Sample(samp, input.Tex, int2({}, {})).r;\n", x, y, x-1, y-1);
 					}
 				}
 				code.append(code_Bicubic_UV);
@@ -376,10 +376,10 @@ HRESULT GetShaderConvertColor(
 					"}\n");
 			}
 			else { // CHROMA_Bilinear
-				code += fmt::format("float2 pos = input.Tex{};\n", strChromaPos);
+				code += std::format("float2 pos = input.Tex{};\n", strChromaPos);
 #if CLAMP_IN_RECT
 				if (boundary_check.size()) {
-					code += fmt::format("if ({})", boundary_check);
+					code += std::format("if ({})", boundary_check);
 					code.append(
 						" {\n"
 						"colorUV[0] = texU.Sample(sampL, pos).r;\n"
@@ -472,14 +472,14 @@ HRESULT GetShaderConvertColor(
 				code.append("float2 pos = t0 * (wh*0.5);\n"
 					"float2 t = frac(pos);\n"
 					"pos -= t;\n");
-				code += fmt::format("t = t{};\n", strChromaPos2);
+				code += std::format("t = t{};\n", strChromaPos2);
 				code.append(code_CatmullRom_weights);
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
 						if (fmtParams.cformat == CF_NV12) {
-							code += fmt::format("float2 c{}{} = tex2D(sUV, (pos + float2({}+0.5, {}+0.5))*dxdy2).ra;\n", x, y, x - 1, y - 1);
+							code += std::format("float2 c{}{} = tex2D(sUV, (pos + float2({}+0.5, {}+0.5))*dxdy2).ra;\n", x, y, x - 1, y - 1);
 						} else {
-							code += fmt::format("float2 c{}{} = tex2D(sUV, (pos + float2({}+0.5, {}+0.5))*dxdy2).rg;\n", x, y, x - 1, y - 1);
+							code += std::format("float2 c{}{} = tex2D(sUV, (pos + float2({}+0.5, {}+0.5))*dxdy2).rg;\n", x, y, x - 1, y - 1);
 						}
 					}
 				}
@@ -526,13 +526,13 @@ HRESULT GetShaderConvertColor(
 				code.append("float2 pos = t0 * (wh*0.5);\n"
 					"float2 t = frac(pos);\n"
 					"pos -= t;\n");
-				code += fmt::format("t = t{};\n", strChromaPos2);
+				code += std::format("t = t{};\n", strChromaPos2);
 				code.append(code_CatmullRom_weights);
 				code.append("float2 c00,c10,c20,c30,c01,c11,c21,c31,c02,c12,c22,c32,c03,c13,c23,c33;\n");
 				for (int y = 0; y < 4; y++) {
 					for (int x = 0; x < 4; x++) {
-						code += fmt::format("c{}{}[0] = tex2D(sU, (pos + float2({}+0.5, {}+0.5))*dxdy2).r;\n", x, y, x-1, y-1);
-						code += fmt::format("c{}{}[1] = tex2D(sV, (pos + float2({}+0.5, {}+0.5))*dxdy2).r;\n", x, y, x-1, y-1);
+						code += std::format("c{}{}[0] = tex2D(sU, (pos + float2({}+0.5, {}+0.5))*dxdy2).r;\n", x, y, x-1, y-1);
+						code += std::format("c{}{}[1] = tex2D(sV, (pos + float2({}+0.5, {}+0.5))*dxdy2).r;\n", x, y, x-1, y-1);
 					}
 				}
 				code.append(code_Bicubic_UV);

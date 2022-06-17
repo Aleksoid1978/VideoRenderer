@@ -406,7 +406,7 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 	D3DADAPTER_IDENTIFIER9 AdapID9 = {};
 	if (S_OK == m_pD3DEx->GetAdapterIdentifier(m_nCurrentAdapter, 0, &AdapID9)) {
 		m_VendorId = AdapID9.VendorId;
-		m_strAdapterDescription = fmt::format(L"{} ({:04X}:{:04X})", A2WStr(AdapID9.Description), AdapID9.VendorId, AdapID9.DeviceId);
+		m_strAdapterDescription = std::format(L"{} ({:04X}:{:04X})", A2WStr(AdapID9.Description), AdapID9.VendorId, AdapID9.DeviceId);
 		DLog(L"Graphics D3D9 adapter: {}", m_strAdapterDescription);
 	}
 
@@ -419,13 +419,13 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 	D3DCAPS9 DevCaps = {};
 	if (S_OK == m_pD3DEx->GetDeviceCaps(m_nCurrentAdapter, D3DDEVTYPE_HAL, &DevCaps)) {
 		std::wstring dbgstr = L"DeviceCaps:";
-		dbgstr += fmt::format(L"\n  MaxTextureWidth                 : {}", DevCaps.MaxTextureWidth);
-		dbgstr += fmt::format(L"\n  MaxTextureHeight                : {}", DevCaps.MaxTextureHeight);
-		dbgstr += fmt::format(L"\n  PresentationInterval IMMEDIATE  : {}", (DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_IMMEDIATE) ? L"supported" : L"NOT supported");
-		dbgstr += fmt::format(L"\n  PresentationInterval ONE        : {}", (DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_ONE) ? L"supported" : L"NOT supported");
-		dbgstr += fmt::format(L"\n  Caps READ_SCANLINE              : {}", (DevCaps.Caps & D3DCAPS_READ_SCANLINE) ? L"supported" : L"NOT supported");
-		dbgstr += fmt::format(L"\n  PixelShaderVersion              : {}.{}", D3DSHADER_VERSION_MAJOR(DevCaps.PixelShaderVersion), D3DSHADER_VERSION_MINOR(DevCaps.PixelShaderVersion));
-		dbgstr += fmt::format(L"\n  MaxPixelShader30InstructionSlots: {}", DevCaps.MaxPixelShader30InstructionSlots);
+		dbgstr += std::format(L"\n  MaxTextureWidth                 : {}", DevCaps.MaxTextureWidth);
+		dbgstr += std::format(L"\n  MaxTextureHeight                : {}", DevCaps.MaxTextureHeight);
+		dbgstr += std::format(L"\n  PresentationInterval IMMEDIATE  : {}", (DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_IMMEDIATE) ? L"supported" : L"NOT supported");
+		dbgstr += std::format(L"\n  PresentationInterval ONE        : {}", (DevCaps.PresentationIntervals & D3DPRESENT_INTERVAL_ONE) ? L"supported" : L"NOT supported");
+		dbgstr += std::format(L"\n  Caps READ_SCANLINE              : {}", (DevCaps.Caps & D3DCAPS_READ_SCANLINE) ? L"supported" : L"NOT supported");
+		dbgstr += std::format(L"\n  PixelShaderVersion              : {}.{}", D3DSHADER_VERSION_MAJOR(DevCaps.PixelShaderVersion), D3DSHADER_VERSION_MINOR(DevCaps.PixelShaderVersion));
+		dbgstr += std::format(L"\n  MaxPixelShader30InstructionSlots: {}", DevCaps.MaxPixelShader30InstructionSlots);
 		DLog(dbgstr);
 	}
 #endif
@@ -1731,7 +1731,7 @@ HRESULT CDX9VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned *pSize)
 HRESULT CDX9VideoProcessor::GetVPInfo(std::wstring& str)
 {
 	str = L"DirectX 9";
-	str += fmt::format(L"\nGraphics adapter: {}", m_strAdapterDescription);
+	str += std::format(L"\nGraphics adapter: {}", m_strAdapterDescription);
 
 	str.append(L"\nVideoProcessor  : ");
 	if (m_DXVA2VP.IsReady()) {
@@ -1739,7 +1739,7 @@ HRESULT CDX9VideoProcessor::GetVPInfo(std::wstring& str)
 		DXVA2_VideoProcessorCaps DXVA2VPcaps;
 		m_DXVA2VP.GetVPParams(DXVA2VPGuid, DXVA2VPcaps);
 
-		str += fmt::format(L"DXVA2 {}", DXVA2VPDeviceToString(DXVA2VPGuid));
+		str += std::format(L"DXVA2 {}", DXVA2VPDeviceToString(DXVA2VPGuid));
 
 		UINT dt = DXVA2VPcaps.DeinterlaceTechnology;
 		str.append(L"\nDeinterlaceTech.:");
@@ -1754,7 +1754,7 @@ HRESULT CDX9VideoProcessor::GetVPInfo(std::wstring& str)
 			if (dt & DXVA2_DeinterlaceTech_MotionVectorSteered)    str.append(L" MotionVectorSteered,");
 			if (dt & DXVA2_DeinterlaceTech_InverseTelecine)        str.append(L" InverseTelecine");
 			str_trim_end(str, ',');
-			str += fmt::format(L"\nReferenceSamples: Backward {}, Forward {}", DXVA2VPcaps.NumBackwardRefSamples, DXVA2VPcaps.NumForwardRefSamples);
+			str += std::format(L"\nReferenceSamples: Backward {}, Forward {}", DXVA2VPcaps.NumBackwardRefSamples, DXVA2VPcaps.NumForwardRefSamples);
 		} else {
 			str.append(L" none");
 		}
@@ -1767,16 +1767,16 @@ HRESULT CDX9VideoProcessor::GetVPInfo(std::wstring& str)
 	if (m_pPostScaleShaders.size()) {
 		str.append(L"\n\nPost scale pixel shaders:");
 		for (const auto& pshader : m_pPostScaleShaders) {
-			str += fmt::format(L"\n  {}", pshader.name);
+			str += std::format(L"\n  {}", pshader.name);
 		}
 	}
 
 #ifdef _DEBUG
 	str.append(L"\n\nDEBUG info:");
-	str += fmt::format(L"\nSource tex size: {}x{}", m_srcWidth, m_srcHeight);
-	str += fmt::format(L"\nSource rect    : {},{},{},{} - {}x{}", m_srcRect.left, m_srcRect.top, m_srcRect.right, m_srcRect.bottom, m_srcRect.Width(), m_srcRect.Height());
-	str += fmt::format(L"\nVideo rect     : {},{},{},{} - {}x{}", m_videoRect.left, m_videoRect.top, m_videoRect.right, m_videoRect.bottom, m_videoRect.Width(), m_videoRect.Height());
-	str += fmt::format(L"\nWindow rect    : {},{},{},{} - {}x{}", m_windowRect.left, m_windowRect.top, m_windowRect.right, m_windowRect.bottom, m_windowRect.Width(), m_windowRect.Height());
+	str += std::format(L"\nSource tex size: {}x{}", m_srcWidth, m_srcHeight);
+	str += std::format(L"\nSource rect    : {},{},{},{} - {}x{}", m_srcRect.left, m_srcRect.top, m_srcRect.right, m_srcRect.bottom, m_srcRect.Width(), m_srcRect.Height());
+	str += std::format(L"\nVideo rect     : {},{},{},{} - {}x{}", m_videoRect.left, m_videoRect.top, m_videoRect.right, m_videoRect.bottom, m_videoRect.Width(), m_videoRect.Height());
+	str += std::format(L"\nWindow rect    : {},{},{},{} - {}x{}", m_windowRect.left, m_windowRect.top, m_windowRect.right, m_windowRect.bottom, m_windowRect.Width(), m_windowRect.Height());
 #endif
 
 	return S_OK;
@@ -2692,13 +2692,13 @@ void CDX9VideoProcessor::UpdateStatsPresent()
 void CDX9VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
-		m_strStatsHeader = fmt::format(L"MPC VR {}, Direct3D 9Ex", _CRT_WIDE(VERSION_STR));
+		m_strStatsHeader = std::format(L"MPC VR {}, Direct3D 9Ex", _CRT_WIDE(VERSION_STR));
 
 		UpdateStatsInputFmt();
 
 		m_strStatsVProc.assign(L"\nVideoProcessor: ");
 		if (m_DXVA2VP.IsReady()) {
-			m_strStatsVProc += fmt::format(L"DXVA2 VP, output to {}", D3DFormatToString(m_DXVA2OutputFmt));
+			m_strStatsVProc += std::format(L"DXVA2 VP, output to {}", D3DFormatToString(m_DXVA2OutputFmt));
 		} else {
 			m_strStatsVProc.append(L"Shaders");
 			if (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422) {
@@ -2716,7 +2716,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 				}
 			}
 		}
-		m_strStatsVProc += fmt::format(L"\nInternalFormat: {}", D3DFormatToString(m_InternalTexFmt));
+		m_strStatsVProc += std::format(L"\nInternalFormat: {}", D3DFormatToString(m_InternalTexFmt));
 
 		if (SourceIsHDR()) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
@@ -2747,10 +2747,10 @@ void CDX9VideoProcessor::UpdateStatsPostProc()
 	if (m_strCorrection || m_pPostScaleShaders.size() || m_bFinalPass) {
 		m_strStatsPostProc.assign(L"\nPostProcessing:");
 		if (m_strCorrection) {
-			m_strStatsPostProc += fmt::format(L" {},", m_strCorrection);
+			m_strStatsPostProc += std::format(L" {},", m_strCorrection);
 		}
 		if (m_pPostScaleShaders.size()) {
-			m_strStatsPostProc += fmt::format(L" shaders[{}],", m_pPostScaleShaders.size());
+			m_strStatsPostProc += std::format(L" shaders[{}],", m_pPostScaleShaders.size());
 		}
 		if (m_bFinalPass) {
 			m_strStatsPostProc.append(L" dither");
@@ -2773,10 +2773,10 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	str.reserve(700);
 	str.assign(m_strStatsHeader);
 	str.append(m_strStatsDispInfo);
-	str += fmt::format(L"\nGraph. Adapter: {}", m_strAdapterDescription);
+	str += std::format(L"\nGraph. Adapter: {}", m_strAdapterDescription);
 
 	wchar_t frametype = (m_CurrentSampleFmt >= DXVA2_SampleFieldInterleavedEvenFirst && m_CurrentSampleFmt <= DXVA2_SampleFieldSingleOdd) ? 'i' : 'p';
-	str += fmt::format(
+	str += std::format(
 		L"\nFrame rate    : {:7.3f}{},{:7.3f}",
 		m_pFilter->m_FrameStats.GetAverageFps(),
 		frametype,
@@ -2789,9 +2789,9 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	const int dstW = m_videoRect.Width();
 	const int dstH = m_videoRect.Height();
 	if (m_iRotation) {
-		str += fmt::format(L"\nScaling       : {}x{} r{}\u00B0> {}x{}", m_srcRectWidth, m_srcRectHeight, m_iRotation, dstW, dstH);
+		str += std::format(L"\nScaling       : {}x{} r{}\u00B0> {}x{}", m_srcRectWidth, m_srcRectHeight, m_iRotation, dstW, dstH);
 	} else {
-		str += fmt::format(L"\nScaling       : {}x{} -> {}x{}", m_srcRectWidth, m_srcRectHeight, dstW, dstH);
+		str += std::format(L"\nScaling       : {}x{} -> {}x{}", m_srcRectWidth, m_srcRectHeight, dstW, dstH);
 	}
 	if (m_srcRectWidth != dstW || m_srcRectHeight != dstH) {
 		if (m_DXVA2VP.IsReady() && m_bVPScaling && !m_bVPScalingUseShaders) {
@@ -2813,10 +2813,10 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	if (m_strCorrection || m_pPostScaleShaders.size() || m_bDitherUsed) {
 		str.append(L"\nPostProcessing:");
 		if (m_strCorrection) {
-			str += fmt::format(L" {},", m_strCorrection);
+			str += std::format(L" {},", m_strCorrection);
 		}
 		if (m_pPostScaleShaders.size()) {
-			str += fmt::format(L" shaders[{}],", m_pPostScaleShaders.size());
+			str += std::format(L" shaders[{}],", m_pPostScaleShaders.size());
 		}
 		if (m_bDitherUsed) {
 			str.append(L" dither");
@@ -2826,19 +2826,19 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	str.append(m_strStatsHDR);
 	str.append(m_strStatsPresent);
 
-	str += fmt::format(L"\nFrames: {:5}, skipped: {}/{}, failed: {}",
+	str += std::format(L"\nFrames: {:5}, skipped: {}/{}, failed: {}",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
-	str += fmt::format(L"\nTimes(ms): Copy{:3}, Paint{:3}, Present{:3}",
+	str += std::format(L"\nTimes(ms): Copy{:3}, Paint{:3}, Present{:3}",
 		m_RenderStats.copyticks    * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.paintticks   * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
-	str += fmt::format(L"\nSync offset   : {:+3} ms", (m_RenderStats.syncoffset + 5000) / 10000);
+	str += std::format(L"\nSync offset   : {:+3} ms", (m_RenderStats.syncoffset + 5000) / 10000);
 
 #if SYNC_OFFSET_EX
 	{
 		const auto [so_min, so_max] = m_Syncs.MinMax();
 		const auto [sod_min, sod_max] = m_SyncDevs.MinMax();
-		str += fmt::format(L", range[{:+3.0f};{:+3.0f}], max change{:+3.0f}/{:+3.0f}",
+		str += std::format(L", range[{:+3.0f};{:+3.0f}], max change{:+3.0f}/{:+3.0f}",
 			so_min / 10000.0f,
 			so_max / 10000.0f,
 			sod_min / 10000.0f,
@@ -2846,7 +2846,7 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	}
 #endif
 #if TEST_TICKS
-	str += fmt::format(L"\n1:{:6.3f}, 2:{:6.3f}, 3:{:6.3f}, 4:{:6.3f}, 5:{:6.3f}, 6:{:6.3f} ms",
+	str += std::format(L"\n1:{:6.3f}, 2:{:6.3f}, 3:{:6.3f}, 4:{:6.3f}, 5:{:6.3f}, 6:{:6.3f} ms",
 		m_RenderStats.t1 * 1000 / GetPreciseTicksPerSecond(),
 		m_RenderStats.t2 * 1000 / GetPreciseTicksPerSecond(),
 		m_RenderStats.t3 * 1000 / GetPreciseTicksPerSecond(),

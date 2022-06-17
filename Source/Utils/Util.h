@@ -28,9 +28,9 @@
 #endif
 
 template <typename... Args>
-inline void DebugLogFmt(const std::wstring_view& format, const Args &...args)
+inline void DebugLogFmt(std::wstring_view format, Args&& ...args)
 {
-	DbgLogInfo(LOG_TRACE, 3, fmt::format(format, args...).c_str());
+	DbgLogInfo(LOG_TRACE, 3, std::vformat(format, std::make_wformat_args(args...)).c_str());
 }
 
 #ifdef _DEBUG

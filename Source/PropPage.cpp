@@ -469,19 +469,19 @@ HRESULT CVRInfoPPage::OnActivate()
 
 		for (const auto& dc : displayConfigs) {
 			double freq = (double)dc.refreshRate.Numerator / (double)dc.refreshRate.Denominator;
-			strInfo += fmt::format(L"\r\n{} - {:.3f} Hz", dc.displayName, freq);
+			strInfo += std::format(L"\r\n{} - {:.3f} Hz", dc.displayName, freq);
 
 			if (dc.bitsPerChannel) { // if bitsPerChannel is not set then colorEncoding and other values are invalid
 				const wchar_t* colenc = ColorEncodingToString(dc.colorEncoding);
 				if (colenc) {
-					strInfo += fmt::format(L" {}", colenc);
+					strInfo += std::format(L" {}", colenc);
 				}
-				strInfo += fmt::format(L" {}-bit", dc.bitsPerChannel);
+				strInfo += std::format(L" {}-bit", dc.bitsPerChannel);
 			}
 
 			const wchar_t* output = OutputTechnologyToString(dc.outputTechnology);
 			if (output) {
-				strInfo += fmt::format(L" {}", output);
+				strInfo += std::format(L" {}", output);
 			}
 		}
 	}

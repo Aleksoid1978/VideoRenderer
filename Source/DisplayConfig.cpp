@@ -1,5 +1,5 @@
 /*
- * (C) 2020 see Authors.txt
+ * (C) 2020-2022 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -304,7 +304,7 @@ std::wstring DisplayConfigToString(const DisplayConfig_t& dc)
 	std::wstring str;
 	if (dc.width && dc.height && dc.refreshRate.Numerator) {
 		double freq = (double)dc.refreshRate.Numerator / (double)dc.refreshRate.Denominator;
-		str = fmt::format(L"{} {}x{} {:.3f}", dc.monitorName, dc.width, dc.height, freq);
+		str = std::format(L"{} {}x{} {:.3f}", dc.monitorName, dc.width, dc.height, freq);
 		if (dc.scanLineOrdering >= DISPLAYCONFIG_SCANLINE_ORDERING_INTERLACED) {
 			str += 'i';
 		}
@@ -315,7 +315,7 @@ std::wstring DisplayConfigToString(const DisplayConfig_t& dc)
 
 std::wstring D3DDisplayModeToString(const D3DDISPLAYMODEEX& dm)
 {
-	std::wstring str = fmt::format(L"{}x{} {}", dm.Width, dm.Height, dm.RefreshRate);
+	std::wstring str = std::format(L"{}x{} {}", dm.Width, dm.Height, dm.RefreshRate);
 	if (dm.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) {
 		str += 'i';
 	}

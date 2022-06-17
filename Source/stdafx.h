@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2021 see Authors.txt
+ * (C) 2018-2022 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -46,6 +46,6 @@
 #include <algorithm>
 #include <numeric>
 #include <vector>
+#include <format>
 
 #include "../external/BaseClasses/streams.h"
-#include "../external/fmt/include/fmt/xchar.h"
