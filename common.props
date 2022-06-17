@@ -10,9 +10,9 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalOptions>/wd4091 /wd4244 /wd4302 /wd4311 /wd4312 /wd4477 /wd4838 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions>/Zo /Zc:throwingNew /Zc:rvalueCast %(AdditionalOptions)</AdditionalOptions>
       <BufferSecurityCheck>true</BufferSecurityCheck>
+      <DisableSpecificWarnings>4244; 4838; 26451</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <LanguageStandard>stdcpp20</LanguageStandard>
