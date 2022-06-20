@@ -607,7 +607,7 @@ HRESULT GetShaderConvertColor(
 		case DXVA2_VideoTransFunc_22:
 		case DXVA2_VideoTransFunc_709:
 		case DXVA2_VideoTransFunc_240M: toLinear = "color = pow(color, 2.2);\n"; break;
-		case DXVA2_VideoTransFunc_sRGB: toLinear = "color = pow(color, 2.4);\n"; break;
+		case DXVA2_VideoTransFunc_sRGB: toLinear = "color = pow(color, 2.2);\n"; break;
 		case DXVA2_VideoTransFunc_28:   toLinear = "color = pow(color, 2.8);\n"; break;
 		case VIDEOTRANSFUNC_26:         toLinear = "color = pow(color, 2.6);\n"; break;
 		}
