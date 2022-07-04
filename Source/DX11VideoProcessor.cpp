@@ -2967,6 +2967,10 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		}
 	}
 
+	if (!m_pFilter->GetActive()) {
+		return;
+	}
+
 	// apply new settings
 
 	if (changeWindow) {
