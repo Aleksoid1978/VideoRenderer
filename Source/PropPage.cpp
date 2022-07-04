@@ -99,6 +99,7 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr                   ? BST_CHECKED : BST_UNCHECKED);
 
 	SendDlgItemMessageW(IDC_COMBO7, CB_SETCURSEL, m_SetsPP.iHdrToggleDisplay, 0);
+	SendDlgItemMessageW(IDC_SLIDER1, TBM_SETPOS, 1, m_SetsPP.iHdrOsdBrightness);
 
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct              ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK10, m_SetsPP.bUseDither                      ? BST_CHECKED : BST_UNCHECKED);
@@ -171,7 +172,14 @@ HRESULT CVRMainPPage::OnActivate()
 		GetDlgItem(IDC_STATIC4).EnableWindow(FALSE);
 		GetDlgItem(IDC_STATIC5).EnableWindow(FALSE);
 		GetDlgItem(IDC_COMBO7).EnableWindow(FALSE);
+		GetDlgItem(IDC_STATIC6).EnableWindow(FALSE);
+		GetDlgItem(IDC_SLIDER1).EnableWindow(FALSE);
 	}
+
+#if 1
+	GetDlgItem(IDC_STATIC6).ShowWindow(SW_HIDE);
+	GetDlgItem(IDC_SLIDER1).ShowWindow(SW_HIDE);
+#endif
 
 	EnableControls();
 
@@ -208,6 +216,9 @@ HRESULT CVRMainPPage::OnActivate()
 
 	SendDlgItemMessageW(IDC_COMBO4, CB_ADDSTRING, 0, (LPARAM)L"Discard");
 	SendDlgItemMessageW(IDC_COMBO4, CB_ADDSTRING, 0, (LPARAM)L"Flip");
+
+	SendDlgItemMessageW(IDC_SLIDER1, TBM_SETRANGE, 0, MAKELONG(0, 2));
+	SendDlgItemMessageW(IDC_SLIDER1, TBM_SETTICFREQ, 1, 0);
 
 	SetDlgItemTextW(IDC_EDIT2, GetNameAndVersion());
 
@@ -369,6 +380,16 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 					return (LRESULT)1;
 				}
 			}
+		}
+	}
+	else if (uMsg == WM_HSCROLL) {
+		if ((HWND)lParam == GetDlgItem(IDC_SLIDER1)) {
+			LRESULT lValue = SendDlgItemMessageW(IDC_SLIDER1, TBM_GETPOS, 0, 0);
+			if (lValue != m_SetsPP.iHdrOsdBrightness) {
+				m_SetsPP.iHdrOsdBrightness = lValue;
+				SetDirty();
+			}
+			return (LRESULT)1;
 		}
 	}
 

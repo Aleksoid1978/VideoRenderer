@@ -133,6 +133,7 @@ struct Settings_t {
 			iHdrToggleDisplay           = HDRTD_Off;
 		}
 		bConvertToSdr                   = true;
+		iHdrOsdBrightness               = 0;
 	}
 };
 
