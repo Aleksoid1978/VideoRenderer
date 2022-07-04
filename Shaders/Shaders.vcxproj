@@ -212,12 +212,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="..\platform.props" />
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+  <PropertyGroup Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -236,23 +231,7 @@
     <OutDir>$(SolutionDir)_bin\shaders\</OutDir>
     <IntDir>$(SolutionDir)_bin\obj\$(Configuration)_$(PlatformName)\$(ProjectName)\</IntDir>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
-    </ClCompile>
-    <FxCompile>
-      <ShaderModel>
-      </ShaderModel>
-      <DisableOptimizations>false</DisableOptimizations>
-      <EnableDebuggingInformation>false</EnableDebuggingInformation>
-    </FxCompile>
-    <PostBuildEvent>
-      <Command>compile_shaders.cmd</Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+  <ItemDefinitionGroup>
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
