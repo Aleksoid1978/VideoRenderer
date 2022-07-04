@@ -52,6 +52,7 @@
 #define OPT_ReinitByDisplay                L"ReinitWhenChangingDisplay"
 #define OPT_HdrPassthrough                 L"HdrPassthrough"
 #define OPT_HdrToggleDisplay               L"HdrToggleDisplay"
+#define OPT_HdrGuiBrightness               L"HdrGuiBrightness"
 #define OPT_ConvertToSdr                   L"ConvertToSdr"
 #define OPT_UseD3DFullscreen               L"UseD3DFullscreen"
 
@@ -219,6 +220,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrToggleDisplay, dw)) {
 			m_Sets.iHdrToggleDisplay = discard<int>(dw, HDRTD_Always, HDRTD_Off, HDRTD_Always);
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrGuiBrightness, dw)) {
+			m_Sets.iHdrGuiBrightness = discard<int>(dw, 0, 0, 2);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ConvertToSdr, dw)) {
 			m_Sets.bConvertToSdr = !!dw;
@@ -1175,6 +1179,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_ReinitByDisplay,                m_Sets.bReinitByDisplay);
 		key.SetDWORDValue(OPT_HdrPassthrough,                 m_Sets.bHdrPassthrough);
 		key.SetDWORDValue(OPT_HdrToggleDisplay,               m_Sets.iHdrToggleDisplay);
+		key.SetDWORDValue(OPT_HdrGuiBrightness,               m_Sets.iHdrGuiBrightness);
 		key.SetDWORDValue(OPT_ConvertToSdr,                   m_Sets.bConvertToSdr);
 	}
 

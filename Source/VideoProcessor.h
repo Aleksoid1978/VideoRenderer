@@ -55,6 +55,7 @@ protected:
 	bool m_bVBlankBeforePresent            = false;
 	bool m_bHdrPassthrough                 = true;
 	int  m_iHdrToggleDisplay               = HDRTD_Always;
+	int  m_iHdrGuiBrightness               = 0;
 	bool m_bConvertToSdr                   = true;
 
 	bool m_bVPScalingUseShaders = false;

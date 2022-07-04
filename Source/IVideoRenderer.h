@@ -94,6 +94,7 @@ struct Settings_t {
 	bool bReinitByDisplay;
 	bool bHdrPassthrough;
 	int  iHdrToggleDisplay;
+	int  iHdrGuiBrightness;
 	bool bConvertToSdr;
 
 	Settings_t() {

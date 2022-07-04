@@ -401,6 +401,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_bVBlankBeforePresent            = config.bVBlankBeforePresent;
 	m_bHdrPassthrough                 = config.bHdrPassthrough;
 	m_iHdrToggleDisplay               = config.iHdrToggleDisplay;
+	m_iHdrGuiBrightness               = config.iHdrGuiBrightness;
 	m_bConvertToSdr                   = config.bConvertToSdr;
 
 	m_nCurrentAdapter = -1;
@@ -2885,6 +2886,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	m_bDeintDouble                    = config.bDeintDouble;
 	m_bInterpolateAt50pct             = config.bInterpolateAt50pct;
 	m_bVBlankBeforePresent            = config.bVBlankBeforePresent;
+	m_iHdrGuiBrightness               = config.iHdrGuiBrightness;
 
 	// checking what needs to be changed
 
