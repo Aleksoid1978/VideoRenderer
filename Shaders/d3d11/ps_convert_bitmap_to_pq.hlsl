@@ -1,3 +1,7 @@
+#ifndef SDR_PEAK_LUM
+#define SDR_PEAK_LUM 100
+#endif
+
 Texture2D tex : register(t0);
 SamplerState samp : register(s0);
 
@@ -17,7 +21,7 @@ inline float3 transferPQ(float3 x)
     static const float ST2084_c1 = 3424.0f / 4096.0f;
     static const float ST2084_c2 = (2413.0f / 4096.0f) * 32.0f;
     static const float ST2084_c3 = (2392.0f / 4096.0f) * 32.0f;
-    static const float SDR_peak_lum = 100.0f;
+    static const float SDR_peak_lum = SDR_PEAK_LUM;
     static const float3x3 matx = {
         0.627402, 0.329292, 0.043306,
         0.069095, 0.919544, 0.011360,

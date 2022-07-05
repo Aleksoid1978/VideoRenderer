@@ -176,11 +176,6 @@ HRESULT CVRMainPPage::OnActivate()
 		GetDlgItem(IDC_SLIDER1).EnableWindow(FALSE);
 	}
 
-#if 1
-	GetDlgItem(IDC_STATIC6).ShowWindow(SW_HIDE);
-	GetDlgItem(IDC_SLIDER1).ShowWindow(SW_HIDE);
-#endif
-
 	EnableControls();
 
 	SendDlgItemMessageW(IDC_COMBO6, CB_ADDSTRING, 0, (LPARAM)L"Fixed font size");

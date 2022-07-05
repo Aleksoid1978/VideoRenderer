@@ -101,6 +101,9 @@ CALL :SubColorText "0A" "=== Compiling D3D11 shaders ===" & ECHO.
 
 %fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_final_pass_10.cso"           "d3d11\ps_final_pass.hlsl" /DQUANTIZATION=1023
 
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_bitmap_to_pq1.cso"   "d3d11\ps_convert_bitmap_to_pq.hlsl" /DSDR_PEAK_LUM=50
+%fxcexe% /nologo /T ps_4_0 /Fo "%workdir%\ps_convert_bitmap_to_pq2.cso"   "d3d11\ps_convert_bitmap_to_pq.hlsl" /DSDR_PEAK_LUM=30
+
 EXIT /B
 
 :SubColorText
