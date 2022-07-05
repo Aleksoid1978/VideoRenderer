@@ -131,6 +131,10 @@ void CVRMainPPage::EnableControls()
 		GetDlgItem(IDC_STATIC3).EnableWindow(bEnable);
 		GetDlgItem(IDC_COMBO4).EnableWindow(bEnable);
 	}
+
+	BOOL bOsdBrightness = IsWindows10OrGreater() && m_SetsPP.bHdrPassthrough;
+	GetDlgItem(IDC_STATIC6).EnableWindow(bOsdBrightness);
+	GetDlgItem(IDC_SLIDER1).EnableWindow(bOsdBrightness);
 }
 
 HRESULT CVRMainPPage::OnConnect(IUnknown *pUnk)
@@ -172,8 +176,6 @@ HRESULT CVRMainPPage::OnActivate()
 		GetDlgItem(IDC_STATIC4).EnableWindow(FALSE);
 		GetDlgItem(IDC_STATIC5).EnableWindow(FALSE);
 		GetDlgItem(IDC_COMBO7).EnableWindow(FALSE);
-		GetDlgItem(IDC_STATIC6).EnableWindow(FALSE);
-		GetDlgItem(IDC_SLIDER1).EnableWindow(FALSE);
 	}
 
 	EnableControls();
@@ -300,6 +302,7 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			}
 			if (nID == IDC_CHECK12) {
 				m_SetsPP.bHdrPassthrough = IsDlgButtonChecked(IDC_CHECK12) == BST_CHECKED;
+				EnableControls();
 				SetDirty();
 				return (LRESULT)1;
 			}
