@@ -481,6 +481,10 @@ void CDXVA2VP::GetProcAmpRanges(DXVA2_ValueRange(&PropRanges)[4])
 
 HRESULT CDXVA2VP::Process(IDirect3DSurface9* pRenderTarget, const DXVA2_SampleFormat sampleFormat, const bool second)
 {
+	if (!m_VideoSamples.Size()) {
+		return E_ABORT;
+	}
+
 	// Initialize VPBlt parameters
 	if (second) {
 		m_BltParams.TargetFrame = (m_VideoSamples.GetFrameStart() + m_VideoSamples.GetFrameEnd()) / 2;
