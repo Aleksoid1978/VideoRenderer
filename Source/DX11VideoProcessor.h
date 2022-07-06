@@ -115,7 +115,7 @@ private:
 
 	// swap chain format
 	DXGI_FORMAT m_SwapChainFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
-	UINT32 m_bitsPerChannelSupport = 8;
+	UINT32 m_DisplayBitsPerChannel = 8;
 
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 
@@ -185,7 +185,7 @@ private:
 	HRESULT MemCopyToTexSrcVideo(const BYTE* srcData, const int srcPitch);
 
 	bool Preferred10BitOutput() {
-		return m_bitsPerChannelSupport >= 10 && (m_InternalTexFmt == DXGI_FORMAT_R10G10B10A2_UNORM || m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT);
+		return m_DisplayBitsPerChannel >= 10 && (m_InternalTexFmt == DXGI_FORMAT_R10G10B10A2_UNORM || m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT);
 	}
 
 	bool HandleHDRToggle();

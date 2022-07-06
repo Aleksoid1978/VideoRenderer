@@ -495,7 +495,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 	m_hWnd = hwnd;
 	m_bHdrPassthroughSupport = false;
 	m_bHdrDisplayModeEnabled = false;
-	m_bitsPerChannelSupport = 8;
+	m_DisplayBitsPerChannel = 8;
 
 	MONITORINFOEXW mi = { sizeof(mi) };
 	GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
@@ -505,7 +505,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 		const auto& ac = displayConfig.advancedColor;
 		m_bHdrPassthroughSupport = ac.advancedColorSupported && ac.advancedColorEnabled;
 		m_bHdrDisplayModeEnabled = ac.advancedColorEnabled;
-		m_bitsPerChannelSupport = displayConfig.bitsPerChannel;
+		m_DisplayBitsPerChannel = displayConfig.bitsPerChannel;
 	}
 
 	if (m_bIsFullscreen != m_pFilter->m_bIsFullscreen) {
@@ -1331,7 +1331,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 			const auto& ac = displayConfig.advancedColor;
 			m_bHdrPassthroughSupport = ac.advancedColorSupported && ac.advancedColorEnabled;
 			m_bHdrDisplayModeEnabled = ac.advancedColorEnabled;
-			m_bitsPerChannelSupport = displayConfig.bitsPerChannel;
+			m_DisplayBitsPerChannel = displayConfig.bitsPerChannel;
 		}
 	}
 
