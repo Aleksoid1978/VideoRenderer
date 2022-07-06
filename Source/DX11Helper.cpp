@@ -171,7 +171,7 @@ HRESULT DumpTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D* pTex
 	return hr;
 }
 
-DirectX::XMFLOAT4 TransferPQ(DirectX::XMFLOAT4& colorF)
+DirectX::XMFLOAT4 TransferPQ(DirectX::XMFLOAT4& colorF, const float SDR_peak_lum)
 {
 	// https://github.com/thexai/xbmc/blob/master/system/shaders/guishader_common.hlsl
 	const float ST2084_m1 = 2610.0f / (4096.0f * 4.0f);
@@ -179,7 +179,6 @@ DirectX::XMFLOAT4 TransferPQ(DirectX::XMFLOAT4& colorF)
 	const float ST2084_c1 = 3424.0f / 4096.0f;
 	const float ST2084_c2 = (2413.0f / 4096.0f) * 32.0f;
 	const float ST2084_c3 = (2392.0f / 4096.0f) * 32.0f;
-	const float SDR_peak_lum = 100.0f;
 	const float matx[3][3] = {
 		{0.627402f, 0.329292f, 0.043306f},
 		{0.069095f, 0.919544f, 0.011360f},
@@ -204,4 +203,11 @@ DirectX::XMFLOAT4 TransferPQ(DirectX::XMFLOAT4& colorF)
 	colorF.z = c[2];
 
 	return colorF;
+}
+
+D3DCOLOR TransferPQ(const D3DCOLOR color, const float SDR_peak_lum)
+{
+	DirectX::XMFLOAT4 colorF = D3DCOLORtoXMFLOAT4(color);
+	colorF = TransferPQ(colorF, SDR_peak_lum);
+	return XMFLOAT4toD3DCOLOR(colorF);
 }

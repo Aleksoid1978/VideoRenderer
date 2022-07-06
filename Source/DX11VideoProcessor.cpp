@@ -1135,7 +1135,19 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR();
 	const auto b10BitOutput = bHdrOutput || Preferred10BitOutput();
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
-	m_dwStatsTextColor = (m_bHdrDisplayModeEnabled && bHdrOutput) ? D3DCOLOR_XRGB(170, 170, 170) : D3DCOLOR_XRGB(255, 255, 255);
+
+	if (m_bHdrDisplayModeEnabled /*&& bHdrOutput*/) {
+		float SDR_peak_lum;
+		switch (m_iHdrOsdBrightness) {
+		default: SDR_peak_lum = 100; break;
+		case 1:  SDR_peak_lum = 50;  break;
+		case 2:  SDR_peak_lum = 30;  break;
+		}
+		m_dwStatsTextColor = TransferPQ(D3DCOLOR_XRGB(255, 255, 255), SDR_peak_lum);
+	}
+	else {
+		m_dwStatsTextColor = D3DCOLOR_XRGB(255, 255, 255);
+	}
 
 	HRESULT hr = S_OK;
 	DXGI_SWAP_CHAIN_DESC1 desc1 = {};
@@ -1976,7 +1988,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 			m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
 			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-			m_pDeviceContext->PSSetShader(m_bHdrDisplayModeEnabled? m_pPS_BitmapToPQ : m_pPS_Simple, nullptr, 0);
+			m_pDeviceContext->PSSetShader(m_bHdrDisplayModeEnabled ? m_pPS_BitmapToPQ : m_pPS_Simple, nullptr, 0);
 
 			// call the function for drawing subtitles
 			m_pFilter->m_pSub11CallBack->Render11(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);

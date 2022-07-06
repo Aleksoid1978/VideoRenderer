@@ -264,4 +264,5 @@ UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAda
 
 HRESULT DumpTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D* pTexture2D, const wchar_t* filename);
 
-DirectX::XMFLOAT4 TransferPQ(DirectX::XMFLOAT4& colorF);
+DirectX::XMFLOAT4 TransferPQ(DirectX::XMFLOAT4& colorF, const float SDR_peak_lum = 100.0f);
+D3DCOLOR TransferPQ(const D3DCOLOR color, const float SDR_peak_lum = 100.0f);
