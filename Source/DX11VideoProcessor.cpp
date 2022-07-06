@@ -271,7 +271,8 @@ HRESULT CDX11VideoProcessor::AlphaBlt(
 	ID3D11Texture2D* pRenderTarget,
 	ID3D11Buffer* pVertexBuffer,
 	D3D11_VIEWPORT* pViewPort,
-	ID3D11SamplerState* pSampler)
+	ID3D11SamplerState* pSampler,
+	bool bToHDR)
 {
 	ID3D11RenderTargetView* pRenderTargetView;
 	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
@@ -286,7 +287,7 @@ HRESULT CDX11VideoProcessor::AlphaBlt(
 		m_pDeviceContext->RSSetViewports(1, pViewPort);
 		m_pDeviceContext->OMSetBlendState(m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-		m_pDeviceContext->PSSetShader(m_pPS_Simple, nullptr, 0);
+		m_pDeviceContext->PSSetShader(bToHDR ? m_pPS_BitmapToPQ : m_pPS_Simple, nullptr, 0);
 		m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
 		m_pDeviceContext->PSSetSamplers(0, 1, &pSampler);
 		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
@@ -1999,7 +2000,9 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			0.0f,
 			1.0f
 		};
-		hr = AlphaBlt(m_TexAlphaBitmap.pShaderResource, pBackBuffer, m_pAlphaBitmapVertex, &VP, m_pSamplerLinear);
+		hr = AlphaBlt(m_TexAlphaBitmap.pShaderResource, pBackBuffer,
+			m_pAlphaBitmapVertex, &VP,
+			m_pSamplerLinear, m_bHdrDisplayModeEnabled);
 	}
 
 #if 0
@@ -2144,7 +2147,9 @@ HRESULT CDX11VideoProcessor::FillBlack()
 			0.0f,
 			1.0f
 		};
-		hr = AlphaBlt(m_TexAlphaBitmap.pShaderResource, pBackBuffer, m_pAlphaBitmapVertex, &VP, m_pSamplerLinear);
+		hr = AlphaBlt(m_TexAlphaBitmap.pShaderResource, pBackBuffer,
+			m_pAlphaBitmapVertex, &VP,
+			m_pSamplerLinear, m_bHdrDisplayModeEnabled);
 	}
 
 	g_bPresent = true;

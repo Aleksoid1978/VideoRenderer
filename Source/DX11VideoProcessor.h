@@ -247,7 +247,8 @@ private:
 	HRESULT Process(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
 
 	HRESULT AlphaBlt(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget,
-					 ID3D11Buffer* pVertexBuffer, D3D11_VIEWPORT* pViewPort, ID3D11SamplerState* pSampler);
+					 ID3D11Buffer* pVertexBuffer, D3D11_VIEWPORT* pViewPort,
+					 ID3D11SamplerState* pSampler, bool bToHDR);
 	HRESULT TextureCopyRect(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
 							const CRect& srcRect, const CRect& destRect,
 							ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer,
