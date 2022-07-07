@@ -1391,6 +1391,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	m_pFilter->m_FrameStats.SetStartFrameDuration(m_rtAvgTimePerFrame);
+	m_pFilter->m_bValidBuffer = false;
 
 	UINT biWidth  = pBIH->biWidth;
 	UINT biHeight = labs(pBIH->biHeight);
@@ -3020,7 +3021,6 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 	if (changeVP) {
 		InitMediaType(&m_pFilter->m_inputMT);
-		m_pFilter->m_bValidBuffer = false;
 		return; // need some test
 	}
 
