@@ -131,10 +131,6 @@ void CVRMainPPage::EnableControls()
 		GetDlgItem(IDC_STATIC3).EnableWindow(bEnable);
 		GetDlgItem(IDC_COMBO4).EnableWindow(bEnable);
 	}
-
-	BOOL bOsdBrightness = IsWindows10OrGreater() && m_SetsPP.bHdrPassthrough;
-	GetDlgItem(IDC_STATIC6).EnableWindow(bOsdBrightness);
-	GetDlgItem(IDC_SLIDER1).EnableWindow(bOsdBrightness);
 }
 
 HRESULT CVRMainPPage::OnConnect(IUnknown *pUnk)
@@ -176,6 +172,8 @@ HRESULT CVRMainPPage::OnActivate()
 		GetDlgItem(IDC_STATIC4).EnableWindow(FALSE);
 		GetDlgItem(IDC_STATIC5).EnableWindow(FALSE);
 		GetDlgItem(IDC_COMBO7).EnableWindow(FALSE);
+		GetDlgItem(IDC_STATIC6).EnableWindow(FALSE);
+		GetDlgItem(IDC_SLIDER1).EnableWindow(FALSE);
 	}
 
 	EnableControls();
