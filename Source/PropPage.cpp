@@ -131,6 +131,14 @@ void CVRMainPPage::EnableControls()
 		GetDlgItem(IDC_STATIC3).EnableWindow(bEnable);
 		GetDlgItem(IDC_COMBO4).EnableWindow(bEnable);
 	}
+	else if (IsWindows10OrGreater()) {
+		const BOOL bEnable = m_SetsPP.bUseD3D11;
+		GetDlgItem(IDC_CHECK12).EnableWindow(bEnable);
+		GetDlgItem(IDC_STATIC5).EnableWindow(bEnable);
+		GetDlgItem(IDC_COMBO7).EnableWindow(bEnable);
+		GetDlgItem(IDC_STATIC6).EnableWindow(bEnable);
+		GetDlgItem(IDC_SLIDER1).EnableWindow(bEnable);
+	}
 }
 
 HRESULT CVRMainPPage::OnConnect(IUnknown *pUnk)
