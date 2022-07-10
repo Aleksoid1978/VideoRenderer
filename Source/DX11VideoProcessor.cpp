@@ -271,8 +271,7 @@ HRESULT CDX11VideoProcessor::AlphaBlt(
 	ID3D11Texture2D* pRenderTarget,
 	ID3D11Buffer* pVertexBuffer,
 	D3D11_VIEWPORT* pViewPort,
-	ID3D11SamplerState* pSampler,
-	bool bToHDR)
+	ID3D11SamplerState* pSampler)
 {
 	ID3D11RenderTargetView* pRenderTargetView;
 	HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
@@ -287,7 +286,7 @@ HRESULT CDX11VideoProcessor::AlphaBlt(
 		m_pDeviceContext->RSSetViewports(1, pViewPort);
 		m_pDeviceContext->OMSetBlendState(m_pAlphaBlendState, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 		m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-		m_pDeviceContext->PSSetShader(bToHDR ? m_pPS_BitmapToPQ : m_pPS_Simple, nullptr, 0);
+		m_pDeviceContext->PSSetShader(m_pPS_BitmapToFrame, nullptr, 0);
 		m_pDeviceContext->PSSetShaderResources(0, 1, &pShaderResource);
 		m_pDeviceContext->PSSetSamplers(0, 1, &pSampler);
 		m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
@@ -682,7 +681,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pVSimpleInputLayout.Release();
 	m_pVS_Simple.Release();
 	m_pPS_Simple.Release();
-	m_pPS_BitmapToPQ.Release();
+	m_pPS_BitmapToFrame.Release();
 	m_pSamplerPoint.Release();
 	m_pSamplerLinear.Release();
 	m_pSamplerDither.Release();
@@ -987,14 +986,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_Simple, IDF_PSH11_SIMPLE));
 
-	UINT resid;
-	switch (m_iHdrOsdBrightness) {
-	default: resid = IDF_PSH11_CONVERT_BITMAP_TO_PQ; break;
-	case 1: resid = IDF_PSH11_CONVERT_BITMAP_TO_PQ1; break;
-	case 2: resid = IDF_PSH11_CONVERT_BITMAP_TO_PQ2; break;
-	}
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_BitmapToPQ, resid));
-
 #if TEST_SHADER
 	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_TEST, IDF_PSH11_TEST));
 #endif
@@ -1135,19 +1126,6 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR();
 	const auto b10BitOutput = bHdrOutput || Preferred10BitOutput();
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
-
-	if (m_bHdrDisplayModeEnabled /*&& bHdrOutput*/) {
-		float SDR_peak_lum;
-		switch (m_iHdrOsdBrightness) {
-		default: SDR_peak_lum = 100; break;
-		case 1:  SDR_peak_lum = 50;  break;
-		case 2:  SDR_peak_lum = 30;  break;
-		}
-		m_dwStatsTextColor = TransferPQ(D3DCOLOR_XRGB(255, 255, 255), SDR_peak_lum);
-	}
-	else {
-		m_dwStatsTextColor = D3DCOLOR_XRGB(255, 255, 255);
-	}
 
 	HRESULT hr = S_OK;
 	DXGI_SWAP_CHAIN_DESC1 desc1 = {};
@@ -1474,6 +1452,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	m_srcVideoTransferFunction = m_srcExFmt.VideoTransferFunction;
+
+	UpdateBitmapShader();
 
 	// D3D11 Video Processor
 	if (FmtParams.VP11Format != DXGI_FORMAT_UNKNOWN && !(m_VendorId == PCIV_NVIDIA && FmtParams.CSType == CS_RGB)) {
@@ -1989,7 +1969,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 			m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
 			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-			m_pDeviceContext->PSSetShader(m_bHdrDisplayModeEnabled ? m_pPS_BitmapToPQ : m_pPS_Simple, nullptr, 0);
+			m_pDeviceContext->PSSetShader(m_pPS_BitmapToFrame, nullptr, 0);
 
 			// call the function for drawing subtitles
 			m_pFilter->m_pSub11CallBack->Render11(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
@@ -2015,7 +1995,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		};
 		hr = AlphaBlt(m_TexAlphaBitmap.pShaderResource, pBackBuffer,
 			m_pAlphaBitmapVertex, &VP,
-			m_pSamplerLinear, m_bHdrDisplayModeEnabled);
+			m_pSamplerLinear);
 	}
 
 #if 0
@@ -2162,7 +2142,7 @@ HRESULT CDX11VideoProcessor::FillBlack()
 		};
 		hr = AlphaBlt(m_TexAlphaBitmap.pShaderResource, pBackBuffer,
 			m_pAlphaBitmapVertex, &VP,
-			m_pSamplerLinear, m_bHdrDisplayModeEnabled);
+			m_pSamplerLinear);
 	}
 
 	g_bPresent = true;
@@ -2270,6 +2250,35 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 	}
 
 	return hr;
+}
+
+void CDX11VideoProcessor::UpdateBitmapShader()
+{
+	if (m_bHdrDisplayModeEnabled) {
+		UINT resid;
+		float SDR_peak_lum;
+		switch (m_iHdrOsdBrightness) {
+		default:
+			resid = IDF_PSH11_CONVERT_BITMAP_TO_PQ;
+			SDR_peak_lum = 100;
+			break;
+		case 1:
+			resid = IDF_PSH11_CONVERT_BITMAP_TO_PQ1;
+			SDR_peak_lum = 50;
+			break;
+		case 2:
+			resid = IDF_PSH11_CONVERT_BITMAP_TO_PQ2;
+			SDR_peak_lum = 30;
+			break;
+		}
+		m_pPS_BitmapToFrame.Release();
+		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_BitmapToFrame, resid));
+		m_dwStatsTextColor = TransferPQ(D3DCOLOR_XRGB(255, 255, 255), SDR_peak_lum);
+	}
+	else {
+		m_pPS_BitmapToFrame = m_pPS_Simple;
+		m_dwStatsTextColor = D3DCOLOR_XRGB(255, 255, 255);
+	}
 }
 
 HRESULT CDX11VideoProcessor::D3D11VPPass(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
@@ -2897,6 +2906,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	bool changeHDR               = false;
 	bool changeTextures          = false;
 	bool changeConvertShader     = false;
+	bool changeBitmapShader      = false;
 	bool changeUpscalingShader   = false;
 	bool changeDowndcalingShader = false;
 	bool changeNumTextures       = false;
@@ -2907,7 +2917,6 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	m_bDeintDouble                    = config.bDeintDouble;
 	m_bInterpolateAt50pct             = config.bInterpolateAt50pct;
 	m_bVBlankBeforePresent            = config.bVBlankBeforePresent;
-	m_iHdrOsdBrightness               = config.iHdrOsdBrightness;
 
 	// checking what needs to be changed
 
@@ -2943,6 +2952,11 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	if (config.iChromaScaling != m_iChromaScaling) {
 		m_iChromaScaling = config.iChromaScaling;
 		changeConvertShader = m_PSConvColorData.bEnable && (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422);
+	}
+
+	if (config.iHdrOsdBrightness != m_iHdrOsdBrightness) {
+		m_iHdrOsdBrightness = config.iHdrOsdBrightness;
+		changeBitmapShader = true;
 	}
 
 	if (config.iUpscaling != m_iUpscaling) {
@@ -3036,6 +3050,10 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 	if (changeConvertShader) {
 		UpdateConvertColorShader();
+	}
+
+	if (changeBitmapShader) {
+		UpdateBitmapShader();
 	}
 
 	if (changeUpscalingShader) {

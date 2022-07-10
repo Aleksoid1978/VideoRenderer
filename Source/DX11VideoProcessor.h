@@ -53,7 +53,7 @@ private:
 	CComPtr<ID3D11BlendState>     m_pAlphaBlendState;
 	CComPtr<ID3D11VertexShader>   m_pVS_Simple;
 	CComPtr<ID3D11PixelShader>    m_pPS_Simple;
-	CComPtr<ID3D11PixelShader>    m_pPS_BitmapToPQ;
+	CComPtr<ID3D11PixelShader>    m_pPS_BitmapToFrame;
 	CComPtr<ID3D11InputLayout>    m_pVSimpleInputLayout;
 	CComPtr<ID3D11Buffer>         m_pVertexBuffer;
 	CComPtr<ID3D11Buffer>         m_pResizeShaderConstantBuffer;
@@ -238,6 +238,7 @@ private:
 	void UpdateUpscalingShaders();
 	void UpdateDownscalingShaders();
 	HRESULT UpdateConvertColorShader();
+	void UpdateBitmapShader();
 
 	HRESULT D3D11VPPass(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
 	HRESULT ConvertColorPass(ID3D11Texture2D* pRenderTarget);
@@ -248,7 +249,7 @@ private:
 
 	HRESULT AlphaBlt(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget,
 					 ID3D11Buffer* pVertexBuffer, D3D11_VIEWPORT* pViewPort,
-					 ID3D11SamplerState* pSampler, bool bToHDR);
+					 ID3D11SamplerState* pSampler);
 	HRESULT TextureCopyRect(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget,
 							const CRect& srcRect, const CRect& destRect,
 							ID3D11PixelShader* pPixelShader, ID3D11Buffer* pConstantBuffer,
