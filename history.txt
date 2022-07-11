@@ -4,10 +4,10 @@ DX11 mode uses the new ISubRender11 subtitle rendering interface. Older players 
 Changed coefficients for experimental Jinc2 interpolation.
 Fixed updating statistics when changing settings.
 Fixed sRGB to Linear conversions in shader video processor.
-Decrease the brightness and adjust the color of the subtitles and OSD when outputting HDR Passthrough.
+Decrease the brightness and adjust the color of the subtitles and OSD if the display is in HDR mode.
 Fixed crash when playing DVD-Video.
 Fixed green screen in some cases.
-Recommended version of MPC-BE 1.6.2.7138 (e22b1ddf0) or later.
+Recommended version of MPC-BE 1.6.3 or later.
 
 v0.5.8 - 2022.05.07
 ------------------------
