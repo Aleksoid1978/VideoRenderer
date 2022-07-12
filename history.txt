@@ -1,3 +1,6 @@
+0.6.2
+------------------------
+
 0.6.1.1931 - 2022.07.12
 ------------------------
 DX11 mode uses the new ISubRender11 subtitle rendering interface. Older players will not be able to output subtitles in DX11 mode.
