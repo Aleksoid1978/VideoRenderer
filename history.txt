@@ -1,4 +1,4 @@
-v0.6.0
+0.6.1.1931 - 2022.07.12
 ------------------------
 DX11 mode uses the new ISubRender11 subtitle rendering interface. Older players will not be able to output subtitles in DX11 mode.
 Changed coefficients for experimental Jinc2 interpolation.
@@ -9,7 +9,7 @@ Fixed crash when playing DVD-Video.
 Fixed green screen in some cases.
 Recommended version of MPC-BE 1.6.3 or later.
 
-v0.5.8 - 2022.05.07
+0.5.8.1877 - 2022.05.07
 ------------------------
 Optimized image overlay through the IMFVideoMixerBitmap interface.
 Fixed processing of the first frames by the DXVA2 video processor on AMD and Intel graphics adapters.
@@ -22,7 +22,7 @@ Fixed copying of RGB24 and RGB48 with odd width size in some rare situations.
 Added experimental support for image upscaling by the "Jinc2" algorithm.
 Recommended version of MPC-BE 1.6.2.6991 (0a27de8af) or later.
 
-v0.5.6.1807 - 2021.12.20
+0.5.6.1807 - 2021.12.20
 ------------------------
 Improved stability in DX9 mode when changing display.
 Fixed display of subtitles in the first frame when using XySubFilter.
@@ -36,7 +36,7 @@ Added support for r210 format.
 The "Use Direct3D 11" option is enabled by default on Windows 8 and newer systems.
 Fixed crash for RGB24 in some situations.
 
-v0.5.4.1723 - 2021.06.23
+0.5.4.1723 - 2021.06.23
 ------------------------
 Fixed dithering when outputting 10-bit for DX11 mode.
 Improved compatibility with CoreAVC Video Decoder.
@@ -55,7 +55,7 @@ Fixed crashes when working with some external filters.
 Added experimental option "Wait for V-Blank before Present".
 Recommended version of MPC-BE 1.5.7.6180 or later.
 
-v0.5.2.1607 - 2021.01.15
+0.5.2.1607 - 2021.01.15
 ------------------------
 Fixed getting the displayed frame when outputting RGB 10-bit.
 Fixed display of BGRA64 format.
@@ -66,7 +66,7 @@ Improved "Auto display HDR On/Off" option.
 Fixed converting color space using shaders.
 Various additions and fixes in statistics.
 
-v0.5.0.1567 - 2020.12.21
+0.5.0.1567 - 2020.12.21
 ------------------------
 Added the OpenConfiguration function to call settings from the command line (Example: rundll32.exe MpcVideoRenderer64.ax,OpenConfiguration).
 Fixed memory leak for Direct3D 11 mode.
