@@ -96,16 +96,16 @@
     <FxCompile Include="d3d11\ps_convert_planar_yv.hlsl">
       <Filter>d3d11</Filter>
     </FxCompile>
-    <FxCompile Include="d3d11\ps_convert_hlg_to_sdr.hlsl">
+    <FxCompile Include="d3d11\ps_fixconvert_hlg_to_sdr.hlsl">
       <Filter>d3d11</Filter>
     </FxCompile>
-    <FxCompile Include="d3d11\ps_convert_pq_to_sdr.hlsl">
+    <FxCompile Include="d3d11\ps_fixconvert_pq_to_sdr.hlsl">
       <Filter>d3d11</Filter>
     </FxCompile>
-    <FxCompile Include="d3d9\convert_hlg_to_sdr.hlsl">
+    <FxCompile Include="d3d9\fixconvert_hlg_to_sdr.hlsl">
       <Filter>d3d9</Filter>
     </FxCompile>
-    <FxCompile Include="d3d9\convert_pq_to_sdr.hlsl">
+    <FxCompile Include="d3d9\fixconvert_pq_to_sdr.hlsl">
       <Filter>d3d9</Filter>
     </FxCompile>
     <FxCompile Include="d3d11\ps_geometry.hlsl">
