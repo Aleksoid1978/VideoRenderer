@@ -58,7 +58,7 @@ HRESULT CD3D11Quadrilateral::InitDeviceObjects(ID3D11Device* pDevice, ID3D11Devi
 
 	LPVOID data;
 	DWORD size;
-	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VSH11_GEOMETRY));
+	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VS_11_GEOMETRY));
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateVertexShader(data, size, nullptr, &m_pVertexShader));
 
 	static const D3D11_INPUT_ELEMENT_DESC vertexLayout[] = {
@@ -67,7 +67,7 @@ HRESULT CD3D11Quadrilateral::InitDeviceObjects(ID3D11Device* pDevice, ID3D11Devi
 	};
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateInputLayout(vertexLayout, std::size(vertexLayout), data, size, &m_pInputLayout));
 
-	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PSH11_GEOMETRY));
+	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PS_11_GEOMETRY));
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPixelShader));
 
 	D3D11_BLEND_DESC bdesc = {};
@@ -211,7 +211,7 @@ HRESULT CD3D11Dots::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 
 	LPVOID data;
 	DWORD size;
-	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VSH11_GEOMETRY));
+	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VS_11_GEOMETRY));
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateVertexShader(data, size, nullptr, &m_pVertexShader));
 
 	static const D3D11_INPUT_ELEMENT_DESC vertexLayout[] = {
@@ -220,7 +220,7 @@ HRESULT CD3D11Dots::InitDeviceObjects(ID3D11Device* pDevice, ID3D11DeviceContext
 	};
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateInputLayout(vertexLayout, std::size(vertexLayout), data, size, &m_pInputLayout));
 
-	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PSH11_GEOMETRY));
+	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_PS_11_GEOMETRY));
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreatePixelShader(data, size, nullptr, &m_pPixelShader));
 
 	return S_OK;

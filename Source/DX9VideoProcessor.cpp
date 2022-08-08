@@ -35,20 +35,20 @@
 
 static const ScalingShaderResId s_Upscaling9ResIDs[UPSCALE_COUNT] = {
 	{0,                             0,                             L"Nearest-neighbor"  },
-	{IDF_SHADER_INTERP_MITCHELL4_X, IDF_SHADER_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
-	{IDF_SHADER_INTERP_CATMULL4_X,  IDF_SHADER_INTERP_CATMULL4_Y,  L"Catmull-Rom"       },
-	{IDF_SHADER_INTERP_LANCZOS2_X,  IDF_SHADER_INTERP_LANCZOS2_Y,  L"Lanczos2"          },
-	{IDF_SHADER_INTERP_LANCZOS3_X,  IDF_SHADER_INTERP_LANCZOS3_Y,  L"Lanczos3"          },
-	{IDF_SHADER_INTERP_JINC2,       IDF_SHADER_INTERP_JINC2,       L"Jinc2*"            },
+	{IDF_PS_9_INTERP_MITCHELL4_X, IDF_PS_9_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
+	{IDF_PS_9_INTERP_CATMULL4_X,  IDF_PS_9_INTERP_CATMULL4_Y,  L"Catmull-Rom"       },
+	{IDF_PS_9_INTERP_LANCZOS2_X,  IDF_PS_9_INTERP_LANCZOS2_Y,  L"Lanczos2"          },
+	{IDF_PS_9_INTERP_LANCZOS3_X,  IDF_PS_9_INTERP_LANCZOS3_Y,  L"Lanczos3"          },
+	{IDF_PS_9_INTERP_JINC2,       IDF_PS_9_INTERP_JINC2,       L"Jinc2*"            },
 };
 
 static const ScalingShaderResId s_Downscaling9ResIDs[DOWNSCALE_COUNT] = {
-	{IDF_SHADER_CONVOL_BOX_X,       IDF_SHADER_CONVOL_BOX_Y,       L"Box"          },
-	{IDF_SHADER_CONVOL_BILINEAR_X,  IDF_SHADER_CONVOL_BILINEAR_Y,  L"Bilinear"     },
-	{IDF_SHADER_CONVOL_HAMMING_X,   IDF_SHADER_CONVOL_HAMMING_Y,   L"Hamming"      },
-	{IDF_SHADER_CONVOL_BICUBIC05_X, IDF_SHADER_CONVOL_BICUBIC05_Y, L"Bicubic"      },
-	{IDF_SHADER_CONVOL_BICUBIC15_X, IDF_SHADER_CONVOL_BICUBIC15_Y, L"Bicubic sharp"},
-	{IDF_SHADER_CONVOL_LANCZOS_X,   IDF_SHADER_CONVOL_LANCZOS_Y,   L"Lanczos"      }
+	{IDF_PS_9_CONVOL_BOX_X,       IDF_PS_9_CONVOL_BOX_Y,       L"Box"          },
+	{IDF_PS_9_CONVOL_BILINEAR_X,  IDF_PS_9_CONVOL_BILINEAR_Y,  L"Bilinear"     },
+	{IDF_PS_9_CONVOL_HAMMING_X,   IDF_PS_9_CONVOL_HAMMING_Y,   L"Hamming"      },
+	{IDF_PS_9_CONVOL_BICUBIC05_X, IDF_PS_9_CONVOL_BICUBIC05_Y, L"Bicubic"      },
+	{IDF_PS_9_CONVOL_BICUBIC15_X, IDF_PS_9_CONVOL_BICUBIC15_Y, L"Bicubic sharp"},
+	{IDF_PS_9_CONVOL_LANCZOS_X,   IDF_PS_9_CONVOL_LANCZOS_Y,   L"Lanczos"      }
 };
 
 const UINT dither_size = 32;
@@ -572,7 +572,7 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 			}
 			if (S_OK == hr3) {
 				m_pPSFinalPass.Release();
-				hr3 = CreatePShaderFromResource(&m_pPSFinalPass, IDF_SHADER_FINAL_PASS);
+				hr3 = CreatePShaderFromResource(&m_pPSFinalPass, IDF_PS_9_FINAL_PASS);
 			}
 
 			if (FAILED(hr3)) {
@@ -780,21 +780,21 @@ HRESULT CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const
 		ASSERT(0);
 		UINT resid = 0;
 		if (params.cformat == CF_YUY2) {
-			resid = IDF_SHADER_CONVERT_YUY2;
+			resid = IDF_PS_9_CONVERT_YUY2;
 		}
 		else if (params.pDX9Planes) {
 			if (params.pDX9Planes->FmtPlane3) {
 				if (params.cformat == CF_YV12 || params.cformat == CF_YV16 || params.cformat == CF_YV24) {
-					resid = IDF_SHADER_CONVERT_PLANAR_YV;
+					resid = IDF_PS_9_CONVERT_PLANAR_YV;
 				} else {
-					resid = IDF_SHADER_CONVERT_PLANAR;
+					resid = IDF_PS_9_CONVERT_PLANAR;
 				}
 			} else {
-				resid = IDF_SHADER_CONVERT_BIPLANAR;
+				resid = IDF_PS_9_CONVERT_BIPLANAR;
 			}
 		}
 		else {
-			resid = IDF_SHADER_CONVERT_COLOR;
+			resid = IDF_PS_9_CONVERT_COLOR;
 		}
 		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
 	}
@@ -1151,19 +1151,19 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 			|| m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG; // HLG compatible with SDR
 
 		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && m_bConvertToSdr) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CONVERT_PQ_TO_SDR));
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIXCONVERT_PQ_TO_SDR));
 			m_strCorrection = L"PQ to SDR";
 		}
 		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG && m_bConvertToSdr) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_CONVERT_HLG_TO_SDR));
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIXCONVERT_HLG_TO_SDR));
 			m_strCorrection = L"HLG to SDR";
 		}
 		else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_FIX_YCGCO));
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIX_YCGCO));
 			m_strCorrection = L"Fix YCoCg";
 		}
 		else if (bTransFunc22 && m_srcExFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_SHADER_FIX_BT2020));
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIX_BT2020));
 			m_strCorrection = L"Fix BT.2020";
 		}
 

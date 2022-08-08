@@ -91,20 +91,20 @@ inline bool HookFunc(T** ppSystemFunction, PVOID pHookFunction)
 
 static const ScalingShaderResId s_Upscaling11ResIDs[UPSCALE_COUNT] = {
 	{0,                            0,                            L"Nearest-neighbor"  },
-	{IDF_PSH11_INTERP_MITCHELL4_X, IDF_PSH11_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
-	{IDF_PSH11_INTERP_CATMULL4_X,  IDF_PSH11_INTERP_CATMULL4_Y,  L"Catmull-Rom"       },
-	{IDF_PSH11_INTERP_LANCZOS2_X,  IDF_PSH11_INTERP_LANCZOS2_Y,  L"Lanczos2"          },
-	{IDF_PSH11_INTERP_LANCZOS3_X,  IDF_PSH11_INTERP_LANCZOS3_Y,  L"Lanczos3"          },
-	{IDF_PSH11_INTERP_JINC2,       IDF_PSH11_INTERP_JINC2,       L"Jinc2*"            },
+	{IDF_PS_11_INTERP_MITCHELL4_X, IDF_PS_11_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
+	{IDF_PS_11_INTERP_CATMULL4_X,  IDF_PS_11_INTERP_CATMULL4_Y,  L"Catmull-Rom"       },
+	{IDF_PS_11_INTERP_LANCZOS2_X,  IDF_PS_11_INTERP_LANCZOS2_Y,  L"Lanczos2"          },
+	{IDF_PS_11_INTERP_LANCZOS3_X,  IDF_PS_11_INTERP_LANCZOS3_Y,  L"Lanczos3"          },
+	{IDF_PS_11_INTERP_JINC2,       IDF_PS_11_INTERP_JINC2,       L"Jinc2*"            },
 };
 
 static const ScalingShaderResId s_Downscaling11ResIDs[DOWNSCALE_COUNT] = {
-	{IDF_PSH11_CONVOL_BOX_X,       IDF_PSH11_CONVOL_BOX_Y,       L"Box"          },
-	{IDF_PSH11_CONVOL_BILINEAR_X,  IDF_PSH11_CONVOL_BILINEAR_Y,  L"Bilinear"     },
-	{IDF_PSH11_CONVOL_HAMMING_X,   IDF_PSH11_CONVOL_HAMMING_Y,   L"Hamming"      },
-	{IDF_PSH11_CONVOL_BICUBIC05_X, IDF_PSH11_CONVOL_BICUBIC05_Y, L"Bicubic"      },
-	{IDF_PSH11_CONVOL_BICUBIC15_X, IDF_PSH11_CONVOL_BICUBIC15_Y, L"Bicubic sharp"},
-	{IDF_PSH11_CONVOL_LANCZOS_X,   IDF_PSH11_CONVOL_LANCZOS_Y,   L"Lanczos"      }
+	{IDF_PS_11_CONVOL_BOX_X,       IDF_PS_11_CONVOL_BOX_Y,       L"Box"          },
+	{IDF_PS_11_CONVOL_BILINEAR_X,  IDF_PS_11_CONVOL_BILINEAR_Y,  L"Bilinear"     },
+	{IDF_PS_11_CONVOL_HAMMING_X,   IDF_PS_11_CONVOL_HAMMING_Y,   L"Hamming"      },
+	{IDF_PS_11_CONVOL_BICUBIC05_X, IDF_PS_11_CONVOL_BICUBIC05_Y, L"Bicubic"      },
+	{IDF_PS_11_CONVOL_BICUBIC15_X, IDF_PS_11_CONVOL_BICUBIC15_Y, L"Bicubic sharp"},
+	{IDF_PS_11_CONVOL_LANCZOS_X,   IDF_PS_11_CONVOL_LANCZOS_Y,   L"Lanczos"      }
 };
 
 const UINT dither_size = 32;
@@ -975,7 +975,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	LPVOID data;
 	DWORD size;
-	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VSH11_SIMPLE));
+	EXECUTE_ASSERT(S_OK == GetDataFromResource(data, size, IDF_VS_11_SIMPLE));
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateVertexShader(data, size, nullptr, &m_pVS_Simple));
 
 	D3D11_INPUT_ELEMENT_DESC Layout[] = {
@@ -984,10 +984,10 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	};
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateInputLayout(Layout, std::size(Layout), data, size, &m_pVSimpleInputLayout));
 
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_Simple, IDF_PSH11_SIMPLE));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_Simple, IDF_PS_11_SIMPLE));
 
 #if TEST_SHADER
-	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_TEST, IDF_PSH11_TEST));
+	EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_TEST, IDF_PS_11_TEST));
 #endif
 
 	D3D11_BUFFER_DESC BufferDesc = { sizeof(VERTEX) * 4, D3D11_USAGE_DYNAMIC, D3D11_BIND_VERTEX_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
@@ -1465,30 +1465,30 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_240M;
 
 			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && !(m_bHdrPassthroughSupport && m_bHdrPassthrough) && m_bConvertToSdr) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CONVERT_PQ_TO_SDR));
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_FIXCONVERT_PQ_TO_SDR));
 				m_strCorrection = L"PQ to SDR";
 			}
 			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
 				if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
-					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CONVERT_HLG_TO_PQ));
+					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_CONVERT_HLG_TO_PQ));
 					m_strCorrection = L"HLG to PQ";
 				}
 				else if (m_bConvertToSdr) {
-					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_CONVERT_HLG_TO_SDR));
+					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_FIXCONVERT_HLG_TO_SDR));
 					m_strCorrection = L"HLG to SDR";
 				}
 				else if (m_srcExFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020) {
 					// HLG compatible with SDR
-					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_FIX_BT2020));
+					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_FIX_BT2020));
 					m_strCorrection = L"Fix BT.2020";
 				}
 			}
 			else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_FIX_YCGCO));
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_FIX_YCGCO));
 				m_strCorrection = L"Fix YCoCg";
 			}
 			else if (bTransFunc22 && m_srcExFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PSH11_FIX_BT2020));
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_FIX_BT2020));
 				m_strCorrection = L"Fix BT.2020";
 			}
 
@@ -1591,21 +1591,21 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 		ASSERT(0);
 		UINT resid = 0;
 		if (params.cformat == CF_YUY2) {
-			resid = IDF_PSH11_CONVERT_YUY2;
+			resid = IDF_PS_11_CONVERT_YUY2;
 		}
 		else if (params.pDX11Planes) {
 			if (params.pDX11Planes->FmtPlane3) {
 				if (params.cformat == CF_YV12 || params.cformat == CF_YV16 || params.cformat == CF_YV24) {
-					resid = IDF_PSH11_CONVERT_PLANAR_YV;
+					resid = IDF_PS_11_CONVERT_PLANAR_YV;
 				} else {
-					resid = IDF_PSH11_CONVERT_PLANAR;
+					resid = IDF_PS_11_CONVERT_PLANAR;
 				}
 			} else {
-				resid = IDF_PSH11_CONVERT_BIPLANAR;
+				resid = IDF_PS_11_CONVERT_BIPLANAR;
 			}
 		}
 		else {
-			resid = IDF_PSH11_CONVERT_COLOR;
+			resid = IDF_PS_11_CONVERT_COLOR;
 		}
 		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
 	}
@@ -2191,7 +2191,7 @@ void CDX11VideoProcessor::UpdatePostScaleTexures()
 		m_pPSFinalPass.Release();
 		m_bFinalPass = SUCCEEDED(CreatePShaderFromResource(
 			&m_pPSFinalPass,
-			(m_SwapChainFmt == DXGI_FORMAT_R10G10B10A2_UNORM) ? IDF_PSH11_FINAL_PASS_10 : IDF_PSH11_FINAL_PASS
+			(m_SwapChainFmt == DXGI_FORMAT_R10G10B10A2_UNORM) ? IDF_PS_11_FINAL_PASS_10 : IDF_PS_11_FINAL_PASS
 		));
 		if (m_bFinalPass) {
 			numPostScaleShaders++;
@@ -2259,15 +2259,15 @@ void CDX11VideoProcessor::UpdateBitmapShader()
 		float SDR_peak_lum;
 		switch (m_iHdrOsdBrightness) {
 		default:
-			resid = IDF_PSH11_CONVERT_BITMAP_TO_PQ;
+			resid = IDF_PS_11_CONVERT_BITMAP_TO_PQ;
 			SDR_peak_lum = 100;
 			break;
 		case 1:
-			resid = IDF_PSH11_CONVERT_BITMAP_TO_PQ1;
+			resid = IDF_PS_11_CONVERT_BITMAP_TO_PQ1;
 			SDR_peak_lum = 50;
 			break;
 		case 2:
-			resid = IDF_PSH11_CONVERT_BITMAP_TO_PQ2;
+			resid = IDF_PS_11_CONVERT_BITMAP_TO_PQ2;
 			SDR_peak_lum = 30;
 			break;
 		}
