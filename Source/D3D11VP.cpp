@@ -416,6 +416,12 @@ void CD3D11VP::GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, UINT& rateConvIndex
 	rateConvCaps = m_RateConvCaps;
 }
 
+bool CD3D11VP::IsPqSupported()
+{
+	CComPtr<ID3D11VideoContext1> pVideoContext1;
+	return (S_OK == m_pVideoContext->QueryInterface(IID_PPV_ARGS(&pVideoContext1)));
+}
+
 HRESULT CD3D11VP::SetRectangles(const RECT* pSrcRect, const RECT* pDstRect)
 {
 	CheckPointer(m_pVideoContext, E_ABORT);
@@ -474,7 +480,14 @@ HRESULT CD3D11VP::SetColorSpace(const DXVA2_ExtendedFormat exFmt, const bool bHd
 			}
 			else
 			*/
-			if (exFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601) {
+			if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && (exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_10 || exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_12)) {
+				const bool topleft = (exFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Cosited);
+				cstype_stream = topleft
+					? DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_TOPLEFT_P2020
+					: DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020;
+				cstype_output = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
+			}
+			else if (exFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601) {
 				cstype_stream = fullrange ? DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601 : DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P601;
 			}
 			else { // DXVA2_VideoTransferMatrix_BT709 and other

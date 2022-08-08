@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2021 see Authors.txt
+* (C) 2019-2022 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -152,6 +152,7 @@ public:
 	bool IsVideoDeviceOk() { return (m_pVideoDevice != nullptr); }
 	bool IsReady() { return (m_pVideoProcessor != nullptr); }
 	void GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, UINT& rateConvIndex, D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS& rateConvCaps);
+	bool IsPqSupported();
 
 	ID3D11Texture2D* GetNextInputTexture(const D3D11_VIDEO_FRAME_FORMAT vframeFormat);
 	void ResetFrameOrder();

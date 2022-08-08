@@ -1460,39 +1460,43 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		// D3D11 VP does not work correctly if RGB32 with odd frame width (source or target) on Nvidia adapters
 
 		if (S_OK == InitializeD3D11VP(FmtParams, origW, origH)) {
+			UINT resId = 0;
 			bool bTransFunc22 = m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_22
 								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_709
 								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_240M;
 
 			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && !(m_bHdrPassthroughSupport && m_bHdrPassthrough) && m_bConvertToSdr) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_FIXCONVERT_PQ_TO_SDR));
+				resId = m_D3D11VP.IsPqSupported() ? IDF_PS_11_CONVERT_PQ_TO_SDR : IDF_PS_11_FIXCONVERT_PQ_TO_SDR;
 				m_strCorrection = L"PQ to SDR";
 			}
 			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
 				if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
-					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_CONVERT_HLG_TO_PQ));
+					resId = IDF_PS_11_CONVERT_HLG_TO_PQ;
 					m_strCorrection = L"HLG to PQ";
 				}
 				else if (m_bConvertToSdr) {
-					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_FIXCONVERT_HLG_TO_SDR));
+					resId = IDF_PS_11_FIXCONVERT_HLG_TO_SDR;
 					m_strCorrection = L"HLG to SDR";
 				}
 				else if (m_srcExFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020) {
 					// HLG compatible with SDR
-					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_FIX_BT2020));
+					resId = IDF_PS_11_FIX_BT2020;
 					m_strCorrection = L"Fix BT.2020";
 				}
 			}
 			else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_FIX_YCGCO));
+				resId = IDF_PS_11_FIX_YCGCO;
 				m_strCorrection = L"Fix YCoCg";
 			}
 			else if (bTransFunc22 && m_srcExFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_FIX_BT2020));
+				resId = IDF_PS_11_FIX_BT2020;
 				m_strCorrection = L"Fix BT.2020";
 			}
 
-			DLogIf(m_pPSCorrection, L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection created");
+			if (resId) {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, resId));
+				DLogIf(m_pPSCorrection, L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection('{}') created", m_strCorrection);
+			}
 
 			m_pFilter->m_inputMT = *pmt;
 			UpdateTexures();

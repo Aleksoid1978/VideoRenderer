@@ -68,7 +68,7 @@ IDF_PS_11_CONVERT_YUY2          FILE                    "..\\_bin\\shaders\\ps_c
 IDF_PS_11_CONVERT_BIPLANAR      FILE                    "..\\_bin\\shaders\\ps_convert_biplanar.cso"
 IDF_PS_11_CONVERT_PLANAR        FILE                    "..\\_bin\\shaders\\ps_convert_planar.cso"
 IDF_PS_11_CONVERT_PLANAR_YV     FILE                    "..\\_bin\\shaders\\ps_convert_planar_yv.cso"
-//IDF_PS_11_CONVERT_PQ_TO_SDR     FILE                    "..\\_bin\\shaders\\ps_convert_pq_to_sdr.cso"
+IDF_PS_11_CONVERT_PQ_TO_SDR     FILE                    "..\\_bin\\shaders\\ps_convert_pq_to_sdr.cso"
 IDF_PS_11_FIXCONVERT_PQ_TO_SDR  FILE                    "..\\_bin\\shaders\\ps_fixconvert_pq_to_sdr.cso"
 IDF_PS_11_FIXCONVERT_HLG_TO_SDR FILE                    "..\\_bin\\shaders\\ps_fixconvert_hlg_to_sdr.cso"
 IDF_PS_11_FIX_YCGCO             FILE                    "..\\_bin\\shaders\\ps_fix_ycgco.cso"
