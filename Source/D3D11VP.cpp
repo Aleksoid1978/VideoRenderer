@@ -484,7 +484,6 @@ HRESULT CD3D11VP::SetColorSpace(const DXVA2_ExtendedFormat exFmt, const bool bHd
 						: fullrange ? DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020 : DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020;
 				}
 			}
-			else
 			*/
 			if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && (exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_10 || exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_12)) {
 				const bool topleft = (exFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Cosited);
@@ -511,31 +510,44 @@ HRESULT CD3D11VP::SetColorSpace(const DXVA2_ExtendedFormat exFmt, const bool bHd
 						cstype_stream = fullrange ? DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709 : DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
 					}
 				}
+				cstype_output = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 			}
 		}
 
-		m_pVideoContext1->VideoProcessorSetStreamColorSpace1(m_pVideoProcessor, 0, cstype_stream);
-		m_pVideoContext1->VideoProcessorSetOutputColorSpace1(m_pVideoProcessor, cstype_output);
-
-		DLog(L"CD3D11VP::SetColorSpace() : VideoProcessorSetStreamColorSpace1({})", (int)cstype_stream);
-		DLog(L"CD3D11VP::SetColorSpace() : VideoProcessorSetOutputColorSpace1({})", (int)cstype_output);
-		DLogIf(exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_10 || exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_12, L"CD3D11VP::SetColorSpace() : PQ and HLG do not apply here");
-	}
-	else {
-		// Windows 8/8.1
-		DLog(L"CD3D11VP::SetColorSpace() : used ID3D11VideoContext");
-
-		D3D11_VIDEO_PROCESSOR_COLOR_SPACE colorSpace = {};
-		if (exFmt.value) {
-			colorSpace.RGB_Range = 0; // output RGB always full range (0-255)
-			colorSpace.YCbCr_Matrix = (exFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601) ? 0 : 1;
-			colorSpace.Nominal_Range = fullrange
-				? D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255
-				: D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
+		BOOL bConvSupported = m_bExConvSupported;
+		if (!bConvSupported) {
+			m_pVideoProcessorEnum1->CheckVideoProcessorFormatConversion(
+				m_srcFormat, cstype_stream,
+				m_dstFormat, cstype_output,
+				&bConvSupported);
 		}
-		m_pVideoContext->VideoProcessorSetStreamColorSpace(m_pVideoProcessor, 0, &colorSpace);
-		m_pVideoContext->VideoProcessorSetOutputColorSpace(m_pVideoProcessor, &colorSpace);
+		ASSERT(bConvSupported);
+
+		if (bConvSupported) {
+			m_pVideoContext1->VideoProcessorSetStreamColorSpace1(m_pVideoProcessor, 0, cstype_stream);
+			m_pVideoContext1->VideoProcessorSetOutputColorSpace1(m_pVideoProcessor, cstype_output);
+
+			DLog(L"CD3D11VP::SetColorSpace() : VideoProcessorSetStreamColorSpace1({})", (int)cstype_stream);
+			DLog(L"CD3D11VP::SetColorSpace() : VideoProcessorSetOutputColorSpace1({})", (int)cstype_output);
+
+			return S_OK;
+		}
+
 	}
+
+	// Windows 8/8.1 or if something went wrong
+	DLog(L"CD3D11VP::SetColorSpace() : used ID3D11VideoContext");
+
+	D3D11_VIDEO_PROCESSOR_COLOR_SPACE colorSpace = {};
+	if (exFmt.value) {
+		colorSpace.RGB_Range = 0; // output RGB always full range (0-255)
+		colorSpace.YCbCr_Matrix = (exFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601) ? 0 : 1;
+		colorSpace.Nominal_Range = fullrange
+			? D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255
+			: D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
+	}
+	m_pVideoContext->VideoProcessorSetStreamColorSpace(m_pVideoProcessor, 0, &colorSpace);
+	m_pVideoContext->VideoProcessorSetOutputColorSpace(m_pVideoProcessor, &colorSpace);
 
 	return S_OK;
 }
