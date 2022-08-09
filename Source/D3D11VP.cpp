@@ -87,6 +87,9 @@ HRESULT CD3D11VP::InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pC
 		return hr;
 	}
 
+	m_pVideoContext->QueryInterface(IID_PPV_ARGS(&m_pVideoContext1));
+	DLogIf(!m_pVideoContext1, L"CD3D11VP::InitVideoDevice() : ID3D11VideoContext1 unavailable");
+
 #ifdef _DEBUG
 	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc = { D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE, {}, 1920, 1080, {}, 1920, 1080, D3D11_VIDEO_USAGE_PLAYBACK_NORMAL };
 	CComPtr<ID3D11VideoProcessorEnumerator> pVideoProcEnum;
@@ -118,8 +121,11 @@ void CD3D11VP::ReleaseVideoDevice()
 {
 	ReleaseVideoProcessor();
 
+	m_pVideoContext1.Release();
 	m_pVideoContext.Release();
 	m_pVideoDevice.Release();
+
+	m_bExConvSupported = false;
 }
 
 int GetBitDepth(const DXGI_FORMAT format)
@@ -291,6 +297,8 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateVideoProcessor() failed with error {}", HR2Str(hr));
 		return hr;
 	}
+	m_pVideoProcessorEnum->QueryInterface(IID_PPV_ARGS(&m_pVideoProcessorEnum1));
+	DLogIf(!m_pVideoProcessorEnum1, L"CD3D11VP::InitVideoProcessor() : ID3D11VideoProcessorEnumerator1 unavailable");
 
 	for (UINT i = 0; i < std::size(m_VPFilters); i++) {
 		auto& filter = m_VPFilters[i];
@@ -330,6 +338,8 @@ HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT widt
 	m_srcHeight   = height;
 	//m_bInterlaced = interlaced;
 
+	m_dstFormat = outputFmt;
+
 	return hr;
 }
 
@@ -338,6 +348,8 @@ void CD3D11VP::ReleaseVideoProcessor()
 	m_VideoTextures.Clear();
 
 	m_pVideoProcessor.Release();
+
+	m_pVideoProcessorEnum1.Release();
 	m_pVideoProcessorEnum.Release();
 
 	m_VPCaps = {};
@@ -416,12 +428,6 @@ void CD3D11VP::GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, UINT& rateConvIndex
 	rateConvCaps = m_RateConvCaps;
 }
 
-bool CD3D11VP::IsPqSupported()
-{
-	CComPtr<ID3D11VideoContext1> pVideoContext1;
-	return (S_OK == m_pVideoContext->QueryInterface(IID_PPV_ARGS(&pVideoContext1)));
-}
-
 HRESULT CD3D11VP::SetRectangles(const RECT* pSrcRect, const RECT* pDstRect)
 {
 	CheckPointer(m_pVideoContext, E_ABORT);
@@ -436,10 +442,10 @@ HRESULT CD3D11VP::SetColorSpace(const DXVA2_ExtendedFormat exFmt, const bool bHd
 {
 	CheckPointer(m_pVideoContext, E_ABORT);
 
+	m_bExConvSupported = FALSE;
 	const bool fullrange = (exFmt.NominalRange == DXVA2_NominalRange_0_255);
 
-	CComPtr<ID3D11VideoContext1> pVideoContext1;
-	if (S_OK == m_pVideoContext->QueryInterface(IID_PPV_ARGS(&pVideoContext1))) {
+	if (m_pVideoContext1) {
 		// Windows 10 or later
 		DLog(L"CD3D11VP::SetColorSpace() : used ID3D11VideoContext1");
 
@@ -486,22 +492,30 @@ HRESULT CD3D11VP::SetColorSpace(const DXVA2_ExtendedFormat exFmt, const bool bHd
 					? DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_TOPLEFT_P2020
 					: DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020;
 				cstype_output = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
+
+				m_pVideoProcessorEnum1->CheckVideoProcessorFormatConversion(
+					m_srcFormat, cstype_stream,
+					m_dstFormat, cstype_output,
+					&m_bExConvSupported);
 			}
-			else if (exFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601) {
-				cstype_stream = fullrange ? DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601 : DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P601;
-			}
-			else { // DXVA2_VideoTransferMatrix_BT709 and other
-				if (exFmt.VideoTransferFunction == DXVA2_VideoTransFunc_sRGB) {
-					cstype_stream = DXGI_COLOR_SPACE_YCBCR_STUDIO_G24_LEFT_P709;
+
+			if (!m_bExConvSupported) {
+				if (exFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601) {
+					cstype_stream = fullrange ? DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601 : DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P601;
 				}
-				else { // DXVA2_VideoTransFunc_22  and other
-					cstype_stream = fullrange ? DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709 : DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
+				else { // DXVA2_VideoTransferMatrix_BT709 and other
+					if (exFmt.VideoTransferFunction == DXVA2_VideoTransFunc_sRGB) {
+						cstype_stream = DXGI_COLOR_SPACE_YCBCR_STUDIO_G24_LEFT_P709;
+					}
+					else { // DXVA2_VideoTransFunc_22  and other
+						cstype_stream = fullrange ? DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709 : DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
+					}
 				}
 			}
 		}
 
-		pVideoContext1->VideoProcessorSetStreamColorSpace1(m_pVideoProcessor, 0, cstype_stream);
-		pVideoContext1->VideoProcessorSetOutputColorSpace1(m_pVideoProcessor, cstype_output);
+		m_pVideoContext1->VideoProcessorSetStreamColorSpace1(m_pVideoProcessor, 0, cstype_stream);
+		m_pVideoContext1->VideoProcessorSetOutputColorSpace1(m_pVideoProcessor, cstype_output);
 
 		DLog(L"CD3D11VP::SetColorSpace() : VideoProcessorSetStreamColorSpace1({})", (int)cstype_stream);
 		DLog(L"CD3D11VP::SetColorSpace() : VideoProcessorSetOutputColorSpace1({})", (int)cstype_output);

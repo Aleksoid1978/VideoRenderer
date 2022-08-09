@@ -110,10 +110,15 @@ public:
 class CD3D11VP
 {
 private:
-	CComPtr<ID3D11VideoContext> m_pVideoContext;
 	CComPtr<ID3D11VideoDevice> m_pVideoDevice;
 	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
+
+	CComPtr<ID3D11VideoContext> m_pVideoContext;
 	CComPtr<ID3D11VideoProcessorEnumerator> m_pVideoProcessorEnum;
+
+	CComPtr<ID3D11VideoContext1> m_pVideoContext1;
+	CComPtr<ID3D11VideoProcessorEnumerator1> m_pVideoProcessorEnum1;
+	BOOL m_bExConvSupported = FALSE;
 
 	D3D11_VIDEO_PROCESSOR_CAPS m_VPCaps = {};
 	UINT m_RateConvIndex = 0;
@@ -139,6 +144,7 @@ private:
 	UINT m_srcWidth    = 0;
 	UINT m_srcHeight   = 0;
 	//bool m_bInterlaced = false;
+	DXGI_FORMAT m_dstFormat = DXGI_FORMAT_UNKNOWN;
 
 public:
 	HRESULT InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
@@ -152,7 +158,7 @@ public:
 	bool IsVideoDeviceOk() { return (m_pVideoDevice != nullptr); }
 	bool IsReady() { return (m_pVideoProcessor != nullptr); }
 	void GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, UINT& rateConvIndex, D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS& rateConvCaps);
-	bool IsPqSupported();
+	BOOL IsPqSupported() { return m_bExConvSupported; }
 
 	ID3D11Texture2D* GetNextInputTexture(const D3D11_VIDEO_FRAME_FORMAT vframeFormat);
 	void ResetFrameOrder();
