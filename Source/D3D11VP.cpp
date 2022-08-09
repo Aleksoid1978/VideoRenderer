@@ -125,7 +125,7 @@ void CD3D11VP::ReleaseVideoDevice()
 	m_pVideoContext.Release();
 	m_pVideoDevice.Release();
 
-	m_bExConvSupported = false;
+	m_bExConvSupported = FALSE;
 }
 
 int GetBitDepth(const DXGI_FORMAT format)
