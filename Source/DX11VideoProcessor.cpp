@@ -664,6 +664,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	ClearPostScaleShaders();
 	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
+	m_pPSConvertColorDeint.Release();
 
 	m_pShaderUpscaleX.Release();
 	m_pShaderUpscaleY.Release();
@@ -1432,6 +1433,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
+	m_pPSConvertColorDeint.Release();
 	m_PSConvColorData.bEnable = false;
 
 	UpdateTexParams(FmtParams.CDepth);
@@ -2237,6 +2239,7 @@ void CDX11VideoProcessor::UpdateDownscalingShaders()
 HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 {
 	m_pPSConvertColor.Release();
+	m_pPSConvertColorDeint.Release();
 	ID3DBlob* pShaderCode = nullptr;
 
 	int convertType = (m_bConvertToSdr && !(m_bHdrPassthroughSupport && m_bHdrPassthrough)) ? SHADER_CONVERT_TO_SDR
@@ -2252,6 +2255,21 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 	if (S_OK == hr) {
 		hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
 		pShaderCode->Release();
+	}
+
+	if (m_bInterlaced && (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 420)) {
+		if (m_srcParams.pDX11Planes && m_srcParams.pDX11Planes->FmtPlane2) {
+			hr = GetShaderConvertColor(true,
+				m_srcWidth,
+				m_TexSrcVideo.desc.Width, m_TexSrcVideo.desc.Height,
+				m_srcRect, m_srcParams, m_srcExFmt,
+				m_iChromaScaling, convertType, true,
+				&pShaderCode);
+			if (S_OK == hr) {
+				hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColorDeint);
+				pShaderCode->Release();
+			}
+		}
 	}
 
 	return hr;
@@ -2325,7 +2343,11 @@ HRESULT CDX11VideoProcessor::ConvertColorPass(ID3D11Texture2D* pRenderTarget)
 	m_pDeviceContext->RSSetViewports(1, &VP);
 	m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-	m_pDeviceContext->PSSetShader(m_pPSConvertColor, nullptr, 0);
+	if (m_bDeintBlend && m_pPSConvertColorDeint) { // TODO: check frame type
+		m_pDeviceContext->PSSetShader(m_pPSConvertColorDeint, nullptr, 0);
+	} else {
+		m_pDeviceContext->PSSetShader(m_pPSConvertColor, nullptr, 0);
+	}
 	m_pDeviceContext->PSSetShaderResources(0, 1, &m_TexSrcVideo.pShaderResource.p);
 	m_pDeviceContext->PSSetShaderResources(1, 1, &m_TexSrcVideo.pShaderResource2.p);
 	m_pDeviceContext->PSSetShaderResources(2, 1, &m_TexSrcVideo.pShaderResource3.p);

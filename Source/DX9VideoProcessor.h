@@ -67,6 +67,7 @@ private:
 	CComPtr<IDirect3DPixelShader9> m_pPSCorrection;
 	const wchar_t* m_strCorrection = nullptr;
 	CComPtr<IDirect3DPixelShader9> m_pPSConvertColor;
+	CComPtr<IDirect3DPixelShader9> m_pPSConvertColorDeint;
 	struct {
 		bool bEnable = false;
 		struct ConvColorVertex_t {

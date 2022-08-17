@@ -229,8 +229,6 @@ HRESULT CVRMainPPage::OnActivate()
 
 	SetControls();
 
-	GetDlgItem(IDC_CHECK17).ShowWindow(SW_HIDE);
-
 	SetCursor(m_hWnd, IDC_ARROW);
 	SetCursor(m_hWnd, IDC_COMBO1, IDC_HAND);
 

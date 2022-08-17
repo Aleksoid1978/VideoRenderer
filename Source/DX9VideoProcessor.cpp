@@ -700,6 +700,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 	ClearPostScaleShaders();
 	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
+	m_pPSConvertColorDeint.Release();
 
 	m_pShaderUpscaleX.Release();
 	m_pShaderUpscaleY.Release();
@@ -1140,6 +1141,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	m_pPSCorrection.Release();
 	m_pPSConvertColor.Release();
+	m_pPSConvertColorDeint.Release();
 	m_PSConvColorData.bEnable = false;
 
 	UpdateTexParams(FmtParams.CDepth);
@@ -2088,6 +2090,7 @@ void CDX9VideoProcessor::UpdateDownscalingShaders()
 HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 {
 	m_pPSConvertColor.Release();
+	m_pPSConvertColorDeint.Release();
 	HRESULT hr = S_OK;
 
 	if (m_TexSrcVideo.pTexture) {
@@ -2103,6 +2106,21 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 		if (S_OK == hr) {
 			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);
 			pShaderCode->Release();
+		}
+
+		if (m_bInterlaced && (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 420)) {
+			if (m_srcParams.pDX9Planes && m_srcParams.pDX9Planes->FmtPlane2) {
+				hr = GetShaderConvertColor(false,
+					m_srcWidth,
+					m_TexSrcVideo.Width, m_TexSrcVideo.Height,
+					m_srcRect, m_srcParams, m_srcExFmt,
+					m_iChromaScaling, convertType, true,
+					&pShaderCode);
+				if (S_OK == hr) {
+					hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColorDeint);
+					pShaderCode->Release();
+				}
+			}
 		}
 
 		const float dx = 1.0f / m_TexSrcVideo.Width;
@@ -2185,7 +2203,11 @@ HRESULT CDX9VideoProcessor::ConvertColorPass(IDirect3DSurface9* pRenderTarget)
 	HRESULT hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
 	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_PSConvColorData.fConstants, std::size(m_PSConvColorData.fConstants));
-	hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColor);
+	if (m_bDeintBlend && m_pPSConvertColorDeint) { // TODO: check frame type
+		hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColorDeint);
+	} else {
+		hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColor);
+	}
 
 	hr = m_pD3DDevEx->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 	hr = m_pD3DDevEx->SetRenderState(D3DRS_LIGHTING, FALSE);

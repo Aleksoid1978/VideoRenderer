@@ -78,6 +78,7 @@ private:
 
 	// D3D11 Shader Video Processor
 	CComPtr<ID3D11PixelShader> m_pPSConvertColor;
+	CComPtr<ID3D11PixelShader> m_pPSConvertColorDeint;
 	struct {
 		bool bEnable = false;
 		ID3D11Buffer* pVertexBuffer = nullptr;
