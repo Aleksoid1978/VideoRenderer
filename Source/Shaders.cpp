@@ -85,6 +85,7 @@ HRESULT GetShaderConvertColor(
 	const DXVA2_ExtendedFormat exFmt,
 	const int chromaScaling,
 	const int convertType,
+	const bool blendDeinterlace,
 	ID3DBlob** ppCode)
 {
 	DLog(L"GetShaderConvertColor() started for {} {}x{} extfmt:{:#010x} chroma:{}", fmtParams.str, texW, texH, exFmt.value, chromaScaling);
@@ -281,10 +282,14 @@ HRESULT GetShaderConvertColor(
 			}
 			break;
 		case 2:
-			code.append(
-				"float colorY = texY.Sample(samp, input.Tex).r;\n"
-				"float2 colorUV;\n"
-			);
+			code.append("float colorY = texY.Sample(samp, input.Tex).r;\n");
+			if (blendDeinterlace) {
+				code.append(
+					"float y1 = texY.Sample(samp, input.Tex, int2(0, -1));\n"
+					"float y2 = texY.Sample(samp, input.Tex, int2(0, 1));\n"
+					"colorY = (colorY * 2 + y1 + y2) / 4;\n");
+			}
+			code.append("float2 colorUV;\n");
 			if (chromaScaling == CHROMA_Nearest || fmtParams.Subsampling == 444) {
 				code.append("colorUV = texUV.Sample(samp, input.Tex).rg;\n");
 			}
@@ -334,10 +339,14 @@ HRESULT GetShaderConvertColor(
 			code.append("float4 color = float4(colorY, colorUV, 1);\n");
 			break;
 		case 3:
-			code.append(
-				"float colorY = texY.Sample(samp, input.Tex).r;\n"
-				"float2 colorUV;\n"
-			);
+			code.append("float colorY = texY.Sample(samp, input.Tex).r;\n");
+			if (blendDeinterlace) {
+				code.append(
+					"float y1 = texY.Sample(samp, input.Tex, int2(0, -1));\n"
+					"float y2 = texY.Sample(samp, input.Tex, int2(0, 1));\n"
+					"colorY = (colorY * 2 + y1 + y2) / 4;\n");
+			}
+			code.append("float2 colorUV;\n");
 			if (chromaScaling == CHROMA_Nearest || fmtParams.Subsampling == 444) {
 				code.append(
 					"colorUV[0] = texU.Sample(samp, input.Tex).r;\n"
@@ -458,9 +467,14 @@ HRESULT GetShaderConvertColor(
 				"\n"
 				"float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n"
 				"{\n"
-				"float colorY = tex2D(sY, t0).r;\n"
-				"float2 colorUV;\n"
-			);
+				"float colorY = tex2D(sY, t0).r;\n");
+			if (blendDeinterlace) {
+				code.append(
+					"float y1 = tex2D(sY, t0 + float2(0, -dy)).r;\n"
+					"float y2 = tex2D(sY, t0 + float2(0, dy)).r;\n"
+					"colorY = (colorY * 2 + y1 + y2) / 4;\n");
+			}
+			code.append("float2 colorUV;\n");
 			if (chromaScaling == CHROMA_Nearest || fmtParams.Subsampling == 444) {
 				if (fmtParams.cformat == CF_NV12) {
 					code.append("colorUV = tex2D(sUV, t0).ra;\n");
@@ -513,9 +527,14 @@ HRESULT GetShaderConvertColor(
 				"\n"
 				"float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n"
 				"{\n"
-				"float colorY = tex2D(sY, t0).r;\n"
-				"float2 colorUV;\n"
-			);
+				"float colorY = tex2D(sY, t0).r;\n");
+			if (blendDeinterlace) {
+				code.append(
+					"float y1 = tex2D(sY, t0 + float2(0, -dy)).r;\n"
+					"float y2 = tex2D(sY, t0 + float2(0, dy)).r;\n"
+					"colorY = (colorY * 2 + y1 + y2) / 4;\n");
+			}
+			code.append("float2 colorUV;\n");
 			if (chromaScaling == CHROMA_Nearest || fmtParams.Subsampling == 444) {
 				code.append(
 					"colorUV[0] = tex2D(sU, t0).r;\n"

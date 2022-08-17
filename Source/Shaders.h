@@ -39,4 +39,5 @@ HRESULT GetShaderConvertColor(
 	const DXVA2_ExtendedFormat exFmt,
 	const int chromaScaling,
 	const int convertType,
+	const bool blendDeinterlace,
 	ID3DBlob** ppCode);
