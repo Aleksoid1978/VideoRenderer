@@ -46,6 +46,7 @@
 #define OPT_Downscaling                    L"Downscaling"
 #define OPT_InterpolateAt50pct             L"InterpolateAt50pct"
 #define OPT_Dither                         L"Dither"
+#define OPT_DeintBlend                     L"DeinterlaceBlend"
 #define OPT_SwapEffect                     L"SwapEffect"
 #define OPT_ExclusiveFullscreen            L"ExclusiveFullscreen"
 #define OPT_VBlankBeforePresent            L"VBlankBeforePresent"
@@ -202,6 +203,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_Dither, dw)) {
 			m_Sets.bUseDither = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_DeintBlend, dw)) {
+			m_Sets.bDeintBlend = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_SwapEffect, dw)) {
 			m_Sets.iSwapEffect = discard<int>(dw, SWAPEFFECT_Discard, SWAPEFFECT_Discard, SWAPEFFECT_Flip);
@@ -1158,29 +1162,30 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 {
 	CRegKey key;
 	if (ERROR_SUCCESS == key.Create(HKEY_CURRENT_USER, OPT_REGKEY_VIDEORENDERER)) {
-		key.SetDWORDValue(OPT_UseD3D11,                       m_Sets.bUseD3D11);
-		key.SetDWORDValue(OPT_ShowStatistics,                 m_Sets.bShowStats);
-		key.SetDWORDValue(OPT_ResizeStatistics,               m_Sets.iResizeStats);
-		key.SetDWORDValue(OPT_TextureFormat,                  m_Sets.iTexFormat);
-		key.SetDWORDValue(OPT_VPEnableNV12,                   m_Sets.VPFmts.bNV12);
-		key.SetDWORDValue(OPT_VPEnableP01x,                   m_Sets.VPFmts.bP01x);
-		key.SetDWORDValue(OPT_VPEnableYUY2,                   m_Sets.VPFmts.bYUY2);
-		key.SetDWORDValue(OPT_VPEnableOther,                  m_Sets.VPFmts.bOther);
-		key.SetDWORDValue(OPT_DoubleFrateDeint,               m_Sets.bDeintDouble);
-		key.SetDWORDValue(OPT_VPScaling,                      m_Sets.bVPScaling);
-		key.SetDWORDValue(OPT_ChromaUpsampling,               m_Sets.iChromaScaling);
-		key.SetDWORDValue(OPT_Upscaling,                      m_Sets.iUpscaling);
-		key.SetDWORDValue(OPT_Downscaling,                    m_Sets.iDownscaling);
-		key.SetDWORDValue(OPT_InterpolateAt50pct,             m_Sets.bInterpolateAt50pct);
-		key.SetDWORDValue(OPT_Dither,                         m_Sets.bUseDither);
-		key.SetDWORDValue(OPT_SwapEffect,                     m_Sets.iSwapEffect);
-		key.SetDWORDValue(OPT_ExclusiveFullscreen,            m_Sets.bExclusiveFS);
-		key.SetDWORDValue(OPT_VBlankBeforePresent,            m_Sets.bVBlankBeforePresent);
-		key.SetDWORDValue(OPT_ReinitByDisplay,                m_Sets.bReinitByDisplay);
-		key.SetDWORDValue(OPT_HdrPassthrough,                 m_Sets.bHdrPassthrough);
-		key.SetDWORDValue(OPT_HdrToggleDisplay,               m_Sets.iHdrToggleDisplay);
-		key.SetDWORDValue(OPT_HdrOsdBrightness,               m_Sets.iHdrOsdBrightness);
-		key.SetDWORDValue(OPT_ConvertToSdr,                   m_Sets.bConvertToSdr);
+		key.SetDWORDValue(OPT_UseD3D11,            m_Sets.bUseD3D11);
+		key.SetDWORDValue(OPT_ShowStatistics,      m_Sets.bShowStats);
+		key.SetDWORDValue(OPT_ResizeStatistics,    m_Sets.iResizeStats);
+		key.SetDWORDValue(OPT_TextureFormat,       m_Sets.iTexFormat);
+		key.SetDWORDValue(OPT_VPEnableNV12,        m_Sets.VPFmts.bNV12);
+		key.SetDWORDValue(OPT_VPEnableP01x,        m_Sets.VPFmts.bP01x);
+		key.SetDWORDValue(OPT_VPEnableYUY2,        m_Sets.VPFmts.bYUY2);
+		key.SetDWORDValue(OPT_VPEnableOther,       m_Sets.VPFmts.bOther);
+		key.SetDWORDValue(OPT_DoubleFrateDeint,    m_Sets.bDeintDouble);
+		key.SetDWORDValue(OPT_VPScaling,           m_Sets.bVPScaling);
+		key.SetDWORDValue(OPT_ChromaUpsampling,    m_Sets.iChromaScaling);
+		key.SetDWORDValue(OPT_Upscaling,           m_Sets.iUpscaling);
+		key.SetDWORDValue(OPT_Downscaling,         m_Sets.iDownscaling);
+		key.SetDWORDValue(OPT_InterpolateAt50pct,  m_Sets.bInterpolateAt50pct);
+		key.SetDWORDValue(OPT_Dither,              m_Sets.bUseDither);
+		key.SetDWORDValue(OPT_DeintBlend,          m_Sets.bDeintBlend);
+		key.SetDWORDValue(OPT_SwapEffect,          m_Sets.iSwapEffect);
+		key.SetDWORDValue(OPT_ExclusiveFullscreen, m_Sets.bExclusiveFS);
+		key.SetDWORDValue(OPT_VBlankBeforePresent, m_Sets.bVBlankBeforePresent);
+		key.SetDWORDValue(OPT_ReinitByDisplay,     m_Sets.bReinitByDisplay);
+		key.SetDWORDValue(OPT_HdrPassthrough,      m_Sets.bHdrPassthrough);
+		key.SetDWORDValue(OPT_HdrToggleDisplay,    m_Sets.iHdrToggleDisplay);
+		key.SetDWORDValue(OPT_HdrOsdBrightness,    m_Sets.iHdrOsdBrightness);
+		key.SetDWORDValue(OPT_ConvertToSdr,        m_Sets.bConvertToSdr);
 	}
 
 	return S_OK;

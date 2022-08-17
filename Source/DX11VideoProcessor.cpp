@@ -386,23 +386,24 @@ HRESULT CDX11VideoProcessor::TextureResizeShader(
 CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Settings_t& config, HRESULT& hr)
 	: CVideoProcessor(pFilter)
 {
-	m_bShowStats                      = config.bShowStats;
-	m_iResizeStats                    = config.iResizeStats;
-	m_iTexFormat                      = config.iTexFormat;
-	m_VPFormats                       = config.VPFmts;
-	m_bDeintDouble                    = config.bDeintDouble;
-	m_bVPScaling                      = config.bVPScaling;
-	m_iChromaScaling                  = config.iChromaScaling;
-	m_iUpscaling                      = config.iUpscaling;
-	m_iDownscaling                    = config.iDownscaling;
-	m_bInterpolateAt50pct             = config.bInterpolateAt50pct;
-	m_bUseDither                      = config.bUseDither;
-	m_iSwapEffect                     = config.iSwapEffect;
-	m_bVBlankBeforePresent            = config.bVBlankBeforePresent;
-	m_bHdrPassthrough                 = config.bHdrPassthrough;
-	m_iHdrToggleDisplay               = config.iHdrToggleDisplay;
-	m_iHdrOsdBrightness               = config.iHdrOsdBrightness;
-	m_bConvertToSdr                   = config.bConvertToSdr;
+	m_bShowStats           = config.bShowStats;
+	m_iResizeStats         = config.iResizeStats;
+	m_iTexFormat           = config.iTexFormat;
+	m_VPFormats            = config.VPFmts;
+	m_bDeintDouble         = config.bDeintDouble;
+	m_bVPScaling           = config.bVPScaling;
+	m_iChromaScaling       = config.iChromaScaling;
+	m_iUpscaling           = config.iUpscaling;
+	m_iDownscaling         = config.iDownscaling;
+	m_bInterpolateAt50pct  = config.bInterpolateAt50pct;
+	m_bUseDither           = config.bUseDither;
+	m_bDeintBlend          = config.bDeintBlend;
+	m_iSwapEffect          = config.iSwapEffect;
+	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
+	m_bHdrPassthrough      = config.bHdrPassthrough;
+	m_iHdrToggleDisplay    = config.iHdrToggleDisplay;
+	m_iHdrOsdBrightness    = config.iHdrOsdBrightness;
+	m_bConvertToSdr        = config.bConvertToSdr;
 
 	m_nCurrentAdapter = -1;
 	m_pDisplayMode = &m_DisplayMode;
@@ -2917,10 +2918,11 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	bool changeResizeStats       = false;
 
 	// settings that do not require preparation
-	m_bShowStats                      = config.bShowStats;
-	m_bDeintDouble                    = config.bDeintDouble;
-	m_bInterpolateAt50pct             = config.bInterpolateAt50pct;
-	m_bVBlankBeforePresent            = config.bVBlankBeforePresent;
+	m_bShowStats           = config.bShowStats;
+	m_bDeintDouble         = config.bDeintDouble;
+	m_bInterpolateAt50pct  = config.bInterpolateAt50pct;
+	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
+	m_bDeintBlend          = config.bDeintBlend;
 
 	// checking what needs to be changed
 

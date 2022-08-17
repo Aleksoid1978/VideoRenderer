@@ -88,6 +88,7 @@ struct Settings_t {
 	int  iDownscaling;
 	bool bInterpolateAt50pct;
 	bool bUseDither;
+	bool bDeintBlend;
 	int  iSwapEffect;
 	bool bExclusiveFS;
 	bool bVBlankBeforePresent;
@@ -121,6 +122,7 @@ struct Settings_t {
 		iDownscaling                    = DOWNSCALE_Hamming;
 		bInterpolateAt50pct             = true;
 		bUseDither                      = true;
+		bDeintBlend                     = false;
 		iSwapEffect                     = SWAPEFFECT_Discard;
 		bExclusiveFS                    = false;
 		bVBlankBeforePresent            = false;

@@ -281,6 +281,7 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Setting
 	m_iDownscaling         = config.iDownscaling;
 	m_bInterpolateAt50pct  = config.bInterpolateAt50pct;
 	m_bUseDither           = config.bUseDither;
+	m_bDeintBlend          = config.bDeintBlend;
 	m_iSwapEffect          = config.iSwapEffect;
 	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
 	m_bHdrPassthrough      = false;
@@ -1800,6 +1801,7 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	m_bDeintDouble         = config.bDeintDouble;
 	m_bInterpolateAt50pct  = config.bInterpolateAt50pct;
 	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
+	m_bDeintBlend          = config.bDeintBlend;
 
 	// checking what needs to be changed
 
