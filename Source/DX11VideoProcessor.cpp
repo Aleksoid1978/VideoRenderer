@@ -2257,7 +2257,7 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 		pShaderCode->Release();
 	}
 
-	if (m_bInterlaced && (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422)) {
+	if (m_bInterlaced && m_srcParams.Subsampling == 420) {
 		if (m_srcParams.pDX11Planes && m_srcParams.pDX11Planes->FmtPlane2) {
 			hr = GetShaderConvertColor(true,
 				m_srcWidth,
