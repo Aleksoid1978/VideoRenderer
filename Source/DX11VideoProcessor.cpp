@@ -2343,7 +2343,7 @@ HRESULT CDX11VideoProcessor::ConvertColorPass(ID3D11Texture2D* pRenderTarget)
 	m_pDeviceContext->RSSetViewports(1, &VP);
 	m_pDeviceContext->OMSetBlendState(nullptr, nullptr, D3D11_DEFAULT_SAMPLE_MASK);
 	m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-	if (m_bDeintBlend && m_pPSConvertColorDeint) { // TODO: check frame type
+	if (m_bDeintBlend && m_SampleFormat != D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE && m_pPSConvertColorDeint) {
 		m_pDeviceContext->PSSetShader(m_pPSConvertColorDeint, nullptr, 0);
 	} else {
 		m_pDeviceContext->PSSetShader(m_pPSConvertColor, nullptr, 0);

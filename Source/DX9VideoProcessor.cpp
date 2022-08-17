@@ -2203,7 +2203,7 @@ HRESULT CDX9VideoProcessor::ConvertColorPass(IDirect3DSurface9* pRenderTarget)
 	HRESULT hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
 	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_PSConvColorData.fConstants, std::size(m_PSConvColorData.fConstants));
-	if (m_bDeintBlend && m_pPSConvertColorDeint) { // TODO: check frame type
+	if (m_bDeintBlend && m_CurrentSampleFmt != DXVA2_SampleProgressiveFrame && m_pPSConvertColorDeint) {
 		hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColorDeint);
 	} else {
 		hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColor);
