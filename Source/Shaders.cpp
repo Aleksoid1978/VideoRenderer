@@ -95,9 +95,10 @@ HRESULT GetShaderConvertColor(
 	LPVOID data;
 	DWORD size;
 
-	bool bBT2020Primaries = (exFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020);
-	bool bConvertHDRtoSDR = (convertType == SHADER_CONVERT_TO_SDR && (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG));
-	bool bConvertHLGtoPQ = (convertType == SHADER_CONVERT_TO_PQ && exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG);
+	const bool bBT2020Primaries = (exFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020);
+	const bool bConvertHDRtoSDR = (convertType == SHADER_CONVERT_TO_SDR && (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG));
+	const bool bConvertHLGtoPQ = (convertType == SHADER_CONVERT_TO_PQ && exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG);
+	const bool blendDeint420 = (blendDeinterlace && fmtParams.Subsampling == 420);
 
 	if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
 		hr = GetDataFromResource(data, size, IDF_HLSL_HLG);
@@ -283,7 +284,7 @@ HRESULT GetShaderConvertColor(
 			break;
 		case 2:
 			code.append("float colorY = texY.Sample(samp, input.Tex).r;\n");
-			if (blendDeinterlace) {
+			if (blendDeint420) {
 				code.append(
 					"float y1 = texY.Sample(samp, input.Tex, int2(0, -1));\n"
 					"float y2 = texY.Sample(samp, input.Tex, int2(0, 1));\n"
@@ -340,7 +341,7 @@ HRESULT GetShaderConvertColor(
 			break;
 		case 3:
 			code.append("float colorY = texY.Sample(samp, input.Tex).r;\n");
-			if (blendDeinterlace) {
+			if (blendDeint420) {
 				code.append(
 					"float y1 = texY.Sample(samp, input.Tex, int2(0, -1));\n"
 					"float y2 = texY.Sample(samp, input.Tex, int2(0, 1));\n"
@@ -468,7 +469,7 @@ HRESULT GetShaderConvertColor(
 				"float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n"
 				"{\n"
 				"float colorY = tex2D(sY, t0).r;\n");
-			if (blendDeinterlace) {
+			if (blendDeint420) {
 				code.append(
 					"float y1 = tex2D(sY, t0 + float2(0, -dy)).r;\n"
 					"float y2 = tex2D(sY, t0 + float2(0, dy)).r;\n"
@@ -528,7 +529,7 @@ HRESULT GetShaderConvertColor(
 				"float4 main(float2 t0 : TEXCOORD0, float2 t1 : TEXCOORD1) : COLOR\n"
 				"{\n"
 				"float colorY = tex2D(sY, t0).r;\n");
-			if (blendDeinterlace) {
+			if (blendDeint420) {
 				code.append(
 					"float y1 = tex2D(sY, t0 + float2(0, -dy)).r;\n"
 					"float y2 = tex2D(sY, t0 + float2(0, dy)).r;\n"

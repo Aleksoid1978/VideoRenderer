@@ -2108,18 +2108,16 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 			pShaderCode->Release();
 		}
 
-		if (m_bInterlaced && m_srcParams.Subsampling == 420) {
-			if (m_srcParams.pDX9Planes && m_srcParams.pDX9Planes->FmtPlane2) {
-				hr = GetShaderConvertColor(false,
-					m_srcWidth,
-					m_TexSrcVideo.Width, m_TexSrcVideo.Height,
-					m_srcRect, m_srcParams, m_srcExFmt,
-					m_iChromaScaling, convertType, true,
-					&pShaderCode);
-				if (S_OK == hr) {
-					hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColorDeint);
-					pShaderCode->Release();
-				}
+		if (m_bInterlaced && m_srcParams.Subsampling == 420 && m_srcParams.pDX9Planes) {
+			hr = GetShaderConvertColor(false,
+				m_srcWidth,
+				m_TexSrcVideo.Width, m_TexSrcVideo.Height,
+				m_srcRect, m_srcParams, m_srcExFmt,
+				m_iChromaScaling, convertType, true,
+				&pShaderCode);
+			if (S_OK == hr) {
+				hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColorDeint);
+				pShaderCode->Release();
 			}
 		}
 
