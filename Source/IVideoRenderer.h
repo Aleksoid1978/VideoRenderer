@@ -123,7 +123,7 @@ struct Settings_t {
 		bInterpolateAt50pct             = true;
 		bUseDither                      = true;
 		bDeintBlend                     = false;
-		iSwapEffect                     = SWAPEFFECT_Discard;
+		iSwapEffect                     = SWAPEFFECT_Flip;
 		bExclusiveFS                    = false;
 		bVBlankBeforePresent            = false;
 		bReinitByDisplay                = false;

@@ -208,7 +208,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			m_Sets.bDeintBlend = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_SwapEffect, dw)) {
-			m_Sets.iSwapEffect = discard<int>(dw, SWAPEFFECT_Discard, SWAPEFFECT_Discard, SWAPEFFECT_Flip);
+			m_Sets.iSwapEffect = discard<int>(dw, SWAPEFFECT_Flip, SWAPEFFECT_Discard, SWAPEFFECT_Flip);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ExclusiveFullscreen, dw)) {
 			m_Sets.bExclusiveFS = !!dw;

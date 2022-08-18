@@ -52,7 +52,7 @@ protected:
 	bool m_bInterpolateAt50pct             = true;
 	bool m_bUseDither                      = true;
 	bool m_bDeintBlend                     = false;
-	int  m_iSwapEffect                     = SWAPEFFECT_Discard;
+	int  m_iSwapEffect                     = SWAPEFFECT_Flip;
 	bool m_bVBlankBeforePresent            = false;
 	bool m_bHdrPassthrough                 = true;
 	int  m_iHdrToggleDisplay               = HDRTD_Always;

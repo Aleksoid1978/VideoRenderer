@@ -1143,11 +1143,11 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		desc1.SampleDesc.Count = 1;
 		desc1.SampleDesc.Quality = 0;
 		desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		if((m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) || bHdrOutput) {
+		if ((m_iSwapEffect == SWAPEFFECT_Flip && IsWindows8OrGreater()) || bHdrOutput) {
 			desc1.BufferCount = bHdrOutput ? 6 : 2;
 			desc1.Scaling = DXGI_SCALING_NONE;
 			desc1.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-		} else { // default SWAPEFFECT_Discard
+		} else { // SWAPEFFECT_Discard or Windows 7
 			desc1.BufferCount = 1;
 			desc1.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 		}
@@ -1174,7 +1174,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 			desc1.BufferCount = bHdrOutput ? 6 : 2;
 			desc1.Scaling = DXGI_SCALING_NONE;
 			desc1.SwapEffect = IsWindows10OrGreater() ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-		} else { // default SWAPEFFECT_Discard
+		} else { // SWAPEFFECT_Discard or Windows 7
 			desc1.BufferCount = 1;
 			desc1.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 		}
