@@ -39,7 +39,7 @@ static const ScalingShaderResId s_Upscaling9ResIDs[UPSCALE_COUNT] = {
 	{IDF_PS_9_INTERP_CATMULL4_X,  IDF_PS_9_INTERP_CATMULL4_Y,  L"Catmull-Rom"       },
 	{IDF_PS_9_INTERP_LANCZOS2_X,  IDF_PS_9_INTERP_LANCZOS2_Y,  L"Lanczos2"          },
 	{IDF_PS_9_INTERP_LANCZOS3_X,  IDF_PS_9_INTERP_LANCZOS3_Y,  L"Lanczos3"          },
-	{IDF_PS_9_INTERP_JINC2,       IDF_PS_9_INTERP_JINC2,       L"Jinc2*"            },
+	{IDF_PS_9_INTERP_JINC2,       IDF_PS_9_INTERP_JINC2,       L"Jinc2-like"        },
 };
 
 static const ScalingShaderResId s_Downscaling9ResIDs[DOWNSCALE_COUNT] = {
