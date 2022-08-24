@@ -818,7 +818,7 @@ STDMETHODIMP CBaseVideoRenderer2::get_FramesDroppedInRenderer(__out int *pcFrame
 // Set *pcFramesDrawn to the number of frames drawn since
 // streaming started.
 
-STDMETHODIMP CBaseVideoRenderer2::get_FramesDrawn( int *pcFramesDrawn)
+STDMETHODIMP CBaseVideoRenderer2::get_FramesDrawn(__out int *pcFramesDrawn)
 {
     CheckPointer(pcFramesDrawn,E_POINTER);
     CAutoLock cVideoLock(&m_InterfaceLock);
@@ -830,7 +830,7 @@ STDMETHODIMP CBaseVideoRenderer2::get_FramesDrawn( int *pcFramesDrawn)
 // Set iAvgFrameRate to the frames per hundred secs since
 // streaming started.  0 otherwise.
 
-STDMETHODIMP CBaseVideoRenderer2::get_AvgFrameRate( int *piAvgFrameRate)
+STDMETHODIMP CBaseVideoRenderer2::get_AvgFrameRate(__out int *piAvgFrameRate)
 {
     CheckPointer(piAvgFrameRate,E_POINTER);
     CAutoLock cVideoLock(&m_InterfaceLock);

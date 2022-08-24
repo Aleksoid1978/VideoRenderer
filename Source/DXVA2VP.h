@@ -27,7 +27,7 @@ class VideoSampleBuffer
 private:
 	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
 	UINT m_maxSize = 1;
-	DXVA2_ExtendedFormat m_exFmt;
+	DXVA2_ExtendedFormat m_exFmt = {};
 
 	void ReleaseSurfaces() {
 		for (auto& dxva2sample : m_DXVA2Samples) {
