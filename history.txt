@@ -1,4 +1,4 @@
-0.6.2
+0.6.3.1956 - 2022.08.25
 ------------------------
 Optimized PQ to SDR conversion using D3D11 video processor on Windows 10.
 Added the ability to use Blend deinterlacing for YUV 4:2:0 formats when using a Shader video processor.
