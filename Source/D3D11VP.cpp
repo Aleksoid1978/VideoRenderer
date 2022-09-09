@@ -521,7 +521,6 @@ HRESULT CD3D11VP::SetColorSpace(const DXVA2_ExtendedFormat exFmt, const bool bHd
 				m_dstFormat, cstype_output,
 				&bConvSupported);
 		}
-		ASSERT(bConvSupported);
 
 		if (bConvSupported) {
 			m_pVideoContext1->VideoProcessorSetStreamColorSpace1(m_pVideoProcessor, 0, cstype_stream);
@@ -532,7 +531,8 @@ HRESULT CD3D11VP::SetColorSpace(const DXVA2_ExtendedFormat exFmt, const bool bHd
 
 			return S_OK;
 		}
-
+		DLog(L"CD3D11VP::SetColorSpace() : using ID3D11VideoContext1 FAILED. {}({}) -> {}({})",
+			DXGIFormatToString(m_srcFormat), (int)cstype_stream, DXGIFormatToString(m_dstFormat), (int)cstype_output);
 	}
 
 	// Windows 8/8.1 or if something went wrong
