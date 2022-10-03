@@ -122,6 +122,8 @@ private:
 
 	bool m_bEnableFullscreenControl = false;
 
+	CSize m_videoSize, m_videoAspectRatio;
+
 	HRESULT Init(const bool bCreateWindow);
 
 public:

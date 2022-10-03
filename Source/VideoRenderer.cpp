@@ -429,15 +429,19 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 		m_VideoProcessor->SetVideoRect(m_videoRect);
 	}
 
-	if (framesize.cx && aspect.cx && m_pSink) {
-		CSize aspectNew, framesizeNew;
-		m_VideoProcessor->GetAspectRatio(&aspectNew.cx, &aspectNew.cy);
-		m_VideoProcessor->GetVideoSize(&framesizeNew.cx, &framesizeNew.cy);
+	CSize aspectNew, framesizeNew;
+	m_VideoProcessor->GetAspectRatio(&aspectNew.cx, &aspectNew.cy);
+	m_VideoProcessor->GetVideoSize(&framesizeNew.cx, &framesizeNew.cy);
 
-		if (aspectNew != aspect || framesizeNew != framesize) {
+	if (framesize.cx && aspect.cx && m_pSink) {
+		if (aspectNew != aspect || framesizeNew != framesize
+				|| aspectNew != m_videoAspectRatio || framesizeNew != m_videoSize) {
 			m_pSink->Notify(EC_VIDEO_SIZE_CHANGED, MAKELPARAM(framesizeNew.cx, framesizeNew.cy), 0);
 		}
 	}
+
+	m_videoSize = framesizeNew;
+	m_videoAspectRatio = aspectNew;
 
 	return S_OK;
 }

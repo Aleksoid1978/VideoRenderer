@@ -1633,7 +1633,7 @@ void CDX11VideoProcessor::UpdatFrameProperties()
 
 BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 {
-	if (VerifyMediaType(&mt)) {
+	if (InitMediaType(&mt)) {
 		const auto& FmtParams = GetFmtConvParams(&mt);
 
 		if (FmtParams.cformat == CF_RGB24) {
