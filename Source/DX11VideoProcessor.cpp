@@ -689,6 +689,10 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pSamplerDither.Release();
 	m_pAlphaBlendState.Release();
 
+	m_Alignment.texture.Release();
+	m_Alignment.cformat = {};
+	m_Alignment.cx = {};
+
 	if (m_pDeviceContext) {
 		// need ClearState() (see ReleaseVP()) and Flush() for ID3D11DeviceContext when using DXGI_SWAP_EFFECT_DISCARD in Windows 8/8.1
 		m_pDeviceContext->Flush();
@@ -1633,7 +1637,7 @@ void CDX11VideoProcessor::UpdatFrameProperties()
 
 BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 {
-	if (InitMediaType(&mt)) {
+	if (VerifyMediaType(&mt)) {
 		const auto& FmtParams = GetFmtConvParams(&mt);
 
 		if (FmtParams.cformat == CF_RGB24) {
@@ -1646,22 +1650,64 @@ BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 			// nothing
 		}
 		else {
-			if (!m_TexSrcVideo.pTexture) {
+			auto pBIH = GetBIHfromVIHs(&mt);
+			if (!pBIH) {
 				return FALSE;
 			}
 
-			UINT RowPitch = 0;
-			D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-			if (SUCCEEDED(m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource))) {
-				RowPitch = mappedResource.RowPitch;
-				m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
+			auto biWidth = pBIH->biWidth;
+			auto biHeight = labs(pBIH->biHeight);
+
+			if (!m_Alignment.cx || m_Alignment.cformat != FmtParams.cformat
+					|| m_Alignment.texture.desc.Width != biWidth || m_Alignment.texture.desc.Height != biHeight) {
+				m_Alignment.texture.Release();
+				m_Alignment.cformat = {};
+				m_Alignment.cx = {};
 			}
 
-			if (!RowPitch) {
-				return FALSE;
+			if (!m_Alignment.texture.pTexture) {
+				auto VP11Format = FmtParams.VP11Format;
+				if (VP11Format != DXGI_FORMAT_UNKNOWN) {
+					bool disableD3D11VP = false;
+					switch (FmtParams.cformat) {
+						case CF_NV12: disableD3D11VP = !m_VPFormats.bNV12;  break;
+						case CF_P010:
+						case CF_P016: disableD3D11VP = !m_VPFormats.bP01x;  break;
+						case CF_YUY2: disableD3D11VP = !m_VPFormats.bYUY2;  break;
+						default:      disableD3D11VP = !m_VPFormats.bOther; break;
+					}
+					if (disableD3D11VP) {
+						VP11Format = DXGI_FORMAT_UNKNOWN;
+					}
+				}
+
+				HRESULT hr = E_FAIL;
+				if (VP11Format != DXGI_FORMAT_UNKNOWN) {
+					hr = m_Alignment.texture.Create(m_pDevice, VP11Format, biWidth, biHeight, Tex2D_DynamicShaderWriteNoSRV);
+				}
+				if (FAILED(hr) && FmtParams.DX11Format != DXGI_FORMAT_UNKNOWN) {
+					hr = m_Alignment.texture.CreateEx(m_pDevice, FmtParams.DX11Format, FmtParams.pDX11Planes, biWidth, biHeight, Tex2D_DynamicShaderWrite);
+				}
+				if (FAILED(hr)) {
+					return FALSE;
+				}
+
+				UINT RowPitch = 0;
+				D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+				if (SUCCEEDED(m_pDeviceContext->Map(m_Alignment.texture.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource))) {
+					RowPitch = mappedResource.RowPitch;
+					m_pDeviceContext->Unmap(m_Alignment.texture.pTexture, 0);
+				}
+
+				if (!RowPitch) {
+					return FALSE;
+				}
+
+				m_Alignment.cformat = FmtParams.cformat;
+				m_Alignment.cx = RowPitch / FmtParams.Packsize;
 			}
 
-			Size.cx = RowPitch / FmtParams.Packsize;
+			Size.cx = m_Alignment.cx;
 		}
 
 		if (FmtParams.cformat == CF_RGB24 || FmtParams.cformat == CF_XRGB32 || FmtParams.cformat == CF_ARGB32) {

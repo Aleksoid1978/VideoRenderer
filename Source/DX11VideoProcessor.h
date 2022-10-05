@@ -71,6 +71,13 @@ private:
 	CTex2DRing m_TexsPostScale;
 	Tex2D_t m_TexDither;
 
+	// for GetAlignmentSize()
+	struct Alignment_t {
+		Tex11Video_t texture;
+		ColorFormat_t cformat = {};
+		LONG cx = {};
+	} m_Alignment;
+
 	// D3D11 Video Processor
 	CD3D11VP m_D3D11VP;
 	CComPtr<ID3D11PixelShader> m_pPSCorrection;
