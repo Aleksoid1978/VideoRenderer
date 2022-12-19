@@ -1842,6 +1842,22 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 	}
 
+#if 0
+#ifdef _DEBUG
+	static unsigned num = 0;
+	if ((num++ & 0xFF) == 0) {
+		if (CComQIPtr<IMediaSideData> pMediaSideData = pSample) {
+			MediaSideDataDOVIMetadata* hdr = nullptr;
+			size_t size = 0;
+			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&hdr, &size);
+			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata)) {
+				DLog(L"CDX11VideoProcessor::CopySample - Dolby Vision metadata found");
+			}
+		}
+	}
+#endif
+#endif
+
 	if (CComQIPtr<IMediaSampleD3D11> pMSD3D11 = pSample) {
 		if (m_iSrcFromGPU != 11) {
 			m_iSrcFromGPU = 11;
