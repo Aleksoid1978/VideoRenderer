@@ -29,6 +29,11 @@ enum : int {
 	VP_DX11 = 11
 };
 
+enum : int {
+	STEREO3D_AsIs = 0,
+	STEREO3D_HalfOverUnder_to_Interlace,
+};
+
 class CMpcVideoRenderer;
 
 class CVideoProcessor
@@ -87,6 +92,7 @@ protected:
 
 	int  m_iRotation   = 0;
 	bool m_bFlip       = false;
+	int  m_iStereo3dTransform = 0;
 	bool m_bFinalPass  = false;
 	bool m_bDitherUsed = false;
 
@@ -179,6 +185,7 @@ public:
 	virtual void SetRotation(int value) = 0;
 	bool GetFlip() { return m_bFlip; }
 	void SetFlip(bool value) { m_bFlip = value; }
+	void SetStereo3dTransform(int value) { m_iStereo3dTransform = value; }
 
 	virtual void ClearPreScaleShaders() = 0;
 	virtual void ClearPostScaleShaders() = 0;

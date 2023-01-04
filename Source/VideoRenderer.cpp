@@ -1358,6 +1358,15 @@ STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
 		}
 	}
 
+	if (!strcmp(field, "stereo3dTransform")) {
+		if (value == STEREO3D_AsIs || value == STEREO3D_HalfOverUnder_to_Interlace) {
+			CAutoLock cRendererLock(&m_RendererLock);
+
+			m_VideoProcessor->SetStereo3dTransform(value);
+			return E_NOTIMPL; // TODO
+		}
+	}
+
 	return E_INVALIDARG;
 }
 
