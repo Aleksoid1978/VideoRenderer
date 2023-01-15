@@ -147,6 +147,9 @@
     <FxCompile Include="d3d11\ps_convert_bitmap_to_pq.hlsl">
       <Filter>d3d11</Filter>
     </FxCompile>
+    <FxCompile Include="d3d9\halfoverunder_to_interlace.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="convert\hdr_tone_mapping.hlsl">

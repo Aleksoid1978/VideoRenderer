@@ -1,5 +1,5 @@
 /*
- * (C) 2020-2022 see Authors.txt
+ * (C) 2020-2023 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -185,7 +185,7 @@ public:
 	virtual void SetRotation(int value) = 0;
 	bool GetFlip() { return m_bFlip; }
 	void SetFlip(bool value) { m_bFlip = value; }
-	void SetStereo3dTransform(int value) { m_iStereo3dTransform = value; }
+	virtual void SetStereo3dTransform(int value) = 0;
 
 	virtual void ClearPreScaleShaders() = 0;
 	virtual void ClearPostScaleShaders() = 0;

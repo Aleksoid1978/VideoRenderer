@@ -40,7 +40,8 @@
 #define IDF_PS_9_CONVOL_BICUBIC15_Y     659
 #define IDF_PS_9_CONVOL_LANCZOS_X       660
 #define IDF_PS_9_CONVOL_LANCZOS_Y       661
-#define IDF_PS_9_FINAL_PASS             670
+#define IDF_PS_9_HALFOU_TO_INTERLACE    670
+#define IDF_PS_9_FINAL_PASS             680
 #define IDF_VS_11_SIMPLE                800
 #define IDF_PS_11_SIMPLE                801
 #define IDF_VS_11_GEOMETRY              802
@@ -81,8 +82,8 @@
 #define IDF_PS_11_CONVOL_BICUBIC15_Y    859
 #define IDF_PS_11_CONVOL_LANCZOS_X      860
 #define IDF_PS_11_CONVOL_LANCZOS_Y      861
-#define IDF_PS_11_FINAL_PASS            870
-#define IDF_PS_11_FINAL_PASS_10         871
+#define IDF_PS_11_FINAL_PASS            880
+#define IDF_PS_11_FINAL_PASS_10         881
 #define IDF_PS_11_TEST                  900
 #define IDC_EDIT1                       1001
 #define IDC_EDIT2                       1002

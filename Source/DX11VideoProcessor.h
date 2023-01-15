@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2022 see Authors.txt
+* (C) 2018-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -231,6 +231,7 @@ public:
 	void Configure(const Settings_t& config) override;
 
 	void SetRotation(int value) override;
+	void SetStereo3dTransform(int value) override;
 
 	void Flush() override;
 

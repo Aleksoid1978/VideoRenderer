@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2022 see Authors.txt
+* (C) 2018-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -546,6 +546,8 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 		}
 		ASSERT(S_OK == hr2);
 
+		SetStereo3dTransform(m_iStereo3dTransform);
+
 		HRESULT hr3 = m_TexDither.Create(m_pD3DDevEx, D3DFMT_A16B16G16R16F, dither_size, dither_size, D3DUSAGE_DYNAMIC);
 		if (S_OK == hr3) {
 			LPVOID data;
@@ -708,6 +710,7 @@ void CDX9VideoProcessor::ReleaseDevice()
 	m_pShaderDownscaleY.Release();
 	m_strShaderX = nullptr;
 	m_strShaderY = nullptr;
+	m_pPSHalfOUtoInterlace.Release();
 	m_pPSFinalPass.Release();
 
 	m_StatsBackground.InvalidateDeviceObjects();
@@ -1926,6 +1929,19 @@ void CDX9VideoProcessor::SetRotation(int value)
 	UpdateTexures();
 }
 
+void CDX9VideoProcessor::SetStereo3dTransform(int value)
+{
+	m_iStereo3dTransform = value;
+
+	if (m_iStereo3dTransform == 1) {
+		if (!m_pPSHalfOUtoInterlace) {
+			CreatePShaderFromResource(&m_pPSHalfOUtoInterlace, IDF_PS_9_HALFOU_TO_INTERLACE);
+		}
+	} else {
+		m_pPSHalfOUtoInterlace.Release();
+	}
+}
+
 void CDX9VideoProcessor::Flush()
 {
 	if (m_DXVA2VP.IsReady()) {
@@ -2050,6 +2066,9 @@ void CDX9VideoProcessor::UpdatePostScaleTexures()
 
 	UINT numPostScaleShaders = m_pPostScaleShaders.size();
 	if (m_pPSCorrection) {
+		numPostScaleShaders++;
+	}
+	if (m_pPSHalfOUtoInterlace) {
 		numPostScaleShaders++;
 	}
 	if (m_bFinalPass) {
@@ -2415,7 +2434,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 
 	CRect rSrc = srcRect;
 	IDirect3DTexture9* pInputTexture = nullptr;
-	bool bNeedPostProc = m_pPSCorrection || m_pPostScaleShaders.size();
+	const bool bNeedPostProc = m_pPSCorrection || m_pPostScaleShaders.size() || m_pPSHalfOUtoInterlace;
 	if (m_DXVA2VP.IsReady()) {
 		bool bNeedShaderTransform = (m_TexConvertOutput.Width != dstRect.Width() || m_TexConvertOutput.Height != dstRect.Height() || m_iRotation || m_bFlip
 									|| dstRect.left < 0 || dstRect.top < 0 || dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom);
@@ -2455,7 +2474,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 			hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
 		}
 
-		if (m_pPostScaleShaders.size()) {
+		if (m_pPostScaleShaders.size() || m_pPSHalfOUtoInterlace) {
 			if (m_pPSCorrection) {
 				pInputTexture = Tex->pTexture;
 				Tex = m_TexsPostScale.GetNextTex();
@@ -2487,10 +2506,26 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 				}
 				hr = m_pD3DDevEx->SetPixelShader(m_pPostScaleShaders.back().shader);
 			}
+
+			if (m_pPSHalfOUtoInterlace) {
+				if (m_pPostScaleShaders.size()) {
+					pInputTexture = Tex->pTexture;
+					Tex = m_TexsPostScale.GetNextTex();
+					hr = m_pD3DDevEx->SetRenderTarget(0, Tex->pSurface);
+					hr = TextureCopyRect(pInputTexture, rect, rect, D3DTEXF_POINT, 0, false);
+				}
+
+				float fConstData[][4] = {
+				{ (float)Tex->Width, (float)Tex->Height, 0, 0 },
+				{ (float)dstRect.left / Tex->Width, (float)dstRect.top / Tex->Height, (float)dstRect.right / Tex->Width, (float)dstRect.bottom / Tex->Height },
+				};
+				hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, std::size(fConstData));
+				hr = m_pD3DDevEx->SetPixelShader(m_pPSHalfOUtoInterlace);
+			}
 		}
 
 		if (m_bFinalPass) {
-			if (m_pPSCorrection || m_pPostScaleShaders.size()) {
+			if (bNeedPostProc) {
 				pInputTexture = Tex->pTexture;
 				Tex = m_TexsPostScale.GetNextTex();
 				hr = m_pD3DDevEx->SetRenderTarget(0, Tex->pSurface);

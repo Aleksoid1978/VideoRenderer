@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2022 see Authors.txt
+* (C) 2018-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -3168,6 +3168,12 @@ void CDX11VideoProcessor::SetRotation(int value)
 	if (m_D3D11VP.IsReady()) {
 		m_D3D11VP.SetRotation(static_cast<D3D11_VIDEO_PROCESSOR_ROTATION>(value / 90));
 	}
+}
+
+void CDX11VideoProcessor::SetStereo3dTransform(int value)
+{
+	m_iStereo3dTransform = value;
+	//TODO
 }
 
 void CDX11VideoProcessor::Flush()

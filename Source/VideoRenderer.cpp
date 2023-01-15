@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2022 see Authors.txt
+ * (C) 2018-2023 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -1363,7 +1363,7 @@ STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
 			CAutoLock cRendererLock(&m_RendererLock);
 
 			m_VideoProcessor->SetStereo3dTransform(value);
-			return E_NOTIMPL; // TODO
+			return S_OK;
 		}
 	}
 
