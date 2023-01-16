@@ -642,6 +642,21 @@ void CDX9VideoProcessor::ResizeInternal()
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::ResizeInternal() : ResetEx() failed with error {}", HR2Str(hr));
 }
 
+UINT CDX9VideoProcessor::GetPostScaleSteps()
+{
+	UINT nSteps = m_pPostScaleShaders.size();
+	if (m_pPSCorrection) {
+		nSteps++;
+	}
+	if (m_pPSHalfOUtoInterlace) {
+		nSteps++;
+	}
+	if (m_bFinalPass) {
+		nSteps++;
+	}
+	return nSteps;
+}
+
 HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
 {
 	CheckPointer(m_pD3DEx, E_FAIL);
@@ -2064,17 +2079,8 @@ void CDX9VideoProcessor::UpdatePostScaleTexures()
 
 	m_bFinalPass = (m_bUseDither && needDither && m_TexDither.pTexture && m_pPSFinalPass);
 
-	UINT numPostScaleShaders = m_pPostScaleShaders.size();
-	if (m_pPSCorrection) {
-		numPostScaleShaders++;
-	}
-	if (m_pPSHalfOUtoInterlace) {
-		numPostScaleShaders++;
-	}
-	if (m_bFinalPass) {
-		numPostScaleShaders++;
-	}
-	HRESULT hr = m_TexsPostScale.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, m_windowRect.Width(), m_windowRect.Height(), numPostScaleShaders);
+	const UINT numPostScaleSteps = GetPostScaleSteps();
+	HRESULT hr = m_TexsPostScale.CheckCreate(m_pD3DDevEx, m_InternalTexFmt, m_windowRect.Width(), m_windowRect.Height(), numPostScaleSteps);
 	//UpdateStatsPostProc();
 }
 
@@ -2434,11 +2440,14 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 
 	CRect rSrc = srcRect;
 	IDirect3DTexture9* pInputTexture = nullptr;
-	const bool bNeedPostProc = m_pPSCorrection || m_pPostScaleShaders.size() || m_pPSHalfOUtoInterlace;
+
+	const UINT numSteps = GetPostScaleSteps();
+
 	if (m_DXVA2VP.IsReady()) {
 		bool bNeedShaderTransform = (m_TexConvertOutput.Width != dstRect.Width() || m_TexConvertOutput.Height != dstRect.Height() || m_iRotation || m_bFlip
 									|| dstRect.left < 0 || dstRect.top < 0 || dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom);
-		if (!bNeedShaderTransform && !bNeedPostProc && !m_bFinalPass) {
+
+		if (!bNeedShaderTransform && !numSteps) {
 			m_bVPScalingUseShaders = false;
 
 			hr = DxvaVPPass(pRenderTarget, rSrc, dstRect, second);
@@ -2459,86 +2468,81 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 		pInputTexture = m_TexSrcVideo.pTexture;
 	}
 
-	if (bNeedPostProc || m_bFinalPass) {
-		Tex_t* Tex = m_TexsPostScale.GetFirstTex();
+	if (numSteps) {
+		UINT step = 0;
+		Tex_t* pTex = nullptr;
+		IDirect3DSurface9* pRT = nullptr;
+
+		auto StepSetting = [&]() {
+			step++;
+			pInputTexture = pTex->pTexture;
+			if (step < numSteps) {
+				pTex = m_TexsPostScale.GetNextTex();
+				pRT = pTex->pSurface;
+			}
+			else {
+				pRT = pRenderTarget;
+			}
+		};
+
+		pTex = m_TexsPostScale.GetFirstTex();
 		CRect rect;
-		rect.IntersectRect(dstRect, CRect(0, 0, Tex->Width, Tex->Height));
+		rect.IntersectRect(dstRect, CRect(0, 0, pTex->Width, pTex->Height));
 
 		if (m_DXVA2VP.IsReady()) {
 			m_bVPScalingUseShaders = rSrc.Width() != dstRect.Width() || rSrc.Height() != dstRect.Height();
 		}
 
-		hr = ResizeShaderPass(pInputTexture, Tex->pSurface, rSrc, dstRect);
+		hr = ResizeShaderPass(pInputTexture, pTex->pSurface, rSrc, dstRect);
 
 		if (m_pPSCorrection) {
+			StepSetting();
 			hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
+			hr = m_pD3DDevEx->SetRenderTarget(0, pRT);
+			hr = TextureCopyRect(pInputTexture, rect, rect, D3DTEXF_POINT, 0, false);
 		}
 
-		if (m_pPostScaleShaders.size() || m_pPSHalfOUtoInterlace) {
-			if (m_pPSCorrection) {
-				pInputTexture = Tex->pTexture;
-				Tex = m_TexsPostScale.GetNextTex();
-				hr = m_pD3DDevEx->SetRenderTarget(0, Tex->pSurface);
+		if (m_pPostScaleShaders.size()) {
+			static __int64 counter = 0;
+			static long start = GetTickCount();
+
+			long stop = GetTickCount();
+			long diff = stop - start;
+			if (diff >= 10 * 60 * 1000) {
+				start = stop;    // reset after 10 min (ps float has its limits in both range and accuracy)
+			}
+			float fConstData[][4] = {
+				{(float)pTex->Width, (float)pTex->Height, (float)(counter++), (float)diff / 1000},
+				{1.0f / pTex->Width, 1.0f / pTex->Height, 0, 0},
+			};
+			hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, std::size(fConstData));
+
+			for (UINT idx = 0; idx < m_pPostScaleShaders.size(); idx++) {
+				StepSetting();
+				hr = m_pD3DDevEx->SetPixelShader(m_pPostScaleShaders[idx].shader);
+				hr = m_pD3DDevEx->SetRenderTarget(0, pRT);
 				hr = TextureCopyRect(pInputTexture, rect, rect, D3DTEXF_POINT, 0, false);
 			}
+		}
 
-			if (m_pPostScaleShaders.size()) {
-				static __int64 counter = 0;
-				static long start = GetTickCount();
-
-				long stop = GetTickCount();
-				long diff = stop - start;
-				if (diff >= 10 * 60 * 1000) {
-					start = stop;    // reset after 10 min (ps float has its limits in both range and accuracy)
-				}
-				float fConstData[][4] = {
-					{(float)Tex->Width, (float)Tex->Height, (float)(counter++), (float)diff / 1000},
-					{1.0f / Tex->Width, 1.0f / Tex->Height, 0, 0},
-				};
-				hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, std::size(fConstData));
-
-				for (UINT idx = 0; idx < m_pPostScaleShaders.size() - 1; idx++) {
-					pInputTexture = Tex->pTexture;
-					Tex = m_TexsPostScale.GetNextTex();
-					hr = m_pD3DDevEx->SetPixelShader(m_pPostScaleShaders[idx].shader);
-					hr = m_pD3DDevEx->SetRenderTarget(0, Tex->pSurface);
-					hr = TextureCopyRect(pInputTexture, rect, rect, D3DTEXF_POINT, 0, false);
-				}
-				hr = m_pD3DDevEx->SetPixelShader(m_pPostScaleShaders.back().shader);
-			}
-
-			if (m_pPSHalfOUtoInterlace) {
-				if (m_pPostScaleShaders.size()) {
-					pInputTexture = Tex->pTexture;
-					Tex = m_TexsPostScale.GetNextTex();
-					hr = m_pD3DDevEx->SetRenderTarget(0, Tex->pSurface);
-					hr = TextureCopyRect(pInputTexture, rect, rect, D3DTEXF_POINT, 0, false);
-				}
-
-				float fConstData[][4] = {
-				{ (float)Tex->Width, (float)Tex->Height, 0, 0 },
-				{ (float)dstRect.left / Tex->Width, (float)dstRect.top / Tex->Height, (float)dstRect.right / Tex->Width, (float)dstRect.bottom / Tex->Height },
-				};
-				hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, std::size(fConstData));
-				hr = m_pD3DDevEx->SetPixelShader(m_pPSHalfOUtoInterlace);
-			}
+		if (m_pPSHalfOUtoInterlace) {
+			StepSetting();
+			float fConstData[][4] = {
+				{ (float)pTex->Width, (float)pTex->Height, 0, 0 },
+				{ (float)dstRect.left / pTex->Width, (float)dstRect.top / pTex->Height, (float)dstRect.right / pTex->Width, (float)dstRect.bottom / pTex->Height },
+			};
+			hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, std::size(fConstData));
+			hr = m_pD3DDevEx->SetPixelShader(m_pPSHalfOUtoInterlace);
+			hr = m_pD3DDevEx->SetRenderTarget(0, pRT);
+			hr = TextureCopyRect(pInputTexture, rect, rect, D3DTEXF_POINT, 0, false);
 		}
 
 		if (m_bFinalPass) {
-			if (bNeedPostProc) {
-				pInputTexture = Tex->pTexture;
-				Tex = m_TexsPostScale.GetNextTex();
-				hr = m_pD3DDevEx->SetRenderTarget(0, Tex->pSurface);
-				hr = TextureCopyRect(pInputTexture, rect, rect, D3DTEXF_POINT, 0, false);
-			}
-
-			hr = FinalPass(Tex->pTexture, pRenderTarget, rect, rect);
+			StepSetting();
+			hr = FinalPass(pTex->pTexture, pRT, rect, rect);
 			m_bDitherUsed = true;
 		}
-		else {
-			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
-			hr = TextureCopyRect(Tex->pTexture, rect, rect, D3DTEXF_POINT, 0, false);
-		}
+
 		m_pD3DDevEx->SetPixelShader(nullptr);
 	}
 	else {

@@ -112,6 +112,8 @@ private:
 	HRESULT ResetInternal();
 	void ResizeInternal();
 
+	UINT GetPostScaleSteps();
+
 public:
 	CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Settings_t& config, HRESULT& hr);
 	~CDX9VideoProcessor() override;
