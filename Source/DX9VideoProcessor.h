@@ -112,8 +112,6 @@ private:
 	HRESULT ResetInternal();
 	void ResizeInternal();
 
-	UINT GetPostScaleSteps();
-
 public:
 	CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Settings_t& config, HRESULT& hr);
 	~CDX9VideoProcessor() override;
@@ -126,6 +124,8 @@ public:
 private:
 	void ReleaseVP();
 	void ReleaseDevice();
+
+	UINT GetPostScaleSteps();
 
 	HRESULT InitializeDXVA2VP(const FmtConvParams_t& params, const UINT width, const UINT height);
 	HRESULT InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height);

@@ -642,21 +642,6 @@ void CDX9VideoProcessor::ResizeInternal()
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::ResizeInternal() : ResetEx() failed with error {}", HR2Str(hr));
 }
 
-UINT CDX9VideoProcessor::GetPostScaleSteps()
-{
-	UINT nSteps = m_pPostScaleShaders.size();
-	if (m_pPSCorrection) {
-		nSteps++;
-	}
-	if (m_pPSHalfOUtoInterlace) {
-		nSteps++;
-	}
-	if (m_bFinalPass) {
-		nSteps++;
-	}
-	return nSteps;
-}
-
 HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
 {
 	CheckPointer(m_pD3DEx, E_FAIL);
@@ -737,6 +722,21 @@ void CDX9VideoProcessor::ReleaseDevice()
 	m_SyncLine.InvalidateDeviceObjects();
 
 	m_pD3DDevEx.Release();
+}
+
+UINT CDX9VideoProcessor::GetPostScaleSteps()
+{
+	UINT nSteps = m_pPostScaleShaders.size();
+	if (m_pPSCorrection) {
+		nSteps++;
+	}
+	if (m_pPSHalfOUtoInterlace) {
+		nSteps++;
+	}
+	if (m_bFinalPass) {
+		nSteps++;
+	}
+	return nSteps;
 }
 
 HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, const UINT width, const UINT height)
@@ -2075,7 +2075,7 @@ void CDX9VideoProcessor::UpdateTexures()
 
 void CDX9VideoProcessor::UpdatePostScaleTexures()
 {
-	bool needDither = (m_InternalTexFmt != D3DFMT_X8R8G8B8); // the output is always D3DFMT_X8R8G8B8
+	const bool needDither = (m_InternalTexFmt != D3DFMT_X8R8G8B8); // the output is always D3DFMT_X8R8G8B8
 
 	m_bFinalPass = (m_bUseDither && needDither && m_TexDither.pTexture && m_pPSFinalPass);
 
@@ -2444,8 +2444,9 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 	const UINT numSteps = GetPostScaleSteps();
 
 	if (m_DXVA2VP.IsReady()) {
-		bool bNeedShaderTransform = (m_TexConvertOutput.Width != dstRect.Width() || m_TexConvertOutput.Height != dstRect.Height() || m_iRotation || m_bFlip
-									|| dstRect.left < 0 || dstRect.top < 0 || dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom);
+		const bool bNeedShaderTransform =
+			(m_TexConvertOutput.Width != dstRect.Width() || m_TexConvertOutput.Height != dstRect.Height() || m_iRotation || m_bFlip
+			|| dstRect.left < 0 || dstRect.top < 0 || dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom);
 
 		if (!bNeedShaderTransform && !numSteps) {
 			m_bVPScalingUseShaders = false;
