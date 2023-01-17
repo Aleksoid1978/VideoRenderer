@@ -181,6 +181,8 @@ private:
 	void ReleaseDevice();
 	void ReleaseSwapChain();
 
+	UINT GetPostScaleSteps();
+
 	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
 

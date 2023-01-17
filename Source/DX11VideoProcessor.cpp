@@ -730,6 +730,18 @@ void CDX11VideoProcessor::ReleaseSwapChain()
 	m_pDXGISwapChain1.Release();
 }
 
+UINT CDX11VideoProcessor::GetPostScaleSteps()
+{
+	UINT nSteps = m_pPostScaleShaders.size();
+	if (m_pPSCorrection) {
+		nSteps++;
+	}
+	if (m_bFinalPass) {
+		nSteps++;
+	}
+	return nSteps;
+}
+
 HRESULT CDX11VideoProcessor::CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid)
 {
 	if (!m_pDevice || !ppPixelShader) {
@@ -2247,26 +2259,21 @@ void CDX11VideoProcessor::UpdateTexures()
 
 void CDX11VideoProcessor::UpdatePostScaleTexures()
 {
-	bool needDither = (m_SwapChainFmt == DXGI_FORMAT_B8G8R8A8_UNORM && m_InternalTexFmt != DXGI_FORMAT_B8G8R8A8_UNORM
+	const bool needDither = 
+		(m_SwapChainFmt == DXGI_FORMAT_B8G8R8A8_UNORM && m_InternalTexFmt != DXGI_FORMAT_B8G8R8A8_UNORM
 		|| m_SwapChainFmt == DXGI_FORMAT_R10G10B10A2_UNORM && m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT);
 
 	m_bFinalPass = (m_bUseDither && needDither && m_TexDither.pTexture);
-
-	UINT numPostScaleShaders = m_pPostScaleShaders.size();
-	if (m_pPSCorrection) {
-		numPostScaleShaders++;
-	}
 	if (m_bFinalPass) {
 		m_pPSFinalPass.Release();
 		m_bFinalPass = SUCCEEDED(CreatePShaderFromResource(
 			&m_pPSFinalPass,
 			(m_SwapChainFmt == DXGI_FORMAT_R10G10B10A2_UNORM) ? IDF_PS_11_FINAL_PASS_10 : IDF_PS_11_FINAL_PASS
 		));
-		if (m_bFinalPass) {
-			numPostScaleShaders++;
-		}
 	}
-	HRESULT hr = m_TexsPostScale.CheckCreate(m_pDevice, m_InternalTexFmt, m_windowRect.Width(), m_windowRect.Height(), numPostScaleShaders);
+
+	const UINT numPostScaleSteps = GetPostScaleSteps();
+	HRESULT hr = m_TexsPostScale.CheckCreate(m_pDevice, m_InternalTexFmt, m_windowRect.Width(), m_windowRect.Height(), numPostScaleSteps);
 	//UpdateStatsPostProc();
 }
 
@@ -2566,12 +2573,16 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 
 	CRect rSrc = srcRect;
 	Tex2D_t* pInputTexture = nullptr;
-	bool bNeedPostProc = m_pPSCorrection || m_pPostScaleShaders.size();
+
+	const UINT numSteps = GetPostScaleSteps();
+
 	if (m_D3D11VP.IsReady()) {
 		if (!(m_iSwapEffect == SWAPEFFECT_Discard && (m_VendorId == PCIV_AMDATI || m_VendorId == PCIV_INTEL))) {
-			bool bNeedShaderTransform = (m_TexConvertOutput.desc.Width != dstRect.Width() || m_TexConvertOutput.desc.Height != dstRect.Height() || m_bFlip
-										|| dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom);
-			if (!bNeedShaderTransform && !bNeedPostProc && !m_bFinalPass) {
+			const bool bNeedShaderTransform =
+				(m_TexConvertOutput.desc.Width != dstRect.Width() || m_TexConvertOutput.desc.Height != dstRect.Height() || m_bFlip
+				|| dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom);
+
+			if (!bNeedShaderTransform && !numSteps) {
 				m_bVPScalingUseShaders = false;
 
 				hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
@@ -2594,78 +2605,70 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 		pInputTexture = &m_TexSrcVideo;
 	}
 
-	if (bNeedPostProc || m_bFinalPass) {
-		Tex2D_t* Tex = m_TexsPostScale.GetFirstTex();
+	if (numSteps) {
+		UINT step = 0;
+		Tex2D_t* pTex = nullptr;
+		ID3D11Texture2D* pRT = nullptr;
+
+		auto StepSetting = [&]() {
+			step++;
+			pInputTexture = pTex;
+			if (step < numSteps) {
+				pTex = m_TexsPostScale.GetNextTex();
+				pRT = pTex->pTexture;
+			} else {
+				pRT = pRenderTarget;
+			}
+		};
+
+		pTex = m_TexsPostScale.GetFirstTex();
 		CRect rect;
-		rect.IntersectRect(dstRect, CRect(0, 0, Tex->desc.Width, Tex->desc.Height));
+		rect.IntersectRect(dstRect, CRect(0, 0, pTex->desc.Width, pTex->desc.Height));
 
 		if (m_D3D11VP.IsReady()) {
 			m_bVPScalingUseShaders = rSrc.Width() != dstRect.Width() || rSrc.Height() != dstRect.Height();
 		}
 
 		if (rSrc != dstRect) {
-			hr = ResizeShaderPass(*pInputTexture, Tex->pTexture, rSrc, dstRect, rotation);
+			hr = ResizeShaderPass(*pInputTexture, pTex->pTexture, rSrc, dstRect, rotation);
 		} else {
-			Tex = pInputTexture;
+			pTex = pInputTexture;
 		}
 
-		ID3D11PixelShader* pPixelShader = nullptr;
-		ID3D11Buffer* pConstantBuffer = nullptr;
-
 		if (m_pPSCorrection) {
-			pPixelShader = m_pPSCorrection;
+			StepSetting();
+			hr = TextureCopyRect(*pInputTexture, pRT, rect, rect, m_pPSCorrection, nullptr, 0, false);
 		}
 
 		if (m_pPostScaleShaders.size()) {
-			if (m_pPSCorrection) {
-				pInputTexture = Tex;
-				Tex = m_TexsPostScale.GetNextTex();
-				hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, nullptr, 0, false);
+			static __int64 counter = 0;
+			static long start = GetTickCount();
+
+			long stop = GetTickCount();
+			long diff = stop - start;
+			if (diff >= 10 * 60 * 1000) {
+				start = stop;    // reset after 10 min (ps float has its limits in both range and accuracy)
 			}
 
-			if (m_pPostScaleShaders.size()) {
-				static __int64 counter = 0;
-				static long start = GetTickCount();
+			PS_EXTSHADER_CONSTANTS ConstData = {
+				{1.0f / pTex->desc.Width, 1.0f / pTex->desc.Height },
+				{(float)pTex->desc.Width, (float)pTex->desc.Height},
+				counter++,
+				(float)diff / 1000,
+				0, 0
+			};
+			m_pDeviceContext->UpdateSubresource(m_pPostScaleConstants, 0, nullptr, &ConstData, 0, 0);
 
-				long stop = GetTickCount();
-				long diff = stop - start;
-				if (diff >= 10 * 60 * 1000) {
-					start = stop;    // reset after 10 min (ps float has its limits in both range and accuracy)
-				}
-
-				PS_EXTSHADER_CONSTANTS ConstData = {
-					{1.0f / Tex->desc.Width, 1.0f / Tex->desc.Height },
-					{(float)Tex->desc.Width, (float)Tex->desc.Height},
-					counter++,
-					(float)diff / 1000,
-					0, 0
-				};
-
-				m_pDeviceContext->UpdateSubresource(m_pPostScaleConstants, 0, nullptr, &ConstData, 0, 0);
-
-				for (UINT idx = 0; idx < m_pPostScaleShaders.size() - 1; idx++) {
-					pInputTexture = Tex;
-					Tex = m_TexsPostScale.GetNextTex();
-					pPixelShader = m_pPostScaleShaders[idx].shader;
-					hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, m_pPostScaleConstants, 0, false);
-				}
-				pPixelShader = m_pPostScaleShaders.back().shader;
-				pConstantBuffer = m_pPostScaleConstants;
+			for (UINT idx = 0; idx < m_pPostScaleShaders.size(); idx++) {
+				StepSetting();
+				hr = TextureCopyRect(*pInputTexture, pRT, rect, rect, m_pPostScaleShaders[idx].shader, m_pPostScaleConstants, 0, false);
 			}
 		}
 
 		if (m_bFinalPass) {
-			if (m_pPSCorrection || m_pPostScaleShaders.size()) {
-				pInputTexture = Tex;
-				Tex = m_TexsPostScale.GetNextTex();
-				hr = TextureCopyRect(*pInputTexture, Tex->pTexture, rect, rect, pPixelShader, pConstantBuffer, 0, false);
-			}
-
-			hr = FinalPass(*Tex, pRenderTarget, rect, rect);
+			StepSetting();
+			hr = FinalPass(*pTex, pRT, rect, rect);
 			m_bDitherUsed = true;
-		}
-		else {
-			hr = TextureCopyRect(*Tex, pRenderTarget, rect, rect, pPixelShader, pConstantBuffer, 0, false);
 		}
 	}
 	else {
