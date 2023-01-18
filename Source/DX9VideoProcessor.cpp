@@ -2529,8 +2529,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 		if (m_pPSHalfOUtoInterlace) {
 			StepSetting();
 			float fConstData[][4] = {
-				{ (float)pTex->Width, (float)pTex->Height, 0, 0 },
-				{ (float)dstRect.left / pTex->Width, (float)dstRect.top / pTex->Height, (float)dstRect.right / pTex->Width, (float)dstRect.bottom / pTex->Height },
+				{ (float)pTex->Height, 0, (float)dstRect.top / pTex->Height, (float)dstRect.bottom / pTex->Height },
 			};
 			hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstData, std::size(fConstData));
 			hr = m_pD3DDevEx->SetPixelShader(m_pPSHalfOUtoInterlace);
