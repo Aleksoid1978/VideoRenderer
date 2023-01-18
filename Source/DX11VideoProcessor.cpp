@@ -715,6 +715,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 
 	m_pVertexBuffer.Release();
 	m_pResizeShaderConstantBuffer.Release();
+	m_pHalfOUtoInterlaceConstantBuffer.Release();
 	m_pFinalPassConstantBuffer.Release();
 
 	m_pDevice.Release();
@@ -734,6 +735,9 @@ UINT CDX11VideoProcessor::GetPostScaleSteps()
 {
 	UINT nSteps = m_pPostScaleShaders.size();
 	if (m_pPSCorrection) {
+		nSteps++;
+	}
+	if (m_pPSHalfOUtoInterlace) {
 		nSteps++;
 	}
 	if (m_bFinalPass) {
@@ -1015,6 +1019,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, nullptr, &m_pResizeShaderConstantBuffer));
 
 	BufferDesc = { sizeof(FLOAT) * 4, D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, nullptr, &m_pHalfOUtoInterlaceConstantBuffer));
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, nullptr, &m_pFinalPassConstantBuffer));
 
 	BufferDesc = { sizeof(PS_EXTSHADER_CONSTANTS), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
@@ -1089,6 +1094,8 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		DLogIf(FAILED(hr2), L"Geometric primitives InitDeviceObjects() failed with error {}", HR2Str(hr2));
 	}
 	ASSERT(S_OK == hr2);
+
+	SetStereo3dTransform(m_iStereo3dTransform);
 
 	HRESULT hr3 = m_TexDither.Create(m_pDevice, DXGI_FORMAT_R16G16B16A16_FLOAT, dither_size, dither_size, Tex2D_DynamicShaderWrite);
 	if (S_OK == hr3) {
@@ -2665,6 +2672,21 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 			}
 		}
 
+		if (m_pPSHalfOUtoInterlace) {
+			StepSetting();
+			FLOAT ConstData[] = {
+				(float)pTex->desc.Height, 0,
+				(float)dstRect.top / pTex->desc.Height, (float)dstRect.bottom / pTex->desc.Height,
+			};
+			D3D11_MAPPED_SUBRESOURCE mr;
+			hr = m_pDeviceContext->Map(m_pHalfOUtoInterlaceConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mr);
+			if (SUCCEEDED(hr)) {
+				memcpy(mr.pData, &ConstData, sizeof(ConstData));
+				m_pDeviceContext->Unmap(m_pHalfOUtoInterlaceConstantBuffer, 0);
+			}
+			hr = TextureCopyRect(*pInputTexture, pRT, rect, rect, m_pPSHalfOUtoInterlace, m_pHalfOUtoInterlaceConstantBuffer, 0, false);
+		}
+
 		if (m_bFinalPass) {
 			StepSetting();
 			hr = FinalPass(*pTex, pRT, rect, rect);
@@ -3176,7 +3198,15 @@ void CDX11VideoProcessor::SetRotation(int value)
 void CDX11VideoProcessor::SetStereo3dTransform(int value)
 {
 	m_iStereo3dTransform = value;
-	//TODO
+
+	if (m_iStereo3dTransform == 1) {
+		if (!m_pPSHalfOUtoInterlace) {
+			CreatePShaderFromResource(&m_pPSHalfOUtoInterlace, IDF_PS_11_HALFOU_TO_INTERLACE);
+		}
+	}
+	else {
+		m_pPSHalfOUtoInterlace.Release();
+	}
 }
 
 void CDX11VideoProcessor::Flush()

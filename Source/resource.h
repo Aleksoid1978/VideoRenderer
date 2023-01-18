@@ -82,6 +82,7 @@
 #define IDF_PS_11_CONVOL_BICUBIC15_Y    859
 #define IDF_PS_11_CONVOL_LANCZOS_X      860
 #define IDF_PS_11_CONVOL_LANCZOS_Y      861
+#define IDF_PS_11_HALFOU_TO_INTERLACE   870
 #define IDF_PS_11_FINAL_PASS            880
 #define IDF_PS_11_FINAL_PASS_10         881
 #define IDF_PS_11_TEST                  900

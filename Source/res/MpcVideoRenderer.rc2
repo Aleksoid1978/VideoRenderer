@@ -99,6 +99,7 @@ IDF_PS_11_CONVOL_BICUBIC15_X    FILE                    "..\\_bin\\shaders\\ps_d
 IDF_PS_11_CONVOL_BICUBIC15_Y    FILE                    "..\\_bin\\shaders\\ps_downscaler_bicubic15_y.cso"
 IDF_PS_11_CONVOL_LANCZOS_X      FILE                    "..\\_bin\\shaders\\ps_downscaler_lanczos_x.cso"
 IDF_PS_11_CONVOL_LANCZOS_Y      FILE                    "..\\_bin\\shaders\\ps_downscaler_lanczos_y.cso"
+IDF_PS_11_HALFOU_TO_INTERLACE   FILE                    "..\\_bin\\shaders\\ps_halfoverunder_to_interlace.cso"
 IDF_PS_11_FINAL_PASS            FILE                    "..\\_bin\\shaders\\ps_final_pass.cso"
 IDF_PS_11_FINAL_PASS_10         FILE                    "..\\_bin\\shaders\\ps_final_pass_10.cso"
 //IDF_PS_11_TEST                  FILE                    "..\\_bin\\shaders\\ps_TEST.cso"

@@ -57,6 +57,7 @@ private:
 	CComPtr<ID3D11InputLayout>    m_pVSimpleInputLayout;
 	CComPtr<ID3D11Buffer>         m_pVertexBuffer;
 	CComPtr<ID3D11Buffer>         m_pResizeShaderConstantBuffer;
+	CComPtr<ID3D11Buffer>         m_pHalfOUtoInterlaceConstantBuffer;
 	CComPtr<ID3D11Buffer>         m_pFinalPassConstantBuffer;
 
 	DXGI_SWAP_EFFECT              m_UsedSwapEffect = DXGI_SWAP_EFFECT_DISCARD;
@@ -104,6 +105,7 @@ private:
 	std::vector<ExternalPixelShader11_t> m_pPreScaleShaders;
 	std::vector<ExternalPixelShader11_t> m_pPostScaleShaders;
 	CComPtr<ID3D11Buffer> m_pPostScaleConstants;
+	CComPtr<ID3D11PixelShader> m_pPSHalfOUtoInterlace;
 	CComPtr<ID3D11PixelShader> m_pPSFinalPass;
 
 	CComPtr<IDXGIFactory2>   m_pDXGIFactory2;
