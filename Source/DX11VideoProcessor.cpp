@@ -2045,26 +2045,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2);
 	}
 
-	if (m_pFilter->m_pSub11CallBack) {
-		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
-		const CRect rDstVid(m_videoRect);
-		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
-
-		ID3D11RenderTargetView* pRenderTargetView;
-		hr = m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView);
-		if (S_OK == hr) {
-			// Set render target and shaders
-			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
-			m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
-			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
-			m_pDeviceContext->PSSetShader(m_pPS_BitmapToFrame, nullptr, 0);
-
-			// call the function for drawing subtitles
-			m_pFilter->m_pSub11CallBack->Render11(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
-
-			pRenderTargetView->Release();
-		}
-	}
+	DrawSubtitles(pBackBuffer);
 
 	if (m_bShowStats) {
 		hr = DrawStats(pBackBuffer);
@@ -2570,6 +2551,30 @@ HRESULT CDX11VideoProcessor::FinalPass(const Tex2D_t& Tex, ID3D11Texture2D* pRen
 	m_pDeviceContext->PSSetShaderResources(1, 1, views);
 
 	return hr;
+}
+
+void CDX11VideoProcessor::DrawSubtitles(ID3D11Texture2D* pRenderTarget)
+{
+	if (m_pFilter->m_pSub11CallBack) {
+		ID3D11RenderTargetView* pRenderTargetView;
+		HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+		if (SUCCEEDED(hr)) {
+			const CRect rSrcPri(POINT(0, 0), m_windowRect.Size());
+			const CRect rDstVid(m_videoRect);
+			const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
+
+			// Set render target and shaders
+			m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+			m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
+			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
+			m_pDeviceContext->PSSetShader(m_pPS_BitmapToFrame, nullptr, 0);
+
+			// call the function for drawing subtitles
+			hr = m_pFilter->m_pSub11CallBack->Render11(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
+
+			pRenderTargetView->Release();
+		}
+	}
 }
 
 HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)

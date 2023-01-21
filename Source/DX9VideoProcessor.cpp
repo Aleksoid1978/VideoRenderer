@@ -1466,17 +1466,7 @@ HRESULT CDX9VideoProcessor::Render(int field)
 	const CRect rSrcPri(CPoint(0, 0), windowSize);
 	const CRect rDstPri(m_windowRect);
 
-	if (m_pFilter->m_pSubCallBack) {
-		CRect rDstVid(m_videoRect);
-		const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
-
-		if (CComQIPtr<ISubRenderCallback4> pSubCallBack4 = m_pFilter->m_pSubCallBack) {
-			pSubCallBack4->RenderEx3(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
-		} else {
-			m_pFilter->m_pSubCallBack->Render(rtStart, rDstVid.left, rDstVid.top, rDstVid.right, rDstVid.bottom, rSrcPri.Width(), rSrcPri.Height());
-		}
-	}
-
+	DrawSubtitles(pBackBuffer);
 	hr = m_pD3DDevEx->BeginScene();
 
 	if (m_bShowStats) {
@@ -2431,6 +2421,25 @@ HRESULT CDX9VideoProcessor::FinalPass(IDirect3DTexture9* pTexture, IDirect3DSurf
 	m_pD3DDevEx->SetTexture(1, nullptr);
 
 	return hr;
+}
+
+void CDX9VideoProcessor::DrawSubtitles(IDirect3DSurface9* pRenderTarget)
+{
+	if (m_pFilter->m_pSubCallBack) {
+		HRESULT hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
+		if (SUCCEEDED(hr)) {
+			const SIZE windowSize = m_windowRect.Size();
+			const CRect rSrcPri(POINT(0, 0), windowSize);
+			CRect rDstVid(m_videoRect);
+			const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
+
+			if (CComQIPtr<ISubRenderCallback4> pSubCallBack4 = m_pFilter->m_pSubCallBack) {
+				pSubCallBack4->RenderEx3(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
+			} else {
+				m_pFilter->m_pSubCallBack->Render(rtStart, rDstVid.left, rDstVid.top, rDstVid.right, rDstVid.bottom, windowSize.cx, windowSize.cy);
+			}
+		}
+	}
 }
 
 HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
