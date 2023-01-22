@@ -1863,7 +1863,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		MediaSideData3DOffset* offset = nullptr;
 		size_t size = 0;
 		hr = pMediaSideData->GetSideData(IID_MediaSideData3DOffset, (const BYTE**)&offset, &size);
-		if (SUCCEEDED(hr) && size == sizeof(MediaSideData3DOffset) && offset->offset_count > 0) {
+		if (SUCCEEDED(hr) && size == sizeof(MediaSideData3DOffset) && offset->offset_count > 0 && offset->offset[0]) {
 			m_nStereoSubtitlesOffsetInPixels = offset->offset[0];
 		}
 	}
