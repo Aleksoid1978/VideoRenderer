@@ -2545,7 +2545,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 		}
 
 		if (drawSubtitles) {
-			DrawSubtitles(pRT);
+			DrawSubtitles(!step ? pTex->pSurface.p : pRT);
 		}
 
 		if (m_pPSHalfOUtoInterlace) {
