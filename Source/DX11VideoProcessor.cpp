@@ -2042,7 +2042,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	}
 
 	if (!m_renderRect.IsRectEmpty()) {
-		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2);
+		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2, true);
 	}
 
 	if (m_bShowStats) {
@@ -2245,7 +2245,7 @@ void CDX11VideoProcessor::UpdateTexures()
 
 void CDX11VideoProcessor::UpdatePostScaleTexures()
 {
-	const bool needDither = 
+	const bool needDither =
 		(m_SwapChainFmt == DXGI_FORMAT_B8G8R8A8_UNORM && m_InternalTexFmt != DXGI_FORMAT_B8G8R8A8_UNORM
 		|| m_SwapChainFmt == DXGI_FORMAT_R10G10B10A2_UNORM && m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT);
 
@@ -2575,7 +2575,7 @@ void CDX11VideoProcessor::DrawSubtitles(ID3D11Texture2D* pRenderTarget)
 	}
 }
 
-HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
+HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second, const bool drawSubtitles)
 {
 	HRESULT hr = S_OK;
 	m_bDitherUsed = false;
@@ -2596,7 +2596,9 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 				m_bVPScalingUseShaders = false;
 
 				hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
-				DrawSubtitles(pRenderTarget);
+				if (drawSubtitles) {
+					DrawSubtitles(pRenderTarget);
+				}
 
 				return hr;
 			}
@@ -2677,7 +2679,9 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 			}
 		}
 
-		DrawSubtitles(pRT);
+		if (drawSubtitles) {
+			DrawSubtitles(!step ? pTex->pTexture.p : pRT);
+		}
 
 		if (m_pPSHalfOUtoInterlace) {
 			StepSetting();
@@ -2702,7 +2706,9 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 	}
 	else {
 		hr = ResizeShaderPass(*pInputTexture, pRenderTarget, rSrc, dstRect, rotation);
-		DrawSubtitles(pRenderTarget);
+		if (drawSubtitles) {
+			DrawSubtitles(pRenderTarget);
+		}
 	}
 
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::Process() : failed with error {}", HR2Str(hr));
@@ -2811,7 +2817,7 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	UpdateTexures();
 	UpdatePostScaleTexures();
 
-	hr = Process(pRGB32Texture2D, m_srcRect, imageRect, false);
+	hr = Process(pRGB32Texture2D, m_srcRect, imageRect, false, false);
 
 	m_videoRect  = backupVidRect;
 	m_windowRect = backupWndRect;

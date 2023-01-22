@@ -1457,7 +1457,7 @@ HRESULT CDX9VideoProcessor::Render(int field)
 	m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
 
 	if (!m_renderRect.IsRectEmpty()) {
-		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2);
+		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2, true);
 	}
 
 	hr = m_pD3DDevEx->EndScene();
@@ -1657,7 +1657,7 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 	UpdateTexures();
 	UpdatePostScaleTexures();
 
-	hr = Process(pRGB32Surface, m_srcRect, imageRect, 0);
+	hr = Process(pRGB32Surface, m_srcRect, imageRect, 0, false);
 
 	m_videoRect  = backupVidRect;
 	m_windowRect = backupWndRect;
@@ -2447,7 +2447,7 @@ void CDX9VideoProcessor::DrawSubtitles(IDirect3DSurface9* pRenderTarget)
 	}
 }
 
-HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
+HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second, const bool drawSubtitles)
 {
 	HRESULT hr = S_OK;
 	m_bDitherUsed = false;
@@ -2466,7 +2466,9 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 			m_bVPScalingUseShaders = false;
 
 			hr = DxvaVPPass(pRenderTarget, rSrc, dstRect, second);
-			DrawSubtitles(pRenderTarget);
+			if (drawSubtitles) {
+				DrawSubtitles(pRenderTarget);
+			}
 
 			return hr;
 		}
@@ -2542,7 +2544,9 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 			}
 		}
 
-		DrawSubtitles(pRT);
+		if (drawSubtitles) {
+			DrawSubtitles(pRT);
+		}
 
 		if (m_pPSHalfOUtoInterlace) {
 			StepSetting();
@@ -2565,7 +2569,9 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 	}
 	else {
 		hr = ResizeShaderPass(pInputTexture, pRenderTarget, rSrc, dstRect);
-		DrawSubtitles(pRenderTarget);
+		if (drawSubtitles) {
+			DrawSubtitles(pRenderTarget);
+		}
 	}
 
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::Process() : failed with error {}", HR2Str(hr));
