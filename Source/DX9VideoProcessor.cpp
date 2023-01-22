@@ -1466,7 +1466,6 @@ HRESULT CDX9VideoProcessor::Render(int field)
 	const CRect rSrcPri(CPoint(0, 0), windowSize);
 	const CRect rDstPri(m_windowRect);
 
-	DrawSubtitles(pBackBuffer);
 	hr = m_pD3DDevEx->BeginScene();
 
 	if (m_bShowStats) {
@@ -2426,6 +2425,8 @@ HRESULT CDX9VideoProcessor::FinalPass(IDirect3DTexture9* pTexture, IDirect3DSurf
 void CDX9VideoProcessor::DrawSubtitles(IDirect3DSurface9* pRenderTarget)
 {
 	if (m_pFilter->m_pSubCallBack) {
+		HRESULT hr_ec = m_pD3DDevEx->EndScene(); //TODO: need to come up with a better solution
+
 		HRESULT hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 		if (SUCCEEDED(hr)) {
 			const SIZE windowSize = m_windowRect.Size();
@@ -2438,6 +2439,10 @@ void CDX9VideoProcessor::DrawSubtitles(IDirect3DSurface9* pRenderTarget)
 			} else {
 				m_pFilter->m_pSubCallBack->Render(rtStart, rDstVid.left, rDstVid.top, rDstVid.right, rDstVid.bottom, windowSize.cx, windowSize.cy);
 			}
+		}
+
+		if (SUCCEEDED(hr_ec)) {
+			hr_ec = m_pD3DDevEx->BeginScene();
 		}
 	}
 }
@@ -2461,6 +2466,8 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 			m_bVPScalingUseShaders = false;
 
 			hr = DxvaVPPass(pRenderTarget, rSrc, dstRect, second);
+			DrawSubtitles(pRenderTarget);
+
 			return hr;
 		}
 
@@ -2535,6 +2542,8 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 			}
 		}
 
+		DrawSubtitles(pRT);
+
 		if (m_pPSHalfOUtoInterlace) {
 			StepSetting();
 			float fConstData[][4] = {
@@ -2556,6 +2565,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 	}
 	else {
 		hr = ResizeShaderPass(pInputTexture, pRenderTarget, rSrc, dstRect);
+		DrawSubtitles(pRenderTarget);
 	}
 
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::Process() : failed with error {}", HR2Str(hr));
