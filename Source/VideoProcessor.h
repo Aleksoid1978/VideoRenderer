@@ -140,6 +140,8 @@ protected:
 	RECT m_GraphRect = {};
 	int m_Yaxis  = 0;
 
+	int m_nStereoSubtitlesOffsetInPixels = 4;
+
 	CVideoProcessor(CMpcVideoRenderer* pFilter) : m_pFilter(pFilter) {}
 
 public:

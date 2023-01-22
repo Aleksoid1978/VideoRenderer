@@ -1301,6 +1301,15 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 	m_FieldDrawn = 0;
 	bool updateStats = false;
 
+	if (CComQIPtr<IMediaSideData> pMediaSideData = pSample) {
+		MediaSideData3DOffset* offset = nullptr;
+		size_t size = 0;
+		hr = pMediaSideData->GetSideData(IID_MediaSideData3DOffset, (const BYTE**)&offset, &size);
+		if (SUCCEEDED(hr) && size == sizeof(MediaSideData3DOffset) && offset->offset_count > 0) {
+			m_nStereoSubtitlesOffsetInPixels = offset->offset[0];
+		}
+	}
+
 	if (CComQIPtr<IMFGetService> pService = pSample) {
 		if (m_iSrcFromGPU != 9) {
 			m_iSrcFromGPU = 9;
@@ -2435,7 +2444,8 @@ void CDX9VideoProcessor::DrawSubtitles(IDirect3DSurface9* pRenderTarget)
 			const auto rtStart = m_pFilter->m_rtStartTime + m_rtStart;
 
 			if (CComQIPtr<ISubRenderCallback4> pSubCallBack4 = m_pFilter->m_pSubCallBack) {
-				pSubCallBack4->RenderEx3(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
+				pSubCallBack4->RenderEx3(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri,
+										 1., m_iStereo3dTransform == 1 ? m_nStereoSubtitlesOffsetInPixels : 0);
 			} else {
 				m_pFilter->m_pSubCallBack->Render(rtStart, rDstVid.left, rDstVid.top, rDstVid.right, rDstVid.bottom, windowSize.cx, windowSize.cy);
 			}

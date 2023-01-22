@@ -1830,8 +1830,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	bool updateStats = false;
 
 	m_hdr10 = {};
-	if (m_bHdrPassthrough && SourceIsHDR()) {
-		if (CComQIPtr<IMediaSideData> pMediaSideData = pSample) {
+	if (CComQIPtr<IMediaSideData> pMediaSideData = pSample) {
+		if (m_bHdrPassthrough && SourceIsHDR()) {
 			MediaSideDataHDR* hdr = nullptr;
 			size_t size = 0;
 			hr = pMediaSideData->GetSideData(IID_MediaSideDataHDR, (const BYTE**)&hdr, &size);
@@ -1858,6 +1858,13 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				m_hdr10.hdr10.MaxContentLightLevel      = hdrCLL->MaxCLL;
 				m_hdr10.hdr10.MaxFrameAverageLightLevel = hdrCLL->MaxFALL;
 			}
+		}
+
+		MediaSideData3DOffset* offset = nullptr;
+		size_t size = 0;
+		hr = pMediaSideData->GetSideData(IID_MediaSideData3DOffset, (const BYTE**)&offset, &size);
+		if (SUCCEEDED(hr) && size == sizeof(MediaSideData3DOffset) && offset->offset_count > 0) {
+			m_nStereoSubtitlesOffsetInPixels = offset->offset[0];
 		}
 	}
 
@@ -2568,7 +2575,8 @@ void CDX11VideoProcessor::DrawSubtitles(ID3D11Texture2D* pRenderTarget)
 			m_pDeviceContext->PSSetShader(m_pPS_BitmapToFrame, nullptr, 0);
 
 			// call the function for drawing subtitles
-			hr = m_pFilter->m_pSub11CallBack->Render11(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri);
+			hr = m_pFilter->m_pSub11CallBack->Render11(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri,
+													   1., m_iStereo3dTransform == 1 ? m_nStereoSubtitlesOffsetInPixels : 0);
 
 			pRenderTargetView->Release();
 		}
