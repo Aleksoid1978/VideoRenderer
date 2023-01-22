@@ -2045,8 +2045,6 @@ HRESULT CDX11VideoProcessor::Render(int field)
 		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2);
 	}
 
-	DrawSubtitles(pBackBuffer);
-
 	if (m_bShowStats) {
 		hr = DrawStats(pBackBuffer);
 	}
@@ -2598,6 +2596,8 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 				m_bVPScalingUseShaders = false;
 
 				hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
+				DrawSubtitles(pRenderTarget);
+
 				return hr;
 			}
 		}
@@ -2677,6 +2677,8 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 			}
 		}
 
+		DrawSubtitles(pRT);
+
 		if (m_pPSHalfOUtoInterlace) {
 			StepSetting();
 			FLOAT ConstData[] = {
@@ -2700,6 +2702,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 	}
 	else {
 		hr = ResizeShaderPass(*pInputTexture, pRenderTarget, rSrc, dstRect, rotation);
+		DrawSubtitles(pRenderTarget);
 	}
 
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::Process() : failed with error {}", HR2Str(hr));
