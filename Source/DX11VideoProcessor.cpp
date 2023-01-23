@@ -2627,8 +2627,8 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 
 	if (numSteps) {
 		UINT step = 0;
-		Tex2D_t* pTex = nullptr;
-		ID3D11Texture2D* pRT = nullptr;
+		Tex2D_t* pTex = m_TexsPostScale.GetFirstTex();
+		ID3D11Texture2D* pRT = pTex->pTexture;
 
 		auto StepSetting = [&]() {
 			step++;
@@ -2641,7 +2641,6 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 			}
 		};
 
-		pTex = m_TexsPostScale.GetFirstTex();
 		CRect rect;
 		rect.IntersectRect(dstRect, CRect(0, 0, pTex->desc.Width, pTex->desc.Height));
 
@@ -2650,9 +2649,9 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 		}
 
 		if (rSrc != dstRect) {
-			hr = ResizeShaderPass(*pInputTexture, pTex->pTexture, rSrc, dstRect, rotation);
+			hr = ResizeShaderPass(*pInputTexture, pRT, rSrc, dstRect, rotation);
 		} else {
-			pTex = pInputTexture;
+			pTex = pInputTexture; // Hmm
 		}
 
 		if (m_pPSCorrection) {
@@ -2685,7 +2684,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 			}
 		}
 
-		DrawSubtitles(!step ? pTex->pTexture.p : pRT);
+		DrawSubtitles(pRT);
 
 		if (m_pPSHalfOUtoInterlace) {
 			StepSetting();
