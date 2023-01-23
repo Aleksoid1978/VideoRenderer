@@ -1466,7 +1466,7 @@ HRESULT CDX9VideoProcessor::Render(int field)
 	m_pD3DDevEx->ColorFill(pBackBuffer, nullptr, 0);
 
 	if (!m_renderRect.IsRectEmpty()) {
-		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2, true);
+		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2);
 	}
 
 	const SIZE windowSize = m_windowRect.Size();
@@ -1662,7 +1662,12 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 	UpdateTexures();
 	UpdatePostScaleTexures();
 
-	hr = Process(pRGB32Surface, m_srcRect, imageRect, 0, false);
+	auto pSubCallBack = m_pFilter->m_pSubCallBack;
+	m_pFilter->m_pSubCallBack = nullptr;
+
+	hr = Process(pRGB32Surface, m_srcRect, imageRect, 0);
+
+	m_pFilter->m_pSubCallBack = pSubCallBack;
 
 	m_videoRect  = backupVidRect;
 	m_windowRect = backupWndRect;
@@ -2453,7 +2458,7 @@ void CDX9VideoProcessor::DrawSubtitles(IDirect3DSurface9* pRenderTarget)
 	}
 }
 
-HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second, const bool drawSubtitles)
+HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
 {
 	HRESULT hr = S_OK;
 	m_bDitherUsed = false;
@@ -2472,9 +2477,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 			m_bVPScalingUseShaders = false;
 
 			hr = DxvaVPPass(pRenderTarget, rSrc, dstRect, second);
-			if (drawSubtitles) {
-				DrawSubtitles(pRenderTarget);
-			}
+			DrawSubtitles(pRenderTarget);
 
 			return hr;
 		}
@@ -2550,9 +2553,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 			}
 		}
 
-		if (drawSubtitles) {
-			DrawSubtitles(!step ? pTex->pSurface.p : pRT);
-		}
+		DrawSubtitles(!step ? pTex->pSurface.p : pRT);
 
 		if (m_pPSHalfOUtoInterlace) {
 			StepSetting();
@@ -2575,9 +2576,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 	}
 	else {
 		hr = ResizeShaderPass(pInputTexture, pRenderTarget, rSrc, dstRect);
-		if (drawSubtitles) {
-			DrawSubtitles(pRenderTarget);
-		}
+		DrawSubtitles(pRenderTarget);
 	}
 
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::Process() : failed with error {}", HR2Str(hr));

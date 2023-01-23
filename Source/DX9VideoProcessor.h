@@ -188,7 +188,7 @@ private:
 	HRESULT FinalPass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect);
 
 	void DrawSubtitles(IDirect3DSurface9* pRenderTarget);
-	HRESULT Process(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second, const bool drawSubtitles);
+	HRESULT Process(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
 
 	HRESULT TextureCopy(IDirect3DTexture9* pTexture);
 	HRESULT TextureCopyRect(IDirect3DTexture9* pTexture, const CRect& srcRect, const CRect& dstRect,

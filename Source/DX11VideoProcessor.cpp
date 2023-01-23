@@ -2049,7 +2049,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	}
 
 	if (!m_renderRect.IsRectEmpty()) {
-		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2, true);
+		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2);
 	}
 
 	if (m_bShowStats) {
@@ -2583,7 +2583,7 @@ void CDX11VideoProcessor::DrawSubtitles(ID3D11Texture2D* pRenderTarget)
 	}
 }
 
-HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second, const bool drawSubtitles)
+HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
 {
 	HRESULT hr = S_OK;
 	m_bDitherUsed = false;
@@ -2604,9 +2604,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 				m_bVPScalingUseShaders = false;
 
 				hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
-				if (drawSubtitles) {
-					DrawSubtitles(pRenderTarget);
-				}
+				DrawSubtitles(pRenderTarget);
 
 				return hr;
 			}
@@ -2687,9 +2685,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 			}
 		}
 
-		if (drawSubtitles) {
-			DrawSubtitles(!step ? pTex->pTexture.p : pRT);
-		}
+		DrawSubtitles(!step ? pTex->pTexture.p : pRT);
 
 		if (m_pPSHalfOUtoInterlace) {
 			StepSetting();
@@ -2714,9 +2710,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 	}
 	else {
 		hr = ResizeShaderPass(*pInputTexture, pRenderTarget, rSrc, dstRect, rotation);
-		if (drawSubtitles) {
-			DrawSubtitles(pRenderTarget);
-		}
+		DrawSubtitles(pRenderTarget);
 	}
 
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::Process() : failed with error {}", HR2Str(hr));
@@ -2825,7 +2819,12 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	UpdateTexures();
 	UpdatePostScaleTexures();
 
-	hr = Process(pRGB32Texture2D, m_srcRect, imageRect, false, false);
+	auto pSub11CallBack = m_pFilter->m_pSub11CallBack;
+	m_pFilter->m_pSub11CallBack = nullptr;
+
+	hr = Process(pRGB32Texture2D, m_srcRect, imageRect, false);
+
+	m_pFilter->m_pSub11CallBack = pSub11CallBack;
 
 	m_videoRect  = backupVidRect;
 	m_windowRect = backupWndRect;
