@@ -1469,13 +1469,9 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2, true);
 	}
 
-	hr = m_pD3DDevEx->EndScene();
-
 	const SIZE windowSize = m_windowRect.Size();
 	const CRect rSrcPri(CPoint(0, 0), windowSize);
 	const CRect rDstPri(m_windowRect);
-
-	hr = m_pD3DDevEx->BeginScene();
 
 	if (m_bShowStats) {
 		hr = DrawStats(pBackBuffer);
