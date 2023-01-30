@@ -4,6 +4,7 @@ The "Subtitle and OSD brightness" option now works for HDR video on an HDR displ
 Added ability to convert Stereo 3D from Half OverUnder to Interlace. Use IExFilterConfig::SetInt("stereo3dTransform", 1).
 Added subtitle offset support for Stereo 3D.
 Some optimizations.
+Recommended version of MPC-BE 1.6.5.164 (8e684d199) or later.
 
 0.6.3.1956 - 2022.08.25
 ------------------------
