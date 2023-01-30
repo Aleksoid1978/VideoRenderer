@@ -794,8 +794,6 @@ STDMETHODIMP CMpcVideoRenderer::GetSourcePosition(long *pLeft, long *pTop, long 
 	*pHeight = rect.Height();
 
 	return S_OK;
-
-	return E_NOTIMPL;
 }
 
 STDMETHODIMP CMpcVideoRenderer::SetDestinationPosition(long Left, long Top, long Width, long Height)
