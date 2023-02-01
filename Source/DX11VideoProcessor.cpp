@@ -1146,6 +1146,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 
 	if (bFullscreenChange) {
 		HandleHDRToggle();
+		UpdateBitmapShader();
 	}
 
 	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR();
