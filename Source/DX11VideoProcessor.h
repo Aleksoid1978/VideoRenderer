@@ -164,6 +164,8 @@ private:
 	HDRMetadata m_hdr10 = {};
 	HDRMetadata m_lastHdr10 = {};
 
+	HWND m_lastFullscreenHWnd = nullptr;
+
 	D3DCOLOR m_dwStatsTextColor = D3DCOLOR_XRGB(255, 255, 255);
 
 	bool m_bCallbackDeviceIsSet = false;
