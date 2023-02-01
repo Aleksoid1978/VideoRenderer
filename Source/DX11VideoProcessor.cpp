@@ -1274,7 +1274,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 											(m_iHdrToggleDisplay == HDRTD_Always || m_iHdrToggleDisplay == HDRTD_Fullscreen && m_bIsFullscreen);
 				const bool bNeedToggleOff = ac.advancedColorEnabled &&
 											!bHDREnabled && m_iHdrToggleDisplay == HDRTD_Fullscreen && !m_bIsFullscreen;
-				DLog(L"HandleHDRToggle() : %d, %d", bNeedToggleOn, bNeedToggleOff);
+				DLog(L"HandleHDRToggle() : {}, {}", bNeedToggleOn, bNeedToggleOff);
 				if (bNeedToggleOn) {
 					bRet = ToggleHDR(displayConfig, TRUE);
 					DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR ON failed");
