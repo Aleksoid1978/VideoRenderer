@@ -1147,6 +1147,12 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	if (bFullscreenChange) {
 		HandleHDRToggle();
 		UpdateBitmapShader();
+
+		if (m_bHdrPassthrough && m_iHdrToggleDisplay == HDRTD_Fullscreen && SourceIsHDR()) {
+			m_bHdrAllowSwitchDisplay = false;
+			InitMediaType(&m_pFilter->m_inputMT);
+			m_bHdrAllowSwitchDisplay = true;
+		}
 	}
 
 	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR();
