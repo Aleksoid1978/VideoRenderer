@@ -126,6 +126,8 @@ private:
 
 	HRESULT Init(const bool bCreateWindow);
 
+	std::atomic_bool m_bDisplayModeChanging = false;
+
 public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
 	~CMpcVideoRenderer();

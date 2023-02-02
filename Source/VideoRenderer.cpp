@@ -566,14 +566,20 @@ void CMpcVideoRenderer::UpdateDisplayInfo()
 
 void CMpcVideoRenderer::OnDisplayModeChange(const bool bReset/* = false*/)
 {
-	if (bReset && !m_VideoProcessor->IsInit()) {
-		CAutoLock cRendererLock(&m_RendererLock);
+	if (m_bDisplayModeChanging) {
+		return;
+	}
 
+	m_bDisplayModeChanging = true;
+
+	if (bReset && !m_VideoProcessor->IsInit()) {
 		m_VideoProcessor->Reset();
 	}
 
 	m_hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 	UpdateDisplayInfo();
+
+	m_bDisplayModeChanging = false;
 }
 
 void CMpcVideoRenderer::OnWindowMove()
