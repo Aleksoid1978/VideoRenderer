@@ -2190,7 +2190,7 @@ HRESULT CDX11VideoProcessor::FillBlack()
 {
 	CheckPointer(m_pDXGISwapChain1, E_ABORT);
 
-	ID3D11Texture2D* pBackBuffer = nullptr;
+	CComPtr<ID3D11Texture2D> pBackBuffer;
 	HRESULT hr = m_pDXGISwapChain1->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::FillBlack() : GetBuffer() failed with error {}", HR2Str(hr));
@@ -2199,14 +2199,14 @@ HRESULT CDX11VideoProcessor::FillBlack()
 
 	ID3D11RenderTargetView* pRenderTargetView;
 	hr = m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView);
-	pBackBuffer->Release();
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::FillBlack() : CreateRenderTargetView() failed with error {}", HR2Str(hr));
 		return hr;
 	}
 
-	float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	m_pDeviceContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
+	pRenderTargetView->Release();
 
 	if (m_bShowStats) {
 		hr = DrawStats(pBackBuffer);
@@ -2231,8 +2231,11 @@ HRESULT CDX11VideoProcessor::FillBlack()
 	g_bPresent = true;
 	hr = m_pDXGISwapChain1->Present(1, 0);
 	g_bPresent = false;
+	DLogIf(FAILED(hr), L"CDX11VideoProcessor::FillBlack() : Present() failed with error {}", HR2Str(hr));
 
-	pRenderTargetView->Release();
+	if (hr == DXGI_ERROR_INVALID_CALL && m_pFilter->m_bIsD3DFullscreen) {
+		InitSwapChain();
+	}
 
 	return hr;
 }
