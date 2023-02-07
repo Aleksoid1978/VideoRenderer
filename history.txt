@@ -1,4 +1,4 @@
-0.6.4.x dev
+0.6.5.1995 - 2023.02.07
 ------------------------
 The "Subtitle and OSD brightness" option now works for HDR video on an HDR display.
 Added ability to convert Stereo 3D from Half OverUnder to Interlace. Use IExFilterConfig::SetInt("stereo3dTransform", 1).
