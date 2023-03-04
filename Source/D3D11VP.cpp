@@ -644,14 +644,14 @@ HRESULT CD3D11VP::SetSuperResIntel(const bool enable)
 	}
 
 	ext.function = kIntelVpeFnMode;
-	param = kIntelVpeModePreproc;
+	param = enable ? kIntelVpeModePreproc : kIntelVpeModeNone;
 	hr = m_pVideoContext->VideoProcessorSetOutputExtension(m_pVideoProcessor, &GUID_INTEL_VPE_INTERFACE, sizeof(ext), &ext);
 	if (FAILED(hr)) {
 		return hr;
 	}
 
 	ext.function = kIntelVpeFnScaling;
-	param = kIntelVpeScalingSuperResolution;
+	param = enable ? kIntelVpeScalingSuperResolution : kIntelVpeScalingDefault;
 	hr = m_pVideoContext->VideoProcessorSetStreamExtension(m_pVideoProcessor, 0, &GUID_INTEL_VPE_INTERFACE, sizeof(ext), &ext);
 
 	return hr;

@@ -965,9 +965,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	CComQIPtr<ID3D10Multithread> pMultithread(m_pDeviceContext);
 	pMultithread->SetMultithreadProtected(TRUE);
 
-	hr = m_D3D11VP.InitVideoDevice(m_pDevice, m_pDeviceContext, m_VendorId);
-	DLogIf(FAILED(hr), L"CDX11VideoProcessor::SetDevice() : InitVideoDevice failed with error {}", HR2Str(hr));
-
 	D3D11_SAMPLER_DESC SampDesc = {};
 	SampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 	SampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -1085,27 +1082,30 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		DLog(L"Graphics DXGI adapter: {}", m_strAdapterDescription);
 	}
 
-	HRESULT hr2 = m_Font3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
-	DLogIf(FAILED(hr2), L"m_Font3D.InitDeviceObjects() failed with error {}", HR2Str(hr2));
-	if (SUCCEEDED(hr2)) {
-		hr2 = m_StatsBackground.InitDeviceObjects(m_pDevice, m_pDeviceContext);
-		hr2 = m_Rect3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
-		hr2 = m_Underlay.InitDeviceObjects(m_pDevice, m_pDeviceContext);
-		hr2 = m_Lines.InitDeviceObjects(m_pDevice, m_pDeviceContext);
-		hr2 = m_SyncLine.InitDeviceObjects(m_pDevice, m_pDeviceContext);
-		DLogIf(FAILED(hr2), L"Geometric primitives InitDeviceObjects() failed with error {}", HR2Str(hr2));
+	HRESULT hr2 = m_D3D11VP.InitVideoDevice(m_pDevice, m_pDeviceContext, m_VendorId);
+	DLogIf(FAILED(hr2), L"CDX11VideoProcessor::SetDevice() : InitVideoDevice failed with error {}", HR2Str(hr2));
+
+	HRESULT hr3 = m_Font3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+	DLogIf(FAILED(hr3), L"m_Font3D.InitDeviceObjects() failed with error {}", HR2Str(hr3));
+	if (SUCCEEDED(hr3)) {
+		hr3 = m_StatsBackground.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+		hr3 = m_Rect3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+		hr3 = m_Underlay.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+		hr3 = m_Lines.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+		hr3 = m_SyncLine.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+		DLogIf(FAILED(hr3), L"Geometric primitives InitDeviceObjects() failed with error {}", HR2Str(hr3));
 	}
-	ASSERT(S_OK == hr2);
+	ASSERT(S_OK == hr3);
 
 	SetStereo3dTransform(m_iStereo3dTransform);
 
-	HRESULT hr3 = m_TexDither.Create(m_pDevice, DXGI_FORMAT_R16G16B16A16_FLOAT, dither_size, dither_size, Tex2D_DynamicShaderWrite);
-	if (S_OK == hr3) {
-		hr3 = GetDataFromResource(data, size, IDF_DITHER_32X32_FLOAT16);
-		if (S_OK == hr3) {
+	HRESULT hr4 = m_TexDither.Create(m_pDevice, DXGI_FORMAT_R16G16B16A16_FLOAT, dither_size, dither_size, Tex2D_DynamicShaderWrite);
+	if (S_OK == hr4) {
+		hr4 = GetDataFromResource(data, size, IDF_DITHER_32X32_FLOAT16);
+		if (S_OK == hr4) {
 			D3D11_MAPPED_SUBRESOURCE mappedResource;
-			hr3 = m_pDeviceContext->Map(m_TexDither.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-			if (S_OK == hr3) {
+			hr4 = m_pDeviceContext->Map(m_TexDither.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+			if (S_OK == hr4) {
 				uint16_t* src = (uint16_t*)data;
 				BYTE* dst = (BYTE*)mappedResource.pData;
 				for (UINT y = 0; y < dither_size; y++) {
@@ -1122,7 +1122,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 				m_pDeviceContext->Unmap(m_TexDither.pTexture, 0);
 			}
 		}
-		if (FAILED(hr3)) {
+		if (FAILED(hr4)) {
 			m_TexDither.Release();
 		}
 	}
