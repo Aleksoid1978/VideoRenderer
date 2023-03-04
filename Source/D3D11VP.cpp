@@ -570,12 +570,8 @@ void CD3D11VP::SetProcAmpValues(DXVA2_ProcAmpValues *pValues)
 	m_bUpdateFilters = true;
 }
 
-HRESULT CD3D11VP::SetSuperRes(const bool enable)
+HRESULT CD3D11VP::SetSuperResNvidia(const bool enable)
 {
-	if (!m_pVideoContext) {
-		return E_ABORT;
-	}
-
 	constexpr GUID kNvidiaPPEInterfaceGUID = {
 		0xd43ce1b3,
 		0x1f4b,
@@ -599,13 +595,17 @@ HRESULT CD3D11VP::SetSuperRes(const bool enable)
 	HRESULT hr = m_pVideoContext->VideoProcessorSetStreamExtension(
 		m_pVideoProcessor, 0, &kNvidiaPPEInterfaceGUID,
 		sizeof(stream_extension_info), &stream_extension_info);
-	if (SUCCEEDED(hr)) {
-		hr = m_pVideoContext->VideoProcessorGetStreamExtension(
-			m_pVideoProcessor, 0, &kNvidiaPPEInterfaceGUID,
-			sizeof(stream_extension_info), &stream_extension_info);
-	}
-	
+
 	return hr;
+}
+
+HRESULT CD3D11VP::SetSuperRes(const bool enable)
+{
+	if (!m_pVideoContext) {
+		return E_ABORT;
+	}
+
+	return SetSuperResNvidia(enable);
 }
 
 HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAME_FORMAT sampleFormat, const bool second)
