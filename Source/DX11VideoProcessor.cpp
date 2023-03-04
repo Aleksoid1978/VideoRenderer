@@ -965,7 +965,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	CComQIPtr<ID3D10Multithread> pMultithread(m_pDeviceContext);
 	pMultithread->SetMultithreadProtected(TRUE);
 
-	hr = m_D3D11VP.InitVideoDevice(m_pDevice, m_pDeviceContext);
+	hr = m_D3D11VP.InitVideoDevice(m_pDevice, m_pDeviceContext, m_VendorId);
 	DLogIf(FAILED(hr), L"CDX11VideoProcessor::SetDevice() : InitVideoDevice failed with error {}", HR2Str(hr));
 
 	D3D11_SAMPLER_DESC SampDesc = {};

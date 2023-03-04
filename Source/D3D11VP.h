@@ -110,6 +110,7 @@ public:
 class CD3D11VP
 {
 private:
+	UINT m_VendorId = 0;
 	CComPtr<ID3D11VideoDevice> m_pVideoDevice;
 	CComPtr<ID3D11VideoProcessor> m_pVideoProcessor;
 
@@ -147,7 +148,7 @@ private:
 	DXGI_FORMAT m_dstFormat = DXGI_FORMAT_UNKNOWN;
 
 public:
-	HRESULT InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
+	HRESULT InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, UINT VendorId);
 	void ReleaseVideoDevice();
 
 	HRESULT InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, DXGI_FORMAT& outputFmt);
@@ -170,6 +171,7 @@ public:
 
 private:
 	HRESULT SetSuperResNvidia(const bool enable);
+	HRESULT SetSuperResIntel(const bool enable);
 public:
 	HRESULT SetSuperRes(const bool enable);
 

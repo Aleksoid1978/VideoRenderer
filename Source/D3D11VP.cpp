@@ -71,7 +71,7 @@ void FilterRangeD3D11toDXVA2(DXVA2_ValueRange& _dxva2_, const D3D11_VIDEO_PROCES
 
 // CD3D11VP
 
-HRESULT CD3D11VP::InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
+HRESULT CD3D11VP::InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, UINT VendorId)
 {
 	HRESULT hr = pDevice->QueryInterface(IID_PPV_ARGS(&m_pVideoDevice));
 	if (FAILED(hr)) {
@@ -114,6 +114,8 @@ HRESULT CD3D11VP::InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pC
 	}
 #endif
 
+	m_VendorId = VendorId;
+
 	return hr;
 }
 
@@ -124,6 +126,7 @@ void CD3D11VP::ReleaseVideoDevice()
 	m_pVideoContext1.Release();
 	m_pVideoContext.Release();
 	m_pVideoDevice.Release();
+	m_VendorId = 0;
 
 	m_bExConvSupported = FALSE;
 }
@@ -599,13 +602,75 @@ HRESULT CD3D11VP::SetSuperResNvidia(const bool enable)
 	return hr;
 }
 
+HRESULT CD3D11VP::SetSuperResIntel(const bool enable)
+{
+	constexpr GUID GUID_INTEL_VPE_INTERFACE = {
+		0xedd1d4b9,
+		0x8659,
+		0x4cbc,
+		{0xa4, 0xd6, 0x98, 0x31, 0xa2, 0x16, 0x3a, 0xc3}
+	};
+	enum : UINT {
+		kIntelVpeFnVersion = 0x01,
+		kIntelVpeFnMode = 0x20,
+		kIntelVpeFnScaling = 0x37,
+	};
+	enum : UINT {
+		kIntelVpeVersion3 = 0x0003,
+	};
+	enum : UINT {
+		kIntelVpeModeNone = 0x0,
+		kIntelVpeModePreproc = 0x01,
+	};
+	enum : UINT {
+		kIntelVpeScalingDefault = 0x0,
+		kIntelVpeScalingSuperResolution = 0x2,
+	};
+
+	struct IntelVpeExt {
+		UINT function;
+		void* param;
+	};
+
+	IntelVpeExt ext = {};
+	UINT param = 0;
+	ext.param = &param;
+
+	ext.function = kIntelVpeFnVersion;
+	param = kIntelVpeVersion3;
+	HRESULT hr = m_pVideoContext->VideoProcessorSetOutputExtension(m_pVideoProcessor, &GUID_INTEL_VPE_INTERFACE, sizeof(ext), &ext);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	ext.function = kIntelVpeFnMode;
+	param = kIntelVpeModePreproc;
+	hr = m_pVideoContext->VideoProcessorSetOutputExtension(m_pVideoProcessor, &GUID_INTEL_VPE_INTERFACE, sizeof(ext), &ext);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	ext.function = kIntelVpeFnScaling;
+	param = kIntelVpeScalingSuperResolution;
+	hr = m_pVideoContext->VideoProcessorSetStreamExtension(m_pVideoProcessor, 0, &GUID_INTEL_VPE_INTERFACE, sizeof(ext), &ext);
+
+	return hr;
+}
+
 HRESULT CD3D11VP::SetSuperRes(const bool enable)
 {
 	if (!m_pVideoContext) {
 		return E_ABORT;
 	}
 
-	return SetSuperResNvidia(enable);
+	if (m_VendorId == PCIV_NVIDIA) {
+		return SetSuperResNvidia(enable);
+	}
+	else if (m_VendorId == PCIV_INTEL) {
+		return SetSuperResIntel(enable);
+	}
+
+	return E_NOT_SET;
 }
 
 HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAME_FORMAT sampleFormat, const bool second)
