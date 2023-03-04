@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2022 see Authors.txt
+* (C) 2019-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -167,6 +167,7 @@ public:
 	HRESULT SetColorSpace(const DXVA2_ExtendedFormat exFmt, const bool bHdrPassthrough);
 	void SetRotation(D3D11_VIDEO_PROCESSOR_ROTATION rotation);
 	void SetProcAmpValues(DXVA2_ProcAmpValues *pValues);
+	HRESULT SetSuperRes(const bool enable);
 
 	HRESULT Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAME_FORMAT sampleFormat, const bool second);
 };

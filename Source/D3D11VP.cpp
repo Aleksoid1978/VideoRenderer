@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2022 see Authors.txt
+* (C) 2019-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -568,6 +568,44 @@ void CD3D11VP::SetProcAmpValues(DXVA2_ProcAmpValues *pValues)
 	m_VPFilters[2].value = ValueDXVA2toD3D11(pValues->Hue,        m_VPFilters[2].range);
 	m_VPFilters[3].value = ValueDXVA2toD3D11(pValues->Saturation, m_VPFilters[3].range);
 	m_bUpdateFilters = true;
+}
+
+HRESULT CD3D11VP::SetSuperRes(const bool enable)
+{
+	if (!m_pVideoContext) {
+		return E_ABORT;
+	}
+
+	constexpr GUID kNvidiaPPEInterfaceGUID = {
+		0xd43ce1b3,
+		0x1f4b,
+		0x48ac,
+		{0xba, 0xee, 0xc3, 0xc2, 0x53, 0x75, 0xe6, 0xf7}
+	};
+	constexpr UINT kStreamExtensionVersionV1 = 0x1;
+	constexpr UINT kStreamExtensionMethodSuperResolution = 0x2;
+
+	struct {
+		UINT version;
+		UINT method;
+		UINT enable;
+	}
+	stream_extension_info = {
+		kStreamExtensionVersionV1,
+		kStreamExtensionMethodSuperResolution,
+		enable ? 1 : 0
+	};
+
+	HRESULT hr = m_pVideoContext->VideoProcessorSetStreamExtension(
+		m_pVideoProcessor, 0, &kNvidiaPPEInterfaceGUID,
+		sizeof(stream_extension_info), &stream_extension_info);
+	if (SUCCEEDED(hr)) {
+		hr = m_pVideoContext->VideoProcessorGetStreamExtension(
+			m_pVideoProcessor, 0, &kNvidiaPPEInterfaceGUID,
+			sizeof(stream_extension_info), &stream_extension_info);
+	}
+	
+	return hr;
 }
 
 HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAME_FORMAT sampleFormat, const bool second)

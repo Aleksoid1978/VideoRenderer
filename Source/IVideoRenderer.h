@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2022 see Authors.txt
+ * (C) 2018-2023 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -83,6 +83,7 @@ struct Settings_t {
 	VPEnableFormats_t VPFmts;
 	bool bDeintDouble;
 	bool bVPScaling;
+	bool bVPSuperRes;
 	int  iChromaScaling;
 	int  iUpscaling;
 	int  iDownscaling;
@@ -117,6 +118,7 @@ struct Settings_t {
 		VPFmts.bOther                   = true;
 		bDeintDouble                    = true;
 		bVPScaling                      = true;
+		bVPSuperRes                     = false;
 		iChromaScaling                  = CHROMA_Bilinear;
 		iUpscaling                      = UPSCALE_CatmullRom;
 		iDownscaling                    = DOWNSCALE_Hamming;

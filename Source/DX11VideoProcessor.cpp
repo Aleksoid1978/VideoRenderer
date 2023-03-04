@@ -405,6 +405,8 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_iHdrOsdBrightness    = config.iHdrOsdBrightness;
 	m_bConvertToSdr        = config.bConvertToSdr;
 
+	m_bSuperRes            = config.bVPSuperRes;
+
 	m_nCurrentAdapter = -1;
 	m_pDisplayMode = &m_DisplayMode;
 
@@ -1586,6 +1588,8 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 	}
 
 	hr = m_D3D11VP.SetColorSpace(m_srcExFmt, m_bHdrDisplayModeEnabled && SourceIsHDR());
+
+	hr = m_D3D11VP.SetSuperRes(m_bVPScaling && m_bSuperRes);
 
 	hr = m_TexSrcVideo.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWriteNoSRV);
 	if (FAILED(hr)) {
