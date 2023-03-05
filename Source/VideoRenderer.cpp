@@ -20,6 +20,7 @@
 
 #include "stdafx.h"
 #include <atomic>
+#include <string>
 #include <evr.h> // for MR_VIDEO_ACCELERATION_SERVICE, because the <mfapi.h> does not contain it
 #include <Mferror.h>
 #include "Helper.h"
