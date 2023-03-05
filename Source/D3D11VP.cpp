@@ -599,6 +599,10 @@ HRESULT CD3D11VP::SetSuperResNvidia(const bool enable)
 		m_pVideoProcessor, 0, &kNvidiaPPEInterfaceGUID,
 		sizeof(stream_extension_info), &stream_extension_info);
 
+	if (hr == S_OK && !enable) {
+		hr = S_FALSE;
+	}
+
 	return hr;
 }
 
@@ -653,6 +657,10 @@ HRESULT CD3D11VP::SetSuperResIntel(const bool enable)
 	ext.function = kIntelVpeFnScaling;
 	param = enable ? kIntelVpeScalingSuperResolution : kIntelVpeScalingDefault;
 	hr = m_pVideoContext->VideoProcessorSetStreamExtension(m_pVideoProcessor, 0, &GUID_INTEL_VPE_INTERFACE, sizeof(ext), &ext);
+
+	if (hr == S_OK && !enable) {
+		hr = S_FALSE;
+	}
 
 	return hr;
 }

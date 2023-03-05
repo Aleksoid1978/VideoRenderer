@@ -64,6 +64,7 @@ protected:
 	int  m_iHdrOsdBrightness               = 0;
 	bool m_bConvertToSdr                   = true;
 
+	bool m_bVPScalingSuperRes   = false;
 	bool m_bVPScalingUseShaders = false;
 
 	CopyFrameDataFn m_pConvertFn = nullptr;

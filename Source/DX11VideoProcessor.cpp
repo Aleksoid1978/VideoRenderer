@@ -1589,7 +1589,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 
 	hr = m_D3D11VP.SetColorSpace(m_srcExFmt, m_bHdrDisplayModeEnabled && SourceIsHDR());
 
-	hr = m_D3D11VP.SetSuperRes(m_bVPScaling && m_bSuperRes);
+	m_bVPScalingSuperRes = (m_D3D11VP.SetSuperRes(m_bVPScaling && m_bSuperRes) == S_OK);
 
 	hr = m_TexSrcVideo.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWriteNoSRV);
 	if (FAILED(hr)) {
@@ -3476,6 +3476,9 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	if (m_srcRectWidth != dstW || m_srcRectHeight != dstH) {
 		if (m_D3D11VP.IsReady() && m_bVPScaling && !m_bVPScalingUseShaders) {
 			str.append(L" D3D11");
+			if (m_bVPScalingSuperRes) {
+				str.append(L" SuperResolution*");
+			}
 		} else {
 			str += L' ';
 			if (m_strShaderX) {
