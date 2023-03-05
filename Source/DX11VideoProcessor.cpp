@@ -405,7 +405,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_iHdrOsdBrightness    = config.iHdrOsdBrightness;
 	m_bConvertToSdr        = config.bConvertToSdr;
 
-	m_bSuperRes            = config.bVPSuperRes;
+	m_bVPSuperRes          = config.bVPSuperRes;
 
 	m_nCurrentAdapter = -1;
 	m_pDisplayMode = &m_DisplayMode;
@@ -1589,7 +1589,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 
 	hr = m_D3D11VP.SetColorSpace(m_srcExFmt, m_bHdrDisplayModeEnabled && SourceIsHDR());
 
-	m_bVPScalingSuperRes = (m_D3D11VP.SetSuperRes(m_bVPScaling && m_bSuperRes) == S_OK);
+	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(m_bVPScaling && m_bVPSuperRes) == S_OK);
 
 	hr = m_TexSrcVideo.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWriteNoSRV);
 	if (FAILED(hr)) {
@@ -3062,6 +3062,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	bool changeDowndcalingShader = false;
 	bool changeNumTextures       = false;
 	bool changeResizeStats       = false;
+	bool changeSuperRes          = false;
 
 	// settings that do not require preparation
 	m_bShowStats           = config.bShowStats;
@@ -3154,6 +3155,11 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		}
 	}
 
+	if (config.bVPSuperRes != m_bVPSuperRes) {
+		m_bVPSuperRes = config.bVPSuperRes;
+		changeSuperRes = true;
+	}
+
 	if (!m_pFilter->GetActive()) {
 		return;
 	}
@@ -3221,6 +3227,10 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 	if (changeResizeStats) {
 		SetGraphSize();
+	}
+
+	if (changeSuperRes) {
+		m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(m_bVPScaling && m_bVPSuperRes) == S_OK);
 	}
 
 	UpdateStatsStatic();
@@ -3476,7 +3486,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	if (m_srcRectWidth != dstW || m_srcRectHeight != dstH) {
 		if (m_D3D11VP.IsReady() && m_bVPScaling && !m_bVPScalingUseShaders) {
 			str.append(L" D3D11");
-			if (m_bVPScalingSuperRes) {
+			if (m_bVPUseSuperRes) {
 				str.append(L" SuperResolution*");
 			}
 		} else {

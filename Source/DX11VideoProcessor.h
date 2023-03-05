@@ -148,7 +148,8 @@ private:
 	bool m_bDecoderDevice = false;
 	bool m_bIsFullscreen = false;
 
-	bool m_bSuperRes = false;
+	bool m_bVPSuperRes = false;
+	bool m_bVPUseSuperRes = false; // but it is not exactly
 
 	bool m_bHdrPassthroughSupport = false;
 	bool m_bHdrDisplaySwitching   = false; // switching HDR display in progress
