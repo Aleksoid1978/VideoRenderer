@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2022 see Authors.txt
+* (C) 2018-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -69,11 +69,11 @@ void CDX9Device::DeviceThreadFunc()
 		const auto dwObject = WaitForMultipleObjects(std::size(hEvts), hEvts, FALSE, INFINITE);
 		m_hrThread = E_FAIL;
 		switch (dwObject) {
-			case WAIT_OBJECT_0:
+			case WAIT_OBJECT_0: // Init
 				m_hrThread = InitDX9DeviceInternal();
 				m_evThreadFinishJob.Set();
 				break;
-			default:
+			default: // Quit
 				return;
 		}
 	}

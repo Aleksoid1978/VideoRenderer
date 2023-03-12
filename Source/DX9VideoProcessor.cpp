@@ -351,19 +351,19 @@ void CDX9VideoProcessor::DeviceThreadFunc()
 		const auto dwObject = WaitForMultipleObjects(std::size(hEvts), hEvts, FALSE, INFINITE);
 		m_hrThread = E_FAIL;
 		switch (dwObject) {
-			case WAIT_OBJECT_0:
+			case WAIT_OBJECT_0: // Init
 				m_hrThread = InitInternal(&m_bChangeDeviceThread);
 				m_evThreadFinishJob.Set();
 				break;
-			case WAIT_OBJECT_0 + 1:
+			case WAIT_OBJECT_0 + 1: // Resize
 				ResizeInternal();
 				m_evThreadFinishJob.Set();
 				break;
-			case WAIT_OBJECT_0 + 2:
+			case WAIT_OBJECT_0 + 2: // Reset
 				m_hrThread = ResetInternal();
 				m_evThreadFinishJob.Set();
 				break;
-			default:
+			default: // Quit
 				return;
 			}
 	}
