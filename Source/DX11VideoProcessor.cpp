@@ -3298,7 +3298,7 @@ HRESULT CDX11VideoProcessor::AddPreScaleShader(const std::wstring& name, const s
 	HRESULT hr = CompileShader(srcCode, nullptr, "ps_4_0", &pShaderCode);
 	if (S_OK == hr) {
 		m_pPreScaleShaders.emplace_back();
-		hr = m_pDevice->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPreScaleShaders.back().shader);
+		hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPreScaleShaders.back().shader);
 		if (S_OK == hr) {
 			m_pPreScaleShaders.back().name = name;
 			//UpdatePreScaleTexures(); //TODO
@@ -3331,7 +3331,7 @@ HRESULT CDX11VideoProcessor::AddPostScaleShader(const std::wstring& name, const 
 	HRESULT hr = CompileShader(srcCode, nullptr, "ps_4_0", &pShaderCode);
 	if (S_OK == hr) {
 		m_pPostScaleShaders.emplace_back();
-		hr = m_pDevice->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPostScaleShaders.back().shader);
+		hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPostScaleShaders.back().shader);
 		if (S_OK == hr) {
 			m_pPostScaleShaders.back().name = name;
 			UpdatePostScaleTexures();
