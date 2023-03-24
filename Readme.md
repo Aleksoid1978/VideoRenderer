@@ -1,6 +1,18 @@
 ﻿# MPC Video Renderer
 
-MPC Video Renderer is a free and open-source video renderer for DirectShow. The renderer can potentially work with any DirectShow player, but full support is available only in the MPC-BE. Recommended MPC-BE 1.6.5.164 (8e684d199) or newer.
+MPC Video Renderer is a free and open-source video renderer for DirectShow. The renderer can potentially work with any DirectShow player, but full support is available only in the MPC-BE. Recommended MPC-BE 1.6.6 or newer.
+
+## Key features
+
+* Can work with DXVA2 and Direct3D 11 hardware decoder.
+* DVXA2 and Direct3D11 Video Processor with hardware de-interlacing for NV12, YUY2, P010 formats.
+* Shader video processor for various YUV, RGB and grayscale formats.
+* Various frame resizing algorithms, including Super Resolution.
+* Subtitle and OSD display.
+* Rotation and flip of the video frame.
+* Dithering when the final color depth is reduced from 10/16 bits to 8 bits.
+* Automatic HDR to SDR conversion.
+* Transferring HDR10 data to the display.
 
 ## Minimum system requirements
 
