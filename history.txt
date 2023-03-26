@@ -1,6 +1,7 @@
 0.6.6.x dev
 ------------------------
-
+Added "Request Super Resolution" option. Hardware and driver support required. The display of "SuperResolution*" in the statistics only means that the request was sent successfully.
+Recommended version of MPC-BE 1.6.6 or later.
 
 0.6.5.1995 - 2023.02.07
 ------------------------

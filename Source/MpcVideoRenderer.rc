@@ -97,7 +97,7 @@ BEGIN
     EDITTEXT        IDC_EDIT2,75,229,266,12,ES_READONLY | NOT WS_BORDER,WS_EX_RIGHT
     CONTROL         "Reinitialize D3D device when changing display",IDC_CHECK16,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,173,165,168,10
-    CONTROL         "Request Super Resolution (test)",IDC_CHECK13,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,100,119,10
+    CONTROL         "Request Super Resolution",IDC_CHECK13,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,100,99,10
 END
 
 IDD_INFOPROPPAGE DIALOGEX 0, 0, 318, 153
