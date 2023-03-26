@@ -148,7 +148,7 @@ private:
 	DXGI_FORMAT m_dstFormat = DXGI_FORMAT_UNKNOWN;
 
 public:
-	HRESULT InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, UINT VendorId);
+	HRESULT InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
 	void ReleaseVideoDevice();
 
 	HRESULT InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, DXGI_FORMAT& outputFmt);
