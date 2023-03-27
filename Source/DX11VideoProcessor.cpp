@@ -965,7 +965,31 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	CComQIPtr<ID3D10Multithread> pMultithread(m_pDeviceContext);
 	pMultithread->SetMultithreadProtected(TRUE);
 
-	HRESULT hr2 = m_D3D11VP.InitVideoDevice(m_pDevice, m_pDeviceContext);
+	CComPtr<IDXGIDevice> pDXGIDevice;
+	hr = m_pDevice->QueryInterface(IID_PPV_ARGS(&pDXGIDevice));
+	if (FAILED(hr)) {
+		DLog(L"CDX11VideoProcessor::SetDevice() : QueryInterface(IDXGIDevice) failed with error {}", HR2Str(hr));
+		ReleaseDevice();
+		return hr;
+	}
+
+	CComPtr<IDXGIAdapter> pDXGIAdapter;
+	hr = pDXGIDevice->GetAdapter(&pDXGIAdapter);
+	if (FAILED(hr)) {
+		DLog(L"CDX11VideoProcessor::SetDevice() : GetAdapter(IDXGIAdapter) failed with error {}", HR2Str(hr));
+		ReleaseDevice();
+		return hr;
+	}
+
+	DXGI_ADAPTER_DESC dxgiAdapterDesc = {};
+	hr = pDXGIAdapter->GetDesc(&dxgiAdapterDesc);
+	if (SUCCEEDED(hr)) {
+		m_VendorId = dxgiAdapterDesc.VendorId;
+		m_strAdapterDescription = std::format(L"{} ({:04X}:{:04X})", dxgiAdapterDesc.Description, dxgiAdapterDesc.VendorId, dxgiAdapterDesc.DeviceId);
+		DLog(L"Graphics DXGI adapter: {}", m_strAdapterDescription);
+	}
+
+	HRESULT hr2 = m_D3D11VP.InitVideoDevice(m_pDevice, m_pDeviceContext, m_VendorId);
 	DLogIf(FAILED(hr2), L"CDX11VideoProcessor::SetDevice() : InitVideoDevice failed with error {}", HR2Str(hr2));
 
 	D3D11_SAMPLER_DESC SampDesc = {};
@@ -1027,22 +1051,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	BufferDesc = { sizeof(PS_EXTSHADER_CONSTANTS), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, nullptr, &m_pPostScaleConstants));
 
-	CComPtr<IDXGIDevice> pDXGIDevice;
-	hr = m_pDevice->QueryInterface(IID_PPV_ARGS(&pDXGIDevice));
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::SetDevice() : QueryInterface(IDXGIDevice) failed with error {}", HR2Str(hr));
-		ReleaseDevice();
-		return hr;
-	}
-
-	CComPtr<IDXGIAdapter> pDXGIAdapter;
-	hr = pDXGIDevice->GetAdapter(&pDXGIAdapter);
-	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::SetDevice() : GetAdapter(IDXGIAdapter) failed with error {}", HR2Str(hr));
-		ReleaseDevice();
-		return hr;
-	}
-
 	CComPtr<IDXGIFactory1> pDXGIFactory1;
 	hr = pDXGIAdapter->GetParent(IID_PPV_ARGS(&pDXGIFactory1));
 	if (FAILED(hr)) {
@@ -1076,14 +1084,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	}
 
 	SetCallbackDevice();
-
-	DXGI_ADAPTER_DESC dxgiAdapterDesc = {};
-	hr = pDXGIAdapter->GetDesc(&dxgiAdapterDesc);
-	if (SUCCEEDED(hr)) {
-		m_VendorId = dxgiAdapterDesc.VendorId;
-		m_strAdapterDescription = std::format(L"{} ({:04X}:{:04X})", dxgiAdapterDesc.Description, dxgiAdapterDesc.VendorId, dxgiAdapterDesc.DeviceId);
-		DLog(L"Graphics DXGI adapter: {}", m_strAdapterDescription);
-	}
 
 	HRESULT hr3 = m_Font3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
 	DLogIf(FAILED(hr3), L"m_Font3D.InitDeviceObjects() failed with error {}", HR2Str(hr3));

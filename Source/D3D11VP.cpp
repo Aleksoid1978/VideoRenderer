@@ -71,7 +71,7 @@ void FilterRangeD3D11toDXVA2(DXVA2_ValueRange& _dxva2_, const D3D11_VIDEO_PROCES
 
 // CD3D11VP
 
-HRESULT CD3D11VP::InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
+HRESULT CD3D11VP::InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, UINT VendorId)
 {
 	HRESULT hr = pDevice->QueryInterface(IID_PPV_ARGS(&m_pVideoDevice));
 	if (FAILED(hr)) {
@@ -114,19 +114,7 @@ HRESULT CD3D11VP::InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pC
 	}
 #endif
 
-	CComPtr<IDXGIDevice> pDXGIDevice;
-	HRESULT hr2 = pDevice->QueryInterface(IID_PPV_ARGS(&pDXGIDevice));
-	if (SUCCEEDED(hr2)) {
-		CComPtr<IDXGIAdapter> pDXGIAdapter;
-		hr2 = pDXGIDevice->GetAdapter(&pDXGIAdapter);
-		if (SUCCEEDED(hr2)) {
-			DXGI_ADAPTER_DESC dxgiAdapterDesc = {};
-			hr2 = pDXGIAdapter->GetDesc(&dxgiAdapterDesc);
-			if (SUCCEEDED(hr2)) {
-				m_VendorId = dxgiAdapterDesc.VendorId;
-			}
-		}
-	}
+	m_VendorId = VendorId;
 
 	return hr;
 }
