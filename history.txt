@@ -1,9 +1,9 @@
-0.6.6.x dev
+0.6.7.2013 - 2023-03-29
 ------------------------
-Added "Request Super Resolution" option. Hardware and driver support required. The display of "SuperResolution*" in the statistics only means that the request was sent successfully.
+Added "Request Super Resolution" option for Nvidia and Intel graphics adapters. Hardware and driver support required. The display of "SuperResolution*" in the statistics only means that the request was sent successfully.
 Recommended version of MPC-BE 1.6.6 or later.
 
-0.6.5.1995 - 2023.02.07
+0.6.5.1995 - 2023-02-07
 ------------------------
 The "Subtitle and OSD brightness" option now works for HDR video on an HDR display.
 Added ability to convert Stereo 3D from Half OverUnder to Interlace. Use IExFilterConfig::SetInt("stereo3dTransform", 1).
@@ -11,13 +11,13 @@ Added subtitle offset support for Stereo 3D.
 Some optimizations.
 Recommended version of MPC-BE 1.6.5.164 (8e684d199) or later.
 
-0.6.3.1956 - 2022.08.25
+0.6.3.1956 - 2022-08-25
 ------------------------
 Optimized PQ to SDR conversion using D3D11 video processor on Windows 10.
 Added the ability to use Blend deinterlacing for YUV 4:2:0 formats when using a Shader video processor.
 Changed the default value for the "Swap effect" option to "Flip".
 
-0.6.1.1931 - 2022.07.12
+0.6.1.1931 - 2022-07-12
 ------------------------
 DX11 mode uses the new ISubRender11 subtitle rendering interface. Older players will not be able to output subtitles in DX11 mode.
 Changed coefficients for experimental Jinc2 interpolation.
@@ -28,7 +28,7 @@ Fixed crash when playing DVD-Video.
 Fixed green screen in some cases.
 Recommended version of MPC-BE 1.6.3 or later.
 
-0.5.8.1877 - 2022.05.07
+0.5.8.1877 - 2022-05-07
 ------------------------
 Optimized image overlay through the IMFVideoMixerBitmap interface.
 Fixed processing of the first frames by the DXVA2 video processor on AMD and Intel graphics adapters.
@@ -41,7 +41,7 @@ Fixed copying of RGB24 and RGB48 with odd width size in some rare situations.
 Added experimental support for image upscaling by the "Jinc2" algorithm.
 Recommended version of MPC-BE 1.6.2.6991 (0a27de8af) or later.
 
-0.5.6.1807 - 2021.12.20
+0.5.6.1807 - 2021-12-20
 ------------------------
 Improved stability in DX9 mode when changing display.
 Fixed display of subtitles in the first frame when using XySubFilter.
@@ -55,7 +55,7 @@ Added support for r210 format.
 The "Use Direct3D 11" option is enabled by default on Windows 8 and newer systems.
 Fixed crash for RGB24 in some situations.
 
-0.5.4.1723 - 2021.06.23
+0.5.4.1723 - 2021-06-23
 ------------------------
 Fixed dithering when outputting 10-bit for DX11 mode.
 Improved compatibility with CoreAVC Video Decoder.
@@ -74,7 +74,7 @@ Fixed crashes when working with some external filters.
 Added experimental option "Wait for V-Blank before Present".
 Recommended version of MPC-BE 1.5.7.6180 or later.
 
-0.5.2.1607 - 2021.01.15
+0.5.2.1607 - 2021-01-15
 ------------------------
 Fixed getting the displayed frame when outputting RGB 10-bit.
 Fixed display of BGRA64 format.
@@ -85,7 +85,7 @@ Improved "Auto display HDR On/Off" option.
 Fixed converting color space using shaders.
 Various additions and fixes in statistics.
 
-0.5.0.1567 - 2020.12.21
+0.5.0.1567 - 2020-12-21
 ------------------------
 Added the OpenConfiguration function to call settings from the command line (Example: rundll32.exe MpcVideoRenderer64.ax,OpenConfiguration).
 Fixed memory leak for Direct3D 11 mode.
@@ -100,7 +100,7 @@ Fixed connections to any input media type when DXVA decoder can be active.
 Added various information to statistics.
 Recommended version of MPC-BE 1.5.6.5832 or later.
 
-v0.4.9.1460 - 2020.08.24
+v0.4.9.1460 - 2020-08-24
 ------------------------
 Now DirectWrite is used instead of GDI+ to generate statistics font.
 Optimized statistics drawing.
@@ -117,7 +117,7 @@ Renamed "Chroma scaling" setting to "Chroma upsampling" and added "Nearest-neigh
 Added information to on-screen statistics and to the "Information" window.
 Recommended version of MPC-BE 1.5.5.5369 or later.
 
-v0.4.7.1356 - 2020.06.21
+v0.4.7.1356 - 2020-06-21
 ------------------------
 Added Sync Offset graph in statistics.
 Fixed getting the current image using IBasicVideo::GetCurrentImage.
@@ -128,14 +128,14 @@ Added support for exclusive full screen in DX9 mode.
 Fixed subtitles flickering after rewind.
 Recommended version of MPC-BE 1.5.5.5342 or later.
 
-v0.4.5.1242 - 2020.04.17
+v0.4.5.1242 - 2020-04-17
 ------------------------
 Fixed problem with old frame output after play-stop-play.
 Fixed the green line on the right side of the frame when using a DXVA2 or D3D11 video processor and a software decoder on AMD graphics cards.
 Added support for IMFVideoMixerBitmap. Now some players can draw images over video (OSD).
 Recommended version of MPC-BE v1.5.5.5183 or later.
 
-v0.4.3.1215 - 2020.04.01
+v0.4.3.1215 - 2020-04-01
 ------------------------
 Fixed frame brightness for 10 bit video after D3D11 video processor.
 Added dithering. It is used for final reduction of bit depth from 10/16 bits to 8 bits.
@@ -149,7 +149,7 @@ Fixed problems with rotation and zoom in some situations.
 Added support for IVideoWindow::put_MessageDrain and IVideoWindow::get_MessageDrain calls.
 Recommended version of MPC-BE v1.5.5.5125 or later.
 
-v0.4.1.1130 - 2020.02.10
+v0.4.1.1130 - 2020-02-10
 ------------------------
 Fixed freezing during frequent timeline navigation.
 Added support for "post scale" shaders.
@@ -160,18 +160,18 @@ Added support for the ARGB64 format (BRA[64]).
 Fixed playback of Y8 and Y800 formats with an odd width.
 Recommended version of MPC-BE v1.5.5.5044 or later.
 
-v0.3.8.1060 - 2019.12.30
+v0.3.8.1060 - 2019-12-30
 ------------------------
 Improved compatibility with third-party players.
 Fixed switching supported formats for DXVA2 and D3D11 video processors during playback.
 Faster statistics rendering. A pre-prepared texture with symbols is used.
 
-v0.3.6.970 - 2019.11.29
+v0.3.6.970 - 2019-11-29
 -----------------------
 Fixed subtitle output using XySubFilter in some situations.
 Fixed crash when exiting the player or moving to the next file when using "Swap Effect Discard" in Windows 8/8.1.
 
-v0.3.4.956 - 2019.11.25
+v0.3.4.956 - 2019-11-25
 -----------------------
 Used the surface of the DXVA2 decoder directly (without copying) if the DXVA2 video processor does not require additional frames.
 "Double the frame rate when deinterlace" setting is now enabled by default.
@@ -186,7 +186,7 @@ Recommended version of MPC-BE v1.5.4.4876 or later.
 Optimized some operations.
 Added more debugging information.
 
-v0.3.2.860 - 2019.09.25
+v0.3.2.860 - 2019-09-25
 -----------------------
 Fixed the debug version in DX11 mode on systems in which the D3D11*SDKLayers.dll files are missing.
 Fixed HDR-SDR conversion in DX11 mode in some situations.
@@ -197,7 +197,7 @@ Allowed to use "16-bit Floating Point" textures for intermediate calculations in
 Fixed subtitle blinking on some video cards in DX11 mode.
 Fixed Catmull-Rom shroma scaling when using decoder DXVA2 or D3D11.
 
-v0.3.0.831 - 2019.08.30
+v0.3.0.831 - 2019-08-30
 -----------------------
 Improved subtitle support in DX11 mode. Fixed work with XySubFilter.
 Type redefinition fixed for RGB24 and RGB48.
@@ -218,6 +218,6 @@ Added the standard "Quality" information panel.
 Added chroma scaling setting. The Bilinear or Catmull-Rom method is available.
 Added information in statistics.
 
-v0.2.0.658 - 2019.06.18
+v0.2.0.658 - 2019-06-18
 -----------------------
 The first official release.
