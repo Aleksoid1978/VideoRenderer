@@ -1,3 +1,7 @@
+0.6.8.x dev
+------------------------
+
+
 0.6.7.2013 - 2023-03-29
 ------------------------
 Added "Request Super Resolution" option for Nvidia and Intel graphics adapters. Hardware and driver support required. The display of "SuperResolution*" in the statistics only means that the request was sent successfully.
