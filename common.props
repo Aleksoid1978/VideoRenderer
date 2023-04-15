@@ -12,7 +12,7 @@
     <ClCompile>
       <AdditionalOptions>/Zo /Zc:throwingNew /Zc:rvalueCast %(AdditionalOptions)</AdditionalOptions>
       <BufferSecurityCheck>true</BufferSecurityCheck>
-      <DisableSpecificWarnings>4244; 4838; 26451</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4244; 4838; 26451; 26812</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <LanguageStandard>stdcpp20</LanguageStandard>
