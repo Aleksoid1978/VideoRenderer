@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2022 see Authors.txt
+ * (C) 2018-2023 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -86,11 +86,11 @@ void CALLBACK OpenConfiguration(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, i
 	if (pFilter) {
 		pFilter->AddRef();
 
-		CoInitialize(nullptr);
+		hr = CoInitialize(nullptr);
 
 		// Get PropertyPages interface
 		ISpecifyPropertyPages *pProp = nullptr;
-		HRESULT hr = pFilter->QueryInterface<ISpecifyPropertyPages>(&pProp);
+		hr = pFilter->QueryInterface<ISpecifyPropertyPages>(&pProp);
 		if (SUCCEEDED(hr) && pProp)
 		{
 			// Get the filter's name and IUnknown pointer.
