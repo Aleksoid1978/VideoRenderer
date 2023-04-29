@@ -1888,9 +1888,16 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	static unsigned num = 0;
 	if ((num++ & 0xFF) == 0) {
 		if (CComQIPtr<IMediaSideData> pMediaSideData = pSample) {
-			MediaSideDataDOVIMetadata* hdr = nullptr;
 			size_t size = 0;
-			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&hdr, &size);
+			MediaSideDataHDR10Plus* pHDR10Plus = nullptr;
+			hr = pMediaSideData->GetSideData(IID_MediaSideDataHDR10Plus, (const BYTE**)&pHDR10Plus, &size);
+			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataHDR10Plus)) {
+				DLog(L"CDX11VideoProcessor::CopySample - HDR10+ metadata found");
+			}
+
+			size = 0;
+			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
+			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
 			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata)) {
 				DLog(L"CDX11VideoProcessor::CopySample - Dolby Vision metadata found");
 			}
