@@ -14,8 +14,8 @@
 void mp_invert_matrix3x3(float m[3][3])
 {
     float m00 = m[0][0], m01 = m[0][1], m02 = m[0][2],
-        m10 = m[1][0], m11 = m[1][1], m12 = m[1][2],
-        m20 = m[2][0], m21 = m[2][1], m22 = m[2][2];
+          m10 = m[1][0], m11 = m[1][1], m12 = m[1][2],
+          m20 = m[2][0], m21 = m[2][1], m22 = m[2][2];
 
     // calculate the adjoint
     m[0][0] =  (m11 * m22 - m21 * m12);
@@ -166,6 +166,38 @@ struct mp_csp_primaries mp_get_csp_primaries(enum mp_csp_prim spc)
             {0.140, 0.855},
             {0.100, -0.05},
             d65
+        };
+    // from EBU Tech. 3213-E
+    case MP_CSP_PRIM_EBU_3213:
+        return {
+            {0.630, 0.340},
+            {0.295, 0.605},
+            {0.155, 0.077},
+            d65
+        };
+    // From H.273, traditional film with Illuminant C
+    case MP_CSP_PRIM_FILM_C:
+        return {
+            {0.681, 0.319},
+            {0.243, 0.692},
+            {0.145, 0.049},
+            c
+        };
+    // From libplacebo source code
+    case MP_CSP_PRIM_ACES_AP0:
+        return {
+            {0.7347, 0.2653},
+            {0.0000, 1.0000},
+            {0.0001, -0.0770},
+            {0.32168, 0.33767},
+        };
+    // From libplacebo source code
+    case MP_CSP_PRIM_ACES_AP1:
+        return {
+            {0.713, 0.293},
+            {0.165, 0.830},
+            {0.128, 0.044},
+            {0.32168, 0.33767},
         };
     default:
         return {{0}};
@@ -409,7 +441,7 @@ void mp_get_csp_matrix(struct mp_csp_params *params, struct mp_cmat *m)
         levels_in = (mp_csp_levels)-1;
 
     if ((colorspace == MP_CSP_BT_601 || colorspace == MP_CSP_BT_709 ||
-        colorspace == MP_CSP_SMPTE_240M || colorspace == MP_CSP_BT_2020_NC))
+         colorspace == MP_CSP_SMPTE_240M || colorspace == MP_CSP_BT_2020_NC))
     {
         // Hue is equivalent to rotating input [U, V] subvector around the origin.
         // Saturation scales [U, V].
@@ -430,9 +462,9 @@ void mp_get_csp_matrix(struct mp_csp_params *params, struct mp_cmat *m)
     // by ITU-R BT.2100. If somebody ever complains about full-range YUV looking
     // different from their reference display, this comment is probably why.
     struct yuvlevels { double ymin, ymax, cmax, cmid; }
-        yuvlim = { 16*s, 235*s, 240*s, 128*s },
-        yuvfull = { 0*s, 255*s, 255*s, 128*s },
-        anyfull = { 0*s, 255*s, 255*s/2, 0 }, // cmax picked to make cmul=ymul
+        yuvlim =  { 16*s, 235*s, 240*s, 128*s },
+        yuvfull = {  0*s, 255*s, 255*s, 128*s },
+        anyfull = {  0*s, 255*s, 255*s/2, 0 }, // cmax picked to make cmul=ymul
         yuvlev;
     switch (levels_in) {
     case MP_CSP_LEVELS_TV: yuvlev = yuvlim; break;
@@ -447,7 +479,7 @@ void mp_get_csp_matrix(struct mp_csp_params *params, struct mp_cmat *m)
         levels_out = MP_CSP_LEVELS_PC;
     struct rgblevels { double min, max; }
         rgblim =  { 16/255., 235/255. },
-        rgbfull = { 0,        1 },
+        rgbfull = {      0,        1  },
         rgblev;
     switch (levels_out) {
     case MP_CSP_LEVELS_TV: rgblev = rgblim; break;

@@ -43,6 +43,10 @@ enum mp_csp_prim {
     MP_CSP_PRIM_DISPLAY_P3,
     MP_CSP_PRIM_V_GAMUT,
     MP_CSP_PRIM_S_GAMUT,
+    MP_CSP_PRIM_EBU_3213,
+    MP_CSP_PRIM_FILM_C,
+    MP_CSP_PRIM_ACES_AP0,
+    MP_CSP_PRIM_ACES_AP1,
     MP_CSP_PRIM_COUNT
 };
 
@@ -63,6 +67,7 @@ enum mp_csp_trc {
     MP_CSP_TRC_V_LOG,
     MP_CSP_TRC_S_LOG1,
     MP_CSP_TRC_S_LOG2,
+    MP_CSP_TRC_ST428,
     MP_CSP_TRC_COUNT
 };
 
