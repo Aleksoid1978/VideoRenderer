@@ -307,12 +307,13 @@ static void mp_apply_chromatic_adaptation(struct mp_csp_col_xy src,
     mp_mul_matrix3x3(m, tmp);
 }
 
-// get the coefficients of an SMPTE 428-1 xyz -> rgb conversion matrix
+// get the coefficients of an ST 428-1 xyz -> rgb conversion matrix
 // intent = the rendering intent used to convert to the target primaries
 static void mp_get_xyz2rgb_coeffs(struct mp_csp_params *params,
                                   enum mp_render_intent intent, struct mp_cmat *m)
 {
-    struct mp_csp_primaries prim = mp_get_csp_primaries(params->color.primaries);
+    // Convert to DCI-P3
+    struct mp_csp_primaries prim = mp_get_csp_primaries(MP_CSP_PRIM_DCI_P3);
     float brightness = params->brightness;
     mp_get_rgb2xyz_matrix(prim, m->m);
     mp_invert_matrix3x3(m->m);
