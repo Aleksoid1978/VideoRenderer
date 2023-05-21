@@ -1,5 +1,5 @@
 /*
-* (C) 2020-2022 see Authors.txt
+* (C) 2020-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -93,13 +93,17 @@ DEFINE_GUID(MEDIASUBTYPE_LAV_RAWVIDEO, 0xd80fa03c, 0x35c1, 0x4fa1, 0x8c, 0x8e, 0
 #define VIDEOTRANSFUNC_10_rel     17
 
 // A byte that is not initialized to std::vector when using the resize method.
+// Note: can be slow in debug mode.
 struct NoInitByte
 {
 	uint8_t value;
+#pragma warning(push)
+#pragma warning(disable:26495)
 	NoInitByte() {
 		// do nothing
-		static_assert(sizeof(*this) == sizeof (value), "invalid size");
+		static_assert(sizeof(*this) == sizeof(value), "invalid size");
 	}
+#pragma warning(pop)
 };
 
 template <typename T>
@@ -126,11 +130,14 @@ LPCWSTR GetWindowsVersion();
 
 inline std::wstring GUIDtoWString(const GUID& guid)
 {
-	WCHAR buff[40];
-	if (StringFromGUID2(guid, buff, 39) <= 0) {
-		StringFromGUID2(GUID_NULL, buff, 39);
+	std::wstring str(39, 0);
+	int ret = StringFromGUID2(guid, &str[0], 39);
+	if (ret) {
+		str.resize(ret - 1);
+	} else {
+		str.clear();
 	}
-	return std::wstring(buff);
+	return str;
 }
 
 std::wstring HR2Str(const HRESULT hr);
