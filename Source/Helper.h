@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2022 see Authors.txt
+* (C) 2018-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -21,6 +21,7 @@
 #pragma once
 
 #include <dxva2api.h>
+#include <mfobjects.h>
 #include "Utils/Util.h"
 #include "Utils/StringUtil.h"
 #include "csputils.h"

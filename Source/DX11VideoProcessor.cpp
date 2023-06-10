@@ -1504,11 +1504,11 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_709
 								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_240M;
 
-			if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && !(m_bHdrPassthroughSupport && m_bHdrPassthrough) && m_bConvertToSdr) {
+			if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && !(m_bHdrPassthroughSupport && m_bHdrPassthrough) && m_bConvertToSdr) {
 				resId = m_D3D11VP.IsPqSupported() ? IDF_PS_11_CONVERT_PQ_TO_SDR : IDF_PS_11_FIXCONVERT_PQ_TO_SDR;
 				m_strCorrection = L"PQ to SDR";
 			}
-			else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
+			else if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG) {
 				if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
 					resId = IDF_PS_11_CONVERT_HLG_TO_PQ;
 					m_strCorrection = L"HLG to PQ";
@@ -1517,7 +1517,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 					resId = IDF_PS_11_FIXCONVERT_HLG_TO_SDR;
 					m_strCorrection = L"HLG to SDR";
 				}
-				else if (m_srcExFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020) {
+				else if (m_srcExFmt.VideoPrimaries == MFVideoPrimaries_BT2020) {
 					// HLG compatible with SDR
 					resId = IDF_PS_11_FIX_BT2020;
 					m_strCorrection = L"Fix BT.2020";
@@ -1527,7 +1527,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 				resId = IDF_PS_11_FIX_YCGCO;
 				m_strCorrection = L"Fix YCoCg";
 			}
-			else if (bTransFunc22 && m_srcExFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020) {
+			else if (bTransFunc22 && m_srcExFmt.VideoPrimaries == MFVideoPrimaries_BT2020) {
 				resId = IDF_PS_11_FIX_BT2020;
 				m_strCorrection = L"Fix BT.2020";
 			}
@@ -2334,7 +2334,7 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 	ID3DBlob* pShaderCode = nullptr;
 
 	int convertType = (m_bConvertToSdr && !(m_bHdrPassthroughSupport && m_bHdrPassthrough)) ? SHADER_CONVERT_TO_SDR
-		: (m_bHdrPassthroughSupport && m_bHdrPassthrough && m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) ? SHADER_CONVERT_TO_PQ
+		: (m_bHdrPassthroughSupport && m_bHdrPassthrough && m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG) ? SHADER_CONVERT_TO_PQ
 		: SHADER_CONVERT_NONE;
 
 	HRESULT hr = GetShaderConvertColor(true,

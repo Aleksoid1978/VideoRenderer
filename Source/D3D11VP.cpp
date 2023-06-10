@@ -466,12 +466,12 @@ HRESULT CD3D11VP::SetColorSpace(const DXVA2_ExtendedFormat exFmt, const bool bHd
 			if (exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_10 || exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_12) {
 				const bool topleft = (exFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Cosited);
 
-				if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084) {
+				if (exFmt.VideoTransferFunction == MFVideoTransFunc_2084) {
 					cstype_stream = topleft
 						? DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_TOPLEFT_P2020
 						: DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020;
 				}
-				else if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
+				else if (exFmt.VideoTransferFunction == MFVideoTransFunc_HLG) {
 					cstype_stream = fullrange
 						? DXGI_COLOR_SPACE_YCBCR_FULL_GHLG_TOPLEFT_P2020
 						: DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020;
@@ -488,7 +488,7 @@ HRESULT CD3D11VP::SetColorSpace(const DXVA2_ExtendedFormat exFmt, const bool bHd
 				}
 			}
 			*/
-			if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && (exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_10 || exFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_BT2020_12)) {
+			if (exFmt.VideoTransferFunction == MFVideoTransFunc_2084 && (exFmt.VideoTransferMatrix == MFVideoTransferMatrix_BT2020_10 || exFmt.VideoTransferMatrix == MFVideoTransferMatrix_BT2020_12)) {
 				const bool topleft = (exFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Cosited);
 				cstype_stream = topleft
 					? DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_TOPLEFT_P2020

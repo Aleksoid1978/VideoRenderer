@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2022 see Authors.txt
+* (C) 2018-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -771,7 +771,7 @@ void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspac
 	case DXVA2_VideoTransferMatrix_BT709:     colorspace.space = MP_CSP_BT_709;     break;
 	case DXVA2_VideoTransferMatrix_BT601:     colorspace.space = MP_CSP_BT_601;     break;
 	case DXVA2_VideoTransferMatrix_SMPTE240M: colorspace.space = MP_CSP_SMPTE_240M; break;
-	case VIDEOTRANSFERMATRIX_BT2020_10:       colorspace.space = MP_CSP_BT_2020_NC; break;
+	case MFVideoTransferMatrix_BT2020_10:     colorspace.space = MP_CSP_BT_2020_NC; break;
 	case VIDEOTRANSFERMATRIX_YCgCo:           colorspace.space = MP_CSP_YCGCO;      break;
 	default:
 		colorspace.space = MP_CSP_AUTO;
@@ -783,8 +783,8 @@ void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspac
 	case DXVA2_VideoPrimaries_BT470_2_SysBG: colorspace.primaries = MP_CSP_PRIM_BT_601_625; break;
 	case DXVA2_VideoPrimaries_SMPTE170M:
 	case DXVA2_VideoPrimaries_SMPTE240M:     colorspace.primaries = MP_CSP_PRIM_BT_601_525; break;
-	case VIDEOPRIMARIES_BT2020:              colorspace.primaries = MP_CSP_PRIM_BT_2020;    break;
-	case VIDEOPRIMARIES_DCI_P3:              colorspace.primaries = MP_CSP_PRIM_DCI_P3;     break;
+	case MFVideoPrimaries_BT2020:            colorspace.primaries = MP_CSP_PRIM_BT_2020;    break;
+	case MFVideoPrimaries_DCI_P3:            colorspace.primaries = MP_CSP_PRIM_DCI_P3;     break;
 	default:
 		colorspace.primaries = MP_CSP_PRIM_AUTO;
 	}
@@ -796,12 +796,12 @@ void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspac
 	case DXVA2_VideoTransFunc_22:      colorspace.gamma = MP_CSP_TRC_GAMMA22; break;
 	case DXVA2_VideoTransFunc_709:
 	case DXVA2_VideoTransFunc_240M:
-	case VIDEOTRANSFUNC_2020_const:
-	case VIDEOTRANSFUNC_2020:          colorspace.gamma = MP_CSP_TRC_BT_1886; break;
+	case MFVideoTransFunc_2020_const:
+	case MFVideoTransFunc_2020:        colorspace.gamma = MP_CSP_TRC_BT_1886; break;
 	case DXVA2_VideoTransFunc_sRGB:    colorspace.gamma = MP_CSP_TRC_SRGB;    break;
 	case DXVA2_VideoTransFunc_28:      colorspace.gamma = MP_CSP_TRC_GAMMA28; break;
-	case VIDEOTRANSFUNC_2084:          colorspace.gamma = MP_CSP_TRC_PQ;      break;
-	case VIDEOTRANSFUNC_HLG:           colorspace.gamma = MP_CSP_TRC_HLG;     break;
+	case MFVideoTransFunc_2084:        colorspace.gamma = MP_CSP_TRC_PQ;      break;
+	case MFVideoTransFunc_HLG:         colorspace.gamma = MP_CSP_TRC_HLG;     break;
 	default:
 		colorspace.gamma = MP_CSP_TRC_AUTO;
 	}

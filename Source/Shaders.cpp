@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2022 see Authors.txt
+* (C) 2019-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -95,12 +95,12 @@ HRESULT GetShaderConvertColor(
 	LPVOID data;
 	DWORD size;
 
-	const bool bBT2020Primaries = (exFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020);
-	const bool bConvertHDRtoSDR = (convertType == SHADER_CONVERT_TO_SDR && (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG));
-	const bool bConvertHLGtoPQ = (convertType == SHADER_CONVERT_TO_PQ && exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG);
+	const bool bBT2020Primaries = (exFmt.VideoPrimaries == MFVideoPrimaries_BT2020);
+	const bool bConvertHDRtoSDR = (convertType == SHADER_CONVERT_TO_SDR && (exFmt.VideoTransferFunction == MFVideoTransFunc_2084 || exFmt.VideoTransferFunction == MFVideoTransFunc_HLG));
+	const bool bConvertHLGtoPQ = (convertType == SHADER_CONVERT_TO_PQ && exFmt.VideoTransferFunction == MFVideoTransFunc_HLG);
 	const bool blendDeint420 = (blendDeinterlace && fmtParams.Subsampling == 420);
 
-	if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
+	if (exFmt.VideoTransferFunction == MFVideoTransFunc_HLG) {
 		hr = GetDataFromResource(data, size, IDF_HLSL_HLG);
 		if (S_OK == hr) {
 			code.append((LPCSTR)data, size);
@@ -593,7 +593,7 @@ HRESULT GetShaderConvertColor(
 	bool isLinear = false;
 
 	if (bConvertHDRtoSDR) {
-		if (exFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG) {
+		if (exFmt.VideoTransferFunction == MFVideoTransFunc_HLG) {
 			code.append(
 				"color = saturate(color);\n"
 				"color.rgb = HLGtoLinear(color.rgb);\n"
@@ -623,13 +623,13 @@ HRESULT GetShaderConvertColor(
 		case DXVA2_VideoTransFunc_10:   toLinear = "\\\\nothing\n";                  break;
 		case DXVA2_VideoTransFunc_18:   toLinear = "color = pow(color, 1.8);\n"; break;
 		case DXVA2_VideoTransFunc_20:   toLinear = "color = pow(color, 2.0);\n"; break;
-		case VIDEOTRANSFUNC_HLG: // HLG compatible with SDR
+		case MFVideoTransFunc_HLG: // HLG compatible with SDR
 		case DXVA2_VideoTransFunc_22:
 		case DXVA2_VideoTransFunc_709:
 		case DXVA2_VideoTransFunc_240M: toLinear = "color = pow(color, 2.2);\n"; break;
 		case DXVA2_VideoTransFunc_sRGB: toLinear = "color = pow(color, 2.2);\n"; break;
 		case DXVA2_VideoTransFunc_28:   toLinear = "color = pow(color, 2.8);\n"; break;
-		case VIDEOTRANSFUNC_26:         toLinear = "color = pow(color, 2.6);\n"; break;
+		case MFVideoTransFunc_26:       toLinear = "color = pow(color, 2.6);\n"; break;
 		}
 
 		if (toLinear.size()) {

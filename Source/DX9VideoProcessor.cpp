@@ -1169,13 +1169,13 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		bool bTransFunc22 = m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_22
 			|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_709
 			|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_240M
-			|| m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG; // HLG compatible with SDR
+			|| m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG; // HLG compatible with SDR
 
-		if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 && m_bConvertToSdr) {
+		if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && m_bConvertToSdr) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIXCONVERT_PQ_TO_SDR));
 			m_strCorrection = L"PQ to SDR";
 		}
-		else if (m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG && m_bConvertToSdr) {
+		else if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG && m_bConvertToSdr) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIXCONVERT_HLG_TO_SDR));
 			m_strCorrection = L"HLG to SDR";
 		}
@@ -1183,7 +1183,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIX_YCGCO));
 			m_strCorrection = L"Fix YCoCg";
 		}
-		else if (bTransFunc22 && m_srcExFmt.VideoPrimaries == VIDEOPRIMARIES_BT2020) {
+		else if (bTransFunc22 && m_srcExFmt.VideoPrimaries == MFVideoPrimaries_BT2020) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIX_BT2020));
 			m_strCorrection = L"Fix BT.2020";
 		}

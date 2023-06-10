@@ -210,7 +210,7 @@ public:
 
 protected:
 	bool SourceIsHDR() {
-		return m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_2084 || m_srcExFmt.VideoTransferFunction == VIDEOTRANSFUNC_HLG;
+		return m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 || m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG;
 	}
 
 	void UpdateStatsInputFmt();
