@@ -166,6 +166,10 @@ private:
 	};
 	HDRMetadata m_hdr10 = {};
 	HDRMetadata m_lastHdr10 = {};
+#ifdef _DEBUG
+	bool m_bSrcHDRPlus = false;
+	bool m_bSrcDoVi = false;
+#endif
 
 	HWND m_lastFullscreenHWnd = nullptr;
 

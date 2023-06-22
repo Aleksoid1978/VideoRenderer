@@ -1875,36 +1875,23 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 		}
 
-		MediaSideData3DOffset* offset = nullptr;
 		size_t size = 0;
+		MediaSideData3DOffset* offset = nullptr;
 		hr = pMediaSideData->GetSideData(IID_MediaSideData3DOffset, (const BYTE**)&offset, &size);
 		if (SUCCEEDED(hr) && size == sizeof(MediaSideData3DOffset) && offset->offset_count > 0 && offset->offset[0]) {
 			m_nStereoSubtitlesOffsetInPixels = offset->offset[0];
 		}
-	}
 
-#if 0
 #ifdef _DEBUG
-	static unsigned num = 0;
-	if ((num++ & 0xFF) == 0) {
-		if (CComQIPtr<IMediaSideData> pMediaSideData = pSample) {
-			size_t size = 0;
-			MediaSideDataHDR10Plus* pHDR10Plus = nullptr;
-			hr = pMediaSideData->GetSideData(IID_MediaSideDataHDR10Plus, (const BYTE**)&pHDR10Plus, &size);
-			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataHDR10Plus)) {
-				DLog(L"CDX11VideoProcessor::CopySample - HDR10+ metadata found");
-			}
+		MediaSideDataHDR10Plus* pHDR10Plus = nullptr;
+		hr = pMediaSideData->GetSideData(IID_MediaSideDataHDR10Plus, (const BYTE**)&pHDR10Plus, &size);
+		m_bSrcHDRPlus = SUCCEEDED(hr);
 
-			size = 0;
-			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
-			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
-			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata)) {
-				DLog(L"CDX11VideoProcessor::CopySample - Dolby Vision metadata found");
-			}
-		}
+		MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
+		hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
+		m_bSrcDoVi = SUCCEEDED(hr);
+#endif
 	}
-#endif
-#endif
 
 	if (CComQIPtr<IMediaSampleD3D11> pMSD3D11 = pSample) {
 		if (m_iSrcFromGPU != 11) {
@@ -3481,6 +3468,17 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	);
 
 	str.append(m_strStatsInputFmt);
+#ifdef _DEBUG
+	if (m_bSrcHDRPlus || m_bSrcDoVi) {
+		str.append(L", MetaData: unsup. ");
+		if (m_bSrcDoVi) {
+			str.append(L"DolbyVision");
+		}
+		else {
+			str.append(L"HDR+");
+		}
+	}
+#endif
 	str.append(m_strStatsVProc);
 
 	const int dstW = m_videoRect.Width();
