@@ -75,67 +75,15 @@ const char code_Bicubic_UV[] =
 	"float2 Q3 = c03 * w0.x + c13 * w1.x + c23 * w2.x + c33 * w3.x;\n"
 	"colorUV = Q0 * w0.y + Q1 * w1.y + Q2 * w2.y + Q3 * w3.y;\n";
 
-HRESULT GetShaderConvertColor(
+
+void ShaderGetPixels(
 	const bool bDX11,
-	const UINT width,
-	const long texW, long texH,
-	const RECT rect,
 	const FmtConvParams_t& fmtParams,
-	const DXVA2_ExtendedFormat exFmt,
+	const UINT chromaSubsampling,
 	const int chromaScaling,
-	const int convertType,
 	const bool blendDeinterlace,
-	ID3DBlob** ppCode)
+	std::string& code)
 {
-	DLog(L"GetShaderConvertColor() started for {} {}x{} extfmt:{:#010x} chroma:{}", fmtParams.str, texW, texH, exFmt.value, chromaScaling);
-
-	std::string code;
-	HRESULT hr = S_OK;
-	LPVOID data;
-	DWORD size;
-
-	const bool bBT2020Primaries = (exFmt.VideoPrimaries == MFVideoPrimaries_BT2020);
-	const bool bConvertHDRtoSDR = (convertType == SHADER_CONVERT_TO_SDR && (exFmt.VideoTransferFunction == MFVideoTransFunc_2084 || exFmt.VideoTransferFunction == MFVideoTransFunc_HLG));
-	const bool bConvertHLGtoPQ = (convertType == SHADER_CONVERT_TO_PQ && exFmt.VideoTransferFunction == MFVideoTransFunc_HLG);
-	const bool blendDeint420 = (blendDeinterlace && fmtParams.Subsampling == 420);
-
-	if (exFmt.VideoTransferFunction == MFVideoTransFunc_HLG) {
-		hr = GetDataFromResource(data, size, IDF_HLSL_HLG);
-		if (S_OK == hr) {
-			code.append((LPCSTR)data, size);
-			code += '\n';
-		}
-	}
-
-	if (bConvertHDRtoSDR || bConvertHLGtoPQ) {
-		hr = GetDataFromResource(data, size, IDF_HLSL_ST2084);
-		if (S_OK == hr) {
-			code.append((LPCSTR)data, size);
-			code += '\n';
-		}
-	}
-
-	if (bBT2020Primaries || bConvertHDRtoSDR) {
-		float matrix_conv_prim[3][3];
-		GetColorspaceGamutConversionMatrix(matrix_conv_prim, MP_CSP_PRIM_BT_2020, MP_CSP_PRIM_BT_709);
-		code.append("static const float3x3 matrix_conv_prim = {\n");
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
-				code += std::format("{}, ", matrix_conv_prim[i][j]);
-			}
-			code.append("\n");
-		}
-		code.append("};\n");
-	}
-
-	if (bConvertHDRtoSDR) {
-		hr = GetDataFromResource(data, size, IDF_HLSL_HDR_TONE_MAPPING);
-		if (S_OK == hr) {
-			code.append((LPCSTR)data, size);
-			code += '\n';
-		}
-	}
-
 	int planes = 1;
 	if (bDX11) {
 		if (fmtParams.pDX11Planes) {
@@ -156,46 +104,39 @@ HRESULT GetShaderConvertColor(
 			}
 		}
 	}
-
-	DLog(L"GetShaderConvertColor() frame consists of {} planes", planes);
+	DLog(L"ConvertColorShader: frame consists of {} planes", planes);
 
 	const bool packed422 = (fmtParams.cformat == CF_YUY2 || fmtParams.cformat == CF_Y210 || fmtParams.cformat == CF_Y216);
-	const bool fix422 = (packed422 && texW * 2 == width);
-
-	code += std::format("#define w {}\n", fix422 ? width : texW);
-	code += std::format("#define dx (1.0/{})\n", texW);
-	code += std::format("#define dy (1.0/{})\n", texH);
-	code += std::format("static const float2 wh = {{{}, {}}};\n", fix422 ? width : texW, texH);
-	code += std::format("static const float2 dxdy2 = {{2.0/{}, 2.0/{}}};\n", texW, texH);
-
-	if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
-		code.append("#define CATMULLROM_05(c0,c1,c2,c3) (9*(c1+c2)-(c0+c3))*0.0625\n");
-	}
+	const bool blendDeint420 = (blendDeinterlace && fmtParams.Subsampling == 420);
 
 	const char* strChromaPos = "";
 	const char* strChromaPos2 = "";
 	if (fmtParams.Subsampling == 420) {
-		switch (exFmt.VideoChromaSubsampling) {
+		switch (chromaSubsampling) {
 		case DXVA2_VideoChromaSubsampling_Cosited:
 			strChromaPos = "+float2(dx*0.5,dy*0.5)";
 			strChromaPos2 = "+float2(-0.25,-0.25)";
-			DLog(L"GetShaderConvertColor() set chroma location Co-sited");
+			DLog(L"ConvertColorShader: chroma location - Co-sited");
 			break;
 		case DXVA2_VideoChromaSubsampling_MPEG1:
 			//strChromaPos = "";
 			strChromaPos2 = "+float2(-0.5,-0.5)";
-			DLog(L"GetShaderConvertColor() set chroma location MPEG-1");
+			DLog(L"ConvertColorShader: chroma location - MPEG-1");
 			break;
 		case DXVA2_VideoChromaSubsampling_MPEG2:
 		default:
 			strChromaPos = "+float2(dx*0.5,0)";
 			strChromaPos2 = "+float2(-0.25,-0.5)";
-			DLog(L"GetShaderConvertColor() set chroma location MPEG-2");
+			DLog(L"ConvertColorShader: chroma location - MPEG-2");
 		}
 	}
 	else if (fmtParams.Subsampling == 422) {
 		strChromaPos = "+float2(dx*0.5,0)";
-		DLog(L"GetShaderConvertColor() set chroma location for YUV 4:2:2");
+		DLog(L"ConvertColorShader: chroma location - YUV 4:2:2");
+	}
+
+	if (chromaScaling == CHROMA_CatmullRom && fmtParams.Subsampling == 422) {
+		code.append("#define CATMULLROM_05(c0,c1,c2,c3) (9*(c1+c2)-(c0+c3))*0.0625\n");
 	}
 
 	if (bDX11) {
@@ -219,20 +160,23 @@ HRESULT GetShaderConvertColor(
 			break;
 		}
 
-		code.append("SamplerState samp : register(s0);\n"
-					"SamplerState sampL : register(s1);\n");
+		code.append(
+			"SamplerState samp : register(s0);\n"
+			"SamplerState sampL : register(s1);\n");
 
-		code.append("cbuffer PS_COLOR_TRANSFORM : register(b0) {"
-						"float3 cm_r;" // NB: sizeof(float3) == sizeof(float4)
-						"float3 cm_g;"
-						"float3 cm_b;"
-						"float3 cm_c;"
-					"};\n");
+		code.append(
+			"cbuffer PS_COLOR_TRANSFORM : register(b0) {"
+				"float3 cm_r;" // NB: sizeof(float3) == sizeof(float4)
+				"float3 cm_g;"
+				"float3 cm_b;"
+				"float3 cm_c;"
+			"};\n");
 
-		code.append("struct PS_INPUT {"
-						"float4 Pos : SV_POSITION;"
-						"float2 Tex : TEXCOORD;"
-					"};\n");
+		code.append(
+			"struct PS_INPUT {"
+				"float4 Pos : SV_POSITION;"
+				"float2 Tex : TEXCOORD;"
+			"};\n");
 
 		code.append("\nfloat4 main(PS_INPUT input) : SV_Target\n{\n");
 
@@ -244,7 +188,8 @@ HRESULT GetShaderConvertColor(
 					"color = float4(color[0], color[1], color[3], 1);\n"
 					"} else {\n");
 				if (chromaScaling == CHROMA_CatmullRom) {
-					code.append("float2 c0 = tex.Sample(samp, input.Tex, int2(-1, 0)).yw;\n"
+					code.append(
+						"float2 c0 = tex.Sample(samp, input.Tex, int2(-1, 0)).yw;\n"
 						"float2 c1 = color.yw;\n"
 						"float2 c2 = tex.Sample(samp, input.Tex, int2(1, 0)).yw;\n"
 						"float2 c3 = tex.Sample(samp, input.Tex, int2(2, 0)).yw;\n"
@@ -377,10 +322,11 @@ HRESULT GetShaderConvertColor(
 			break;
 		}
 
-		code.append("float3 cm_r : register(c0);\n"
-					"float3 cm_g : register(c1);\n"
-					"float3 cm_b : register(c2);\n"
-					"float3 cm_c : register(c3);\n");
+		code.append(
+			"float3 cm_r : register(c0);\n"
+			"float3 cm_g : register(c1);\n"
+			"float3 cm_b : register(c2);\n"
+			"float3 cm_c : register(c3);\n");
 
 		switch (planes) {
 		case 1:
@@ -395,7 +341,8 @@ HRESULT GetShaderConvertColor(
 					"color = float4(color[2], color[1], color[3], 1);\n"
 					"} else {\n");
 				if (chromaScaling == CHROMA_CatmullRom) {
-					code.append("float2 c0 = tex2D(s0, tex + float2(-dx, 0)).yw;\n"
+					code.append(
+						"float2 c0 = tex2D(s0, tex + float2(-dx, 0)).yw;\n"
 						"float2 c1 = color.yw;\n"
 						"float2 c2 = tex2D(s0, tex + float2(dx, 0)).yw;\n"
 						"float2 c3 = tex2D(s0, tex + float2(2*dx, 0)).yw;\n"
@@ -531,6 +478,81 @@ HRESULT GetShaderConvertColor(
 			break;
 		}
 	}
+}
+
+//////////////////////////////
+
+HRESULT GetShaderConvertColor(
+	const bool bDX11,
+	const UINT width,
+	const long texW, long texH,
+	const RECT rect,
+	const FmtConvParams_t& fmtParams,
+	const DXVA2_ExtendedFormat exFmt,
+	const int chromaScaling,
+	const int convertType,
+	const bool blendDeinterlace,
+	ID3DBlob** ppCode)
+{
+	DLog(L"GetShaderConvertColor() started for {} {}x{} extfmt:{:#010x} chroma:{}", fmtParams.str, texW, texH, exFmt.value, chromaScaling);
+
+	std::string code;
+	HRESULT hr = S_OK;
+	LPVOID data;
+	DWORD size;
+
+	const bool bBT2020Primaries = (exFmt.VideoPrimaries == MFVideoPrimaries_BT2020);
+	const bool bConvertHDRtoSDR = (convertType == SHADER_CONVERT_TO_SDR && (exFmt.VideoTransferFunction == MFVideoTransFunc_2084 || exFmt.VideoTransferFunction == MFVideoTransFunc_HLG));
+	const bool bConvertHLGtoPQ = (convertType == SHADER_CONVERT_TO_PQ && exFmt.VideoTransferFunction == MFVideoTransFunc_HLG);
+
+	if (exFmt.VideoTransferFunction == MFVideoTransFunc_HLG) {
+		hr = GetDataFromResource(data, size, IDF_HLSL_HLG);
+		if (S_OK == hr) {
+			code.append((LPCSTR)data, size);
+			code += '\n';
+		}
+	}
+
+	if (bConvertHDRtoSDR || bConvertHLGtoPQ) {
+		hr = GetDataFromResource(data, size, IDF_HLSL_ST2084);
+		if (S_OK == hr) {
+			code.append((LPCSTR)data, size);
+			code += '\n';
+		}
+	}
+
+	if (bBT2020Primaries || bConvertHDRtoSDR) {
+		float matrix_conv_prim[3][3];
+		GetColorspaceGamutConversionMatrix(matrix_conv_prim, MP_CSP_PRIM_BT_2020, MP_CSP_PRIM_BT_709);
+		code.append("static const float3x3 matrix_conv_prim = {\n");
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				code += std::format("{}, ", matrix_conv_prim[i][j]);
+			}
+			code.append("\n");
+		}
+		code.append("};\n");
+	}
+
+	if (bConvertHDRtoSDR) {
+		hr = GetDataFromResource(data, size, IDF_HLSL_HDR_TONE_MAPPING);
+		if (S_OK == hr) {
+			code.append((LPCSTR)data, size);
+			code += '\n';
+		}
+	}
+
+	const bool packed422 = (fmtParams.cformat == CF_YUY2 || fmtParams.cformat == CF_Y210 || fmtParams.cformat == CF_Y216);
+	const bool fix422 = (packed422 && texW * 2 == width);
+
+	code += std::format("#define w {}\n", fix422 ? width : texW);
+	code += std::format("#define dx (1.0/{})\n", texW);
+	code += std::format("#define dy (1.0/{})\n", texH);
+	code += std::format("static const float2 wh = {{{}, {}}};\n", fix422 ? width : texW, texH);
+	code += std::format("static const float2 dxdy2 = {{2.0/{}, 2.0/{}}};\n", texW, texH);
+
+	ShaderGetPixels(bDX11, fmtParams, exFmt.VideoChromaSubsampling, chromaScaling, blendDeinterlace, code);
+
 	code.append("//convert color\n");
 	code.append("color.rgb = float3(mul(cm_r, color), mul(cm_g, color), mul(cm_b, color)) + cm_c;\n");
 
