@@ -876,7 +876,7 @@ void CDX11VideoProcessor::SetGraphSize()
 		CalcStatsFont();
 		if (S_OK == m_Font3D.CreateFontBitmap(L"Consolas", m_StatsFontH, 0)) {
 			SIZE charSize = m_Font3D.GetMaxCharMetric();
-			m_StatsRect.right  = m_StatsRect.left + 60 * charSize.cx + 5 + 3;
+			m_StatsRect.right  = m_StatsRect.left + 61 * charSize.cx + 5 + 3;
 			m_StatsRect.bottom = m_StatsRect.top + 18 * charSize.cy + 5 + 3;
 		}
 		m_StatsBackground.Set(m_StatsRect, rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
@@ -1889,7 +1889,11 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 		MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
 		hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
-		m_bSrcDoVi = SUCCEEDED(hr);
+		if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata)) {
+			m_bSrcDoVi = true;
+		} else {
+			false;
+		}
 #endif
 	}
 
