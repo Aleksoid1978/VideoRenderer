@@ -1889,11 +1889,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 		MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
 		hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
-		if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata)) {
-			m_bSrcDoVi = true;
-		} else {
-			false;
-		}
+		m_bSrcDoVi = SUCCEEDED(hr);
 #endif
 	}
 
