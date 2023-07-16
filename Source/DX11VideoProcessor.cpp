@@ -1894,6 +1894,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			m_Dovi.bColorChanged = (memcmp(&m_Dovi.msd.ColorMetadata, &pDOVIMetadata->ColorMetadata, sizeof(MediaSideDataDOVIMetadata::ColorMetadata)) != 0);
 			memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
 			m_Dovi.bValid = true;
+			DLogIf(m_Dovi.bColorChanged, L"CDX11VideoProcessor::CopySample() : DoVi color metadata is changed");
 		}
 		else {
 			m_Dovi.bValid = false;
