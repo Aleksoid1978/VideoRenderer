@@ -168,7 +168,11 @@ private:
 	HDRMetadata m_lastHdr10 = {};
 #ifdef _DEBUG
 	bool m_bSrcHDRPlus = false;
-	bool m_bSrcDoVi = false;
+	struct DOVIMetadata {
+		MediaSideDataDOVIMetadata msd = {};
+		bool bValid = false;
+		bool bColorChanged = false;
+	} m_Dovi;
 #endif
 
 	HWND m_lastFullscreenHWnd = nullptr;

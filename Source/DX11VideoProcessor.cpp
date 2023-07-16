@@ -1889,7 +1889,15 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 		MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
 		hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
-		m_bSrcDoVi = SUCCEEDED(hr);
+		if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata)) {
+			m_Dovi.msd.ColorMetadata.scene_refresh_flag = pDOVIMetadata->ColorMetadata.scene_refresh_flag; // scene change is not taken into account for bColorChanged
+			m_Dovi.bColorChanged = (memcmp(&m_Dovi.msd.ColorMetadata, &pDOVIMetadata->ColorMetadata, sizeof(MediaSideDataDOVIMetadata::ColorMetadata)) != 0);
+			memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
+			m_Dovi.bValid = true;
+		}
+		else {
+			m_Dovi.bValid = false;
+		}
 #endif
 	}
 
@@ -3469,9 +3477,9 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 
 	str.append(m_strStatsInputFmt);
 #ifdef _DEBUG
-	if (m_bSrcHDRPlus || m_bSrcDoVi) {
+	if (m_bSrcHDRPlus || m_Dovi.bValid) {
 		str.append(L", MetaData: unsup. ");
-		if (m_bSrcDoVi) {
+		if (m_Dovi.bValid) {
 			str.append(L"DolbyVision");
 		}
 		else {
