@@ -776,10 +776,8 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 			cmatrix.m[i][2] = (float)m_Dovi.msd.ColorMetadata.ycc_to_rgb_matrix[i * 3 + 2];
 		}
 
-		cmatrix.c[0] = 0;
-		cmatrix.c[1] = 0;
-		cmatrix.c[2] = 0;
 		for (int i = 0; i < 3; i++) {
+			cmatrix.c[i] = 0;
 			for (int j = 0; j < 3; j++) {
 				cmatrix.c[i] -= cmatrix.m[i][j] * m_Dovi.msd.ColorMetadata.ycc_to_rgb_offset[j];
 			}
