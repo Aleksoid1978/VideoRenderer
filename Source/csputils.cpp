@@ -528,6 +528,20 @@ void mp_invert_cmat(struct mp_cmat *out, struct mp_cmat *in)
 // additional code //
 /////////////////////
 
+void mul_matrix3x3(float a[3][3], float b[3][3])
+{
+    mp_mul_matrix3x3(a, b);
+}
+
+void transpose_matrix3x3(float t[3][3], const float m[3][3])
+{
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            t[j][i] = m[i][j];
+        }
+    }
+}
+
 void GetColorspaceGamutConversionMatrix(float matrix[3][3], mp_csp_prim csp_in, mp_csp_prim csp_out)
 {
 	float matrix_rgb2xyz_in[3][3];
