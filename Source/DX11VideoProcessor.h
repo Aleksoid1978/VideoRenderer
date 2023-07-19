@@ -171,7 +171,6 @@ private:
 	struct DOVIMetadata {
 		MediaSideDataDOVIMetadata msd = {};
 		bool bValid = false;
-		bool bColorChanged = false;
 	} m_Dovi;
 #endif
 

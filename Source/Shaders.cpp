@@ -489,6 +489,7 @@ HRESULT GetShaderConvertColor(
 	const RECT rect,
 	const FmtConvParams_t& fmtParams,
 	const DXVA2_ExtendedFormat exFmt,
+	const MediaSideDataDOVIMetadata* const pDoviMetadata,
 	const int chromaScaling,
 	const int convertType,
 	const bool blendDeinterlace,
@@ -513,7 +514,7 @@ HRESULT GetShaderConvertColor(
 		}
 	}
 
-	if (bConvertHDRtoSDR || bConvertHLGtoPQ) {
+	if (bConvertHDRtoSDR || bConvertHLGtoPQ || pDoviMetadata) {
 		hr = GetDataFromResource(data, size, IDF_HLSL_ST2084);
 		if (S_OK == hr) {
 			code.append((LPCSTR)data, size);
@@ -606,6 +607,44 @@ HRESULT GetShaderConvertColor(
 			);
 			isLinear = true;
 		}
+	}
+	else if (pDoviMetadata) {
+		float dovi_lms2rgb[3][3] = {
+			{ 3.06441879f, -2.16597676f,  0.10155818f},
+			{-0.65612108f,  1.78554118f, -0.12943749f},
+			{ 0.01736321f, -0.04725154f,  1.03004253f},
+		};
+		float linear[3][3];
+		for (int i = 0; i < 3; i++) {
+			linear[i][0] = (float)pDoviMetadata->ColorMetadata.rgb_to_lms_matrix[i * 3 + 0];
+			linear[i][1] = (float)pDoviMetadata->ColorMetadata.rgb_to_lms_matrix[i * 3 + 1];
+			linear[i][2] = (float)pDoviMetadata->ColorMetadata.rgb_to_lms_matrix[i * 3 + 2];
+		}
+		mul_matrix3x3(dovi_lms2rgb, linear);
+		float m[3][3];
+		transpose_matrix3x3(m, dovi_lms2rgb);
+
+		code.append("float3x3 mat = {\n");
+		code += std::format("{}, {}, {},\n", m[0][0], m[0][1], m[0][2]);
+		code += std::format("{}, {}, {},\n", m[1][0], m[1][1], m[1][2]);
+		code += std::format("{}, {}, {}\n",  m[2][0], m[2][1], m[2][2]);
+		code.append("};\n");
+
+		// PQ EOTF
+		code.append(
+			"color = max(color, 0.0);\n"
+			"color = ST2084ToLinear(color, 1.0);\n"
+		);
+
+		// LMS matrix
+		code.append("color.rgb = mul(mat, color.rgb); \n");
+
+		// PQ OETF
+		//code.append(
+		//	"color = max(color, 0.0);\n"
+		//	"color = LinearToST2084(color, 1.0);\n"
+		//);
+		isLinear = true;
 	}
 
 	if (isLinear) {

@@ -2128,7 +2128,7 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 		hr = GetShaderConvertColor(false,
 			m_srcWidth,
 			m_TexSrcVideo.Width, m_TexSrcVideo.Height,
-			m_srcRect, m_srcParams, m_srcExFmt,
+			m_srcRect, m_srcParams, m_srcExFmt, nullptr,
 			m_iChromaScaling, convertType, false,
 			&pShaderCode);
 		if (S_OK == hr) {
@@ -2140,7 +2140,7 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 			hr = GetShaderConvertColor(false,
 				m_srcWidth,
 				m_TexSrcVideo.Width, m_TexSrcVideo.Height,
-				m_srcRect, m_srcParams, m_srcExFmt,
+				m_srcRect, m_srcParams, m_srcExFmt, nullptr,
 				m_iChromaScaling, convertType, true,
 				&pShaderCode);
 			if (S_OK == hr) {

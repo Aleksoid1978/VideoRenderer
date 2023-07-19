@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2022 see Authors.txt
+* (C) 2019-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -37,6 +37,7 @@ HRESULT GetShaderConvertColor(
 	const RECT rect,
 	const FmtConvParams_t& fmtParams,
 	const DXVA2_ExtendedFormat exFmt,
+	const MediaSideDataDOVIMetadata* const pDoviMetadata,
 	const int chromaScaling,
 	const int convertType,
 	const bool blendDeinterlace,
