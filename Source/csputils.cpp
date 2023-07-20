@@ -528,12 +528,16 @@ void mp_invert_cmat(struct mp_cmat *out, struct mp_cmat *in)
 // additional code //
 /////////////////////
 
-void mul_matrix3x3(float a[3][3], float b[3][3])
+void mul_matrix3x3(float(&c)[3][3], const float(&a)[3][3], const float(&b)[3][3])
 {
-    mp_mul_matrix3x3(a, b);
+    for (int i = 0; i < 3; i++) {
+        c[0][i] = a[0][0] * b[0][i] + a[0][1] * b[1][i] + a[0][2] * b[2][i];
+        c[1][i] = a[1][0] * b[0][i] + a[1][1] * b[1][i] + a[1][2] * b[2][i];
+        c[2][i] = a[2][0] * b[0][i] + a[2][1] * b[1][i] + a[2][2] * b[2][i];
+    }
 }
 
-void transpose_matrix3x3(float t[3][3], const float m[3][3])
+void transpose_matrix3x3(float(&t)[3][3], const float(&m)[3][3])
 {
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {

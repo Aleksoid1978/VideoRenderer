@@ -620,14 +620,13 @@ HRESULT GetShaderConvertColor(
 			linear[i][1] = (float)pDoviMetadata->ColorMetadata.rgb_to_lms_matrix[i * 3 + 1];
 			linear[i][2] = (float)pDoviMetadata->ColorMetadata.rgb_to_lms_matrix[i * 3 + 2];
 		}
-		mul_matrix3x3(dovi_lms2rgb, linear);
-		float m[3][3];
-		memcpy(m, dovi_lms2rgb, sizeof(m));
+		float mat[3][3];
+		mul_matrix3x3(mat, dovi_lms2rgb, linear);
 
 		code.append("float3x3 mat = {\n");
-		code += std::format("{}, {}, {},\n", m[0][0], m[0][1], m[0][2]);
-		code += std::format("{}, {}, {},\n", m[1][0], m[1][1], m[1][2]);
-		code += std::format("{}, {}, {}\n",  m[2][0], m[2][1], m[2][2]);
+		code += std::format("{}, {}, {},\n", mat[0][0], mat[0][1], mat[0][2]);
+		code += std::format("{}, {}, {},\n", mat[1][0], mat[1][1], mat[1][2]);
+		code += std::format("{}, {}, {}\n",  mat[2][0], mat[2][1], mat[2][2]);
 		code.append("};\n");
 
 		// PQ EOTF
