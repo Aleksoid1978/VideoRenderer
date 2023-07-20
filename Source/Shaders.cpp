@@ -622,7 +622,7 @@ HRESULT GetShaderConvertColor(
 		}
 		mul_matrix3x3(dovi_lms2rgb, linear);
 		float m[3][3];
-		transpose_matrix3x3(m, dovi_lms2rgb);
+		memcpy(m, dovi_lms2rgb, sizeof(m));
 
 		code.append("float3x3 mat = {\n");
 		code += std::format("{}, {}, {},\n", m[0][0], m[0][1], m[0][2]);
@@ -640,11 +640,10 @@ HRESULT GetShaderConvertColor(
 		code.append("color.rgb = mul(mat, color.rgb); \n");
 
 		// PQ OETF
-		//code.append(
-		//	"color = max(color, 0.0);\n"
-		//	"color = LinearToST2084(color, 1.0);\n"
-		//);
-		isLinear = true;
+		code.append(
+			"color = max(color, 0.0);\n"
+			"color = LinearToST2084(color, 1.0);\n"
+		);
 	}
 
 	if (isLinear) {
