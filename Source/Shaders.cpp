@@ -503,7 +503,7 @@ HRESULT GetShaderConvertColor(
 	DWORD size;
 
 	const bool bBT2020Primaries = (exFmt.VideoPrimaries == MFVideoPrimaries_BT2020);
-	const bool bConvertHDRtoSDR = (convertType == SHADER_CONVERT_TO_SDR && (exFmt.VideoTransferFunction == MFVideoTransFunc_2084 || exFmt.VideoTransferFunction == MFVideoTransFunc_HLG));
+	const bool bConvertHDRtoSDR = (convertType == SHADER_CONVERT_TO_SDR && (exFmt.VideoTransferFunction == MFVideoTransFunc_2084 || exFmt.VideoTransferFunction == MFVideoTransFunc_HLG) || pDoviMetadata);
 	const bool bConvertHLGtoPQ = (convertType == SHADER_CONVERT_TO_PQ && exFmt.VideoTransferFunction == MFVideoTransFunc_HLG);
 
 	if (exFmt.VideoTransferFunction == MFVideoTransFunc_HLG) {
@@ -514,7 +514,7 @@ HRESULT GetShaderConvertColor(
 		}
 	}
 
-	if (bConvertHDRtoSDR || bConvertHLGtoPQ || pDoviMetadata) {
+	if (bConvertHDRtoSDR || bConvertHLGtoPQ) {
 		hr = GetDataFromResource(data, size, IDF_HLSL_ST2084);
 		if (S_OK == hr) {
 			code.append((LPCSTR)data, size);
@@ -558,6 +558,43 @@ HRESULT GetShaderConvertColor(
 	code.append("color.rgb = float3(mul(cm_r, color), mul(cm_g, color), mul(cm_b, color)) + cm_c;\n");
 
 	bool isLinear = false;
+
+	if (pDoviMetadata) {
+		float dovi_lms2rgb[3][3] = {
+			{ 3.06441879f, -2.16597676f,  0.10155818f},
+			{-0.65612108f,  1.78554118f, -0.12943749f},
+			{ 0.01736321f, -0.04725154f,  1.03004253f},
+		};
+		float linear[3][3];
+		for (int i = 0; i < 3; i++) {
+			linear[i][0] = (float)pDoviMetadata->ColorMetadata.rgb_to_lms_matrix[i * 3 + 0];
+			linear[i][1] = (float)pDoviMetadata->ColorMetadata.rgb_to_lms_matrix[i * 3 + 1];
+			linear[i][2] = (float)pDoviMetadata->ColorMetadata.rgb_to_lms_matrix[i * 3 + 2];
+		}
+		float mat[3][3];
+		mul_matrix3x3(mat, dovi_lms2rgb, linear);
+
+		code.append("float3x3 mat = {\n");
+		code += std::format("{}, {}, {},\n", mat[0][0], mat[0][1], mat[0][2]);
+		code += std::format("{}, {}, {},\n", mat[1][0], mat[1][1], mat[1][2]);
+		code += std::format("{}, {}, {}\n", mat[2][0], mat[2][1], mat[2][2]);
+		code.append("};\n");
+
+		// PQ EOTF
+		code.append(
+			"color = max(color, 0.0);\n"
+			"color = ST2084ToLinear(color, 1.0);\n"
+		);
+
+		// LMS matrix
+		code.append("color.rgb = mul(mat, color.rgb); \n");
+
+		// PQ OETF
+		code.append(
+			"color = max(color, 0.0);\n"
+			"color = LinearToST2084(color, 1.0);\n"
+		);
+	}
 
 	if (bConvertHDRtoSDR) {
 		if (exFmt.VideoTransferFunction == MFVideoTransFunc_HLG) {
@@ -607,42 +644,6 @@ HRESULT GetShaderConvertColor(
 			);
 			isLinear = true;
 		}
-	}
-	else if (pDoviMetadata) {
-		float dovi_lms2rgb[3][3] = {
-			{ 3.06441879f, -2.16597676f,  0.10155818f},
-			{-0.65612108f,  1.78554118f, -0.12943749f},
-			{ 0.01736321f, -0.04725154f,  1.03004253f},
-		};
-		float linear[3][3];
-		for (int i = 0; i < 3; i++) {
-			linear[i][0] = (float)pDoviMetadata->ColorMetadata.rgb_to_lms_matrix[i * 3 + 0];
-			linear[i][1] = (float)pDoviMetadata->ColorMetadata.rgb_to_lms_matrix[i * 3 + 1];
-			linear[i][2] = (float)pDoviMetadata->ColorMetadata.rgb_to_lms_matrix[i * 3 + 2];
-		}
-		float mat[3][3];
-		mul_matrix3x3(mat, dovi_lms2rgb, linear);
-
-		code.append("float3x3 mat = {\n");
-		code += std::format("{}, {}, {},\n", mat[0][0], mat[0][1], mat[0][2]);
-		code += std::format("{}, {}, {},\n", mat[1][0], mat[1][1], mat[1][2]);
-		code += std::format("{}, {}, {}\n",  mat[2][0], mat[2][1], mat[2][2]);
-		code.append("};\n");
-
-		// PQ EOTF
-		code.append(
-			"color = max(color, 0.0);\n"
-			"color = ST2084ToLinear(color, 1.0);\n"
-		);
-
-		// LMS matrix
-		code.append("color.rgb = mul(mat, color.rgb); \n");
-
-		// PQ OETF
-		code.append(
-			"color = max(color, 0.0);\n"
-			"color = LinearToST2084(color, 1.0);\n"
-		);
 	}
 
 	if (isLinear) {
