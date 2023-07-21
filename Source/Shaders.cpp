@@ -503,7 +503,7 @@ HRESULT GetShaderConvertColor(
 	DWORD size;
 
 	const bool bBT2020Primaries = (exFmt.VideoPrimaries == MFVideoPrimaries_BT2020);
-	const bool bConvertHDRtoSDR = (convertType == SHADER_CONVERT_TO_SDR && (exFmt.VideoTransferFunction == MFVideoTransFunc_2084 || exFmt.VideoTransferFunction == MFVideoTransFunc_HLG) || pDoviMetadata);
+	const bool bConvertHDRtoSDR = (convertType == SHADER_CONVERT_TO_SDR && (exFmt.VideoTransferFunction == MFVideoTransFunc_2084 || exFmt.VideoTransferFunction == MFVideoTransFunc_HLG || pDoviMetadata));
 	const bool bConvertHLGtoPQ = (convertType == SHADER_CONVERT_TO_PQ && exFmt.VideoTransferFunction == MFVideoTransFunc_HLG);
 
 	if (exFmt.VideoTransferFunction == MFVideoTransFunc_HLG) {
@@ -514,7 +514,7 @@ HRESULT GetShaderConvertColor(
 		}
 	}
 
-	if (bConvertHDRtoSDR || bConvertHLGtoPQ) {
+	if (bConvertHDRtoSDR || bConvertHLGtoPQ || pDoviMetadata) {
 		hr = GetDataFromResource(data, size, IDF_HLSL_ST2084);
 		if (S_OK == hr) {
 			code.append((LPCSTR)data, size);
