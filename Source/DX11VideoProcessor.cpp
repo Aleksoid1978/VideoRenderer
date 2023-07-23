@@ -878,9 +878,9 @@ void CDX11VideoProcessor::SetShaderDoviCurvesParams()
 			const float scale_coef = 1.0f / (1 << m_Dovi.msd.Header.coef_log2_denom);
 			for (int i = 0; i < curve.num_pivots - 1; i++) {
 				int k = 0;
-				cbuffer.coeffs_data[i].x = (k++ <= curve.poly_order[i]) ? scale * curve.poly_coef[i][0] : 0.0f;
-				cbuffer.coeffs_data[i].y = (k++ <= curve.poly_order[i]) ? scale * curve.poly_coef[i][1] : 0.0f;
-				cbuffer.coeffs_data[i].z = (k++ <= curve.poly_order[i]) ? scale * curve.poly_coef[i][2] : 0.0f;
+				cbuffer.coeffs_data[i].x = (k++ <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][0] : 0.0f;
+				cbuffer.coeffs_data[i].y = (k++ <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][1] : 0.0f;
+				cbuffer.coeffs_data[i].z = (k++ <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][2] : 0.0f;
 				cbuffer.coeffs_data[i].w = 0.0; // order=0 signals polynomial
 			}
 
