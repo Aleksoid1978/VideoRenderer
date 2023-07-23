@@ -97,6 +97,16 @@ private:
 			SAFE_RELEASE(pConstants);
 		}
 	} m_PSConvColorData;
+#ifdef _DEBUG
+	struct {
+		bool bEnable = false;
+		ID3D11Buffer* pConstants = nullptr;
+		void Release() {
+			bEnable = false;
+			SAFE_RELEASE(pConstants);
+		}
+	} m_PSDoviCurvesData;
+#endif
 	CComPtr<ID3D11PixelShader> m_pShaderUpscaleX;
 	CComPtr<ID3D11PixelShader> m_pShaderUpscaleY;
 	CComPtr<ID3D11PixelShader> m_pShaderDownscaleX;
@@ -199,6 +209,9 @@ private:
 
 	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
+#ifdef _DEBUG
+	void SetShaderDoviCurvesParams();
+#endif
 
 	void UpdateTexParams(int cdepth);
 	void UpdateRenderRect();
