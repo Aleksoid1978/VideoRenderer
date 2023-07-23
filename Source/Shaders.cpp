@@ -466,6 +466,109 @@ void ShaderGetPixels(
 	}
 }
 
+void ShaderDoviReshape(const MediaSideDataDOVIMetadata* const pDoviMetadata, std::string& code)
+{
+	if (!pDoviMetadata) {
+		return;
+	}
+
+	for (const auto& curve : pDoviMetadata->Mapping.curves) {
+		if (curve.num_pivots > 9) {
+			return; // incorrect value
+		}
+		for (int i = 0; i < int(curve.num_pivots - 1); i++) {
+			if (curve.mapping_idc[i] != 0) {
+				return; // only polynomial is supported
+			}
+		}
+	}
+
+	float coeffs_data[8][4];
+
+	code.append(
+		"// dovi reshape\n"
+		"{\n"
+		"float4 coeffs;\n"
+		"float3 sig = saturate(color.rgb);\n"
+	);
+
+	for (int c = 0; c < 3; c++) {
+		const auto& curve = pDoviMetadata->Mapping.curves[c];
+		if (!curve.num_pivots) {
+			continue;
+		}
+
+		code.append("{\n");
+		code += std::format("float s = sig[{}];\n", c);
+
+		memset(coeffs_data, 0, sizeof(coeffs_data));
+		const float scale_coef = 1.0f / (1 << pDoviMetadata->Header.coef_log2_denom);
+		const int num_coef = curve.num_pivots - 1;
+		for (int i = 0; i < num_coef; i++) {
+			for (int k = 0; k < 3; k++) {
+				coeffs_data[i][k] = (k <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][k] : 0.0f;
+			}
+			coeffs_data[i][3] = 0.0; // order=0 signals polynomial
+		}
+
+		if (curve.num_pivots > 2) {
+			code.append("float4 coeffs_data[8] = {\n");
+			for (int i = 0; i < 8; i++) {
+				code += std::format("{{{},{},{},{}}},\n",
+					coeffs_data[i][0],
+					coeffs_data[i][1],
+					coeffs_data[i][2],
+					coeffs_data[i][3]);
+			}
+			code.append("};\n");
+
+			// Skip the (irrelevant) lower and upper bounds
+			float pivots_data[7];
+			const float scale = 1.0f / ((1 << pDoviMetadata->Header.bl_bit_depth) - 1);
+			const int n = curve.num_pivots - 2;
+			for (int i = 0; i < n; i++) {
+				pivots_data[i] = scale * curve.pivots[i + 1];
+			}
+			for (int i = n; i < 7; i++) {
+				pivots_data[i] = 1e9f;
+			}
+
+			code.append("float pivots_data[7];\n");
+			for (int i = 0; i < 7; i++) {
+				code += std::format("pivots_data[{}] = {};\n", i, pivots_data[i]);
+			}
+
+			code.append(
+				"\n"
+				"#define test(i) (s >= pivots_data[i]) ? 1.0 : 0.0\n"
+				"#define coef(i) coeffs_data[i]\n"
+				"coeffs = lerp(lerp(lerp(coef(0), coef(1), test(0)),\n"
+				"                   lerp(coef(2), coef(3), test(2)),\n"
+				"                   test(1)),\n"
+				"         lerp(lerp(coef(4), coef(5), test(4)),\n"
+				"              lerp(coef(6), coef(7), test(6)),\n"
+				"              test(5)),\n"
+				"         test(3));\n"
+				"#undef test\n"
+				"#undef coef\n"
+				"\n");
+		}
+		else {
+			code += std::format("coeffs = float4({}, {}, {}, {});\n",
+				coeffs_data[0][0],
+				coeffs_data[0][1],
+				coeffs_data[0][2],
+				coeffs_data[0][3]);
+		}
+
+		code.append("s = (coeffs.z * s + coeffs.y) * s + coeffs.x;\n");
+		code += std::format("color[{}] = saturate(s);\n", c);
+
+		code.append("}\n");
+	}
+	code.append("}\n");
+}
+
 //////////////////////////////
 
 HRESULT GetShaderConvertColor(
@@ -556,6 +659,8 @@ HRESULT GetShaderConvertColor(
 	}
 
 	ShaderGetPixels(bDX11, fmtParams, exFmt.VideoChromaSubsampling, chromaScaling, blendDeinterlace, code);
+
+	ShaderDoviReshape(pDoviMetadata, code);
 
 	code.append("//convert color\n");
 	code.append("color.rgb = float3(mul(cm_r, color), mul(cm_g, color), mul(cm_b, color)) + cm_c;\n");

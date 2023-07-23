@@ -1975,11 +1975,13 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			m_Dovi.bValid = true;
 			if (bColorChanged) {
 				SetShaderConvertColorParams();
-				UpdateConvertColorShader();
 				DLog(L"CDX11VideoProcessor::CopySample() : DoVi color metadata is changed");
 			}
-			if (bMappingCurvesChanged) {
-				SetShaderDoviCurvesParams();
+			//if (bMappingCurvesChanged) {
+			//	SetShaderDoviCurvesParams();
+			//}
+			if (bColorChanged || bMappingCurvesChanged) {
+				UpdateConvertColorShader();
 			}
 		}
 		else {
