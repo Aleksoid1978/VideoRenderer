@@ -768,7 +768,7 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 {
 	mp_cmat cmatrix;
 
-#ifdef _DEBUG
+#if DOVI_ENABLE
 	if (m_Dovi.bValid) {
 		for (int i = 0; i < 3; i++) {
 			cmatrix.m[i][0] = (float)m_Dovi.msd.ColorMetadata.ycc_to_rgb_matrix[i * 3 + 0];
@@ -1904,11 +1904,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			m_nStereoSubtitlesOffsetInPixels = offset->offset[0];
 		}
 
-#ifdef _DEBUG
-		MediaSideDataHDR10Plus* pHDR10Plus = nullptr;
-		hr = pMediaSideData->GetSideData(IID_MediaSideDataHDR10Plus, (const BYTE**)&pHDR10Plus, &size);
-		m_bSrcHDRPlus = SUCCEEDED(hr);
-
+#if DOVI_ENABLE
 		MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
 		hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
 		if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata)) {
@@ -2363,7 +2359,7 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 		: SHADER_CONVERT_NONE;
 
 	MediaSideDataDOVIMetadata* pDOVIMetadata =
-#ifdef _DEBUG
+#if DOVI_ENABLE
 		m_Dovi.bValid ? &m_Dovi.msd : 
 #endif
 		nullptr;
@@ -3512,15 +3508,9 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	);
 
 	str.append(m_strStatsInputFmt);
-#ifdef _DEBUG
-	if (m_bSrcHDRPlus || m_Dovi.bValid) {
-		str.append(L", MetaData: unsup. ");
-		if (m_Dovi.bValid) {
-			str.append(L"DolbyVision");
-		}
-		else {
-			str.append(L"HDR+");
-		}
+#if DOVI_ENABLE
+	if (m_Dovi.bValid) {
+		str.append(L", MetaData: DolbyVision");
 	}
 #endif
 	str.append(m_strStatsVProc);

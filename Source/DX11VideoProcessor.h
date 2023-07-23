@@ -34,6 +34,7 @@
 #include "VideoProcessor.h"
 
 #define TEST_SHADER 0
+#define DOVI_ENABLE 0
 
 class CVideoRendererInputPin;
 
@@ -166,8 +167,7 @@ private:
 	};
 	HDRMetadata m_hdr10 = {};
 	HDRMetadata m_lastHdr10 = {};
-#ifdef _DEBUG
-	bool m_bSrcHDRPlus = false;
+#if DOVI_ENABLE
 	struct DOVIMetadata {
 		MediaSideDataDOVIMetadata msd = {};
 		bool bValid = false;
