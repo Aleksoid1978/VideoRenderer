@@ -1913,13 +1913,19 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
 		if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata)) {
 			m_Dovi.msd.ColorMetadata.scene_refresh_flag = pDOVIMetadata->ColorMetadata.scene_refresh_flag; // scene change is not taken into account for bColorChanged
-			bool bColorChanged = (memcmp(&m_Dovi.msd.ColorMetadata, &pDOVIMetadata->ColorMetadata, sizeof(MediaSideDataDOVIMetadata::ColorMetadata)) != 0);
+			const bool bColorChanged = (memcmp(&m_Dovi.msd.ColorMetadata, &pDOVIMetadata->ColorMetadata, sizeof(MediaSideDataDOVIMetadata::ColorMetadata)) != 0);
+			const bool bMappingCurvesChanged = (memcmp(&m_Dovi.msd.Mapping.curves, &pDOVIMetadata->Mapping.curves, sizeof(MediaSideDataDOVIMetadata::Mapping.curves)) != 0);
 			memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
 			m_Dovi.bValid = true;
 			if (bColorChanged) {
 				SetShaderConvertColorParams();
 				UpdateConvertColorShader();
 				DLog(L"CDX11VideoProcessor::CopySample() : DoVi color metadata is changed");
+			}
+			if (bMappingCurvesChanged) {
+				// TODO
+				static int number_of_changes = 0;
+				++number_of_changes;
 			}
 		}
 		else {
