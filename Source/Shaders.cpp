@@ -165,14 +165,6 @@ void ShaderGetPixels(
 			"SamplerState sampL : register(s1);\n");
 
 		code.append(
-			"cbuffer PS_COLOR_TRANSFORM : register(b0) {"
-				"float3 cm_r;" // NB: sizeof(float3) == sizeof(float4)
-				"float3 cm_g;"
-				"float3 cm_b;"
-				"float3 cm_c;"
-			"};\n");
-
-		code.append(
 			"struct PS_INPUT {"
 				"float4 Pos : SV_POSITION;"
 				"float2 Tex : TEXCOORD;"
@@ -321,12 +313,6 @@ void ShaderGetPixels(
 			}
 			break;
 		}
-
-		code.append(
-			"float3 cm_r : register(c0);\n"
-			"float3 cm_g : register(c1);\n"
-			"float3 cm_b : register(c2);\n"
-			"float3 cm_c : register(c3);\n");
 
 		switch (planes) {
 		case 1:
@@ -551,6 +537,23 @@ HRESULT GetShaderConvertColor(
 	code += std::format("#define dy (1.0/{})\n", texH);
 	code += std::format("static const float2 wh = {{{}, {}}};\n", fix422 ? width : texW, texH);
 	code += std::format("static const float2 dxdy2 = {{2.0/{}, 2.0/{}}};\n", texW, texH);
+
+	if (bDX11) {
+		code.append(
+			"cbuffer PS_COLOR_TRANSFORM : register(b0) {"
+			"float3 cm_r;" // NB: sizeof(float3) == sizeof(float4)
+			"float3 cm_g;"
+			"float3 cm_b;"
+			"float3 cm_c;"
+			"};\n");
+	}
+	else {
+		code.append(
+			"float3 cm_r : register(c0);\n"
+			"float3 cm_g : register(c1);\n"
+			"float3 cm_b : register(c2);\n"
+			"float3 cm_c : register(c3);\n");
+	}
 
 	ShaderGetPixels(bDX11, fmtParams, exFmt.VideoChromaSubsampling, chromaScaling, blendDeinterlace, code);
 
