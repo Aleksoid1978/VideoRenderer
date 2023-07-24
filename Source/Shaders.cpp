@@ -468,9 +468,18 @@ void ShaderGetPixels(
 
 void ShaderDoviReshape(const MediaSideDataDOVIMetadata* const pDoviMetadata, std::string& code)
 {
+	ASSERT(pDoviMetadata);
+
 	for (const auto& curve : pDoviMetadata->Mapping.curves) {
 		if (curve.num_pivots < 2 || curve.num_pivots > 9) {
-			return; // incorrect value
+			DLog(L"ShaderDoviReshape() : incorrect num_pivots value");
+			return;
+		}
+		for (int i = 0; i < int(curve.num_pivots - 1); i++) {
+			if (curve.mapping_idc[i] > 1) { // 0 polynomial, 1 mmr
+				DLog(L"ShaderDoviReshape() : incorrect mapping_idc value");
+				return;
+			}
 		}
 	}
 
@@ -499,8 +508,8 @@ void ShaderDoviReshape(const MediaSideDataDOVIMetadata* const pDoviMetadata, std
 
 		memset(coeffs_data, 0, sizeof(coeffs_data));
 		const float scale_coef = 1.0f / (1 << pDoviMetadata->Header.coef_log2_denom);
-		const int num_pivots = curve.num_pivots - 1;
-		for (int i = 0; i < num_pivots; i++) {
+		const int num_coef = curve.num_pivots - 1;
+		for (int i = 0; i < num_coef; i++) {
 			switch (curve.mapping_idc[i]) {
 			case 0: // polynomial
 				has_poly = true;
