@@ -258,6 +258,7 @@
     <FxCompile>
       <ShaderModel>
       </ShaderModel>
+      <AdditionalOptions>/O2</AdditionalOptions>
     </FxCompile>
     <PostBuildEvent>
       <Command>compile_shaders.cmd</Command>

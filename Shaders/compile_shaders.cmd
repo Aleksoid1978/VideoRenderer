@@ -49,7 +49,7 @@ IF NOT EXIST "%workdir%\" MKDIR "%workdir%"
 
 CALL :SubColorText "0A" "=== Compiling D3D9 shaders ===" & ECHO.
 
-SET fxc_ps3=%fxcexe% /nologo /T ps_3_0
+SET fxc_ps3=%fxcexe% /nologo /O2 /T ps_3_0
 
 %fxc_ps3% /Fo "%workdir%\resizer_mitchell4_x.cso"        "d3d9\interpolation_spline4.hlsl" /DMETHOD=0 /DAXIS=0
 %fxc_ps3% /Fo "%workdir%\resizer_mitchell4_y.cso"        "d3d9\interpolation_spline4.hlsl" /DMETHOD=0 /DAXIS=1
@@ -77,7 +77,7 @@ SET fxc_ps3=%fxcexe% /nologo /T ps_3_0
 
 CALL :SubColorText "0A" "=== Compiling D3D11 shaders ===" & ECHO.
 
-SET fxc_ps4=%fxcexe% /nologo /T ps_4_0
+SET fxc_ps4=%fxcexe% /nologo /O2 /T ps_4_0
 
 %fxc_ps4% /Fo "%workdir%\ps_resizer_mitchell4_x.cso"     "d3d11\ps_interpolation_spline4.hlsl" /DMETHOD=0 /DAXIS=0
 %fxc_ps4% /Fo "%workdir%\ps_resizer_mitchell4_y.cso"     "d3d11\ps_interpolation_spline4.hlsl" /DMETHOD=0 /DAXIS=1
