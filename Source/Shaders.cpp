@@ -468,22 +468,14 @@ void ShaderGetPixels(
 
 void ShaderDoviReshape(const MediaSideDataDOVIMetadata* const pDoviMetadata, std::string& code)
 {
-	if (!pDoviMetadata) {
-		return;
-	}
-
 	for (const auto& curve : pDoviMetadata->Mapping.curves) {
-		if (curve.num_pivots > 9) {
+		if (curve.num_pivots < 2 || curve.num_pivots > 9) {
 			return; // incorrect value
-		}
-		for (int i = 0; i < int(curve.num_pivots - 1); i++) {
-			if (curve.mapping_idc[i] != 0) {
-				return; // only polynomial is supported
-			}
 		}
 	}
 
 	float coeffs_data[8][4];
+	float mmr_packed_data[8 * 6][4];
 
 	code.append(
 		"// dovi reshape\n"
@@ -501,14 +493,45 @@ void ShaderDoviReshape(const MediaSideDataDOVIMetadata* const pDoviMetadata, std
 		code.append("{\n");
 		code += std::format("float s = sig[{}];\n", c);
 
+		// Prepare coefficients for GPU
+		bool has_poly = false, has_mmr = false, mmr_single = true;
+		int mmr_idx = 0, min_order = 3, max_order = 1;
+
 		memset(coeffs_data, 0, sizeof(coeffs_data));
 		const float scale_coef = 1.0f / (1 << pDoviMetadata->Header.coef_log2_denom);
-		const int num_coef = curve.num_pivots - 1;
-		for (int i = 0; i < num_coef; i++) {
-			for (int k = 0; k < 3; k++) {
-				coeffs_data[i][k] = (k <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][k] : 0.0f;
+		const int num_pivots = curve.num_pivots - 1;
+		for (int i = 0; i < num_pivots; i++) {
+			switch (curve.mapping_idc[i]) {
+			case 0: // polynomial
+				has_poly = true;
+				for (int k = 0; k < 3; k++) {
+					coeffs_data[i][k] = (k <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][k] : 0.0f;
+				}
+				coeffs_data[i][3] = 0.0; // order=0 signals polynomial
+				break;
+			case 1: // mmr
+				min_order = std::min<int>(min_order, curve.mmr_order[i]);
+				max_order = std::max<int>(max_order, curve.mmr_order[i]);
+				mmr_single = !has_mmr;
+				has_mmr = true;
+				coeffs_data[i][3] = static_cast<float>(curve.mmr_order[i]);
+				coeffs_data[i][0] = scale_coef * curve.mmr_constant[i];
+				coeffs_data[i][1] = static_cast<float>(mmr_idx);
+				for (int j = 0; j < curve.mmr_order[i]; j++) {
+					// store weights per order as two packed vec4s
+					float* mmr = &mmr_packed_data[mmr_idx][0];
+					mmr[0] = scale_coef * curve.mmr_coef[i][j][0];
+					mmr[1] = scale_coef * curve.mmr_coef[i][j][1];
+					mmr[2] = scale_coef * curve.mmr_coef[i][j][2];
+					mmr[3] = 0.0f; // unused
+					mmr[4] = scale_coef * curve.mmr_coef[i][j][3];
+					mmr[5] = scale_coef * curve.mmr_coef[i][j][4];
+					mmr[6] = scale_coef * curve.mmr_coef[i][j][5];
+					mmr[7] = scale_coef * curve.mmr_coef[i][j][6];
+					mmr_idx += 2;
+				}
+				break;
 			}
-			coeffs_data[i][3] = 0.0; // order=0 signals polynomial
 		}
 
 		if (curve.num_pivots > 2) {
@@ -561,11 +584,87 @@ void ShaderDoviReshape(const MediaSideDataDOVIMetadata* const pDoviMetadata, std
 				coeffs_data[0][3]);
 		}
 
-		code.append("s = (coeffs.z * s + coeffs.y) * s + coeffs.x;\n");
-		code += std::format("color[{}] = saturate(s);\n", c);
+		if (has_mmr) {
+			code += std::format("float4 mmr[{}] = {{\n", mmr_idx);
+			for (int i = 0; i < mmr_idx; i++) {
+				code += std::format("{{{},{},{},{}}},\n",
+									mmr_packed_data[i][0],
+									mmr_packed_data[i][1],
+									mmr_packed_data[i][2],
+									mmr_packed_data[i][3]);
+			}
+			code.append("};\n");
+		}
 
+		auto reshape_mmr = [&]() {
+			if (mmr_single) {
+				code.append("const uint mmr_idx = 0u;\n");
+			} else {
+				code.append("uint mmr_idx = uint(coeffs.y);\n");
+			}
+
+			if (min_order < max_order) {
+				code.append("uint order = uint(coeffs.w);\n");
+			}
+
+			code.append("float4 sigX;\n"
+						"s = coeffs.x;\n"
+						"sigX.xyz = sig.xxy * sig.yzz;\n"
+						//"sigX.w = sigX.x * sig.z;\n" // TODO - error X3000: syntax error: unexpected integer constant
+						"sigX = float4(sigX.xyz, sigX.x * sig.z);\n"
+						"s += dot(mmr[mmr_idx + 0].xyz, sig);\n"
+						"s += dot(mmr[mmr_idx + 1], sigX);\n"
+			);
+
+			if (max_order >= 2) {
+				if (min_order < 2) {
+					code.append("if (order >= 2) {\n");
+				}
+
+				code.append("float3 sig2 = sig * sig;\n"
+							"float4 sigX2 = sigX * sigX;\n"
+							"s += dot(mmr[mmr_idx + 2].xyz, sig2);\n"
+							"s += dot(mmr[mmr_idx + 3], sigX2);\n"
+				);
+
+				if (max_order == 3) {
+					if (min_order < 3) {
+						code.append("if (order >= 3 {\n");
+					}
+
+					code.append("s += dot(mmr[mmr_idx + 4].xyz, sig2 * sig);\n"
+								"s += dot(mmr[mmr_idx + 5], sigX2 * sigX);\n");
+
+					if (min_order < 3) {
+						code.append("}\n");
+					}
+				}
+
+				if (min_order < 2) {
+					code.append("}\n");
+				}
+			}
+		};
+
+		constexpr auto reshape_poly = "s = (coeffs.z * s + coeffs.y) * s + coeffs.x;\n";
+		if (has_mmr && has_poly) {
+			code.append("if (coeffs.w == 0.0f) {\n");
+			code.append(reshape_poly);
+			code.append("} else {\n");
+			reshape_mmr();
+			code.append("}\n");
+		} else if (has_poly) {
+			code.append(reshape_poly);
+		} else {
+			code.append("{\n");
+			reshape_mmr();
+			code.append("}\n");
+		}
+
+		code += std::format("color[{}] = saturate(s);\n", c);
 		code.append("}\n");
 	}
+
 	code.append("}\n");
 }
 
@@ -660,7 +759,9 @@ HRESULT GetShaderConvertColor(
 
 	ShaderGetPixels(bDX11, fmtParams, exFmt.VideoChromaSubsampling, chromaScaling, blendDeinterlace, code);
 
-	ShaderDoviReshape(pDoviMetadata, code);
+	if (pDoviMetadata) {
+		ShaderDoviReshape(pDoviMetadata, code);
+	}
 
 	code.append("//convert color\n");
 	code.append("color.rgb = float3(mul(cm_r, color), mul(cm_g, color), mul(cm_b, color)) + cm_c;\n");
