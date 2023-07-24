@@ -2360,7 +2360,7 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 
 	MediaSideDataDOVIMetadata* pDOVIMetadata =
 #if DOVI_ENABLE
-		m_Dovi.bValid ? &m_Dovi.msd : 
+		m_Dovi.bValid ? &m_Dovi.msd :
 #endif
 		nullptr;
 
