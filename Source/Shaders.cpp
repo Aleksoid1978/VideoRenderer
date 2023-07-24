@@ -468,6 +468,7 @@ void ShaderGetPixels(
 
 void ShaderDoviReshape(const MediaSideDataDOVIMetadata* const pDoviMetadata, std::string& code)
 {
+	// based on libplacebo source code
 	ASSERT(pDoviMetadata);
 
 	for (const auto& curve : pDoviMetadata->Mapping.curves) {
@@ -561,6 +562,7 @@ void ShaderDoviReshape(const MediaSideDataDOVIMetadata* const pDoviMetadata, std
 			for (int i = 0; i < n; i++) {
 				pivots_data[i] = scale * curve.pivots[i + 1];
 			}
+			// Fill the remainder with a quasi-infinite sentinel pivot
 			for (int i = n; i < 7; i++) {
 				pivots_data[i] = 1e9f;
 			}
@@ -570,6 +572,7 @@ void ShaderDoviReshape(const MediaSideDataDOVIMetadata* const pDoviMetadata, std
 				code += std::format("pivots_data[{}] = {};\n", i, pivots_data[i]);
 			}
 
+			// Efficiently branch into the correct set of coefficients
 			code.append(
 				"\n"
 				"#define test(i) (s >= pivots_data[i]) ? 1.0 : 0.0\n"
@@ -586,6 +589,7 @@ void ShaderDoviReshape(const MediaSideDataDOVIMetadata* const pDoviMetadata, std
 				"\n");
 		}
 		else {
+			// No need for a single pivot, just set the coeffs directly
 			code += std::format("coeffs = float4({}, {}, {}, {});\n",
 				coeffs_data[0][0],
 				coeffs_data[0][1],
