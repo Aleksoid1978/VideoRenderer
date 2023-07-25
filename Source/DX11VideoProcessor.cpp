@@ -121,6 +121,16 @@ struct PS_COLOR_TRANSFORM {
 	DirectX::XMFLOAT4 cm_c;
 };
 
+struct PS_DOVI_CURVE {
+	float pivots_data[7];
+	uint32_t num_pivots; // for alignment and information
+	DirectX::XMFLOAT4 coeffs_data[8];
+};
+
+struct PS_DOVI_CURVES {
+	PS_DOVI_CURVE curves[3];
+};
+
 struct PS_EXTSHADER_CONSTANTS {
 	DirectX::XMFLOAT2 pxy; // pixel size in normalized coordinates
 	DirectX::XMFLOAT2 wh;  // width and height of texture
@@ -630,6 +640,9 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_TexsPostScale.Release();
 
 	m_PSConvColorData.Release();
+#if DOVI_ENABLE
+	m_PSDoviCurvesData.Release();
+#endif
 
 	m_D3D11VP.ReleaseVideoProcessor();
 	m_strCorrection = nullptr;
@@ -846,6 +859,72 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 	D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants));
 }
+
+#if DOVI_ENABLE
+void CDX11VideoProcessor::SetShaderDoviCurvesParams()
+{
+	ASSERT(m_Dovi.bValid);
+
+	SAFE_RELEASE(m_PSDoviCurvesData.pConstants);
+
+	for (const auto& curve : m_Dovi.msd.Mapping.curves) {
+		if (curve.num_pivots < 2 || curve.num_pivots > 9) {
+			return;
+		}
+		for (int i = 0; i < int(curve.num_pivots - 1); i++) {
+			if (curve.mapping_idc[i] > 0) { // 0 polynomial, 1 mmr
+				return;
+			}
+		}
+	}
+
+	PS_DOVI_CURVES cbuffer;
+
+	for (int c = 0; c < 3; c++) {
+		const auto& curve = m_Dovi.msd.Mapping.curves[c];
+		auto& out = cbuffer.curves[c];
+
+		memset(out.coeffs_data, 0, sizeof(out.coeffs_data));
+		const float scale_coef = 1.0f / (1 << m_Dovi.msd.Header.coef_log2_denom);
+		const int num_coef = curve.num_pivots - 1;
+		for (int i = 0; i < num_coef; i++) {
+			int k = 0;
+			switch (curve.mapping_idc[i]) {
+			case 0: // polynomial
+				out.coeffs_data[i].x = (k <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][k] : 0.0f;
+				k++;
+				out.coeffs_data[i].y = (k <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][k] : 0.0f;
+				k++;
+				out.coeffs_data[i].z = (k <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][k] : 0.0f;
+				k++;
+				out.coeffs_data[i].w = 0.0; // order=0 signals polynomial
+				break;
+			case 1: // mmr
+				break;
+			}
+		}
+
+		const float scale = 1.0f / ((1 << m_Dovi.msd.Header.bl_bit_depth) - 1);
+		const int n = curve.num_pivots - 2;
+		for (int i = 0; i < n; i++) {
+			out.pivots_data[i] = scale * curve.pivots[i + 1];
+		}
+		for (int i = n; i < 7; i++) {
+			out.pivots_data[i] = 1e9f;
+		}
+
+		out.num_pivots = curve.num_pivots;
+	}
+
+	D3D11_BUFFER_DESC BufferDesc = {};
+	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	BufferDesc.ByteWidth = sizeof(cbuffer);
+	BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	BufferDesc.CPUAccessFlags = 0;
+	D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSDoviCurvesData.pConstants));
+}
+#endif
 
 void CDX11VideoProcessor::UpdateTexParams(int cdepth)
 {
@@ -1917,6 +1996,9 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				SetShaderConvertColorParams();
 				DLog(L"CDX11VideoProcessor::CopySample() : DoVi color metadata is changed");
 			}
+			if (bMappingCurvesChanged) {
+				SetShaderDoviCurvesParams();
+			}
 			if (bColorChanged || bMappingCurvesChanged) {
 				UpdateConvertColorShader();
 			}
@@ -2470,6 +2552,9 @@ HRESULT CDX11VideoProcessor::ConvertColorPass(ID3D11Texture2D* pRenderTarget)
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint.p);
 	m_pDeviceContext->PSSetSamplers(1, 1, &m_pSamplerLinear.p);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
+#if DOVI_ENABLE
+	m_pDeviceContext->PSSetConstantBuffers(2, 1, &m_PSDoviCurvesData.pConstants);
+#endif
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_PSConvColorData.pVertexBuffer, &Stride, &Offset);
 
