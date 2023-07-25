@@ -2553,7 +2553,7 @@ HRESULT CDX11VideoProcessor::ConvertColorPass(ID3D11Texture2D* pRenderTarget)
 	m_pDeviceContext->PSSetSamplers(1, 1, &m_pSamplerLinear.p);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
 #if DOVI_ENABLE
-	m_pDeviceContext->PSSetConstantBuffers(2, 1, &m_PSDoviCurvesData.pConstants);
+	m_pDeviceContext->PSSetConstantBuffers(1, 1, &m_PSDoviCurvesData.pConstants);
 #endif
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_PSConvColorData.pVertexBuffer, &Stride, &Offset);
