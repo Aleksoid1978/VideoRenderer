@@ -122,8 +122,7 @@ struct PS_COLOR_TRANSFORM {
 };
 
 struct PS_DOVI_CURVE {
-	float pivots_data[7];
-	uint32_t num_pivots; // for alignment and information
+	DirectX::XMFLOAT4 pivots_data[7];
 	DirectX::XMFLOAT4 coeffs_data[8];
 };
 
@@ -907,13 +906,11 @@ void CDX11VideoProcessor::SetShaderDoviCurvesParams()
 		const float scale = 1.0f / ((1 << m_Dovi.msd.Header.bl_bit_depth) - 1);
 		const int n = curve.num_pivots - 2;
 		for (int i = 0; i < n; i++) {
-			out.pivots_data[i] = scale * curve.pivots[i + 1];
+			out.pivots_data[i].x = scale * curve.pivots[i + 1];
 		}
 		for (int i = n; i < 7; i++) {
-			out.pivots_data[i] = 1e9f;
+			out.pivots_data[i].x = 1e9f;
 		}
-
-		out.num_pivots = curve.num_pivots;
 	}
 
 	D3D11_BUFFER_DESC BufferDesc = {};
