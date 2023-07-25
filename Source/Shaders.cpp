@@ -545,22 +545,27 @@ void ShaderDoviReshape(const MediaSideDataDOVIMetadata* const pDoviMetadata, std
 		}
 
 		if (curve.num_pivots > 2) {
-			code.append("float4 coeffs_data[8] = {\n");
-			for (int i = 0; i < 8; i++) {
-				code += std::format("{{{},{},{},{}}},\n",
-					coeffs_data[i][0],
-					coeffs_data[i][1],
-					coeffs_data[i][2],
-					coeffs_data[i][3]);
+			if (has_mmr) {
+				code.append("float4 coeffs_data[8] = {\n");
+				for (int i = 0; i < 8; i++) {
+					code += std::format("{{{},{},{},{}}},\n",
+						coeffs_data[i][0],
+						coeffs_data[i][1],
+						coeffs_data[i][2],
+						coeffs_data[i][3]);
+				}
+				code.append("};\n");
+				code.append("#define coef(i) coeffs_data[i]\n");
 			}
-			code.append("};\n");
+			else {
+				code += std::format(
+					"#define coef(i) curves[{}].coeffs_data[i]\n", c);
+			}
 
 			// Efficiently branch into the correct set of coefficients
 			code += std::format(
-				"#define test(i) (s >= curves[{0}].pivots_data[i]) ? 1.0 : 0.0\n",
-				c);
+				"#define test(i) (s >= curves[{}].pivots_data[i]) ? 1.0 : 0.0\n", c);
 			code.append(
-				"#define coef(i) coeffs_data[i]\n"
 				"coeffs = lerp(lerp(lerp(coef(0), coef(1), test(0)),\n"
 				"                   lerp(coef(2), coef(3), test(2)),\n"
 				"                   test(1)),\n"
@@ -574,11 +579,16 @@ void ShaderDoviReshape(const MediaSideDataDOVIMetadata* const pDoviMetadata, std
 		}
 		else {
 			// No need for a single pivot, just set the coeffs directly
-			code += std::format("coeffs = float4({}, {}, {}, {});\n",
-				coeffs_data[0][0],
-				coeffs_data[0][1],
-				coeffs_data[0][2],
-				coeffs_data[0][3]);
+			if (has_mmr) {
+				code += std::format("coeffs = float4({}, {}, {}, {});\n",
+					coeffs_data[0][0],
+					coeffs_data[0][1],
+					coeffs_data[0][2],
+					coeffs_data[0][3]);
+			}
+			else {
+				code += std::format("coeffs = curves[{}].coeffs_data[0];\n", c);
+			}
 		}
 
 		if (has_mmr) {
