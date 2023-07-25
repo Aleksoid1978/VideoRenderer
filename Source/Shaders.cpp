@@ -555,27 +555,11 @@ void ShaderDoviReshape(const MediaSideDataDOVIMetadata* const pDoviMetadata, std
 			}
 			code.append("};\n");
 
-			// Skip the (irrelevant) lower and upper bounds
-			float pivots_data[7];
-			const float scale = 1.0f / ((1 << pDoviMetadata->Header.bl_bit_depth) - 1);
-			const int n = curve.num_pivots - 2;
-			for (int i = 0; i < n; i++) {
-				pivots_data[i] = scale * curve.pivots[i + 1];
-			}
-			// Fill the remainder with a quasi-infinite sentinel pivot
-			for (int i = n; i < 7; i++) {
-				pivots_data[i] = 1e9f;
-			}
-
-			code.append("float pivots_data[7];\n");
-			for (int i = 0; i < 7; i++) {
-				code += std::format("pivots_data[{}] = {};\n", i, pivots_data[i]);
-			}
-
 			// Efficiently branch into the correct set of coefficients
+			code += std::format(
+				"#define test(i) (s >= curves[{0}].pivots_data[i]) ? 1.0 : 0.0\n",
+				c);
 			code.append(
-				"\n"
-				"#define test(i) (s >= pivots_data[i]) ? 1.0 : 0.0\n"
 				"#define coef(i) coeffs_data[i]\n"
 				"coeffs = lerp(lerp(lerp(coef(0), coef(1), test(0)),\n"
 				"                   lerp(coef(2), coef(3), test(2)),\n"
@@ -755,12 +739,24 @@ HRESULT GetShaderConvertColor(
 
 	if (bDX11) {
 		code.append(
-			"cbuffer PS_COLOR_TRANSFORM : register(b0) {"
-			"float3 cm_r;" // NB: sizeof(float3) == sizeof(float4)
-			"float3 cm_g;"
-			"float3 cm_b;"
-			"float3 cm_c;"
-			"};\n");
+			"cbuffer PS_COLOR_TRANSFORM : register(b0) {\n"
+			"float3 cm_r;\n" // NB: sizeof(float3) == sizeof(float4)
+			"float3 cm_g;\n"
+			"float3 cm_b;\n"
+			"float3 cm_c;\n"
+			"};\n"
+		);
+		if (pDoviMetadata) {
+			code.append(
+				"struct PS_DOVI_CURVE {\n"
+				"float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
+				"float4 coeffs_data[8];\n"
+				"};\n"
+				"cbuffer PS_DOVI_CURVES : register(b1) {\n"
+				"PS_DOVI_CURVE curves[3];\n"
+				"};\n"
+			);
+		}
 	}
 	else {
 		code.append(

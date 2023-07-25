@@ -871,19 +871,18 @@ void CDX11VideoProcessor::SetShaderDoviCurvesParams()
 			return;
 		}
 		for (int i = 0; i < int(curve.num_pivots - 1); i++) {
-			if (curve.mapping_idc[i] > 0) { // 0 polynomial, 1 mmr
+			if (curve.mapping_idc[i] > 1) { // 0 polynomial, 1 mmr
 				return;
 			}
 		}
 	}
 
-	PS_DOVI_CURVES cbuffer;
+	PS_DOVI_CURVES cbuffer = {};
 
 	for (int c = 0; c < 3; c++) {
 		const auto& curve = m_Dovi.msd.Mapping.curves[c];
 		auto& out = cbuffer.curves[c];
 
-		memset(out.coeffs_data, 0, sizeof(out.coeffs_data));
 		const float scale_coef = 1.0f / (1 << m_Dovi.msd.Header.coef_log2_denom);
 		const int num_coef = curve.num_pivots - 1;
 		for (int i = 0; i < num_coef; i++) {
