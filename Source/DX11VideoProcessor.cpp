@@ -1306,7 +1306,11 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		}
 	}
 
-	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR();
+	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && (SourceIsHDR()
+#if DOVI_ENABLE
+																			  || m_Dovi.bValid
+#endif
+																			  );
 	const auto b10BitOutput = bHdrOutput || Preferred10BitOutput();
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
@@ -2049,6 +2053,11 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			if (bMappingCurvesChanged) {
 				SetShaderDoviCurvesParams();
 			}
+
+			if (m_bHdrPassthrough && m_bHdrPassthroughSupport && !SourceIsHDR() && !m_pDXGISwapChain4) {
+				ReleaseSwapChain();
+				Init(m_hWnd);
+			}
 		}
 		else {
 			m_Dovi.bValid = false;
@@ -2307,7 +2316,7 @@ HRESULT CDX11VideoProcessor::Render(int field)
 				m_lastHdr10.hdr10.WhitePoint[0]   = 15635;
 				m_lastHdr10.hdr10.WhitePoint[1]   = 16450;
 				m_lastHdr10.hdr10.MaxMasteringLuminance = 1000 * 10000; // 1000 nits
-				m_lastHdr10.hdr10.MinMasteringLuminance = 100;          // 0.01 nits
+				m_lastHdr10.hdr10.MinMasteringLuminance = 50;           // 0.005 nits
 				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_lastHdr10.hdr10);
 				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(Display P3 standard) failed with error {}", HR2Str(hr));
 
@@ -3569,7 +3578,11 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		}
 		m_strStatsVProc += std::format(L"\nInternalFormat: {}", DXGIFormatToString(m_InternalTexFmt));
 
-		if (SourceIsHDR()) {
+		if (SourceIsHDR()
+#if DOVI_ENABLE
+			|| m_Dovi.bValid
+#endif
+			) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
 			if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
 				m_strStatsHDR.append(L"Passthrough");
