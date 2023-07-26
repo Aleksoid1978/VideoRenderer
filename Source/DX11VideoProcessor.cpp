@@ -137,7 +137,7 @@ struct mmr_flags {
 struct PS_DOVI_CURVE {
 	DirectX::XMFLOAT4 pivots_data[7];
 	DirectX::XMFLOAT4 coeffs_data[8];
-	float mmr_data[8 * 6][4];
+	DirectX::XMFLOAT4 mmr_data[8 * 6];
 	dovi_params params;
 	mmr_flags mmr_flags;
 };
@@ -928,17 +928,17 @@ void CDX11VideoProcessor::SetShaderDoviCurvesParams()
 				out.coeffs_data[i].y = static_cast<float>(mmr_idx);
 				out.coeffs_data[i].w = static_cast<float>(curve.mmr_order[i]);
 				for (int j = 0; j < curve.mmr_order[i]; j++) {
-					// store weights per order as two packed vec4s
-					float* mmr = &out.mmr_data[mmr_idx][0];
-					mmr[0] = scale_coef * curve.mmr_coef[i][j][0];
-					mmr[1] = scale_coef * curve.mmr_coef[i][j][1];
-					mmr[2] = scale_coef * curve.mmr_coef[i][j][2];
-					mmr[3] = 0.0f; // unused
-					mmr[4] = scale_coef * curve.mmr_coef[i][j][3];
-					mmr[5] = scale_coef * curve.mmr_coef[i][j][4];
-					mmr[6] = scale_coef * curve.mmr_coef[i][j][5];
-					mmr[7] = scale_coef * curve.mmr_coef[i][j][6];
-					mmr_idx += 2;
+					// store weights per order as two packed float4s
+					out.mmr_data[mmr_idx].x = scale_coef * curve.mmr_coef[i][j][0];
+					out.mmr_data[mmr_idx].y = scale_coef * curve.mmr_coef[i][j][1];
+					out.mmr_data[mmr_idx].z = scale_coef * curve.mmr_coef[i][j][2];
+					out.mmr_data[mmr_idx].w = 0.0f; // unused
+					mmr_idx++;
+					out.mmr_data[mmr_idx].x = scale_coef * curve.mmr_coef[i][j][3];
+					out.mmr_data[mmr_idx].y = scale_coef * curve.mmr_coef[i][j][4];
+					out.mmr_data[mmr_idx].z = scale_coef * curve.mmr_coef[i][j][5];
+					out.mmr_data[mmr_idx].w = scale_coef * curve.mmr_coef[i][j][6];
+					mmr_idx++;
 				}
 				break;
 			}
