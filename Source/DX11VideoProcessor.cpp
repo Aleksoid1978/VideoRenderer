@@ -2036,31 +2036,32 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 
 #if DOVI_ENABLE
-		MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
-		hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
-		if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && pDOVIMetadata->Header.disable_residual_flag) {
-			m_Dovi.msd.ColorMetadata.scene_refresh_flag = pDOVIMetadata->ColorMetadata.scene_refresh_flag; // scene change is not taken into account for bColorChanged
-			const bool bColorChanged = (memcmp(&m_Dovi.msd.ColorMetadata, &pDOVIMetadata->ColorMetadata, sizeof(MediaSideDataDOVIMetadata::ColorMetadata)) != 0);
-			const bool bMappingCurvesChanged = (memcmp(&m_Dovi.msd.Mapping.curves, &pDOVIMetadata->Mapping.curves, sizeof(MediaSideDataDOVIMetadata::Mapping.curves)) != 0);
-			memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
-			m_Dovi.bValid = true;
-			if (bColorChanged) {
-				DLog(L"CDX11VideoProcessor::CopySample() : DoVi color metadata is changed");
+		if (m_srcExFmt.VideoTransferFunction != MFVideoTransFunc_HLG) {
+			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
+			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
+			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && pDOVIMetadata->Header.disable_residual_flag) {
+				m_Dovi.msd.ColorMetadata.scene_refresh_flag = pDOVIMetadata->ColorMetadata.scene_refresh_flag; // scene change is not taken into account for bColorChanged
+				const bool bColorChanged = (memcmp(&m_Dovi.msd.ColorMetadata, &pDOVIMetadata->ColorMetadata, sizeof(MediaSideDataDOVIMetadata::ColorMetadata)) != 0);
+				const bool bMappingCurvesChanged = (memcmp(&m_Dovi.msd.Mapping.curves, &pDOVIMetadata->Mapping.curves, sizeof(MediaSideDataDOVIMetadata::Mapping.curves)) != 0);
+				memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
+				m_Dovi.bValid = true;
+				if (bColorChanged) {
+					DLog(L"CDX11VideoProcessor::CopySample() : DoVi color metadata is changed");
 
-				SetShaderConvertColorParams();
-				UpdateConvertColorShader();
-			}
-			if (bMappingCurvesChanged || !m_PSDoviCurvesData.pConstants) {
-				SetShaderDoviCurvesParams();
-			}
+					SetShaderConvertColorParams();
+					UpdateConvertColorShader();
+				}
+				if (bMappingCurvesChanged || !m_PSDoviCurvesData.pConstants) {
+					SetShaderDoviCurvesParams();
+				}
 
-			if (m_bHdrPassthrough && m_bHdrPassthroughSupport && !SourceIsHDR() && !m_pDXGISwapChain4) {
-				ReleaseSwapChain();
-				Init(m_hWnd);
+				if (m_bHdrPassthrough && m_bHdrPassthroughSupport && !SourceIsHDR() && !m_pDXGISwapChain4) {
+					ReleaseSwapChain();
+					Init(m_hWnd);
+				}
+			} else {
+				m_Dovi.bValid = false;
 			}
-		}
-		else {
-			m_Dovi.bValid = false;
 		}
 #endif
 	}
