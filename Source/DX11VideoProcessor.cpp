@@ -2050,7 +2050,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				SetShaderConvertColorParams();
 				UpdateConvertColorShader();
 			}
-			if (bMappingCurvesChanged) {
+			if (bMappingCurvesChanged || !m_PSDoviCurvesData.pConstants) {
 				SetShaderDoviCurvesParams();
 			}
 
