@@ -680,7 +680,7 @@ HRESULT GetShaderConvertColor(
 	}
 
 	code.append("//convert color\n");
-	code.append("color.rgb = float3(mul(cm_r, color), mul(cm_g, color), mul(cm_b, color)) + cm_c;\n");
+	code.append("color.rgb = float3(mul(cm_r, color.rgb), mul(cm_g, color.rgb), mul(cm_b, color.rgb)) + cm_c;\n");
 
 	bool isLinear = false;
 
