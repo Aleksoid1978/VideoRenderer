@@ -473,174 +473,57 @@ void ShaderDoviReshape(const MediaSideDataDOVIMetadata* const pDoviMetadata, std
 
 	for (const auto& curve : pDoviMetadata->Mapping.curves) {
 		if (curve.num_pivots < 2 || curve.num_pivots > 9) {
-			DLog(L"ShaderDoviReshape() : incorrect num_pivots value");
+			DLog(L"ShaderDoviReshape() : incorrect num_pivots value - {}", curve.num_pivots);
 			return;
 		}
-		for (int i = 0; i < int(curve.num_pivots - 1); i++) {
+		for (uint8_t i = 0; i < (curve.num_pivots - 1); i++) {
 			if (curve.mapping_idc[i] > 1) { // 0 polynomial, 1 mmr
-				DLog(L"ShaderDoviReshape() : incorrect mapping_idc value");
+				DLog(L"ShaderDoviReshape() : incorrect mapping_idc[{}] value - {}", i, curve.mapping_idc[i]);
 				return;
 			}
 		}
 	}
 
-	float coeffs_data[8][4];
-	float mmr_packed_data[8 * 6][4];
-
 	code.append(
-		"// dovi reshape\n"
 		"{\n"
-		"float4 coeffs;\n"
-		"float3 sig = saturate(color.rgb);\n"
+		"    // dovi reshape\n"
+		"    float3 sig = saturate(color.rgb);\n"
+		"    [unroll(3)]\n"
+		"    for (uint c = 0; c < 3; c++) {\n"
+		"        float s = sig[c];\n"
+		"        float4 coeffs;\n"
+		"        if (curves[c].params.num_pivots > 2) {\n"
+		"            #define test(i) (s >= curves[c].pivots_data[i]) ? 1.0 : 0.0\n"
+		"            #define coef(i) curves[c].coeffs_data[i]\n"
+		"            coeffs = lerp(lerp(lerp(coef(0), coef(1), test(0)),\n"
+		"                               lerp(coef(2), coef(3), test(2)),\n"
+		"                               test(1)),\n"
+		"                     lerp(lerp(coef(4), coef(5), test(4)),\n"
+		"                          lerp(coef(6), coef(7), test(6)),\n"
+		"                          test(5)),\n"
+		"                     test(3));\n"
+		"            #undef test\n"
+		"            #undef coef\n"
+		"        } else {\n"
+		"            coeffs = curves[c].coeffs_data[0];\n"
+		"        }\n"
+		"        if (curves[c].params.has_poly && curves[c].params.has_mmr) {\n"
+		"            if (coeffs[3] == 0.0) {\n"
+		"                // reshape_poly\n"
+		"                s = (coeffs.z * s + coeffs.y) * s + coeffs.x;\n"
+		"            } else {\n"
+		"                s = reshape_mmr(coeffs, sig, c, curves[c].mmr_flags.mmr_single, curves[c].mmr_flags.min_order, curves[c].mmr_flags.max_order);\n"
+		"            }\n"
+		"        } else if (curves[c].params.has_poly) {\n"
+		"            // reshape_poly\n"
+		"            s = (coeffs.z * s + coeffs.y) * s + coeffs.x;\n"
+		"        } else {\n"
+		"            s = reshape_mmr(coeffs, sig, c, curves[c].mmr_flags.mmr_single, curves[c].mmr_flags.min_order, curves[c].mmr_flags.max_order);\n"
+		"        }\n"
+		"        color[c] = saturate(s);\n"
+		"    }\n"
+		"}\n"
 	);
-
-	for (int c = 0; c < 3; c++) {
-		const auto& curve = pDoviMetadata->Mapping.curves[c];
-		if (!curve.num_pivots) {
-			continue;
-		}
-
-		code.append("{\n");
-		code += std::format("float s = sig[{}];\n", c);
-
-		// Prepare coefficients for GPU
-		bool has_poly = false, has_mmr = false, mmr_single = true;
-		int mmr_idx = 0, min_order = 3, max_order = 1;
-
-		memset(coeffs_data, 0, sizeof(coeffs_data));
-		const float scale_coef = 1.0f / (1 << pDoviMetadata->Header.coef_log2_denom);
-		const int num_coef = curve.num_pivots - 1;
-		for (int i = 0; i < num_coef; i++) {
-			switch (curve.mapping_idc[i]) {
-			case 0: // polynomial
-				has_poly = true;
-				break;
-			case 1: // mmr
-				min_order = std::min<int>(min_order, curve.mmr_order[i]);
-				max_order = std::max<int>(max_order, curve.mmr_order[i]);
-				mmr_single = !has_mmr;
-				has_mmr = true;
-				for (int j = 0; j < curve.mmr_order[i]; j++) {
-					// store weights per order as two packed vec4s
-					float* mmr = &mmr_packed_data[mmr_idx][0];
-					mmr[0] = scale_coef * curve.mmr_coef[i][j][0];
-					mmr[1] = scale_coef * curve.mmr_coef[i][j][1];
-					mmr[2] = scale_coef * curve.mmr_coef[i][j][2];
-					mmr[3] = 0.0f; // unused
-					mmr[4] = scale_coef * curve.mmr_coef[i][j][3];
-					mmr[5] = scale_coef * curve.mmr_coef[i][j][4];
-					mmr[6] = scale_coef * curve.mmr_coef[i][j][5];
-					mmr[7] = scale_coef * curve.mmr_coef[i][j][6];
-					mmr_idx += 2;
-				}
-				break;
-			}
-		}
-
-		if (curve.num_pivots > 2) {
-			// Efficiently branch into the correct set of coefficients
-			code += std::format(
-				"#define test(i) (s >= curves[{0}].pivots_data[i]) ? 1.0 : 0.0\n"
-				"#define coef(i) curves[{0}].coeffs_data[i]\n", c);
-			code.append(
-				"coeffs = lerp(lerp(lerp(coef(0), coef(1), test(0)),\n"
-				"                   lerp(coef(2), coef(3), test(2)),\n"
-				"                   test(1)),\n"
-				"         lerp(lerp(coef(4), coef(5), test(4)),\n"
-				"              lerp(coef(6), coef(7), test(6)),\n"
-				"              test(5)),\n"
-				"         test(3));\n"
-				"#undef test\n"
-				"#undef coef\n"
-				"\n");
-		}
-		else {
-			// No need for a single pivot, just set the coeffs directly
-			code += std::format("coeffs = curves[{}].coeffs_data[0];\n", c);
-		}
-
-		if (has_mmr) {
-			code += std::format("float4 mmr[{}] = {{\n", mmr_idx);
-			for (int i = 0; i < mmr_idx; i++) {
-				code += std::format("{{{},{},{},{}}},\n",
-									mmr_packed_data[i][0],
-									mmr_packed_data[i][1],
-									mmr_packed_data[i][2],
-									mmr_packed_data[i][3]);
-			}
-			code.append("};\n");
-		}
-
-		auto reshape_mmr = [&]() {
-			if (mmr_single) {
-				code.append("const uint mmr_idx = 0u;\n");
-			} else {
-				code.append("uint mmr_idx = uint(coeffs.y);\n");
-			}
-
-			if (min_order < max_order) {
-				code.append("uint order = uint(coeffs.w);\n");
-			}
-
-			code.append("float4 sigX;\n"
-						"s = coeffs.x;\n"
-						"sigX.xyz = sig.xxy * sig.yzz;\n"
-						//"sigX.w = sigX.x * sig.z;\n" // TODO - error X3000: syntax error: unexpected integer constant
-						"sigX = float4(sigX.xyz, sigX.x * sig.z);\n"
-						"s += dot(mmr[mmr_idx + 0].xyz, sig);\n"
-						"s += dot(mmr[mmr_idx + 1], sigX);\n"
-			);
-
-			if (max_order >= 2) {
-				if (min_order < 2) {
-					code.append("if (order >= 2) {\n");
-				}
-
-				code.append("float3 sig2 = sig * sig;\n"
-							"float4 sigX2 = sigX * sigX;\n"
-							"s += dot(mmr[mmr_idx + 2].xyz, sig2);\n"
-							"s += dot(mmr[mmr_idx + 3], sigX2);\n"
-				);
-
-				if (max_order == 3) {
-					if (min_order < 3) {
-						code.append("if (order >= 3 {\n");
-					}
-
-					code.append("s += dot(mmr[mmr_idx + 4].xyz, sig2 * sig);\n"
-								"s += dot(mmr[mmr_idx + 5], sigX2 * sigX);\n");
-
-					if (min_order < 3) {
-						code.append("}\n");
-					}
-				}
-
-				if (min_order < 2) {
-					code.append("}\n");
-				}
-			}
-		};
-
-		constexpr auto reshape_poly = "s = (coeffs.z * s + coeffs.y) * s + coeffs.x;\n";
-		if (has_mmr && has_poly) {
-			code.append("if (coeffs.w == 0.0f) {\n");
-			code.append(reshape_poly);
-			code.append("} else {\n");
-			reshape_mmr();
-			code.append("}\n");
-		} else if (has_poly) {
-			code.append(reshape_poly);
-		} else {
-			code.append("{\n");
-			reshape_mmr();
-			code.append("}\n");
-		}
-
-		code += std::format("color[{}] = saturate(s);\n", c);
-		code.append("}\n");
-	}
-
-	code.append("}\n");
 }
 
 //////////////////////////////
@@ -726,14 +609,64 @@ HRESULT GetShaderConvertColor(
 		);
 		if (pDoviMetadata) {
 			code.append(
+				"struct dovi_params {\n"
+				"    uint num_pivots;\n"
+				"    uint has_poly;\n"
+				"    uint has_mmr;\n"
+				"    uint padding;\n"
+				"};\n"
+				"struct mmr_flags {\n"
+				"    uint mmr_single;\n"
+				"    uint min_order;\n"
+				"    uint max_order;\n"
+				"    uint padding;\n"
+				"};\n"
 				"struct PS_DOVI_CURVE {\n"
-				"float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
-				"float4 coeffs_data[8];\n"
+				"    float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
+				"    float4 coeffs_data[8];\n"
+				"    float4 mmr_data[8 * 6];\n"
+				"    dovi_params params;\n"
+				"    mmr_flags mmr_flags;\n"
 				"};\n"
 				"cbuffer PS_DOVI_CURVES : register(b1) {\n"
-				"PS_DOVI_CURVE curves[3];\n"
+				"    PS_DOVI_CURVE curves[3];\n"
 				"};\n"
 			);
+
+			code.append("const float reshape_mmr(const float4 coeffs, const float3 sig, uint c,\n"
+						"                        const uint mmr_single, const uint min_order, const uint max_order) {\n"
+						"    uint mmr_idx = mmr_single ? 0u : uint(coeffs.y);\n"
+						"    float s = coeffs.x;\n"
+						"    float4 sigX = float4(0.0, 0.0, 0.0, 0.0);\n"
+						"    sigX.xyz = sig.xxy * sig.yzz;\n"
+						"    sigX[3] = sigX.x * sig.z;\n"
+						"    sigX = float4(sigX.xyz, sigX.x * sig.z);\n"
+						"    s += dot(curves[c].mmr_data[mmr_idx + 0].xyz, sig);\n"
+						"    s += dot(curves[c].mmr_data[mmr_idx + 1], sigX);\n"
+						"    if (max_order >= 2) {\n"
+						"        uint order = uint(coeffs[3]);\n"
+						"        bool valid = true;\n"
+						"        if (min_order < 2 && order < 2) {\n"
+						"            valid = false;\n"
+						"        }\n"
+						"        if (valid) {\n"
+						"            float3 sig2 = sig * sig;\n"
+						"            float4 sigX2 = sigX * sigX;\n"
+						"            s += dot(curves[c].mmr_data[mmr_idx + 2].xyz, sig2);\n"
+						"            s += dot(curves[c].mmr_data[mmr_idx + 3], sigX2);\n"
+						"            if (max_order == 3) {\n"
+						"                if (min_order < 3 && order < 3) {\n"
+						"                    valid = false;\n"
+						"                }\n"
+						"                if (valid) {\n"
+						"                    s += dot(curves[c].mmr_data[mmr_idx + 4].xyz, sig2 * sig);\n"
+						"                    s += dot(curves[c].mmr_data[mmr_idx + 5], sigX2 * sigX);\n"
+						"                }\n"
+						"            }\n"
+						"        }\n"
+						"    }"
+						"    return s;\n"
+						"}\n");
 		}
 	}
 	else {
@@ -746,7 +679,7 @@ HRESULT GetShaderConvertColor(
 
 	ShaderGetPixels(bDX11, fmtParams, exFmt.VideoChromaSubsampling, chromaScaling, blendDeinterlace, code);
 
-	if (pDoviMetadata) {
+	if (bDX11 && pDoviMetadata) {
 		ShaderDoviReshape(pDoviMetadata, code);
 	}
 

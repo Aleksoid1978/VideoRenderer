@@ -121,10 +121,28 @@ struct PS_COLOR_TRANSFORM {
 	DirectX::XMFLOAT4 cm_c;
 };
 
+struct dovi_params {
+	uint32_t num_pivots;
+	uint32_t has_poly;
+	uint32_t has_mmr;
+	uint32_t padding;
+};
+struct mmr_flags {
+	uint32_t mmr_single;
+	uint32_t min_order;
+	uint32_t max_order;
+	uint32_t padding;
+};
+
 struct PS_DOVI_CURVE {
 	DirectX::XMFLOAT4 pivots_data[7];
 	DirectX::XMFLOAT4 coeffs_data[8];
+	float mmr_data[8 * 6][4];
+	dovi_params params;
+	mmr_flags mmr_flags;
 };
+
+static_assert(sizeof(PS_DOVI_CURVE) % 16 == 0);
 
 struct PS_DOVI_CURVES {
 	PS_DOVI_CURVE curves[3];
@@ -883,26 +901,43 @@ void CDX11VideoProcessor::SetShaderDoviCurvesParams()
 		const auto& curve = m_Dovi.msd.Mapping.curves[c];
 		auto& out = cbuffer.curves[c];
 
+		bool has_poly = false, has_mmr = false, mmr_single = true;
+		uint32_t mmr_idx = 0, min_order = 3, max_order = 1;
+
 		const float scale_coef = 1.0f / (1 << m_Dovi.msd.Header.coef_log2_denom);
 		const int num_coef = curve.num_pivots - 1;
-		int mmr_idx = 0;
 		for (int i = 0; i < num_coef; i++) {
 			int k = 0;
 			switch (curve.mapping_idc[i]) {
 			case 0: // polynomial
+				has_poly = true;
 				out.coeffs_data[i].x = (k <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][k] : 0.0f;
 				k++;
 				out.coeffs_data[i].y = (k <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][k] : 0.0f;
 				k++;
 				out.coeffs_data[i].z = (k <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][k] : 0.0f;
 				k++;
-				out.coeffs_data[i].w = 0.0; // order=0 signals polynomial
+				out.coeffs_data[i].w = 0.0f; // order=0 signals polynomial
 				break;
 			case 1: // mmr
+				min_order = std::min<int>(min_order, curve.mmr_order[i]);
+				max_order = std::max<int>(max_order, curve.mmr_order[i]);
+				mmr_single = !has_mmr;
+				has_mmr = true;
 				out.coeffs_data[i].x = scale_coef * curve.mmr_constant[i];
-				out.coeffs_data[i].y = (float)mmr_idx;
-				out.coeffs_data[i].w = (float)curve.mmr_order[i];
+				out.coeffs_data[i].y = static_cast<float>(mmr_idx);
+				out.coeffs_data[i].w = static_cast<float>(curve.mmr_order[i]);
 				for (int j = 0; j < curve.mmr_order[i]; j++) {
+					// store weights per order as two packed vec4s
+					float* mmr = &out.mmr_data[mmr_idx][0];
+					mmr[0] = scale_coef * curve.mmr_coef[i][j][0];
+					mmr[1] = scale_coef * curve.mmr_coef[i][j][1];
+					mmr[2] = scale_coef * curve.mmr_coef[i][j][2];
+					mmr[3] = 0.0f; // unused
+					mmr[4] = scale_coef * curve.mmr_coef[i][j][3];
+					mmr[5] = scale_coef * curve.mmr_coef[i][j][4];
+					mmr[6] = scale_coef * curve.mmr_coef[i][j][5];
+					mmr[7] = scale_coef * curve.mmr_coef[i][j][6];
 					mmr_idx += 2;
 				}
 				break;
@@ -916,6 +951,16 @@ void CDX11VideoProcessor::SetShaderDoviCurvesParams()
 		}
 		for (int i = n; i < 7; i++) {
 			out.pivots_data[i].x = 1e9f;
+		}
+
+		out.params.num_pivots = curve.num_pivots;
+		out.params.has_poly = has_poly;
+		out.params.has_mmr = has_mmr;
+
+		if (has_mmr) {
+			out.mmr_flags.mmr_single = mmr_single;
+			out.mmr_flags.min_order = min_order;
+			out.mmr_flags.max_order = max_order;
 		}
 	}
 
@@ -2002,7 +2047,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			if (bMappingCurvesChanged) {
 				SetShaderDoviCurvesParams();
 			}
-			if (bColorChanged || bMappingCurvesChanged) {
+			if (bColorChanged) {
 				UpdateConvertColorShader();
 			}
 		}
