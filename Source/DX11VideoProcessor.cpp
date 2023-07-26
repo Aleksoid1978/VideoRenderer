@@ -885,6 +885,7 @@ void CDX11VideoProcessor::SetShaderDoviCurvesParams()
 
 		const float scale_coef = 1.0f / (1 << m_Dovi.msd.Header.coef_log2_denom);
 		const int num_coef = curve.num_pivots - 1;
+		int mmr_idx = 0;
 		for (int i = 0; i < num_coef; i++) {
 			int k = 0;
 			switch (curve.mapping_idc[i]) {
@@ -898,6 +899,12 @@ void CDX11VideoProcessor::SetShaderDoviCurvesParams()
 				out.coeffs_data[i].w = 0.0; // order=0 signals polynomial
 				break;
 			case 1: // mmr
+				out.coeffs_data[i].x = scale_coef * curve.mmr_constant[i];
+				out.coeffs_data[i].y = (float)mmr_idx;
+				out.coeffs_data[i].w = (float)curve.mmr_order[i];
+				for (int j = 0; j < curve.mmr_order[i]; j++) {
+					mmr_idx += 2;
+				}
 				break;
 			}
 		}
