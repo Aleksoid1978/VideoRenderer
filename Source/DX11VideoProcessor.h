@@ -34,7 +34,7 @@
 #include "VideoProcessor.h"
 
 #define TEST_SHADER 0
-#define DOVI_ENABLE 0
+#define DOVI_ENABLE 1
 
 class CVideoRendererInputPin;
 

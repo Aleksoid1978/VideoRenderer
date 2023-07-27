@@ -2026,7 +2026,9 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 
 #if DOVI_ENABLE
-		if (m_srcExFmt.VideoTransferFunction != MFVideoTransFunc_HLG) {
+		m_Dovi.bValid = false;
+
+		if (m_srcParams.CSType == CS_YUV && m_srcExFmt.VideoTransferFunction != MFVideoTransFunc_HLG) {
 			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
 			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
 			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && pDOVIMetadata->Header.disable_residual_flag) {
@@ -2069,8 +2071,6 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					ReleaseSwapChain();
 					Init(m_hWnd);
 				}
-			} else {
-				m_Dovi.bValid = false;
 			}
 		}
 #endif
