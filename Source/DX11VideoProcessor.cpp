@@ -658,7 +658,7 @@ void CDX11VideoProcessor::ReleaseVP()
 
 	m_PSConvColorData.Release();
 #if DOVI_ENABLE
-	m_PSDoviCurvesData.Release();
+	m_pDoviCurvesConstantBuffer.Release();
 #endif
 
 	m_D3D11VP.ReleaseVideoProcessor();
@@ -868,19 +868,17 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 }
 
 #if DOVI_ENABLE
-void CDX11VideoProcessor::SetShaderDoviCurvesParams()
+HRESULT CDX11VideoProcessor::SetShaderDoviCurvesParams()
 {
 	ASSERT(m_Dovi.bValid);
 
-	SAFE_RELEASE(m_PSDoviCurvesData.pConstants);
-
 	for (const auto& curve : m_Dovi.msd.Mapping.curves) {
 		if (curve.num_pivots < 2 || curve.num_pivots > 9) {
-			return;
+			return E_INVALIDARG;
 		}
 		for (int i = 0; i < int(curve.num_pivots - 1); i++) {
 			if (curve.mapping_idc[i] > 1) { // 0 polynomial, 1 mmr
-				return;
+				return E_INVALIDARG;
 			}
 		}
 	}
@@ -954,13 +952,23 @@ void CDX11VideoProcessor::SetShaderDoviCurvesParams()
 		}
 	}
 
-	D3D11_BUFFER_DESC BufferDesc = {};
-	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	BufferDesc.ByteWidth = sizeof(cbuffer);
-	BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	BufferDesc.CPUAccessFlags = 0;
-	D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
-	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSDoviCurvesData.pConstants));
+	HRESULT hr;
+
+	if (m_pDoviCurvesConstantBuffer) {
+		D3D11_MAPPED_SUBRESOURCE mr;
+		hr = m_pDeviceContext->Map(m_pDoviCurvesConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mr);
+		if (SUCCEEDED(hr)) {
+			memcpy(mr.pData, &cbuffer, sizeof(cbuffer));
+			m_pDeviceContext->Unmap(m_pDoviCurvesConstantBuffer, 0);
+		}
+	}
+	else {
+		D3D11_BUFFER_DESC BufferDesc = { sizeof(cbuffer), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+		D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
+		hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pDoviCurvesConstantBuffer);
+	}
+
+	return hr;
 }
 #endif
 
@@ -2045,7 +2053,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 						&pDOVIMetadata->ColorMetadata.rgb_to_lms_matrix,
 						sizeof(MediaSideDataDOVIMetadata::ColorMetadata.rgb_to_lms_matrix)
 					) != 0);
-				const bool bMappingCurvesChanged = !m_PSDoviCurvesData.pConstants ||
+				const bool bMappingCurvesChanged = !m_pDoviCurvesConstantBuffer ||
 					(memcmp(
 						&m_Dovi.msd.Mapping.curves,
 						&pDOVIMetadata->Mapping.curves,
@@ -2064,7 +2072,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					UpdateConvertColorShader();
 				}
 				if (bMappingCurvesChanged) {
-					SetShaderDoviCurvesParams();
+					hr = SetShaderDoviCurvesParams();
 				}
 
 				if (m_bHdrPassthrough && m_bHdrPassthroughSupport && !SourceIsHDR() && !m_pDXGISwapChain4) {
@@ -2620,7 +2628,7 @@ HRESULT CDX11VideoProcessor::ConvertColorPass(ID3D11Texture2D* pRenderTarget)
 	m_pDeviceContext->PSSetSamplers(1, 1, &m_pSamplerLinear.p);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
 #if DOVI_ENABLE
-	m_pDeviceContext->PSSetConstantBuffers(1, 1, &m_PSDoviCurvesData.pConstants);
+	m_pDeviceContext->PSSetConstantBuffers(1, 1, &m_pDoviCurvesConstantBuffer.p);
 #endif
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_PSConvColorData.pVertexBuffer, &Stride, &Offset);

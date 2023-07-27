@@ -34,7 +34,7 @@
 #include "VideoProcessor.h"
 
 #define TEST_SHADER 0
-#define DOVI_ENABLE 1
+#define DOVI_ENABLE 0
 
 class CVideoRendererInputPin;
 
@@ -99,12 +99,7 @@ private:
 		}
 	} m_PSConvColorData;
 #if DOVI_ENABLE
-	struct {
-		ID3D11Buffer* pConstants = nullptr;
-		void Release() {
-			SAFE_RELEASE(pConstants);
-		}
-	} m_PSDoviCurvesData;
+	CComPtr<ID3D11Buffer> m_pDoviCurvesConstantBuffer;
 #endif
 	CComPtr<ID3D11PixelShader> m_pShaderUpscaleX;
 	CComPtr<ID3D11PixelShader> m_pShaderUpscaleY;
@@ -208,7 +203,7 @@ private:
 	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
 #if DOVI_ENABLE
-	void SetShaderDoviCurvesParams();
+	HRESULT SetShaderDoviCurvesParams();
 #endif
 
 	void UpdateTexParams(int cdepth);
