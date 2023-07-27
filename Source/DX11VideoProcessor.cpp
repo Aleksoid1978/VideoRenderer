@@ -2040,18 +2040,38 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
 			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
 			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && pDOVIMetadata->Header.disable_residual_flag) {
-				m_Dovi.msd.ColorMetadata.scene_refresh_flag = pDOVIMetadata->ColorMetadata.scene_refresh_flag; // scene change is not taken into account for bColorChanged
-				const bool bColorChanged = (memcmp(&m_Dovi.msd.ColorMetadata, &pDOVIMetadata->ColorMetadata, sizeof(MediaSideDataDOVIMetadata::ColorMetadata)) != 0);
-				const bool bMappingCurvesChanged = (memcmp(&m_Dovi.msd.Mapping.curves, &pDOVIMetadata->Mapping.curves, sizeof(MediaSideDataDOVIMetadata::Mapping.curves)) != 0);
+
+				const bool bYCCtoRGBChanged = !m_PSConvColorData.bEnable ||
+					(memcmp(
+						&m_Dovi.msd.ColorMetadata.ycc_to_rgb_matrix,
+						&pDOVIMetadata->ColorMetadata.ycc_to_rgb_matrix,
+						sizeof(MediaSideDataDOVIMetadata::ColorMetadata.ycc_to_rgb_matrix) + sizeof(MediaSideDataDOVIMetadata::ColorMetadata.ycc_to_rgb_offset)
+					) != 0);
+				const bool bRGBtoLMSChanged =
+					(memcmp(
+						&m_Dovi.msd.ColorMetadata.rgb_to_lms_matrix,
+						&pDOVIMetadata->ColorMetadata.rgb_to_lms_matrix,
+						sizeof(MediaSideDataDOVIMetadata::ColorMetadata.rgb_to_lms_matrix)
+					) != 0);
+				const bool bMappingCurvesChanged = !m_PSDoviCurvesData.pConstants ||
+					(memcmp(
+						&m_Dovi.msd.Mapping.curves,
+						&pDOVIMetadata->Mapping.curves,
+						sizeof(MediaSideDataDOVIMetadata::Mapping.curves)
+					) != 0);
+				
 				memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
 				m_Dovi.bValid = true;
-				if (bColorChanged) {
-					DLog(L"CDX11VideoProcessor::CopySample() : DoVi color metadata is changed");
 
+				if (bYCCtoRGBChanged) {
+					DLog(L"CDX11VideoProcessor::CopySample() : DoVi ycc_to_rgb_matrix is changed");
 					SetShaderConvertColorParams();
+				}
+				if (bRGBtoLMSChanged) {
+					DLog(L"CDX11VideoProcessor::CopySample() : DoVi rgb_to_lms_matrix is changed");
 					UpdateConvertColorShader();
 				}
-				if (bMappingCurvesChanged || !m_PSDoviCurvesData.pConstants) {
+				if (bMappingCurvesChanged) {
 					SetShaderDoviCurvesParams();
 				}
 
