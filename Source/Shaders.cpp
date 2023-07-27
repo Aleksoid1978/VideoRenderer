@@ -174,7 +174,18 @@ void ShaderGetPixels(
 
 		switch (planes) {
 		case 1:
-			code.append("float4 color = tex.Sample(samp, input.Tex);\n");
+			switch (fmtParams.cformat) {
+			default:
+				code.append("float4 color = tex.Sample(samp, input.Tex);\n");
+				break;
+			case CF_AYUV:
+				code.append("float4 color = tex.Sample(samp, input.Tex).zyxw;\n");
+				break;
+			case CF_Y410:
+			case CF_Y416:
+				code.append("float4 color = tex.Sample(samp, input.Tex).yxzw;\n");
+				break;
+			}
 			if (packed422) {
 				code.append("if (fmod(input.Tex.x*w, 2) < 1.0) {\n"
 					"color = float4(color[0], color[1], color[3], 1);\n"
