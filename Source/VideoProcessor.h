@@ -24,6 +24,8 @@
 #include "DisplayConfig.h"
 #include "FrameStats.h"
 
+#define DOVI_ENABLE 0
+
 enum : int {
 	VP_DX9 = 9,
 	VP_DX11 = 11
@@ -98,6 +100,12 @@ protected:
 
 	DXVA2_ValueRange m_DXVA2ProcAmpRanges[4] = {};
 	DXVA2_ProcAmpValues m_DXVA2ProcAmpValues = {};
+#if DOVI_ENABLE
+	struct DOVIMetadata {
+		MediaSideDataDOVIMetadata msd = {};
+		bool bValid = false;
+	} m_Dovi;
+#endif
 
 	HWND m_hWnd = nullptr;
 	UINT m_nCurrentAdapter; // set it in subclasses
