@@ -22,6 +22,13 @@
 
 #include <d3dcommon.h>
 
+struct PS_COLOR_TRANSFORM {
+	DirectX::XMFLOAT4 cm_r;
+	DirectX::XMFLOAT4 cm_g;
+	DirectX::XMFLOAT4 cm_b;
+	DirectX::XMFLOAT4 cm_c;
+};
+
 enum :int {
 	SHADER_CONVERT_NONE = 0,
 	SHADER_CONVERT_TO_SDR,

@@ -114,13 +114,6 @@ struct VERTEX {
 	DirectX::XMFLOAT2 TexCoord;
 };
 
-struct PS_COLOR_TRANSFORM {
-	DirectX::XMFLOAT4 cm_r;
-	DirectX::XMFLOAT4 cm_g;
-	DirectX::XMFLOAT4 cm_b;
-	DirectX::XMFLOAT4 cm_c;
-};
-
 struct dovi_params {
 	uint32_t num_pivots;
 	uint32_t has_poly;

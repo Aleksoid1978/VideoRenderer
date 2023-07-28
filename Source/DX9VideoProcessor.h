@@ -27,6 +27,7 @@
 #include "D3DUtil/D3D9Font.h"
 #include "D3DUtil/D3D9Geometry.h"
 #include "VideoProcessor.h"
+#include "Shaders.h"
 
 
 class CDX9VideoProcessor
@@ -74,7 +75,7 @@ private:
 			DirectX::XMFLOAT4 Pos;
 			DirectX::XMFLOAT2 Tex[2];
 		} VertexData[4] = {};
-		float fConstants[4][4] = {};
+		PS_COLOR_TRANSFORM Constants;
 	} m_PSConvColorData;
 
 	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleX;

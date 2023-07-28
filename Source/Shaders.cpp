@@ -331,8 +331,19 @@ void ShaderGetPixels(
 				"\n"
 				"float4 main(float2 tex : TEXCOORD0) : COLOR\n"
 				"{\n"
-				"float4 color = tex2D(s0, tex);\n"
 			);
+			switch (fmtParams.cformat) {
+			default:
+				code.append("float4 color = tex2D(s0, tex);\n");
+				break;
+			case CF_AYUV:
+				code.append("float4 color = tex2D(s0, tex).zyxw;\n");
+				break;
+			case CF_Y410:
+			case CF_Y416:
+				code.append("float4 color = tex2D(s0, tex).yxzw;\n");
+				break;
+			}
 			if (packed422) {
 				code.append("if (fmod(tex.x*w, 2) < 1.0) {\n"
 					"color = float4(color[2], color[1], color[3], 1);\n"

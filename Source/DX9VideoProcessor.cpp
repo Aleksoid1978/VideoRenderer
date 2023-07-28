@@ -28,7 +28,6 @@
 #include "VideoRenderer.h"
 #include "../Include/Version.h"
 #include "DX9VideoProcessor.h"
-#include "Shaders.h"
 #include "Utils/CPUInfo.h"
 
 #include "../external/minhook/include/MinHook.h"
@@ -874,26 +873,19 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 	mp_cmat cmatrix;
 	mp_get_csp_matrix(&csp_params, &cmatrix);
 
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
-			m_PSConvColorData.fConstants[i][j] = cmatrix.m[i][j];
-		}
-		m_PSConvColorData.fConstants[i][3] = 0.0f;
-	}
-	for (int j = 0; j < 3; j++) {
-		m_PSConvColorData.fConstants[3][j] = cmatrix.c[j];
-	}
+	m_PSConvColorData.Constants = {
+		{cmatrix.m[0][0], cmatrix.m[0][1], cmatrix.m[0][2], 0},
+		{cmatrix.m[1][0], cmatrix.m[1][1], cmatrix.m[1][2], 0},
+		{cmatrix.m[2][0], cmatrix.m[2][1], cmatrix.m[2][2], 0},
+		{cmatrix.c[0],    cmatrix.c[1],    cmatrix.c[2],    0},
+	};
 
-	if (m_srcParams.cformat == CF_Y410 || m_srcParams.cformat == CF_Y416) {
-		for (int i = 0; i < 3; i++) {
-			std::swap(m_PSConvColorData.fConstants[i][0], m_PSConvColorData.fConstants[i][1]);
-		}
-	}
-	else if (m_srcParams.cformat == CF_GBRP8 || m_srcParams.cformat == CF_GBRP16) {
-		for (int i = 0; i < 3; i++) {
-			std::swap(m_PSConvColorData.fConstants[i][0], m_PSConvColorData.fConstants[i][1]);
-			std::swap(m_PSConvColorData.fConstants[i][1], m_PSConvColorData.fConstants[i][2]);
-		}
+	auto& cbuffer = m_PSConvColorData.Constants;
+
+	if (m_srcParams.cformat == CF_GBRP8 || m_srcParams.cformat == CF_GBRP16) {
+		std::swap(cbuffer.cm_r.x, cbuffer.cm_r.y); std::swap(cbuffer.cm_r.y, cbuffer.cm_r.z);
+		std::swap(cbuffer.cm_g.x, cbuffer.cm_g.y); std::swap(cbuffer.cm_g.y, cbuffer.cm_g.z);
+		std::swap(cbuffer.cm_b.x, cbuffer.cm_b.y); std::swap(cbuffer.cm_b.y, cbuffer.cm_b.z);
 	}
 }
 
@@ -2228,7 +2220,7 @@ HRESULT CDX9VideoProcessor::ConvertColorPass(IDirect3DSurface9* pRenderTarget)
 {
 	HRESULT hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
-	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)m_PSConvColorData.fConstants, std::size(m_PSConvColorData.fConstants));
+	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)&m_PSConvColorData.Constants, sizeof(m_PSConvColorData.Constants)/sizeof(float));
 	if (m_bDeintBlend && m_CurrentSampleFmt != DXVA2_SampleProgressiveFrame && m_pPSConvertColorDeint) {
 		hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColorDeint);
 	} else {
