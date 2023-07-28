@@ -1347,6 +1347,15 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
 				m_Dovi.bValid = true;
 
+				if (m_DXVA2VP.IsReady()) {
+					// TODO: make the VP created only after the first frame
+					m_DXVA2VP.ReleaseVideoService();
+					hr = InitializeTexVP(m_srcParams, m_srcWidth, m_srcHeight);
+					if (SUCCEEDED(hr)) {
+						UpdateTexures();
+					}
+				}
+
 				if (bYCCtoRGBChanged) {
 					DLog(L"CDX11VideoProcessor::CopySample() : DoVi ycc_to_rgb_matrix is changed");
 					SetShaderConvertColorParams();
