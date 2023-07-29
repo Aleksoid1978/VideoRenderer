@@ -77,6 +77,9 @@ private:
 		} VertexData[4] = {};
 		PS_COLOR_TRANSFORM Constants;
 	} m_PSConvColorData;
+#if DOVI_ENABLE
+	Tex_t m_TexDoviReshapeLUT;
+#endif
 
 	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleX;
 	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleY;
@@ -134,6 +137,9 @@ private:
 
 	HRESULT CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
+#if DOVI_ENABLE
+	HRESULT SetShaderDoviCurvesLUT();
+#endif
 
 	void UpdateTexParams(int cdepth);
 	void UpdateRenderRect();

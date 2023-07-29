@@ -911,6 +911,91 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 	}
 }
 
+#if DOVI_ENABLE
+HRESULT CDX9VideoProcessor::SetShaderDoviCurvesLUT()
+{
+	ASSERT(m_Dovi.bValid);
+
+	for (const auto& curve : m_Dovi.msd.Mapping.curves) {
+		if (curve.num_pivots < 2 || curve.num_pivots > 9) {
+			return E_INVALIDARG;
+		}
+		for (int i = 0; i < int(curve.num_pivots - 1); i++) {
+			if (curve.mapping_idc[i] > 1) { // 0 polynomial, 1 mmr
+				return E_INVALIDARG;
+			}
+		}
+	}
+
+	ASSERT(m_Dovi.msd.Header.bl_bit_depth && m_Dovi.msd.Header.bl_bit_depth <= 10);
+	const UINT lutSize = 1u << m_Dovi.msd.Header.bl_bit_depth;
+	const float scale = 1.0f / (lutSize - 1);
+	const float scale_coef = 1.0f / (1u << m_Dovi.msd.Header.coef_log2_denom);
+
+	DirectX::XMFLOAT4 coeffs_data[8];
+
+	HRESULT hr = S_FALSE;
+
+	if (!m_TexDoviReshapeLUT.pTexture) {
+		hr = m_TexDoviReshapeLUT.Create(m_pD3DDevEx, D3DFMT_R32F, lutSize, 3, D3DUSAGE_DYNAMIC);
+	}
+	if (m_TexDoviReshapeLUT.pTexture) {
+		D3DLOCKED_RECT lockedRect;
+		hr = m_TexDoviReshapeLUT.pTexture->LockRect(0, &lockedRect, nullptr, D3DLOCK_DISCARD);
+		if (SUCCEEDED(hr)) {
+			for (UINT c = 0; c < 3; c++) {
+				const auto& curve = m_Dovi.msd.Mapping.curves[c];
+
+				const int num_coef = curve.num_pivots - 1;
+				bool has_poly = false;
+				bool has_mmr = false;
+
+				for (int i = 0; i < num_coef; i++) {
+					int k = 0;
+					switch (curve.mapping_idc[i]) {
+					case 0: // polynomial
+						has_poly = true;
+						coeffs_data[i].x = (k <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][k] : 0.0f;
+						k++;
+						coeffs_data[i].y = (k <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][k] : 0.0f;
+						k++;
+						coeffs_data[i].z = (k <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][k] : 0.0f;
+						k++;
+						coeffs_data[i].w = 0.0f; // order=0 signals polynomial
+						break;
+					case 1: // mmr
+						has_mmr = true;
+						break;
+					}
+				}
+
+				float* out = (float*)((BYTE*)lockedRect.pBits + lockedRect.Pitch * c);
+				int k = 0;
+
+				for (int i = 0; i < num_coef; i++) {
+					int m = curve.pivots[i + 1];
+					auto& coeffs = coeffs_data[i];
+					for (; k < m; k++) {
+						float s = scale * k;
+						if (has_mmr) {
+							// TODO
+							*out++ = k * scale;
+						}
+						else {
+							*out++ = (coeffs.z * s + coeffs.y) * s + coeffs.x;
+						}
+					}
+				}
+			}
+
+			hr = m_TexDoviReshapeLUT.pTexture->UnlockRect(0);
+		}
+	}
+
+	return hr;
+}
+#endif
+
 void CDX9VideoProcessor::UpdateTexParams(int cdepth)
 {
 	switch (m_iTexFormat) {
@@ -1343,6 +1428,12 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 						&pDOVIMetadata->ColorMetadata.rgb_to_lms_matrix,
 						sizeof(MediaSideDataDOVIMetadata::ColorMetadata.rgb_to_lms_matrix)
 					) != 0);
+				const bool bMappingCurvesChanged = !m_TexDoviReshapeLUT.Format ||
+					(memcmp(
+						&m_Dovi.msd.Mapping.curves,
+						&pDOVIMetadata->Mapping.curves,
+						sizeof(MediaSideDataDOVIMetadata::Mapping.curves)
+					) != 0);
 
 				memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
 				m_Dovi.bValid = true;
@@ -1363,6 +1454,9 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				if (bRGBtoLMSChanged) {
 					DLog(L"CDX11VideoProcessor::CopySample() : DoVi rgb_to_lms_matrix is changed");
 					UpdateConvertColorShader();
+				}
+				if (bMappingCurvesChanged) {
+					hr = SetShaderDoviCurvesLUT();
 				}
 			}
 		}
@@ -2338,6 +2432,17 @@ HRESULT CDX9VideoProcessor::ConvertColorPass(IDirect3DSurface9* pRenderTarget)
 			hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
 		}
 	}
+
+#if DOVI_ENABLE
+	if (m_TexDoviReshapeLUT.pTexture) {
+		hr = m_pD3DDevEx->SetTexture(3, m_TexDoviReshapeLUT.pTexture);
+		hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+		hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+		hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+		hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+		hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+	}
+#endif
 
 	hr = m_pD3DDevEx->SetFVF(D3DFVF_XYZRHW | FVF);
 	hr = m_pD3DDevEx->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, m_PSConvColorData.VertexData, sizeof(m_PSConvColorData.VertexData[0]));

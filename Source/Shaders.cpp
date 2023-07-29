@@ -689,13 +689,34 @@ HRESULT GetShaderConvertColor(
 			"float3 cm_r : register(c0);\n"
 			"float3 cm_g : register(c1);\n"
 			"float3 cm_b : register(c2);\n"
-			"float3 cm_c : register(c3);\n");
+			"float3 cm_c : register(c3);\n"
+		);
+		if (pDoviMetadata) {
+			code.append("sampler texDoViCurveLUT : register(s3);\n");
+		}
 	}
 
 	ShaderGetPixels(bDX11, fmtParams, exFmt.VideoChromaSubsampling, chromaScaling, blendDeinterlace, code);
 
-	if (bDX11 && pDoviMetadata) {
-		ShaderDoviReshape(pDoviMetadata, code);
+	if (pDoviMetadata) {
+		if (bDX11) {
+			ShaderDoviReshape(pDoviMetadata, code);
+		}
+		else {
+			code.append(
+				"// dovi reshape\n"
+				"float3 sig = saturate(color.rgb);\n"
+				"float s = sig[0];\n"
+				"s = tex2D(texDoViCurveLUT, float2(s, 0.1)).r;\n"
+				"color[0] = saturate(s);\n"
+				"s = sig[1];\n"
+				"s = tex2D(texDoViCurveLUT, float2(s, 0.5)).r;\n"
+				"color[1] = saturate(s);\n"
+				"s = sig[2];\n"
+				"s = tex2D(texDoViCurveLUT, float2(s, 0.9)).r;\n"
+				"color[2] = saturate(s);\n"
+			);
+		}
 	}
 
 	code.append("//convert color\n");
