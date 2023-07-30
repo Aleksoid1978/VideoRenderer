@@ -951,20 +951,21 @@ HRESULT CDX9VideoProcessor::SetShaderDoviCurvesLUT()
 				bool has_mmr = false;
 
 				for (int i = 0; i < num_coef; i++) {
-					int k = 0;
 					switch (curve.mapping_idc[i]) {
 					case 0: // polynomial
 						has_poly = true;
-						coeffs_data[i].x = (k <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][k] : 0.0f;
-						k++;
-						coeffs_data[i].y = (k <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][k] : 0.0f;
-						k++;
-						coeffs_data[i].z = (k <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][k] : 0.0f;
-						k++;
+						coeffs_data[i].x = (0 <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][0] : 0.0f;
+						coeffs_data[i].y = (1 <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][1] : 0.0f;
+						coeffs_data[i].z = (2 <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][2] : 0.0f;
 						coeffs_data[i].w = 0.0f; // order=0 signals polynomial
 						break;
 					case 1: // mmr
 						has_mmr = true;
+						//not supported, leave as is
+						coeffs_data[i].x = 0.0f;
+						coeffs_data[i].y = 1.0f;
+						coeffs_data[i].z = 0.0f;
+						coeffs_data[i].w = 0.0f;
 						break;
 					}
 				}
@@ -977,13 +978,7 @@ HRESULT CDX9VideoProcessor::SetShaderDoviCurvesLUT()
 					auto& coeffs = coeffs_data[i];
 					for (; k < m; k++) {
 						float s = scale * k;
-						if (has_mmr) {
-							// TODO
-							*out++ = k * scale;
-						}
-						else {
-							*out++ = (coeffs.z * s + coeffs.y) * s + coeffs.x;
-						}
+						*out++ = (coeffs.z * s + coeffs.y) * s + coeffs.x;
 					}
 				}
 			}
