@@ -2048,7 +2048,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 						&pDOVIMetadata->Mapping.curves,
 						sizeof(MediaSideDataDOVIMetadata::Mapping.curves)
 					) != 0);
-				
+
 				memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
 				m_Dovi.bValid = true;
 

@@ -488,60 +488,73 @@ void ShaderGetPixels(
 	}
 }
 
-void ShaderDoviReshape(const MediaSideDataDOVIMetadata* const pDoviMetadata, std::string& code)
+void ShaderDoviReshape(std::string& code, bool bDX11)
 {
 	// based on libplacebo source code
-	ASSERT(pDoviMetadata);
 
-	for (const auto& curve : pDoviMetadata->Mapping.curves) {
-		if (curve.num_pivots < 2 || curve.num_pivots > 9) {
-			DLog(L"ShaderDoviReshape() : incorrect num_pivots value - {}", curve.num_pivots);
-			return;
-		}
-		for (uint8_t i = 0; i < (curve.num_pivots - 1); i++) {
-			if (curve.mapping_idc[i] > 1) { // 0 polynomial, 1 mmr
-				DLog(L"ShaderDoviReshape() : incorrect mapping_idc[{}] value - {}", i, curve.mapping_idc[i]);
-				return;
-			}
-		}
+	if (bDX11) {
+		code.append(
+			"{\n"
+			"    // dovi reshape\n"
+			"    float3 sig = saturate(color.rgb);\n"
+			"    [unroll(3)]\n"
+			"    for (uint c = 0; c < 3; c++) {\n"
+			"        float s = sig[c];\n"
+			"        float4 coeffs;\n"
+			"        #define test(i) (s >= curves[c].pivots_data[i]) ? 1.0 : 0.0\n"
+			"        #define coef(i) curves[c].coeffs_data[i]\n"
+			"        coeffs = lerp(lerp(lerp(coef(0), coef(1), test(0)),\n"
+			"                           lerp(coef(2), coef(3), test(2)),\n"
+			"                           test(1)),\n"
+			"                 lerp(lerp(coef(4), coef(5), test(4)),\n"
+			"                      lerp(coef(6), coef(7), test(6)),\n"
+			"                      test(5)),\n"
+			"                 test(3));\n"
+			"        #undef test\n"
+			"        #undef coef\n"
+			"        if (curves[c].params.has_poly && curves[c].params.has_mmr) {\n"
+			"            if (coeffs[3] == 0.0) {\n"
+			"                // reshape_poly\n"
+			"                s = (coeffs.z * s + coeffs.y) * s + coeffs.x;\n"
+			"            } else {\n"
+			"                s = reshape_mmr(coeffs, sig, c, curves[c].mmr_flags.mmr_single, curves[c].mmr_flags.min_order, curves[c].mmr_flags.max_order);\n"
+			"            }\n"
+			"        } else if (curves[c].params.has_poly) {\n"
+			"            // reshape_poly\n"
+			"            s = (coeffs.z * s + coeffs.y) * s + coeffs.x;\n"
+			"        } else {\n"
+			"            s = reshape_mmr(coeffs, sig, c, curves[c].mmr_flags.mmr_single, curves[c].mmr_flags.min_order, curves[c].mmr_flags.max_order);\n"
+			"        }\n"
+			"        color[c] = saturate(s);\n"
+			"    }\n"
+			"}\n"
+		);
+	} else {
+		code.append(
+			"{\n"
+			"    // dovi reshape\n"
+			"    float3 sig = saturate(color.rgb);\n"
+			"    [unroll(3)]\n"
+			"    for (uint c = 0; c < 3; c++) {\n"
+			"        float s = sig[c];\n"
+			"        #define test(i) (s >= curves[c].pivots_data[i]) ? 1.0 : 0.0\n"
+			"        #define coef(i) curves[c].coeffs_data[i]\n"
+			"        float4 coeffs =\n"
+			"            lerp(lerp(lerp(coef(0), coef(1), test(0)),\n"
+			"                      lerp(coef(2), coef(3), test(2)),\n"
+			"                      test(1)),\n"
+			"                 lerp(lerp(coef(4), coef(5), test(4)),\n"
+			"                      lerp(coef(6), coef(7), test(6)),\n"
+			"                      test(5)),\n"
+			"                 test(3));\n"
+			"        #undef test\n"
+			"        #undef coef\n"
+			"        s = (coeffs.z * s + coeffs.y) * s + coeffs.x;\n"
+			"        color[c] = saturate(s);\n"
+			"    }\n"
+			"}\n"
+		);
 	}
-
-	code.append(
-		"{\n"
-		"    // dovi reshape\n"
-		"    float3 sig = saturate(color.rgb);\n"
-		"    [unroll(3)]\n"
-		"    for (uint c = 0; c < 3; c++) {\n"
-		"        float s = sig[c];\n"
-		"        float4 coeffs;\n"
-		"        #define test(i) (s >= curves[c].pivots_data[i]) ? 1.0 : 0.0\n"
-		"        #define coef(i) curves[c].coeffs_data[i]\n"
-		"        coeffs = lerp(lerp(lerp(coef(0), coef(1), test(0)),\n"
-		"                           lerp(coef(2), coef(3), test(2)),\n"
-		"                           test(1)),\n"
-		"                 lerp(lerp(coef(4), coef(5), test(4)),\n"
-		"                      lerp(coef(6), coef(7), test(6)),\n"
-		"                      test(5)),\n"
-		"                 test(3));\n"
-		"        #undef test\n"
-		"        #undef coef\n"
-		"        if (curves[c].params.has_poly && curves[c].params.has_mmr) {\n"
-		"            if (coeffs[3] == 0.0) {\n"
-		"                // reshape_poly\n"
-		"                s = (coeffs.z * s + coeffs.y) * s + coeffs.x;\n"
-		"            } else {\n"
-		"                s = reshape_mmr(coeffs, sig, c, curves[c].mmr_flags.mmr_single, curves[c].mmr_flags.min_order, curves[c].mmr_flags.max_order);\n"
-		"            }\n"
-		"        } else if (curves[c].params.has_poly) {\n"
-		"            // reshape_poly\n"
-		"            s = (coeffs.z * s + coeffs.y) * s + coeffs.x;\n"
-		"        } else {\n"
-		"            s = reshape_mmr(coeffs, sig, c, curves[c].mmr_flags.mmr_single, curves[c].mmr_flags.min_order, curves[c].mmr_flags.max_order);\n"
-		"        }\n"
-		"        color[c] = saturate(s);\n"
-		"    }\n"
-		"}\n"
-	);
 }
 
 //////////////////////////////
@@ -694,8 +707,8 @@ HRESULT GetShaderConvertColor(
 		if (pDoviMetadata) {
 			code.append(
 				"struct PS_DOVI_CURVE {\n"
-				"float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
-				"float4 coeffs_data[8];\n"
+				"    float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
+				"    float4 coeffs_data[8];\n"
 				"};\n"
 				"PS_DOVI_CURVE curves[3] : register(c4);\n"
 			);
@@ -705,33 +718,7 @@ HRESULT GetShaderConvertColor(
 	ShaderGetPixels(bDX11, fmtParams, exFmt.VideoChromaSubsampling, chromaScaling, blendDeinterlace, code);
 
 	if (pDoviMetadata) {
-		if (bDX11) {
-			ShaderDoviReshape(pDoviMetadata, code);
-		}
-		else {
-			code.append(
-				"// dovi reshape\n"
-				"float3 sig = saturate(color.rgb);\n"
-				"[unroll(3)]\n"
-				"for (uint c = 0; c < 3; c++) {\n"
-				"    float s = sig[c];\n"
-				"    #define test(i) (s >= curves[c].pivots_data[i]) ? 1.0 : 0.0\n"
-				"    #define coef(i) curves[c].coeffs_data[i]\n"
-				"    float4 coeffs =\n"
-				"        lerp(lerp(lerp(coef(0), coef(1), test(0)),\n"
-				"                  lerp(coef(2), coef(3), test(2)),\n"
-				"                  test(1)),\n"
-				"             lerp(lerp(coef(4), coef(5), test(4)),\n"
-				"                  lerp(coef(6), coef(7), test(6)),\n"
-				"                  test(5)),\n"
-				"             test(3));\n"
-				"    #undef test\n"
-				"    #undef coef\n"
-				"    s = (coeffs.z * s + coeffs.y) * s + coeffs.x;\n"
-				"    color[c] = saturate(s);\n"
-				"}\n"
-			);
-		}
+		ShaderDoviReshape(code, bDX11);
 	}
 
 	code.append("//convert color\n");
