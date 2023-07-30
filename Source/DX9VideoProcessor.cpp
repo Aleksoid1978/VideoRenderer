@@ -937,7 +937,7 @@ HRESULT CDX9VideoProcessor::SetShaderDoviCurvesLUT()
 	HRESULT hr = S_FALSE;
 
 	if (!m_TexDoviReshapeLUT.pTexture) {
-		hr = m_TexDoviReshapeLUT.Create(m_pD3DDevEx, D3DFMT_R32F, lutSize, 3, D3DUSAGE_DYNAMIC);
+		hr = m_TexDoviReshapeLUT.Create(m_pD3DDevEx, D3DFMT_R16F, lutSize, 3, D3DUSAGE_DYNAMIC);
 	}
 	if (m_TexDoviReshapeLUT.pTexture) {
 		D3DLOCKED_RECT lockedRect;
@@ -970,7 +970,7 @@ HRESULT CDX9VideoProcessor::SetShaderDoviCurvesLUT()
 					}
 				}
 
-				float* out = (float*)((BYTE*)lockedRect.pBits + lockedRect.Pitch * c);
+				uint16_t* out = (uint16_t*)((BYTE*)lockedRect.pBits + lockedRect.Pitch * c);
 				int k = 0;
 
 				for (int i = 0; i < num_coef; i++) {
@@ -978,7 +978,18 @@ HRESULT CDX9VideoProcessor::SetShaderDoviCurvesLUT()
 					auto& coeffs = coeffs_data[i];
 					for (; k < m; k++) {
 						float s = scale * k;
-						*out++ = (coeffs.z * s + coeffs.y) * s + coeffs.x;
+						s = (coeffs.z * s + coeffs.y) * s + coeffs.x;
+
+						// fast and reasonably correct float32 to float16 conversion
+						// https://stackoverflow.com/a/5587983
+						uint32_t fltInt32 = *((uint32_t*)&s);
+						uint16_t fltInt16 = (fltInt32 >> 31) << 5;
+						uint16_t tmp = (fltInt32 >> 23) & 0xff;
+						tmp = (tmp - 0x70) & ((unsigned int)((int)(0x70 - tmp) >> 4) >> 27);
+						fltInt16 = (fltInt16 | tmp) << 10;
+						fltInt16 |= (fltInt32 >> 13) & 0x3ff;
+
+						*out++ = fltInt16;
 					}
 				}
 			}
