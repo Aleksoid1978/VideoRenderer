@@ -912,7 +912,7 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 }
 
 #if DOVI_ENABLE
-HRESULT CDX9VideoProcessor::SetShaderDoviCurvesLUT()
+HRESULT CDX9VideoProcessor::SetShaderDoviCurves()
 {
 	ASSERT(m_Dovi.bValid);
 
@@ -932,73 +932,45 @@ HRESULT CDX9VideoProcessor::SetShaderDoviCurvesLUT()
 	const float scale = 1.0f / (lutSize - 1);
 	const float scale_coef = 1.0f / (1u << m_Dovi.msd.Header.coef_log2_denom);
 
-	DirectX::XMFLOAT4 coeffs_data[8];
+	for (UINT c = 0; c < 3; c++) {
+		const auto& curve = m_Dovi.msd.Mapping.curves[c];
+		auto& out = m_DoviReshapePolyCurves[c];
 
-	HRESULT hr = S_FALSE;
+		const int num_coef = curve.num_pivots - 1;
+		bool has_poly = false;
+		bool has_mmr = false;
 
-	if (!m_TexDoviReshapeLUT.pTexture) {
-		hr = m_TexDoviReshapeLUT.Create(m_pD3DDevEx, D3DFMT_R16F, lutSize, 3, D3DUSAGE_DYNAMIC);
-	}
-	if (m_TexDoviReshapeLUT.pTexture) {
-		D3DLOCKED_RECT lockedRect;
-		hr = m_TexDoviReshapeLUT.pTexture->LockRect(0, &lockedRect, nullptr, D3DLOCK_DISCARD);
-		if (SUCCEEDED(hr)) {
-			for (UINT c = 0; c < 3; c++) {
-				const auto& curve = m_Dovi.msd.Mapping.curves[c];
-
-				const int num_coef = curve.num_pivots - 1;
-				bool has_poly = false;
-				bool has_mmr = false;
-
-				for (int i = 0; i < num_coef; i++) {
-					switch (curve.mapping_idc[i]) {
-					case 0: // polynomial
-						has_poly = true;
-						coeffs_data[i].x = (0 <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][0] : 0.0f;
-						coeffs_data[i].y = (1 <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][1] : 0.0f;
-						coeffs_data[i].z = (2 <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][2] : 0.0f;
-						coeffs_data[i].w = 0.0f; // order=0 signals polynomial
-						break;
-					case 1: // mmr
-						has_mmr = true;
-						//not supported, leave as is
-						coeffs_data[i].x = 0.0f;
-						coeffs_data[i].y = 1.0f;
-						coeffs_data[i].z = 0.0f;
-						coeffs_data[i].w = 0.0f;
-						break;
-					}
-				}
-
-				uint16_t* out = (uint16_t*)((BYTE*)lockedRect.pBits + lockedRect.Pitch * c);
-				int k = 0;
-
-				for (int i = 0; i < num_coef; i++) {
-					int m = curve.pivots[i + 1];
-					auto& coeffs = coeffs_data[i];
-					for (; k < m; k++) {
-						float s = scale * k;
-						s = (coeffs.z * s + coeffs.y) * s + coeffs.x;
-
-						// fast and reasonably correct float32 to float16 conversion
-						// https://stackoverflow.com/a/5587983
-						uint32_t fltInt32 = *((uint32_t*)&s);
-						uint16_t fltInt16 = (fltInt32 >> 31) << 5;
-						uint16_t tmp = (fltInt32 >> 23) & 0xff;
-						tmp = (tmp - 0x70) & ((unsigned int)((int)(0x70 - tmp) >> 4) >> 27);
-						fltInt16 = (fltInt16 | tmp) << 10;
-						fltInt16 |= (fltInt32 >> 13) & 0x3ff;
-
-						*out++ = fltInt16;
-					}
-				}
+		for (int i = 0; i < num_coef; i++) {
+			switch (curve.mapping_idc[i]) {
+			case 0: // polynomial
+				has_poly = true;
+				out.coeffs_data[i].x = (0 <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][0] : 0.0f;
+				out.coeffs_data[i].y = (1 <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][1] : 0.0f;
+				out.coeffs_data[i].z = (2 <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][2] : 0.0f;
+				out.coeffs_data[i].w = 0.0f; // order=0 signals polynomial
+				break;
+			case 1: // mmr
+				has_mmr = true;
+				//not supported, leave as is
+				out.coeffs_data[i].x = 0.0f;
+				out.coeffs_data[i].y = 1.0f;
+				out.coeffs_data[i].z = 0.0f;
+				out.coeffs_data[i].w = 0.0f;
+				break;
 			}
+		}
 
-			hr = m_TexDoviReshapeLUT.pTexture->UnlockRect(0);
+		const float scale = 1.0f / ((1 << m_Dovi.msd.Header.bl_bit_depth) - 1);
+		const int n = curve.num_pivots - 2;
+		for (int i = 0; i < n; i++) {
+			out.pivots_data[i].x = scale * curve.pivots[i + 1];
+		}
+		for (int i = n; i < 7; i++) {
+			out.pivots_data[i].x = 1e9f;
 		}
 	}
 
-	return hr;
+	return S_OK;
 }
 #endif
 
@@ -1434,7 +1406,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 						&pDOVIMetadata->ColorMetadata.rgb_to_lms_matrix,
 						sizeof(MediaSideDataDOVIMetadata::ColorMetadata.rgb_to_lms_matrix)
 					) != 0);
-				const bool bMappingCurvesChanged = !m_TexDoviReshapeLUT.Format ||
+				const bool bMappingCurvesChanged =
 					(memcmp(
 						&m_Dovi.msd.Mapping.curves,
 						&pDOVIMetadata->Mapping.curves,
@@ -1462,7 +1434,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 					UpdateConvertColorShader();
 				}
 				if (bMappingCurvesChanged) {
-					hr = SetShaderDoviCurvesLUT();
+					hr = SetShaderDoviCurves();
 				}
 			}
 		}
@@ -2394,6 +2366,10 @@ HRESULT CDX9VideoProcessor::ConvertColorPass(IDirect3DSurface9* pRenderTarget)
 	HRESULT hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
 	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)&m_PSConvColorData.Constants, sizeof(m_PSConvColorData.Constants)/sizeof(float));
+#if DOVI_ENABLE
+	hr = m_pD3DDevEx->SetPixelShaderConstantF(4, (float*)&m_DoviReshapePolyCurves, sizeof(m_DoviReshapePolyCurves) / sizeof(float));
+#endif
+
 	if (m_bDeintBlend && m_CurrentSampleFmt != DXVA2_SampleProgressiveFrame && m_pPSConvertColorDeint) {
 		hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColorDeint);
 	} else {
@@ -2438,17 +2414,6 @@ HRESULT CDX9VideoProcessor::ConvertColorPass(IDirect3DSurface9* pRenderTarget)
 			hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
 		}
 	}
-
-#if DOVI_ENABLE
-	if (m_TexDoviReshapeLUT.pTexture) {
-		hr = m_pD3DDevEx->SetTexture(3, m_TexDoviReshapeLUT.pTexture);
-		hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-		hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_MINFILTER, D3DTEXF_POINT);
-		hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
-		hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
-		hr = m_pD3DDevEx->SetSamplerState(2, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
-	}
-#endif
 
 	hr = m_pD3DDevEx->SetFVF(D3DFVF_XYZRHW | FVF);
 	hr = m_pD3DDevEx->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, m_PSConvColorData.VertexData, sizeof(m_PSConvColorData.VertexData[0]));

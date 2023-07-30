@@ -29,6 +29,10 @@
 #include "VideoProcessor.h"
 #include "Shaders.h"
 
+struct PS_DOVI_POLY_CURVE {
+	DirectX::XMFLOAT4 pivots_data[7];
+	DirectX::XMFLOAT4 coeffs_data[8];
+};
 
 class CDX9VideoProcessor
 	: public CVideoProcessor
@@ -78,7 +82,7 @@ private:
 		PS_COLOR_TRANSFORM Constants;
 	} m_PSConvColorData;
 #if DOVI_ENABLE
-	Tex_t m_TexDoviReshapeLUT;
+	PS_DOVI_POLY_CURVE m_DoviReshapePolyCurves[3];
 #endif
 
 	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleX;
@@ -138,7 +142,7 @@ private:
 	HRESULT CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
 #if DOVI_ENABLE
-	HRESULT SetShaderDoviCurvesLUT();
+	HRESULT SetShaderDoviCurves();
 #endif
 
 	void UpdateTexParams(int cdepth);

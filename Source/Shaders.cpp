@@ -692,7 +692,13 @@ HRESULT GetShaderConvertColor(
 			"float3 cm_c : register(c3);\n"
 		);
 		if (pDoviMetadata) {
-			code.append("sampler texDoViCurveLUT : register(s3);\n");
+			code.append(
+				"struct PS_DOVI_CURVE {\n"
+				"float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
+				"float4 coeffs_data[8];\n"
+				"};\n"
+				"PS_DOVI_CURVE curves[3] : register(c4);\n"
+			);
 		}
 	}
 
@@ -706,15 +712,24 @@ HRESULT GetShaderConvertColor(
 			code.append(
 				"// dovi reshape\n"
 				"float3 sig = saturate(color.rgb);\n"
-				"float s = sig[0];\n"
-				"s = tex2D(texDoViCurveLUT, float2(s, 0.1)).r;\n"
-				"color[0] = saturate(s);\n"
-				"s = sig[1];\n"
-				"s = tex2D(texDoViCurveLUT, float2(s, 0.5)).r;\n"
-				"color[1] = saturate(s);\n"
-				"s = sig[2];\n"
-				"s = tex2D(texDoViCurveLUT, float2(s, 0.9)).r;\n"
-				"color[2] = saturate(s);\n"
+				"[unroll(3)]\n"
+				"for (uint c = 0; c < 3; c++) {\n"
+				"    float s = sig[c];\n"
+				"    #define test(i) (s >= curves[c].pivots_data[i]) ? 1.0 : 0.0\n"
+				"    #define coef(i) curves[c].coeffs_data[i]\n"
+				"    float4 coeffs =\n"
+				"        lerp(lerp(lerp(coef(0), coef(1), test(0)),\n"
+				"                  lerp(coef(2), coef(3), test(2)),\n"
+				"                  test(1)),\n"
+				"             lerp(lerp(coef(4), coef(5), test(4)),\n"
+				"                  lerp(coef(6), coef(7), test(6)),\n"
+				"                  test(5)),\n"
+				"             test(3));\n"
+				"    #undef test\n"
+				"    #undef coef\n"
+				"    s = (coeffs.z * s + coeffs.y) * s + coeffs.x;\n"
+				"    color[c] = saturate(s);\n"
+				"}\n"
 			);
 		}
 	}
