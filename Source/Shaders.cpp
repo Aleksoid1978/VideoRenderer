@@ -578,9 +578,10 @@ HRESULT GetShaderConvertColor(
 
 	const bool bBT2020Primaries = (exFmt.VideoPrimaries == MFVideoPrimaries_BT2020);
 	const bool bConvertHDRtoSDR = (convertType == SHADER_CONVERT_TO_SDR && (exFmt.VideoTransferFunction == MFVideoTransFunc_2084 || exFmt.VideoTransferFunction == MFVideoTransFunc_HLG || pDoviMetadata));
-	const bool bConvertHLGtoPQ = (convertType == SHADER_CONVERT_TO_PQ && exFmt.VideoTransferFunction == MFVideoTransFunc_HLG && !pDoviMetadata);
+	const bool bApplyHLG = (exFmt.VideoTransferFunction == MFVideoTransFunc_HLG && !pDoviMetadata);
+	const bool bConvertHLGtoPQ = (convertType == SHADER_CONVERT_TO_PQ && bApplyHLG);
 
-	if (exFmt.VideoTransferFunction == MFVideoTransFunc_HLG && !pDoviMetadata) {
+	if (bApplyHLG) {
 		hr = GetDataFromResource(data, size, IDF_HLSL_HLG);
 		if (S_OK == hr) {
 			code.append((LPCSTR)data, size);
@@ -788,7 +789,7 @@ HRESULT GetShaderConvertColor(
 	}
 
 	if (bConvertHDRtoSDR) {
-		if (exFmt.VideoTransferFunction == MFVideoTransFunc_HLG && !pDoviMetadata) {
+		if (bApplyHLG) {
 			code.append(
 				"color = saturate(color);\n"
 				"color.rgb = HLGtoLinear(color.rgb);\n"
