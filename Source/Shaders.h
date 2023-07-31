@@ -29,6 +29,11 @@ struct PS_COLOR_TRANSFORM {
 	DirectX::XMFLOAT4 cm_c;
 };
 
+struct PS_DOVI_POLY_CURVE {
+	DirectX::XMFLOAT4 pivots_data[7];
+	DirectX::XMFLOAT4 coeffs_data[8];
+};
+
 enum :int {
 	SHADER_CONVERT_NONE = 0,
 	SHADER_CONVERT_TO_SDR,

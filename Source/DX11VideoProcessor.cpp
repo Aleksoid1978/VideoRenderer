@@ -861,6 +861,71 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 }
 
 #if DOVI_ENABLE
+HRESULT CDX11VideoProcessor::SetShaderDoviCurvesPoly()
+{
+	ASSERT(m_Dovi.bValid);
+
+	PS_DOVI_POLY_CURVE polyCurves[3] = {};
+
+	const float scale = 1.0f / ((1 << m_Dovi.msd.Header.bl_bit_depth) - 1);
+	const float scale_coef = 1.0f / (1u << m_Dovi.msd.Header.coef_log2_denom);
+
+	for (int c = 0; c < 3; c++) {
+		const auto& curve = m_Dovi.msd.Mapping.curves[c];
+		auto& out = polyCurves[c];
+
+		const int num_coef = curve.num_pivots - 1;
+		bool has_poly = false;
+		bool has_mmr = false;
+
+		for (int i = 0; i < num_coef; i++) {
+			switch (curve.mapping_idc[i]) {
+			case 0: // polynomial
+				has_poly = true;
+				out.coeffs_data[i].x = (0 <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][0] : 0.0f;
+				out.coeffs_data[i].y = (1 <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][1] : 0.0f;
+				out.coeffs_data[i].z = (2 <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][2] : 0.0f;
+				out.coeffs_data[i].w = 0.0f; // order=0 signals polynomial
+				break;
+			case 1: // mmr
+				has_mmr = true;
+				// not supported, leave as is
+				out.coeffs_data[i].x = 0.0f;
+				out.coeffs_data[i].y = 1.0f;
+				out.coeffs_data[i].z = 0.0f;
+				out.coeffs_data[i].w = 0.0f;
+				break;
+			}
+		}
+
+		const int n = curve.num_pivots - 2;
+		for (int i = 0; i < n; i++) {
+			out.pivots_data[i].x = scale * curve.pivots[i + 1];
+		}
+		for (int i = n; i < 7; i++) {
+			out.pivots_data[i].x = 1e9f;
+		}
+	}
+
+	HRESULT hr;
+
+	if (m_pDoviCurvesConstantBuffer) {
+		D3D11_MAPPED_SUBRESOURCE mr;
+		hr = m_pDeviceContext->Map(m_pDoviCurvesConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mr);
+		if (SUCCEEDED(hr)) {
+			memcpy(mr.pData, &polyCurves, sizeof(polyCurves));
+			m_pDeviceContext->Unmap(m_pDoviCurvesConstantBuffer, 0);
+		}
+	}
+	else {
+		D3D11_BUFFER_DESC BufferDesc = { sizeof(polyCurves), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
+		D3D11_SUBRESOURCE_DATA InitData = { &polyCurves, 0, 0 };
+		hr = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pDoviCurvesConstantBuffer);
+	}
+
+	return hr;
+}
+
 HRESULT CDX11VideoProcessor::SetShaderDoviCurves()
 {
 	ASSERT(m_Dovi.bValid);
@@ -2036,6 +2101,24 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 						sizeof(MediaSideDataDOVIMetadata::Mapping.curves)
 					) != 0);
 
+				bool bMMRChanged = false;
+				if (bMappingCurvesChanged) {
+					bool has_mmr = false;
+					for (const auto& curve : pDOVIMetadata->Mapping.curves) {
+						for (uint8_t i = 0; i < (curve.num_pivots - 1); i++) {
+							if (curve.mapping_idc[i] == 1) {
+								has_mmr = true;
+								break;
+							}
+						}
+					}
+					if (m_Dovi.bHasMMR != has_mmr) {
+						m_Dovi.bHasMMR = has_mmr;
+						m_pDoviCurvesConstantBuffer.Release();
+						bMMRChanged = true;
+					}
+				}
+
 				memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
 				m_Dovi.bValid = true;
 
@@ -2049,12 +2132,17 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					DLog(L"CDX11VideoProcessor::CopySample() : DoVi ycc_to_rgb_matrix is changed");
 					SetShaderConvertColorParams();
 				}
-				if (bRGBtoLMSChanged) {
-					DLog(L"CDX11VideoProcessor::CopySample() : DoVi rgb_to_lms_matrix is changed");
+				if (bRGBtoLMSChanged || bMMRChanged) {
+					DLogIf(bRGBtoLMSChanged, L"CDX11VideoProcessor::CopySample() : DoVi rgb_to_lms_matrix is changed");
+					DLogIf(bMMRChanged, L"CDX11VideoProcessor::CopySample() : DoVi has_mmr is changed");
 					UpdateConvertColorShader();
 				}
 				if (bMappingCurvesChanged) {
-					hr = SetShaderDoviCurves();
+					if (m_Dovi.bHasMMR) {
+						hr = SetShaderDoviCurves();
+					} else {
+						hr = SetShaderDoviCurvesPoly();
+					}
 				}
 
 				if (m_bHdrPassthrough && m_bHdrPassthroughSupport && !SourceIsHDR() && !m_pDXGISwapChain4) {

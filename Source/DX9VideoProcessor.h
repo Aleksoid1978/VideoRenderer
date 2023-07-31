@@ -29,11 +29,6 @@
 #include "VideoProcessor.h"
 #include "Shaders.h"
 
-struct PS_DOVI_POLY_CURVE {
-	DirectX::XMFLOAT4 pivots_data[7];
-	DirectX::XMFLOAT4 coeffs_data[8];
-};
-
 class CDX9VideoProcessor
 	: public CVideoProcessor
 {
@@ -142,7 +137,7 @@ private:
 	HRESULT CreatePShaderFromResource(IDirect3DPixelShader9** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
 #if DOVI_ENABLE
-	HRESULT SetShaderDoviCurves();
+	HRESULT SetShaderDoviCurvesPoly();
 #endif
 
 	void UpdateTexParams(int cdepth);

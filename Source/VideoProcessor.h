@@ -104,6 +104,7 @@ protected:
 	struct DOVIMetadata {
 		MediaSideDataDOVIMetadata msd = {};
 		bool bValid = false;
+		bool bHasMMR = false;
 	} m_Dovi;
 
 	bool CheckDoviMetadata(const MediaSideDataDOVIMetadata* pDOVIMetadata, const uint8_t maxReshapeMethon);

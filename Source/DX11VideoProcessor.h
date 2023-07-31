@@ -196,6 +196,7 @@ private:
 	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
 #if DOVI_ENABLE
+	HRESULT SetShaderDoviCurvesPoly();
 	HRESULT SetShaderDoviCurves();
 #endif
 

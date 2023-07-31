@@ -912,13 +912,11 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 }
 
 #if DOVI_ENABLE
-HRESULT CDX9VideoProcessor::SetShaderDoviCurves()
+HRESULT CDX9VideoProcessor::SetShaderDoviCurvesPoly()
 {
 	ASSERT(m_Dovi.bValid);
-	ASSERT(m_Dovi.msd.Header.bl_bit_depth && m_Dovi.msd.Header.bl_bit_depth <= 10);
 
-	const UINT lutSize = 1u << m_Dovi.msd.Header.bl_bit_depth;
-	const float scale = 1.0f / (lutSize - 1);
+	const float scale = 1.0f / ((1 << m_Dovi.msd.Header.bl_bit_depth) - 1);
 	const float scale_coef = 1.0f / (1u << m_Dovi.msd.Header.coef_log2_denom);
 
 	for (UINT c = 0; c < 3; c++) {
@@ -949,7 +947,6 @@ HRESULT CDX9VideoProcessor::SetShaderDoviCurves()
 			}
 		}
 
-		const float scale = 1.0f / ((1 << m_Dovi.msd.Header.bl_bit_depth) - 1);
 		const int n = curve.num_pivots - 2;
 		for (int i = 0; i < n; i++) {
 			out.pivots_data[i].x = scale * curve.pivots[i + 1];
@@ -1421,7 +1418,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 					UpdateConvertColorShader();
 				}
 				if (bMappingCurvesChanged) {
-					hr = SetShaderDoviCurves();
+					hr = SetShaderDoviCurvesPoly();
 				}
 			}
 		}
