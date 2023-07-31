@@ -630,7 +630,7 @@ HRESULT GetShaderConvertColor(
 	code += std::format("static const float2 dxdy2 = {{2.0/{}, 2.0/{}}};\n", texW, texH);
 
 	bool has_mmr = false;
-	if (pDoviMetadata) {
+	if (pDoviMetadata && bDX11) {
 		for (const auto& curve : pDoviMetadata->Mapping.curves) {
 			for (uint8_t i = 0; i < (curve.num_pivots - 1); i++) {
 				if (curve.mapping_idc[i] == 1) {
