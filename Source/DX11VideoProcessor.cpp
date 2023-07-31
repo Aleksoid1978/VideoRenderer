@@ -861,7 +861,7 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 }
 
 #if DOVI_ENABLE
-HRESULT CDX11VideoProcessor::SetShaderDoviCurvesParams()
+HRESULT CDX11VideoProcessor::SetShaderDoviCurves()
 {
 	ASSERT(m_Dovi.bValid);
 
@@ -2015,7 +2015,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		if (m_srcParams.CSType == CS_YUV && m_srcExFmt.VideoTransferFunction != MFVideoTransFunc_HLG) {
 			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
 			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
-			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && CheckValidDoviMetadata(pDOVIMetadata, 1)) {
+			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && CheckDoviMetadata(pDOVIMetadata, 1)) {
 
 				const bool bYCCtoRGBChanged = !m_PSConvColorData.bEnable ||
 					(memcmp(
@@ -2054,7 +2054,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					UpdateConvertColorShader();
 				}
 				if (bMappingCurvesChanged) {
-					hr = SetShaderDoviCurvesParams();
+					hr = SetShaderDoviCurves();
 				}
 
 				if (m_bHdrPassthrough && m_bHdrPassthroughSupport && !SourceIsHDR() && !m_pDXGISwapChain4) {

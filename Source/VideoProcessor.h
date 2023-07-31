@@ -24,7 +24,7 @@
 #include "DisplayConfig.h"
 #include "FrameStats.h"
 
-#define DOVI_ENABLE 0
+#define DOVI_ENABLE 1
 
 enum : int {
 	VP_DX9 = 9,
@@ -106,7 +106,7 @@ protected:
 		bool bValid = false;
 	} m_Dovi;
 
-	bool CheckValidDoviMetadata(const MediaSideDataDOVIMetadata* pDOVIMetadata, const uint8_t mmr_supported);
+	bool CheckDoviMetadata(const MediaSideDataDOVIMetadata* pDOVIMetadata, const uint8_t maxReshapeMethon);
 #endif
 
 	HWND m_hWnd = nullptr;

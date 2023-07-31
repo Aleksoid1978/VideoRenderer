@@ -189,7 +189,7 @@ void CVideoProcessor::UpdateStatsInputFmt()
 }
 
 #if DOVI_ENABLE
-bool CVideoProcessor::CheckValidDoviMetadata(const MediaSideDataDOVIMetadata* pDOVIMetadata, const uint8_t mmr_supported)
+bool CVideoProcessor::CheckDoviMetadata(const MediaSideDataDOVIMetadata* pDOVIMetadata, const uint8_t maxReshapeMethon)
 {
 	if (!pDOVIMetadata->Header.disable_residual_flag) {
 		return false;
@@ -200,7 +200,7 @@ bool CVideoProcessor::CheckValidDoviMetadata(const MediaSideDataDOVIMetadata* pD
 			return false;
 		}
 		for (int i = 0; i < int(curve.num_pivots - 1); i++) {
-			if (curve.mapping_idc[i] > mmr_supported) { // 0 polynomial, 1 mmr
+			if (curve.mapping_idc[i] > maxReshapeMethon) { // 0 polynomial, 1 mmr
 				return false;
 			}
 		}

@@ -1379,7 +1379,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		if (m_srcParams.CSType == CS_YUV && m_srcExFmt.VideoTransferFunction != MFVideoTransFunc_HLG) {
 			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
 			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
-			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && CheckValidDoviMetadata(pDOVIMetadata, 0)) {
+			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && CheckDoviMetadata(pDOVIMetadata, 0)) {
 
 				const bool bYCCtoRGBChanged = !m_PSConvColorData.bEnable ||
 					(memcmp(

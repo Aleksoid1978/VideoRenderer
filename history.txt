@@ -1,6 +1,7 @@
 0.6.8.x dev
 ------------------------
-
+Added partial support for Dolby Vision.
+Recommended version of MPC-BE 1.6.8.18 or later.
 
 0.6.7.2013 - 2023-03-29
 ------------------------
