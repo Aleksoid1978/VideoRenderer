@@ -3745,6 +3745,9 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 #if DOVI_ENABLE
 	if (m_Dovi.bValid) {
 		str.append(L", MetaData: DolbyVision");
+		if (m_Dovi.bHasMMR) {
+			str.append(L"(MMR)");
+		}
 	}
 #endif
 	str.append(m_strStatsVProc);
