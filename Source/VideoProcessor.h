@@ -105,6 +105,8 @@ protected:
 		MediaSideDataDOVIMetadata msd = {};
 		bool bValid = false;
 	} m_Dovi;
+
+	bool CheckValidDoviMetadata(const MediaSideDataDOVIMetadata* pDOVIMetadata, const uint8_t mmr_supported);
 #endif
 
 	HWND m_hWnd = nullptr;

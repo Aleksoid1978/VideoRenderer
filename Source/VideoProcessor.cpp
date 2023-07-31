@@ -188,6 +188,28 @@ void CVideoProcessor::UpdateStatsInputFmt()
 	}
 }
 
+#if DOVI_ENABLE
+bool CVideoProcessor::CheckValidDoviMetadata(const MediaSideDataDOVIMetadata* pDOVIMetadata, const uint8_t mmr_supported)
+{
+	if (!pDOVIMetadata->Header.disable_residual_flag) {
+		return false;
+	}
+
+	for (const auto& curve : pDOVIMetadata->Mapping.curves) {
+		if (curve.num_pivots < 2 || curve.num_pivots > 9) {
+			return false;
+		}
+		for (int i = 0; i < int(curve.num_pivots - 1); i++) {
+			if (curve.mapping_idc[i] > mmr_supported) { // 0 polynomial, 1 mmr
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+#endif
+
 // IUnknown
 
 STDMETHODIMP CVideoProcessor::QueryInterface(REFIID riid, void **ppv)

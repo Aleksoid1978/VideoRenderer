@@ -915,19 +915,8 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 HRESULT CDX9VideoProcessor::SetShaderDoviCurves()
 {
 	ASSERT(m_Dovi.bValid);
-
-	for (const auto& curve : m_Dovi.msd.Mapping.curves) {
-		if (curve.num_pivots < 2 || curve.num_pivots > 9) {
-			return E_INVALIDARG;
-		}
-		for (int i = 0; i < int(curve.num_pivots - 1); i++) {
-			if (curve.mapping_idc[i] > 1) { // 0 polynomial, 1 mmr
-				return E_INVALIDARG;
-			}
-		}
-	}
-
 	ASSERT(m_Dovi.msd.Header.bl_bit_depth && m_Dovi.msd.Header.bl_bit_depth <= 10);
+
 	const UINT lutSize = 1u << m_Dovi.msd.Header.bl_bit_depth;
 	const float scale = 1.0f / (lutSize - 1);
 	const float scale_coef = 1.0f / (1u << m_Dovi.msd.Header.coef_log2_denom);
@@ -951,7 +940,7 @@ HRESULT CDX9VideoProcessor::SetShaderDoviCurves()
 				break;
 			case 1: // mmr
 				has_mmr = true;
-				//not supported, leave as is
+				// not supported, leave as is
 				out.coeffs_data[i].x = 0.0f;
 				out.coeffs_data[i].y = 1.0f;
 				out.coeffs_data[i].z = 0.0f;
@@ -1387,12 +1376,10 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 
 #if DOVI_ENABLE
-		m_Dovi.bValid = false;
-
 		if (m_srcParams.CSType == CS_YUV && m_srcExFmt.VideoTransferFunction != MFVideoTransFunc_HLG) {
 			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
 			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
-			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && pDOVIMetadata->Header.disable_residual_flag) {
+			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && CheckValidDoviMetadata(pDOVIMetadata, 0)) {
 
 				const bool bYCCtoRGBChanged = !m_PSConvColorData.bEnable ||
 					(memcmp(
