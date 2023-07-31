@@ -1373,7 +1373,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 
 #if DOVI_ENABLE
-		if (m_srcParams.CSType == CS_YUV && m_srcExFmt.VideoTransferFunction != MFVideoTransFunc_HLG) {
+		if (m_srcParams.CSType == CS_YUV) {
 			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
 			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
 			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && CheckDoviMetadata(pDOVIMetadata, 0)) {
