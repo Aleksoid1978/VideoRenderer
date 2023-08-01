@@ -621,8 +621,6 @@ HRESULT GetShaderConvertColor(
 	code += std::format("static const float2 wh = {{{}, {}}};\n", fix422 ? width : texW, texH);
 	code += std::format("static const float2 dxdy2 = {{2.0/{}, 2.0/{}}};\n", texW, texH);
 
-	bool has_mmr = false;
-
 	if (bDX11) {
 		code.append(
 			"cbuffer PS_COLOR_TRANSFORM : register(b0) {\n"
@@ -632,7 +630,20 @@ HRESULT GetShaderConvertColor(
 			"float3 cm_c;\n"
 			"};\n"
 		);
-		if (pDoviMetadata) {
+	}
+	else {
+		code.append(
+			"float3 cm_r : register(c0);\n"
+			"float3 cm_g : register(c1);\n"
+			"float3 cm_b : register(c2);\n"
+			"float3 cm_c : register(c3);\n"
+		);
+	}
+
+	bool has_mmr = false;
+
+	if (pDoviMetadata) {
+		if (bDX11) {
 			for (const auto& curve : pDoviMetadata->Mapping.curves) {
 				for (uint8_t i = 0; i < (curve.num_pivots - 1); i++) {
 					if (curve.mapping_idc[i] == 1) {
@@ -705,15 +716,7 @@ HRESULT GetShaderConvertColor(
 				);
 			}
 		}
-	}
-	else {
-		code.append(
-			"float3 cm_r : register(c0);\n"
-			"float3 cm_g : register(c1);\n"
-			"float3 cm_b : register(c2);\n"
-			"float3 cm_c : register(c3);\n"
-		);
-		if (pDoviMetadata) {
+		else {
 			code.append(
 				"struct PS_DOVI_POLY_CURVE {\n"
 				"    float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
