@@ -34,6 +34,23 @@ struct PS_DOVI_POLY_CURVE {
 	DirectX::XMFLOAT4 coeffs_data[8];
 };
 
+#define PS_RESHAPE_POLY 1
+#define PS_RESHAPE_MMR  2
+
+struct PS_DOVI_CURVE {
+	DirectX::XMFLOAT4 pivots_data[7];
+	DirectX::XMFLOAT4 coeffs_data[8];
+	DirectX::XMFLOAT4 mmr_data[8 * 6];
+	struct {
+		uint32_t methods;
+		uint32_t mmr_single;
+		uint32_t min_order;
+		uint32_t max_order;
+	} params;
+};
+
+static_assert(sizeof(PS_DOVI_CURVE) % 16 == 0);
+
 enum :int {
 	SHADER_CONVERT_NONE = 0,
 	SHADER_CONVERT_TO_SDR,

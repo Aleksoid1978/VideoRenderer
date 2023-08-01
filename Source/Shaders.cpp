@@ -529,18 +529,18 @@ void ShaderDoviReshape(std::string& code)
 		"                       : (test(6) ? coef(6) : coef(7)));\n"
 		"        #undef test\n"
 		"        #undef coef\n"
-		"        if (curves[c].params.has_poly && curves[c].params.has_mmr) {\n"
+		"        if (curves[c].params.methods == PS_RESHAPE_POLY + PS_RESHAPE_MMR) {\n"
 		"            if (coeffs[3] == 0.0) {\n"
 		"                // reshape_poly\n"
 		"                s = (coeffs.z * s + coeffs.y) * s + coeffs.x;\n"
 		"            } else {\n"
-		"                s = reshape_mmr(coeffs, sig, c, curves[c].mmr_flags.mmr_single, curves[c].mmr_flags.min_order, curves[c].mmr_flags.max_order);\n"
+		"                s = reshape_mmr(coeffs, sig, c, curves[c].params.mmr_single, curves[c].params.min_order, curves[c].params.max_order);\n"
 		"            }\n"
-		"        } else if (curves[c].params.has_poly) {\n"
+		"        } else if (curves[c].params.methods == PS_RESHAPE_POLY) {\n"
 		"            // reshape_poly\n"
 		"            s = (coeffs.z * s + coeffs.y) * s + coeffs.x;\n"
 		"        } else {\n"
-		"            s = reshape_mmr(coeffs, sig, c, curves[c].mmr_flags.mmr_single, curves[c].mmr_flags.min_order, curves[c].mmr_flags.max_order);\n"
+		"            s = reshape_mmr(coeffs, sig, c, curves[c].params.mmr_single, curves[c].params.min_order, curves[c].params.max_order);\n"
 		"        }\n"
 		"        color[c] = saturate(s);\n"
 		"    }\n"
@@ -644,24 +644,18 @@ HRESULT GetShaderConvertColor(
 
 			if (has_mmr) {
 				code.append(
-					"struct dovi_params {\n"
-					"    uint num_pivots;\n"
-					"    uint has_poly;\n"
-					"    uint has_mmr;\n"
-					"    uint padding;\n"
-					"};\n"
-					"struct mmr_flags {\n"
-					"    uint mmr_single;\n"
-					"    uint min_order;\n"
-					"    uint max_order;\n"
-					"    uint padding;\n"
-					"};\n"
+					"#define PS_RESHAPE_POLY 1\n"
+					"#define PS_RESHAPE_MMR  2\n"
 					"struct PS_DOVI_CURVE {\n"
 					"    float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
 					"    float4 coeffs_data[8];\n"
 					"    float4 mmr_data[8 * 6];\n"
-					"    dovi_params params;\n"
-					"    mmr_flags mmr_flags;\n"
+					"    struct {\n"
+					"        uint methods;\n"
+					"        uint mmr_single;\n"
+					"        uint min_order;\n"
+					"        uint max_order;\n"
+					"    } params;\n"
 					"};\n"
 					"cbuffer PS_DOVI_CURVES : register(b1) {\n"
 					"    PS_DOVI_CURVE curves[3];\n"
@@ -701,12 +695,12 @@ HRESULT GetShaderConvertColor(
 			}
 			else {
 				code.append(
-					"struct PS_DOVI_CURVE {\n"
+					"struct PS_DOVI_POLY_CURVE {\n"
 					"    float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
 					"    float4 coeffs_data[8];\n"
 					"};\n"
-					"cbuffer PS_DOVI_CURVES : register(b1) {\n"
-					"    PS_DOVI_CURVE curves[3];\n"
+					"cbuffer PS_DOVI_POLY_CURVES : register(b1) {\n"
+					"    PS_DOVI_POLY_CURVE curves[3];\n"
 					"};\n"
 				);
 			}
@@ -721,11 +715,11 @@ HRESULT GetShaderConvertColor(
 		);
 		if (pDoviMetadata) {
 			code.append(
-				"struct PS_DOVI_CURVE {\n"
+				"struct PS_DOVI_POLY_CURVE {\n"
 				"    float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
 				"    float4 coeffs_data[8];\n"
 				"};\n"
-				"PS_DOVI_CURVE curves[3] : register(c4);\n"
+				"PS_DOVI_POLY_CURVE curves[3] : register(c4);\n"
 			);
 		}
 	}

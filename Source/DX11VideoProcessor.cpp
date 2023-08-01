@@ -114,33 +114,6 @@ struct VERTEX {
 	DirectX::XMFLOAT2 TexCoord;
 };
 
-struct dovi_params {
-	uint32_t num_pivots;
-	uint32_t has_poly;
-	uint32_t has_mmr;
-	uint32_t padding;
-};
-struct mmr_flags {
-	uint32_t mmr_single;
-	uint32_t min_order;
-	uint32_t max_order;
-	uint32_t padding;
-};
-
-struct PS_DOVI_CURVE {
-	DirectX::XMFLOAT4 pivots_data[7];
-	DirectX::XMFLOAT4 coeffs_data[8];
-	DirectX::XMFLOAT4 mmr_data[8 * 6];
-	dovi_params params;
-	mmr_flags mmr_flags;
-};
-
-static_assert(sizeof(PS_DOVI_CURVE) % 16 == 0);
-
-struct PS_DOVI_CURVES {
-	PS_DOVI_CURVE curves[3];
-};
-
 struct PS_EXTSHADER_CONSTANTS {
 	DirectX::XMFLOAT2 pxy; // pixel size in normalized coordinates
 	DirectX::XMFLOAT2 wh;  // width and height of texture
@@ -930,11 +903,11 @@ HRESULT CDX11VideoProcessor::SetShaderDoviCurves()
 {
 	ASSERT(m_Dovi.bValid);
 
-	PS_DOVI_CURVES cbuffer = {};
+	PS_DOVI_CURVE cbuffer[3] = {};
 
 	for (int c = 0; c < 3; c++) {
 		const auto& curve = m_Dovi.msd.Mapping.curves[c];
-		auto& out = cbuffer.curves[c];
+		auto& out = cbuffer[c];
 
 		bool has_poly = false, has_mmr = false, mmr_single = true;
 		uint32_t mmr_idx = 0, min_order = 3, max_order = 1;
@@ -984,14 +957,14 @@ HRESULT CDX11VideoProcessor::SetShaderDoviCurves()
 			out.pivots_data[i].x = 1e9f;
 		}
 
-		out.params.num_pivots = curve.num_pivots;
-		out.params.has_poly = has_poly;
-		out.params.has_mmr = has_mmr;
-
+		if (has_poly) {
+			out.params.methods = PS_RESHAPE_POLY;
+		}
 		if (has_mmr) {
-			out.mmr_flags.mmr_single = mmr_single;
-			out.mmr_flags.min_order = min_order;
-			out.mmr_flags.max_order = max_order;
+			out.params.methods |= PS_RESHAPE_MMR;
+			out.params.mmr_single = mmr_single;
+			out.params.min_order = min_order;
+			out.params.max_order = max_order;
 		}
 	}
 
