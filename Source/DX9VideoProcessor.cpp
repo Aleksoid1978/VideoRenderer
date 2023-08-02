@@ -1126,6 +1126,11 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	case CF_YUY2: disableDXVA2 = !m_VPFormats.bYUY2;  break;
 	default:      disableDXVA2 = !m_VPFormats.bOther; break;
 	}
+#if DOVI_ENABLE
+	if (m_Dovi.bValid) {
+		disableDXVA2 = true;
+	}
+#endif
 	if (disableDXVA2) {
 		FmtParams.DXVA2Format = D3DFMT_UNKNOWN;
 	}
@@ -1401,12 +1406,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				m_Dovi.bValid = true;
 
 				if (m_DXVA2VP.IsReady()) {
-					// TODO: make the VP created only after the first frame
-					m_DXVA2VP.ReleaseVideoService();
-					hr = InitializeTexVP(m_srcParams, m_srcWidth, m_srcHeight);
-					if (SUCCEEDED(hr)) {
-						UpdateTexures();
-					}
+					InitMediaType(&m_pFilter->m_inputMT);
 				}
 
 				if (bYCCtoRGBChanged) {
