@@ -643,67 +643,78 @@ HRESULT GetShaderConvertColor(
 	bool has_mmr = false;
 
 	if (pDoviMetadata) {
-		for (const auto& curve : pDoviMetadata->Mapping.curves) {
-			for (uint8_t i = 0; i < (curve.num_pivots - 1); i++) {
-				if (curve.mapping_idc[i] == 1) {
-					has_mmr = true;
-					break;
+		if (bDX11) {
+			for (const auto& curve : pDoviMetadata->Mapping.curves) {
+				for (uint8_t i = 0; i < (curve.num_pivots - 1); i++) {
+					if (curve.mapping_idc[i] == 1) {
+						has_mmr = true;
+						break;
+					}
 				}
 			}
-		}
 
-		if (has_mmr) {
-			code.append(
-				"#define PS_RESHAPE_POLY 1\n"
-				"#define PS_RESHAPE_MMR  2\n"
-				"struct PS_DOVI_CURVE {\n"
-				"    float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
-				"    float4 coeffs_data[8];\n"
-				"    float4 mmr_data[8 * 6];\n"
-				"    struct {\n"
-				"        uint methods;\n"
-				"        uint mmr_single;\n"
-				"        uint min_order;\n"
-				"        uint max_order;\n"
-				"    } params;\n"
-				"};\n"
-			);
-			if (bDX11) {
-				code.append("cbuffer PS_DOVI_CURVES : register(b1) {PS_DOVI_CURVE curves[3];};\n");
-			}else {
-				code.append("PS_DOVI_CURVE curves[3] : register(c4);\n");
+			if (has_mmr) {
+				code.append(
+					"#define PS_RESHAPE_POLY 1\n"
+					"#define PS_RESHAPE_MMR  2\n"
+					"struct PS_DOVI_CURVE {\n"
+					"    float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
+					"    float4 coeffs_data[8];\n"
+					"    float4 mmr_data[8 * 6];\n"
+					"    struct {\n"
+					"        uint methods;\n"
+					"        uint mmr_single;\n"
+					"        uint min_order;\n"
+					"        uint max_order;\n"
+					"    } params;\n"
+					"};\n"
+					"cbuffer PS_DOVI_CURVES : register(b1) {\n"
+					"    PS_DOVI_CURVE curves[3];\n"
+					"};\n"
+				);
+				code.append(
+					"const float reshape_mmr(const float4 coeffs, const float3 sig, uint c,\n"
+					"                        const uint mmr_single, const uint min_order, const uint max_order) {\n"
+					"    uint mmr_idx = mmr_single ? 0u : uint(coeffs.y);\n"
+					"    float s = coeffs.x;\n"
+					"    float4 sigX = float4(0.0, 0.0, 0.0, 0.0);\n"
+					"    sigX.xyz = sig.xxy * sig.yzz;\n"
+					"    sigX[3] = sigX.x * sig.z;\n"
+					"    sigX = float4(sigX.xyz, sigX.x * sig.z);\n"
+					"    s += dot(curves[c].mmr_data[mmr_idx + 0].xyz, sig);\n"
+					"    s += dot(curves[c].mmr_data[mmr_idx + 1], sigX);\n"
+					"    if (max_order >= 2) {\n"
+					"        uint order = uint(coeffs[3]);\n"
+					"        if (min_order < 2 && order < 2) {\n"
+					"            return s;\n"
+					"        }\n"
+					"        float3 sig2 = sig * sig;\n"
+					"        float4 sigX2 = sigX * sigX;\n"
+					"        s += dot(curves[c].mmr_data[mmr_idx + 2].xyz, sig2);\n"
+					"        s += dot(curves[c].mmr_data[mmr_idx + 3], sigX2);\n"
+					"        if (max_order == 3) {\n"
+					"            if (min_order < 3 && order < 3) {\n"
+					"                return s;\n"
+					"            }\n"
+					"            s += dot(curves[c].mmr_data[mmr_idx + 4].xyz, sig2 * sig);\n"
+					"            s += dot(curves[c].mmr_data[mmr_idx + 5], sigX2 * sigX);\n"
+					"        }\n"
+					"    }"
+					"    return s;\n"
+					"}\n"
+				);
 			}
-			code.append(
-				"const float reshape_mmr(const float4 coeffs, const float3 sig, uint c,\n"
-				"                        const uint mmr_single, const uint min_order, const uint max_order) {\n"
-				"    uint mmr_idx = mmr_single ? 0u : uint(coeffs.y);\n"
-				"    float s = coeffs.x;\n"
-				"    float4 sigX = float4(0.0, 0.0, 0.0, 0.0);\n"
-				"    sigX.xyz = sig.xxy * sig.yzz;\n"
-				"    sigX[3] = sigX.x * sig.z;\n"
-				"    sigX = float4(sigX.xyz, sigX.x * sig.z);\n"
-				"    s += dot(curves[c].mmr_data[mmr_idx + 0].xyz, sig);\n"
-				"    s += dot(curves[c].mmr_data[mmr_idx + 1], sigX);\n"
-				"    if (max_order >= 2) {\n"
-				"        uint order = uint(coeffs[3]);\n"
-				"        if (min_order < 2 && order < 2) {\n"
-				"            return s;\n"
-				"        }\n"
-				"        float3 sig2 = sig * sig;\n"
-				"        float4 sigX2 = sigX * sigX;\n"
-				"        s += dot(curves[c].mmr_data[mmr_idx + 2].xyz, sig2);\n"
-				"        s += dot(curves[c].mmr_data[mmr_idx + 3], sigX2);\n"
-				"        if (max_order == 3) {\n"
-				"            if (min_order < 3 && order < 3) {\n"
-				"                return s;\n"
-				"            }\n"
-				"            s += dot(curves[c].mmr_data[mmr_idx + 4].xyz, sig2 * sig);\n"
-				"            s += dot(curves[c].mmr_data[mmr_idx + 5], sigX2 * sigX);\n"
-				"        }\n"
-				"    }"
-				"    return s;\n"
-				"}\n"
-			);
+			else {
+				code.append(
+					"struct PS_DOVI_POLY_CURVE {\n"
+					"    float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
+					"    float4 coeffs_data[8];\n"
+					"};\n"
+					"cbuffer PS_DOVI_POLY_CURVES : register(b1) {\n"
+					"    PS_DOVI_POLY_CURVE curves[3];\n"
+					"};\n"
+				);
+			}
 		}
 		else {
 			code.append(
@@ -711,12 +722,8 @@ HRESULT GetShaderConvertColor(
 				"    float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
 				"    float4 coeffs_data[8];\n"
 				"};\n"
+				"PS_DOVI_POLY_CURVE curves[3] : register(c4);\n"
 			);
-			if (bDX11) {
-				code.append("cbuffer PS_DOVI_POLY_CURVES : register(b1) {PS_DOVI_POLY_CURVE curves[3];};\n");
-			} else {
-				code.append("PS_DOVI_POLY_CURVE curves[3] : register(c4);\n");
-			}
 		}
 	}
 
