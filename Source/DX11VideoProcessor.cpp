@@ -2073,6 +2073,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 						&pDOVIMetadata->Mapping.curves,
 						sizeof(MediaSideDataDOVIMetadata::Mapping.curves)
 					) != 0);
+				const bool bMasteringLuminanceChanged = m_Dovi.msd.ColorMetadata.source_max_pq != pDOVIMetadata->ColorMetadata.source_max_pq
+					|| m_Dovi.msd.ColorMetadata.source_min_pq != pDOVIMetadata->ColorMetadata.source_min_pq;
 
 				bool bMMRChanged = false;
 				if (bMappingCurvesChanged) {
@@ -2094,6 +2096,28 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 				memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
 				m_Dovi.bValid = true;
+
+				if (bMasteringLuminanceChanged) {
+					// based on libplacebo source code
+					constexpr float
+						PQ_M1 = 2610.f / (4096.f * 4.f),
+						PQ_M2 = 2523.f / 4096.f * 128.f,
+						PQ_C1 = 3424.f / 4096.f,
+						PQ_C2 = 2413.f / 4096.f * 32.f,
+						PQ_C3 = 2392.f / 4096.f * 32.f;
+
+					auto pl_hdr_rescale = [](float x) {
+						x = powf(x, 1.0f / PQ_M2);
+						x = fmaxf(x - PQ_C1, 0.0f) / (PQ_C2 - PQ_C3 * x);
+						x = powf(x, 1.0f / PQ_M1);
+						x *= 10000.0f;
+
+						return x;
+					};
+
+					MaxMasteringLuminance = static_cast<UINT>(pl_hdr_rescale(m_Dovi.msd.ColorMetadata.source_max_pq / 4095.f) * 10000.0);
+					MinMasteringLuminance = static_cast<UINT>(pl_hdr_rescale(m_Dovi.msd.ColorMetadata.source_min_pq / 4095.f) * 10000.0);
+				}
 
 				if (m_D3D11VP.IsReady()) {
 					// TODO: make the VP created only after the first frame
@@ -2355,6 +2379,15 @@ HRESULT CDX11VideoProcessor::Render(int field)
 	m_RenderStats.paintticks = tick3 - tick1;
 
 	if (m_pDXGISwapChain4) {
+		if (m_hdr10.bValid) {
+			if (MaxMasteringLuminance > m_hdr10.hdr10.MaxMasteringLuminance) {
+				m_hdr10.hdr10.MaxMasteringLuminance = MaxMasteringLuminance;
+			}
+			if (MinMasteringLuminance && MinMasteringLuminance != m_hdr10.hdr10.MinMasteringLuminance) {
+				m_hdr10.hdr10.MinMasteringLuminance = MinMasteringLuminance;
+			}
+		}
+
 		const DXGI_COLOR_SPACE_TYPE colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
 		if (m_currentSwapChainColorSpace != colorSpace) {
 			if (m_hdr10.bValid) {
@@ -2377,8 +2410,8 @@ HRESULT CDX11VideoProcessor::Render(int field)
 				m_lastHdr10.hdr10.BluePrimary[1]  = 3000;
 				m_lastHdr10.hdr10.WhitePoint[0]   = 15635;
 				m_lastHdr10.hdr10.WhitePoint[1]   = 16450;
-				m_lastHdr10.hdr10.MaxMasteringLuminance = 1000 * 10000; // 1000 nits
-				m_lastHdr10.hdr10.MinMasteringLuminance = 50;           // 0.005 nits
+				m_lastHdr10.hdr10.MaxMasteringLuminance = MaxMasteringLuminance ? MaxMasteringLuminance : 1000 * 10000; // 1000 nits
+				m_lastHdr10.hdr10.MinMasteringLuminance = MinMasteringLuminance ? MinMasteringLuminance : 50;           // 0.005 nits
 				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_lastHdr10.hdr10);
 				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(Display P3 standard) failed with error {}", HR2Str(hr));
 
