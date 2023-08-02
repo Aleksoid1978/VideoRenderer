@@ -2019,6 +2019,11 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 		return;
 	}
 
+#if DOVI_ENABLE
+	if (m_Dovi.bValid) {
+		changeVP = false;
+	}
+#endif
 	if (changeVP) {
 		InitMediaType(&m_pFilter->m_inputMT);
 		return; // need some test

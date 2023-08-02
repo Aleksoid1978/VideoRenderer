@@ -1540,6 +1540,11 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	case CF_YUY2: disableD3D11VP = !m_VPFormats.bYUY2;  break;
 	default:      disableD3D11VP = !m_VPFormats.bOther; break;
 	}
+#if DOVI_ENABLE
+	if (m_Dovi.bValid) {
+		disableD3D11VP = true;
+	}
+#endif
 	if (disableD3D11VP) {
 		FmtParams.VP11Format = DXGI_FORMAT_UNKNOWN;
 	}
@@ -2120,9 +2125,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				}
 
 				if (m_D3D11VP.IsReady()) {
-					// TODO: make the VP created only after the first frame
-					m_D3D11VP.ReleaseVideoDevice();
-					hr = InitializeTexVP(m_srcParams, m_srcWidth, m_srcHeight);
+					InitMediaType(&m_pFilter->m_inputMT);
 				}
 
 				if (bYCCtoRGBChanged) {
@@ -3461,6 +3464,11 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		}
 	}
 
+#if DOVI_ENABLE
+	if (m_Dovi.bValid) {
+		changeVP = false;
+	}
+#endif
 	if (changeVP) {
 		InitMediaType(&m_pFilter->m_inputMT);
 		return; // need some test
