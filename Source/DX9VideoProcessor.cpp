@@ -1997,6 +1997,10 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 		changeWindow = !m_pFilter->m_bIsFullscreen;
 	}
 
+	if (config.bHdrPreferDoVi) {
+		m_bHdrPreferDoVi = config.bHdrPreferDoVi;
+	}
+
 	if (config.bConvertToSdr != m_bConvertToSdr) {
 		m_bConvertToSdr = config.bConvertToSdr;
 		if (SourceIsHDR()) {
