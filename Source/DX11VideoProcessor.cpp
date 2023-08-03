@@ -3355,6 +3355,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		changeTextures = true;
 		changeVP = true; // temporary solution
 	}
+
 	if (config.iChromaScaling != m_iChromaScaling) {
 		m_iChromaScaling = config.iChromaScaling;
 		changeConvertShader = m_PSConvColorData.bEnable && (m_srcParams.Subsampling == 420 || m_srcParams.Subsampling == 422);
@@ -3402,7 +3403,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 	if (config.bConvertToSdr != m_bConvertToSdr) {
 		m_bConvertToSdr = config.bConvertToSdr;
-		if (SourceIsHDR()) {
+		if (SourceIsHDR() || m_Dovi.bValid) {
 			if (m_D3D11VP.IsReady()) {
 				changeNumTextures = true;
 				changeVP = true; // temporary solution
