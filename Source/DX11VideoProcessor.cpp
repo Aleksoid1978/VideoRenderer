@@ -393,6 +393,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_bDeintBlend          = config.bDeintBlend;
 	m_iSwapEffect          = config.iSwapEffect;
 	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
+	m_bHdrPreferDoVi       = config.bHdrPreferDoVi;
 	m_bHdrPassthrough      = config.bHdrPassthrough;
 	m_iHdrToggleDisplay    = config.iHdrToggleDisplay;
 	m_iHdrOsdBrightness    = config.iHdrOsdBrightness;
@@ -2055,7 +2056,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 
 #if DOVI_ENABLE
-		if (m_srcParams.CSType == CS_YUV) {
+		if (m_srcParams.CSType == CS_YUV && (m_bHdrPreferDoVi || !SourceIsHDR())) {
 			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
 			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
 			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && CheckDoviMetadata(pDOVIMetadata, 1)) {

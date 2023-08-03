@@ -94,6 +94,7 @@ struct Settings_t {
 	bool bExclusiveFS;
 	bool bVBlankBeforePresent;
 	bool bReinitByDisplay;
+	bool bHdrPreferDoVi;
 	bool bHdrPassthrough;
 	int  iHdrToggleDisplay;
 	int  iHdrOsdBrightness;
@@ -129,6 +130,7 @@ struct Settings_t {
 		bExclusiveFS                    = false;
 		bVBlankBeforePresent            = false;
 		bReinitByDisplay                = false;
+		bHdrPreferDoVi                  = false;
 		if (IsWindows10OrGreater()) {
 			bHdrPassthrough             = true;
 			iHdrToggleDisplay           = HDRTD_Always;

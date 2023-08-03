@@ -52,6 +52,7 @@
 #define OPT_ExclusiveFullscreen            L"ExclusiveFullscreen"
 #define OPT_VBlankBeforePresent            L"VBlankBeforePresent"
 #define OPT_ReinitByDisplay                L"ReinitWhenChangingDisplay"
+#define OPT_HdrPreferDoVi                  L"HdrPreferDoVi"
 #define OPT_HdrPassthrough                 L"HdrPassthrough"
 #define OPT_HdrToggleDisplay               L"HdrToggleDisplay"
 #define OPT_HdrOsdBrightness               L"HdrOsdBrightness"
@@ -222,6 +223,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ReinitByDisplay, dw)) {
 			m_Sets.bReinitByDisplay = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrPreferDoVi, dw)) {
+			m_Sets.bHdrPreferDoVi = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrPassthrough, dw)) {
 			m_Sets.bHdrPassthrough = !!dw;
@@ -1195,6 +1199,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_ExclusiveFullscreen, m_Sets.bExclusiveFS);
 		key.SetDWORDValue(OPT_VBlankBeforePresent, m_Sets.bVBlankBeforePresent);
 		key.SetDWORDValue(OPT_ReinitByDisplay,     m_Sets.bReinitByDisplay);
+		key.SetDWORDValue(OPT_HdrPreferDoVi,       m_Sets.bHdrPreferDoVi);
 		key.SetDWORDValue(OPT_HdrPassthrough,      m_Sets.bHdrPassthrough);
 		key.SetDWORDValue(OPT_HdrToggleDisplay,    m_Sets.iHdrToggleDisplay);
 		key.SetDWORDValue(OPT_HdrOsdBrightness,    m_Sets.iHdrOsdBrightness);
