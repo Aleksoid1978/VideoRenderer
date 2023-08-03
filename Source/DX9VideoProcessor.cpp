@@ -858,7 +858,6 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 {
 	mp_cmat cmatrix;
 
-#if DOVI_ENABLE
 	if (m_Dovi.bValid) {
 		for (int i = 0; i < 3; i++) {
 			cmatrix.m[i][0] = (float)m_Dovi.msd.ColorMetadata.ycc_to_rgb_matrix[i * 3 + 0];
@@ -875,9 +874,7 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 
 		m_PSConvColorData.bEnable = true;
 	}
-	else
-#endif
-	{
+	else {
 		mp_csp_params csp_params;
 		set_colorspace(m_srcExFmt, csp_params.color);
 		csp_params.brightness = DXVA2FixedToFloat(m_DXVA2ProcAmpValues.Brightness) / 255;
@@ -912,7 +909,6 @@ void CDX9VideoProcessor::SetShaderConvertColorParams()
 	}
 }
 
-#if DOVI_ENABLE
 HRESULT CDX9VideoProcessor::SetShaderDoviCurvesPoly()
 {
 	ASSERT(m_Dovi.bValid);
@@ -959,7 +955,6 @@ HRESULT CDX9VideoProcessor::SetShaderDoviCurvesPoly()
 
 	return S_OK;
 }
-#endif
 
 void CDX9VideoProcessor::UpdateTexParams(int cdepth)
 {
@@ -1127,11 +1122,9 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	case CF_YUY2: disableDXVA2 = !m_VPFormats.bYUY2;  break;
 	default:      disableDXVA2 = !m_VPFormats.bOther; break;
 	}
-#if DOVI_ENABLE
 	if (m_Dovi.bValid) {
 		disableDXVA2 = true;
 	}
-#endif
 	if (disableDXVA2) {
 		FmtParams.DXVA2Format = D3DFMT_UNKNOWN;
 	}
@@ -1378,7 +1371,6 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 			m_nStereoSubtitlesOffsetInPixels = offset->offset[0];
 		}
 
-#if DOVI_ENABLE
 		if (m_srcParams.CSType == CS_YUV && (m_bHdrPreferDoVi || !SourceIsHDR())) {
 			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
 			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
@@ -1423,7 +1415,6 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				}
 			}
 		}
-#endif
 	}
 
 	if (CComQIPtr<IMFGetService> pService = pSample) {
@@ -2024,11 +2015,9 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 		return;
 	}
 
-#if DOVI_ENABLE
 	if (m_Dovi.bValid) {
 		changeVP = false;
 	}
-#endif
 	if (changeVP) {
 		InitMediaType(&m_pFilter->m_inputMT);
 		return; // need some test
@@ -2249,11 +2238,7 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 	if (m_TexSrcVideo.pTexture) {
 		int convertType = m_bConvertToSdr ? SHADER_CONVERT_TO_SDR : SHADER_CONVERT_NONE;
 
-		MediaSideDataDOVIMetadata* pDOVIMetadata =
-#if DOVI_ENABLE
-			m_Dovi.bValid ? &m_Dovi.msd :
-#endif
-			nullptr;
+		MediaSideDataDOVIMetadata* pDOVIMetadata = m_Dovi.bValid ? &m_Dovi.msd : nullptr;
 
 		ID3DBlob* pShaderCode = nullptr;
 		hr = GetShaderConvertColor(false,
@@ -2360,9 +2345,7 @@ HRESULT CDX9VideoProcessor::ConvertColorPass(IDirect3DSurface9* pRenderTarget)
 	HRESULT hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
 	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)&m_PSConvColorData.Constants, sizeof(m_PSConvColorData.Constants)/sizeof(float));
-#if DOVI_ENABLE
 	hr = m_pD3DDevEx->SetPixelShaderConstantF(4, (float*)&m_DoviReshapePolyCurves, sizeof(m_DoviReshapePolyCurves) / sizeof(float));
-#endif
 
 	if (m_bDeintBlend && m_CurrentSampleFmt != DXVA2_SampleProgressiveFrame && m_pPSConvertColorDeint) {
 		hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColorDeint);
@@ -3014,11 +2997,9 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	);
 
 	str.append(m_strStatsInputFmt);
-#if DOVI_ENABLE
 	if (m_Dovi.bValid) {
 		str.append(L", MetaData: DolbyVision");
 	}
-#endif
 	str.append(m_strStatsVProc);
 
 	const int dstW = m_videoRect.Width();

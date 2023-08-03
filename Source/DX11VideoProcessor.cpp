@@ -624,9 +624,7 @@ void CDX11VideoProcessor::ReleaseVP()
 	m_TexsPostScale.Release();
 
 	m_PSConvColorData.Release();
-#if DOVI_ENABLE
 	m_pDoviCurvesConstantBuffer.Release();
-#endif
 
 	m_D3D11VP.ReleaseVideoProcessor();
 	m_strCorrection = nullptr;
@@ -765,7 +763,6 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 {
 	mp_cmat cmatrix;
 
-#if DOVI_ENABLE
 	if (m_Dovi.bValid) {
 		for (int i = 0; i < 3; i++) {
 			cmatrix.m[i][0] = (float)m_Dovi.msd.ColorMetadata.ycc_to_rgb_matrix[i * 3 + 0];
@@ -782,9 +779,7 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 
 		m_PSConvColorData.bEnable = true;
 	}
-	else
-#endif
-	{
+	else {
 		mp_csp_params csp_params;
 		set_colorspace(m_srcExFmt, csp_params.color);
 		csp_params.brightness = DXVA2FixedToFloat(m_DXVA2ProcAmpValues.Brightness) / 255;
@@ -834,7 +829,6 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants));
 }
 
-#if DOVI_ENABLE
 HRESULT CDX11VideoProcessor::SetShaderDoviCurvesPoly()
 {
 	ASSERT(m_Dovi.bValid);
@@ -987,7 +981,6 @@ HRESULT CDX11VideoProcessor::SetShaderDoviCurves()
 
 	return hr;
 }
-#endif
 
 void CDX11VideoProcessor::UpdateTexParams(int cdepth)
 {
@@ -1321,11 +1314,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		}
 	}
 
-	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && (SourceIsHDR()
-#if DOVI_ENABLE
-																			  || m_Dovi.bValid
-#endif
-																			  );
+	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && (SourceIsHDR() || m_Dovi.bValid);
 	const auto b10BitOutput = bHdrOutput || Preferred10BitOutput();
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
@@ -1541,11 +1530,9 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	case CF_YUY2: disableD3D11VP = !m_VPFormats.bYUY2;  break;
 	default:      disableD3D11VP = !m_VPFormats.bOther; break;
 	}
-#if DOVI_ENABLE
 	if (m_Dovi.bValid) {
 		disableD3D11VP = true;
 	}
-#endif
 	if (disableD3D11VP) {
 		FmtParams.VP11Format = DXGI_FORMAT_UNKNOWN;
 	}
@@ -2055,7 +2042,6 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			m_nStereoSubtitlesOffsetInPixels = offset->offset[0];
 		}
 
-#if DOVI_ENABLE
 		if (m_srcParams.CSType == CS_YUV && (m_bHdrPreferDoVi || !SourceIsHDR())) {
 			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
 			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
@@ -2152,7 +2138,6 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				}
 			}
 		}
-#endif
 	}
 
 	if (CComQIPtr<IMediaSampleD3D11> pMSD3D11 = pSample) {
@@ -2595,11 +2580,7 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 		: (m_bHdrPassthroughSupport && m_bHdrPassthrough && m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG) ? SHADER_CONVERT_TO_PQ
 		: SHADER_CONVERT_NONE;
 
-	MediaSideDataDOVIMetadata* pDOVIMetadata =
-#if DOVI_ENABLE
-		m_Dovi.bValid ? &m_Dovi.msd :
-#endif
-		nullptr;
+	MediaSideDataDOVIMetadata* pDOVIMetadata = m_Dovi.bValid ? &m_Dovi.msd : nullptr;
 
 	HRESULT hr = GetShaderConvertColor(true,
 		m_srcWidth,
@@ -2707,9 +2688,7 @@ HRESULT CDX11VideoProcessor::ConvertColorPass(ID3D11Texture2D* pRenderTarget)
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint.p);
 	m_pDeviceContext->PSSetSamplers(1, 1, &m_pSamplerLinear.p);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
-#if DOVI_ENABLE
 	m_pDeviceContext->PSSetConstantBuffers(1, 1, &m_pDoviCurvesConstantBuffer.p);
-#endif
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_PSConvColorData.pVertexBuffer, &Stride, &Offset);
 
@@ -3469,11 +3448,9 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		}
 	}
 
-#if DOVI_ENABLE
 	if (m_Dovi.bValid) {
 		changeVP = false;
 	}
-#endif
 	if (changeVP) {
 		InitMediaType(&m_pFilter->m_inputMT);
 		return; // need some test
@@ -3686,11 +3663,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		}
 		m_strStatsVProc += std::format(L"\nInternalFormat: {}", DXGIFormatToString(m_InternalTexFmt));
 
-		if (SourceIsHDR()
-#if DOVI_ENABLE
-			|| m_Dovi.bValid
-#endif
-			) {
+		if (SourceIsHDR() || m_Dovi.bValid) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
 			if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
 				m_strStatsHDR.append(L"Passthrough");
@@ -3761,14 +3734,12 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	);
 
 	str.append(m_strStatsInputFmt);
-#if DOVI_ENABLE
 	if (m_Dovi.bValid) {
 		str.append(L", MetaData: DolbyVision");
 		if (m_Dovi.bHasMMR) {
 			str.append(L"(MMR)");
 		}
 	}
-#endif
 	str.append(m_strStatsVProc);
 
 	const int dstW = m_videoRect.Width();

@@ -97,9 +97,9 @@ private:
 			SAFE_RELEASE(pConstants);
 		}
 	} m_PSConvColorData;
-#if DOVI_ENABLE
+
 	CComPtr<ID3D11Buffer> m_pDoviCurvesConstantBuffer;
-#endif
+
 	CComPtr<ID3D11PixelShader> m_pShaderUpscaleX;
 	CComPtr<ID3D11PixelShader> m_pShaderUpscaleY;
 	CComPtr<ID3D11PixelShader> m_pShaderDownscaleX;
@@ -198,10 +198,9 @@ private:
 
 	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
-#if DOVI_ENABLE
+
 	HRESULT SetShaderDoviCurvesPoly();
 	HRESULT SetShaderDoviCurves();
-#endif
 
 	void UpdateTexParams(int cdepth);
 	void UpdateRenderRect();

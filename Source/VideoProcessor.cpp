@@ -1,5 +1,5 @@
 /*
- * (C) 2020-2022 see Authors.txt
+ * (C) 2020-2023 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -188,7 +188,6 @@ void CVideoProcessor::UpdateStatsInputFmt()
 	}
 }
 
-#if DOVI_ENABLE
 bool CVideoProcessor::CheckDoviMetadata(const MediaSideDataDOVIMetadata* pDOVIMetadata, const uint8_t maxReshapeMethon)
 {
 	if (!pDOVIMetadata->Header.disable_residual_flag) {
@@ -208,7 +207,6 @@ bool CVideoProcessor::CheckDoviMetadata(const MediaSideDataDOVIMetadata* pDOVIMe
 
 	return true;
 }
-#endif
 
 // IUnknown
 
