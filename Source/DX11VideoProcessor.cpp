@@ -2113,6 +2113,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 				if (m_D3D11VP.IsReady()) {
 					InitMediaType(&m_pFilter->m_inputMT);
+				} else {
+					UpdateStatsStatic();
 				}
 
 				if (bYCCtoRGBChanged) {
