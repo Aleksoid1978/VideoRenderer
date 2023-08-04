@@ -1307,14 +1307,14 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		HandleHDRToggle();
 		UpdateBitmapShader();
 
-		if (m_bHdrPassthrough && m_iHdrToggleDisplay == HDRTD_Fullscreen && SourceIsHDR()) {
+		if (m_bHdrPassthrough && m_iHdrToggleDisplay == HDRTD_Fullscreen && SourceIsPQorHLG()) {
 			m_bHdrAllowSwitchDisplay = false;
 			InitMediaType(&m_pFilter->m_inputMT);
 			m_bHdrAllowSwitchDisplay = true;
 		}
 	}
 
-	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && (SourceIsHDR() || m_Dovi.bValid);
+	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && (SourceIsPQorHLG() || m_Dovi.bValid);
 	const auto b10BitOutput = bHdrOutput || Preferred10BitOutput();
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
@@ -1425,7 +1425,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 {
 	m_bHdrDisplaySwitching = true;
 	bool bRet = false;
-	if (m_bHdrPassthrough && SourceIsHDR()) {
+	if (m_bHdrPassthrough && SourceIsPQorHLG()) {
 		MONITORINFOEXW mi = { sizeof(mi) };
 		GetMonitorInfoW(MonitorFromWindow(m_lastFullscreenHWnd ? m_lastFullscreenHWnd : m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 		DisplayConfig_t displayConfig = {};
@@ -1636,7 +1636,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	if (m_bHdrAllowSwitchDisplay && m_srcVideoTransferFunction != m_srcExFmt.VideoTransferFunction) {
 		auto ret = HandleHDRToggle();
-		if (!ret && (m_bHdrPassthrough && m_bHdrPassthroughSupport && SourceIsHDR() && !m_pDXGISwapChain4)) {
+		if (!ret && (m_bHdrPassthrough && m_bHdrPassthroughSupport && SourceIsPQorHLG() && !m_pDXGISwapChain4)) {
 			ret = true;
 		}
 		if (ret) {
@@ -1747,7 +1747,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return hr;
 	}
 
-	hr = m_D3D11VP.SetColorSpace(m_srcExFmt, m_bHdrDisplayModeEnabled && SourceIsHDR());
+	hr = m_D3D11VP.SetColorSpace(m_srcExFmt, m_bHdrDisplayModeEnabled && SourceIsPQorHLG());
 
 	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(m_bVPScaling && m_bVPSuperRes) == S_OK);
 
@@ -2006,7 +2006,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 	m_hdr10 = {};
 	if (CComQIPtr<IMediaSideData> pMediaSideData = pSample) {
-		if (m_bHdrPassthrough && SourceIsHDR()) {
+		if (m_bHdrPassthrough && SourceIsPQorHLG()) {
 			MediaSideDataHDR* hdr = nullptr;
 			size_t size = 0;
 			hr = pMediaSideData->GetSideData(IID_MediaSideDataHDR, (const BYTE**)&hdr, &size);
@@ -2042,7 +2042,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			m_nStereoSubtitlesOffsetInPixels = offset->offset[0];
 		}
 
-		if (m_srcParams.CSType == CS_YUV && (m_bHdrPreferDoVi || !SourceIsHDR())) {
+		if (m_srcParams.CSType == CS_YUV && (m_bHdrPreferDoVi || !SourceIsPQorHLG())) {
 			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
 			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
 			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && CheckDoviMetadata(pDOVIMetadata, 1)) {
@@ -2132,7 +2132,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					}
 				}
 
-				if (m_bHdrPassthrough && m_bHdrPassthroughSupport && !SourceIsHDR() && !m_pDXGISwapChain4) {
+				if (m_bHdrPassthrough && m_bHdrPassthroughSupport && !SourceIsPQorHLG() && !m_pDXGISwapChain4) {
 					ReleaseSwapChain();
 					Init(m_hWnd);
 				}
@@ -2611,7 +2611,7 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 
 void CDX11VideoProcessor::UpdateBitmapShader()
 {
-	if (m_bHdrDisplayModeEnabled && SourceIsHDR()) {
+	if (m_bHdrDisplayModeEnabled && SourceIsPQorHLG()) {
 		UINT resid;
 		float SDR_peak_lum;
 		switch (m_iHdrOsdBrightness) {
@@ -3020,7 +3020,7 @@ HRESULT CDX11VideoProcessor::Reset()
 {
 	DLog(L"CDX11VideoProcessor::Reset()");
 
-	if (m_bHdrPassthrough && SourceIsHDR()) {
+	if (m_bHdrPassthrough && SourceIsPQorHLG()) {
 		MONITORINFOEXW mi = { sizeof(mi) };
 		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 		DisplayConfig_t displayConfig = {};
@@ -3385,7 +3385,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		changeWindow = !m_pFilter->m_bIsFullscreen;
 	}
 
-	if (!config.bHdrPreferDoVi && SourceIsHDR()) {
+	if (!config.bHdrPreferDoVi && SourceIsPQorHLG()) {
 		m_Dovi.bValid = false;
 		changeVP = false;
 	}
@@ -3405,7 +3405,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 	if (config.bConvertToSdr != m_bConvertToSdr) {
 		m_bConvertToSdr = config.bConvertToSdr;
-		if (SourceIsHDR() || m_Dovi.bValid) {
+		if (SourceIsPQorHLG() || m_Dovi.bValid) {
 			if (m_D3D11VP.IsReady()) {
 				changeNumTextures = true;
 				changeVP = true; // temporary solution
@@ -3430,7 +3430,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		ReleaseSwapChain();
 		EXECUTE_ASSERT(S_OK == m_pFilter->Init(true));
 
-		if (changeHDR && (SourceIsHDR()) || m_iHdrToggleDisplay) {
+		if (changeHDR && (SourceIsPQorHLG()) || m_iHdrToggleDisplay) {
 			m_srcVideoTransferFunction = 0;
 			InitMediaType(&m_pFilter->m_inputMT);
 		}
@@ -3438,7 +3438,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (changeHDR) {
-		if (SourceIsHDR() || m_iHdrToggleDisplay) {
+		if (SourceIsPQorHLG() || m_iHdrToggleDisplay) {
 			if (m_iSwapEffect == SWAPEFFECT_Discard) {
 				ReleaseSwapChain();
 				m_pFilter->Init(true);
@@ -3666,7 +3666,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		}
 		m_strStatsVProc += std::format(L"\nInternalFormat: {}", DXGIFormatToString(m_InternalTexFmt));
 
-		if (SourceIsHDR() || m_Dovi.bValid) {
+		if (SourceIsPQorHLG() || m_Dovi.bValid) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
 			if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
 				m_strStatsHDR.append(L"Passthrough");

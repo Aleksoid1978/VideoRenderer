@@ -1371,7 +1371,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 			m_nStereoSubtitlesOffsetInPixels = offset->offset[0];
 		}
 
-		if (m_srcParams.CSType == CS_YUV && (m_bHdrPreferDoVi || !SourceIsHDR())) {
+		if (m_srcParams.CSType == CS_YUV && (m_bHdrPreferDoVi || !SourceIsPQorHLG())) {
 			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
 			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
 			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && CheckDoviMetadata(pDOVIMetadata, 0)) {
@@ -1989,7 +1989,7 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 		changeWindow = !m_pFilter->m_bIsFullscreen;
 	}
 
-	if (!config.bHdrPreferDoVi && SourceIsHDR()) {
+	if (!config.bHdrPreferDoVi && SourceIsPQorHLG()) {
 		m_Dovi.bValid = false;
 		changeVP = false;
 	}
@@ -1997,7 +1997,7 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 
 	if (config.bConvertToSdr != m_bConvertToSdr) {
 		m_bConvertToSdr = config.bConvertToSdr;
-		if (SourceIsHDR() || m_Dovi.bValid) {
+		if (SourceIsPQorHLG() || m_Dovi.bValid) {
 			if (m_DXVA2VP.IsReady()) {
 				changeNumTextures = true;
 				changeVP = true; // temporary solution
@@ -2934,7 +2934,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 		}
 		m_strStatsVProc += std::format(L"\nInternalFormat: {}", D3DFormatToString(m_InternalTexFmt));
 
-		if (SourceIsHDR()) {
+		if (SourceIsPQorHLG()) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
 			if (m_bConvertToSdr) {
 				m_strStatsHDR.append(L"Convert to SDR");

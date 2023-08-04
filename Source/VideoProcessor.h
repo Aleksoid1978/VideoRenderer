@@ -218,7 +218,7 @@ public:
 	bool GetDoubleRate() { return m_bDoubleFrames; }
 
 protected:
-	bool SourceIsHDR() {
+	inline bool SourceIsPQorHLG() {
 		return m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 || m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG;
 	}
 
