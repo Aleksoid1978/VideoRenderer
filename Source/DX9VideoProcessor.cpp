@@ -1400,6 +1400,8 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 
 				if (m_DXVA2VP.IsReady()) {
 					InitMediaType(&m_pFilter->m_inputMT);
+				} else {
+					UpdateStatsStatic();
 				}
 
 				if (bYCCtoRGBChanged) {
@@ -2934,7 +2936,7 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 		}
 		m_strStatsVProc += std::format(L"\nInternalFormat: {}", D3DFormatToString(m_InternalTexFmt));
 
-		if (SourceIsPQorHLG()) {
+		if (SourceIsHDR()) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
 			if (m_bConvertToSdr) {
 				m_strStatsHDR.append(L"Convert to SDR");
