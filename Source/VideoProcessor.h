@@ -221,6 +221,10 @@ protected:
 	inline bool SourceIsPQorHLG() {
 		return m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 || m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG;
 	}
+	// source is PQ, HLG or Dolby Vision
+	inline bool SourceIsHDR() {
+		return SourceIsPQorHLG() || m_Dovi.bValid;
+	}
 
 	void UpdateStatsInputFmt();
 

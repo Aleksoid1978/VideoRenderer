@@ -1997,7 +1997,7 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 
 	if (config.bConvertToSdr != m_bConvertToSdr) {
 		m_bConvertToSdr = config.bConvertToSdr;
-		if (SourceIsPQorHLG() || m_Dovi.bValid) {
+		if (SourceIsHDR()) {
 			if (m_DXVA2VP.IsReady()) {
 				changeNumTextures = true;
 				changeVP = true; // temporary solution

@@ -1314,7 +1314,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		}
 	}
 
-	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && (SourceIsPQorHLG() || m_Dovi.bValid);
+	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR();
 	const auto b10BitOutput = bHdrOutput || Preferred10BitOutput();
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
@@ -3405,7 +3405,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 	if (config.bConvertToSdr != m_bConvertToSdr) {
 		m_bConvertToSdr = config.bConvertToSdr;
-		if (SourceIsPQorHLG() || m_Dovi.bValid) {
+		if (SourceIsHDR()) {
 			if (m_D3D11VP.IsReady()) {
 				changeNumTextures = true;
 				changeVP = true; // temporary solution
@@ -3666,7 +3666,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		}
 		m_strStatsVProc += std::format(L"\nInternalFormat: {}", DXGIFormatToString(m_InternalTexFmt));
 
-		if (SourceIsPQorHLG() || m_Dovi.bValid) {
+		if (SourceIsHDR()) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
 			if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
 				m_strStatsHDR.append(L"Passthrough");
