@@ -1991,11 +1991,13 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 		changeWindow = !m_pFilter->m_bIsFullscreen;
 	}
 
-	if (!config.bHdrPreferDoVi && SourceIsPQorHLG()) {
-		m_Dovi.bValid = false;
-		changeVP = false;
+	if (config.bHdrPreferDoVi != m_bHdrPreferDoVi) {
+		if (!config.bHdrPreferDoVi && SourceIsPQorHLG()) {
+			m_Dovi.bValid = false;
+			changeVP = true;
+		}
+		m_bHdrPreferDoVi = config.bHdrPreferDoVi;
 	}
-	m_bHdrPreferDoVi = config.bHdrPreferDoVi;
 
 	if (config.bConvertToSdr != m_bConvertToSdr) {
 		m_bConvertToSdr = config.bConvertToSdr;
