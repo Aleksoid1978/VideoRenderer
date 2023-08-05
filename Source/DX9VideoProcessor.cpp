@@ -1993,7 +1993,7 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 
 	if (config.bHdrPreferDoVi != m_bHdrPreferDoVi) {
 		if (!config.bHdrPreferDoVi && SourceIsPQorHLG()) {
-			m_Dovi.bValid = false;
+			m_Dovi = {};
 			changeVP = true;
 		}
 		m_bHdrPreferDoVi = config.bHdrPreferDoVi;
