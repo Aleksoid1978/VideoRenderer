@@ -42,7 +42,9 @@ HRESULT CompileShader(const std::string& srcCode, const D3D_SHADER_MACRO* pDefin
 	}
 
 	ID3DBlob* pErrorBlob = nullptr;
-	HRESULT hr = s_fnD3DCompile(srcCode.c_str(), srcCode.size(), nullptr, pDefines, nullptr, "main", pTarget, 0, 0, ppShaderBlob, &pErrorBlob);
+	HRESULT hr = s_fnD3DCompile(
+		srcCode.c_str(), srcCode.size(), nullptr, pDefines, nullptr,
+		"main", pTarget, 0, 0, ppShaderBlob, &pErrorBlob);
 
 	if (FAILED(hr)) {
 		SAFE_RELEASE(*ppShaderBlob);
@@ -516,7 +518,7 @@ void ShaderDoviReshape(std::string& code)
 	// based on libplacebo source code
 	code.append(
 		"{// dovi reshape\n"
-		"    float3 sig = saturate(color.rgb);\n"
+		"    const float3 sig = saturate(color.rgb);\n"
 		"    [unroll(3)]\n"
 		"    for (uint c = 0; c < 3; c++) {\n"
 		"        float s = sig[c];\n"
@@ -674,13 +676,13 @@ HRESULT GetShaderConvertColor(
 				);
 				code.append(
 					"const float reshape_mmr(const float4 coeffs, const float3 sig, uint c,\n"
-					"                        const uint mmr_single, const uint min_order, const uint max_order) {\n"
+					"    const uint mmr_single, const uint min_order, const uint max_order)\n"
+					"{\n"
 					"    uint mmr_idx = mmr_single ? 0u : uint(coeffs.y);\n"
 					"    float s = coeffs.x;\n"
-					"    float4 sigX = float4(0.0, 0.0, 0.0, 0.0);\n"
+					"    float4 sigX;\n"
 					"    sigX.xyz = sig.xxy * sig.yzz;\n"
 					"    sigX[3] = sigX.x * sig.z;\n"
-					"    sigX = float4(sigX.xyz, sigX.x * sig.z);\n"
 					"    s += dot(curves[c].mmr_data[mmr_idx + 0].xyz, sig);\n"
 					"    s += dot(curves[c].mmr_data[mmr_idx + 1], sigX);\n"
 					"    if (max_order >= 2) {\n"
@@ -699,7 +701,7 @@ HRESULT GetShaderConvertColor(
 					"            s += dot(curves[c].mmr_data[mmr_idx + 4].xyz, sig2 * sig);\n"
 					"            s += dot(curves[c].mmr_data[mmr_idx + 5], sigX2 * sigX);\n"
 					"        }\n"
-					"    }"
+					"    }\n"
 					"    return s;\n"
 					"}\n"
 				);
