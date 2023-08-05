@@ -3388,7 +3388,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (config.bHdrPreferDoVi != m_bHdrPreferDoVi) {
-		if (!config.bHdrPreferDoVi && SourceIsPQorHLG()) {
+		if (m_Dovi.bValid && !config.bHdrPreferDoVi && SourceIsPQorHLG()) {
 			m_Dovi = {};
 			changeVP = true;
 		}
