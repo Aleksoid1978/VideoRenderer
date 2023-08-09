@@ -30,7 +30,6 @@
 #include "D3D11VP.h"
 #include "D3DUtil/D3D11Font.h"
 #include "D3DUtil/D3D11Geometry.h"
-#include "DX9Device.h"
 #include "VideoProcessor.h"
 
 #define TEST_SHADER 0
@@ -39,7 +38,6 @@ class CVideoRendererInputPin;
 
 class CDX11VideoProcessor
 	: public CVideoProcessor
-	, public CDX9Device
 {
 private:
 	friend class CVideoRendererInputPin;
@@ -240,7 +238,7 @@ public:
 	HRESULT Reset() override;
 	bool IsInit() const override { return m_bHdrDisplaySwitching; }
 
-	IDirect3DDeviceManager9* GetDeviceManager9() override { return GetDevMan9(); }
+	IDirect3DDeviceManager9* GetDeviceManager9() override { return nullptr; }
 	HRESULT GetCurentImage(long *pDIBImage) override;
 	HRESULT GetDisplayedImage(BYTE **ppDib, unsigned* pSize) override;
 	HRESULT GetVPInfo(std::wstring& str) override;

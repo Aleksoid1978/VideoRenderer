@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2021 see Authors.txt
+ * (C) 2018-2023 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -43,7 +43,7 @@ STDMETHODIMP CVideoRendererInputPin::NonDelegatingQueryInterface(REFIID riid, vo
 {
 	CheckPointer(ppv, E_POINTER);
 
-	if (riid == __uuidof(IMFGetService)) {
+	if (riid == __uuidof(IMFGetService) && m_pBaseRenderer->m_VideoProcessor->Type() == VP_DX9) {
 		return GetInterface((IMFGetService*)this, ppv);
 	}
 	else if (riid == __uuidof(ID3D11DecoderConfiguration) && m_pBaseRenderer->m_VideoProcessor->Type() == VP_DX11) {
