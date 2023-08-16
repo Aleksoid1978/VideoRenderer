@@ -774,7 +774,7 @@ STDMETHODIMP CMpcVideoRenderer::QuerySupported(REFGUID PropSet, ULONG Id, ULONG*
 STDMETHODIMP CMpcVideoRenderer::GetService(REFGUID guidService, REFIID riid, LPVOID *ppvObject)
 {
 	if (guidService == MR_VIDEO_ACCELERATION_SERVICE) {
-		if (riid == __uuidof(IDirect3DDeviceManager9) && m_VideoProcessor->GetDeviceManager9()) {
+		if (riid == IID_IDirect3DDeviceManager9 && m_VideoProcessor->GetDeviceManager9()) {
 			return m_VideoProcessor->GetDeviceManager9()->QueryInterface(riid, ppvObject);
 		}
 	}
