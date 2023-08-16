@@ -160,7 +160,7 @@ public:
 
 	virtual HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr) = 0;
 
-	virtual IDirect3DDeviceManager9* GetDeviceManager9() = 0;
+	virtual IDirect3DDeviceManager9* GetDeviceManager9() { return nullptr; }
 	UINT GetCurrentAdapter() { return m_nCurrentAdapter; }
 
 	virtual BOOL VerifyMediaType(const CMediaType* pmt) = 0;

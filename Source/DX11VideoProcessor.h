@@ -238,7 +238,6 @@ public:
 	HRESULT Reset() override;
 	bool IsInit() const override { return m_bHdrDisplaySwitching; }
 
-	IDirect3DDeviceManager9* GetDeviceManager9() override { return nullptr; }
 	HRESULT GetCurentImage(long *pDIBImage) override;
 	HRESULT GetDisplayedImage(BYTE **ppDib, unsigned* pSize) override;
 	HRESULT GetVPInfo(std::wstring& str) override;
