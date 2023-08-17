@@ -928,9 +928,9 @@ HRESULT CDX9VideoProcessor::SetShaderDoviCurvesPoly()
 			switch (curve.mapping_idc[i]) {
 			case 0: // polynomial
 				has_poly = true;
-				out.coeffs_data[i].x = (0 <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][0] : 0.0f;
-				out.coeffs_data[i].y = (1 <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][1] : 0.0f;
-				out.coeffs_data[i].z = (2 <= curve.poly_order[i]) ? scale_coef * curve.poly_coef[i][2] : 0.0f;
+				out.coeffs_data[i].x = scale_coef * curve.poly_coef[i][0];
+				out.coeffs_data[i].y = (curve.poly_order[i] >= 1) ? scale_coef * curve.poly_coef[i][1] : 0.0f;
+				out.coeffs_data[i].z = (curve.poly_order[i] >= 2) ? scale_coef * curve.poly_coef[i][2] : 0.0f;
 				out.coeffs_data[i].w = 0.0f; // order=0 signals polynomial
 				break;
 			case 1: // mmr
