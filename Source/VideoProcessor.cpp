@@ -167,9 +167,9 @@ void CVideoProcessor::UpdateStatsInputFmt()
 		if (m_decExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
 			m_strStatsInputFmt += L'*';
 		};
-		m_strStatsInputFmt += std::format(L", Lighting: {}", A2WStr(strs[3]));
-		if (m_decExFmt.VideoLighting == DXVA2_VideoLighting_Unknown) {
-			m_strStatsInputFmt += L'*';
+		if (m_decExFmt.VideoLighting != DXVA2_VideoLighting_Unknown) {
+			// display Lighting only for values other than Unknown, but this never happens
+			m_strStatsInputFmt += std::format(L", Lighting: {}", A2WStr(strs[3]));
 		};
 		m_strStatsInputFmt += std::format(L"\n  Primaries: {}", A2WStr(strs[4]));
 		if (m_decExFmt.VideoPrimaries == DXVA2_VideoPrimaries_Unknown) {
