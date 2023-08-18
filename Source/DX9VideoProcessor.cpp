@@ -1396,11 +1396,13 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 					) != 0);
 
 				memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
+				const bool updateStats = !m_Dovi.bValid;
 				m_Dovi.bValid = true;
 
 				if (m_DXVA2VP.IsReady()) {
 					InitMediaType(&m_pFilter->m_inputMT);
-				} else {
+				}
+				else if (updateStats) {
 					UpdateStatsStatic();
 				}
 

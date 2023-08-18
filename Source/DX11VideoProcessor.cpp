@@ -2076,6 +2076,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				}
 
 				memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
+				const bool updateStats = !m_Dovi.bValid;
 				m_Dovi.bValid = true;
 
 				if (bMasteringLuminanceChanged) {
@@ -2102,7 +2103,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 				if (m_D3D11VP.IsReady()) {
 					InitMediaType(&m_pFilter->m_inputMT);
-				} else {
+				}
+				else if (updateStats) {
 					UpdateStatsStatic();
 				}
 
