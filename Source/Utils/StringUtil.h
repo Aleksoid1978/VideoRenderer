@@ -73,14 +73,14 @@ void str_split(const std::wstring& wstr, std::vector<std::wstring>& tokens, wcha
 // trimming whitespace
 //
 
-inline const std::string str_trim(const std::string_view& sv)
+inline const std::string str_trim(const std::string_view sv)
 {
 	auto sfront = std::find_if_not(sv.begin(), sv.end(), [](int c) {return isspace(c); });
 	auto sback = std::find_if_not(sv.rbegin(), sv.rend(), [](int c) {return isspace(c); }).base();
 	return (sback <= sfront ? std::string() : std::string(sfront, sback));
 }
 
-inline const std::wstring str_trim(const std::wstring_view& sv)
+inline const std::wstring str_trim(const std::wstring_view sv)
 {
 	auto sfront = std::find_if_not(sv.begin(), sv.end(), [](int c) {return iswspace(c); });
 	auto sback = std::find_if_not(sv.rbegin(), sv.rend(), [](int c) {return iswspace(c); }).base();
@@ -112,7 +112,7 @@ void str_replace(std::wstring& s, const std::wstring_view from, const std::wstri
 // simple convert ANSI string to wide character string
 //
 
-inline const std::wstring A2WStr(const std::string_view& sv)
+inline const std::wstring A2WStr(const std::string_view sv)
 {
 	return std::wstring(sv.begin(), sv.end());
 }
