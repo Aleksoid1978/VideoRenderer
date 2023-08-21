@@ -1,5 +1,5 @@
 /*
-* (C) 2020-2021 see Authors.txt
+* (C) 2020-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -52,13 +52,13 @@ inline void str_toupper(std::wstring& s)
 inline void str_tolower_all(std::wstring& s)
 {
 	const std::ctype<wchar_t>& f = std::use_facet<std::ctype<wchar_t>>(std::locale());
-	f.tolower(&s[0], &s[0] + s.size());
+	std::ignore = f.tolower(&s[0], &s[0] + s.size());
 }
 
 inline void str_toupper_all(std::wstring& s)
 {
 	const std::ctype<wchar_t>& f = std::use_facet<std::ctype<wchar_t>>(std::locale());
-	f.toupper(&s[0], &s[0] + s.size());
+	std::ignore = f.toupper(&s[0], &s[0] + s.size());
 }
 
 //
