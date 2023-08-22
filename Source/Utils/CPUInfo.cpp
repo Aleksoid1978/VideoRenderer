@@ -1,5 +1,5 @@
 /*
- * (C) 2016-2019 see Authors.txt
+ * (C) 2016-2023 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -71,7 +71,7 @@ static int GetCPUInfo()
 	int nIds = info[0];
 
 	{
-		char vendor[0x20] = {};
+		__declspec(align(4)) char vendor[0x20] = {};
 		*reinterpret_cast<int*>(vendor) = info[1];
 		*reinterpret_cast<int*>(vendor + 4) = info[3];
 		*reinterpret_cast<int*>(vendor + 8) = info[2];
