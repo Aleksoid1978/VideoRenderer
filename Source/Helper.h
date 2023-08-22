@@ -179,7 +179,7 @@ void ConvertXRGB10toXRGB8(const UINT lines, BYTE* dst, UINT dst_pitch, const BYT
 
 void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d);
 
-void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspace);
+void set_colorspace(const DXVA2_ExtendedFormat extfmt, mp_colorspace& colorspace);
 
 BITMAPINFOHEADER* GetBIHfromVIHs(const AM_MEDIA_TYPE* mt);
 

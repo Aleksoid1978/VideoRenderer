@@ -750,7 +750,7 @@ void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d)
 	return;
 }
 
-void set_colorspace(const DXVA2_ExtendedFormat& extfmt, mp_colorspace& colorspace)
+void set_colorspace(const DXVA2_ExtendedFormat extfmt, mp_colorspace& colorspace)
 {
 	colorspace = {};
 
