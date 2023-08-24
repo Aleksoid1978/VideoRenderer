@@ -980,7 +980,7 @@ HRESULT CMpcVideoRenderer::Init(const bool bCreateWindow/* = false*/)
 				wc.lpfnWndProc = WndProc;
 				wc.hInstance = g_hInst;
 				wc.lpszClassName = g_szClassName;
-				wc.cbWndExtra = sizeof(this);
+				wc.cbWndExtra = sizeof(CMpcVideoRenderer*); // pointer size
 				if (!RegisterClassExW(&wc)) {
 					hr = HRESULT_FROM_WIN32(GetLastError());
 					DLog(L"CMpcVideoRenderer::Init() : RegisterClassExW() failed with error {}", HR2Str(hr));
