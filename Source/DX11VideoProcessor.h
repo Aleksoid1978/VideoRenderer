@@ -168,8 +168,8 @@ private:
 	HDRMetadata m_hdr10 = {};
 	HDRMetadata m_lastHdr10 = {};
 
-	UINT MaxMasteringLuminance = {};
-	UINT MinMasteringLuminance = {};
+	UINT m_DoviMaxMasteringLuminance = 0;
+	UINT m_DoviMinMasteringLuminance = 0;
 
 	HWND m_lastFullscreenHWnd = nullptr;
 
