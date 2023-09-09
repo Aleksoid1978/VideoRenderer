@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2022 see Authors.txt
+ * (C) 2018-2023 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -109,7 +109,7 @@ private:
 	REFERENCE_TIME m_rtStartTime = 0;
 
 	// VideoProcessor
-	CVideoProcessor* m_VideoProcessor = nullptr;
+	std::unique_ptr<CVideoProcessor> m_VideoProcessor;
 
 	CMediaType m_inputMT;
 

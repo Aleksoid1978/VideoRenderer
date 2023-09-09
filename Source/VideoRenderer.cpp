@@ -249,19 +249,19 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	HRESULT hr = S_FALSE;
 
 	if (m_Sets.bUseD3D11 && IsWindows7SP1OrGreater()) {
-		m_VideoProcessor = new CDX11VideoProcessor(this, m_Sets, hr);
+		m_VideoProcessor.reset(new CDX11VideoProcessor(this, m_Sets, hr));
 		if (SUCCEEDED(hr)) {
 			hr = m_VideoProcessor->Init(m_hWnd);
 		}
 
 		if (FAILED(hr)) {
-			SAFE_DELETE(m_VideoProcessor);
+			m_VideoProcessor.reset();
 		}
 		DLogIf(S_OK == hr, L"Direct3D11 initialization successfully!");
 	}
 
 	if (!m_VideoProcessor) {
-		m_VideoProcessor = new CDX9VideoProcessor(this, m_Sets, hr);
+		m_VideoProcessor.reset(new CDX9VideoProcessor(this, m_Sets, hr));
 		if (SUCCEEDED(hr)) {
 			hr = m_VideoProcessor->Init(::GetForegroundWindow());
 		}
@@ -292,7 +292,7 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 		PostMessageW(m_hWndParentMain, WM_SWITCH_FULLSCREEN, 0, 0);
 	}
 
-	SAFE_DELETE(m_VideoProcessor);
+	m_VideoProcessor.reset();
 
 	g_nInstance--; // always decrement g_nInstance in the destructor
 }
