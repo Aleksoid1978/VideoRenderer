@@ -795,29 +795,7 @@ HRESULT CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const
 	// set default ProcAmp ranges
 	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
 
-	HRESULT hr2 = UpdateConvertColorShader();
-	if (FAILED(hr2)) {
-		ASSERT(0);
-		UINT resid = 0;
-		if (params.cformat == CF_YUY2) {
-			resid = IDF_PS_9_CONVERT_YUY2;
-		}
-		else if (params.pDX9Planes) {
-			if (params.pDX9Planes->FmtPlane3) {
-				if (params.cformat == CF_YV12 || params.cformat == CF_YV16 || params.cformat == CF_YV24) {
-					resid = IDF_PS_9_CONVERT_PLANAR_YV;
-				} else {
-					resid = IDF_PS_9_CONVERT_PLANAR;
-				}
-			} else {
-				resid = IDF_PS_9_CONVERT_BIPLANAR;
-			}
-		}
-		else {
-			resid = IDF_PS_9_CONVERT_COLOR;
-		}
-		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
-	}
+	hr = UpdateConvertColorShader();
 
 	DLog(L"CDX9VideoProcessor::InitializeTexVP() completed successfully");
 
@@ -2337,6 +2315,31 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 		m_PSConvColorData.VertexData[1].Tex[1] = { fr.right, fr.top };
 		m_PSConvColorData.VertexData[2].Tex[1] = { fr.left , fr.bottom };
 		m_PSConvColorData.VertexData[3].Tex[1] = { fr.right, fr.bottom };
+	}
+
+	if (FAILED(hr)) {
+		ASSERT(0);
+		UINT resid = 0;
+		if (m_srcParams.cformat == CF_YUY2) {
+			resid = IDF_PS_9_CONVERT_YUY2;
+		}
+		else if (m_srcParams.pDX9Planes) {
+			if (m_srcParams.pDX9Planes->FmtPlane3) {
+				if (m_srcParams.cformat == CF_YV12 || m_srcParams.cformat == CF_YV16 || m_srcParams.cformat == CF_YV24) {
+					resid = IDF_PS_9_CONVERT_PLANAR_YV;
+				} else {
+					resid = IDF_PS_9_CONVERT_PLANAR;
+				}
+			} else {
+				resid = IDF_PS_9_CONVERT_BIPLANAR;
+			}
+		}
+		else {
+			resid = IDF_PS_9_CONVERT_COLOR;
+		}
+		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
+
+		return S_FALSE;
 	}
 
 	return hr;

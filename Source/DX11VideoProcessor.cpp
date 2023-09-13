@@ -1780,29 +1780,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 	// set default ProcAmp ranges
 	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
 
-	HRESULT hr2 = UpdateConvertColorShader();
-	if (FAILED(hr2)) {
-		ASSERT(0);
-		UINT resid = 0;
-		if (params.cformat == CF_YUY2) {
-			resid = IDF_PS_11_CONVERT_YUY2;
-		}
-		else if (params.pDX11Planes) {
-			if (params.pDX11Planes->FmtPlane3) {
-				if (params.cformat == CF_YV12 || params.cformat == CF_YV16 || params.cformat == CF_YV24) {
-					resid = IDF_PS_11_CONVERT_PLANAR_YV;
-				} else {
-					resid = IDF_PS_11_CONVERT_PLANAR;
-				}
-			} else {
-				resid = IDF_PS_11_CONVERT_BIPLANAR;
-			}
-		}
-		else {
-			resid = IDF_PS_11_CONVERT_COLOR;
-		}
-		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
-	}
+	hr = UpdateConvertColorShader();
 
 	SAFE_RELEASE(m_PSConvColorData.pVertexBuffer);
 	EXECUTE_ASSERT(S_OK == CreateVertexBuffer(m_pDevice, &m_PSConvColorData.pVertexBuffer, m_srcWidth, m_srcHeight, m_srcRect, 0, false));
@@ -2532,6 +2510,31 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 			hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColorDeint);
 			pShaderCode->Release();
 		}
+	}
+
+	if (FAILED(hr)) {
+		ASSERT(0);
+		UINT resid = 0;
+		if (m_srcParams.cformat == CF_YUY2) {
+			resid = IDF_PS_11_CONVERT_YUY2;
+		}
+		else if (m_srcParams.pDX11Planes) {
+			if (m_srcParams.pDX11Planes->FmtPlane3) {
+				if (m_srcParams.cformat == CF_YV12 || m_srcParams.cformat == CF_YV16 || m_srcParams.cformat == CF_YV24) {
+					resid = IDF_PS_11_CONVERT_PLANAR_YV;
+				} else {
+					resid = IDF_PS_11_CONVERT_PLANAR;
+				}
+			} else {
+				resid = IDF_PS_11_CONVERT_BIPLANAR;
+			}
+		}
+		else {
+			resid = IDF_PS_11_CONVERT_COLOR;
+		}
+		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSConvertColor, resid));
+
+		return S_FALSE;
 	}
 
 	return hr;
