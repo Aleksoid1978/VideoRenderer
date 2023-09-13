@@ -1516,20 +1516,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	ReleaseVP();
 
 	auto FmtParams = GetFmtConvParams(pmt);
-	bool disableD3D11VP = false;
-	switch (FmtParams.cformat) {
-	case CF_NV12: disableD3D11VP = !m_VPFormats.bNV12; break;
-	case CF_P010:
-	case CF_P016: disableD3D11VP = !m_VPFormats.bP01x;  break;
-	case CF_YUY2: disableD3D11VP = !m_VPFormats.bYUY2;  break;
-	default:      disableD3D11VP = !m_VPFormats.bOther; break;
-	}
-	if (m_Dovi.bValid) {
-		disableD3D11VP = true;
-	}
-	if (disableD3D11VP) {
-		FmtParams.VP11Format = DXGI_FORMAT_UNKNOWN;
-	}
 
 	const BITMAPINFOHEADER* pBIH = nullptr;
 	m_decExFmt.value = 0;
@@ -1601,6 +1587,21 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_srcRectHeight = m_srcRect.Height();
 
 	m_srcExFmt = SpecifyExtendedFormat(m_decExFmt, FmtParams, m_srcRectWidth, m_srcRectHeight);
+
+	bool disableD3D11VP = false;
+	switch (FmtParams.cformat) {
+	case CF_NV12: disableD3D11VP = !m_VPFormats.bNV12; break;
+	case CF_P010:
+	case CF_P016: disableD3D11VP = !m_VPFormats.bP01x;  break;
+	case CF_YUY2: disableD3D11VP = !m_VPFormats.bYUY2;  break;
+	default:      disableD3D11VP = !m_VPFormats.bOther; break;
+	}
+	if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo || m_Dovi.bValid) {
+		disableD3D11VP = true;
+	}
+	if (disableD3D11VP) {
+		FmtParams.VP11Format = DXGI_FORMAT_UNKNOWN;
+	}
 
 	const auto frm_gcd = std::gcd(m_srcRectWidth, m_srcRectHeight);
 	const auto srcFrameARX = m_srcRectWidth / frm_gcd;
@@ -1676,10 +1677,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 					resId = IDF_PS_11_FIX_BT2020;
 					m_strCorrection = L"Fix BT.2020";
 				}
-			}
-			else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
-				resId = IDF_PS_11_FIX_YCGCO;
-				m_strCorrection = L"Fix YCoCg";
 			}
 			else if (bTransFunc22 && m_srcExFmt.VideoPrimaries == MFVideoPrimaries_BT2020) {
 				resId = IDF_PS_11_FIX_BT2020;

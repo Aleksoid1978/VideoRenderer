@@ -1117,20 +1117,6 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	ReleaseVP();
 
 	auto FmtParams = GetFmtConvParams(pmt);
-	bool disableDXVA2 = false;
-	switch (FmtParams.cformat) {
-	case CF_NV12: disableDXVA2 = !m_VPFormats.bNV12; break;
-	case CF_P010:
-	case CF_P016: disableDXVA2 = !m_VPFormats.bP01x;  break;
-	case CF_YUY2: disableDXVA2 = !m_VPFormats.bYUY2;  break;
-	default:      disableDXVA2 = !m_VPFormats.bOther; break;
-	}
-	if (m_Dovi.bValid) {
-		disableDXVA2 = true;
-	}
-	if (disableDXVA2) {
-		FmtParams.DXVA2Format = D3DFMT_UNKNOWN;
-	}
 
 	const BITMAPINFOHEADER* pBIH = nullptr;
 	m_decExFmt.value = 0;
@@ -1203,6 +1189,21 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	m_srcExFmt = SpecifyExtendedFormat(m_decExFmt, FmtParams, m_srcRectWidth, m_srcRectHeight);
 
+	bool disableDXVA2 = false;
+	switch (FmtParams.cformat) {
+	case CF_NV12: disableDXVA2 = !m_VPFormats.bNV12; break;
+	case CF_P010:
+	case CF_P016: disableDXVA2 = !m_VPFormats.bP01x;  break;
+	case CF_YUY2: disableDXVA2 = !m_VPFormats.bYUY2;  break;
+	default:      disableDXVA2 = !m_VPFormats.bOther; break;
+	}
+	if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo || m_Dovi.bValid) {
+		disableDXVA2 = true;
+	}
+	if (disableDXVA2) {
+		FmtParams.DXVA2Format = D3DFMT_UNKNOWN;
+	}
+
 	const auto frm_gcd = std::gcd(m_srcRectWidth, m_srcRectHeight);
 	const auto srcFrameARX = m_srcRectWidth / frm_gcd;
 	const auto srcFrameARY = m_srcRectHeight / frm_gcd;
@@ -1243,10 +1244,6 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		else if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG && m_bConvertToSdr) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIXCONVERT_HLG_TO_SDR));
 			m_strCorrection = L"HLG to SDR";
-		}
-		else if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIX_YCGCO));
-			m_strCorrection = L"Fix YCoCg";
 		}
 		else if (bTransFunc22 && m_srcExFmt.VideoPrimaries == MFVideoPrimaries_BT2020) {
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIX_BT2020));
