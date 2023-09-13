@@ -1,6 +1,8 @@
 0.7.0 dev
 ------------------------
 The DXVA2 decoder is no longer supported in DirectX 11 mode.
+Added brightness and contrast adjustment for Dolby Vision.
+The YCgCo color space will now only be converted using shaders.
 
 0.6.9.2117 - 2023-08-07
 ------------------------
