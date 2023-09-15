@@ -102,7 +102,21 @@ inline void str_trim_end(std::wstring& s, const wchar_t ch)
 }
 
 //
+// truncate after a null character
 //
+
+inline void str_truncate_after_null(std::string& s)
+{
+	s.erase(std::find(s.begin(), s.end(), '\0'), s.end());
+}
+
+inline void str_truncate_after_null(std::wstring& s)
+{
+	s.erase(std::find(s.begin(), s.end(), '\0'), s.end());
+}
+
+//
+// replace substring
 //
 
 void str_replace(std::string& s, const std::string_view from, const std::string_view to);
@@ -124,7 +138,9 @@ inline const std::wstring A2WStr(const std::string_view sv)
 std::string ConvertWideToANSI(const std::wstring& wstr);
 
 std::wstring ConvertAnsiToWide(const std::string& str);
+std::wstring ConvertAnsiToWide(const char* pstr, int size);
 
 std::string ConvertWideToUtf8(const std::wstring& wstr);
 
 std::wstring ConvertUtf8ToWide(const std::string& str);
+std::wstring ConvertUtf8ToWide(const char* pstr, int size);
