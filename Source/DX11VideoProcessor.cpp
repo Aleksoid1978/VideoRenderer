@@ -1599,6 +1599,10 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	if (m_srcExFmt.VideoTransferMatrix == VIDEOTRANSFERMATRIX_YCgCo || m_Dovi.bValid) {
 		disableD3D11VP = true;
 	}
+	if (FmtParams.CSType == CS_RGB && m_VendorId == PCIV_NVIDIA) {
+		// D3D11 VP does not work correctly if RGB32 with odd frame width (source or target) on Nvidia adapters
+		disableD3D11VP = true;
+	}
 	if (disableD3D11VP) {
 		FmtParams.VP11Format = DXGI_FORMAT_UNKNOWN;
 	}
@@ -1650,9 +1654,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	UpdateBitmapShader();
 
 	// D3D11 Video Processor
-	if (FmtParams.VP11Format != DXGI_FORMAT_UNKNOWN && !(m_VendorId == PCIV_NVIDIA && FmtParams.CSType == CS_RGB)) {
-		// D3D11 VP does not work correctly if RGB32 with odd frame width (source or target) on Nvidia adapters
-
+	if (FmtParams.VP11Format != DXGI_FORMAT_UNKNOWN) {
 		if (S_OK == InitializeD3D11VP(FmtParams, origW, origH)) {
 			UINT resId = 0;
 			bool bTransFunc22 = m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_22
