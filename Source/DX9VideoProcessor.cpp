@@ -1234,15 +1234,15 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 			DLogIf(m_pPSCorrection, L"CDX9VideoProcessor::InitMediaType() m_pPSCorrection created");
 		}
+		else {
+			ReleaseVP();
+		}
 	}
 
-	if (FAILED(hr)) {
-		ReleaseVP();
-		if (FmtParams.D3DFormat != D3DFMT_UNKNOWN) {
-			hr = InitializeTexVP(FmtParams, origW, origH);
-			if (SUCCEEDED(hr)) {
-				SetShaderConvertColorParams();
-			}
+	if (FAILED(hr) && FmtParams.D3DFormat != D3DFMT_UNKNOWN) {
+		hr = InitializeTexVP(FmtParams, origW, origH);
+		if (SUCCEEDED(hr)) {
+			SetShaderConvertColorParams();
 		}
 	}
 
