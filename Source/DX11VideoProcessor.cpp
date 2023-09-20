@@ -1653,9 +1653,12 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	UpdateBitmapShader();
 
+	HRESULT hr = E_NOT_VALID_STATE;
+
 	// D3D11 Video Processor
 	if (FmtParams.VP11Format != DXGI_FORMAT_UNKNOWN) {
-		if (S_OK == InitializeD3D11VP(FmtParams, origW, origH)) {
+		hr = InitializeD3D11VP(FmtParams, origW, origH);
+		if (SUCCEEDED(hr)) {
 			UINT resId = 0;
 			bool bTransFunc22 = m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_22
 								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_709
@@ -1689,25 +1692,26 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, resId));
 				DLogIf(m_pPSCorrection, L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection('{}') created", m_strCorrection);
 			}
-
-			m_pFilter->m_inputMT = *pmt;
-			UpdateTexures();
-			UpdatePostScaleTexures();
-			UpdateStatsStatic();
-
-			return TRUE;
 		}
-
-		ReleaseVP();
+		else {
+			ReleaseVP();
+		}
 	}
 
 	// Tex Video Processor
-	if (FmtParams.DX11Format != DXGI_FORMAT_UNKNOWN && S_OK == InitializeTexVP(FmtParams, origW, origH)) {
-		m_pFilter->m_inputMT = *pmt;
-		SetShaderConvertColorParams();
+	if (FAILED(hr) && FmtParams.DX11Format != DXGI_FORMAT_UNKNOWN) {
+		hr = InitializeTexVP(FmtParams, origW, origH);
+		if (SUCCEEDED(hr)) {
+			SetShaderConvertColorParams();
+		}
+	}
+
+	if (SUCCEEDED(hr)) {
 		UpdateTexures();
 		UpdatePostScaleTexures();
 		UpdateStatsStatic();
+
+		m_pFilter->m_inputMT = *pmt;
 
 		return TRUE;
 	}

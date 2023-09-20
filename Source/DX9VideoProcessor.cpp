@@ -33,7 +33,7 @@
 #include "../external/minhook/include/MinHook.h"
 
 static const ScalingShaderResId s_Upscaling9ResIDs[UPSCALE_COUNT] = {
-	{0,                             0,                             L"Nearest-neighbor"  },
+	{0,                           0,                           L"Nearest-neighbor"  },
 	{IDF_PS_9_INTERP_MITCHELL4_X, IDF_PS_9_INTERP_MITCHELL4_Y, L"Mitchell-Netravali"},
 	{IDF_PS_9_INTERP_CATMULL4_X,  IDF_PS_9_INTERP_CATMULL4_Y,  L"Catmull-Rom"       },
 	{IDF_PS_9_INTERP_LANCZOS2_X,  IDF_PS_9_INTERP_LANCZOS2_Y,  L"Lanczos2"          },
@@ -1208,42 +1208,45 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	UpdateTexParams(FmtParams.CDepth);
 
+	HRESULT hr = E_NOT_VALID_STATE;
+
 	// DXVA2 Video Processor
-	if (FmtParams.DXVA2Format != D3DFMT_UNKNOWN && S_OK == InitializeDXVA2VP(FmtParams, origW, origH)) {
-		bool bTransFunc22 = m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_22
-			|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_709
-			|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_240M
-			|| m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG; // HLG compatible with SDR
+	if (FmtParams.DXVA2Format != D3DFMT_UNKNOWN) {
+		hr = InitializeDXVA2VP(FmtParams, origW, origH);
+		if (SUCCEEDED(hr)) {
+			bool bTransFunc22 = m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_22
+				|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_709
+				|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_240M
+				|| m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG; // HLG compatible with SDR
 
-		if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && m_bConvertToSdr) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIXCONVERT_PQ_TO_SDR));
-			m_strCorrection = L"PQ to SDR";
+			if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && m_bConvertToSdr) {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIXCONVERT_PQ_TO_SDR));
+				m_strCorrection = L"PQ to SDR";
+			}
+			else if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG && m_bConvertToSdr) {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIXCONVERT_HLG_TO_SDR));
+				m_strCorrection = L"HLG to SDR";
+			}
+			else if (bTransFunc22 && m_srcExFmt.VideoPrimaries == MFVideoPrimaries_BT2020) {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIX_BT2020));
+				m_strCorrection = L"Fix BT.2020";
+			}
+
+			DLogIf(m_pPSCorrection, L"CDX9VideoProcessor::InitMediaType() m_pPSCorrection created");
 		}
-		else if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG && m_bConvertToSdr) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIXCONVERT_HLG_TO_SDR));
-			m_strCorrection = L"HLG to SDR";
-		}
-		else if (bTransFunc22 && m_srcExFmt.VideoPrimaries == MFVideoPrimaries_BT2020) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIX_BT2020));
-			m_strCorrection = L"Fix BT.2020";
-		}
-
-		DLogIf(m_pPSCorrection, L"CDX9VideoProcessor::InitMediaType() m_pPSCorrection created");
-
-		UpdateTexures();
-		UpdatePostScaleTexures();
-		UpdateStatsStatic();
-
-		m_pFilter->m_inputMT = *pmt;
-
-		return TRUE;
 	}
 
-	ReleaseVP();
+	if (FAILED(hr)) {
+		ReleaseVP();
+		if (FmtParams.D3DFormat != D3DFMT_UNKNOWN) {
+			hr = InitializeTexVP(FmtParams, origW, origH);
+			if (SUCCEEDED(hr)) {
+				SetShaderConvertColorParams();
+			}
+		}
+	}
 
-	// Tex Video Processor
-	if (FmtParams.D3DFormat != D3DFMT_UNKNOWN && S_OK == InitializeTexVP(FmtParams, origW, origH)) {
-		SetShaderConvertColorParams();
+	if (SUCCEEDED(hr)) {
 		UpdateTexures();
 		UpdatePostScaleTexures();
 		UpdateStatsStatic();
