@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2020 see Authors.txt
+* (C) 2019-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -88,26 +88,26 @@ UINT GetAdapter(HWND hWnd, IDXGIFactory1* pDXGIFactory, IDXGIAdapter** ppDXGIAda
 
 	const HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
 
-	UINT i = 0;
+	UINT adapter = 0;
 	IDXGIAdapter* pDXGIAdapter = nullptr;
-	while (SUCCEEDED(pDXGIFactory->EnumAdapters(i, &pDXGIAdapter))) {
-		UINT k = 0;
+	while (SUCCEEDED(pDXGIFactory->EnumAdapters(adapter, &pDXGIAdapter))) {
+		UINT output = 0;
 		IDXGIOutput* pDXGIOutput = nullptr;
-		while (SUCCEEDED(pDXGIAdapter->EnumOutputs(k, &pDXGIOutput))) {
+		while (SUCCEEDED(pDXGIAdapter->EnumOutputs(output, &pDXGIOutput))) {
 			DXGI_OUTPUT_DESC desc = {};
 			if (SUCCEEDED(pDXGIOutput->GetDesc(&desc))) {
 				if (desc.Monitor == hMonitor) {
 					SAFE_RELEASE(pDXGIOutput);
 					*ppDXGIAdapter = pDXGIAdapter;
-					return i;
+					return adapter;
 				}
 			}
 			SAFE_RELEASE(pDXGIOutput);
-			k++;
+			output++;
 		}
 
 		SAFE_RELEASE(pDXGIAdapter);
-		i++;
+		adapter++;
 	}
 
 	return 0;

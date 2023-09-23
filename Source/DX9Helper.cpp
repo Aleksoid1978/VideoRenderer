@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2020 see Authors.txt
+* (C) 2019-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -33,10 +33,11 @@ UINT GetAdapter(HWND hWnd, IDirect3D9Ex* pD3D)
 	const HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
 	CheckPointer(hMonitor, D3DADAPTER_DEFAULT);
 
-	for (UINT adp = 0, num_adp = pD3D->GetAdapterCount(); adp < num_adp; ++adp) {
-		const HMONITOR hAdapterMonitor = pD3D->GetAdapterMonitor(adp);
+	const UINT adapterCount = pD3D->GetAdapterCount();
+	for (UINT adapter = 0; adapter < adapterCount; ++adapter) {
+		const HMONITOR hAdapterMonitor = pD3D->GetAdapterMonitor(adapter);
 		if (hAdapterMonitor == hMonitor) {
-			return adp;
+			return adapter;
 		}
 	}
 
