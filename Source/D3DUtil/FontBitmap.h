@@ -398,6 +398,9 @@ public:
 			};
 
 			hr = m_pWICFactory->CreateBitmap(bmWidth, bmHeight, GUID_WICPixelFormat32bppPBGRA, WICBitmapCacheOnDemand, &m_pWICBitmap);
+			if (S_OK != hr) {
+				return hr;
+			}
 
 			CComPtr<ID2D1RenderTarget>    pD2D1RenderTarget;
 			CComPtr<ID2D1SolidColorBrush> pD2D1Brush;
@@ -408,8 +411,12 @@ public:
 				96, 96);
 
 			hr = m_pD2D1Factory->CreateWicBitmapRenderTarget(m_pWICBitmap, &props, &pD2D1RenderTarget);
-			if (S_OK == hr) {
-				hr = pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &pD2D1Brush);
+			if (S_OK != hr) {
+				return hr;
+			}
+			hr = pD2D1RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &pD2D1Brush);
+			if (S_OK != hr) {
+				return hr;
 			}
 
 			m_charCoords.reserve(length);
