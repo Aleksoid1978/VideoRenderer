@@ -567,14 +567,3 @@ HRESULT CVRInfoPPage::OnActivate()
 
 	return S_OK;
 }
-
-INT_PTR CVRInfoPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	if (uMsg == WM_CLOSE) {
-		// fixed Esc handling when EDITTEXT control has ES_MULTILINE property and is in focus
-		return (LRESULT)1;
-	}
-
-	// Let the parent class handle the message.
-	return CBasePropertyPage::OnReceiveMessage(hwnd, uMsg, wParam, lParam);
-}
