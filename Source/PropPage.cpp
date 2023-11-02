@@ -472,7 +472,8 @@ HRESULT CVRInfoPPage::OnDisconnect()
 	return S_OK;
 }
 
-HWND GetParentOwner(HWND hwnd) {
+HWND GetParentOwner(HWND hwnd)
+{
 	HWND hWndParent = hwnd;
 	HWND hWndT;
 	while ((::GetWindowLong(hWndParent, GWL_STYLE) & WS_CHILD) &&
@@ -484,15 +485,15 @@ HWND GetParentOwner(HWND hwnd) {
 }
 
 static WNDPROC OldControlProc;
-static LRESULT CALLBACK ControlProc(HWND control, UINT message, WPARAM wParam, LPARAM lParam) {
-	if (message == WM_KEYDOWN) {
-		if (LOWORD(wParam) == VK_ESCAPE) {
-			HWND parentOwner = GetParentOwner(control);
-			if (parentOwner) {
-				::PostMessageW(parentOwner, WM_COMMAND, IDCANCEL, 0);
-			}
-			return TRUE;
+static LRESULT CALLBACK ControlProc(HWND control, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	if (message == WM_KEYDOWN && LOWORD(wParam) == VK_ESCAPE) {
+		// fixed Esc handling when EDITTEXT control has ES_MULTILINE property and is in focus
+		HWND parentOwner = GetParentOwner(control);
+		if (parentOwner) {
+			::PostMessageW(parentOwner, WM_COMMAND, IDCANCEL, 0);
 		}
+		return TRUE;
 	}
 
 	return CallWindowProcW(OldControlProc, control, message, wParam, lParam); // call edit control's own windowproc
