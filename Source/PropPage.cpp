@@ -472,6 +472,32 @@ HRESULT CVRInfoPPage::OnDisconnect()
 	return S_OK;
 }
 
+HWND GetParentOwner(HWND hwnd) {
+	HWND hWndParent = hwnd;
+	HWND hWndT;
+	while ((::GetWindowLong(hWndParent, GWL_STYLE) & WS_CHILD) &&
+		(hWndT = ::GetParent(hWndParent)) != NULL) {
+		hWndParent = hWndT;
+	}
+
+	return hWndParent;
+}
+
+static WNDPROC OldControlProc;
+static LRESULT CALLBACK ControlProc(HWND control, UINT message, WPARAM wParam, LPARAM lParam) {
+	if (message == WM_KEYDOWN) {
+		if (LOWORD(wParam) == VK_ESCAPE) {
+			HWND parentOwner = GetParentOwner(control);
+			if (parentOwner) {
+				::PostMessageW(parentOwner, WM_COMMAND, IDCANCEL, 0);
+			}
+			return TRUE;
+		}
+	}
+
+	return CallWindowProcW(OldControlProc, control, message, wParam, lParam); // call edit control's own windowproc
+}
+
 HRESULT CVRInfoPPage::OnActivate()
 {
 	// set m_hWnd for CWindow
@@ -535,6 +561,8 @@ HRESULT CVRInfoPPage::OnActivate()
 #endif
 
 	SetDlgItemTextW(IDC_EDIT1, strInfo.c_str());
+
+	OldControlProc = (WNDPROC)::SetWindowLongPtrW(::GetDlgItem(m_hWnd, IDC_EDIT1), GWLP_WNDPROC, (LONG_PTR)ControlProc);
 
 	return S_OK;
 }
