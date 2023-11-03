@@ -1429,7 +1429,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 
 			if (ac.advancedColorSupported && m_iHdrToggleDisplay) {
 				BOOL bHDREnabled = FALSE;
-				const auto& it = m_hdrModeStartState.find(mi.szDevice);
+				const auto it = m_hdrModeStartState.find(mi.szDevice);
 				if (it != m_hdrModeStartState.cend()) {
 					bHDREnabled = it->second;
 				}
