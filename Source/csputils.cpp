@@ -320,9 +320,9 @@ static void mp_get_xyz2rgb_coeffs(struct mp_csp_params *params,
 
     // All non-absolute mappings want to map source white to target white
     if (intent != MP_INTENT_ABSOLUTE_COLORIMETRIC) {
-        // SMPTE 428-1 defines the calibration white point as CIE xy (0.314, 0.351)
-        static const struct mp_csp_col_xy smpte428 = {0.314, 0.351};
-        mp_apply_chromatic_adaptation(smpte428, prim.white, m->m);
+        // SMPTE EG 432-1 Annex H defines the white point as equal energy
+        static const struct mp_csp_col_xy smpte432 = {1.0/3.0, 1.0/3.0};
+        mp_apply_chromatic_adaptation(smpte432, prim.white, m->m);
     }
 
     // Since this outputs linear RGB rather than companded RGB, we
