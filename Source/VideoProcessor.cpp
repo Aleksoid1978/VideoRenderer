@@ -127,7 +127,7 @@ void CVideoProcessor::SetDisplayInfo(const DisplayConfig_t& dc, const bool prima
 	}
 
 	if (primary) {
-		m_strStatsDispInfo.append(L" [Primary]");
+		m_strStatsDispInfo.append(L" Primary");
 	}
 	m_strStatsDispInfo.append(fullscreen ? L" fullscreen" : L" windowed");
 
