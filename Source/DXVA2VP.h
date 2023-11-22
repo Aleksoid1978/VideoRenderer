@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2022 see Authors.txt
+* (C) 2019-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -162,7 +162,10 @@ public:
 	HRESULT InitVideoService(IDirect3DDevice9* pDevice, DWORD vendorId);
 	void ReleaseVideoService();
 
-	HRESULT InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width, const UINT height, const DXVA2_ExtendedFormat exFmt, const bool interlaced, D3DFORMAT& outputFmt);
+	HRESULT InitVideoProcessor(
+		const D3DFORMAT inputFmt, const UINT width, const UINT height,
+		const DXVA2_ExtendedFormat exFmt, const bool interlaced,
+		D3DFORMAT& outputFmt);
 	void ReleaseVideoProcessor();
 
 	bool IsReady() { return (m_pDXVA2_VP != nullptr); }

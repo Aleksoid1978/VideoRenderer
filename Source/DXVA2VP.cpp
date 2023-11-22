@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2022 see Authors.txt
+* (C) 2019-2023 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -259,7 +259,10 @@ void CDXVA2VP::ReleaseVideoService()
 	m_pDXVA2_VPService.Release();
 }
 
-HRESULT CDXVA2VP::InitVideoProcessor(const D3DFORMAT inputFmt, const UINT width, const UINT height, const DXVA2_ExtendedFormat exFmt, const bool interlaced, D3DFORMAT& outputFmt)
+HRESULT CDXVA2VP::InitVideoProcessor(
+	const D3DFORMAT inputFmt, const UINT width, const UINT height,
+	const DXVA2_ExtendedFormat exFmt, const bool interlaced,
+	D3DFORMAT& outputFmt)
 {
 	CheckPointer(m_pDXVA2_VPService, E_FAIL);
 

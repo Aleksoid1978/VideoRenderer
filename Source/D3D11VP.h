@@ -151,7 +151,10 @@ public:
 	HRESULT InitVideoDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, UINT VendorId);
 	void ReleaseVideoDevice();
 
-	HRESULT InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, DXGI_FORMAT& outputFmt);
+	HRESULT InitVideoProcessor(
+		const DXGI_FORMAT inputFmt, const UINT width, const UINT height,
+		const DXVA2_ExtendedFormat exFmt, const bool interlaced,
+		DXGI_FORMAT& outputFmt);
 	void ReleaseVideoProcessor();
 
 	HRESULT InitInputTextures(ID3D11Device* pDevice);

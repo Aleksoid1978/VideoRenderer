@@ -157,7 +157,10 @@ int GetBitDepth(const DXGI_FORMAT format)
 	}
 }
 
-HRESULT CD3D11VP::InitVideoProcessor(const DXGI_FORMAT inputFmt, const UINT width, const UINT height, const bool interlaced, DXGI_FORMAT& outputFmt)
+HRESULT CD3D11VP::InitVideoProcessor(
+	const DXGI_FORMAT inputFmt, const UINT width, const UINT height,
+	const DXVA2_ExtendedFormat exFmt, const bool interlaced,
+	DXGI_FORMAT& outputFmt)
 {
 	ReleaseVideoProcessor();
 	HRESULT hr = S_OK;
