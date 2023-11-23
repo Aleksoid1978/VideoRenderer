@@ -26,7 +26,7 @@ MPC Video Renderer is a free and open-source video renderer for DirectShow. The 
 ## Recommended system requirements
 
 * An SSE2-capable CPU
-* Windows 8.1 or newer
+* Windows 10 or newer
 * DirectX 10/11 video card
 
 ## License
