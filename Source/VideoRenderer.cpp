@@ -231,7 +231,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			m_Sets.bHdrPassthrough = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrToggleDisplay, dw)) {
-			m_Sets.iHdrToggleDisplay = discard<int>(dw, HDRTD_Always, HDRTD_Off, HDRTD_Always);
+			m_Sets.iHdrToggleDisplay = discard<int>(dw, HDRTD_On, HDRTD_Disabled, HDRTD_OnOff);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrOsdBrightness, dw)) {
 			m_Sets.iHdrOsdBrightness = discard<int>(dw, 0, 0, 2);
@@ -243,7 +243,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	if (!IsWindows10OrGreater()) {
 		m_Sets.bHdrPassthrough = false;
-		m_Sets.iHdrToggleDisplay = HDRTD_Off;
+		m_Sets.iHdrToggleDisplay = HDRTD_Disabled;
 	}
 
 	HRESULT hr = S_FALSE;

@@ -63,9 +63,11 @@ enum :int {
 };
 
 enum :int {
-	HDRTD_Off = 0,
-	HDRTD_Fullscreen = 1,
-	HDRTD_Always = 2
+	HDRTD_Disabled   = 0,
+	HDRTD_On_Full    = 1,
+	HDRTD_On         = 2,
+	HDRTD_OnOff_Full = 3,
+	HDRTD_OnOff      = 4
 };
 
 struct VPEnableFormats_t {
@@ -133,10 +135,10 @@ struct Settings_t {
 		bHdrPreferDoVi                  = false;
 		if (IsWindows10OrGreater()) {
 			bHdrPassthrough             = true;
-			iHdrToggleDisplay           = HDRTD_Always;
+			iHdrToggleDisplay           = HDRTD_On;
 		} else {
 			bHdrPassthrough             = false;
-			iHdrToggleDisplay           = HDRTD_Off;
+			iHdrToggleDisplay           = HDRTD_Disabled;
 		}
 		bConvertToSdr                   = true;
 		iHdrOsdBrightness               = 0;
