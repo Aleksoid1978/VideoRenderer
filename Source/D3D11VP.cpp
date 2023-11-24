@@ -502,7 +502,7 @@ HRESULT CD3D11VP::CheckColorSpaceNew(
 	ASSERT(m_pVideoProcessorEnum1);
 
 	// Windows 10 or later
-	DLog(L"CD3D11VP::SetColorSpace() : used ID3D11VideoContext1");
+	DLog(L"CD3D11VP::CheckColorSpaceNew() : used ID3D11VideoContext1");
 
 	m_bConvSupportedG2084 = FALSE;
 	HRESULT hr = S_OK;
@@ -611,21 +611,17 @@ HRESULT CD3D11VP::CheckColorSpaceNew(
 			&bConvSupported);
 	}
 
-	if (SUCCEEDED(hr)) {
-		if (bConvSupported) {
-			DLog(L"CD3D11VP::SetColorSpace() : VideoProcessorSetStreamColorSpace1({})", (int)cstype_input);
-			DLog(L"CD3D11VP::SetColorSpace() : VideoProcessorSetOutputColorSpace1({})", (int)cstype_output);
-		}
-		else {
-			hr = E_FAIL;
-			DLog(L"CD3D11VP::SetColorSpace() : CheckVideoProcessorFormatConversion does not support {}({}) -> {}({})",
-				DXGIFormatToString(inputFormat), (int)cstype_input, DXGIFormatToString(outputFormat), (int)cstype_output);
-		}
-	}
-	else {
-		DLog(L"CD3D11VP::SetColorSpace() : CheckVideoProcessorFormatConversion FAILED. {}({}) -> {}({})",
+	DLogIf(FAILED(hr), L"CD3D11VP::CheckColorSpaceNew() : CheckVideoProcessorFormatConversion FAILED. {}({}) -> {}({})",
+		DXGIFormatToString(inputFormat), (int)cstype_input, DXGIFormatToString(outputFormat), (int)cstype_output);
+
+	if (SUCCEEDED(hr) && !bConvSupported) {
+		hr = E_FAIL;
+		DLog(L"CD3D11VP::CheckColorSpaceNew() : VideoProcessor does NOT support {}({}) -> {}({})",
 			DXGIFormatToString(inputFormat), (int)cstype_input, DXGIFormatToString(outputFormat), (int)cstype_output);
 	}
+
+	DLogIf(SUCCEEDED(hr), L"CD3D11VP::CheckColorSpaceNew() : VideoProcessor supports {}({}) -> {}({})",
+		DXGIFormatToString(inputFormat), (int)cstype_input, DXGIFormatToString(outputFormat), (int)cstype_output);
 
 	return hr;
 }
