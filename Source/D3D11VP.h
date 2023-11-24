@@ -119,7 +119,7 @@ private:
 
 	CComPtr<ID3D11VideoContext1> m_pVideoContext1;
 	CComPtr<ID3D11VideoProcessorEnumerator1> m_pVideoProcessorEnum1;
-	BOOL m_bExConvSupported = FALSE;
+	BOOL m_bConvSupportedG2084 = FALSE;
 
 	D3D11_VIDEO_PROCESSOR_CAPS m_VPCaps = {};
 	UINT m_RateConvIndex = 0;
@@ -153,7 +153,7 @@ public:
 
 	HRESULT InitVideoProcessor(
 		const DXGI_FORMAT inputFmt, const UINT width, const UINT height,
-		const DXVA2_ExtendedFormat exFmt, const bool interlaced,
+		const DXVA2_ExtendedFormat exFmt, const bool interlaced, const bool bHdrPassthrough,
 		DXGI_FORMAT& outputFmt);
 	void ReleaseVideoProcessor();
 
@@ -162,17 +162,24 @@ public:
 	bool IsVideoDeviceOk() { return (m_pVideoDevice != nullptr); }
 	bool IsReady() { return (m_pVideoProcessor != nullptr); }
 	void GetVPParams(D3D11_VIDEO_PROCESSOR_CAPS& caps, UINT& rateConvIndex, D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS& rateConvCaps);
-	BOOL IsPqSupported() { return m_bExConvSupported; }
+	BOOL IsPqSupported() { return m_bConvSupportedG2084; }
 
 	ID3D11Texture2D* GetNextInputTexture(const D3D11_VIDEO_FRAME_FORMAT vframeFormat);
 	void ResetFrameOrder();
 
 	HRESULT SetRectangles(const RECT * pSrcRect, const RECT* pDstRect);
-	HRESULT SetColorSpace(const DXVA2_ExtendedFormat exFmt, const bool bHdrPassthrough);
 	void SetRotation(D3D11_VIDEO_PROCESSOR_ROTATION rotation);
 	void SetProcAmpValues(DXVA2_ProcAmpValues *pValues);
 
 private:
+	HRESULT CheckColorSpaceNew(
+		const DXGI_FORMAT inputFormat, const DXGI_FORMAT outputFormat,
+		const DXVA2_ExtendedFormat exFmt, const bool bHdrPassthrough,
+		DXGI_COLOR_SPACE_TYPE& cstype_input, DXGI_COLOR_SPACE_TYPE& cstype_output
+	);
+	void SetColorSpaceNew(DXGI_COLOR_SPACE_TYPE cstype_input, DXGI_COLOR_SPACE_TYPE cstype_output);
+	void SetColorSpaceOld(const DXVA2_ExtendedFormat exFmt);
+
 	HRESULT SetSuperResNvidia(const bool enable);
 	HRESULT SetSuperResIntel(const bool enable);
 public:

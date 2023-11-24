@@ -1731,8 +1731,9 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 
 	m_TexSrcVideo.Release();
 
+	const bool bHdrPassthrough = m_bHdrDisplayModeEnabled && SourceIsPQorHLG();
 	m_D3D11OutputFmt = m_InternalTexFmt;
-	HRESULT hr = m_D3D11VP.InitVideoProcessor(dxgiFormat, width, height, m_srcExFmt, m_bInterlaced, m_D3D11OutputFmt);
+	HRESULT hr = m_D3D11VP.InitVideoProcessor(dxgiFormat, width, height, m_srcExFmt, m_bInterlaced, bHdrPassthrough, m_D3D11OutputFmt);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : InitVideoProcessor() failed with error {}", HR2Str(hr));
 		return hr;
@@ -1743,8 +1744,6 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : InitInputTextures() failed with error {}", HR2Str(hr));
 		return hr;
 	}
-
-	hr = m_D3D11VP.SetColorSpace(m_srcExFmt, m_bHdrDisplayModeEnabled && SourceIsPQorHLG());
 
 	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(m_bVPScaling && m_bVPSuperRes) == S_OK);
 
