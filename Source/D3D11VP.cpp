@@ -239,7 +239,7 @@ HRESULT CD3D11VP::InitVideoProcessor(
 	DXGI_COLOR_SPACE_TYPE cstype_input = DXGI_COLOR_SPACE_CUSTOM;
 	DXGI_COLOR_SPACE_TYPE cstype_output = DXGI_COLOR_SPACE_CUSTOM;
 
-	if (GetBitDepth(inputFmt) > 8 && (outputFmt == DXGI_FORMAT_R10G10B10A2_UNORM || outputFmt == DXGI_FORMAT_R16G16B16A16_FLOAT)) {
+	if (GetBitDepth(inputFmt) > 8 || (outputFmt == DXGI_FORMAT_R10G10B10A2_UNORM || outputFmt == DXGI_FORMAT_R16G16B16A16_FLOAT)) {
 		// checking the 10-bit output
 		outputFmt = DXGI_FORMAT_R10G10B10A2_UNORM;
 
