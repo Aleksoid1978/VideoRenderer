@@ -180,8 +180,15 @@ HRESULT CD3D11VP::InitVideoProcessor(
 		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateVideoProcessorEnumerator() failed with error {}", HR2Str(hr));
 		return hr;
 	}
-	m_pVideoProcessorEnum->QueryInterface(IID_PPV_ARGS(&m_pVideoProcessorEnum1));
-	DLogIf(!m_pVideoProcessorEnum1, L"CD3D11VP::InitVideoProcessor() : ID3D11VideoProcessorEnumerator1 unavailable");
+	hr = m_pVideoProcessorEnum->QueryInterface(IID_PPV_ARGS(&m_pVideoProcessorEnum1));
+	if (FAILED(hr)) {
+		// Windows 8/8.1
+		DLog(L"CD3D11VP::InitVideoProcessor() : ID3D11VideoProcessorEnumerator1 unavailable");
+		if (exFmt.value && exFmt.VideoTransferMatrix > DXVA2_VideoTransferMatrix_BT601) {
+			// Win8/8.1 D3D11 VP only supports RGB, BT.601, BT.709
+			return E_ABORT;
+		}
+	}
 
 	// check input format
 	UINT uiFlags;
