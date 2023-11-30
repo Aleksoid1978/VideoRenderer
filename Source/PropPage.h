@@ -35,6 +35,8 @@ public:
 	CVRMainPPage(LPUNKNOWN lpunk, HRESULT* phr);
 	~CVRMainPPage();
 
+	void SendDlgComboCurSel(int nID, WPARAM wParam);
+
 private:
 	void SetControls();
 	void EnableControls();

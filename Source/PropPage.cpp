@@ -51,14 +51,14 @@ inline LONG_PTR ComboBox_GetCurItemData(HWND hWnd, int nIDComboBox)
 	return lValue;
 }
 
-void ComboBox_SelectByItemData(HWND hWnd, int nIDComboBox, LONG_PTR data)
+void ComboBox_SelectByItemData(CVRMainPPage* wnd, int nIDComboBox, LONG_PTR data)
 {
-	LRESULT lCount = SendDlgItemMessageW(hWnd, nIDComboBox, CB_GETCOUNT, 0, 0);
+	LRESULT lCount = wnd->SendDlgItemMessageW(nIDComboBox, CB_GETCOUNT, 0, 0);
 	if (lCount != CB_ERR) {
 		for (int idx = 0; idx < lCount; idx++) {
-			const LRESULT lValue = SendDlgItemMessageW(hWnd, nIDComboBox, CB_GETITEMDATA, idx, 0);
+			const LRESULT lValue = wnd->SendDlgItemMessageW(nIDComboBox, CB_GETITEMDATA, idx, 0);
 			if (data == lValue) {
-				SendDlgItemMessageW(hWnd, nIDComboBox, CB_SETCURSEL, idx, 0);
+				wnd->SendDlgComboCurSel(nIDComboBox, idx);
 				break;
 			}
 		}
@@ -81,12 +81,22 @@ CVRMainPPage::~CVRMainPPage()
 	DLog(L"~CVRMainPPage()");
 }
 
+void CVRMainPPage::SendDlgComboCurSel(_In_ int nID, _In_ WPARAM wParam)
+{
+	WPARAM curSel = SendDlgItemMessageW(nID, CB_GETCURSEL, 0, 0);
+	if (curSel != wParam) {
+		SendDlgItemMessageW(nID, CB_SETCURSEL, wParam, 0);
+		GetDlgItem(nID).RedrawWindow();
+	}
+}
+
+
 void CVRMainPPage::SetControls()
 {
 	CheckDlgButton(IDC_CHECK1, m_SetsPP.bUseD3D11             ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK2, m_SetsPP.bShowStats            ? BST_CHECKED : BST_UNCHECKED);
 
-	ComboBox_SelectByItemData(m_hWnd, IDC_COMBO1, m_SetsPP.iTexFormat);
+	ComboBox_SelectByItemData(this, IDC_COMBO1, m_SetsPP.iTexFormat);
 
 	CheckDlgButton(IDC_CHECK7, m_SetsPP.VPFmts.bNV12          ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK8, m_SetsPP.VPFmts.bP01x          ? BST_CHECKED : BST_UNCHECKED);
@@ -96,11 +106,11 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling            ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK13, m_SetsPP.bVPSuperRes          ? BST_CHECKED : BST_UNCHECKED);
 
-    CheckDlgButton(IDC_CHECK18, m_SetsPP.bHdrPreferDoVi       ? BST_CHECKED : BST_UNCHECKED);
+  CheckDlgButton(IDC_CHECK18, m_SetsPP.bHdrPreferDoVi       ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK12, m_SetsPP.bHdrPassthrough      ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr        ? BST_CHECKED : BST_UNCHECKED);
 
-	SendDlgItemMessageW(IDC_COMBO7, CB_SETCURSEL, m_SetsPP.iHdrToggleDisplay, 0);
+	SendDlgComboCurSel(IDC_COMBO7, m_SetsPP.iHdrToggleDisplay);
 	SendDlgItemMessageW(IDC_SLIDER1, TBM_SETPOS, 1, m_SetsPP.iHdrOsdBrightness);
 
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct   ? BST_CHECKED : BST_UNCHECKED);
@@ -111,13 +121,13 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK15, m_SetsPP.bVBlankBeforePresent ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK16, m_SetsPP.bReinitByDisplay     ? BST_CHECKED : BST_UNCHECKED);
 
-	SendDlgItemMessageW(IDC_COMBO6, CB_SETCURSEL, m_SetsPP.iResizeStats, 0);
+	SendDlgComboCurSel(IDC_COMBO6, m_SetsPP.iResizeStats);
 
-	SendDlgItemMessageW(IDC_COMBO5, CB_SETCURSEL, m_SetsPP.iChromaScaling, 0);
-	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, m_SetsPP.iUpscaling, 0);
-	SendDlgItemMessageW(IDC_COMBO3, CB_SETCURSEL, m_SetsPP.iDownscaling, 0);
+	SendDlgComboCurSel(IDC_COMBO5, m_SetsPP.iChromaScaling);
+	SendDlgComboCurSel(IDC_COMBO2, m_SetsPP.iUpscaling);
+	SendDlgComboCurSel(IDC_COMBO3, m_SetsPP.iDownscaling);
 
-	SendDlgItemMessageW(IDC_COMBO4, CB_SETCURSEL, m_SetsPP.iSwapEffect, 0);
+	SendDlgComboCurSel(IDC_COMBO4, m_SetsPP.iSwapEffect);
 }
 
 void CVRMainPPage::EnableControls()
