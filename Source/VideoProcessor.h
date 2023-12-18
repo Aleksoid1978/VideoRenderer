@@ -71,7 +71,7 @@ protected:
 	CopyFrameDataFn m_pCopyGpuFn = CopyFrameAsIs;
 
 	// Input parameters
-	FmtConvParams_t m_srcParams = {};
+	FmtConvParams_t m_srcParams = GetFmtConvParams(CF_NONE);
 	UINT  m_srcWidth        = 0;
 	UINT  m_srcHeight       = 0;
 	UINT  m_srcRectWidth    = 0;
