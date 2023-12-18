@@ -42,12 +42,17 @@ struct Tex_t
 
 		HRESULT hr = pDevice->CreateTexture(width, height, 1, usage, format, D3DPOOL_DEFAULT, &pTexture, nullptr);
 		if (S_OK == hr) {
-			EXECUTE_ASSERT(S_OK == pTexture->GetSurfaceLevel(0, &pSurface));
-			D3DSURFACE_DESC desc = {};
-			EXECUTE_ASSERT(S_OK == pSurface->GetDesc(&desc));
-			Format = desc.Format;
-			Width  = desc.Width;
-			Height = desc.Height;
+			hr = pTexture->GetSurfaceLevel(0, &pSurface);
+			if (S_OK == hr) {
+				D3DSURFACE_DESC desc = {};
+				EXECUTE_ASSERT(S_OK == pSurface->GetDesc(&desc));
+				Format = desc.Format;
+				Width  = desc.Width;
+				Height = desc.Height;
+			} else {
+				ASSERT(FALSE);
+				pTexture.Release();
+			}
 		}
 
 		return hr;
