@@ -298,7 +298,7 @@ static DX11PlaneConfig_t DX11Plane_RGBA16  = { DXGI_FORMAT_R16G16B16A16_UNORM, D
 
 static const FmtConvParams_t s_FmtConvMapping[] = {
 	// cformat    | str         | DXVA2Format    | D3DFormat(DX9)     |pDX9Planes| VP11Format                | DX11Format                |  pDX11Planes  |Packsize|PitchCoeff| CSType|Subsampling|CDepth| Func           |FuncSSSE3
-	{CF_NONE,      nullptr,      D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,         nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,               nullptr,       0, 0,        CS_YUV,    0,       0,     nullptr,                  nullptr},
+	{CF_NONE,      L"unknown",   D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,         nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,               nullptr,       0, 0,        CS_YUV,    0,       0,     nullptr,                  nullptr},
 	{CF_NV12,      L"NV12",      D3DFMT_NV12,     D3DFMT_NV12,     &DX9PlanesNV12, DXGI_FORMAT_NV12,           DXGI_FORMAT_NV12,          &DX11PlanesNV12,       1, 3,        CS_YUV,  420,       8,     &CopyFrameAsIs,           nullptr},
 	{CF_P010,      L"P010",      D3DFMT_P010,     D3DFMT_P010,     &DX9PlanesP01x, DXGI_FORMAT_P010,           DXGI_FORMAT_P010,          &DX11PlanesP01x,       2, 3,        CS_YUV,  420,       16,    &CopyFrameAsIs,           nullptr},
 	{CF_P016,      L"P016",      D3DFMT_P016,     D3DFMT_P016,     &DX9PlanesP01x, DXGI_FORMAT_P016,           DXGI_FORMAT_P016,          &DX11PlanesP01x,       2, 3,        CS_YUV,  420,       16,    &CopyFrameAsIs,           nullptr},
