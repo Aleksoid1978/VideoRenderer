@@ -1346,7 +1346,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		bCreateSwapChain = false;
 		DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd(fullscreen) failed with error {}", HR2Str(hr));
 
-		m_lastFullscreenHWnd = m_hWnd;
+		m_lastFullscreenHMonitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY);
 	}
 	else {
 		desc1.Width = std::max(8, m_windowRect.Width());
@@ -1372,7 +1372,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc1, nullptr, nullptr, &m_pDXGISwapChain1);
 		DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd() failed with error {}", HR2Str(hr));
 
-		m_lastFullscreenHWnd = nullptr;
+		m_lastFullscreenHMonitor = nullptr;
 	}
 
 	if (m_pDXGISwapChain1) {
@@ -1421,7 +1421,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 	bool bRet = false;
 	if (m_bHdrPassthrough && SourceIsPQorHLG()) {
 		MONITORINFOEXW mi = { sizeof(mi) };
-		GetMonitorInfoW(MonitorFromWindow(m_lastFullscreenHWnd ? m_lastFullscreenHWnd : m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
+		GetMonitorInfoW(m_lastFullscreenHMonitor ? m_lastFullscreenHMonitor : MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 		DisplayConfig_t displayConfig = {};
 
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
