@@ -74,8 +74,8 @@ BEGIN
     CONTROL         "Passthrough to display",IDC_CHECK12,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,60,89,10
     LTEXT           " if not possible",IDC_STATIC4,178,73,47,8
     CONTROL         "Convert to SDR",IDC_CHECK14,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,85,66,10
-    LTEXT           "Auto display HDR On/Off:",IDC_STATIC5,178,100,92,8
-    COMBOBOX        IDC_COMBO7,267,97,75,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Windows HDR Mode:",IDC_STATIC5,178,100,68,8
+    COMBOBOX        IDC_COMBO7,245,99,100,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Subtitle and OSD brightness:",IDC_STATIC6,178,115,92,8
     CONTROL         "",IDC_SLIDER1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,274,114,68,12
     GROUPBOX        "Shader video processor",IDC_STATIC,5,120,161,107

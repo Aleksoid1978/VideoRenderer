@@ -1301,7 +1301,9 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		HandleHDRToggle();
 		UpdateBitmapShader();
 
-		if (m_bHdrPassthrough && m_iHdrToggleDisplay == HDRTD_Fullscreen && SourceIsPQorHLG()) {
+		if (m_bHdrPassthrough
+				&& ((m_iHdrToggleDisplay == HDRTD_On_Fullscreen && m_bIsFullscreen) || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen)
+				&& SourceIsPQorHLG()) {
 			m_bHdrAllowSwitchDisplay = false;
 			InitMediaType(&m_pFilter->m_inputMT);
 			m_bHdrAllowSwitchDisplay = true;
@@ -1435,9 +1437,10 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 				}
 
 				const bool bNeedToggleOn  = !ac.advancedColorEnabled &&
-											(m_iHdrToggleDisplay == HDRTD_Always || m_iHdrToggleDisplay == HDRTD_Fullscreen && m_bIsFullscreen);
+											(m_iHdrToggleDisplay == HDRTD_On || m_iHdrToggleDisplay == HDRTD_OnOff
+											 || m_bIsFullscreen && (m_iHdrToggleDisplay == HDRTD_On_Fullscreen || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen));
 				const bool bNeedToggleOff = ac.advancedColorEnabled &&
-											!bHDREnabled && m_iHdrToggleDisplay == HDRTD_Fullscreen && !m_bIsFullscreen;
+											!bHDREnabled && !m_bIsFullscreen && m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen;
 				DLog(L"HandleHDRToggle() : {}, {}", bNeedToggleOn, bNeedToggleOff);
 				if (bNeedToggleOn) {
 					bRet = ToggleHDR(displayConfig, TRUE);
@@ -1472,8 +1475,15 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 			const auto& ac = displayConfig.advancedColor;
 
+			// check if HDR was already enabled in Windows before starting
+			BOOL bWindowsHDREnabled = FALSE;
+			const auto& it = m_hdrModeStartState.find(mi.szDevice);
+			if (it != m_hdrModeStartState.cend()) {
+				bWindowsHDREnabled = it->second;
+			}
+
 			if (ac.advancedColorSupported && ac.advancedColorEnabled &&
-					(m_iHdrToggleDisplay == HDRTD_Always || m_iHdrToggleDisplay == HDRTD_Fullscreen && m_bIsFullscreen)) {
+					(!bWindowsHDREnabled || (m_iHdrToggleDisplay == HDRTD_OnOff || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen && m_bIsFullscreen))) {
 				bRet = ToggleHDR(displayConfig, FALSE);
 				DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR OFF failed");
 
@@ -3335,7 +3345,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (config.iHdrToggleDisplay != m_iHdrToggleDisplay) {
-		if (config.iHdrToggleDisplay == HDRTD_Off || m_iHdrToggleDisplay == HDRTD_Off) {
+		if (config.iHdrToggleDisplay == HDRTD_Disabled || m_iHdrToggleDisplay == HDRTD_Disabled) {
 			changeHDR = true;
 		}
 		m_iHdrToggleDisplay = config.iHdrToggleDisplay;
