@@ -6,6 +6,8 @@ The YCgCo color space will now only be converted using shaders.
 Fixed closing the "Information" window after pressing the Esc key.
 Improved checking of supported format conversions for D3D11 video processor in Windows 10. This resolves the black screen issue on some AMD video adapters.
 The D3D11 video processor will not be used for unsupported formats in Windows 8/8.1.
+Fixed crashes in rare cases.
+The "Auto Display HDR On/Off" setting has been changed to "Windows HDR Mode".
 
 0.6.9.2117 - 2023-08-07
 ------------------------
