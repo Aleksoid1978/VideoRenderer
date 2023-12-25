@@ -1,4 +1,4 @@
-0.7.0 dev
+0.7.1.2172 - 2023-12-25
 ------------------------
 The DXVA2 decoder is no longer supported in DirectX 11 mode.
 Added brightness and contrast adjustment for Dolby Vision.
