@@ -1,3 +1,7 @@
+0.7.2 dev
+------------------------
+
+
 0.7.1.2172 - 2023-12-25
 ------------------------
 The DXVA2 decoder is no longer supported in DirectX 11 mode.
