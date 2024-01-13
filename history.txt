@@ -1,6 +1,6 @@
 0.7.2 dev
 ------------------------
-
+Added the ability to request Super Resolution only for low resolution videos.
 
 0.7.1.2172 - 2023-12-25
 ------------------------
