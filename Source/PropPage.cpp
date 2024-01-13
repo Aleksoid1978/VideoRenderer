@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2023 see Authors.txt
+ * (C) 2018-2024 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -94,9 +94,9 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK4, m_SetsPP.VPFmts.bOther         ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK3, m_SetsPP.bDeintDouble          ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling            ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK13, m_SetsPP.bVPSuperRes          ? BST_CHECKED : BST_UNCHECKED);
+	SendDlgItemMessageW(IDC_COMBO8, CB_SETCURSEL, m_SetsPP.iVPSuperRes, 0);
 
-    CheckDlgButton(IDC_CHECK18, m_SetsPP.bHdrPreferDoVi       ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK18, m_SetsPP.bHdrPreferDoVi       ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK12, m_SetsPP.bHdrPassthrough      ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr        ? BST_CHECKED : BST_UNCHECKED);
 
@@ -142,7 +142,8 @@ void CVRMainPPage::EnableControls()
 		GetDlgItem(IDC_COMBO7).EnableWindow(bEnable);
 		GetDlgItem(IDC_STATIC6).EnableWindow(bEnable);
 		GetDlgItem(IDC_SLIDER1).EnableWindow(bEnable);
-		GetDlgItem(IDC_CHECK13).EnableWindow(bEnable && m_SetsPP.bVPScaling);
+		GetDlgItem(IDC_STATIC7).EnableWindow(bEnable && m_SetsPP.bVPScaling);
+		GetDlgItem(IDC_COMBO8).EnableWindow(bEnable && m_SetsPP.bVPScaling);
 	}
 }
 
@@ -187,7 +188,8 @@ HRESULT CVRMainPPage::OnActivate()
 		GetDlgItem(IDC_COMBO7).EnableWindow(FALSE);
 		GetDlgItem(IDC_STATIC6).EnableWindow(FALSE);
 		GetDlgItem(IDC_SLIDER1).EnableWindow(FALSE);
-		GetDlgItem(IDC_CHECK13).EnableWindow(FALSE);
+		GetDlgItem(IDC_STATIC7).EnableWindow(FALSE);
+		GetDlgItem(IDC_COMBO8).EnableWindow(FALSE);
 	}
 
 	EnableControls();
@@ -200,6 +202,11 @@ HRESULT CVRMainPPage::OnActivate()
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"8-bit Integer",          8);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"10-bit Integer",        10);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO1, L"16-bit Floating Point", 16);
+
+	SendDlgItemMessageW(IDC_COMBO8, CB_ADDSTRING, 0, (LPARAM)L"Disable");
+	SendDlgItemMessageW(IDC_COMBO8, CB_ADDSTRING, 0, (LPARAM)L"for SD");
+	SendDlgItemMessageW(IDC_COMBO8, CB_ADDSTRING, 0, (LPARAM)L"for \x2264 HD");
+	SendDlgItemMessageW(IDC_COMBO8, CB_ADDSTRING, 0, (LPARAM)L"for \x2264 FullHD");
 
 	SendDlgItemMessageW(IDC_COMBO7, CB_ADDSTRING, 0, (LPARAM)L"Do not change");
 	SendDlgItemMessageW(IDC_COMBO7, CB_ADDSTRING, 0, (LPARAM)L"Allow turn on (fullscreen)");
@@ -267,12 +274,8 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			if (nID == IDC_CHECK5) {
 				m_SetsPP.bVPScaling = IsDlgButtonChecked(IDC_CHECK5) == BST_CHECKED;
 				SetDirty();
-				GetDlgItem(IDC_CHECK13).EnableWindow(m_SetsPP.bVPScaling && m_SetsPP.bUseD3D11 && IsWindows10OrGreater());
-				return (LRESULT)1;
-			}
-			if (nID == IDC_CHECK13) {
-				m_SetsPP.bVPSuperRes = IsDlgButtonChecked(IDC_CHECK13) == BST_CHECKED;
-				SetDirty();
+				GetDlgItem(IDC_STATIC7).EnableWindow(m_SetsPP.bVPScaling && m_SetsPP.bUseD3D11 && IsWindows10OrGreater());
+				GetDlgItem(IDC_COMBO8).EnableWindow(m_SetsPP.bVPScaling && m_SetsPP.bUseD3D11 && IsWindows10OrGreater());
 				return (LRESULT)1;
 			}
 			if (nID == IDC_CHECK6) {
@@ -364,6 +367,14 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				lValue = ComboBox_GetCurItemData(m_hWnd, IDC_COMBO1);
 				if (lValue != m_SetsPP.iTexFormat) {
 					m_SetsPP.iTexFormat = lValue;
+					SetDirty();
+					return (LRESULT)1;
+				}
+			}
+			if (nID == IDC_COMBO8) {
+				lValue = SendDlgItemMessageW(IDC_COMBO8, CB_GETCURSEL, 0, 0);
+				if (lValue != m_SetsPP.iVPSuperRes) {
+					m_SetsPP.iVPSuperRes = lValue;
 					SetDirty();
 					return (LRESULT)1;
 				}

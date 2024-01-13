@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2023 see Authors.txt
+* (C) 2019-2024 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -24,6 +24,7 @@
 #include <cmath>
 #include "Helper.h"
 #include "DX11Helper.h"
+#include "IVideoRenderer.h"
 
 #include "D3D11VP.h"
 
@@ -754,10 +755,30 @@ HRESULT CD3D11VP::SetSuperResIntel(const bool enable)
 	return hr;
 }
 
-HRESULT CD3D11VP::SetSuperRes(const bool enable)
+HRESULT CD3D11VP::SetSuperRes(const int iSuperRes)
 {
 	if (!m_pVideoContext) {
 		return E_ABORT;
+	}
+
+	bool enable = false;
+
+	switch (iSuperRes) {
+	case SUPERRES_SD:
+		if (m_srcWidth <= 1024 && m_srcHeight <= 576) {
+			enable = true;
+		}
+		break;
+	case SUPERRES_HD:
+		if (m_srcWidth <= 1280 && m_srcHeight <= 720) {
+			enable = true;
+		}
+		break;
+	case SUPERRES_FHD:
+		if (m_srcWidth <= 2048 && m_srcHeight <= 1088) {
+			enable = true;
+		}
+		break;
 	}
 
 	if (m_VendorId == PCIV_NVIDIA) {

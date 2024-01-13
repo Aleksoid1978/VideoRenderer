@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2023 see Authors.txt
+ * (C) 2018-2024 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -27,6 +27,14 @@ enum :int {
 	TEXFMT_8INT = 8,
 	TEXFMT_10INT = 10,
 	TEXFMT_16FLOAT = 16,
+};
+
+enum :int {
+	SUPERRES_Disable = 0,
+	SUPERRES_SD,
+	SUPERRES_HD,
+	SUPERRES_FHD,
+	SUPERRES_COUNT
 };
 
 enum :int {
@@ -85,7 +93,7 @@ struct Settings_t {
 	VPEnableFormats_t VPFmts;
 	bool bDeintDouble;
 	bool bVPScaling;
-	bool bVPSuperRes;
+	int iVPSuperRes;
 	int  iChromaScaling;
 	int  iUpscaling;
 	int  iDownscaling;
@@ -121,7 +129,7 @@ struct Settings_t {
 		VPFmts.bOther                   = true;
 		bDeintDouble                    = true;
 		bVPScaling                      = true;
-		bVPSuperRes                     = false;
+		iVPSuperRes                     = SUPERRES_Disable;
 		iChromaScaling                  = CHROMA_Bilinear;
 		iUpscaling                      = UPSCALE_CatmullRom;
 		iDownscaling                    = DOWNSCALE_Hamming;

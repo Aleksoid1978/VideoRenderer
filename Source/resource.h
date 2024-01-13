@@ -94,6 +94,7 @@
 #define IDC_STATIC4                     1014
 #define IDC_STATIC5                     1015
 #define IDC_STATIC6                     1016
+#define IDC_STATIC7                     1017
 #define IDC_CHECK1                      1021
 #define IDC_CHECK2                      1022
 #define IDC_CHECK3                      1023
@@ -119,6 +120,7 @@
 #define IDC_COMBO5                      1045
 #define IDC_COMBO6                      1046
 #define IDC_COMBO7                      1047
+#define IDC_COMBO8                      1048
 #define IDC_BUTTON1                     1051
 #define IDC_SLIDER1                     1061
 

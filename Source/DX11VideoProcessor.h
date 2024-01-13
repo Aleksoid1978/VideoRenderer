@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2023 see Authors.txt
+* (C) 2018-2024 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -149,7 +149,7 @@ private:
 	bool m_bDecoderDevice = false;
 	bool m_bIsFullscreen = false;
 
-	bool m_bVPSuperRes = false;
+	int m_iVPSuperRes = 0;
 	bool m_bVPUseSuperRes = false; // but it is not exactly
 
 	bool m_bHdrPassthroughSupport = false;

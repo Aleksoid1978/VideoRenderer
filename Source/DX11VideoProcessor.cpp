@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2023 see Authors.txt
+* (C) 2018-2024 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -398,7 +398,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_iHdrOsdBrightness    = config.iHdrOsdBrightness;
 	m_bConvertToSdr        = config.bConvertToSdr;
 
-	m_bVPSuperRes          = config.bVPSuperRes;
+	m_iVPSuperRes          = config.iVPSuperRes;
 
 	m_nCurrentAdapter = -1;
 
@@ -1755,7 +1755,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return hr;
 	}
 
-	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(m_bVPScaling && m_bVPSuperRes) == S_OK);
+	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(m_bVPScaling ? m_iVPSuperRes : 0) == S_OK);
 
 	hr = m_TexSrcVideo.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWriteNoSRV);
 	if (FAILED(hr)) {
@@ -3363,8 +3363,8 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		}
 	}
 
-	if (config.bVPSuperRes != m_bVPSuperRes) {
-		m_bVPSuperRes = config.bVPSuperRes;
+	if (config.iVPSuperRes != m_iVPSuperRes) {
+		m_iVPSuperRes = config.iVPSuperRes;
 		changeSuperRes = true;
 	}
 
@@ -3441,7 +3441,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (changeSuperRes) {
-		m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(m_bVPScaling && m_bVPSuperRes) == S_OK);
+		m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(m_bVPScaling ? m_iVPSuperRes : 0) == S_OK);
 	}
 
 	UpdateStatsStatic();

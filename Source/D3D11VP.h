@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2023 see Authors.txt
+* (C) 2019-2024 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -183,7 +183,7 @@ private:
 	HRESULT SetSuperResNvidia(const bool enable);
 	HRESULT SetSuperResIntel(const bool enable);
 public:
-	HRESULT SetSuperRes(const bool enable);
+	HRESULT SetSuperRes(const int iSuperRes);
 
 	HRESULT Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAME_FORMAT sampleFormat, const bool second);
 };
