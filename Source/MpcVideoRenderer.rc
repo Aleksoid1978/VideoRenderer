@@ -71,24 +71,24 @@ BEGIN
     CONTROL         "Use for resizing",IDC_CHECK5,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,87,67,10
     LTEXT           "Request Super Resolution",IDC_STATIC7,10,100,85,8
     COMBOBOX        IDC_COMBO8,99,98,65,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    GROUPBOX        "Shader video processor", IDC_STATIC, 5, 120, 161, 107
-    LTEXT           "Chroma upsampling:", IDC_STATIC, 10, 134, 69, 8
-    COMBOBOX        IDC_COMBO5, 83, 132, 76, 30, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Upscaling:", IDC_STATIC, 10, 150, 35, 8
-    COMBOBOX        IDC_COMBO2, 83, 148, 76, 30, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Downscaling:", IDC_STATIC, 10, 166, 44, 8
-    COMBOBOX        IDC_COMBO3, 83, 164, 76, 30, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Use the ""Upscaling"" method to reducing the frame to 50%", IDC_CHECK6,
-    "Button", BS_AUTOCHECKBOX | BS_MULTILINE | WS_TABSTOP, 10, 180, 146, 15
-    CONTROL         "Use dithering", IDC_CHECK10, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 199, 59, 10
-    CONTROL         "Use Blend deinterlacing for YUV 4:2:0", IDC_CHECK17,
-    "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 212, 139, 10
+    GROUPBOX        "Shader video processor",IDC_STATIC,5,120,161,107
+    LTEXT           "Chroma upsampling:",IDC_STATIC,10,134,69,8
+    COMBOBOX        IDC_COMBO5,83,132,76,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Upscaling:",IDC_STATIC,10,150,35,8
+    COMBOBOX        IDC_COMBO2,83,148,76,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Downscaling:",IDC_STATIC,10,166,44,8
+    COMBOBOX        IDC_COMBO3,83,164,76,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Use the ""Upscaling"" method to reducing the frame to 50%",IDC_CHECK6,
+                    "Button",BS_AUTOCHECKBOX | BS_MULTILINE | WS_TABSTOP,10,180,146,15
+    CONTROL         "Use dithering",IDC_CHECK10,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,199,59,10
+    CONTROL         "Use Blend deinterlacing for YUV 4:2:0",IDC_CHECK17,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,212,139,10
     GROUPBOX        "HDR",IDC_STATIC,171,35,176,96
     CONTROL         "Prefer Dolby Vision over PQ and HLG",IDC_CHECK18,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,47,135,10
     CONTROL         "Passthrough to display",IDC_CHECK12,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,60,89,10
     LTEXT           " if not possible",IDC_STATIC4,178,73,48,8
     CONTROL         "Convert to SDR",IDC_CHECK14,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,85,66,10
-    LTEXT           "Windows HDR:",IDC_STATIC5,178,100,50,8
+    LTEXT           "Windows HDR:",IDC_STATIC5,178,100,51,8
     COMBOBOX        IDC_COMBO7,232,98,110,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Subtitle and OSD brightness:",IDC_STATIC6,178,115,95,8
     CONTROL         "",IDC_SLIDER1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,277,114,65,12
