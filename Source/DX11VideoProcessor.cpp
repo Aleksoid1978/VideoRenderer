@@ -2992,6 +2992,12 @@ HRESULT CDX11VideoProcessor::Reset()
 			}
 		}
 	}
+	else
+	{
+		ReleaseSwapChain();
+		m_pFilter->Init(true);
+		InitMediaType(&m_pFilter->m_inputMT);
+	}
 
 	return S_OK;
 }
