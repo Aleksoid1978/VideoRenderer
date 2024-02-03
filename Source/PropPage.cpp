@@ -142,8 +142,9 @@ void CVRMainPPage::EnableControls()
 		GetDlgItem(IDC_COMBO7).EnableWindow(bEnable);
 		GetDlgItem(IDC_STATIC6).EnableWindow(bEnable);
 		GetDlgItem(IDC_SLIDER1).EnableWindow(bEnable);
-		GetDlgItem(IDC_STATIC7).EnableWindow(bEnable && m_SetsPP.bVPScaling);
-		GetDlgItem(IDC_COMBO8).EnableWindow(bEnable && m_SetsPP.bVPScaling);
+		//Decoupling SuperRes from VPScaling because we set it manually for better control
+		GetDlgItem(IDC_STATIC7).EnableWindow(bEnable);
+		GetDlgItem(IDC_COMBO8).EnableWindow(bEnable);
 	}
 }
 
@@ -207,6 +208,7 @@ HRESULT CVRMainPPage::OnActivate()
 	SendDlgItemMessageW(IDC_COMBO8, CB_ADDSTRING, 0, (LPARAM)L"for SD");
 	SendDlgItemMessageW(IDC_COMBO8, CB_ADDSTRING, 0, (LPARAM)L"for \x2264 HD");
 	SendDlgItemMessageW(IDC_COMBO8, CB_ADDSTRING, 0, (LPARAM)L"for \x2264 FullHD");
+	SendDlgItemMessageW(IDC_COMBO8, CB_ADDSTRING, 0, (LPARAM)L"Always");
 
 	SendDlgItemMessageW(IDC_COMBO7, CB_ADDSTRING, 0, (LPARAM)L"Do not change");
 	SendDlgItemMessageW(IDC_COMBO7, CB_ADDSTRING, 0, (LPARAM)L"Allow turn on (fullscreen)");
@@ -274,8 +276,9 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			if (nID == IDC_CHECK5) {
 				m_SetsPP.bVPScaling = IsDlgButtonChecked(IDC_CHECK5) == BST_CHECKED;
 				SetDirty();
-				GetDlgItem(IDC_STATIC7).EnableWindow(m_SetsPP.bVPScaling && m_SetsPP.bUseD3D11 && IsWindows10OrGreater());
-				GetDlgItem(IDC_COMBO8).EnableWindow(m_SetsPP.bVPScaling && m_SetsPP.bUseD3D11 && IsWindows10OrGreater());
+				//Decoupling SuperRes from VPScaling because we set it manually for better control
+				GetDlgItem(IDC_STATIC7).EnableWindow(m_SetsPP.bUseD3D11 && IsWindows10OrGreater());
+				GetDlgItem(IDC_COMBO8).EnableWindow(m_SetsPP.bUseD3D11 && IsWindows10OrGreater());
 				return (LRESULT)1;
 			}
 			if (nID == IDC_CHECK6) {

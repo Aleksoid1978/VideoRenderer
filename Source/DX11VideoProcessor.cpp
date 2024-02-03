@@ -992,10 +992,76 @@ void CDX11VideoProcessor::UpdateTexParams(int cdepth)
 	}
 }
 
+//check if SuperRes is valid based on settings and input video
+bool CDX11VideoProcessor::SuperResValid()
+{
+	if (m_windowRect.Width() == 0 || m_windowRect.Height() == 0)
+		return false;
+
+	//check for user settings based on input video resolution
+	bool ValidSettings = false;
+	switch (m_iVPSuperRes) {
+	case SUPERRES_SD:
+		if (m_srcRectWidth <= 1024 && m_srcRectHeight <= 576) {
+			ValidSettings = true;
+		}
+		break;
+	case SUPERRES_HD:
+		if (m_srcRectWidth <= 1280 && m_srcRectHeight <= 720) {
+			ValidSettings = true;
+		}
+		break;
+	case SUPERRES_FHD:
+		if (m_srcRectWidth <= 2048 && m_srcRectHeight <= 1088) {
+			ValidSettings = true;
+		}
+		break;
+	case SUPERRES_Always:
+		ValidSettings = true;
+		break;
+	}
+
+	//nvidia SuperRes has some more specific limitations
+	if (m_VendorId == PCIV_NVIDIA) {
+		const int dstW = m_videoRect.Width();
+		const int dstH = m_videoRect.Height();
+
+		//cannot upscale videos that are smaller than this size
+		//not exact, but good cut-off point
+		bool InputLargerThanMinSize = m_srcRectWidth >= 640 && m_srcRectHeight >= 270;
+		//cannot upscale videos that are larger than this size
+		//might change in future
+		bool InputSmallerThanMaxSize = m_srcRectWidth <= 2560 && m_srcRectHeight <= 1440;
+		//can only upscale if video window is larger or equal to input video resolution
+		//aka no downscaling support, but still works if window is the same size as the input video
+		bool OutputEqualToOrLargerThanInput = (m_srcRectWidth == dstW && m_srcRectHeight == dstH) || m_srcRectWidth < (UINT)dstW || m_srcRectHeight < (UINT)dstH;
+
+		//Nvidia can only upscale the video if:
+		//	video is not too small,
+		//	video is not too large,
+		//	video requires upscaling based on output video size,
+		//	video is not being output in HDR (HDR-to-SDR conversion works).
+		bool superres_valid = ValidSettings && InputLargerThanMinSize && InputSmallerThanMaxSize &&
+			OutputEqualToOrLargerThanInput && (!SourceIsHDR() || (!m_bHdrPassthroughSupport || !m_bHdrPassthrough));
+		return superres_valid;
+	}
+
+	return ValidSettings;
+}
+
 void CDX11VideoProcessor::UpdateRenderRect()
 {
 	m_renderRect.IntersectRect(m_videoRect, m_windowRect);
 	UpdateScalingStrings();
+
+	//need to reset the window if:
+	//	SuperRes option changes
+	//this is to cause InitSwapChain() to run and toggle HDR when needed for RTX Video: SuperRes
+	bool superres_valid = SuperResValid();
+	static bool old_superres = true;
+	if ((!SourceIsHDR() || !m_bHdrPassthroughSupport || !m_bHdrPassthrough) && (superres_valid != old_superres || !superres_valid && m_bVPUseSuperRes))
+		Reset();
+	old_superres = superres_valid;
 }
 
 void CDX11VideoProcessor::UpdateScalingStrings()
@@ -1310,8 +1376,11 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		}
 	}
 
-	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR();
-	const auto b10BitOutput = bHdrOutput || Preferred10BitOutput();
+	//If being output in higher than 8bit and using an HDR display,
+	//	RTX Video requires the window to be in HDR to output correct colors
+	const auto Prefer10Bit = Preferred10BitOutput();
+	const auto bHdrOutput = m_bHdrPassthroughSupport && (m_bHdrPassthrough && SourceIsHDR() || (m_VendorId == PCIV_NVIDIA) && (Prefer10Bit && SuperResValid()));
+	const auto b10BitOutput = bHdrOutput || Prefer10Bit;
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
 	HRESULT hr = S_OK;
@@ -1755,7 +1824,9 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return hr;
 	}
 
-	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(m_bVPScaling ? m_iVPSuperRes : 0) == S_OK);
+	//Now we control when SuperRes turns on more thoroughly
+	//There should be less instances where this setting is on, but SuperRes itself is off
+	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(SuperResValid()) == S_OK);
 
 	hr = m_TexSrcVideo.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWriteNoSRV);
 	if (FAILED(hr)) {
@@ -2431,7 +2502,7 @@ void CDX11VideoProcessor::UpdateTexures()
 	HRESULT hr = S_OK;
 
 	if (m_D3D11VP.IsReady()) {
-		if (m_bVPScaling) {
+		if (m_bVPScaling || m_bVPUseSuperRes) {
 			CSize texsize = m_videoRect.Size();
 			hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, texsize.cx, texsize.cy, Tex2D_DefaultShaderRTarget);
 		} else {
@@ -3405,6 +3476,19 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		}
 	}
 
+	//need to reset the window if:
+	//	SuperRes option changes
+	//this is to cause InitSwapChain() to run and toggle HDR when needed for RTX Video: SuperRes
+	if (changeSuperRes)
+	{
+		m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(SuperResValid()) == S_OK);
+		static bool old_superres = !m_bVPUseSuperRes;
+
+		if (m_bHdrPassthroughSupport && old_superres != m_bVPUseSuperRes)
+			Reset();
+		old_superres = m_bVPUseSuperRes;
+	}
+
 	if (m_Dovi.bValid) {
 		changeVP = false;
 	}
@@ -3421,6 +3505,9 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		}
 		UpdateTexures();
 		UpdatePostScaleTexures();
+		//this is to cause InitSwapChain() to run and toggle HDR when needed for RTX Video: SuperRes
+		if (m_bHdrPassthroughSupport)
+			Reset();
 	}
 
 	if (changeConvertShader) {
@@ -3444,10 +3531,6 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 	if (changeResizeStats) {
 		SetGraphSize();
-	}
-
-	if (changeSuperRes) {
-		m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(m_bVPScaling ? m_iVPSuperRes : 0) == S_OK);
 	}
 
 	UpdateStatsStatic();
@@ -3528,7 +3611,13 @@ HRESULT CDX11VideoProcessor::AddPreScaleShader(const std::wstring& name, const s
 		pShaderCode->Release();
 	}
 
-	if (S_OK == hr && m_D3D11VP.IsReady() && m_bVPScaling) {
+	//While SuperRes can be used with other scalers,
+	//	it works best without them.
+	//decoupling VPScaling from SuperRes and forcing PreScaleShaders 
+	//	manually to off only when SuperRes is working
+	//	allows the user to still use custom downscale shaders and
+	//	upscale shaders when SuperRes is not valid.
+	if (S_OK == hr && m_D3D11VP.IsReady() && (m_bVPScaling || m_bVPUseSuperRes)) {
 		return S_FALSE;
 	}
 
@@ -3707,11 +3796,9 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		str += std::format(L"\nScaling       : {}x{} -> {}x{}", m_srcRectWidth, m_srcRectHeight, dstW, dstH);
 	}
 	if (m_srcRectWidth != dstW || m_srcRectHeight != dstH) {
-		if (m_D3D11VP.IsReady() && m_bVPScaling && !m_bVPScalingUseShaders) {
+		//D3D scaling is manually forced on if SuperRes is enabled
+		if (m_D3D11VP.IsReady() && (m_bVPScaling || m_bVPUseSuperRes) && !m_bVPScalingUseShaders) {
 			str.append(L" D3D11");
-			if (m_bVPUseSuperRes) {
-				str.append(L" SuperResolution*");
-			}
 		} else {
 			str += L' ';
 			if (m_strShaderX) {
@@ -3724,6 +3811,10 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 				str.append(m_strShaderY);
 			}
 		}
+	}
+
+	if (m_bVPUseSuperRes) {
+		str.append(L" SuperResolution*");
 	}
 
 	if (m_strCorrection || m_pPostScaleShaders.size() || m_bDitherUsed) {

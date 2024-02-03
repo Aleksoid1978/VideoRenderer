@@ -213,6 +213,7 @@ private:
 	}
 
 	bool HandleHDRToggle();
+	bool SuperResValid();
 
 public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, const bool bDecoderDevice);

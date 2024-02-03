@@ -34,6 +34,7 @@ enum :int {
 	SUPERRES_SD,
 	SUPERRES_HD,
 	SUPERRES_FHD,
+	SUPERRES_Always,
 	SUPERRES_COUNT
 };
 

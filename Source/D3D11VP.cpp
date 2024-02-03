@@ -755,30 +755,11 @@ HRESULT CD3D11VP::SetSuperResIntel(const bool enable)
 	return hr;
 }
 
-HRESULT CD3D11VP::SetSuperRes(const int iSuperRes)
+//Simplified the function and moved relevant code to a SuperResValid() check
+HRESULT CD3D11VP::SetSuperRes(const bool enable)
 {
 	if (!m_pVideoContext) {
 		return E_ABORT;
-	}
-
-	bool enable = false;
-
-	switch (iSuperRes) {
-	case SUPERRES_SD:
-		if (m_srcWidth <= 1024 && m_srcHeight <= 576) {
-			enable = true;
-		}
-		break;
-	case SUPERRES_HD:
-		if (m_srcWidth <= 1280 && m_srcHeight <= 720) {
-			enable = true;
-		}
-		break;
-	case SUPERRES_FHD:
-		if (m_srcWidth <= 2048 && m_srcHeight <= 1088) {
-			enable = true;
-		}
-		break;
 	}
 
 	if (m_VendorId == PCIV_NVIDIA) {
