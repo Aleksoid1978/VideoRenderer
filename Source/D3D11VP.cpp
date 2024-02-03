@@ -772,6 +772,88 @@ HRESULT CD3D11VP::SetSuperRes(const bool enable)
 	return E_NOT_SET;
 }
 
+HRESULT CD3D11VP::SetRTXVideoHDR(bool enable)
+{
+	if (!m_pVideoContext) {
+		return E_ABORT;
+	}
+
+	bool support = GpuDriverSupportsVpAutoHDR();
+	return ToggleVpAutoHDR(support, enable);
+}
+
+constexpr GUID kNvidiaTrueHDRInterfaceGUID = {
+0xfdd62bb4,
+0x620b,
+0x4fd7,
+{0x9a, 0xb3, 0x1e, 0x59, 0xd0, 0xd5, 0x44, 0xb3} };
+
+bool CD3D11VP::NvidiaDriverSupportsTrueHDR() {
+	if (!m_pVideoContext || !m_pVideoProcessor) {
+		return false;
+	}
+
+	UINT driver_supports_true_hdr = 0;
+	HRESULT hr = m_pVideoContext->VideoProcessorGetStreamExtension(
+		m_pVideoProcessor, 0, &kNvidiaTrueHDRInterfaceGUID,
+		sizeof(driver_supports_true_hdr), &driver_supports_true_hdr);
+
+	// The runtime never fails the GetStreamExtension hr unless a bad memory size
+	// is provided.
+	if (FAILED(hr)) {
+		return false;
+	}
+
+	return (driver_supports_true_hdr == 1);
+}
+
+bool CD3D11VP::GpuDriverSupportsVpAutoHDR() {
+	if (m_VendorId == PCIV_NVIDIA) {
+		return NvidiaDriverSupportsTrueHDR();
+	}
+
+	return false;
+}
+
+HRESULT CD3D11VP::ToggleNvidiaVpTrueHDR(bool driver_supports_vp_auto_hdr, bool enable) {
+	if (!m_pVideoContext || !m_pVideoProcessor) {
+		return E_ABORT;
+	}
+
+	if (enable && !driver_supports_vp_auto_hdr) {
+		return E_NOTIMPL;
+	}
+
+	constexpr UINT kStreamExtensionVersionV4 = 0x4;
+	constexpr UINT kStreamExtensionMethodTrueHDR = 0x3;
+	struct {
+		UINT version;
+		UINT method;
+		UINT enable : 1;
+		UINT reserved : 31;
+	} stream_extension_info = { kStreamExtensionVersionV4,
+							   kStreamExtensionMethodTrueHDR, enable ? 1u : 0u,
+							   0u };
+
+	HRESULT hr = m_pVideoContext->VideoProcessorSetStreamExtension(
+		m_pVideoProcessor, 0, &kNvidiaTrueHDRInterfaceGUID,
+		sizeof(stream_extension_info), &stream_extension_info);
+
+	if (hr == S_OK && !enable) {
+		hr = S_FALSE;
+	}
+
+	return hr;
+}
+
+HRESULT CD3D11VP::ToggleVpAutoHDR(bool driver_supports_vp_auto_hdr, bool enable) {
+	if (m_VendorId == PCIV_NVIDIA) {
+		return ToggleNvidiaVpTrueHDR(driver_supports_vp_auto_hdr, enable);
+	}
+
+	return E_NOTIMPL;
+}
+
 HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAME_FORMAT sampleFormat, const bool second)
 {
 	ASSERT(m_pVideoDevice);

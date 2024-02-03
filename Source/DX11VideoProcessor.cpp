@@ -399,6 +399,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_bConvertToSdr        = config.bConvertToSdr;
 
 	m_iVPSuperRes          = config.iVPSuperRes;
+	m_bVPRTXVideoHDR       = config.bVPRTXVideoHDR;
 
 	m_nCurrentAdapter = -1;
 
@@ -982,7 +983,8 @@ void CDX11VideoProcessor::UpdateTexParams(int cdepth)
 {
 	switch (m_iTexFormat) {
 	case TEXFMT_AUTOINT:
-		m_InternalTexFmt = (cdepth > 8) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
+		//RTX Video HDR requires the output to be in 10bit
+		m_InternalTexFmt = (cdepth > 8 || RTXVideoHDRValid()) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 		break;
 	case TEXFMT_8INT:    m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM;     break;
 	case TEXFMT_10INT:   m_InternalTexFmt = DXGI_FORMAT_R10G10B10A2_UNORM;  break;
@@ -990,6 +992,21 @@ void CDX11VideoProcessor::UpdateTexParams(int cdepth)
 	default:
 		ASSERT(FALSE);
 	}
+}
+
+//check if RTX Video HDR is valid based on settings and input video
+bool CDX11VideoProcessor::RTXVideoHDRValid()
+{
+	if (m_VendorId == PCIV_NVIDIA) {
+		//hacky fix for checking if video is HDR before all the video data is loaded/processed on first launch
+		//RTX Video HDR does not work for HDR videos, nor HDR-to-SDR videos, but does work for 10bit SDR videos
+		bool ValidFormat = !(m_srcParams.cformat == CF_P010 && 
+			(m_srcExFmt.VideoTransferFunction < MFVideoTransFunc_709 || m_srcExFmt.VideoTransferFunction > MFVideoTransFunc_sRGB) || 
+			m_srcExFmt.VideoTransferFunction > MFVideoTransFunc_sRGB);
+		bool ValidSettings = m_bHdrPassthroughSupport && m_bVPRTXVideoHDR;
+		return ValidFormat && ValidSettings && !SourceIsHDR();
+	}
+	return false;
 }
 
 //check if SuperRes is valid based on settings and input video
@@ -1056,12 +1073,16 @@ void CDX11VideoProcessor::UpdateRenderRect()
 
 	//need to reset the window if:
 	//	SuperRes option changes
-	//this is to cause InitSwapChain() to run and toggle HDR when needed for RTX Video: SuperRes
+	//	RTX Video HDR option changes
+	//this is to cause InitSwapChain() to run and toggle HDR when needed for RTX Video: SuperRes and HDR
 	bool superres_valid = SuperResValid();
+	bool rtxvideohdr_valid = RTXVideoHDRValid();
 	static bool old_superres = true;
-	if ((!SourceIsHDR() || !m_bHdrPassthroughSupport || !m_bHdrPassthrough) && (superres_valid != old_superres || !superres_valid && m_bVPUseSuperRes))
+	static bool old_rtxvideohdr = true;
+	if ((!SourceIsHDR() || !m_bHdrPassthroughSupport || !m_bHdrPassthrough) && (superres_valid != old_superres || !superres_valid && m_bVPUseSuperRes || old_rtxvideohdr != rtxvideohdr_valid))
 		Reset();
 	old_superres = superres_valid;
+	old_rtxvideohdr = rtxvideohdr_valid;
 }
 
 void CDX11VideoProcessor::UpdateScalingStrings()
@@ -1379,7 +1400,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	//If being output in higher than 8bit and using an HDR display,
 	//	RTX Video requires the window to be in HDR to output correct colors
 	const auto Prefer10Bit = Preferred10BitOutput();
-	const auto bHdrOutput = m_bHdrPassthroughSupport && (m_bHdrPassthrough && SourceIsHDR() || (m_VendorId == PCIV_NVIDIA) && (Prefer10Bit && SuperResValid()));
+	const auto bHdrOutput = m_bHdrPassthroughSupport && (m_bHdrPassthrough && SourceIsHDR() || (m_VendorId == PCIV_NVIDIA) && (Prefer10Bit && SuperResValid() || RTXVideoHDRValid()));
 	const auto b10BitOutput = bHdrOutput || Prefer10Bit;
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
@@ -1827,6 +1848,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 	//Now we control when SuperRes turns on more thoroughly
 	//There should be less instances where this setting is on, but SuperRes itself is off
 	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(SuperResValid()) == S_OK);
+	m_bVPUseRTXVideoHDR = (m_D3D11VP.SetRTXVideoHDR(RTXVideoHDRValid()) == S_OK);
 
 	hr = m_TexSrcVideo.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWriteNoSRV);
 	if (FAILED(hr)) {
@@ -3339,6 +3361,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	bool changeNumTextures       = false;
 	bool changeResizeStats       = false;
 	bool changeSuperRes          = false;
+	bool changeRTXVideoHDR       = false;
 
 	// settings that do not require preparation
 	m_bShowStats           = config.bShowStats;
@@ -3445,6 +3468,11 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		changeSuperRes = true;
 	}
 
+	if (config.bVPRTXVideoHDR != m_bVPRTXVideoHDR) {
+		m_bVPRTXVideoHDR = config.bVPRTXVideoHDR;
+		changeRTXVideoHDR = true;
+	}
+
 	if (!m_pFilter->GetActive()) {
 		return;
 	}
@@ -3487,6 +3515,18 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		if (m_bHdrPassthroughSupport && old_superres != m_bVPUseSuperRes)
 			Reset();
 		old_superres = m_bVPUseSuperRes;
+	}
+	//need to reset the window if:
+	//	RTX Video HDR option changes
+	//this is to cause InitSwapChain() to run and toggle HDR when needed for RTX Video: HDR
+	if (changeRTXVideoHDR)
+	{
+		m_bVPUseRTXVideoHDR = (m_D3D11VP.SetRTXVideoHDR(RTXVideoHDRValid()) == S_OK);
+		static bool old_rtxvideohdr = !m_bVPUseRTXVideoHDR;
+
+		if (m_bHdrPassthroughSupport && old_rtxvideohdr != m_bVPUseRTXVideoHDR)
+			Reset();
+		old_rtxvideohdr = m_bVPUseRTXVideoHDR;
 	}
 
 	if (m_Dovi.bValid) {
@@ -3709,9 +3749,13 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		}
 		m_strStatsVProc += std::format(L"\nInternalFormat: {}", DXGIFormatToString(m_InternalTexFmt));
 
-		if (SourceIsHDR()) {
+		//add debug output so users know when RTX Video HDR is enabled
+		bool sourceHDR = SourceIsHDR();
+		if (sourceHDR || m_bVPUseRTXVideoHDR) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
-			if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
+			if (m_bVPUseRTXVideoHDR && !sourceHDR)
+				m_strStatsHDR.append(L"RTX Video HDR");
+			else if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
 				m_strStatsHDR.append(L"Passthrough");
 				if (m_lastHdr10.bValid) {
 					m_strStatsHDR += std::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance / 10000);

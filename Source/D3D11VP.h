@@ -182,8 +182,16 @@ private:
 
 	HRESULT SetSuperResNvidia(const bool enable);
 	HRESULT SetSuperResIntel(const bool enable);
+
+	//tests if there is HDR support for RTX Video HDR
+	HRESULT ToggleNvidiaVpTrueHDR(bool driver_supports_vp_auto_hdr, bool enable);
+	HRESULT ToggleVpAutoHDR(bool driver_supports_vp_auto_hdr, bool enable);
+	bool NvidiaDriverSupportsTrueHDR();
+	bool GpuDriverSupportsVpAutoHDR();
+
 public:
 	HRESULT SetSuperRes(const bool enable);
+	HRESULT SetRTXVideoHDR(bool enable);
 
 	HRESULT Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAME_FORMAT sampleFormat, const bool second);
 };

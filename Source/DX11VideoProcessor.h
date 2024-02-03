@@ -151,6 +151,8 @@ private:
 
 	int m_iVPSuperRes = 0;
 	bool m_bVPUseSuperRes = false; // but it is not exactly
+	bool m_bVPRTXVideoHDR = false;
+	bool m_bVPUseRTXVideoHDR = false;
 
 	bool m_bHdrPassthroughSupport = false;
 	bool m_bHdrDisplaySwitching   = false; // switching HDR display in progress
@@ -214,6 +216,7 @@ private:
 
 	bool HandleHDRToggle();
 	bool SuperResValid();
+	bool RTXVideoHDRValid();
 
 public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, const bool bDecoderDevice);
