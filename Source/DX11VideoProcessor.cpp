@@ -1075,6 +1075,17 @@ void CDX11VideoProcessor::UpdateRenderRect()
 	m_renderRect.IntersectRect(m_videoRect, m_windowRect);
 	UpdateScalingStrings();
 
+	//hacky fix for multi-monitor support where monitors are not all in HDR.
+	//When going out of fullscreen mode OnWindowMove() gets called,
+	//	and if the window was snapped to anywhere on the side closer to an SDR monitor
+	//	the MonitorFromWindow() call malfunctions because window is still set at fullscreen dimensions,
+	//	this makes the function think that this window overlaps more with the SDR monitor,
+	//	and thus HDR video gets tonemapped to SDR.
+	//This issue can easily be seen by the debug overlay showing the "Display"
+	//	as the wrong monitor, the name being for the secondary monitor.
+	//We would ideally only reset after the window size has changed in OnWindowMove(),
+	//	that way MonitorFromWindow() would function as intended, but this method works fine.
+	const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 	//need to reset the window if:
 	//	SuperRes option changes
 	//	RTX Video HDR option changes
@@ -1084,10 +1095,12 @@ void CDX11VideoProcessor::UpdateRenderRect()
 	bool rtxvideohdr_valid = RTXVideoHDRValid();
 	static bool old_superres = true;
 	static bool old_rtxvideohdr = true;
-	if ((!SourceIsHDR() || !m_bHdrPassthroughSupport || !m_bHdrPassthrough) && (superres_valid != old_superres || !superres_valid && m_bVPUseSuperRes || old_rtxvideohdr != rtxvideohdr_valid))
+	static HMONITOR old_hMon = hMon;
+	if (hMon != old_hMon || (!SourceIsHDR() || !m_bHdrPassthroughSupport || !m_bHdrPassthrough) && (superres_valid != old_superres || !superres_valid && m_bVPUseSuperRes || old_rtxvideohdr != rtxvideohdr_valid))
 		Reset();
 	old_superres = superres_valid;
 	old_rtxvideohdr = rtxvideohdr_valid;
+	old_hMon = hMon;
 }
 
 void CDX11VideoProcessor::UpdateScalingStrings()
