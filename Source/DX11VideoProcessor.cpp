@@ -3523,14 +3523,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 	if (changeHDR) {
 		if (SourceIsPQorHLG() || m_iHdrToggleDisplay) {
-			if (m_iSwapEffect == SWAPEFFECT_Discard) {
-				ReleaseSwapChain();
-				m_pFilter->Init(true);
-			}
-
-			m_srcVideoTransferFunction = 0;
-			InitMediaType(&m_pFilter->m_inputMT);
-
+			Reset();
 			return;
 		}
 	}
