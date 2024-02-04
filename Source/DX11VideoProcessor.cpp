@@ -1017,21 +1017,24 @@ bool CDX11VideoProcessor::SuperResValid()
 	if (m_windowRect.Width() == 0 || m_windowRect.Height() == 0)
 		return false;
 
+	const UINT AR_width = std::max(m_srcRectWidth, m_srcRectHeight);
+	const UINT AR_height = std::min(m_srcRectWidth, m_srcRectHeight);
+
 	//check for user settings based on input video resolution
 	bool ValidSettings = false;
 	switch (m_iVPSuperRes) {
 	case SUPERRES_SD:
-		if (m_srcRectWidth <= 1024 && m_srcRectHeight <= 576) {
+		if (AR_width <= 1024 && AR_height <= 576) {
 			ValidSettings = true;
 		}
 		break;
 	case SUPERRES_HD:
-		if (m_srcRectWidth <= 1280 && m_srcRectHeight <= 720) {
+		if (AR_width <= 1280 && AR_height <= 720) {
 			ValidSettings = true;
 		}
 		break;
 	case SUPERRES_FHD:
-		if (m_srcRectWidth <= 2048 && m_srcRectHeight <= 1088) {
+		if (AR_width <= 2048 && AR_height <= 1088) {
 			ValidSettings = true;
 		}
 		break;
@@ -1047,10 +1050,10 @@ bool CDX11VideoProcessor::SuperResValid()
 
 		//cannot upscale videos that are smaller than this size
 		//not exact, but good cut-off point
-		bool InputLargerThanMinSize = m_srcRectWidth >= 640 && m_srcRectHeight >= 270;
+		bool InputLargerThanMinSize = AR_width >= 640 && AR_height >= 270;
 		//cannot upscale videos that are larger than this size
 		//might change in future
-		bool InputSmallerThanMaxSize = m_srcRectWidth <= 2560 && m_srcRectHeight <= 1440;
+		bool InputSmallerThanMaxSize = AR_width <= 2560 && AR_height <= 1440;
 		//can only upscale if video window is larger or equal to input video resolution
 		//aka no downscaling support, but still works if window is the same size as the input video
 		bool OutputEqualToOrLargerThanInput = (m_srcRectWidth == dstW && m_srcRectHeight == dstH) || m_srcRectWidth < (UINT)dstW || m_srcRectHeight < (UINT)dstH;
