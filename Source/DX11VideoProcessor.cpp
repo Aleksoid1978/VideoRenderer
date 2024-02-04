@@ -999,11 +999,13 @@ bool CDX11VideoProcessor::RTXVideoHDRValid()
 {
 	if (m_VendorId == PCIV_NVIDIA) {
 		//hacky fix for checking if video is HDR before all the video data is loaded/processed on first launch
-		//RTX Video HDR does not work for HDR videos, nor HDR-to-SDR videos, but does work for 10bit SDR videos
+		//RTX Video HDR does not work for HDR videos, nor HDR-to-SDR videos, but does work for 10bit SDR videos.
 		bool ValidFormat = !(m_srcParams.cformat == CF_P010 && 
 			(m_srcExFmt.VideoTransferFunction < MFVideoTransFunc_709 || m_srcExFmt.VideoTransferFunction > MFVideoTransFunc_sRGB) || 
 			m_srcExFmt.VideoTransferFunction > MFVideoTransFunc_sRGB);
 		bool ValidSettings = m_bHdrPassthroughSupport && m_bVPRTXVideoHDR;
+		//does not work if another video is already using this feature,
+		//	but there is no good way to test for this.
 		return ValidFormat && ValidSettings && !SourceIsHDR();
 	}
 	return false;
@@ -1058,6 +1060,8 @@ bool CDX11VideoProcessor::SuperResValid()
 		//	video is not too large,
 		//	video requires upscaling based on output video size,
 		//	video is not being output in HDR (HDR-to-SDR conversion works).
+		//does not work if another video is already using this feature,
+		//	but there is no good way to test for this.
 		bool superres_valid = ValidSettings && InputLargerThanMinSize && InputSmallerThanMaxSize &&
 			OutputEqualToOrLargerThanInput && (!SourceIsHDR() || (!m_bHdrPassthroughSupport || !m_bHdrPassthrough));
 		return superres_valid;
@@ -1075,6 +1079,7 @@ void CDX11VideoProcessor::UpdateRenderRect()
 	//	SuperRes option changes
 	//	RTX Video HDR option changes
 	//this is to cause InitSwapChain() to run and toggle HDR when needed for RTX Video: SuperRes and HDR
+	//and to call InitializeD3D11VP to run SetSuperRes and SetRTXVideoHDR
 	bool superres_valid = SuperResValid();
 	bool rtxvideohdr_valid = RTXVideoHDRValid();
 	static bool old_superres = true;
@@ -3083,10 +3088,23 @@ HRESULT CDX11VideoProcessor::Reset()
 					m_bHdrAllowSwitchDisplay = true;
 				}
 			}
+			else
+			{
+				//watching an HDR video on an SDR monitor needs to reset
+				//	and call SetSuperRes from InitializeD3D11VP
+				//	to toggle SuperRes as it works for HDR-to-SDR videos
+				ReleaseSwapChain();
+				m_pFilter->Init(true);
+				InitMediaType(&m_pFilter->m_inputMT);
+			}
 		}
 	}
 	else
 	{
+		//dragging an HDR window from an SDR screen to an HDR screen
+		//	fails the above check if the video metadata has not been loaded yet
+		//	and SourceIsPQorHLG() returns false,
+		//	thus causing HDR-to-SDR conversion to enable when it shouldn't.
 		ReleaseSwapChain();
 		m_pFilter->Init(true);
 		InitMediaType(&m_pFilter->m_inputMT);
@@ -3750,6 +3768,9 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		m_strStatsVProc += std::format(L"\nInternalFormat: {}", DXGIFormatToString(m_InternalTexFmt));
 
 		//add debug output so users know when RTX Video HDR is enabled
+		//might want to rename this feature to 'Auto HDR' or something else in the future,
+		//	but considering nvidia is the only one to currently support this,
+		//	RTX Video HDR seems to be more recognizable for users.
 		bool sourceHDR = SourceIsHDR();
 		if (sourceHDR || m_bVPUseRTXVideoHDR) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
