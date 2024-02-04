@@ -68,7 +68,7 @@ BEGIN
     CONTROL         "Other supported formats",IDC_CHECK4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,41,60,97,10
     CONTROL         "Double the frame rate when deinterlacing",IDC_CHECK3,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,74,152,10
-    CONTROL         "Use for resizing",IDC_CHECK5,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,87,67,10
+    CONTROL         "Use D3D/DXVA for resizing",IDC_CHECK5,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,87,67,10
     LTEXT           "Request Super Resolution",IDC_STATIC7,10,100,85,8
     COMBOBOX        IDC_COMBO8,99,98,65,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     GROUPBOX        "Shader video processor",IDC_STATIC,5,120,162,107

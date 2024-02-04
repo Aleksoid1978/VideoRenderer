@@ -146,6 +146,7 @@ void CVRMainPPage::EnableControls()
 		//Decoupling SuperRes from VPScaling because we set it manually for better control
 		GetDlgItem(IDC_STATIC7).EnableWindow(bEnable);
 		GetDlgItem(IDC_COMBO8).EnableWindow(bEnable);
+		GetDlgItem(IDC_CHECK19).EnableWindow(bEnable);
 	}
 }
 
@@ -192,6 +193,7 @@ HRESULT CVRMainPPage::OnActivate()
 		GetDlgItem(IDC_SLIDER1).EnableWindow(FALSE);
 		GetDlgItem(IDC_STATIC7).EnableWindow(FALSE);
 		GetDlgItem(IDC_COMBO8).EnableWindow(FALSE);
+		GetDlgItem(IDC_CHECK19).EnableWindow(FALSE);
 	}
 
 	EnableControls();
@@ -280,6 +282,7 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				//Decoupling SuperRes from VPScaling because we set it manually for better control
 				GetDlgItem(IDC_STATIC7).EnableWindow(m_SetsPP.bUseD3D11 && IsWindows10OrGreater());
 				GetDlgItem(IDC_COMBO8).EnableWindow(m_SetsPP.bUseD3D11 && IsWindows10OrGreater());
+				GetDlgItem(IDC_CHECK19).EnableWindow(m_SetsPP.bUseD3D11 && IsWindows10OrGreater());
 				return (LRESULT)1;
 			}
 			if (nID == IDC_CHECK6) {
