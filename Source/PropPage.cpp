@@ -148,7 +148,7 @@ void CVRMainPPage::EnableControls()
 		GetDlgItem(IDC_STATIC7).EnableWindow(bEnable);
 		GetDlgItem(IDC_COMBO8).EnableWindow(bEnable);
 		GetDlgItem(IDC_CHECK19).EnableWindow(bEnable);
-		GetDlgItem(IDC_CHECK20).EnableWindow(bEnable);
+		GetDlgItem(IDC_CHECK20).EnableWindow(bEnable && m_SetsPP.iVPSuperRes);
 	}
 }
 
