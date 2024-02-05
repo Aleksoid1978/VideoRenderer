@@ -3551,6 +3551,12 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		m_bVPUseRTXVideoHDR = (m_D3D11VP.SetRTXVideoHDR(RTXVideoHDRValid()) == S_OK);
 		static bool old_rtxvideohdr = !m_bVPUseRTXVideoHDR;
 
+		//need to update m_InternalTexFmt if RTX Video HDR
+		//	gets disabled, because then there is no need to use a 10bit output
+		//	if the video is 8bit (see UpdateTexParams()).
+		if (old_rtxvideohdr && !m_bVPUseRTXVideoHDR)
+			InitMediaType(&m_pFilter->m_inputMT);
+
 		if (m_bHdrPassthroughSupport && old_rtxvideohdr != m_bVPUseRTXVideoHDR)
 			Reset();
 		old_rtxvideohdr = m_bVPUseRTXVideoHDR;
