@@ -400,6 +400,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 
 	m_iVPSuperRes          = config.iVPSuperRes;
 	m_bVPRTXVideoHDR       = config.bVPRTXVideoHDR;
+	m_bVPSuperResIfScaling = config.bVPSuperResIfScaling;
 
 	m_nCurrentAdapter = -1;
 
@@ -1041,6 +1042,21 @@ bool CDX11VideoProcessor::SuperResValid()
 	case SUPERRES_Always:
 		ValidSettings = true;
 		break;
+	}
+
+	//disable SuperResolution if the video resolution matches the window size
+	//NOTE: Nvidia SuperResolution supports this, and works by
+	//	reducing the banding, noise, artifacting, etc. without any upscaling
+	//	but giving users an option to disable this mode is a good idea.
+	if (m_bVPSuperResIfScaling)
+	{
+		const int dstW = m_videoRect.Width();
+		const int dstH = m_videoRect.Height();
+
+		bool OutputEqualToInput = (m_srcRectWidth == dstW && m_srcRectHeight == dstH);
+
+		if (OutputEqualToInput)
+			ValidSettings = false;
 	}
 
 	//nvidia SuperRes has some more specific limitations
@@ -3505,6 +3521,11 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	if (config.bVPRTXVideoHDR != m_bVPRTXVideoHDR) {
 		m_bVPRTXVideoHDR = config.bVPRTXVideoHDR;
 		changeRTXVideoHDR = true;
+	}
+
+	if (config.bVPSuperResIfScaling != m_bVPSuperResIfScaling) {
+		m_bVPSuperResIfScaling = config.bVPSuperResIfScaling;
+		changeSuperRes = true;
 	}
 
 	if (!m_pFilter->GetActive()) {
