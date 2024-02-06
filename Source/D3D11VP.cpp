@@ -778,8 +778,11 @@ HRESULT CD3D11VP::SetRTXVideoHDR(bool enable)
 		return E_ABORT;
 	}
 
-	bool support = GpuDriverSupportsVpAutoHDR();
-	return ToggleVpAutoHDR(support, enable);
+	if (m_VendorId == PCIV_NVIDIA) {
+		return ToggleNvidiaVpTrueHDR(enable);
+	}
+
+	return E_NOT_SET;
 }
 
 constexpr GUID kNvidiaTrueHDRInterfaceGUID = {
@@ -815,13 +818,9 @@ bool CD3D11VP::GpuDriverSupportsVpAutoHDR() {
 	return false;
 }
 
-HRESULT CD3D11VP::ToggleNvidiaVpTrueHDR(bool driver_supports_vp_auto_hdr, bool enable) {
+HRESULT CD3D11VP::ToggleNvidiaVpTrueHDR(bool enable) {
 	if (!m_pVideoContext || !m_pVideoProcessor) {
 		return E_ABORT;
-	}
-
-	if (enable && !driver_supports_vp_auto_hdr) {
-		return E_NOTIMPL;
 	}
 
 	constexpr UINT kStreamExtensionVersionV4 = 0x4;
@@ -844,14 +843,6 @@ HRESULT CD3D11VP::ToggleNvidiaVpTrueHDR(bool driver_supports_vp_auto_hdr, bool e
 	}
 
 	return hr;
-}
-
-HRESULT CD3D11VP::ToggleVpAutoHDR(bool driver_supports_vp_auto_hdr, bool enable) {
-	if (m_VendorId == PCIV_NVIDIA) {
-		return ToggleNvidiaVpTrueHDR(driver_supports_vp_auto_hdr, enable);
-	}
-
-	return E_NOTIMPL;
 }
 
 HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAME_FORMAT sampleFormat, const bool second)

@@ -154,6 +154,9 @@ private:
 	bool m_bVPRTXVideoHDR = false;
 	bool m_bVPUseRTXVideoHDR = false;
 	bool m_bVPSuperResIfScaling = false;
+	bool m_bSuperRes_supported = false;
+	bool m_bRTXVideoHDR_supported = false;
+	bool m_bGPUEnhancementsChecked = false;
 
 	bool m_bHdrPassthroughSupport = false;
 	bool m_bHdrDisplaySwitching   = false; // switching HDR display in progress

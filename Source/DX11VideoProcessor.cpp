@@ -998,6 +998,10 @@ void CDX11VideoProcessor::UpdateTexParams(int cdepth)
 //check if RTX Video HDR is valid based on settings and input video
 bool CDX11VideoProcessor::RTXVideoHDRValid()
 {
+	if (!m_bRTXVideoHDR_supported)
+		return false;
+
+	bool DriverSupport = m_D3D11VP.GpuDriverSupportsVpAutoHDR();
 	if (m_VendorId == PCIV_NVIDIA) {
 		//hacky fix for checking if video is HDR before all the video data is loaded/processed on first launch
 		//RTX Video HDR does not work for HDR videos, nor HDR-to-SDR videos, but does work for 10bit SDR videos.
@@ -1007,7 +1011,7 @@ bool CDX11VideoProcessor::RTXVideoHDRValid()
 		bool ValidSettings = m_bHdrPassthroughSupport && m_bVPRTXVideoHDR;
 		//does not work if another video is already using this feature,
 		//	but there is no good way to test for this.
-		return ValidFormat && ValidSettings && !SourceIsHDR();
+		return DriverSupport && ValidFormat && ValidSettings && !SourceIsHDR();
 	}
 	return false;
 }
@@ -1015,7 +1019,7 @@ bool CDX11VideoProcessor::RTXVideoHDRValid()
 //check if SuperRes is valid based on settings and input video
 bool CDX11VideoProcessor::SuperResValid()
 {
-	if (m_windowRect.Width() == 0 || m_windowRect.Height() == 0)
+	if (!m_bSuperRes_supported || m_windowRect.Width() == 0 || m_windowRect.Height() == 0)
 		return false;
 
 	const UINT AR_width = std::max(m_srcRectWidth, m_srcRectHeight);
@@ -1884,6 +1888,19 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : InitInputTextures() failed with error {}", HR2Str(hr));
 		return hr;
+	}
+
+	//check if these technologies are supported on this system.
+	//only way I could think of force-disabling them entirely
+	//	where the Valid() checks would pass but Set() functions would fail,
+	//	thus causing problems such as the renderer preparing the window for HDR.
+	//does not check if these are enabled in settings by the user, or if they will work for this video,
+	//	just checks that it could in theory work on this system.
+	//only runs once on launch, but does rerun the checks on new videos.
+	//the code right below this will toggle these functions as requested by the user after.
+	if (!std::exchange(m_bGPUEnhancementsChecked, true)) {
+		m_bSuperRes_supported = (m_D3D11VP.SetSuperRes(true) == S_OK);
+		m_bRTXVideoHDR_supported = (m_D3D11VP.SetRTXVideoHDR(true) == S_OK);
 	}
 
 	//Now we control when SuperRes turns on more thoroughly
@@ -3815,7 +3832,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		if (sourceHDR || m_bVPUseRTXVideoHDR) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
 			if (m_bVPUseRTXVideoHDR && !sourceHDR)
-				m_strStatsHDR.append(L"RTX Video HDR");
+				m_strStatsHDR.append(L"RTX Video HDR*");
 			else if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
 				m_strStatsHDR.append(L"Passthrough");
 				if (m_lastHdr10.bValid) {
