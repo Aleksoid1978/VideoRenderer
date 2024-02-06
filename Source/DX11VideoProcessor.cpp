@@ -1085,8 +1085,11 @@ bool CDX11VideoProcessor::SuperResValid()
 			OutputEqualToOrLargerThanInput && (!SourceIsHDR() || (!m_bHdrPassthroughSupport || !m_bHdrPassthrough));
 		return superres_valid;
 	}
+	else if (m_VendorId == PCIV_INTEL) {
+		return ValidSettings;
+	}
 
-	return ValidSettings;
+	return false;
 }
 
 void CDX11VideoProcessor::UpdateRenderRect()
@@ -1435,9 +1438,10 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	}
 
 	//If being output in higher than 8bit and using an HDR display,
-	//	RTX Video requires the window to be in HDR to output correct colors
+	//	Nvidia's SuperRes implementation requires the window to be in HDR to output correct colors
+	//SDR-to-HDR requires window to be in HDR for all platforms.
 	const auto Prefer10Bit = Preferred10BitOutput();
-	const auto bHdrOutput = m_bHdrPassthroughSupport && (m_bHdrPassthrough && SourceIsHDR() || (m_VendorId == PCIV_NVIDIA) && (Prefer10Bit && SuperResValid() || RTXVideoHDRValid()));
+	const auto bHdrOutput = m_bHdrPassthroughSupport && (m_bHdrPassthrough && SourceIsHDR() || ((m_VendorId == PCIV_NVIDIA) && Prefer10Bit && SuperResValid() || RTXVideoHDRValid()));
 	const auto b10BitOutput = bHdrOutput || Prefer10Bit;
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
