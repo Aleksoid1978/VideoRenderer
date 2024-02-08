@@ -654,7 +654,7 @@ void CD3D11VP::SetColorSpaceOld(const DXVA2_ExtendedFormat exFmt)
 		colorSpace.RGB_Range = 0; // output RGB always full range (0-255)
 		colorSpace.YCbCr_Matrix = (exFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_BT601)
 			? 0  // ITU-R BT.601
-			: 1; // ITU-R BT.709 
+			: 1; // ITU-R BT.709
 		colorSpace.Nominal_Range = (exFmt.NominalRange == DXVA2_NominalRange_0_255)
 			? D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255
 			: D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
