@@ -399,6 +399,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_bConvertToSdr        = config.bConvertToSdr;
 
 	m_iVPSuperRes          = config.iVPSuperRes;
+	m_bVPRTXVideoHDR       = config.bVPRTXVideoHDR;
 
 	m_nCurrentAdapter = -1;
 
@@ -982,7 +983,8 @@ void CDX11VideoProcessor::UpdateTexParams(int cdepth)
 {
 	switch (m_iTexFormat) {
 	case TEXFMT_AUTOINT:
-		m_InternalTexFmt = (cdepth > 8) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
+		//RTX Video HDR requires the output to be in 10bit
+		m_InternalTexFmt = (cdepth > 8 || RTXVideoHDRValid()) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 		break;
 	case TEXFMT_8INT:    m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM;     break;
 	case TEXFMT_10INT:   m_InternalTexFmt = DXGI_FORMAT_R10G10B10A2_UNORM;  break;
@@ -992,10 +994,40 @@ void CDX11VideoProcessor::UpdateTexParams(int cdepth)
 	}
 }
 
+//check if RTX Video HDR is valid based on settings and input video
+bool CDX11VideoProcessor::RTXVideoHDRValid()
+{
+	if (!m_bRTXVideoHDR_supported)
+		return false;
+
+	if (m_VendorId == PCIV_NVIDIA) {
+		//hacky fix for checking if video is HDR before all the video data is loaded/processed on first launch
+		//RTX Video HDR does not work for HDR videos, nor HDR-to-SDR videos, but does work for 10bit SDR videos.
+		bool ValidFormat = !(m_srcParams.cformat == CF_P010 &&
+			(m_srcExFmt.VideoTransferFunction < MFVideoTransFunc_709 || m_srcExFmt.VideoTransferFunction > MFVideoTransFunc_sRGB) ||
+			m_srcExFmt.VideoTransferFunction > MFVideoTransFunc_sRGB);
+		bool ValidSettings = m_bHdrPassthroughSupport && m_bVPRTXVideoHDR;
+		//does not work if another video is already using this feature,
+		//	but there is no good way to test for this.
+		return ValidFormat && ValidSettings && !SourceIsHDR();
+	}
+	return false;
+}
+
 void CDX11VideoProcessor::UpdateRenderRect()
 {
 	m_renderRect.IntersectRect(m_videoRect, m_windowRect);
 	UpdateScalingStrings();
+
+	//need to reset the window if:
+	//	RTX Video HDR option changes
+	//this is to cause InitSwapChain() to run and toggle HDR when needed for RTX Video: HDR
+	//	and to call InitializeD3D11VP to run SetRTXVideoHDR
+	bool rtxvideohdr_valid = RTXVideoHDRValid();
+	static bool old_rtxvideohdr = true;
+	if ((!SourceIsHDR() || !m_bHdrPassthroughSupport || !m_bHdrPassthrough) && (old_rtxvideohdr != rtxvideohdr_valid))
+		Reset();
+	old_rtxvideohdr = rtxvideohdr_valid;
 }
 
 void CDX11VideoProcessor::UpdateScalingStrings()
@@ -1310,7 +1342,8 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		}
 	}
 
-	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR();
+	//SDR-to-HDR requires window to be in HDR for all platforms.
+	const auto bHdrOutput = m_bHdrPassthroughSupport && (m_bHdrPassthrough && SourceIsHDR() || RTXVideoHDRValid());
 	const auto b10BitOutput = bHdrOutput || Preferred10BitOutput();
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
@@ -1755,7 +1788,20 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return hr;
 	}
 
+	//check if these technologies are supported on this system.
+	//only way I could think of force-disabling them entirely
+	//	where the Valid() checks would pass but Set() functions would fail,
+	//	thus causing problems such as the renderer preparing the window for HDR.
+	//does not check if these are enabled in settings by the user, or if they will work for this video,
+	//	just checks that it could in theory work on this system.
+	//only runs once on launch, but does rerun the checks on new videos.
+	//the code right below this will toggle these functions as requested by the user after.
+	if (!std::exchange(m_bGPUEnhancementsChecked, true)) {
+		m_bRTXVideoHDR_supported = (m_D3D11VP.SetRTXVideoHDR(true) == S_OK);
+	}
+
 	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(m_bVPScaling ? m_iVPSuperRes : 0) == S_OK);
+	m_bVPUseRTXVideoHDR = (m_D3D11VP.SetRTXVideoHDR(RTXVideoHDRValid()) == S_OK);
 
 	hr = m_TexSrcVideo.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWriteNoSRV);
 	if (FAILED(hr)) {
@@ -2992,6 +3038,17 @@ HRESULT CDX11VideoProcessor::Reset()
 			}
 		}
 	}
+	//dragging an HDR window from an SDR screen to an HDR screen
+	//	fails the above check if the video metadata has not been loaded yet
+	//	and SourceIsPQorHLG() returns false,
+	//	thus causing HDR-to-SDR conversion to enable when it shouldn't.
+	//also allows RTX Video HDR to properly reset the window for SDR videos.
+	else
+	{
+		ReleaseSwapChain();
+		m_pFilter->Init(true);
+		InitMediaType(&m_pFilter->m_inputMT);
+	}
 
 	return S_OK;
 }
@@ -3262,6 +3319,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	bool changeNumTextures       = false;
 	bool changeResizeStats       = false;
 	bool changeSuperRes          = false;
+	bool changeRTXVideoHDR       = false;
 
 	// settings that do not require preparation
 	m_bShowStats           = config.bShowStats;
@@ -3368,6 +3426,11 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		changeSuperRes = true;
 	}
 
+	if (config.bVPRTXVideoHDR != m_bVPRTXVideoHDR) {
+		m_bVPRTXVideoHDR = config.bVPRTXVideoHDR;
+		changeRTXVideoHDR = true;
+	}
+
 	if (!m_pFilter->GetActive()) {
 		return;
 	}
@@ -3397,6 +3460,25 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 			return;
 		}
+	}
+
+	//need to reset the window if:
+	//	RTX Video HDR option changes
+	//this is to cause InitSwapChain() to run and toggle HDR when needed for RTX Video: HDR
+	if (changeRTXVideoHDR)
+	{
+		m_bVPUseRTXVideoHDR = (m_D3D11VP.SetRTXVideoHDR(RTXVideoHDRValid()) == S_OK);
+		static bool old_rtxvideohdr = !m_bVPUseRTXVideoHDR;
+
+		//need to update m_InternalTexFmt if RTX Video HDR
+		//	gets disabled, because then there is no need to use a 10bit output
+		//	if the video is 8bit (see UpdateTexParams()).
+		if (old_rtxvideohdr && !m_bVPUseRTXVideoHDR)
+			InitMediaType(&m_pFilter->m_inputMT);
+
+		if (m_bHdrPassthroughSupport && old_rtxvideohdr != m_bVPUseRTXVideoHDR)
+			Reset();
+		old_rtxvideohdr = m_bVPUseRTXVideoHDR;
 	}
 
 	if (m_Dovi.bValid) {
@@ -3614,9 +3696,16 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		}
 		m_strStatsVProc += std::format(L"\nInternalFormat: {}", DXGIFormatToString(m_InternalTexFmt));
 
-		if (SourceIsHDR()) {
+		//add debug output so users know when RTX Video HDR is enabled
+		//might want to rename this feature to 'Auto SDR-to-HDR' or something else in the future,
+		//	but considering nvidia is the only one to currently support this,
+		//	RTX Video HDR seems to be more recognizable for users.
+		bool sourceHDR = SourceIsHDR();
+		if (sourceHDR || m_bVPUseRTXVideoHDR) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
-			if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
+			if (m_bVPUseRTXVideoHDR && !sourceHDR)
+				m_strStatsHDR.append(L"RTX Video HDR*");
+			else if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
 				m_strStatsHDR.append(L"Passthrough");
 				if (m_lastHdr10.bValid) {
 					m_strStatsHDR += std::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance / 10000);
