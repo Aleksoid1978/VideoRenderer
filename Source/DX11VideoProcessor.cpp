@@ -1755,7 +1755,8 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return hr;
 	}
 
-	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(m_bVPScaling ? m_iVPSuperRes : 0) == S_OK);
+	auto superRes = (m_bVPScaling && !(m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR())) ? m_iVPSuperRes : SUPERRES_Disable;
+	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(superRes) == S_OK);
 
 	hr = m_TexSrcVideo.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWriteNoSRV);
 	if (FAILED(hr)) {
@@ -3441,7 +3442,8 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (changeSuperRes) {
-		m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(m_bVPScaling ? m_iVPSuperRes : 0) == S_OK);
+		auto superRes = (m_bVPScaling && !(m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR())) ? m_iVPSuperRes : SUPERRES_Disable;
+		m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(superRes) == S_OK);
 	}
 
 	UpdateStatsStatic();
