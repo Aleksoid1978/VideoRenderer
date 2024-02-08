@@ -1000,13 +1000,15 @@ bool CDX11VideoProcessor::RTXVideoHDRValid()
 	if (!m_bRTXVideoHDR_supported)
 		return false;
 
+	//RTX Video HDR requires 10bit, and we can't have that if the user forces to use 8bit
+	bool Forced8bit = m_iTexFormat == TEXFMT_8INT;
 	if (m_VendorId == PCIV_NVIDIA) {
 		//hacky fix for checking if video is HDR before all the video data is loaded/processed on first launch
 		//RTX Video HDR does not work for HDR videos, nor HDR-to-SDR videos, but does work for 10bit SDR videos.
 		bool ValidFormat = !(m_srcParams.cformat == CF_P010 &&
 			(m_srcExFmt.VideoTransferFunction < MFVideoTransFunc_709 || m_srcExFmt.VideoTransferFunction > MFVideoTransFunc_sRGB) ||
 			m_srcExFmt.VideoTransferFunction > MFVideoTransFunc_sRGB);
-		bool ValidSettings = m_bHdrPassthroughSupport && m_bVPRTXVideoHDR;
+		bool ValidSettings = !Forced8bit && m_bHdrPassthroughSupport && m_bVPRTXVideoHDR;
 		//does not work if another video is already using this feature,
 		//	but there is no good way to test for this.
 		return ValidFormat && ValidSettings && !SourceIsHDR();
@@ -1798,9 +1800,20 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 	//the code right below this will toggle these functions as requested by the user after.
 	if (!std::exchange(m_bGPUEnhancementsChecked, true)) {
 		m_bRTXVideoHDR_supported = (m_D3D11VP.SetRTXVideoHDR(true) == S_OK);
+		//need to reload for the above information to update
+		Reset();
 	}
 
-	m_bVPUseRTXVideoHDR = (m_D3D11VP.SetRTXVideoHDR(RTXVideoHDRValid()) == S_OK);
+	//if the function fails for whatever reason when it shouldn't,
+	//	force disable it until relaunch/new video load.
+	bool rtxvideohdr_valid = RTXVideoHDRValid();
+	m_bVPUseRTXVideoHDR = (m_D3D11VP.SetRTXVideoHDR(rtxvideohdr_valid) == S_OK);
+	if (rtxvideohdr_valid && !m_bVPUseRTXVideoHDR)
+	{
+		m_bRTXVideoHDR_supported = false;
+		return Reset();
+	}
+
 	auto superRes = (m_bVPScaling && !(m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR())) ? m_iVPSuperRes : SUPERRES_Disable;
 	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(superRes) == S_OK);
 
