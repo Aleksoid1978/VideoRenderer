@@ -95,6 +95,7 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK3, m_SetsPP.bDeintDouble          ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK5, m_SetsPP.bVPScaling            ? BST_CHECKED : BST_UNCHECKED);
 	SendDlgItemMessageW(IDC_COMBO8, CB_SETCURSEL, m_SetsPP.iVPSuperRes, 0);
+	CheckDlgButton(IDC_CHECK19, m_SetsPP.bVPRTXVideoHDR       ? BST_CHECKED : BST_UNCHECKED);
 
 	CheckDlgButton(IDC_CHECK18, m_SetsPP.bHdrPreferDoVi       ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK12, m_SetsPP.bHdrPassthrough      ? BST_CHECKED : BST_UNCHECKED);
@@ -144,6 +145,7 @@ void CVRMainPPage::EnableControls()
 		GetDlgItem(IDC_SLIDER1).EnableWindow(bEnable);
 		GetDlgItem(IDC_STATIC7).EnableWindow(bEnable && m_SetsPP.bVPScaling);
 		GetDlgItem(IDC_COMBO8).EnableWindow(bEnable && m_SetsPP.bVPScaling);
+		GetDlgItem(IDC_CHECK19).EnableWindow(bEnable && m_SetsPP.bHdrPassthrough);
 	}
 }
 
@@ -190,6 +192,7 @@ HRESULT CVRMainPPage::OnActivate()
 		GetDlgItem(IDC_SLIDER1).EnableWindow(FALSE);
 		GetDlgItem(IDC_STATIC7).EnableWindow(FALSE);
 		GetDlgItem(IDC_COMBO8).EnableWindow(FALSE);
+		GetDlgItem(IDC_CHECK19).EnableWindow(FALSE);
 	}
 
 	EnableControls();
@@ -341,6 +344,11 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			}
 			if (nID == IDC_CHECK14) {
 				m_SetsPP.bConvertToSdr = IsDlgButtonChecked(IDC_CHECK14) == BST_CHECKED;
+				SetDirty();
+				return (LRESULT)1;
+			}
+			if (nID == IDC_CHECK19) {
+				m_SetsPP.bVPRTXVideoHDR = IsDlgButtonChecked(IDC_CHECK19) == BST_CHECKED;
 				SetDirty();
 				return (LRESULT)1;
 			}

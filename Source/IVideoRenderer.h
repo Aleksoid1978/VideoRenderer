@@ -94,6 +94,7 @@ struct Settings_t {
 	bool bDeintDouble;
 	bool bVPScaling;
 	int iVPSuperRes;
+	bool bVPRTXVideoHDR;
 	int  iChromaScaling;
 	int  iUpscaling;
 	int  iDownscaling;
@@ -130,6 +131,7 @@ struct Settings_t {
 		bDeintDouble                    = true;
 		bVPScaling                      = true;
 		iVPSuperRes                     = SUPERRES_Disable;
+		bVPRTXVideoHDR                  = false;
 		iChromaScaling                  = CHROMA_Bilinear;
 		iUpscaling                      = UPSCALE_CatmullRom;
 		iDownscaling                    = DOWNSCALE_Hamming;
