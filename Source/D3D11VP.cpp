@@ -791,32 +791,14 @@ HRESULT CD3D11VP::SetSuperRes(const int iSuperRes)
 	return E_NOT_SET;
 }
 
-constexpr GUID kNvidiaTrueHDRInterfaceGUID = {
-	0xfdd62bb4,
-	0x620b,
-	0x4fd7,
-	{0x9a, 0xb3, 0x1e, 0x59, 0xd0, 0xd5, 0x44, 0xb3}
-};
-
-bool CD3D11VP::IsNvididaRTXVideoHDRSupported()
-{
-	if (!m_pVideoContext) {
-		return false;
-	}
-
-	BOOL supported = FALSE;
-	HRESULT hr = m_pVideoContext->VideoProcessorGetStreamExtension(
-		m_pVideoProcessor, 0, &kNvidiaTrueHDRInterfaceGUID,
-		sizeof(supported), &supported);
-	if (FAILED(hr)) {
-		return false;
-	}
-
-	return !!supported;
-}
-
 HRESULT CD3D11VP::SetRTXVideoHDRNvidia(const bool enable)
 {
+	constexpr GUID kNvidiaTrueHDRInterfaceGUID = {
+		0xfdd62bb4,
+		0x620b,
+		0x4fd7,
+		{0x9a, 0xb3, 0x1e, 0x59, 0xd0, 0xd5, 0x44, 0xb3}
+	};
 	constexpr UINT kStreamExtensionVersionV4 = 0x4;
 	constexpr UINT kStreamExtensionMethodTrueHDR = 0x3;
 
@@ -843,19 +825,10 @@ HRESULT CD3D11VP::SetRTXVideoHDRNvidia(const bool enable)
 	return hr;
 }
 
-bool CD3D11VP::IsAutoHDRSupported()
-{
-	return (m_VendorId == PCIV_NVIDIA && IsNvididaRTXVideoHDRSupported());
-}
-
-HRESULT CD3D11VP::SetAutoHDR(bool enable)
+HRESULT CD3D11VP::SetRTXVideoHDR(bool enable)
 {
 	if (!m_pVideoContext) {
 		return E_ABORT;
-	}
-
-	if (!IsAutoHDRSupported()) {
-		return E_NOT_SET;
 	}
 
 	if (m_VendorId == PCIV_NVIDIA) {
