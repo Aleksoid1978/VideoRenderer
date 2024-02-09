@@ -397,6 +397,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_iHdrToggleDisplay    = config.iHdrToggleDisplay;
 	m_iHdrOsdBrightness    = config.iHdrOsdBrightness;
 	m_bConvertToSdr        = config.bConvertToSdr;
+	m_bVPRTXVideoHDR       = config.bVPRTXVideoHDR;
 
 	m_iVPSuperRes          = config.iVPSuperRes;
 
@@ -982,7 +983,7 @@ void CDX11VideoProcessor::UpdateTexParams(int cdepth)
 {
 	switch (m_iTexFormat) {
 	case TEXFMT_AUTOINT:
-		m_InternalTexFmt = (cdepth > 8) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
+		m_InternalTexFmt = (cdepth > 8 || m_bVPUseRTXVideoHDR) ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 		break;
 	case TEXFMT_8INT:    m_InternalTexFmt = DXGI_FORMAT_B8G8R8A8_UNORM;     break;
 	case TEXFMT_10INT:   m_InternalTexFmt = DXGI_FORMAT_R10G10B10A2_UNORM;  break;
@@ -1310,7 +1311,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 		}
 	}
 
-	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR();
+	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && (SourceIsHDR() || m_bVPUseRTXVideoHDR);
 	const auto b10BitOutput = bHdrOutput || Preferred10BitOutput();
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
@@ -1710,6 +1711,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// Tex Video Processor
 	if (FAILED(hr) && FmtParams.DX11Format != DXGI_FORMAT_UNKNOWN) {
+		m_bVPUseRTXVideoHDR = false;
 		hr = InitializeTexVP(FmtParams, origW, origH);
 		if (SUCCEEDED(hr)) {
 			SetShaderConvertColorParams();
@@ -1741,7 +1743,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 
 	m_TexSrcVideo.Release();
 
-	const bool bHdrPassthrough = m_bHdrDisplayModeEnabled && SourceIsPQorHLG();
+	const bool bHdrPassthrough = m_bHdrDisplayModeEnabled && (SourceIsPQorHLG() || m_bVPUseRTXVideoHDR);
 	m_D3D11OutputFmt = m_InternalTexFmt;
 	HRESULT hr = m_D3D11VP.InitVideoProcessor(dxgiFormat, width, height, m_srcExFmt, m_bInterlaced, bHdrPassthrough, m_D3D11OutputFmt);
 	if (FAILED(hr)) {
@@ -1757,6 +1759,20 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 
 	auto superRes = (m_bVPScaling && !(m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR())) ? m_iVPSuperRes : SUPERRES_Disable;
 	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(superRes) == S_OK);
+
+	auto rtxHDR = m_bVPRTXVideoHDR && m_bHdrPassthroughSupport && m_bHdrPassthrough && params.CDepth == 8 && m_iTexFormat != TEXFMT_8INT && !SourceIsHDR();
+	m_bVPUseRTXVideoHDR = (m_D3D11VP.SetAutoHDR(rtxHDR) == S_OK);
+
+	if ((m_bVPUseRTXVideoHDR && !m_pDXGISwapChain4)
+			|| (!m_bVPUseRTXVideoHDR && m_pDXGISwapChain4 && !SourceIsHDR())) {
+		ReleaseSwapChain();
+		InitSwapChain();
+		m_bHdrAllowSwitchDisplay = false;
+		InitMediaType(&m_pFilter->m_inputMT);
+		m_bHdrAllowSwitchDisplay = true;
+
+		return S_OK;
+	}
 
 	hr = m_TexSrcVideo.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWriteNoSRV);
 	if (FAILED(hr)) {
@@ -3263,6 +3279,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	bool changeNumTextures       = false;
 	bool changeResizeStats       = false;
 	bool changeSuperRes          = false;
+	bool changeRTXVideoHDR       = false;
 
 	// settings that do not require preparation
 	m_bShowStats           = config.bShowStats;
@@ -3369,6 +3386,11 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		changeSuperRes = true;
 	}
 
+	if (config.bVPRTXVideoHDR != m_bVPRTXVideoHDR) {
+		m_bVPRTXVideoHDR = config.bVPRTXVideoHDR;
+		changeRTXVideoHDR = true;
+	}
+
 	if (!m_pFilter->GetActive()) {
 		return;
 	}
@@ -3379,7 +3401,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		ReleaseSwapChain();
 		EXECUTE_ASSERT(S_OK == m_pFilter->Init(true));
 
-		if (changeHDR && (SourceIsPQorHLG()) || m_iHdrToggleDisplay) {
+		if (changeHDR && (SourceIsPQorHLG() || m_bVPUseRTXVideoHDR || m_bVPRTXVideoHDR) || m_iHdrToggleDisplay) {
 			m_srcVideoTransferFunction = 0;
 			InitMediaType(&m_pFilter->m_inputMT);
 		}
@@ -3387,7 +3409,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (changeHDR) {
-		if (SourceIsPQorHLG() || m_iHdrToggleDisplay) {
+		if (SourceIsPQorHLG() || m_bVPUseRTXVideoHDR || m_bVPRTXVideoHDR || m_iHdrToggleDisplay) {
 			if (m_iSwapEffect == SWAPEFFECT_Discard) {
 				ReleaseSwapChain();
 				m_pFilter->Init(true);
@@ -3405,6 +3427,11 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 	if (changeVP) {
 		InitMediaType(&m_pFilter->m_inputMT);
+		if (m_bVPUseRTXVideoHDR || m_bVPRTXVideoHDR) {
+			ReleaseSwapChain();
+			InitSwapChain();
+		}
+
 		return; // need some test
 	}
 
@@ -3444,6 +3471,10 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	if (changeSuperRes) {
 		auto superRes = (m_bVPScaling && !(m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR())) ? m_iVPSuperRes : SUPERRES_Disable;
 		m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(superRes) == S_OK);
+	}
+
+	if (changeRTXVideoHDR) {
+		InitMediaType(&m_pFilter->m_inputMT);
 	}
 
 	UpdateStatsStatic();
@@ -3616,10 +3647,13 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 		}
 		m_strStatsVProc += std::format(L"\nInternalFormat: {}", DXGIFormatToString(m_InternalTexFmt));
 
-		if (SourceIsHDR()) {
+		if (SourceIsHDR() || m_bVPUseRTXVideoHDR) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
 			if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
 				m_strStatsHDR.append(L"Passthrough");
+				if (m_bVPUseRTXVideoHDR) {
+					m_strStatsHDR.append(L", RTX Video HDR*");
+				}
 				if (m_lastHdr10.bValid) {
 					m_strStatsHDR += std::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance / 10000);
 				}
