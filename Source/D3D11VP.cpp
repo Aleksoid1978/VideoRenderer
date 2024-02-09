@@ -178,7 +178,7 @@ HRESULT CD3D11VP::InitVideoProcessor(
 
 	hr = m_pVideoDevice->CreateVideoProcessorEnumerator(&ContentDesc, &m_pVideoProcessorEnum);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateVideoProcessorEnumerator() failed with error {}", HR2Str(hr));
+		DLog(L"CD3D11VP::InitVideoProcessor() : CreateVideoProcessorEnumerator() failed with error {}", HR2Str(hr));
 		return hr;
 	}
 	hr = m_pVideoProcessorEnum->QueryInterface(IID_PPV_ARGS(&m_pVideoProcessorEnum1));
@@ -195,14 +195,14 @@ HRESULT CD3D11VP::InitVideoProcessor(
 	UINT uiFlags;
 	hr = m_pVideoProcessorEnum->CheckVideoProcessorFormat(inputFmt, &uiFlags);
 	if (FAILED(hr) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT)) {
-		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : {} is not supported for D3D11 VP input.", DXGIFormatToString(inputFmt));
+		DLog(L"CD3D11VP::InitVideoProcessor() : {} is not supported for D3D11 VP input.", DXGIFormatToString(inputFmt));
 		return E_INVALIDARG;
 	}
 
 	// get VideoProcessorCaps
 	hr = m_pVideoProcessorEnum->GetVideoProcessorCaps(&m_VPCaps);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : GetVideoProcessorCaps() failed with error {}", HR2Str(hr));
+		DLog(L"CD3D11VP::InitVideoProcessor() : GetVideoProcessorCaps() failed with error {}", HR2Str(hr));
 		return hr;
 	}
 #ifdef _DEBUG
@@ -264,7 +264,7 @@ HRESULT CD3D11VP::InitVideoProcessor(
 				}
 			}
 		}
-		DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitializeD3D11VP() DXGI_FORMAT_R10G10B10A2_UNORM is not supported for D3D11 VP output.");
+		DLogIf(FAILED(hr), L"CD3D11VP::InitVideoProcessor() : DXGI_FORMAT_R10G10B10A2_UNORM is not supported for D3D11 VP output.");
 	}
 
 	if (FAILED(hr)) {
@@ -287,7 +287,7 @@ HRESULT CD3D11VP::InitVideoProcessor(
 	}
 
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() DXGI_FORMAT_B8G8R8A8_UNORM is not supported for D3D11 VP output.");
+		DLog(L"CD3D11VP::InitVideoProcessor() : DXGI_FORMAT_B8G8R8A8_UNORM is not supported for D3D11 VP output.");
 		return E_INVALIDARG;
 	}
 
@@ -311,7 +311,7 @@ HRESULT CD3D11VP::InitVideoProcessor(
 			}
 		}
 
-		DLogIf(!maxProcCaps, L"CDX11VideoProcessor::InitializeD3D11VP() : deinterlace caps don't support");
+		DLogIf(!maxProcCaps, L"CD3D11VP::InitVideoProcessor() : deinterlace caps don't support");
 		if (maxProcCaps) {
 			if (S_OK == m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(m_RateConvIndex, &m_RateConvCaps)) {
 #ifdef _DEBUG
@@ -334,7 +334,7 @@ HRESULT CD3D11VP::InitVideoProcessor(
 
 	hr = m_pVideoDevice->CreateVideoProcessor(m_pVideoProcessorEnum, m_RateConvIndex, &m_pVideoProcessor);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : CreateVideoProcessor() failed with error {}", HR2Str(hr));
+		DLog(L"CD3D11VP::InitVideoProcessor() : CreateVideoProcessor() failed with error {}", HR2Str(hr));
 		return hr;
 	}
 
@@ -348,10 +348,10 @@ HRESULT CD3D11VP::InitVideoProcessor(
 			hr2 = m_pVideoProcessorEnum->GetVideoProcessorFilterRange((D3D11_VIDEO_PROCESSOR_FILTER)i, &filter.range);
 
 			if (FAILED(hr2)) {
-				DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : GetVideoProcessorFilterRange({}) failed with error {}", i, HR2Str(hr2));
+				DLog(L"CD3D11VP::InitVideoProcessor() : GetVideoProcessorFilterRange({}) failed with error {}", i, HR2Str(hr2));
 				filter.support = 0;
 			}
-			DLogIf(SUCCEEDED(hr2) ,L"CDX11VideoProcessor::InitializeD3D11VP() : FilterRange({}) : {:5d}, {:3d}, {:4d}, {:f}",
+			DLogIf(SUCCEEDED(hr2) ,L"CD3D11VP::InitVideoProcessor() : FilterRange({}) : {:5d}, {:3d}, {:4d}, {:f}",
 				i, filter.range.Minimum, filter.range.Default, filter.range.Maximum, filter.range.Multiplier);
 
 			if (i >= D3D11_VIDEO_PROCESSOR_FILTER_NOISE_REDUCTION) {
