@@ -1,0 +1,36 @@
+name: Build VideoRenderer
+
+on:
+  push:
+    paths-ignore:
+      - .github/workflows/main.yml
+      - Readme.md
+      - history.txt
+  pull_request:
+    paths-ignore:
+      - .github/workflows/main.yml      
+      - Readme.md
+      - history.txt
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Build VideoRenderer
+        run: |
+          .\\build_mpcvr.cmd NoWait
+        shell: pwsh
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: "MPC Video Renderer" 
+          path: _bin/MpcVideoRenderer*.zip
+          compression-level: 0
