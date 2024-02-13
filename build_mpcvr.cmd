@@ -1,5 +1,5 @@
 @ECHO OFF
-REM (C) 2018-2021 see Authors.txt
+REM (C) 2018-2024 see Authors.txt
 REM
 REM This file is part of MPC-BE.
 REM
@@ -27,6 +27,7 @@ SET "BUILDTYPE=Build"
 SET "BUILDCFG=Release"
 SET "SUFFIX="
 SET "SIGN=False"
+SET "Wait=True"
 
 FOR %%A IN (%*) DO (
   IF /I "%%A" == "Debug" (
@@ -36,7 +37,11 @@ FOR %%A IN (%*) DO (
   IF /I "%%A" == "Sign" (
     SET "SIGN=True"
   )
+  IF /I "%%A" == "NoWait" (
+    SET "Wait=False"
+  )
 )
+
 
 IF /I "%SIGN%" == "True" (
   IF NOT EXIST "%~dp0signinfo.txt" (
@@ -119,7 +124,9 @@ IF DEFINED SEVENZIP (
 )
 
 TITLE Compiling %TITLE% [FINISHED]
-TIMEOUT /T 3
+IF /I "%Wait%" == "True" (
+  TIMEOUT /T 3
+)
 ENDLOCAL
 EXIT
 
@@ -163,8 +170,10 @@ IF /I "%~1" == "ERROR" (
 )
 ECHO ------------------------------ & ECHO.
 IF /I "%~1" == "ERROR" (
-  ECHO Press any key to close this window...
-  PAUSE >NUL
+  IF /I "%Wait%" == "True" (
+    ECHO Press any key to close this window...
+    PAUSE >NUL
+  )
   ENDLOCAL
   EXIT
 ) ELSE (
