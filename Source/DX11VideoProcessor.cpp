@@ -1422,7 +1422,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 {
 	m_bHdrDisplaySwitching = true;
 	bool bRet = false;
-	if (m_bHdrPassthrough && SourceIsPQorHLG()) {
+	if (m_bHdrPassthrough && SourceIsHDR()) {
 		MONITORINFOEXW mi = { sizeof(mi) };
 		GetMonitorInfoW(m_lastFullscreenHMonitor ? m_lastFullscreenHMonitor : MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 		DisplayConfig_t displayConfig = {};
@@ -2086,7 +2086,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				}
 
 				memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
-				const bool updateStats = !m_Dovi.bValid;
+				const bool doviStateChanged = !m_Dovi.bValid;
 				m_Dovi.bValid = true;
 
 				if (bMasteringLuminanceChanged) {
@@ -2114,7 +2114,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				if (m_D3D11VP.IsReady()) {
 					InitMediaType(&m_pFilter->m_inputMT);
 				}
-				else if (updateStats) {
+				else if (doviStateChanged) {
 					UpdateStatsStatic();
 				}
 
@@ -2135,9 +2135,12 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					}
 				}
 
-				if (m_bHdrPassthrough && m_bHdrPassthroughSupport && !SourceIsPQorHLG() && !m_pDXGISwapChain4) {
+				if (doviStateChanged && !SourceIsPQorHLG()) {
 					ReleaseSwapChain();
 					Init(m_hWnd);
+
+					m_srcVideoTransferFunction = 0;
+					InitMediaType(&m_pFilter->m_inputMT);
 				}
 			}
 		}
