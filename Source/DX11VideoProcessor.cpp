@@ -1916,6 +1916,34 @@ BOOL CDX11VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 	return FALSE;
 }
 
+void CDX11VideoProcessor::SleepToSync(CRefTime& rtClock, const REFERENCE_TIME& rtStart)
+{
+	//we only need to sync frames when the player is running
+	if (m_pFilter->m_filterState != State_Running)
+		return;
+
+	//sleeping has some inherent variance, it does not sleep exactly for the amount you want
+	//	so we have to offset it a little bit to not overshoot too much
+	//currently set at 3ms
+	constexpr REFERENCE_TIME variance_offset = 3 * 1000ll;
+	//limit how long we can sleep for
+	//currently set at 40ms
+	constexpr REFERENCE_TIME max_sleep = 40 * 1000ll;
+
+	//need to get the updated time for when the next frame should be rendered
+	m_pFilter->StreamTime(rtClock);
+	//how much time between now and when the frame should be rendered
+	const REFERENCE_TIME us_to_ideal_time = std::clamp((rtClock - rtStart) / 10ll, -max_sleep, max_sleep);
+	//the amount of time we should sleep for
+	const REFERENCE_TIME us_to_sleep = us_to_ideal_time + variance_offset;
+
+	//if the time is negative, that means that the frame should be rendered in the future,
+	//	positive means we are already late and the frame should have already been drawn.
+	//only sleep if we have time to spare
+	if (us_to_sleep < 0)
+		std::this_thread::sleep_for(std::chrono::microseconds(-us_to_sleep));
+}
+
 HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 {
 	REFERENCE_TIME rtStart, rtEnd;
@@ -1934,6 +1962,7 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 		return hr;
 	}
 
+	SleepToSync(rtClock, rtStart);
 	// always Render(1) a frame after CopySample()
 	hr = Render(1);
 	m_pFilter->m_DrawStats.Add(GetPreciseTick());
@@ -1955,13 +1984,14 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 			return S_FALSE; // skip frame
 		}
 
+		rtStart += rtFrameDur / 2;
+		SleepToSync(rtClock, rtStart);
 		hr = Render(2);
 		m_pFilter->m_DrawStats.Add(GetPreciseTick());
 		if (m_pFilter->m_filterState == State_Running) {
 			m_pFilter->StreamTime(rtClock);
 		}
 
-		rtStart += rtFrameDur / 2;
 		m_RenderStats.syncoffset = rtClock - rtStart;
 
 		so = (int)std::clamp(m_RenderStats.syncoffset, -UNITS, UNITS);

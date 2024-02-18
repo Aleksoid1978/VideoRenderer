@@ -216,6 +216,7 @@ private:
 	}
 
 	bool HandleHDRToggle();
+	void SleepToSync(CRefTime& rtClock, const REFERENCE_TIME& rtStart);
 
 public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, const bool bDecoderDevice);
