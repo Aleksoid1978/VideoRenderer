@@ -1278,7 +1278,7 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 	}
 
 	// always Render(1) a frame after CopySample()
-	hr = Render(1);
+	hr = Render(1, rtStart);
 	m_pFilter->m_DrawStats.Add(GetPreciseTick());
 	if (m_pFilter->m_filterState == State_Running) {
 		m_pFilter->StreamTime(rtClock);
@@ -1298,13 +1298,14 @@ HRESULT CDX9VideoProcessor::ProcessSample(IMediaSample* pSample)
 			return S_FALSE; // skip frame
 		}
 
-		hr = Render(2);
+		rtStart += rtFrameDur / 2;
+
+		hr = Render(2, rtStart);
 		m_pFilter->m_DrawStats.Add(GetPreciseTick());
 		if (m_pFilter->m_filterState == State_Running) {
 			m_pFilter->StreamTime(rtClock);
 		}
 
-		rtStart += rtFrameDur / 2;
 		m_RenderStats.syncoffset = rtClock - rtStart;
 
 		so = (int)std::clamp(m_RenderStats.syncoffset, -UNITS, UNITS);
@@ -1536,7 +1537,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 	return hr;
 }
 
-HRESULT CDX9VideoProcessor::Render(int field)
+HRESULT CDX9VideoProcessor::Render(int field, REFERENCE_TIME rt/* = INVALID_TIME*/)
 {
 	uint64_t tick1 = GetPreciseTick();
 
@@ -1613,6 +1614,8 @@ HRESULT CDX9VideoProcessor::Render(int field)
 		hr = m_pD3DDevEx->WaitForVBlank(0);
 		DLogIf(FAILED(hr), L"WaitForVBlank failed with error {}", HR2Str(hr));
 	}
+
+	SyncFrameToStreamTime(rt);
 
 	if (m_d3dpp.SwapEffect == D3DSWAPEFFECT_DISCARD) {
 		hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);

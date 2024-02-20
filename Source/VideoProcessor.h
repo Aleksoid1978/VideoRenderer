@@ -1,5 +1,5 @@
 /*
- * (C) 2020-2023 see Authors.txt
+ * (C) 2020-2024 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -41,6 +41,8 @@ class CVideoProcessor
 	, public IMFVideoMixerBitmap
 {
 protected:
+	constexpr static auto INVALID_TIME = INT64_MIN;
+
 	long m_nRefCount = 1;
 	CMpcVideoRenderer* m_pFilter = nullptr;
 
@@ -169,7 +171,7 @@ public:
 	virtual BOOL GetAlignmentSize(const CMediaType& mt, SIZE& Size) = 0;
 
 	virtual HRESULT ProcessSample(IMediaSample* pSample) = 0;
-	virtual HRESULT Render(int field) = 0;
+	virtual HRESULT Render(int field, REFERENCE_TIME rt = INVALID_TIME) = 0;
 	virtual HRESULT FillBlack() = 0;
 
 	void Start() { m_rtStart = 0; }
@@ -227,6 +229,9 @@ protected:
 	}
 
 	void UpdateStatsInputFmt();
+
+	CRefTime m_streamTime;
+	void SyncFrameToStreamTime(REFERENCE_TIME rt);
 
 public:
 	// IUnknown

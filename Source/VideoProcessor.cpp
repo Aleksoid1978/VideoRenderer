@@ -1,5 +1,5 @@
 /*
- * (C) 2020-2023 see Authors.txt
+ * (C) 2020-2024 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -184,6 +184,18 @@ void CVideoProcessor::UpdateStatsInputFmt()
 			if (m_decExFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Unknown) {
 				m_strStatsInputFmt += L'*';
 			};
+		}
+	}
+}
+
+void CVideoProcessor::SyncFrameToStreamTime(REFERENCE_TIME rt)
+{
+	if (m_pFilter->m_filterState == State_Running && rt != INVALID_TIME) {
+		if (SUCCEEDED(m_pFilter->StreamTime(m_streamTime)) && rt > m_streamTime) {
+			const auto sleepTime = (rt - m_streamTime) / 10000LL;
+			if (sleepTime > 1) {
+				Sleep(static_cast<DWORD>(sleepTime));
+			}
 		}
 	}
 }
