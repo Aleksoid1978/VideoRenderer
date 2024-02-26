@@ -442,8 +442,41 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	}
 }
 
+//refresh rate before toggling hdr
+DWORD wanted_freq = 0;
+//name of the display we are watching on
+std::wstring disp_name{};
+
+bool RecoverRefreshRate()
+{
+	if (wanted_freq == 0 || disp_name.empty())
+		return false;
+
+	//we only want to change the frequency here
+	DEVMODE dmScreenSettings;
+	ZeroMemory(&dmScreenSettings, sizeof(DEVMODE));
+	dmScreenSettings.dmSize = sizeof(DEVMODE);
+	dmScreenSettings.dmDisplayFrequency = wanted_freq;
+	dmScreenSettings.dmFields = DM_DISPLAYFREQUENCY;
+
+	//set our refresh rate back to what it was before toggling hdr
+	const auto hr = ChangeDisplaySettingsEx(disp_name.c_str(), &dmScreenSettings, nullptr, CDS_FULLSCREEN, nullptr);
+
+	DLogIf(DISP_CHANGE_SUCCESSFUL != hr, L"RecoverRefreshRate() : ChangeDisplaySettingsEx() failed with error {}", hr);
+	wanted_freq = 0;
+	disp_name.clear();
+
+	return DISP_CHANGE_SUCCESSFUL == hr;
+}
+
 static bool ToggleHDR(const DisplayConfig_t& displayConfig, const BOOL bEnableAdvancedColor)
 {
+	//calling DisplayConfigSetDeviceInfo() to toggle HDR resets the refresh rate
+	//	to max for a display, so we need to save the values before that happens
+	DEVMODE disp_pre;
+	disp_pre.dmSize = sizeof(DEVMODE);
+	const auto hr1 = EnumDisplaySettings(displayConfig.displayName, ENUM_CURRENT_SETTINGS, &disp_pre);
+	
 	DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
 	setColorState.header.type         = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
 	setColorState.header.size         = sizeof(setColorState);
@@ -453,6 +486,19 @@ static bool ToggleHDR(const DisplayConfig_t& displayConfig, const BOOL bEnableAd
 
 	const auto ret = DisplayConfigSetDeviceInfo(&setColorState.header);
 	DLogIf(ERROR_SUCCESS != ret, L"ToggleHDR() : DisplayConfigSetDeviceInfo({}) failed with error {}", bEnableAdvancedColor, HR2Str(HRESULT_FROM_WIN32(ret)));
+
+	//check what refresh rate the display is at now
+	DEVMODE disp_post;
+	disp_post.dmSize = sizeof(DEVMODE);
+	const auto hr2 = EnumDisplaySettings(displayConfig.displayName, ENUM_CURRENT_SETTINGS, &disp_post);
+
+	//if toggling hdr changed our refresh rate,
+	//	we want to fix that
+	if (hr1 != 0 && hr2 != 0 && disp_pre.dmDisplayFrequency != disp_post.dmDisplayFrequency)
+	{
+		wanted_freq = disp_pre.dmDisplayFrequency;
+		disp_name = displayConfig.displayName;
+	}
 
 	return ret == ERROR_SUCCESS;
 }
@@ -1964,6 +2010,19 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 		m_SyncDevs.Add(so - m_Syncs.Last());
 #endif
 		m_Syncs.Add(so);
+	}
+
+	//doing this after frame render seems to work best,
+	//	calling it inside ToggleHDR() seems to cause random crashes
+	//	due to screen mode changing and invalidating swapchain mid-present
+	if (RecoverRefreshRate())
+	{
+		ReleaseSwapChain();
+		ReleaseVP();
+		Init(m_hWnd);
+		InitMediaType(&m_pFilter->m_inputMT);
+	
+		return E_FAIL;
 	}
 
 	return hr;
