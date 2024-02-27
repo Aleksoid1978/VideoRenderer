@@ -23,6 +23,7 @@
 #include <Mferror.h>
 #include <Mfidl.h>
 #include <dwmapi.h>
+#include <optional>
 #include "Helper.h"
 #include "Times.h"
 #include "resource.h"
@@ -444,6 +445,19 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 
 static bool ToggleHDR(const DisplayConfig_t& displayConfig, const BOOL bEnableAdvancedColor)
 {
+	auto GetCurrentDisplayMode = [](LPCWSTR lpszDeviceName) -> std::optional<DEVMODEW> {
+		DEVMODEW devmode = {};
+		devmode.dmSize = sizeof(DEVMODEW);
+		auto ret = EnumDisplaySettingsW(lpszDeviceName, ENUM_CURRENT_SETTINGS, &devmode);
+		if (ret) {
+			return devmode;
+		}
+
+		return {};
+	};
+
+	auto beforeModeOpt = GetCurrentDisplayMode(displayConfig.displayName);
+
 	DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
 	setColorState.header.type         = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
 	setColorState.header.size         = sizeof(setColorState);
@@ -453,6 +467,23 @@ static bool ToggleHDR(const DisplayConfig_t& displayConfig, const BOOL bEnableAd
 
 	const auto ret = DisplayConfigSetDeviceInfo(&setColorState.header);
 	DLogIf(ERROR_SUCCESS != ret, L"ToggleHDR() : DisplayConfigSetDeviceInfo({}) failed with error {}", bEnableAdvancedColor, HR2Str(HRESULT_FROM_WIN32(ret)));
+
+	if (ret == ERROR_SUCCESS && beforeModeOpt.has_value()) {
+		auto afterModeOpt = GetCurrentDisplayMode(displayConfig.displayName);
+		if (afterModeOpt.has_value()) {
+			auto& beforeMode = *beforeModeOpt;
+			auto& afterMode = *afterModeOpt;
+			if (beforeMode.dmPelsWidth != afterMode.dmPelsWidth || beforeMode.dmPelsHeight != afterMode.dmPelsHeight
+					|| beforeMode.dmBitsPerPel != afterMode.dmBitsPerPel || beforeMode.dmDisplayFrequency != afterMode.dmDisplayFrequency) {
+				DLog(L"ToggleHDR() : Display mode changed from {}x{}@{} to {}x{}@{}, restoring",
+					 beforeMode.dmPelsWidth, beforeMode.dmPelsHeight, beforeMode.dmDisplayFrequency,
+					 afterMode.dmPelsWidth, afterMode.dmPelsHeight, afterMode.dmDisplayFrequency);
+
+				auto ret = ChangeDisplaySettingsExW(displayConfig.displayName, &beforeMode, nullptr, CDS_FULLSCREEN, nullptr);
+				DLogIf(DISP_CHANGE_SUCCESSFUL != ret, L"ToggleHDR() : ChangeDisplaySettingsExW() failed with error {}", HR2Str(HRESULT_FROM_WIN32(ret)));
+			}
+		}
+	}
 
 	return ret == ERROR_SUCCESS;
 }
