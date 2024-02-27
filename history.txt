@@ -1,10 +1,11 @@
 0.7.2 dev
 ------------------------
-Improved "Windows HDR" switching in some situations.
-Improved deinterlacing smoothness on high frequency displays.
 Added the ability to request Super Resolution only for low resolution videos.
 "Windows HDR Mode" has been renamed to "Windows HDR".
+Improved display switching to HDR mode in some situations.
+Added support for Dolby Vision output on HDR displays.
 Added support for "RTX Video HDR" for Nvidia graphics adapters. Hardware and driver support required.
+Improved deinterlacing smoothness with double frame rate on high frequency displays.
 
 0.7.1.2172 - 2023-12-25
 ------------------------
