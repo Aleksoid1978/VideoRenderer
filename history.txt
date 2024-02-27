@@ -1,5 +1,6 @@
 0.7.2 dev
 ------------------------
+Improved deinterlacing smoothness on high frequency displays.
 Added the ability to request Super Resolution only for low resolution videos.
 "Windows HDR Mode" has been renamed to "Windows HDR".
 Added support for "RTX Video HDR" for Nvidia graphics adapters. Hardware and driver support required.
