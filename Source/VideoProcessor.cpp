@@ -188,11 +188,11 @@ void CVideoProcessor::UpdateStatsInputFmt()
 	}
 }
 
-void CVideoProcessor::SyncFrameToStreamTime(REFERENCE_TIME rt)
+void CVideoProcessor::SyncFrameToStreamTime(const REFERENCE_TIME frameStartTime)
 {
-	if (m_pFilter->m_filterState == State_Running && rt != INVALID_TIME) {
-		if (SUCCEEDED(m_pFilter->StreamTime(m_streamTime)) && rt > m_streamTime) {
-			const auto sleepTime = (rt - m_streamTime) / 10000LL;
+	if (m_pFilter->m_filterState == State_Running && frameStartTime != INVALID_TIME) {
+		if (SUCCEEDED(m_pFilter->StreamTime(m_streamTime)) && frameStartTime > m_streamTime) {
+			const auto sleepTime = (frameStartTime - m_streamTime) / 10000LL;
 			if (sleepTime > 1) {
 				Sleep(static_cast<DWORD>(sleepTime));
 			}

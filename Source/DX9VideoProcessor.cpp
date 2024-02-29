@@ -1537,7 +1537,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 	return hr;
 }
 
-HRESULT CDX9VideoProcessor::Render(int field, REFERENCE_TIME rt/* = INVALID_TIME*/)
+HRESULT CDX9VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTime)
 {
 	uint64_t tick1 = GetPreciseTick();
 
@@ -1613,7 +1613,7 @@ HRESULT CDX9VideoProcessor::Render(int field, REFERENCE_TIME rt/* = INVALID_TIME
 		DLogIf(FAILED(hr), L"WaitForVBlank failed with error {}", HR2Str(hr));
 	}
 
-	SyncFrameToStreamTime(rt);
+	SyncFrameToStreamTime(frameStartTime);
 
 	if (m_d3dpp.SwapEffect == D3DSWAPEFFECT_DISCARD) {
 		const CRect rSrcPri(CPoint(0, 0), windowSize);

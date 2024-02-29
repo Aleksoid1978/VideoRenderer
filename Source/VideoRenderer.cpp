@@ -1471,7 +1471,7 @@ HRESULT CMpcVideoRenderer::Redraw()
 
 	HRESULT hr = S_OK;
 	if (bDrawFrame) {
-		hr = m_VideoProcessor->Render(0);
+		hr = m_VideoProcessor->Render(0, INVALID_TIME);
 	} else {
 		hr = m_VideoProcessor->FillBlack();
 	}

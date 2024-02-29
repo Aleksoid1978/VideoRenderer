@@ -2243,7 +2243,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::Render(int field, REFERENCE_TIME rt/* = INVALID_TIME*/)
+HRESULT CDX11VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTime)
 {
 	CheckPointer(m_TexSrcVideo.pTexture, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
@@ -2399,7 +2399,7 @@ HRESULT CDX11VideoProcessor::Render(int field, REFERENCE_TIME rt/* = INVALID_TIM
 		DLogIf(FAILED(hr), L"WaitForVBlank failed with error {}", HR2Str(hr));
 	}
 
-	SyncFrameToStreamTime(rt);
+	SyncFrameToStreamTime(frameStartTime);
 
 	g_bPresent = true;
 	hr = m_pDXGISwapChain1->Present(1, 0);

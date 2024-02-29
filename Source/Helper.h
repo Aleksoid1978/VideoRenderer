@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2023 see Authors.txt
+* (C) 2018-2024 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -44,6 +44,8 @@
 #define PCIV_AMDATI      0x1002
 #define PCIV_NVIDIA      0x10DE
 #define PCIV_INTEL       0x8086
+
+#define INVALID_TIME INT64_MIN
 
 struct VR_Extradata {
 	LONG  QueryWidth;

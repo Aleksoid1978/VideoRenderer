@@ -233,7 +233,7 @@ public:
 	HRESULT ProcessSample(IMediaSample* pSample) override;
 	HRESULT CopySample(IMediaSample* pSample);
 	// Render: 1 - render first fied or progressive frame, 2 - render second fied, 0 or other - forced repeat of render.
-	HRESULT Render(int field, REFERENCE_TIME rt = INVALID_TIME) override;
+	HRESULT Render(int field, const REFERENCE_TIME frameStartTime) override;
 	HRESULT FillBlack() override;
 
 	void SetVideoRect(const CRect& videoRect)      override;
