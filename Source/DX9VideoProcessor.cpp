@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2023 see Authors.txt
+* (C) 2018-2024 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -1567,8 +1567,6 @@ HRESULT CDX9VideoProcessor::Render(int field, REFERENCE_TIME rt/* = INVALID_TIME
 	}
 
 	const SIZE windowSize = m_windowRect.Size();
-	const CRect rSrcPri(CPoint(0, 0), windowSize);
-	const CRect rDstPri(m_windowRect);
 
 	if (m_bShowStats) {
 		hr = DrawStats(pBackBuffer);
@@ -1618,6 +1616,8 @@ HRESULT CDX9VideoProcessor::Render(int field, REFERENCE_TIME rt/* = INVALID_TIME
 	SyncFrameToStreamTime(rt);
 
 	if (m_d3dpp.SwapEffect == D3DSWAPEFFECT_DISCARD) {
+		const CRect rSrcPri(CPoint(0, 0), windowSize);
+		const CRect rDstPri(m_windowRect);
 		hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
 	} else {
 		hr = m_pD3DDevEx->PresentEx(nullptr, nullptr, nullptr, nullptr, 0);
@@ -1666,10 +1666,9 @@ HRESULT CDX9VideoProcessor::FillBlack()
 
 	hr = m_pD3DDevEx->EndScene();
 
-	const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
-	const CRect rDstPri(m_windowRect);
-
 	if (m_d3dpp.SwapEffect == D3DSWAPEFFECT_DISCARD) {
+		const CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
+		const CRect rDstPri(m_windowRect);
 		hr = m_pD3DDevEx->PresentEx(rSrcPri, rDstPri, nullptr, nullptr, 0);
 	} else {
 		hr = m_pD3DDevEx->PresentEx(nullptr, nullptr, nullptr, nullptr, 0);

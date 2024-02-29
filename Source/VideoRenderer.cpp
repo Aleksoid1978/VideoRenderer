@@ -428,7 +428,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			if (S_OK == m_pInputPin->GetConnected()->QueryAccept(&mtNew)) {
 				DLog(L"CMpcVideoRenderer::SetMediaType() : upstream filter accepted new media type. QueryAccept return S_OK");
 				inputPin->SetNewMediaType(mtNew);
-				mt = mtNew;
+				mt = std::move(mtNew);
 			}
 		}
 	}
