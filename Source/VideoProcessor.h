@@ -132,7 +132,6 @@ protected:
 	std::wstring m_strStatsHDR;
 	std::wstring m_strStatsPresent;
 	int m_iSrcFromGPU = 0;
-	D3DDISPLAYMODEEX* m_pDisplayMode = nullptr;
 	const wchar_t* m_strShaderX = nullptr;
 	const wchar_t* m_strShaderY = nullptr;
 	int m_StatsFontH = 14;

@@ -122,8 +122,6 @@ void CVideoProcessor::SetDisplayInfo(const DisplayConfig_t& dc, const bool prima
 				}
 			}
 		}
-	} else {
-		m_strStatsDispInfo.append(D3DDisplayModeToString(*m_pDisplayMode));
 	}
 
 	if (primary) {

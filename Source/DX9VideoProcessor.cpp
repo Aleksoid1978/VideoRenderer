@@ -289,7 +289,6 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Setting
 	m_bConvertToSdr        = config.bConvertToSdr;
 
 	m_nCurrentAdapter = D3DADAPTER_DEFAULT;
-	m_pDisplayMode = &m_DisplayMode;
 
 	hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
 	if (!m_pD3DEx || FAILED(hr)) {
