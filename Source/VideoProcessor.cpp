@@ -105,6 +105,8 @@ void CVideoProcessor::CalcGraphParams()
 
 void CVideoProcessor::SetDisplayInfo(const DisplayConfig_t& dc, const bool primary, const bool fullscreen)
 {
+	m_uHalfRefreshPeriodMs = (UINT32)(500ull * dc.refreshRate.Denominator / dc.refreshRate.Numerator);
+
 	m_strStatsDispInfo.assign(L"\nDisplay: ");
 
 	std::wstring str = DisplayConfigToString(dc);
@@ -190,8 +192,8 @@ void CVideoProcessor::SyncFrameToStreamTime(const REFERENCE_TIME frameStartTime)
 {
 	if (m_pFilter->m_filterState == State_Running && frameStartTime != INVALID_TIME) {
 		if (SUCCEEDED(m_pFilter->StreamTime(m_streamTime)) && frameStartTime > m_streamTime) {
-			const auto sleepTime = (frameStartTime - m_streamTime) / 10000LL;
-			if (sleepTime > 1) {
+			const auto sleepTime = (frameStartTime - m_streamTime) / 10000LL - m_uHalfRefreshPeriodMs;
+			if (sleepTime > 0) {
 				Sleep(static_cast<DWORD>(sleepTime));
 			}
 		}

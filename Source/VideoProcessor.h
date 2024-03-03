@@ -117,6 +117,8 @@ protected:
 	int m_FieldDrawn = 0;
 	bool m_bDoubleFrames = false;
 
+	UINT32 m_uHalfRefreshPeriodMs = 0;
+
 	// AlphaBitmap
 	bool m_bAlphaBitmapEnable = false;
 	RECT m_AlphaBitmapRectSrc = {};
