@@ -1,3 +1,7 @@
+0.8.0 dev
+------------------------
+
+
 0.7.3.2210 - 2024-03-05
 ------------------------
 Added the ability to request Super Resolution only for low resolution videos.
