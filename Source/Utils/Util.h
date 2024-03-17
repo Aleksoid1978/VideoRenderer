@@ -119,3 +119,6 @@ inline std::wstring GUIDtoWString(const GUID& guid)
 std::wstring HR2Str(const HRESULT hr);
 
 HRESULT GetDataFromResource(LPVOID& data, DWORD& size, UINT resid);
+
+// Usage: SetThreadName ((DWORD)-1, "MainThread");
+void SetThreadName(DWORD dwThreadID, const char* threadName);
