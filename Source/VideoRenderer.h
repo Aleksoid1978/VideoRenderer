@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2023 see Authors.txt
+ * (C) 2018-2024 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -267,14 +267,14 @@ public:
 	STDMETHODIMP SetCallback11(ISubRender11Callback* cb) override;
 
 	// IExFilterConfig
-	STDMETHODIMP GetBool(LPCSTR field, bool* value) override;
-	STDMETHODIMP GetInt(LPCSTR field,  int*  value) override;
-	STDMETHODIMP GetInt64(LPCSTR field, __int64* value) override;
-	STDMETHODIMP GetBin(LPCSTR field, LPVOID* value, unsigned* size) override;
+	STDMETHODIMP Flt_GetBool(LPCSTR field, bool* value) override;
+	STDMETHODIMP Flt_GetInt(LPCSTR field,  int*  value) override;
+	STDMETHODIMP Flt_GetInt64(LPCSTR field, __int64* value) override;
+	STDMETHODIMP Flt_GetBin(LPCSTR field, LPVOID* value, unsigned* size) override;
 
-	STDMETHODIMP SetBool(LPCSTR field, bool value) override;
-	STDMETHODIMP SetInt(LPCSTR field, int value) override;
-	STDMETHODIMP SetBin(LPCSTR field, LPVOID value, int size) override;
+	STDMETHODIMP Flt_SetBool(LPCSTR field, bool value) override;
+	STDMETHODIMP Flt_SetInt(LPCSTR field, int value) override;
+	STDMETHODIMP Flt_SetBin(LPCSTR field, LPVOID value, int size) override;
 
 	// ID3DFullscreenControl
 	STDMETHODIMP SetD3DFullscreen(bool bEnabled);

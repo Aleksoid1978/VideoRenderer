@@ -1232,7 +1232,7 @@ STDMETHODIMP CMpcVideoRenderer::SetCallback11(ISubRender11Callback* cb)
 
 // IExFilterConfig
 
-STDMETHODIMP CMpcVideoRenderer::GetBool(LPCSTR field, bool* value)
+STDMETHODIMP CMpcVideoRenderer::Flt_GetBool(LPCSTR field, bool* value)
 {
 	CheckPointer(value, E_POINTER);
 
@@ -1255,7 +1255,7 @@ STDMETHODIMP CMpcVideoRenderer::GetBool(LPCSTR field, bool* value)
 	return E_INVALIDARG;
 }
 
-STDMETHODIMP CMpcVideoRenderer::GetInt(LPCSTR field, int* value)
+STDMETHODIMP CMpcVideoRenderer::Flt_GetInt(LPCSTR field, int* value)
 {
 	CheckPointer(value, E_POINTER);
 
@@ -1279,7 +1279,7 @@ STDMETHODIMP CMpcVideoRenderer::GetInt(LPCSTR field, int* value)
 	return E_INVALIDARG;
 }
 
-STDMETHODIMP CMpcVideoRenderer::GetInt64(LPCSTR field, __int64 *value)
+STDMETHODIMP CMpcVideoRenderer::Flt_GetInt64(LPCSTR field, __int64 *value)
 {
 	CheckPointer(value, E_POINTER);
 
@@ -1294,7 +1294,7 @@ STDMETHODIMP CMpcVideoRenderer::GetInt64(LPCSTR field, __int64 *value)
 	return E_INVALIDARG;
 }
 
-STDMETHODIMP CMpcVideoRenderer::GetBin(LPCSTR field, LPVOID* value, unsigned* size)
+STDMETHODIMP CMpcVideoRenderer::Flt_GetBin(LPCSTR field, LPVOID* value, unsigned* size)
 {
 	if (!strcmp(field, "displayedImage")) {
 		CAutoLock cRendererLock(&m_RendererLock);
@@ -1307,7 +1307,7 @@ STDMETHODIMP CMpcVideoRenderer::GetBin(LPCSTR field, LPVOID* value, unsigned* si
 	return E_INVALIDARG;
 }
 
-STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
+STDMETHODIMP CMpcVideoRenderer::Flt_SetBool(LPCSTR field, bool value)
 {
 	if (!strcmp(field, "cmd_redraw") && value) {
 		Redraw();
@@ -1359,7 +1359,7 @@ STDMETHODIMP CMpcVideoRenderer::SetBool(LPCSTR field, bool value)
 	return E_INVALIDARG;
 }
 
-STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
+STDMETHODIMP CMpcVideoRenderer::Flt_SetInt(LPCSTR field, int value)
 {
 	if (!strcmp(field, "rotation")) {
 		// Allowed angles are multiples of 90.
@@ -1389,7 +1389,7 @@ STDMETHODIMP CMpcVideoRenderer::SetInt(LPCSTR field, int value)
 	return E_INVALIDARG;
 }
 
-STDMETHODIMP CMpcVideoRenderer::SetBin(LPCSTR field, LPVOID value, int size)
+STDMETHODIMP CMpcVideoRenderer::Flt_SetBin(LPCSTR field, LPVOID value, int size)
 {
 	if (size > 0) {
 		auto ReadShaderData = [&](std::wstring& shaderName, std::string& shaderCode) {
