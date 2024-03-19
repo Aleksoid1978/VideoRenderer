@@ -629,7 +629,7 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 		QI(ISpecifyPropertyPages)
 		QI(IVideoRenderer)
 		QI(IExFilterConfig)
-		QI(ISubRender)
+		(riid == __uuidof(ISubRender) && m_VideoProcessor && m_VideoProcessor->Type() == 9) ? GetInterface((ISubRender*)this, ppv) :
 		(riid == __uuidof(ISubRender11) && m_VideoProcessor && m_VideoProcessor->Type() == 11) ? GetInterface((ISubRender11*)this, ppv) :
 		(riid == __uuidof(ID3DFullscreenControl) && m_bEnableFullscreenControl) ? GetInterface((ID3DFullscreenControl*)this, ppv) :
 		__super::NonDelegatingQueryInterface(riid, ppv);
