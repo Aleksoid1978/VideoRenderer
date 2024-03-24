@@ -1,5 +1,6 @@
 0.8.0 dev
 ------------------------
+"RTX Video HDR" also works with 10-bit video.
 
 
 0.7.3.2210 - 2024-03-05
