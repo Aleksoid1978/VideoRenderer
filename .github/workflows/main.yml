@@ -4,13 +4,17 @@ on:
   push:
     paths-ignore:
       - .github/workflows/main.yml
-      - Readme.md
-      - history.txt
+      - '**.txt'
+      - '**.md'
+      - '**.cmd'
+      - '**.vcxproj.filters'
   pull_request:
     paths-ignore:
       - .github/workflows/main.yml      
-      - Readme.md
-      - history.txt
+      - '**.txt'
+      - '**.md'
+      - '**.cmd'
+      - '**.vcxproj.filters'
 
 jobs:
   build:
