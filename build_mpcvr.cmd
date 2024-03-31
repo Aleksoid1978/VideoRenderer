@@ -118,7 +118,7 @@ IF DEFINED SEVENZIP (
 .\distrib\Reset_Settings.cmd ^
 .\Readme.md ^
 .\history.txt ^
-.\LICENSE
+.\LICENSE.txt
     IF %ERRORLEVEL% NEQ 0 CALL :SubMsg "ERROR" "Unable to create %PCKG_NAME%.zip!"
     CALL :SubMsg "INFO" "%PCKG_NAME%.zip successfully created"
 )
