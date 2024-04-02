@@ -197,7 +197,10 @@ void CVideoProcessor::SyncFrameToStreamTime(const REFERENCE_TIME frameStartTime)
 	if (m_pFilter->m_filterState == State_Running && frameStartTime != INVALID_TIME) {
 		if (SUCCEEDED(m_pFilter->StreamTime(m_streamTime)) && frameStartTime > m_streamTime) {
 			const auto sleepTime = (frameStartTime - m_streamTime) / 10000LL - m_uHalfRefreshPeriodMs;
-			if (sleepTime > 0) {
+			if (sleepTime > 0 && sleepTime < 42) {
+				// We are waiting for Preset to display the frame at the required display refresh interval.
+				// This is relevant for displays with high frame rates (for example 144 Hz).
+				// But no longer than 41 ms to avoid problems with the DVD-Video menu.
 				Sleep(static_cast<DWORD>(sleepTime));
 			}
 		}
