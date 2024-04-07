@@ -779,6 +779,11 @@ HRESULT CD3D11VP::SetSuperRes(const int iSuperRes)
 			enable = true;
 		}
 		break;
+	case SUPERRES_QHD:
+		if (m_srcWidth <= 2560 && m_srcHeight <= 1440) {
+			enable = true;
+		}
+		break;
 	}
 
 	if (m_VendorId == PCIV_NVIDIA) {
