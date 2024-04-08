@@ -769,17 +769,18 @@ HRESULT CD3D11VP::SetSuperRes(const int iSuperRes)
 			enable = true;
 		}
 		break;
-	case SUPERRES_HD:
+	case SUPERRES_720p:
 		if (m_srcWidth <= 1280 && m_srcHeight <= 720) {
 			enable = true;
 		}
 		break;
-	case SUPERRES_FHD:
+	case SUPERRES_1080p:
+		// a little more than Full HD
 		if (m_srcWidth <= 2048 && m_srcHeight <= 1088) {
 			enable = true;
 		}
 		break;
-	case SUPERRES_QHD:
+	case SUPERRES_1440p:
 		if (m_srcWidth <= 2560 && m_srcHeight <= 1440) {
 			enable = true;
 		}
