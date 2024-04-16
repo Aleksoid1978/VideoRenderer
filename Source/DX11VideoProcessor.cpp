@@ -2605,7 +2605,7 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 void CDX11VideoProcessor::UpdateBitmapShader()
 {
 	if (m_bHdrDisplayModeEnabled
-			&& (SourceIsPQorHLG() || m_bVPUseRTXVideoHDR)) {
+			&& (SourceIsHDR() || m_bVPUseRTXVideoHDR)) {
 		UINT resid;
 		float SDR_peak_lum;
 		switch (m_iHdrOsdBrightness) {
