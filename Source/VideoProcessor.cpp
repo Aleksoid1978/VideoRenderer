@@ -161,33 +161,55 @@ void CVideoProcessor::UpdateStatsInputFmt()
 	}
 
 	if (m_srcParams.CSType == CS_YUV) {
-		LPCSTR strs[6] = {};
-		GetExtendedFormatString(strs, m_srcExFmt, m_srcParams.CSType);
-		m_strStatsInputFmt += std::format(L"\n  Range: {}", A2WStr(strs[1]));
-		if (m_decExFmt.NominalRange == DXVA2_NominalRange_Unknown) {
-			m_strStatsInputFmt += L'*';
-		};
-		m_strStatsInputFmt += std::format(L", Matrix: {}", A2WStr(strs[2]));
-		if (m_decExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
-			m_strStatsInputFmt += L'*';
-		};
-		if (m_decExFmt.VideoLighting != DXVA2_VideoLighting_Unknown) {
-			// display Lighting only for values other than Unknown, but this never happens
-			m_strStatsInputFmt += std::format(L", Lighting: {}", A2WStr(strs[3]));
-		};
-		m_strStatsInputFmt += std::format(L"\n  Primaries: {}", A2WStr(strs[4]));
-		if (m_decExFmt.VideoPrimaries == DXVA2_VideoPrimaries_Unknown) {
-			m_strStatsInputFmt += L'*';
-		};
-		m_strStatsInputFmt += std::format(L", Function: {}", A2WStr(strs[5]));
-		if (m_decExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_Unknown) {
-			m_strStatsInputFmt += L'*';
-		};
-		if (m_srcParams.Subsampling == 420) {
-			m_strStatsInputFmt += std::format(L"\n  ChromaLocation: {}", A2WStr(strs[0]));
-			if (m_decExFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Unknown) {
+		if (m_Dovi.bValid) {
+			int dv_profile = 0;
+			const auto& hdr = m_Dovi.msd.Header;
+			const bool has_el = hdr.el_spatial_resampling_filter_flag && !hdr.disable_residual_flag;
+
+			if ((hdr.vdr_rpu_profile == 0) && hdr.bl_video_full_range_flag) {
+				dv_profile = 5;
+			} else if (has_el) {
+				// Profile 7 is max 12 bits, both MEL & FEL
+				if (hdr.vdr_bit_depth == 12) {
+					dv_profile = 7;
+				} else {
+					dv_profile = 4;
+				}
+			} else {
+				dv_profile = 8;
+			}
+
+			m_strStatsInputFmt += std::format(L"\n  DolbyVision Profile {}", dv_profile);
+		}
+		else {
+			LPCSTR strs[6] = {};
+			GetExtendedFormatString(strs, m_srcExFmt, m_srcParams.CSType);
+			m_strStatsInputFmt += std::format(L"\n  Range: {}", A2WStr(strs[1]));
+			if (m_decExFmt.NominalRange == DXVA2_NominalRange_Unknown) {
 				m_strStatsInputFmt += L'*';
 			};
+			m_strStatsInputFmt += std::format(L", Matrix: {}", A2WStr(strs[2]));
+			if (m_decExFmt.VideoTransferMatrix == DXVA2_VideoTransferMatrix_Unknown) {
+				m_strStatsInputFmt += L'*';
+			};
+			if (m_decExFmt.VideoLighting != DXVA2_VideoLighting_Unknown) {
+				// display Lighting only for values other than Unknown, but this never happens
+				m_strStatsInputFmt += std::format(L", Lighting: {}", A2WStr(strs[3]));
+			};
+			m_strStatsInputFmt += std::format(L"\n  Primaries: {}", A2WStr(strs[4]));
+			if (m_decExFmt.VideoPrimaries == DXVA2_VideoPrimaries_Unknown) {
+				m_strStatsInputFmt += L'*';
+			};
+			m_strStatsInputFmt += std::format(L", Function: {}", A2WStr(strs[5]));
+			if (m_decExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_Unknown) {
+				m_strStatsInputFmt += L'*';
+			};
+			if (m_srcParams.Subsampling == 420) {
+				m_strStatsInputFmt += std::format(L"\n  ChromaLocation: {}", A2WStr(strs[0]));
+				if (m_decExFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Unknown) {
+					m_strStatsInputFmt += L'*';
+				};
+			}
 		}
 	}
 }

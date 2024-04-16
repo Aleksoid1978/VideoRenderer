@@ -3013,9 +3013,7 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	);
 
 	str.append(m_strStatsInputFmt);
-	if (m_Dovi.bValid) {
-		str.append(L", MetaData: DolbyVision");
-	}
+
 	str.append(m_strStatsVProc);
 
 	const int dstW = m_videoRect.Width();
