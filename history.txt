@@ -1,7 +1,12 @@
 0.8.0 dev
 ------------------------
-"RTX Video HDR" also works with 10-bit video.
-
+"RTX Video HDR" now works with 10-bit SDR video.
+Fixed OSD and subtitle brightness adjustment for some cases.
+Fixed playback of static DVD-Video menu when frame rate doubling deinterlacing is active.
+Expanded support for "Super Resolution" to 1440p.
+Changed input format statistics for Dolby Vision.
+Improved handling of input format changes.
+Recommended MPC-BE 1.7.0.19 or newer.
 
 0.7.3.2210 - 2024-03-05
 ------------------------
