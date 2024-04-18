@@ -418,6 +418,8 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 
 	CMediaType mt(*pmt);
 
+	m_bSetNewMediaTypeToInputPin = false;
+
 	auto inputPin = static_cast<CVideoRendererInputPin*>(m_pInputPin);
 	inputPin->ClearNewMediaType();
 	if (!inputPin->FrameInVideoMem()) {
@@ -428,6 +430,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 			if (S_OK == m_pInputPin->GetConnected()->QueryAccept(&mtNew)) {
 				DLog(L"CMpcVideoRenderer::SetMediaType() : upstream filter accepted new media type. QueryAccept return S_OK");
 				inputPin->SetNewMediaType(mtNew);
+				m_bSetNewMediaTypeToInputPin = true;
 			}
 		}
 	}
@@ -460,6 +463,12 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 HRESULT CMpcVideoRenderer::DoRenderSample(IMediaSample* pSample)
 {
 	CheckPointer(pSample, E_POINTER);
+
+	if (m_bSetNewMediaTypeToInputPin) {
+		auto inputPin = static_cast<CVideoRendererInputPin*>(m_pInputPin);
+		inputPin->ClearNewMediaType();
+		m_bSetNewMediaTypeToInputPin = false;
+	}
 
 	HRESULT hr = m_VideoProcessor->ProcessSample(pSample);
 

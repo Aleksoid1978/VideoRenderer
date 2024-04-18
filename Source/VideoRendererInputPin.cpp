@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2023 see Authors.txt
+ * (C) 2018-2024 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -32,11 +32,6 @@ CVideoRendererInputPin::CVideoRendererInputPin(CBaseRenderer *pRenderer, HRESULT
 	: CRendererInputPin(pRenderer, phr, Name)
 	, m_pBaseRenderer(pBaseRenderer)
 {
-}
-
-CVideoRendererInputPin::~CVideoRendererInputPin()
-{
-	SAFE_DELETE(m_pNewMT);
 }
 
 STDMETHODIMP CVideoRendererInputPin::NonDelegatingQueryInterface(REFIID riid, void** ppv)
@@ -84,8 +79,8 @@ STDMETHODIMP CVideoRendererInputPin::GetAllocator(IMemAllocator **ppAllocator)
 	}
 
 	if (m_pNewMT) {
-		m_pCustomAllocator->SetNewMediaType(*m_pNewMT);
-		SAFE_DELETE(m_pNewMT);
+		m_pCustomAllocator->SetNewMediaType(*m_pNewMT.get());
+		m_pNewMT.reset();
 	}
 
 	// Return the IMemAllocator interface to the caller.
@@ -212,17 +207,19 @@ void CVideoRendererInputPin::SetNewMediaType(const CMediaType& mt)
 {
 	DLog(L"CVideoRendererInputPin::SetNewMediaType()");
 
-	SAFE_DELETE(m_pNewMT);
+	m_pNewMT.reset();
 	if (m_pCustomAllocator) {
 		m_pCustomAllocator->SetNewMediaType(mt);
 	} else {
-		m_pNewMT = new CMediaType(mt);
+		m_pNewMT.reset(new CMediaType(mt));
 	}
 }
 
 void CVideoRendererInputPin::ClearNewMediaType()
 {
-	SAFE_DELETE(m_pNewMT);
+	DLog(L"CVideoRendererInputPin::ClearNewMediaType()");
+
+	m_pNewMT.reset();
 	if (m_pCustomAllocator) {
 		m_pCustomAllocator->ClearNewMediaType();
 	}

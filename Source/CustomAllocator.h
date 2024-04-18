@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2021 see Authors.txt
+* (C) 2018-2024 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <memory>
 #include "MediaSampleSideData.h"
 
 class CVideoRendererInputPin;
@@ -39,7 +40,7 @@ protected:
 	HRESULT Alloc();
 
 	CVideoRendererInputPin* m_pVideoRendererInputPin = nullptr;
-	CMediaType* m_pNewMT = nullptr;
+	std::unique_ptr<CMediaType> m_pNewMT;
 	long m_cbBuffer = 0;
 
 public:

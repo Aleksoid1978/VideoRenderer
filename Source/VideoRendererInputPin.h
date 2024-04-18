@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2021 see Authors.txt
+ * (C) 2018-2024 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -22,6 +22,7 @@
 
 #include <d3d11.h>
 #include <mfidl.h>
+#include <memory>
 #include "../Include/ID3DVideoMemoryConfiguration.h"
 
 class CMpcVideoRenderer;
@@ -41,13 +42,13 @@ private:
 	bool m_bD3D11 = false;
 
 	CCustomAllocator* m_pCustomAllocator = nullptr;
-	CMediaType* m_pNewMT = nullptr;
+	std::unique_ptr<CMediaType> m_pNewMT;
 
 	CCritSec m_csReceive;
 
 public:
 	CVideoRendererInputPin(CBaseRenderer *pRenderer, HRESULT *phr, LPCWSTR Name, CMpcVideoRenderer* pBaseRenderer);
-	~CVideoRendererInputPin();
+	~CVideoRendererInputPin() = default;
 
 	bool FrameInVideoMem() { return m_bDXVA || m_bD3D11; }
 

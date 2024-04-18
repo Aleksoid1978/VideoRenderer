@@ -128,6 +128,8 @@ private:
 
 	std::atomic_bool m_bDisplayModeChanging = false;
 
+	bool m_bSetNewMediaTypeToInputPin = false;
+
 public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
 	~CMpcVideoRenderer();

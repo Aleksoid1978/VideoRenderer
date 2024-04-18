@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2021 see Authors.txt
+* (C) 2018-2024 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -39,8 +39,6 @@ CCustomAllocator::~CCustomAllocator()
 	if (m_pVideoRendererInputPin && m_pVideoRendererInputPin->m_pCustomAllocator == this) {
 		m_pVideoRendererInputPin->m_pCustomAllocator = nullptr;
 	}
-
-	SAFE_DELETE(m_pNewMT);
 }
 
 HRESULT CCustomAllocator::Alloc(void)
@@ -162,10 +160,8 @@ HRESULT CCustomAllocator::GetBuffer(IMediaSample** ppBuffer, REFERENCE_TIME* pSt
 	HRESULT hr = __super::GetBuffer(ppBuffer, pStartTime, pEndTime, dwFlags);
 
 	if (SUCCEEDED(hr) && m_pNewMT) {
-		DLog(L"CCustomAllocator::GetBuffer() : Set new media type for MediaSample\n{}", MediaType2Str(m_pNewMT));
-		(*ppBuffer)->SetMediaType(m_pNewMT);
-		SAFE_DELETE(m_pNewMT);
-		m_cbBuffer = 0;
+		DLog(L"CCustomAllocator::GetBuffer() : Set new media type for MediaSample\n{}", MediaType2Str(m_pNewMT.get()));
+		(*ppBuffer)->SetMediaType(m_pNewMT.get());
 	}
 
 	return hr;
@@ -175,16 +171,16 @@ void CCustomAllocator::SetNewMediaType(const CMediaType& mt)
 {
 	DLog(L"CCustomAllocator::SetNewMediaType()");
 
-	SAFE_DELETE(m_pNewMT);
-	m_pNewMT = new CMediaType(mt);
+	m_pNewMT.reset(new CMediaType(mt));
 
 	m_cbBuffer = 0;
-	if (const auto pBIH = GetBIHfromVIHs(m_pNewMT); pBIH) {
+	if (const auto pBIH = GetBIHfromVIHs(m_pNewMT.get()); pBIH) {
 		m_cbBuffer = pBIH->biSizeImage ? pBIH->biSizeImage : DIBSIZE(*pBIH);
 	}
 }
 
 void CCustomAllocator::ClearNewMediaType()
 {
-	SAFE_DELETE(m_pNewMT);
+	m_pNewMT.reset();
+	m_cbBuffer = 0;
 }
