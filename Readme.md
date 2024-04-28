@@ -35,11 +35,11 @@ MPC Video Renderer's code is licensed under [GPL v3].
 
 ## Links
 
-Nightly builds - <https://yadi.sk/d/X0EVMKP4TcmnHQ>
+[Nightly builds](https://github.com/Aleksoid1978/VideoRenderer/wiki/Nightly-builds)
 
-Topic in MPC-BE forum (Russian) - <https://mpc-be.org/forum/index.php?topic=381>
+[Topic in MPC-BE forum (Russian)](https://mpc-be.org/forum/index.php?topic=381)
 
-MPC-BE - <https://sourceforge.net/projects/mpcbe/>
+[MPC-BE](https://github.com/Aleksoid1978/MPC-BE)
 
 ## Donate
 
