@@ -1,4 +1,4 @@
-0.8.0 dev
+0.8.1.2230 - 2024-05-05
 ------------------------
 "RTX Video HDR" now works with 10-bit SDR video.
 Fixed OSD and subtitle brightness adjustment for some cases.
