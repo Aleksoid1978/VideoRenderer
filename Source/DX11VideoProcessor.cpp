@@ -398,8 +398,8 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_iHdrToggleDisplay    = config.iHdrToggleDisplay;
 	m_iHdrOsdBrightness    = config.iHdrOsdBrightness;
 	m_bConvertToSdr        = config.bConvertToSdr;
+	m_iSDRDisplayNits      = config.iSDRDisplayNits;
 	m_bVPRTXVideoHDR       = config.bVPRTXVideoHDR;
-
 	m_iVPSuperRes          = config.iVPSuperRes;
 
 	m_nCurrentAdapter = -1;
@@ -697,6 +697,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_strShaderY = nullptr;
 	m_pPSFinalPass.Release();
 
+	m_pCorrectionConstants.Release();
 	m_pPostScaleConstants.Release();
 
 #if TEST_SHADER
@@ -1700,6 +1701,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		hr = InitializeD3D11VP(FmtParams, origW, origH);
 		if (SUCCEEDED(hr)) {
 			UINT resId = 0;
+			m_pCorrectionConstants.Release();
 			bool bTransFunc22 = m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_22
 								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_709
 								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_240M;
@@ -1707,6 +1709,11 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && !(m_bHdrPassthroughSupport && m_bHdrPassthrough) && m_bConvertToSdr) {
 				resId = m_D3D11VP.IsPqSupported() ? IDF_PS_11_CONVERT_PQ_TO_SDR : IDF_PS_11_FIXCONVERT_PQ_TO_SDR;
 				m_strCorrection = L"PQ to SDR";
+
+				D3D11_BUFFER_DESC BufferDesc = { sizeof(FLOAT) * 4, D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
+				FLOAT CorrectionConstantsData[4] = { 10000.0f / m_iSDRDisplayNits, 0, 0, 0 };
+				D3D11_SUBRESOURCE_DATA InitData = { &CorrectionConstantsData, 0, 0 };
+				EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pCorrectionConstants));
 			}
 			else if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG) {
 				if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
@@ -2554,7 +2561,7 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 		m_srcWidth,
 		m_TexSrcVideo.desc.Width, m_TexSrcVideo.desc.Height,
 		m_srcRect, m_srcParams, m_srcExFmt, pDOVIMetadata,
-		m_iChromaScaling, convertType, false,
+		m_iChromaScaling, convertType, false, 10000.0f / m_iSDRDisplayNits,
 		&pShaderCode);
 	if (S_OK == hr) {
 		hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
@@ -2566,7 +2573,7 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 			m_srcWidth,
 			m_TexSrcVideo.desc.Width, m_TexSrcVideo.desc.Height,
 			m_srcRect, m_srcParams, m_srcExFmt, pDOVIMetadata,
-			m_iChromaScaling, convertType, true,
+			m_iChromaScaling, convertType, true, 10000.0f / m_iSDRDisplayNits,
 			&pShaderCode);
 		if (S_OK == hr) {
 			hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColorDeint);
@@ -2923,7 +2930,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 
 		if (m_pPSCorrection) {
 			StepSetting();
-			hr = TextureCopyRect(*pInputTexture, pRT, rect, rect, m_pPSCorrection, nullptr, 0, false);
+			hr = TextureCopyRect(*pInputTexture, pRT, rect, rect, m_pPSCorrection, m_pCorrectionConstants, 0, false);
 		}
 
 		if (m_pPostScaleShaders.size()) {
@@ -3420,6 +3427,11 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	if (config.bVPRTXVideoHDR != m_bVPRTXVideoHDR) {
 		m_bVPRTXVideoHDR = config.bVPRTXVideoHDR;
 		changeRTXVideoHDR = true;
+	}
+
+	if (config.iSDRDisplayNits != m_iSDRDisplayNits) {
+		m_iSDRDisplayNits = config.iSDRDisplayNits;
+		changeConvertShader = true;
 	}
 
 	if (!m_pFilter->GetActive()) {

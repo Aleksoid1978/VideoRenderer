@@ -563,6 +563,7 @@ HRESULT GetShaderConvertColor(
 	const int chromaScaling,
 	const int convertType,
 	const bool blendDeinterlace,
+	const float LuminanceScale,
 	ID3DBlob** ppCode)
 {
 	DLog(L"GetShaderConvertColor() started for {} {}x{} extfmt:{:#010x} chroma:{}", fmtParams.str, texW, texH, exFmt.value, chromaScaling);
@@ -789,14 +790,13 @@ HRESULT GetShaderConvertColor(
 				"color = LinearToST2084(color, 1000.0);\n"
 			);
 		}
-		code.append(
-			"#define SRC_LUMINANCE_PEAK     10000.0\n"
-			"#define DISPLAY_LUMINANCE_PEAK 125.0\n"
+		std::string hdrtmp = std::format(
 			"color = saturate(color);\n"
-			"color = ST2084ToLinear(color, SRC_LUMINANCE_PEAK/DISPLAY_LUMINANCE_PEAK);\n"
+			"color = ST2084ToLinear(color, {});\n"
 			"color.rgb = ToneMappingHable(color.rgb);\n"
 			"color.rgb = mul(matrix_conv_prim, color.rgb);\n"
-		);
+		, LuminanceScale);
+		code.append(hdrtmp);
 		isLinear = true;
 	}
 	else if (bConvertHLGtoPQ) {

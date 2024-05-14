@@ -79,6 +79,8 @@ private:
 
 	// D3D11 Video Processor
 	CD3D11VP m_D3D11VP;
+
+	CComPtr<ID3D11Buffer> m_pCorrectionConstants;
 	CComPtr<ID3D11PixelShader> m_pPSCorrection;
 	const wchar_t* m_strCorrection = nullptr;
 
