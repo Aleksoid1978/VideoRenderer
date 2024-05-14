@@ -287,6 +287,7 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Setting
 	m_bHdrPassthrough      = false;
 	m_iHdrToggleDisplay    = false;
 	m_bConvertToSdr        = config.bConvertToSdr;
+	m_iSDRDisplayNits      = config.iSDRDisplayNits;
 
 	m_nCurrentAdapter = D3DADAPTER_DEFAULT;
 
@@ -1995,6 +1996,11 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 		}
 	}
 
+	if (config.iSDRDisplayNits != m_iSDRDisplayNits) {
+		m_iSDRDisplayNits = config.iSDRDisplayNits;
+		changeConvertShader = true;
+	}
+
 	if (!m_pFilter->GetActive()) {
 		return;
 	}
@@ -2236,7 +2242,7 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 			m_srcWidth,
 			m_TexSrcVideo.Width, m_TexSrcVideo.Height,
 			m_srcRect, m_srcParams, m_srcExFmt, pDOVIMetadata,
-			m_iChromaScaling, convertType, false,
+			m_iChromaScaling, convertType, false, 10000.0f / m_iSDRDisplayNits,
 			&pShaderCode);
 		if (S_OK == hr) {
 			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);
@@ -2248,7 +2254,7 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 				m_srcWidth,
 				m_TexSrcVideo.Width, m_TexSrcVideo.Height,
 				m_srcRect, m_srcParams, m_srcExFmt, pDOVIMetadata,
-				m_iChromaScaling, convertType, true,
+				m_iChromaScaling, convertType, true, 10000.0f / m_iSDRDisplayNits,
 				&pShaderCode);
 			if (S_OK == hr) {
 				hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColorDeint);
@@ -2660,6 +2666,10 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 
 		if (m_pPSCorrection) {
 			StepSetting();
+			float fConstDataHDR[][4] = {
+				{10000.0f / m_iSDRDisplayNits, 0.0f, 0.0f, 0.0f}
+			};
+			hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstDataHDR, sizeof(fConstDataHDR) / sizeof(float[4]));
 			hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
 			hr = m_pD3DDevEx->SetRenderTarget(0, pRT);
 			hr = TextureCopyRect(pInputTexture, rect, rect, D3DTEXF_POINT, 0, false);

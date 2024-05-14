@@ -111,6 +111,7 @@ struct Settings_t {
 	int  iHdrToggleDisplay;
 	int  iHdrOsdBrightness;
 	bool bConvertToSdr;
+	int  iSDRDisplayNits;
 
 	Settings_t() {
 		SetDefault();
@@ -153,6 +154,7 @@ struct Settings_t {
 		}
 		bConvertToSdr                   = true;
 		iHdrOsdBrightness               = 0;
+		iSDRDisplayNits                 = 125;
 	}
 };
 
