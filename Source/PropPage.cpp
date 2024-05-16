@@ -104,8 +104,8 @@ void CVRMainPPage::SetControls()
 	SendDlgItemMessageW(IDC_COMBO7, CB_SETCURSEL, m_SetsPP.iHdrToggleDisplay, 0);
 	SendDlgItemMessageW(IDC_SLIDER1, TBM_SETPOS, 1, m_SetsPP.iHdrOsdBrightness);
 
-	SendDlgItemMessageW(IDC_SPIN1, UDM_SETRANGE, 0, MAKELONG(400, 25));
-	SendDlgItemMessageW(IDC_SPIN1, UDM_SETPOS, 0, m_SetsPP.iSDRDisplayNits);
+	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETPOS, 1, m_SetsPP.iSDRDisplayNits);
+	GetDlgItem(IDC_EDIT1).SetWindowTextW(std::format(L"{}", m_SetsPP.iSDRDisplayNits).c_str());
 
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct   ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK10, m_SetsPP.bUseDither           ? BST_CHECKED : BST_UNCHECKED);
@@ -152,7 +152,7 @@ void CVRMainPPage::EnableControls()
 
 	GetDlgItem(IDC_STATIC8).EnableWindow(m_SetsPP.bConvertToSdr);
 	GetDlgItem(IDC_EDIT1).EnableWindow(m_SetsPP.bConvertToSdr);
-	GetDlgItem(IDC_SPIN1).EnableWindow(m_SetsPP.bConvertToSdr);
+	GetDlgItem(IDC_SLIDER2).EnableWindow(m_SetsPP.bConvertToSdr);
 }
 
 HRESULT CVRMainPPage::OnConnect(IUnknown *pUnk)
@@ -247,6 +247,10 @@ HRESULT CVRMainPPage::OnActivate()
 
 	SendDlgItemMessageW(IDC_SLIDER1, TBM_SETRANGE, 0, MAKELONG(0, 2));
 	SendDlgItemMessageW(IDC_SLIDER1, TBM_SETTICFREQ, 1, 0);
+
+	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETRANGE, 0, MAKELONG(25, 400));
+	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETLINESIZE, 0, 5);  // arrow keys
+	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETPAGESIZE, 0, 25); // clicks on trackbar's channel
 
 	SetDlgItemTextW(IDC_EDIT2, GetNameAndVersion());
 
@@ -440,26 +444,21 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				}
 			}
 		}
-
-		if (action == EN_CHANGE) {
-			if (nID == IDC_EDIT1) {
-				LRESULT lValue = SendDlgItemMessageW(IDC_SPIN1, UDM_GETPOS, 0, 0);
-				if (HIWORD(lValue) == 0) { // valid value
-					int newvalue = LOWORD(lValue);
-					if (newvalue != m_SetsPP.iSDRDisplayNits) {
-						m_SetsPP.iSDRDisplayNits = newvalue;
-						SetDirty();
-						return (LRESULT)1;
-					}
-				}
-			}
-		}
 	}
 	else if (uMsg == WM_HSCROLL) {
 		if ((HWND)lParam == GetDlgItem(IDC_SLIDER1)) {
 			LRESULT lValue = SendDlgItemMessageW(IDC_SLIDER1, TBM_GETPOS, 0, 0);
 			if (lValue != m_SetsPP.iHdrOsdBrightness) {
 				m_SetsPP.iHdrOsdBrightness = lValue;
+				SetDirty();
+			}
+			return (LRESULT)1;
+		}
+		if ((HWND)lParam == GetDlgItem(IDC_SLIDER2)) {
+			LRESULT lValue = SendDlgItemMessageW(IDC_SLIDER2, TBM_GETPOS, 0, 0);
+			if (lValue != m_SetsPP.iSDRDisplayNits) {
+				m_SetsPP.iSDRDisplayNits = lValue;
+				GetDlgItem(IDC_EDIT1).SetWindowTextW(std::format(L"{}", m_SetsPP.iSDRDisplayNits).c_str());
 				SetDirty();
 			}
 			return (LRESULT)1;
