@@ -1,9 +1,10 @@
 Texture2D tex : register(t0);
 SamplerState samp : register(s0);
 
-cbuffer PS_COLOR_TRANSFORM : register(b0)
+cbuffer PS_PARAMETERS : register(b0)
 {
     float LuminanceScale;
+    float param2;
 };
 
 #include "../convert/conv_matrix.hlsl"

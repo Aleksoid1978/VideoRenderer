@@ -9,8 +9,11 @@ SamplerState samp : register(s0);
 
 static const float4x4 fix_bt2020_matrix = mul(ycbcr2020nc_rgb, rgb_ycbcr709);
 
-#define SRC_LUMINANCE_PEAK     10000.0
-#define DISPLAY_LUMINANCE_PEAK 125.0
+cbuffer PS_PARAMETERS : register(b0)
+{
+    float LuminanceScale;
+    float param2;
+};
 
 struct PS_INPUT
 {
@@ -32,7 +35,7 @@ float4 main(PS_INPUT input) : SV_Target
 
     // PQ to Linear
     color = saturate(color);
-    color = ST2084ToLinear(color, SRC_LUMINANCE_PEAK/DISPLAY_LUMINANCE_PEAK);
+    color = ST2084ToLinear(color, LuminanceScale);
 
     color.rgb = ToneMappingHable(color.rgb);
     color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);
