@@ -105,7 +105,7 @@ void CVRMainPPage::SetControls()
 	SendDlgItemMessageW(IDC_SLIDER1, TBM_SETPOS, 1, m_SetsPP.iHdrOsdBrightness);
 
 	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETPOS, 1, m_SetsPP.iSDRDisplayNits);
-	GetDlgItem(IDC_EDIT1).SetWindowTextW(std::format(L"{}", m_SetsPP.iSDRDisplayNits).c_str());
+	GetDlgItem(IDC_EDIT1).SetWindowTextW(std::to_wstring(m_SetsPP.iSDRDisplayNits).c_str());
 
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct   ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK10, m_SetsPP.bUseDither           ? BST_CHECKED : BST_UNCHECKED);
@@ -458,7 +458,7 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 			LRESULT lValue = SendDlgItemMessageW(IDC_SLIDER2, TBM_GETPOS, 0, 0);
 			if (lValue != m_SetsPP.iSDRDisplayNits) {
 				m_SetsPP.iSDRDisplayNits = lValue;
-				GetDlgItem(IDC_EDIT1).SetWindowTextW(std::format(L"{}", m_SetsPP.iSDRDisplayNits).c_str());
+				GetDlgItem(IDC_EDIT1).SetWindowTextW(std::to_wstring(m_SetsPP.iSDRDisplayNits).c_str());
 				SetDirty();
 			}
 			return (LRESULT)1;
