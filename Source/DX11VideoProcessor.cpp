@@ -3496,6 +3496,14 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		return; // need some test
 	}
 
+	if (changeRTXVideoHDR) {
+		InitMediaType(&m_pFilter->m_inputMT);
+
+		return;
+	}
+
+	// changes that do not require a global rebuild of the video processor
+
 	if (changeTextures) {
 		UpdateTexParams(m_srcParams.CDepth);
 		if (m_D3D11VP.IsReady()) {
@@ -3536,10 +3544,6 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	if (changeSuperRes) {
 		auto superRes = (m_bVPScaling && !(m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR())) ? m_iVPSuperRes : SUPERRES_Disable;
 		m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(superRes) == S_OK);
-	}
-
-	if (changeRTXVideoHDR) {
-		InitMediaType(&m_pFilter->m_inputMT);
 	}
 
 	UpdateStatsStatic();
