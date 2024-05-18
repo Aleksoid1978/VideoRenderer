@@ -64,7 +64,7 @@ protected:
 	int  m_iHdrToggleDisplay               = HDRTD_On;
 	int  m_iHdrOsdBrightness               = 0;
 	bool m_bConvertToSdr                   = true;
-	int  m_iSDRDisplayNits                 = 125;
+	int  m_iSDRDisplayNits                 = SDR_NITS_DEF;
 
 	bool m_bVPScalingUseShaders = false;
 

@@ -79,6 +79,11 @@ enum :int {
 	HDRTD_OnOff
 };
 
+#define SDR_NITS_DEF 125
+#define SDR_NITS_MIN  25
+#define SDR_NITS_MAX 400
+#define SDR_NITS_STEP  5
+
 struct VPEnableFormats_t {
 	bool bNV12;
 	bool bP01x;

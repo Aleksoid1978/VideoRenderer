@@ -104,7 +104,7 @@ void CVRMainPPage::SetControls()
 	SendDlgItemMessageW(IDC_COMBO7, CB_SETCURSEL, m_SetsPP.iHdrToggleDisplay, 0);
 	SendDlgItemMessageW(IDC_SLIDER1, TBM_SETPOS, 1, m_SetsPP.iHdrOsdBrightness);
 
-	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETPOS, 1, m_SetsPP.iSDRDisplayNits);
+	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETPOS, 1, m_SetsPP.iSDRDisplayNits / SDR_NITS_STEP);
 	GetDlgItem(IDC_EDIT1).SetWindowTextW(std::to_wstring(m_SetsPP.iSDRDisplayNits).c_str());
 
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct   ? BST_CHECKED : BST_UNCHECKED);
@@ -248,9 +248,9 @@ HRESULT CVRMainPPage::OnActivate()
 	SendDlgItemMessageW(IDC_SLIDER1, TBM_SETRANGE, 0, MAKELONG(0, 2));
 	SendDlgItemMessageW(IDC_SLIDER1, TBM_SETTICFREQ, 1, 0);
 
-	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETRANGE, 0, MAKELONG(25, 400));
-	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETLINESIZE, 0, 5);  // arrow keys
-	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETPAGESIZE, 0, 25); // clicks on trackbar's channel
+	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETRANGE, 0, MAKELONG(SDR_NITS_MIN / SDR_NITS_STEP, SDR_NITS_MAX / SDR_NITS_STEP));
+	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETLINESIZE, 0, 1); // arrow keys
+	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETPAGESIZE, 0, 5); // clicks on trackbar's channel
 
 	SetDlgItemTextW(IDC_EDIT2, GetNameAndVersion());
 
@@ -456,6 +456,7 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 		}
 		if ((HWND)lParam == GetDlgItem(IDC_SLIDER2)) {
 			LRESULT lValue = SendDlgItemMessageW(IDC_SLIDER2, TBM_GETPOS, 0, 0);
+			lValue *= SDR_NITS_STEP;
 			if (lValue != m_SetsPP.iSDRDisplayNits) {
 				m_SetsPP.iSDRDisplayNits = lValue;
 				GetDlgItem(IDC_EDIT1).SetWindowTextW(std::to_wstring(m_SetsPP.iSDRDisplayNits).c_str());

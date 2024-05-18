@@ -245,7 +245,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			m_Sets.bConvertToSdr = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_DisplayNits, dw)) {
-			m_Sets.iSDRDisplayNits = discard<int>(dw, 125, 25, 400);
+			m_Sets.iSDRDisplayNits = discard<int>(dw, SDR_NITS_DEF, SDR_NITS_MIN, SDR_NITS_MAX);
 		}
 	}
 
