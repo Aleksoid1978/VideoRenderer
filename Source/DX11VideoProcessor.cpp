@@ -858,6 +858,21 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants));
 }
 
+void CDX11VideoProcessor::SetShaderLuminanceParams()
+{
+	m_pCorrectionConstants.Release();
+
+	if (m_D3D11VP.IsReady()) {
+		D3D11_BUFFER_DESC BufferDesc = { sizeof(FLOAT) * 4, D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
+		FLOAT CorrectionConstantsData[4] = {
+			10000.0f / m_iSDRDisplayNits,
+			0, 0, 0 };
+		D3D11_SUBRESOURCE_DATA InitData = { &CorrectionConstantsData, 0, 0 };
+
+		EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pCorrectionConstants));
+	}
+}
+
 HRESULT CDX11VideoProcessor::SetShaderDoviCurvesPoly()
 {
 	ASSERT(m_Dovi.bValid);
@@ -1706,14 +1721,9 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_709
 								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_240M;
 
-			D3D11_BUFFER_DESC BufferDesc = { sizeof(FLOAT) * 4, D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
-			FLOAT CorrectionConstantsData[4] = { 10000.0f / m_iSDRDisplayNits, 0, 0, 0 };
-			D3D11_SUBRESOURCE_DATA InitData = { &CorrectionConstantsData, 0, 0 };
-
 			if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && !(m_bHdrPassthroughSupport && m_bHdrPassthrough) && m_bConvertToSdr) {
 				resId = m_D3D11VP.IsPqSupported() ? IDF_PS_11_CONVERT_PQ_TO_SDR : IDF_PS_11_FIXCONVERT_PQ_TO_SDR;
 				m_strCorrection = L"PQ to SDR";
-				EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pCorrectionConstants));
 			}
 			else if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG) {
 				if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
@@ -1723,7 +1733,6 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 				else if (m_bConvertToSdr) {
 					resId = IDF_PS_11_FIXCONVERT_HLG_TO_SDR;
 					m_strCorrection = L"HLG to SDR";
-					EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pCorrectionConstants));
 				}
 				else if (m_srcExFmt.VideoPrimaries == MFVideoPrimaries_BT2020) {
 					// HLG compatible with SDR
@@ -1739,6 +1748,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 			if (resId) {
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, resId));
 				DLogIf(m_pPSCorrection, L"CDX11VideoProcessor::InitMediaType() m_pPSCorrection('{}') created", m_strCorrection);
+				SetShaderLuminanceParams();
 			}
 		}
 		else {
@@ -3319,6 +3329,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	bool changeResizeStats       = false;
 	bool changeSuperRes          = false;
 	bool changeRTXVideoHDR       = false;
+	bool changeLuminanceParams   = false;
 
 	// settings that do not require preparation
 	m_bShowStats           = config.bShowStats;
@@ -3432,7 +3443,13 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 	if (config.iSDRDisplayNits != m_iSDRDisplayNits) {
 		m_iSDRDisplayNits = config.iSDRDisplayNits;
-		changeConvertShader = true;
+		if (SourceIsHDR()) {
+			if (m_D3D11VP.IsReady()) {
+				changeLuminanceParams = true;
+			} else {
+				changeConvertShader = true;
+			}
+		}
 	}
 
 	if (!m_pFilter->GetActive()) {
@@ -3502,6 +3519,10 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 	if (changeDowndcalingShader) {
 		UpdateDownscalingShaders();
+	}
+
+	if (changeLuminanceParams) {
+		SetShaderLuminanceParams();
 	}
 
 	if (changeNumTextures) {
