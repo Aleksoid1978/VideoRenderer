@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2023 see Authors.txt
+* (C) 2019-2024 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -563,7 +563,6 @@ HRESULT GetShaderConvertColor(
 	const int chromaScaling,
 	const int convertType,
 	const bool blendDeinterlace,
-	const float LuminanceScale,
 	ID3DBlob** ppCode)
 {
 	DLog(L"GetShaderConvertColor() started for {} {}x{} extfmt:{:#010x} chroma:{}", fmtParams.str, texW, texH, exFmt.value, chromaScaling);
@@ -633,6 +632,14 @@ HRESULT GetShaderConvertColor(
 			"float3 cm_c;\n"
 			"};\n"
 		);
+		if (bConvertHDRtoSDR) {
+			code.append(
+				"cbuffer PS_PARAMETERS : register(b1) {\n"
+				"float LuminanceScale;\n"
+				"float param2;\n"
+				"};\n"
+			);
+		}
 	}
 	else {
 		code.append(
@@ -641,6 +648,13 @@ HRESULT GetShaderConvertColor(
 			"float3 cm_b : register(c2);\n"
 			"float3 cm_c : register(c3);\n"
 		);
+		if (bConvertHDRtoSDR) {
+			code.append(
+				"float4 parameters : register(c4);\n"
+				"#define LuminanceScale parameters[0]\n"
+				"#define param2         parameters[1]\n"
+			);
+		}
 	}
 
 	bool has_mmr = false;
@@ -671,7 +685,7 @@ HRESULT GetShaderConvertColor(
 					"        uint max_order;\n"
 					"    } params;\n"
 					"};\n"
-					"cbuffer PS_DOVI_CURVES : register(b1) {\n"
+					"cbuffer PS_DOVI_CURVES : register(b2) {\n"
 					"    PS_DOVI_CURVE curves[3];\n"
 					"};\n"
 				);
@@ -713,7 +727,7 @@ HRESULT GetShaderConvertColor(
 					"    float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
 					"    float4 coeffs_data[8];\n"
 					"};\n"
-					"cbuffer PS_DOVI_POLY_CURVES : register(b1) {\n"
+					"cbuffer PS_DOVI_POLY_CURVES : register(b2) {\n"
 					"    PS_DOVI_POLY_CURVE curves[3];\n"
 					"};\n"
 				);
@@ -725,7 +739,7 @@ HRESULT GetShaderConvertColor(
 				"    float pivots_data[7];\n" // NB: sizeof(float) == sizeof(float4)
 				"    float4 coeffs_data[8];\n"
 				"};\n"
-				"PS_DOVI_POLY_CURVE curves[3] : register(c4);\n"
+				"PS_DOVI_POLY_CURVE curves[3] : register(c5);\n"
 			);
 		}
 	}
@@ -790,13 +804,12 @@ HRESULT GetShaderConvertColor(
 				"color = LinearToST2084(color, 1000.0);\n"
 			);
 		}
-		std::string hdrtmp = std::format(
+		code.append(
 			"color = saturate(color);\n"
-			"color = ST2084ToLinear(color, {});\n"
+			"color = ST2084ToLinear(color, LuminanceScale);\n"
 			"color.rgb = ToneMappingHable(color.rgb);\n"
 			"color.rgb = mul(matrix_conv_prim, color.rgb);\n"
-		, LuminanceScale);
-		code.append(hdrtmp);
+		);
 		isLinear = true;
 	}
 	else if (bConvertHLGtoPQ) {

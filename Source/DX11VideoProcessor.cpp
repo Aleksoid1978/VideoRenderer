@@ -862,15 +862,13 @@ void CDX11VideoProcessor::SetShaderLuminanceParams()
 {
 	m_pCorrectionConstants.Release();
 
-	if (m_D3D11VP.IsReady()) {
-		D3D11_BUFFER_DESC BufferDesc = { sizeof(FLOAT) * 4, D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
-		FLOAT CorrectionConstantsData[4] = {
-			10000.0f / m_iSDRDisplayNits,
-			0, 0, 0 };
-		D3D11_SUBRESOURCE_DATA InitData = { &CorrectionConstantsData, 0, 0 };
+	D3D11_BUFFER_DESC BufferDesc = { sizeof(FLOAT) * 4, D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
+	FLOAT CorrectionConstantsData[4] = {
+		10000.0f / m_iSDRDisplayNits,
+		0, 0, 0 };
+	D3D11_SUBRESOURCE_DATA InitData = { &CorrectionConstantsData, 0, 0 };
 
-		EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pCorrectionConstants));
-	}
+	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pCorrectionConstants));
 }
 
 HRESULT CDX11VideoProcessor::SetShaderDoviCurvesPoly()
@@ -1762,6 +1760,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		hr = InitializeTexVP(FmtParams, origW, origH);
 		if (SUCCEEDED(hr)) {
 			SetShaderConvertColorParams();
+			SetShaderLuminanceParams();
 		}
 	}
 
@@ -2572,7 +2571,7 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 		m_srcWidth,
 		m_TexSrcVideo.desc.Width, m_TexSrcVideo.desc.Height,
 		m_srcRect, m_srcParams, m_srcExFmt, pDOVIMetadata,
-		m_iChromaScaling, convertType, false, 10000.0f / m_iSDRDisplayNits,
+		m_iChromaScaling, convertType, false,
 		&pShaderCode);
 	if (S_OK == hr) {
 		hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
@@ -2584,7 +2583,7 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 			m_srcWidth,
 			m_TexSrcVideo.desc.Width, m_TexSrcVideo.desc.Height,
 			m_srcRect, m_srcParams, m_srcExFmt, pDOVIMetadata,
-			m_iChromaScaling, convertType, true, 10000.0f / m_iSDRDisplayNits,
+			m_iChromaScaling, convertType, true,
 			&pShaderCode);
 		if (S_OK == hr) {
 			hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColorDeint);
@@ -2700,7 +2699,8 @@ HRESULT CDX11VideoProcessor::ConvertColorPass(ID3D11Texture2D* pRenderTarget)
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerPoint.p);
 	m_pDeviceContext->PSSetSamplers(1, 1, &m_pSamplerLinear.p);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
-	m_pDeviceContext->PSSetConstantBuffers(1, 1, &m_pDoviCurvesConstantBuffer.p);
+	m_pDeviceContext->PSSetConstantBuffers(1, 1, &m_pCorrectionConstants.p);
+	m_pDeviceContext->PSSetConstantBuffers(2, 1, &m_pDoviCurvesConstantBuffer.p);
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_PSConvColorData.pVertexBuffer, &Stride, &Offset);
 
@@ -3444,11 +3444,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	if (config.iSDRDisplayNits != m_iSDRDisplayNits) {
 		m_iSDRDisplayNits = config.iSDRDisplayNits;
 		if (SourceIsHDR()) {
-			if (m_D3D11VP.IsReady()) {
-				changeLuminanceParams = true;
-			} else {
-				changeConvertShader = true;
-			}
+			changeLuminanceParams = true;
 		}
 	}
 

@@ -1919,6 +1919,7 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	m_bInterpolateAt50pct  = config.bInterpolateAt50pct;
 	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
 	m_bDeintBlend          = config.bDeintBlend;
+	m_iSDRDisplayNits      = config.iSDRDisplayNits;
 
 	// checking what needs to be changed
 
@@ -1994,11 +1995,6 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 				changeConvertShader = true;
 			}
 		}
-	}
-
-	if (config.iSDRDisplayNits != m_iSDRDisplayNits) {
-		m_iSDRDisplayNits = config.iSDRDisplayNits;
-		changeConvertShader = true;
 	}
 
 	if (!m_pFilter->GetActive()) {
@@ -2242,7 +2238,7 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 			m_srcWidth,
 			m_TexSrcVideo.Width, m_TexSrcVideo.Height,
 			m_srcRect, m_srcParams, m_srcExFmt, pDOVIMetadata,
-			m_iChromaScaling, convertType, false, 10000.0f / m_iSDRDisplayNits,
+			m_iChromaScaling, convertType, false,
 			&pShaderCode);
 		if (S_OK == hr) {
 			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);
@@ -2254,7 +2250,7 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 				m_srcWidth,
 				m_TexSrcVideo.Width, m_TexSrcVideo.Height,
 				m_srcRect, m_srcParams, m_srcExFmt, pDOVIMetadata,
-				m_iChromaScaling, convertType, true, 10000.0f / m_iSDRDisplayNits,
+				m_iChromaScaling, convertType, true,
 				&pShaderCode);
 			if (S_OK == hr) {
 				hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColorDeint);
@@ -2366,8 +2362,13 @@ HRESULT CDX9VideoProcessor::ConvertColorPass(IDirect3DSurface9* pRenderTarget)
 {
 	HRESULT hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
-	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)&m_PSConvColorData.Constants, sizeof(m_PSConvColorData.Constants) / sizeof(float[4]));
-	hr = m_pD3DDevEx->SetPixelShaderConstantF(4, (float*)&m_DoviReshapePolyCurves, sizeof(m_DoviReshapePolyCurves) / sizeof(float[4]));
+	float fConstDataHDR[][4] = {
+		{10000.0f / m_iSDRDisplayNits, 0.0f, 0.0f, 0.0f}
+	};
+
+	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)&m_PSConvColorData.Constants, sizeof(m_PSConvColorData.Constants) / sizeof(DirectX::XMFLOAT4));
+	hr = m_pD3DDevEx->SetPixelShaderConstantF(4, (float*)fConstDataHDR, sizeof(fConstDataHDR) / sizeof(float[4]));
+	hr = m_pD3DDevEx->SetPixelShaderConstantF(5, (float*)&m_DoviReshapePolyCurves, sizeof(m_DoviReshapePolyCurves) / sizeof(DirectX::XMFLOAT4));
 
 	if (m_bDeintBlend && m_CurrentSampleFmt != DXVA2_SampleProgressiveFrame && m_pPSConvertColorDeint) {
 		hr = m_pD3DDevEx->SetPixelShader(m_pPSConvertColorDeint);
