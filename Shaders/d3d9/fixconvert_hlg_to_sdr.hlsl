@@ -1,5 +1,7 @@
 sampler s0 : register(s0);
-float LuminanceScale : register(c0);
+float4 parameters : register(c0);
+#define LuminanceScale parameters[0]
+#define param2         parameters[1]
 
 #include "../convert/conv_matrix.hlsl"
 #include "../convert/hlg.hlsl"
