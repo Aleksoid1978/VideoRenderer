@@ -382,8 +382,8 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				if (lValue != m_SetsPP.iResizeStats) {
 					m_SetsPP.iResizeStats = lValue;
 					SetDirty();
-					return (LRESULT)1;
 				}
+				return (LRESULT)1;
 			}
 			if (nID == IDC_COMBO1) {
 				lValue = ComboBox_GetCurItemData(m_hWnd, IDC_COMBO1);
@@ -392,57 +392,56 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 					SetDirty();
 
 					GetDlgItem(IDC_CHECK19).EnableWindow(m_SetsPP.bUseD3D11 && m_SetsPP.bHdrPassthrough && m_SetsPP.iTexFormat != TEXFMT_8INT);
-
-					return (LRESULT)1;
 				}
+				return (LRESULT)1;
 			}
 			if (nID == IDC_COMBO8) {
 				lValue = SendDlgItemMessageW(IDC_COMBO8, CB_GETCURSEL, 0, 0);
 				if (lValue != m_SetsPP.iVPSuperRes) {
 					m_SetsPP.iVPSuperRes = lValue;
 					SetDirty();
-					return (LRESULT)1;
 				}
+				return (LRESULT)1;
 			}
 			if (nID == IDC_COMBO7) {
 				lValue = SendDlgItemMessageW(IDC_COMBO7, CB_GETCURSEL, 0, 0);
 				if (lValue != m_SetsPP.iHdrToggleDisplay) {
 					m_SetsPP.iHdrToggleDisplay = lValue;
 					SetDirty();
-					return (LRESULT)1;
 				}
+				return (LRESULT)1;
 			}
 			if (nID == IDC_COMBO5) {
 				lValue = SendDlgItemMessageW(IDC_COMBO5, CB_GETCURSEL, 0, 0);
 				if (lValue != m_SetsPP.iChromaScaling) {
 					m_SetsPP.iChromaScaling = lValue;
 					SetDirty();
-					return (LRESULT)1;
 				}
+				return (LRESULT)1;
 			}
 			if (nID == IDC_COMBO2) {
 				lValue = SendDlgItemMessageW(IDC_COMBO2, CB_GETCURSEL, 0, 0);
 				if (lValue != m_SetsPP.iUpscaling) {
 					m_SetsPP.iUpscaling = lValue;
 					SetDirty();
-					return (LRESULT)1;
 				}
+				return (LRESULT)1;
 			}
 			if (nID == IDC_COMBO3) {
 				lValue = SendDlgItemMessageW(IDC_COMBO3, CB_GETCURSEL, 0, 0);
 				if (lValue != m_SetsPP.iDownscaling) {
 					m_SetsPP.iDownscaling = lValue;
 					SetDirty();
-					return (LRESULT)1;
 				}
+				return (LRESULT)1;
 			}
 			if (nID == IDC_COMBO4) {
 				lValue = SendDlgItemMessageW(IDC_COMBO4, CB_GETCURSEL, 0, 0);
 				if (lValue != m_SetsPP.iSwapEffect) {
 					m_SetsPP.iSwapEffect = lValue;
 					SetDirty();
-					return (LRESULT)1;
 				}
+				return (LRESULT)1;
 			}
 		}
 	}
