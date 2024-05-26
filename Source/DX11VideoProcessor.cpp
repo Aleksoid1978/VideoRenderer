@@ -860,15 +860,20 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 
 void CDX11VideoProcessor::SetShaderLuminanceParams()
 {
-	m_pCorrectionConstants.Release();
+	FLOAT cbuffer[4] = { 10000.0f / m_iSDRDisplayNits, 0, 0, 0 };
 
-	D3D11_BUFFER_DESC BufferDesc = { sizeof(FLOAT) * 4, D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0 };
-	FLOAT CorrectionConstantsData[4] = {
-		10000.0f / m_iSDRDisplayNits,
-		0, 0, 0 };
-	D3D11_SUBRESOURCE_DATA InitData = { &CorrectionConstantsData, 0, 0 };
-
-	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pCorrectionConstants));
+	if (m_pCorrectionConstants) {
+		m_pDeviceContext->UpdateSubresource(m_pCorrectionConstants, 0, nullptr, &cbuffer, 0, 0);
+	}
+	else {
+		D3D11_BUFFER_DESC BufferDesc = {
+			.ByteWidth = sizeof(cbuffer),
+			.Usage = D3D11_USAGE_DEFAULT,
+			.BindFlags = D3D11_BIND_CONSTANT_BUFFER
+		};
+		D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
+		EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pCorrectionConstants));
+	}
 }
 
 HRESULT CDX11VideoProcessor::SetShaderDoviCurvesPoly()
