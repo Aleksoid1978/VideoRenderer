@@ -847,15 +847,18 @@ void CDX11VideoProcessor::SetShaderConvertColorParams()
 		cbuffer.cm_b.z = 0;
 	}
 
-	SAFE_RELEASE(m_PSConvColorData.pConstants);
-
-	D3D11_BUFFER_DESC BufferDesc = {};
-	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	BufferDesc.ByteWidth = sizeof(cbuffer);
-	BufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	BufferDesc.CPUAccessFlags = 0;
-	D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
-	EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants));
+	if (m_PSConvColorData.pConstants) {
+		m_pDeviceContext->UpdateSubresource(m_PSConvColorData.pConstants, 0, nullptr, &cbuffer, 0, 0);
+	}
+	else {
+		D3D11_BUFFER_DESC BufferDesc = {
+			.ByteWidth = sizeof(cbuffer),
+			.Usage = D3D11_USAGE_DEFAULT,
+			.BindFlags = D3D11_BIND_CONSTANT_BUFFER
+		};
+		D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
+		EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_PSConvColorData.pConstants));
+	}
 }
 
 void CDX11VideoProcessor::SetShaderLuminanceParams()
