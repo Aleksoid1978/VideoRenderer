@@ -173,6 +173,13 @@ HRESULT CVRMainPPage::OnDisconnect()
 		return E_UNEXPECTED;
 	}
 
+	if (m_SetsPP.iSDRDisplayNits != m_oldSDRDisplayNits) {
+		// OK or Apply buttons were not pressed. cancel the settings.
+		m_pVideoRenderer->GetSettings(m_SetsPP);
+		m_SetsPP.iSDRDisplayNits = m_oldSDRDisplayNits;
+		m_pVideoRenderer->SetSettings(m_SetsPP);
+	}
+
 	m_pVideoRenderer.Release();
 
 	return S_OK;
@@ -184,6 +191,7 @@ HRESULT CVRMainPPage::OnActivate()
 	m_hWnd = m_hwnd;
 
 	m_pVideoRenderer->GetSettings(m_SetsPP);
+	m_oldSDRDisplayNits = m_SetsPP.iSDRDisplayNits;
 
 	if (!IsWindows7SP1OrGreater()) {
 		GetDlgItem(IDC_CHECK1).EnableWindow(FALSE);
@@ -461,6 +469,13 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				m_SetsPP.iSDRDisplayNits = lValue;
 				GetDlgItem(IDC_EDIT1).SetWindowTextW(std::to_wstring(m_SetsPP.iSDRDisplayNits).c_str());
 				SetDirty();
+				{
+					// apply only SDRDisplayNits
+					Settings_t sets;
+					m_pVideoRenderer->GetSettings(sets);
+					sets.iSDRDisplayNits = m_SetsPP.iSDRDisplayNits;
+					m_pVideoRenderer->SetSettings(sets);
+				}
 			}
 			return (LRESULT)1;
 		}
@@ -474,6 +489,8 @@ HRESULT CVRMainPPage::OnApplyChanges()
 {
 	m_pVideoRenderer->SetSettings(m_SetsPP);
 	m_pVideoRenderer->SaveSettings();
+
+	m_oldSDRDisplayNits = m_SetsPP.iSDRDisplayNits;
 
 	return S_OK;
 }

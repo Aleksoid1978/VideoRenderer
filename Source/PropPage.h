@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2023 see Authors.txt
+ * (C) 2018-2024 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -30,6 +30,8 @@ class __declspec(uuid("DA46D181-07D6-441D-B314-019AEB10148A"))
 	CComQIPtr<IVideoRenderer> m_pVideoRenderer;
 
 	Settings_t m_SetsPP;
+
+	int m_oldSDRDisplayNits = SDR_NITS_DEF;
 
 public:
 	CVRMainPPage(LPUNKNOWN lpunk, HRESULT* phr);

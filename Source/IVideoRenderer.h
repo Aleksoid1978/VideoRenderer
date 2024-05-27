@@ -159,7 +159,7 @@ struct Settings_t {
 		}
 		bConvertToSdr                   = true;
 		iHdrOsdBrightness               = 0;
-		iSDRDisplayNits                 = 125;
+		iSDRDisplayNits                 = SDR_NITS_DEF;
 	}
 };
 
