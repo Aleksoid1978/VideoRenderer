@@ -1,5 +1,5 @@
 /*
- * (C) 2020 see Authors.txt
+ * (C) 2020-2024 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -17,6 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
+#pragma once
 
 struct DisplayConfig_t {
 	UINT32 width;

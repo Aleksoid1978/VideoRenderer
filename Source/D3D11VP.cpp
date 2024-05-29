@@ -18,8 +18,6 @@
 *
 */
 
-#pragma once
-
 #include "stdafx.h"
 #include <cmath>
 #include "Helper.h"
