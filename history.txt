@@ -1,5 +1,8 @@
 0.8.2 dev
 ------------------------
+Added "SDR Display nits" setting.
+Added validation of HDR metadata.
+Fixed HDR Passthrough working in some rare cases.
 
 0.8.1.2230 - 2024-05-05
 ------------------------
