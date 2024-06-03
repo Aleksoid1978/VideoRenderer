@@ -3500,14 +3500,16 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	if (changeVP) {
 		InitMediaType(&m_pFilter->m_inputMT);
 		if (m_bVPUseRTXVideoHDR || m_bVPRTXVideoHDR) {
-			ReleaseSwapChain();
 			InitSwapChain();
+			InitMediaType(&m_pFilter->m_inputMT);
 		}
 
 		return; // need some test
 	}
 
 	if (changeRTXVideoHDR) {
+		InitMediaType(&m_pFilter->m_inputMT);
+		InitSwapChain();
 		InitMediaType(&m_pFilter->m_inputMT);
 
 		return;
