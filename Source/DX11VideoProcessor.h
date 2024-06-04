@@ -227,7 +227,7 @@ public:
 	BOOL VerifyMediaType(const CMediaType* pmt) override;
 	BOOL InitMediaType(const CMediaType* pmt) override;
 
-	HRESULT InitializeD3D11VP(const FmtConvParams_t& params, const UINT width, const UINT height);
+	HRESULT InitializeD3D11VP(const FmtConvParams_t& params, const UINT width, const UINT height, const CMediaType* pmt);
 	HRESULT InitializeTexVP(const FmtConvParams_t& params, const UINT width, const UINT height);
 	void UpdatFrameProperties(); // use this after receiving modified frame from hardware decoder
 

@@ -1719,7 +1719,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	// D3D11 Video Processor
 	if (FmtParams.VP11Format != DXGI_FORMAT_UNKNOWN) {
-		hr = InitializeD3D11VP(FmtParams, origW, origH);
+		hr = InitializeD3D11VP(FmtParams, origW, origH, pmt);
 		if (SUCCEEDED(hr)) {
 			UINT resId = 0;
 			m_pCorrectionConstants.Release();
@@ -1786,7 +1786,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	return FALSE;
 }
 
-HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, const UINT width, const UINT height)
+HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, const UINT width, const UINT height, const CMediaType* pmt)
 {
 	if (!m_D3D11VP.IsVideoDeviceOk()) {
 		return E_ABORT;
@@ -1821,6 +1821,8 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 	if ((m_bVPUseRTXVideoHDR && !m_pDXGISwapChain4)
 			|| (!m_bVPUseRTXVideoHDR && m_pDXGISwapChain4 && !SourceIsHDR())) {
 		InitSwapChain();
+		InitMediaType(pmt);
+		return S_OK;
 	}
 
 	hr = m_TexSrcVideo.Create(m_pDevice, dxgiFormat, width, height, Tex2D_DynamicShaderWriteNoSRV);
@@ -3501,15 +3503,12 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		InitMediaType(&m_pFilter->m_inputMT);
 		if (m_bVPUseRTXVideoHDR || m_bVPRTXVideoHDR) {
 			InitSwapChain();
-			InitMediaType(&m_pFilter->m_inputMT);
 		}
 
 		return; // need some test
 	}
 
 	if (changeRTXVideoHDR) {
-		InitMediaType(&m_pFilter->m_inputMT);
-		InitSwapChain();
 		InitMediaType(&m_pFilter->m_inputMT);
 
 		return;
@@ -3521,7 +3520,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		UpdateTexParams(m_srcParams.CDepth);
 		if (m_D3D11VP.IsReady()) {
 			// update m_D3D11OutputFmt
-			EXECUTE_ASSERT(S_OK == InitializeD3D11VP(m_srcParams, m_srcWidth, m_srcHeight));
+			EXECUTE_ASSERT(S_OK == InitializeD3D11VP(m_srcParams, m_srcWidth, m_srcHeight, &m_pFilter->m_inputMT));
 		}
 		UpdateTexures();
 		UpdatePostScaleTexures();
