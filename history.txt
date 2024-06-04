@@ -3,6 +3,7 @@
 Added "SDR Display nits" setting.
 Added validation of HDR metadata.
 Fixed HDR Passthrough working in some rare cases.
+Improved control of the "RTX Video HDR" setting.
 
 0.8.1.2230 - 2024-05-05
 ------------------------
