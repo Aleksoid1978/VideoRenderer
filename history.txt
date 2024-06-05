@@ -1,4 +1,4 @@
-0.8.2 dev
+0.8.3.2255 - 2024-06-05
 ------------------------
 Added "SDR Display nits" setting.
 Added validation of HDR metadata.
