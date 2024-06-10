@@ -759,30 +759,30 @@ HRESULT CD3D11VP::SetSuperRes(const int iSuperRes)
 		return E_ABORT;
 	}
 
+	auto checkDimension = [this](UINT width, UINT height) {
+		if (m_srcWidth >= m_srcHeight) {
+			return m_srcWidth <= width && m_srcHeight <= height;
+		} else {
+			return m_srcHeight <= width && m_srcWidth <= height;
+		}
+	};
+
 	bool enable = false;
 
 	switch (iSuperRes) {
-	case SUPERRES_SD:
-		if (m_srcWidth <= 1024 && m_srcHeight <= 576) {
-			enable = true;
-		}
-		break;
-	case SUPERRES_720p:
-		if (m_srcWidth <= 1280 && m_srcHeight <= 720) {
-			enable = true;
-		}
-		break;
-	case SUPERRES_1080p:
-		// a little more than Full HD
-		if (m_srcWidth <= 2048 && m_srcHeight <= 1088) {
-			enable = true;
-		}
-		break;
-	case SUPERRES_1440p:
-		if (m_srcWidth <= 2560 && m_srcHeight <= 1440) {
-			enable = true;
-		}
-		break;
+		case SUPERRES_SD:
+			enable = checkDimension(1024u, 576u);
+			break;
+		case SUPERRES_720p:
+			enable = checkDimension(1280u, 720u);
+			break;
+		case SUPERRES_1080p:
+			// a little more than Full HD
+			enable = checkDimension(2048u, 1088u);
+			break;
+		case SUPERRES_1440p:
+			enable = checkDimension(2560u, 1440u);
+			break;
 	}
 
 	if (m_VendorId == PCIV_NVIDIA) {
