@@ -16,7 +16,7 @@ REM
 REM You should have received a copy of the GNU General Public License
 REM along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SETLOCAL
+SETLOCAL ENABLEDELAYEDEXPANSION
 CD /D %~dp0
 
 SET "TITLE=MPC Video Renderer"
@@ -60,17 +60,20 @@ CALL "%TOOLSET%" -no_logo -arch=x86
 REM again set the source directory (fix possible bug in VS2017)
 CD /D %~dp0
 CALL :SubCompiling x86
+IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
 
 CALL "%TOOLSET%" -no_logo -arch=amd64
 REM again set the source directory (fix possible bug in VS2017)
 CD /D %~dp0
 CALL :SubCompiling x64
+IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
 
 IF /I "%SIGN%" == "True" (
   SET FILES="%~dp0_bin\Filter_x86%SUFFIX%\%PROJECT%.ax" "%~dp0_bin\Filter_x64%SUFFIX%\%PROJECT%64.ax"
   CALL "%~dp0\sign.cmd" %%FILES%%
   IF %ERRORLEVEL% NEQ 0 (
     CALL :SubMsg "ERROR" "Problem signing files."
+    EXIT /B %ERRORLEVEL%
   ) ELSE (
     CALL :SubMsg "INFO" "Files signed successfully."
   )
@@ -120,6 +123,7 @@ IF DEFINED SEVENZIP (
 .\history.txt ^
 .\LICENSE.txt
     IF %ERRORLEVEL% NEQ 0 CALL :SubMsg "ERROR" "Unable to create %PCKG_NAME%.zip!"
+    EXIT /B %ERRORLEVEL%
     CALL :SubMsg "INFO" "%PCKG_NAME%.zip successfully created"
 )
 
@@ -154,6 +158,7 @@ MSBuild.exe %PROJECT%.sln %MSBUILD_SWITCHES%^
  /flp2:LogFile=%LOG_DIR%\warnings_%BUILDCFG%_%1.log;warningsonly;Verbosity=diagnostic
 IF %ERRORLEVEL% NEQ 0 (
   CALL :SubMsg "ERROR" "%PROJECT%.sln %BUILDCFG% %1 - Compilation failed!"
+  EXIT /B %ERRORLEVEL%
 ) ELSE (
   CALL :SubMsg "INFO" "%PROJECT%.sln %BUILDCFG% %1 compiled successfully"
 )
@@ -175,7 +180,7 @@ IF /I "%~1" == "ERROR" (
     PAUSE >NUL
   )
   ENDLOCAL
-  EXIT
+  EXIT /B 1
 ) ELSE (
   EXIT /B
 )
