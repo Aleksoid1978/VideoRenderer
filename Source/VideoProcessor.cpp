@@ -231,10 +231,6 @@ void CVideoProcessor::SyncFrameToStreamTime(const REFERENCE_TIME frameStartTime)
 
 bool CVideoProcessor::CheckDoviMetadata(const MediaSideDataDOVIMetadata* pDOVIMetadata, const uint8_t maxReshapeMethon)
 {
-	if (!pDOVIMetadata->Header.disable_residual_flag) {
-		return false;
-	}
-
 	for (const auto& curve : pDOVIMetadata->Mapping.curves) {
 		if (curve.num_pivots < 2 || curve.num_pivots > 9) {
 			return false;
