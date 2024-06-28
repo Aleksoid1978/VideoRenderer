@@ -231,6 +231,12 @@ void CVideoProcessor::SyncFrameToStreamTime(const REFERENCE_TIME frameStartTime)
 
 bool CVideoProcessor::CheckDoviMetadata(const MediaSideDataDOVIMetadata* pDOVIMetadata, const uint8_t maxReshapeMethon)
 {
+	if (pDOVIMetadata->Header.el_spatial_resampling_filter_flag && !pDOVIMetadata->Header.disable_residual_flag
+			&& pDOVIMetadata->Header.vdr_bit_depth != 12) {
+		// ignore Profile 4
+		return false;
+	}
+
 	for (const auto& curve : pDOVIMetadata->Mapping.curves) {
 		if (curve.num_pivots < 2 || curve.num_pivots > 9) {
 			return false;
