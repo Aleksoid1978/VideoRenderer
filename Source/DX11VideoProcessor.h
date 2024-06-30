@@ -151,7 +151,7 @@ private:
 	bool m_bDecoderDevice = false;
 	bool m_bIsFullscreen = false;
 
-	int m_iVPSuperRes = 0;
+	int m_iVPSuperRes = SUPERRES_Disable;
 	bool m_bVPUseSuperRes = false; // but it is not exactly
 
 	bool m_bVPRTXVideoHDR = false;
@@ -164,7 +164,7 @@ private:
 	UINT m_srcVideoTransferFunction = 0; // need a description or rename
 
 	std::map<std::wstring, BOOL> m_hdrModeSavedState;
-	std::map<std::wstring, BOOL> m_hdrModeStartState;
+	std::map<std::wstring, BOOL, std::less<>> m_hdrModeStartState;
 
 	struct HDRMetadata {
 		DXGI_HDR_METADATA_HDR10 hdr10 = {};
