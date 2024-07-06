@@ -285,7 +285,7 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Setting
 	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
 	m_bHdrPreferDoVi       = config.bHdrPreferDoVi;
 	m_bHdrPassthrough      = false;
-	m_iHdrToggleDisplay    = false;
+	m_iHdrToggleDisplay    = HDRTD_Disabled;
 	m_bConvertToSdr        = config.bConvertToSdr;
 	m_iSDRDisplayNits      = config.iSDRDisplayNits;
 

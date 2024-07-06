@@ -152,11 +152,10 @@ struct Settings_t {
 		bHdrPreferDoVi                  = false;
 		if (IsWindows10OrGreater()) {
 			bHdrPassthrough             = true;
-			iHdrToggleDisplay           = HDRTD_On;
 		} else {
 			bHdrPassthrough             = false;
-			iHdrToggleDisplay           = HDRTD_Disabled;
 		}
+		iHdrToggleDisplay               = HDRTD_Disabled;
 		bConvertToSdr                   = true;
 		iHdrOsdBrightness               = 0;
 		iSDRDisplayNits                 = SDR_NITS_DEF;

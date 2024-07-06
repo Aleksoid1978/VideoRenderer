@@ -61,7 +61,7 @@ protected:
 	bool m_bVBlankBeforePresent            = false;
 	bool m_bHdrPreferDoVi                  = false;
 	bool m_bHdrPassthrough                 = true;
-	int  m_iHdrToggleDisplay               = HDRTD_On;
+	int  m_iHdrToggleDisplay               = HDRTD_Disabled;
 	int  m_iHdrOsdBrightness               = 0;
 	bool m_bConvertToSdr                   = true;
 	int  m_iSDRDisplayNits                 = SDR_NITS_DEF;
