@@ -1,9 +1,9 @@
 0.8.4 dev
 ------------------------
-Fixed detection of HDR capabilities of a screen with the "Auto Color Management" option enabled in new builds of Windows 11.
 Added support for vertical videos when using Super Resolution.
 The "Prefer Dolby Vision over PQ and HLG" setting now also works for Dolby Vision Profile 7.
 The "Windows HDR" setting is now set to "Do not change" by default. This will prevent unexpected screen flickering.
+Fixed detection of HDR capabilities of a screen with the "Auto Color Management" option enabled in Windows 11.
 
 0.8.3.2255 - 2024-06-05
 ------------------------
