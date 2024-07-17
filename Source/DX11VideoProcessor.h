@@ -163,8 +163,8 @@ private:
 	bool m_bHdrAllowSwitchDisplay = true;
 	UINT m_srcVideoTransferFunction = 0; // need a description or rename
 
-	std::map<std::wstring, BOOL> m_hdrModeSavedState;
-	std::map<std::wstring, BOOL, std::less<>> m_hdrModeStartState;
+	std::map<std::wstring, bool> m_hdrModeSavedState;
+	std::map<std::wstring, bool, std::less<>> m_hdrModeStartState;
 
 	struct HDRMetadata {
 		DXGI_HDR_METADATA_HDR10 hdr10 = {};

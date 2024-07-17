@@ -27,13 +27,16 @@ struct DisplayConfig_t {
 	DISPLAYCONFIG_COLOR_ENCODING colorEncoding;
 	union {
 		struct {
-			UINT32 advancedColorSupported : 1;    // A type of advanced color is supported
-			UINT32 advancedColorEnabled : 1;    // A type of advanced color is enabled
-			UINT32 wideColorEnforced : 1;    // Wide color gamut is enabled
-			UINT32 advancedColorForceDisabled : 1;    // Advanced color is force disabled due to system/OS policy
+			UINT32 advancedColorSupported : 1;     // A type of advanced color is supported
+			UINT32 advancedColorEnabled : 1;       // A type of advanced color is enabled
+			UINT32 wideColorEnforced : 1;          // Wide color gamut is enabled
+			UINT32 advancedColorForceDisabled : 1; // Advanced color is force disabled due to system/OS policy
 			UINT32 reserved : 28;
 		};
 		UINT32 value;
+
+		bool HDRSupported() const { return advancedColorSupported && !wideColorEnforced && !advancedColorForceDisabled; }
+		bool HDREnabled() const { return advancedColorEnabled && !wideColorEnforced && !advancedColorForceDisabled; }
 	} advancedColor;
 	DISPLAYCONFIG_RATIONAL                refreshRate;
 	DISPLAYCONFIG_SCANLINE_ORDERING       scanLineOrdering;
