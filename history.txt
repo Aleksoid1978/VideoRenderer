@@ -1,4 +1,4 @@
-0.8.4 dev
+0.8.5.2268 - 2024-07-18
 ------------------------
 Added support for vertical videos when using Super Resolution.
 The "Prefer Dolby Vision over PQ and HLG" setting now also works for Dolby Vision Profile 7.
