@@ -1,3 +1,7 @@
+0.8.6 dev
+------------------------
+
+
 0.8.5.2268 - 2024-07-18
 ------------------------
 Added support for vertical videos when using Super Resolution.
