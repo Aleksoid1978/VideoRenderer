@@ -452,7 +452,8 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 		*/
 
 		if (bTryToReset) {
-			bTryToReset = SUCCEEDED(hr = m_pD3DDevEx->ResetEx(&m_d3dpp, &m_DisplayMode));
+			hr = m_pD3DDevEx->ResetEx(&m_d3dpp, &m_DisplayMode);
+			bTryToReset = SUCCEEDED(hr);
 			DLog(L"    => ResetEx(fullscreen) : {}", HR2Str(hr));
 		}
 
@@ -482,7 +483,8 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 		}
 
 		if (bTryToReset) {
-			bTryToReset = SUCCEEDED(hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr));
+			hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
+			bTryToReset = SUCCEEDED(hr);
 			DLog(L"    => ResetEx() : {}", HR2Str(hr));
 		}
 

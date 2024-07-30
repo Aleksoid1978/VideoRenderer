@@ -103,20 +103,27 @@ HRESULT DumpDX9Surface(IDirect3DSurface9* pSurface, const wchar_t* filename)
 	HRESULT hr = S_OK;
 
 	D3DSURFACE_DESC desc = {};
-	if (FAILED(hr = pSurface->GetDesc(&desc))) {
+	hr = pSurface->GetDesc(&desc);
+	if (FAILED(hr)) {
 		return hr;
 	};
 
 	CComPtr<IDirect3DDevice9> pDevice;
-	if (FAILED(hr = pSurface->GetDevice(&pDevice))) {
+	hr = pSurface->GetDevice(&pDevice);
+	if (FAILED(hr)) {
 		return hr;
 	};
 
 	CComPtr<IDirect3DSurface9> pTarget;
-	if (FAILED(hr = pDevice->CreateRenderTarget(desc.Width, desc.Height, D3DFMT_X8R8G8B8, D3DMULTISAMPLE_NONE, 0, TRUE, &pTarget, nullptr))
-		|| FAILED(hr = pDevice->StretchRect(pSurface, nullptr, pTarget, nullptr, D3DTEXF_NONE))) {
+	hr = pDevice->CreateRenderTarget(desc.Width, desc.Height, D3DFMT_X8R8G8B8, D3DMULTISAMPLE_NONE, 0, TRUE, &pTarget, nullptr);
+	if (FAILED(hr)) {
 		return hr;
-	}
+	};
+
+	hr = pDevice->StretchRect(pSurface, nullptr, pTarget, nullptr, D3DTEXF_NONE);
+	if (FAILED(hr)) {
+		return hr;
+	};
 
 	unsigned len = desc.Width * desc.Height * 4;
 	std::unique_ptr<BYTE[]> dib(new(std::nothrow) BYTE[sizeof(BITMAPINFOHEADER) + len]);
@@ -134,7 +141,8 @@ HRESULT DumpDX9Surface(IDirect3DSurface9* pSurface, const wchar_t* filename)
 	bih->biSizeImage = DIBSIZE(*bih);
 
 	D3DLOCKED_RECT r;
-	if (FAILED(hr = pTarget->LockRect(&r, nullptr, D3DLOCK_READONLY))) {
+	hr = pTarget->LockRect(&r, nullptr, D3DLOCK_READONLY);
+	if (FAILED(hr)) {
 		return hr;
 	}
 
