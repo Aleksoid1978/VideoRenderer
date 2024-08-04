@@ -70,7 +70,15 @@ void CVideoProcessor::CalcStatsFont()
 		}
 	}
 	else {
-		m_StatsFontH = 14;
+		int dpiY = 96;
+
+		HDC hdc = GetDC(nullptr);
+		if (hdc) {
+			dpiY = GetDeviceCaps(hdc, LOGPIXELSY);
+			ReleaseDC(nullptr, hdc);
+		}
+
+		m_StatsFontH = MulDiv(14, dpiY, 96);
 	}
 }
 
