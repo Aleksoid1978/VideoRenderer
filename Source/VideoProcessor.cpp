@@ -25,6 +25,7 @@
 #include "VideoRenderer.h"
 
 #include "VideoProcessor.h"
+#include <shellscalingapi.h>
 
 HRESULT CVideoProcessor::GetVideoSize(long *pWidth, long *pHeight)
 {
@@ -58,7 +59,7 @@ HRESULT CVideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
 	return S_OK;
 }
 
-void CVideoProcessor::CalcStatsFont()
+void CVideoProcessor::UpdateStatsByWindow()
 {
 	if (m_iResizeStats == 1) {
 		int w = std::max(512, m_windowRect.Width() / 2 - 10) - 5 - 3;
@@ -69,16 +70,42 @@ void CVideoProcessor::CalcStatsFont()
 			m_StatsFontH = 14;
 		}
 	}
-	else {
-		int dpiY = 96;
 
-		HDC hdc = GetDC(nullptr);
-		if (hdc) {
-			dpiY = GetDeviceCaps(hdc, LOGPIXELSY);
-			ReleaseDC(nullptr, hdc);
+	CalcStatsParams(); // always run here to recalculate the graph position
+}
+void CVideoProcessor::UpdateStatsByDisplay()
+{
+	if (m_iResizeStats == 0) {
+		int dpiH = 0;
+
+		if (IsWindows8OrGreater()) {
+			static HMODULE hShcore = LoadLibraryW(L"Shcore.dll");
+			if (hShcore) {
+				typedef HRESULT(WINAPI* tpGetDpiForMonitor)(HMONITOR hmonitor, MONITOR_DPI_TYPE dpiType, UINT* dpiX, UINT* dpiY);
+				static tpGetDpiForMonitor pGetDpiForMonitor = (tpGetDpiForMonitor)GetProcAddress(hShcore, "GetDpiForMonitor");
+				if (pGetDpiForMonitor) {
+					UINT dpix, dpiy;
+					if (S_OK == pGetDpiForMonitor(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST), MDT_EFFECTIVE_DPI, &dpix, &dpiy)) {
+						dpiH = dpiy;
+					}
+				}
+			}
 		}
 
-		m_StatsFontH = MulDiv(14, dpiY, 96);
+		if (!dpiH) {
+			HDC hdc = GetDC(nullptr);
+			if (hdc) {
+				dpiH = GetDeviceCaps(hdc, LOGPIXELSY);
+				ReleaseDC(nullptr, hdc);
+			}
+			else {
+				dpiH = 14;
+			}
+		}
+
+		m_StatsFontH = MulDiv(14, dpiH, 96);
+
+		CalcStatsParams();
 	}
 }
 

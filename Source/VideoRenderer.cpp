@@ -624,6 +624,7 @@ void CMpcVideoRenderer::OnWindowMove()
 
 			m_hMon = hMon;
 			UpdateDisplayInfo();
+			m_VideoProcessor->UpdateStatsByDisplay();
 		}
 	}
 }

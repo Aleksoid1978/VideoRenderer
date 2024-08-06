@@ -210,10 +210,11 @@ public:
 	virtual HRESULT GetDisplayedImage(BYTE **ppDib, unsigned *pSize) = 0;
 	virtual HRESULT GetVPInfo(std::wstring& str) = 0;
 
-	void CalcStatsFont();
+	void UpdateStatsByWindow();
+	void UpdateStatsByDisplay();
 	bool CheckGraphPlacement();
 	void CalcGraphParams();
-	virtual void SetGraphSize() = 0;
+	virtual void CalcStatsParams() = 0;
 
 	void SetDisplayInfo(const DisplayConfig_t& dc, const bool primary, const bool fullscreen);
 

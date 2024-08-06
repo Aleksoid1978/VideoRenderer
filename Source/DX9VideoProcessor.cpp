@@ -598,9 +598,9 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 
 	bInitVP = false;
 
-	SetGraphSize();
 	m_pFilter->OnDisplayModeChange();
 	UpdateStatsStatic();
+	UpdateStatsByDisplay();
 
 	if (pChangeDevice) {
 		*pChangeDevice = !bTryToReset;
@@ -982,10 +982,9 @@ void CDX9VideoProcessor::UpdateScalingStrings()
 		: s_Upscaling9ResIDs[m_iUpscaling].description;
 }
 
-void CDX9VideoProcessor::SetGraphSize()
+void CDX9VideoProcessor::CalcStatsParams()
 {
 	if (m_pD3DDevEx && !m_windowRect.IsRectEmpty()) {
-		CalcStatsFont();
 		if (S_OK == m_Font3D.CreateFontBitmap(L"Consolas", m_StatsFontH, 0)) {
 			SIZE charSize = m_Font3D.GetMaxCharMetric();
 			m_StatsRect.right  = m_StatsRect.left + 61 * charSize.cx + 5 + 3;
@@ -1708,7 +1707,7 @@ HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 			}
 		}
 
-		SetGraphSize();
+		UpdateStatsByWindow();
 	}
 
 	UpdatePostScaleTexures();
@@ -2044,7 +2043,8 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (changeResizeStats) {
-		SetGraphSize();
+		UpdateStatsByWindow();
+		UpdateStatsByDisplay();
 	}
 
 	UpdateStatsStatic();

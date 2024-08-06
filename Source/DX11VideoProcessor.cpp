@@ -1075,12 +1075,11 @@ void CDX11VideoProcessor::UpdateScalingStrings()
 		: s_Upscaling11ResIDs[m_iUpscaling].description;
 }
 
-void CDX11VideoProcessor::SetGraphSize()
+void CDX11VideoProcessor::CalcStatsParams()
 {
 	if (m_pDeviceContext && !m_windowRect.IsRectEmpty()) {
 		SIZE rtSize = m_windowRect.Size();
 
-		CalcStatsFont();
 		if (S_OK == m_Font3D.CreateFontBitmap(L"Consolas", m_StatsFontH, 0)) {
 			SIZE charSize = m_Font3D.GetMaxCharMetric();
 			m_StatsRect.right  = m_StatsRect.left + 61 * charSize.cx + 5 + 3;
@@ -1336,7 +1335,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	m_pFilter->OnDisplayModeChange();
 	UpdateStatsStatic();
-	SetGraphSize();
+	UpdateStatsByDisplay();
 
 	return hr;
 }
@@ -3038,7 +3037,7 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 		hr = m_pDXGISwapChain1->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
 	}
 
-	SetGraphSize();
+	UpdateStatsByWindow();
 
 	UpdatePostScaleTexures();
 
@@ -3550,7 +3549,8 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (changeResizeStats) {
-		SetGraphSize();
+		UpdateStatsByWindow();
+		UpdateStatsByDisplay();
 	}
 
 	if (changeSuperRes) {
