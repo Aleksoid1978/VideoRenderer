@@ -1,0 +1,48 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "Build AX",
+            "command": "build_mpcvr.cmd",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [ "/d", "/c" ]
+                }
+            },
+            "runOptions": {
+                "instanceLimit": 1,
+            },
+            "osx": {
+                "hide": true
+            },
+            "linux": {
+                "hide": true
+            }
+        },
+        {
+            "type": "shell",
+            "label": "Build Debug AX",
+            "command": "build_mpcvr.cmd",
+            "args": [ "Debug" ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [ "/d", "/c" ]
+                }
+            },
+            "runOptions": {
+                "instanceLimit": 1,
+            },
+            "osx": {
+                "hide": true
+            },
+            "linux": {
+                "hide": true
+            }
+        }
+    ]
+}
