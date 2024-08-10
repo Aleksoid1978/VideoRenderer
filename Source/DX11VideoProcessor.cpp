@@ -1353,10 +1353,18 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	if (bFullscreenChange) {
 		HandleHDRToggle();
 		UpdateBitmapShader();
+		bool bIsSourcePQorHLG = SourceIsPQorHLG();
 
-		if (m_bHdrPassthrough
-				&& ((m_iHdrToggleDisplay == HDRTD_On_Fullscreen && m_bIsFullscreen) || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen)
-				&& SourceIsPQorHLG()) {
+		DLog(L"CDX11VideoProcessor::InitSwapChain() - Is fullscreen: {}", m_bIsFullscreen);
+		DLog(L"CDX11VideoProcessor::InitSwapChain() - Is source PQ or HLG: {}", bIsSourcePQorHLG);
+		DLog(L"CDX11VideoProcessor::InitSwapChain() - HDR pass-through: {}", m_bHdrPassthrough);
+		DLog(L"CDX11VideoProcessor::InitSwapChain() - HDR toggle display: {}", m_iHdrToggleDisplay);
+
+		// Reinit to do the following:
+		// 1. Fullscreen toggle (based on user preference)
+		// 2. HDR toggle (based on user preference)
+		// 3. HDR settings check (if HDR toggle is disabled: check fullscreen display mode, which may differ from current display)
+		if (m_bHdrPassthrough && bIsSourcePQorHLG) {
 			m_bHdrAllowSwitchDisplay = false;
 			InitMediaType(&m_pFilter->m_inputMT);
 			m_bHdrAllowSwitchDisplay = true;
