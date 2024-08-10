@@ -1091,7 +1091,13 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 
 	CAutoLock cRendererLock(&m_RendererLock);
 
-	if (!m_bIsD3DFullscreen && (m_Sets.bExclusiveFS || m_bIsFullscreen)) {
+	DLog(L"CMpcVideoRenderer::SetWindowPosition() - Is D3D fullscreen: {}", m_bIsD3DFullscreen);
+	DLog(L"CMpcVideoRenderer::SetWindowPosition() - Is exclusive fullscreen: {}", m_Sets.bExclusiveFS);
+	DLog(L"CMpcVideoRenderer::SetWindowPosition() - Is fullscreen: {}", m_bIsFullscreen);
+
+	// Reinit whether in exclusive and non-exclusive fullscreen mode to do the following:
+	// HDR settings check (if HDR toggle is disabled: check fullscreen display mode, which may differ from current display)
+	if (!m_bIsD3DFullscreen) {
 		const HMONITOR hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 		MONITORINFO mi = { mi.cbSize = sizeof(mi) };
 		::GetMonitorInfoW(hMon, &mi);
