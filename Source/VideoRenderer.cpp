@@ -1035,7 +1035,7 @@ HRESULT CMpcVideoRenderer::Init(const bool bCreateWindow/* = false*/)
 	}
 
 	bool bChangeDevice = false;
-	hr = m_VideoProcessor->Init(m_hWnd, &bChangeDevice);
+	hr = m_VideoProcessor->Init(m_hWnd, false, &bChangeDevice);
 
 	if (bChangeDevice) {
 		DoAfterChangingDevice();
