@@ -513,11 +513,11 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 	MH_RemoveHook(SetWindowLongA);
 }
 
-HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullptr*/)
+HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool windowChanged, bool* pChangeDevice/* = nullptr*/)
 {
 	DLog(L"CDX11VideoProcessor::Init()");
 
-	const bool bWindowChanged = (m_hWnd != hwnd);
+	const bool bWindowChanged = windowChanged || (m_hWnd != hwnd);
 	m_hWnd = hwnd;
 	m_bHdrPassthroughSupport = false;
 	m_bHdrDisplayModeEnabled = false;
@@ -547,7 +547,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool* pChangeDevice/* = nullp
 		SetCallbackDevice();
 
 		if (!m_pDXGISwapChain1 || m_bIsFullscreen != m_pFilter->m_bIsFullscreen || bWindowChanged) {
-			InitSwapChain();
+			InitSwapChain(bWindowChanged);
 			UpdateStatsStatic();
 			m_pFilter->OnDisplayModeChange();
 		}
@@ -1280,7 +1280,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	}
 
 	if (m_hWnd) {
-		hr = InitSwapChain();
+		hr = InitSwapChain(false);
 		if (FAILED(hr)) {
 			ReleaseDevice();
 			return hr;
@@ -1340,7 +1340,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::InitSwapChain()
+HRESULT CDX11VideoProcessor::InitSwapChain(bool bWindowChanged)
 {
 	DLog(L"CDX11VideoProcessor::InitSwapChain() - {}", m_pFilter->m_bIsFullscreen ? L"fullscreen" : L"window");
 	CheckPointer(m_pDXGIFactory2, E_FAIL);
@@ -1350,13 +1350,11 @@ HRESULT CDX11VideoProcessor::InitSwapChain()
 	auto bFullscreenChange = m_bIsFullscreen != m_pFilter->m_bIsFullscreen;
 	m_bIsFullscreen = m_pFilter->m_bIsFullscreen;
 
-	if (bFullscreenChange) {
+	if (bFullscreenChange || bWindowChanged) {
 		HandleHDRToggle();
 		UpdateBitmapShader();
 
-		if (m_bHdrPassthrough
-				&& ((m_iHdrToggleDisplay == HDRTD_On_Fullscreen && m_bIsFullscreen) || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen)
-				&& SourceIsPQorHLG()) {
+		if (m_bHdrPassthrough && SourceIsPQorHLG()) {
 			m_bHdrAllowSwitchDisplay = false;
 			InitMediaType(&m_pFilter->m_inputMT);
 			m_bHdrAllowSwitchDisplay = true;
@@ -1703,13 +1701,13 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		}
 		if (ret) {
 			ReleaseSwapChain();
-			Init(m_hWnd);
+			Init(m_hWnd, false);
 		}
 	}
 
 	if (Preferred10BitOutput() && m_SwapChainFmt == DXGI_FORMAT_B8G8R8A8_UNORM) {
 		ReleaseSwapChain();
-		Init(m_hWnd);
+		Init(m_hWnd, false);
 	}
 
 	m_srcVideoTransferFunction = m_srcExFmt.VideoTransferFunction;
@@ -1819,7 +1817,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 
 	if ((m_bVPUseRTXVideoHDR && !m_pDXGISwapChain4)
 			|| (!m_bVPUseRTXVideoHDR && m_pDXGISwapChain4 && !SourceIsHDR())) {
-		InitSwapChain();
+		InitSwapChain(false);
 		InitMediaType(pmt);
 		return S_OK;
 	}
@@ -2195,7 +2193,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 				if (doviStateChanged && !SourceIsPQorHLG()) {
 					ReleaseSwapChain();
-					Init(m_hWnd);
+					Init(m_hWnd, false);
 
 					m_srcVideoTransferFunction = 0;
 					InitMediaType(&m_pFilter->m_inputMT);
@@ -2441,7 +2439,7 @@ HRESULT CDX11VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTi
 	m_RenderStats.presentticks = GetPreciseTick() - tick3;
 
 	if (hr == DXGI_ERROR_INVALID_CALL && m_pFilter->m_bIsD3DFullscreen) {
-		InitSwapChain();
+		InitSwapChain(false);
 	}
 
 	return hr;
@@ -2495,7 +2493,7 @@ HRESULT CDX11VideoProcessor::FillBlack()
 	DLogIf(FAILED(hr), L"CDX11VideoProcessor::FillBlack() : Present() failed with error {}", HR2Str(hr));
 
 	if (hr == DXGI_ERROR_INVALID_CALL && m_pFilter->m_bIsD3DFullscreen) {
-		InitSwapChain();
+		InitSwapChain(false);
 	}
 
 	return hr;
@@ -3057,7 +3055,7 @@ HRESULT CDX11VideoProcessor::Reset()
 			const auto& ac = displayConfig.advancedColor;
 			const auto bHdrPassthroughSupport = ac.HDRSupported() && ac.HDREnabled();
 
-			if (bHdrPassthroughSupport && !m_bHdrPassthroughSupport || !ac.HDREnabled() && m_bHdrPassthroughSupport) {
+			if ((bHdrPassthroughSupport && !m_bHdrPassthroughSupport) || (!ac.HDREnabled() && m_bHdrPassthroughSupport)) {
 				m_hdrModeSavedState.erase(mi.szDevice);
 
 				if (m_pFilter->m_inputMT.IsValid()) {
@@ -3065,11 +3063,8 @@ HRESULT CDX11VideoProcessor::Reset()
 					if (m_iSwapEffect == SWAPEFFECT_Discard && !ac.HDREnabled()) {
 						m_pFilter->Init(true);
 					} else {
-						Init(m_hWnd);
+						Init(m_hWnd, true);
 					}
-					m_bHdrAllowSwitchDisplay = false;
-					InitMediaType(&m_pFilter->m_inputMT);
-					m_bHdrAllowSwitchDisplay = true;
 				}
 			}
 		}
@@ -3501,7 +3496,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	if (changeVP) {
 		InitMediaType(&m_pFilter->m_inputMT);
 		if (m_bVPUseRTXVideoHDR || m_bVPRTXVideoHDR) {
-			InitSwapChain();
+			InitSwapChain(false);
 		}
 
 		return; // need some test

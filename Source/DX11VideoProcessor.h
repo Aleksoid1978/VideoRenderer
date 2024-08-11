@@ -189,7 +189,7 @@ public:
 
 	int Type() override { return VP_DX11; }
 
-	HRESULT Init(const HWND hwnd, bool* pChangeDevice = nullptr) override;
+	HRESULT Init(const HWND hwnd, bool windowChanged, bool* pChangeDevice = nullptr) override;
 	bool Initialized();
 
 private:
@@ -222,7 +222,7 @@ private:
 
 public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, const bool bDecoderDevice);
-	HRESULT InitSwapChain();
+	HRESULT InitSwapChain(bool bWindowChanged);
 
 	BOOL VerifyMediaType(const CMediaType* pmt) override;
 	BOOL InitMediaType(const CMediaType* pmt) override;

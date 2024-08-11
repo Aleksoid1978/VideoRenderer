@@ -259,7 +259,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	if (m_Sets.bUseD3D11 && IsWindows7SP1OrGreater()) {
 		m_VideoProcessor.reset(new CDX11VideoProcessor(this, m_Sets, hr));
 		if (SUCCEEDED(hr)) {
-			hr = m_VideoProcessor->Init(m_hWnd);
+			hr = m_VideoProcessor->Init(m_hWnd, false);
 		}
 
 		if (FAILED(hr)) {
@@ -271,7 +271,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 	if (!m_VideoProcessor) {
 		m_VideoProcessor.reset(new CDX9VideoProcessor(this, m_Sets, hr));
 		if (SUCCEEDED(hr)) {
-			hr = m_VideoProcessor->Init(::GetForegroundWindow());
+			hr = m_VideoProcessor->Init(::GetForegroundWindow(), false);
 		}
 
 		DLogIf(S_OK == hr, L"Direct3D9 initialization successfully!");
