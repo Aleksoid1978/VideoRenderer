@@ -189,7 +189,7 @@ public:
 
 	int Type() override { return VP_DX11; }
 
-	HRESULT Init(const HWND hwnd, bool windowChanged, bool* pChangeDevice = nullptr) override;
+	HRESULT Init(const HWND hwnd, const bool displayHdrChanged, bool* pChangeDevice = nullptr) override;
 	bool Initialized();
 
 private:

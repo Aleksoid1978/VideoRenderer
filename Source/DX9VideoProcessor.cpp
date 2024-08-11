@@ -644,7 +644,7 @@ void CDX9VideoProcessor::ResizeInternal()
 	DLogIf(FAILED(hr), L"CDX9VideoProcessor::ResizeInternal() : ResetEx() failed with error {}", HR2Str(hr));
 }
 
-HRESULT CDX9VideoProcessor::Init(const HWND hwnd, bool windowChanged, bool* pChangeDevice/* = nullptr*/)
+HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged, bool* pChangeDevice/* = nullptr*/)
 {
 	CheckPointer(m_pD3DEx, E_FAIL);
 

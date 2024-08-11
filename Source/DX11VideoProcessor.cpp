@@ -513,11 +513,11 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 	MH_RemoveHook(SetWindowLongA);
 }
 
-HRESULT CDX11VideoProcessor::Init(const HWND hwnd, bool windowChanged, bool* pChangeDevice/* = nullptr*/)
+HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged, bool* pChangeDevice/* = nullptr*/)
 {
 	DLog(L"CDX11VideoProcessor::Init()");
 
-	const bool bWindowChanged = windowChanged || (m_hWnd != hwnd);
+	const bool bWindowChanged = displayHdrChanged || (m_hWnd != hwnd);
 	m_hWnd = hwnd;
 	m_bHdrPassthroughSupport = false;
 	m_bHdrDisplayModeEnabled = false;
