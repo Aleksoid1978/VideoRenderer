@@ -1358,6 +1358,11 @@ HRESULT CDX11VideoProcessor::InitSwapChain(bool bWindowChanged)
 			m_bHdrAllowSwitchDisplay = false;
 			InitMediaType(&m_pFilter->m_inputMT);
 			m_bHdrAllowSwitchDisplay = true;
+
+			if (m_pDXGISwapChain1) {
+				DLog(L"CDX11VideoProcessor::InitSwapChain() - SwapChain was created during the call to InitMediaType(), exit");
+				return S_OK;
+			}
 		}
 	}
 
