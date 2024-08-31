@@ -93,9 +93,12 @@ struct Tex11Video_t : Tex2D_t
 
 	HRESULT CreateEx(ID3D11Device* pDevice, const DXGI_FORMAT format, const DX11PlaneConfig_t* pPlanes, UINT width, const UINT height, const Tex2DType type) {
 		Release();
-		D3D11_TEXTURE2D_DESC texdesc = CreateTex2DDesc(format, width, height, type);
 
-		HRESULT hr = pDevice->CreateTexture2D(&texdesc, nullptr, &pTexture);
+		HRESULT hr = E_FAIL;
+		if (format != DXGI_FORMAT_PLANAR) {
+			auto texdesc = CreateTex2DDesc(format, width, height, type);
+			hr = pDevice->CreateTexture2D(&texdesc, nullptr, &pTexture);
+		}
 		if (S_OK == hr) {
 			pTexture->GetDesc(&desc);
 
@@ -130,7 +133,7 @@ struct Tex11Video_t : Tex2D_t
 				// 2 textures, 2 SRV
 				const UINT chromaWidth = width / pPlanes->div_chroma_w;
 				const UINT chromaHeight = height / pPlanes->div_chroma_h;
-				texdesc = CreateTex2DDesc(pPlanes->FmtPlane2, chromaWidth, chromaHeight, type);
+				auto texdesc = CreateTex2DDesc(pPlanes->FmtPlane2, chromaWidth, chromaHeight, type);
 
 				hr = pDevice->CreateTexture2D(&texdesc, nullptr, &pTexture2);
 				if (S_OK == hr) {

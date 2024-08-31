@@ -27,25 +27,24 @@
 #include "csputils.h"
 #include "../Include/IMediaSideData.h"
 
-#define D3DFMT_YV12 (D3DFORMAT)FCC('YV12')
-#define D3DFMT_NV12 (D3DFORMAT)FCC('NV12')
-#define D3DFMT_P010 (D3DFORMAT)FCC('P010')
-#define D3DFMT_P016 (D3DFORMAT)FCC('P016')
-#define D3DFMT_P210 (D3DFORMAT)FCC('P210')
-#define D3DFMT_P216 (D3DFORMAT)FCC('P216')
-#define D3DFMT_AYUV (D3DFORMAT)FCC('AYUV')
-#define D3DFMT_Y410 (D3DFORMAT)FCC('Y410')
-#define D3DFMT_Y416 (D3DFORMAT)FCC('Y416')
+constexpr auto D3DFMT_YV12 = static_cast<D3DFORMAT>(FCC('YV12'));
+constexpr auto D3DFMT_NV12 = static_cast<D3DFORMAT>(FCC('NV12'));
+constexpr auto D3DFMT_P010 = static_cast<D3DFORMAT>(FCC('P010'));
+constexpr auto D3DFMT_P016 = static_cast<D3DFORMAT>(FCC('P016'));
+constexpr auto D3DFMT_P210 = static_cast<D3DFORMAT>(FCC('P210'));
+constexpr auto D3DFMT_P216 = static_cast<D3DFORMAT>(FCC('P216'));
+constexpr auto D3DFMT_AYUV = static_cast<D3DFORMAT>(FCC('AYUV'));
+constexpr auto D3DFMT_Y410 = static_cast<D3DFORMAT>(FCC('Y410'));
+constexpr auto D3DFMT_Y416 = static_cast<D3DFORMAT>(FCC('Y416'));
 
-#define D3DFMT_PLANAR (D3DFORMAT)0xFFFF
+constexpr auto D3DFMT_PLANAR      = static_cast<D3DFORMAT>(0xFFFF);
+constexpr auto DXGI_FORMAT_PLANAR = static_cast<DXGI_FORMAT>(0xFFFF);
 
-#define DXGI_FORMAT_PLANAR (DXGI_FORMAT)0xFFFF
+constexpr UINT PCIV_AMDATI = 0x1002;
+constexpr UINT PCIV_NVIDIA = 0x10DE;
+constexpr UINT PCIV_INTEL  = 0x8086;
 
-#define PCIV_AMDATI      0x1002
-#define PCIV_NVIDIA      0x10DE
-#define PCIV_INTEL       0x8086
-
-#define INVALID_TIME INT64_MIN
+constexpr REFERENCE_TIME INVALID_TIME = INT64_MIN;
 
 struct VR_Extradata {
 	LONG  QueryWidth;
