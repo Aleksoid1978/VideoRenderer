@@ -1047,7 +1047,7 @@ HRESULT CMpcVideoRenderer::Init(const bool bCreateWindow/* = false*/)
 // IVideoWindow
 STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 {
-	if (m_hWndParent != (HWND)Owner) {
+	if (Owner && m_hWndParent != (HWND)Owner) {
 		m_hWndParent = (HWND)Owner;
 		return Init(true);
 	}
