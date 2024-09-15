@@ -39,15 +39,52 @@ IsWindows11OrGreater() // https://walbourn.github.io/windows-sdk-for-windows-11/
 	return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_BUILDNUMBER, dwlConditionMask) != FALSE;
 }
 
-LPCWSTR GetWindowsVersion()
+LPCWSTR GetWinVer()
 {
-	if (IsWindows11OrGreater()) {
-		return L"11";
+	const struct {
+		const DWORD buildNumber;
+		LPCWSTR version;
 	}
-	else if (IsWindows10OrGreater()) {
-		return L"10";
+	win10versions[] = {
+		{ 26100, L"11 24H2" },
+		{ 22631, L"11 23H2" },
+		{ 22621, L"11 22H2" },
+		{ 22000, L"11 21H2" },
+		{ 19045, L"10 22H2" },
+		{ 19044, L"10 21H2" },
+		{ 19043, L"10 21H1" },
+		{ 19042, L"10 20H2" },
+		{ 19041, L"10 2004" },
+		{ 18363, L"10 1909" },
+		{ 18362, L"10 1903" },
+		{ 17763, L"10 1809" },
+		{ 17134, L"10 1803" },
+		{ 16299, L"10 1709" },
+		{ 15063, L"10 1703" },
+		{ 14393, L"10 1607" },
+		{ 10586, L"10 1511" },
+		{ 10240, L"10 1507" },
+	};
+
+	OSVERSIONINFOEXW osvi = { sizeof(osvi), 0, 0, 0, 0, {0}, 0, 0 };
+	DWORDLONG const dwlConditionMask = VerSetConditionMask(
+		VerSetConditionMask(
+			VerSetConditionMask(
+				0, VER_MAJORVERSION, VER_GREATER_EQUAL),
+			VER_MINORVERSION, VER_GREATER_EQUAL),
+		VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+	osvi.dwMajorVersion = HIBYTE(_WIN32_WINNT_WIN10);
+	osvi.dwMinorVersion = LOBYTE(_WIN32_WINNT_WIN10);
+
+	for (const auto& win10ver : win10versions) {
+		osvi.dwBuildNumber = win10ver.buildNumber;
+		if (VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_BUILDNUMBER, dwlConditionMask) != FALSE) {
+			return win10ver.version;
+		}
 	}
-	else if (IsWindows8Point1OrGreater()) {
+
+	if (IsWindows8Point1OrGreater()) {
 		return L"8.1";
 	}
 	else if (IsWindows8OrGreater()) {
@@ -60,6 +97,12 @@ LPCWSTR GetWindowsVersion()
 		return L"7";
 	}
 	return L"Vista or older";
+}
+
+LPCWSTR GetWindowsVersion()
+{
+	static LPCWSTR winver = GetWinVer();
+	return winver;
 }
 
 std::wstring HR2Str(const HRESULT hr)
