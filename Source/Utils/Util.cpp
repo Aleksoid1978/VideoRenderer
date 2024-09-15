@@ -41,6 +41,8 @@ IsWindows11OrGreater() // https://walbourn.github.io/windows-sdk-for-windows-11/
 
 LPCWSTR GetWinVer()
 {
+	// https://learn.microsoft.com/en-us/windows/release-health/release-information#windows-10-release-history
+	// https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information#windows-11-release-history
 	const struct {
 		const DWORD buildNumber;
 		LPCWSTR version;
