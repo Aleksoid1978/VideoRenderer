@@ -3702,7 +3702,7 @@ void CDX11VideoProcessor::UpdateStatsPresent()
 void CDX11VideoProcessor::UpdateStatsStatic()
 {
 	if (m_srcParams.cformat) {
-		m_strStatsHeader = std::format(L"MPC VR {}, Direct3D 11", _CRT_WIDE(VERSION_STR));
+		m_strStatsHeader = std::format(L"MPC VR {}, Direct3D 11, Windows {}", _CRT_WIDE(VERSION_STR), GetWindowsVersion());
 
 		UpdateStatsInputFmt();
 
