@@ -1,6 +1,8 @@
 0.8.6 dev
 ------------------------
-
+Cosmetic fixes to the settings window.
+Statistics font size now scales according to Windows text scale.
+Improved handling of switching the display to and from HDR mode.
 
 0.8.5.2268 - 2024-07-18
 ------------------------
