@@ -3,6 +3,7 @@
 Cosmetic fixes to the settings window.
 Statistics font size now scales according to Windows text scale.
 Improved handling of switching the display to and from HDR mode.
+Added the "Adjust the frame presentation time" setting. The feature without setting was added earlier in the 0.7.3 release for smooth viewing of interlaced video on high-frequency displays.
 
 0.8.5.2268 - 2024-07-18
 ------------------------
