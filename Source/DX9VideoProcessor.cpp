@@ -283,6 +283,7 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Setting
 	m_bDeintBlend          = config.bDeintBlend;
 	m_iSwapEffect          = config.iSwapEffect;
 	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
+	m_bAdjustPresentTime   = config.bAdjustPresentTime;
 	m_bHdrPreferDoVi       = config.bHdrPreferDoVi;
 	m_bHdrPassthrough      = false;
 	m_iHdrToggleDisplay    = HDRTD_Disabled;
@@ -1614,7 +1615,9 @@ HRESULT CDX9VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTim
 		DLogIf(FAILED(hr), L"WaitForVBlank failed with error {}", HR2Str(hr));
 	}
 
-	SyncFrameToStreamTime(frameStartTime);
+	if (m_bAdjustPresentTime) {
+		SyncFrameToStreamTime(frameStartTime);
+	}
 
 	if (m_d3dpp.SwapEffect == D3DSWAPEFFECT_DISCARD) {
 		const CRect rSrcPri(CPoint(0, 0), windowSize);
@@ -1919,6 +1922,7 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	m_bDeintDouble         = config.bDeintDouble;
 	m_bInterpolateAt50pct  = config.bInterpolateAt50pct;
 	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
+	m_bAdjustPresentTime   = config.bAdjustPresentTime;
 	m_bDeintBlend          = config.bDeintBlend;
 	m_iSDRDisplayNits      = config.iSDRDisplayNits;
 

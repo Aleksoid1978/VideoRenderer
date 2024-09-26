@@ -110,6 +110,7 @@ struct Settings_t {
 	int  iSwapEffect;
 	bool bExclusiveFS;
 	bool bVBlankBeforePresent;
+	bool bAdjustPresentTime;
 	bool bReinitByDisplay;
 	bool bHdrPreferDoVi;
 	bool bHdrPassthrough;
@@ -148,6 +149,7 @@ struct Settings_t {
 		iSwapEffect                     = SWAPEFFECT_Flip;
 		bExclusiveFS                    = false;
 		bVBlankBeforePresent            = false;
+		bAdjustPresentTime              = true;
 		bReinitByDisplay                = false;
 		bHdrPreferDoVi                  = false;
 		if (IsWindows10OrGreater()) {

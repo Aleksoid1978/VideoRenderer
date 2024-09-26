@@ -393,6 +393,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_bDeintBlend          = config.bDeintBlend;
 	m_iSwapEffect          = config.iSwapEffect;
 	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
+	m_bAdjustPresentTime   = config.bAdjustPresentTime;
 	m_bHdrPreferDoVi       = config.bHdrPreferDoVi;
 	m_bHdrPassthrough      = config.bHdrPassthrough;
 	m_iHdrToggleDisplay    = config.iHdrToggleDisplay;
@@ -2434,7 +2435,9 @@ HRESULT CDX11VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTi
 		DLogIf(FAILED(hr), L"WaitForVBlank failed with error {}", HR2Str(hr));
 	}
 
-	SyncFrameToStreamTime(frameStartTime);
+	if (m_bAdjustPresentTime) {
+		SyncFrameToStreamTime(frameStartTime);
+	}
 
 	g_bPresent = true;
 	hr = m_pDXGISwapChain1->Present(1, 0);
@@ -3352,6 +3355,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	m_bDeintDouble         = config.bDeintDouble;
 	m_bInterpolateAt50pct  = config.bInterpolateAt50pct;
 	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
+	m_bAdjustPresentTime   = config.bAdjustPresentTime;
 	m_bDeintBlend          = config.bDeintBlend;
 
 	// checking what needs to be changed

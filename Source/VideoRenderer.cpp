@@ -52,6 +52,7 @@
 #define OPT_SwapEffect                     L"SwapEffect"
 #define OPT_ExclusiveFullscreen            L"ExclusiveFullscreen"
 #define OPT_VBlankBeforePresent            L"VBlankBeforePresent"
+#define OPT_AdjustPresentTime              L"AdjustPresentationTime"
 #define OPT_ReinitByDisplay                L"ReinitWhenChangingDisplay"
 #define OPT_HdrPreferDoVi                  L"HdrPreferDoVi"
 #define OPT_HdrPassthrough                 L"HdrPassthrough"
@@ -225,6 +226,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VBlankBeforePresent, dw)) {
 			m_Sets.bVBlankBeforePresent = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_AdjustPresentTime, dw)) {
+			m_Sets.bAdjustPresentTime = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ReinitByDisplay, dw)) {
 			m_Sets.bReinitByDisplay = !!dw;
@@ -1216,6 +1220,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_SwapEffect,          m_Sets.iSwapEffect);
 		key.SetDWORDValue(OPT_ExclusiveFullscreen, m_Sets.bExclusiveFS);
 		key.SetDWORDValue(OPT_VBlankBeforePresent, m_Sets.bVBlankBeforePresent);
+		key.SetDWORDValue(OPT_AdjustPresentTime,   m_Sets.bAdjustPresentTime);
 		key.SetDWORDValue(OPT_ReinitByDisplay,     m_Sets.bReinitByDisplay);
 		key.SetDWORDValue(OPT_HdrPreferDoVi,       m_Sets.bHdrPreferDoVi);
 		key.SetDWORDValue(OPT_HdrPassthrough,      m_Sets.bHdrPassthrough);

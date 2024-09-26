@@ -98,11 +98,12 @@ BEGIN
     CONTROL         "",IDC_SLIDER2,"msctls_trackbar32",WS_TABSTOP | 0x400,279,130,63,12
     LTEXT           "Swap effect:",IDC_STATIC3,178,153,43,8
     COMBOBOX        IDC_COMBO4,266,150,76,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Use exclusive fullscreen",IDC_CHECK11,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,166,93,10
-    CONTROL         "Wait for VBlank before Present",IDC_CHECK15,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,179,117,10
+    CONTROL         "Use exclusive fullscreen",IDC_CHECK11,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,165,93,10
+    CONTROL         "Wait for VBlank before Present",IDC_CHECK15,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,178,117,10
+    CONTROL         "Adjust the frame presentation time",IDC_CHECK13,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,191,133,10
     CONTROL         "Reinitialize device when changing display",IDC_CHECK16,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,192,151,10
-    PUSHBUTTON      "Default",IDC_BUTTON1,305,211,37,14
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,204,151,10
+    PUSHBUTTON      "Default",IDC_BUTTON1,305,217,37,14
     EDITTEXT        IDC_EDIT2,76,235,266,12,ES_READONLY | NOT WS_BORDER,WS_EX_RIGHT
 END
 
