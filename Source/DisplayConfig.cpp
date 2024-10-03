@@ -145,7 +145,7 @@ bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig
 
 						if (IsWindows11_24H2OrGreater()) {
 							DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO_2 color_info = {
-								{static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO_2),
+								{static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_TYPE_2::DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO_2),
 								 sizeof(color_info), mode.adapterId, mode.id}, {}
 							};
 							res = DisplayConfigGetDeviceInfo(&color_info.header);
@@ -252,7 +252,7 @@ bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs)
 
 				if (IsWindows11_24H2OrGreater()) {
 					DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO_2 color_info = {
-						{static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO_2),
+						{static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_TYPE_2::DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO_2),
 						 sizeof(color_info), mode.adapterId, mode.id}, {}
 					};
 					res = DisplayConfigGetDeviceInfo(&color_info.header);

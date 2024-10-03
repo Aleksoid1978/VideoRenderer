@@ -463,7 +463,7 @@ static bool ToggleHDR(const DisplayConfig_t& displayConfig, const bool bEnableAd
 
 	if (IsWindows11_24H2OrGreater()) {
 		DISPLAYCONFIG_SET_HDR_STATE setHdrState = {};
-		setHdrState.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_SET_HDR_STATE);
+		setHdrState.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_TYPE_2::DISPLAYCONFIG_DEVICE_INFO_SET_HDR_STATE);
 		setHdrState.header.size = sizeof(setHdrState);
 		setHdrState.header.adapterId = displayConfig.modeTarget.adapterId;
 		setHdrState.header.id = displayConfig.modeTarget.id;
