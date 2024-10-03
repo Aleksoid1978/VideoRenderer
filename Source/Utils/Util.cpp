@@ -1,15 +1,15 @@
 // Copyright (c) 2020-2024 v0lt, Aleksoid
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,14 +21,13 @@
 #include "stdafx.h"
 #include "Util.h"
 
-VERSIONHELPERAPI
-IsWindows11OrGreater() // https://walbourn.github.io/windows-sdk-for-windows-11/
+static bool IsWindows11OrGreater(DWORD dwBuildNumber)
 {
 	OSVERSIONINFOEXW osvi = {
 		.dwOSVersionInfoSize = sizeof(osvi),
 		.dwMajorVersion = HIBYTE(_WIN32_WINNT_WIN10),
 		.dwMinorVersion = LOBYTE(_WIN32_WINNT_WIN10),
-		.dwBuildNumber = 22000, };
+		.dwBuildNumber = dwBuildNumber, };
 	DWORDLONG const dwlConditionMask = VerSetConditionMask(
 		VerSetConditionMask(
 		VerSetConditionMask(
@@ -39,7 +38,7 @@ IsWindows11OrGreater() // https://walbourn.github.io/windows-sdk-for-windows-11/
 	return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_BUILDNUMBER, dwlConditionMask) != FALSE;
 }
 
-LPCWSTR GetWinVer()
+static LPCWSTR GetWinVer()
 {
 	// https://learn.microsoft.com/en-us/windows/release-health/release-information#windows-10-release-history
 	// https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information#windows-11-release-history
@@ -99,6 +98,12 @@ LPCWSTR GetWinVer()
 		return L"7";
 	}
 	return L"Vista or older";
+}
+
+bool IsWindows11_24H2OrGreater()
+{
+	static auto ret = IsWindows11OrGreater(26100);
+	return ret;
 }
 
 LPCWSTR GetWindowsVersion()

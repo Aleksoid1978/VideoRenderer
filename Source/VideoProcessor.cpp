@@ -157,9 +157,9 @@ void CVideoProcessor::SetDisplayInfo(const DisplayConfig_t& dc, const bool prima
 			const wchar_t* colenc = ColorEncodingToString(dc.colorEncoding);
 			if (colenc) {
 				str = std::format(L"\n  Color: {} {}-bit", colenc, dc.bitsPerChannel);
-				if (dc.advancedColor.HDRSupported()) {
+				if (dc.HDRSupported()) {
 					str.append(L" HDR10: ");
-					str.append(dc.advancedColor.HDREnabled() ? L"on" : L"off");
+					str.append(dc.HDREnabled() ? L"on" : L"off");
 				}
 			}
 		}

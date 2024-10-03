@@ -433,7 +433,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 			if (SUCCEEDED(pDXGIOutput->GetDesc(&desc))) {
 				DisplayConfig_t displayConfig = {};
 				if (GetDisplayConfig(desc.DeviceName, displayConfig)) {
-					m_hdrModeStartState[desc.DeviceName] = displayConfig.advancedColor.HDREnabled();
+					m_hdrModeStartState[desc.DeviceName] = displayConfig.HDREnabled();
 				}
 			}
 
@@ -459,15 +459,29 @@ static bool ToggleHDR(const DisplayConfig_t& displayConfig, const bool bEnableAd
 
 	auto beforeModeOpt = GetCurrentDisplayMode(displayConfig.displayName);
 
-	DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
-	setColorState.header.type         = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
-	setColorState.header.size         = sizeof(setColorState);
-	setColorState.header.adapterId    = displayConfig.modeTarget.adapterId;
-	setColorState.header.id           = displayConfig.modeTarget.id;
-	setColorState.enableAdvancedColor = bEnableAdvancedColor ? 1 : 0;
+	LONG ret = 1;
 
-	const auto ret = DisplayConfigSetDeviceInfo(&setColorState.header);
-	DLogIf(ERROR_SUCCESS != ret, L"ToggleHDR() : DisplayConfigSetDeviceInfo({}) failed with error {}", bEnableAdvancedColor, HR2Str(HRESULT_FROM_WIN32(ret)));
+	if (IsWindows11_24H2OrGreater()) {
+		DISPLAYCONFIG_SET_HDR_STATE setHdrState = {};
+		setHdrState.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_SET_HDR_STATE);
+		setHdrState.header.size = sizeof(setHdrState);
+		setHdrState.header.adapterId = displayConfig.modeTarget.adapterId;
+		setHdrState.header.id = displayConfig.modeTarget.id;
+		setHdrState.enableHdr = bEnableAdvancedColor ? 1 : 0;
+
+		ret = DisplayConfigSetDeviceInfo(&setHdrState.header);
+		DLogIf(ERROR_SUCCESS != ret, L"ToggleHDR() : DisplayConfigSetDeviceInfo(DISPLAYCONFIG_SET_HDR_STATE) with '{}' failed with error {}", bEnableAdvancedColor, HR2Str(HRESULT_FROM_WIN32(ret)));
+	} else {
+		DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
+		setColorState.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
+		setColorState.header.size = sizeof(setColorState);
+		setColorState.header.adapterId = displayConfig.modeTarget.adapterId;
+		setColorState.header.id = displayConfig.modeTarget.id;
+		setColorState.enableAdvancedColor = bEnableAdvancedColor ? 1 : 0;
+
+		ret = DisplayConfigSetDeviceInfo(&setColorState.header);
+		DLogIf(ERROR_SUCCESS != ret, L"ToggleHDR() : DisplayConfigSetDeviceInfo(DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE) with '{}' failed with error {}", bEnableAdvancedColor, HR2Str(HRESULT_FROM_WIN32(ret)));
+	}
 
 	if (ret == ERROR_SUCCESS && beforeModeOpt.has_value()) {
 		auto afterModeOpt = GetCurrentDisplayMode(displayConfig.displayName);
@@ -494,9 +508,7 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 	for (const auto& [displayName, state] : m_hdrModeSavedState) {
 		DisplayConfig_t displayConfig = {};
 		if (GetDisplayConfig(displayName.c_str(), displayConfig)) {
-			const auto& ac = displayConfig.advancedColor;
-
-			if (ac.HDRSupported() && ac.HDREnabled() != state) {
+			if (displayConfig.HDRSupported() && displayConfig.HDREnabled() != state) {
 				const auto ret = ToggleHDR(displayConfig, state);
 				DLogIf(!ret, L"CDX11VideoProcessor::~CDX11VideoProcessor() : Toggle HDR {} for '{}' failed", state ? L"ON" : L"OFF", displayName);
 			}
@@ -529,9 +541,8 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged,
 	DisplayConfig_t displayConfig = {};
 
 	if (GetDisplayConfig(mi.szDevice, displayConfig)) {
-		const auto& ac = displayConfig.advancedColor;
-		m_bHdrDisplayModeEnabled = ac.HDREnabled();
-		m_bHdrPassthroughSupport = ac.HDRSupported() && m_bHdrDisplayModeEnabled;
+		m_bHdrDisplayModeEnabled = displayConfig.HDREnabled();
+		m_bHdrPassthroughSupport = displayConfig.HDRSupported() && m_bHdrDisplayModeEnabled;
 		m_DisplayBitsPerChannel = displayConfig.bitsPerChannel;
 	}
 
@@ -1484,19 +1495,17 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 		DisplayConfig_t displayConfig = {};
 
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
-			const auto& ac = displayConfig.advancedColor;
-
-			if (ac.HDRSupported() && m_iHdrToggleDisplay) {
+			if (displayConfig.HDRSupported() && m_iHdrToggleDisplay) {
 				bool bHDREnabled = false;
 				const auto it = m_hdrModeStartState.find(mi.szDevice);
 				if (it != m_hdrModeStartState.cend()) {
 					bHDREnabled = it->second;
 				}
 
-				const bool bNeedToggleOn  = !ac.HDREnabled() &&
+				const bool bNeedToggleOn  = !displayConfig.HDREnabled() &&
 											(m_iHdrToggleDisplay == HDRTD_On || m_iHdrToggleDisplay == HDRTD_OnOff
 											 || m_bIsFullscreen && (m_iHdrToggleDisplay == HDRTD_On_Fullscreen || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen));
-				const bool bNeedToggleOff = ac.HDREnabled() &&
+				const bool bNeedToggleOff = displayConfig.HDREnabled() &&
 											!bHDREnabled && !m_bIsFullscreen && m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen;
 				DLog(L"HandleHDRToggle() : {}, {}", bNeedToggleOn, bNeedToggleOff);
 				if (bNeedToggleOn) {
@@ -1530,8 +1539,6 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 		DisplayConfig_t displayConfig = {};
 
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
-			const auto& ac = displayConfig.advancedColor;
-
 			// check if HDR was already enabled in Windows before starting
 			BOOL bWindowsHDREnabled = FALSE;
 			const auto& it = m_hdrModeStartState.find(mi.szDevice);
@@ -1539,7 +1546,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 				bWindowsHDREnabled = it->second;
 			}
 
-			if (ac.HDRSupported() && ac.HDREnabled() &&
+			if (displayConfig.HDRSupported() && displayConfig.HDREnabled() &&
 					(!bWindowsHDREnabled || (m_iHdrToggleDisplay == HDRTD_OnOff || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen && m_bIsFullscreen))) {
 				bRet = ToggleHDR(displayConfig, false);
 				DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR OFF failed");
@@ -1562,9 +1569,8 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 		DisplayConfig_t displayConfig = {};
 
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
-			const auto& ac = displayConfig.advancedColor;
-			m_bHdrDisplayModeEnabled = ac.HDREnabled();
-			m_bHdrPassthroughSupport = ac.HDRSupported() && m_bHdrDisplayModeEnabled;
+			m_bHdrDisplayModeEnabled = displayConfig.HDREnabled();
+			m_bHdrPassthroughSupport = displayConfig.HDRSupported() && m_bHdrDisplayModeEnabled;
 			m_DisplayBitsPerChannel = displayConfig.bitsPerChannel;
 		}
 	}
@@ -3060,15 +3066,13 @@ HRESULT CDX11VideoProcessor::Reset()
 		DisplayConfig_t displayConfig = {};
 
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
-			const auto& ac = displayConfig.advancedColor;
-			const auto bHdrPassthroughSupport = ac.HDRSupported() && ac.HDREnabled();
-
-			if ((bHdrPassthroughSupport && !m_bHdrPassthroughSupport) || (!ac.HDREnabled() && m_bHdrPassthroughSupport)) {
+			const auto bHdrPassthroughSupport = displayConfig.HDRSupported() && displayConfig.HDREnabled();
+			if ((bHdrPassthroughSupport && !m_bHdrPassthroughSupport) || (!displayConfig.HDREnabled() && m_bHdrPassthroughSupport)) {
 				m_hdrModeSavedState.erase(mi.szDevice);
 
 				if (m_pFilter->m_inputMT.IsValid()) {
 					ReleaseSwapChain();
-					if (m_iSwapEffect == SWAPEFFECT_Discard && !ac.HDREnabled()) {
+					if (m_iSwapEffect == SWAPEFFECT_Discard && !displayConfig.HDREnabled()) {
 						m_pFilter->Init(true);
 					} else {
 						Init(m_hWnd, true);

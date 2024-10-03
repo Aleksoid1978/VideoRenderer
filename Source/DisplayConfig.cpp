@@ -143,14 +143,28 @@ bool GetDisplayConfig(const wchar_t* displayName, DisplayConfig_t& displayConfig
 						}
 						displayConfig.modeTarget = mode;
 
-						DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {
-							{DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO, sizeof(color_info), mode.adapterId, mode.id}, {}
-						};
-						res = DisplayConfigGetDeviceInfo(&color_info.header);
-						if (ERROR_SUCCESS == res) {
-							displayConfig.colorEncoding = color_info.colorEncoding;
-							displayConfig.bitsPerChannel = color_info.bitsPerColorChannel;
-							displayConfig.advancedColor.value = color_info.value;
+						if (IsWindows11_24H2OrGreater()) {
+							DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO_2 color_info = {
+								{static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO_2),
+								 sizeof(color_info), mode.adapterId, mode.id}, {}
+							};
+							res = DisplayConfigGetDeviceInfo(&color_info.header);
+							if (ERROR_SUCCESS == res) {
+								displayConfig.colorEncoding = color_info.colorEncoding;
+								displayConfig.bitsPerChannel = color_info.bitsPerColorChannel;
+								displayConfig.windows1124H2Colors.value = color_info.value;
+								displayConfig.windows1124H2Colors.activeColorMode = color_info.activeColorMode;
+							}
+						} else {
+							DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {
+								{DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO, sizeof(color_info), mode.adapterId, mode.id}, {}
+							};
+							res = DisplayConfigGetDeviceInfo(&color_info.header);
+							if (ERROR_SUCCESS == res) {
+								displayConfig.colorEncoding = color_info.colorEncoding;
+								displayConfig.bitsPerChannel = color_info.bitsPerColorChannel;
+								displayConfig.advancedColor.value = color_info.value;
+							}
 						}
 					}
 
@@ -236,14 +250,28 @@ bool GetDisplayConfigs(std::vector<DisplayConfig_t>& displayConfigs)
 				}
 				dc.modeTarget = mode;
 
-				DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {
-							{DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO, sizeof(color_info), mode.adapterId, mode.id}, {}
-				};
-				res = DisplayConfigGetDeviceInfo(&color_info.header);
-				if (ERROR_SUCCESS == res) {
-					dc.colorEncoding = color_info.colorEncoding;
-					dc.bitsPerChannel = color_info.bitsPerColorChannel;
-					dc.advancedColor.value = color_info.value;
+				if (IsWindows11_24H2OrGreater()) {
+					DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO_2 color_info = {
+						{static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO_2),
+						 sizeof(color_info), mode.adapterId, mode.id}, {}
+					};
+					res = DisplayConfigGetDeviceInfo(&color_info.header);
+					if (ERROR_SUCCESS == res) {
+						dc.colorEncoding = color_info.colorEncoding;
+						dc.bitsPerChannel = color_info.bitsPerColorChannel;
+						dc.windows1124H2Colors.value = color_info.value;
+						dc.windows1124H2Colors.activeColorMode = color_info.activeColorMode;
+					}
+				} else {
+					DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO color_info = {
+						{DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO, sizeof(color_info), mode.adapterId, mode.id}, {}
+					};
+					res = DisplayConfigGetDeviceInfo(&color_info.header);
+					if (ERROR_SUCCESS == res) {
+						dc.colorEncoding = color_info.colorEncoding;
+						dc.bitsPerChannel = color_info.bitsPerColorChannel;
+						dc.advancedColor.value = color_info.value;
+					}
 				}
 			}
 
