@@ -1,4 +1,4 @@
-0.8.6 dev
+0.8.7.2295 - 2024-10-05
 ------------------------
 Cosmetic fixes to the settings window.
 Statistics font size now scales according to Windows text scale.
