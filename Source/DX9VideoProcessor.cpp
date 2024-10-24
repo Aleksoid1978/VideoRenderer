@@ -594,7 +594,7 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 	if (m_VendorId == PCIV_INTEL && CPUInfo::HaveSSE41()) {
 		m_pCopyGpuFn = CopyGpuFrame_SSE41;
 	} else {
-		m_pCopyGpuFn = CopyFrameAsIs;
+		m_pCopyGpuFn = CopyPlaneAsIs;
 	}
 
 	bInitVP = false;
@@ -1495,7 +1495,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				if (m_TexSrcVideo.Plane2.pSurface) {
 					hr = m_TexSrcVideo.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 					if (S_OK == hr) {
-						CopyFrameAsIs(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, data, m_srcPitch);
+						CopyPlaneAsIs(m_srcHeight, (BYTE*)lr.pBits, lr.Pitch, data, m_srcPitch);
 						hr = m_TexSrcVideo.pSurface->UnlockRect();
 
 						hr = m_TexSrcVideo.Plane2.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
@@ -1503,14 +1503,14 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 							const UINT cromaH = m_srcHeight / m_srcParams.pDX9Planes->div_chroma_h;
 							const UINT cromaPitch = (m_TexSrcVideo.Plane3.pSurface) ? m_srcPitch / m_srcParams.pDX9Planes->div_chroma_w : m_srcPitch;
 							data += m_srcPitch * m_srcHeight;
-							CopyFrameAsIs(cromaH, (BYTE*)lr.pBits, lr.Pitch, data, cromaPitch);
+							CopyPlaneAsIs(cromaH, (BYTE*)lr.pBits, lr.Pitch, data, cromaPitch);
 							hr = m_TexSrcVideo.Plane2.pSurface->UnlockRect();
 
 							if (m_TexSrcVideo.Plane3.pSurface) {
 								hr = m_TexSrcVideo.Plane3.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD | D3DLOCK_NOSYSLOCK);
 								if (S_OK == hr) {
 									data += cromaPitch * cromaH;
-									CopyFrameAsIs(cromaH, (BYTE*)lr.pBits, lr.Pitch, data, cromaPitch);
+									CopyPlaneAsIs(cromaH, (BYTE*)lr.pBits, lr.Pitch, data, cromaPitch);
 									hr = m_TexSrcVideo.Plane3.pSurface->UnlockRect();
 								}
 							}
@@ -1783,7 +1783,7 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 	D3DLOCKED_RECT lr;
 	hr = pRGB32Surface->LockRect(&lr, nullptr, D3DLOCK_READONLY);
 	if (S_OK == hr) {
-		CopyFrameAsIs(h, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)lr.pBits + lr.Pitch * (h - 1), -lr.Pitch);
+		CopyPlaneAsIs(h, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)lr.pBits + lr.Pitch * (h - 1), -lr.Pitch);
 		hr = pRGB32Surface->UnlockRect();
 	}
 
@@ -1836,7 +1836,7 @@ HRESULT CDX9VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned *pSize)
 	D3DLOCKED_RECT lr;
 	hr = pDestSurface->LockRect(&lr, nullptr, D3DLOCK_READONLY);
 	if (S_OK == hr) {
-		CopyFrameAsIs(height, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)lr.pBits + lr.Pitch * (height - 1), -lr.Pitch);
+		CopyPlaneAsIs(height, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)lr.pBits + lr.Pitch * (height - 1), -lr.Pitch);
 		hr = pDestSurface->UnlockRect();
 	}
 
