@@ -69,8 +69,9 @@ protected:
 
 	bool m_bVPScalingUseShaders = false;
 
-	CopyFrameDataFn m_pConvertFn = nullptr;
-	CopyFrameDataFn m_pCopyGpuFn = CopyPlaneAsIs;
+	CopyFrameDataFn m_pConvertFn   = nullptr;
+	CopyFrameDataFn m_pCopyPlaneFn = CopyPlaneAsIs;
+	CopyFrameDataFn m_pCopyGpuFn   = CopyPlaneAsIs;
 
 	// Input parameters
 	FmtConvParams_t m_srcParams = GetFmtConvParams(CF_NONE);
