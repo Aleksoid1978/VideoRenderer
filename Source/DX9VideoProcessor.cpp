@@ -765,6 +765,7 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 	m_srcParams      = params;
 	m_srcDXVA2Format = dxva2format;
 	m_pConvertFn     = GetCopyFunction(params);
+	m_pCopyPlaneFn   = GetCopyPlaneFunction(params);
 
 	m_DXVA2VP.GetProcAmpRanges(m_DXVA2ProcAmpRanges);
 	m_DXVA2VP.SetProcAmpValues(m_DXVA2ProcAmpValues);
@@ -794,6 +795,7 @@ HRESULT CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const
 	m_srcParams      = params;
 	m_srcDXVA2Format = d3dformat;
 	m_pConvertFn     = GetCopyFunction(params);
+	m_pCopyPlaneFn   = GetCopyPlaneFunction(params);
 
 	// set default ProcAmp ranges
 	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);

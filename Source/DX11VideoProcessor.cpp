@@ -1845,6 +1845,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 	m_srcParams      = params;
 	m_srcDXGIFormat  = dxgiFormat;
 	m_pConvertFn     = GetCopyFunction(params);
+	m_pCopyPlaneFn   = GetCopyPlaneFunction(params);
 
 	DLog(L"CDX11VideoProcessor::InitializeD3D11VP() completed successfully");
 
@@ -1868,6 +1869,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 	m_srcParams      = params;
 	m_srcDXGIFormat  = srcDXGIFormat;
 	m_pConvertFn     = GetCopyFunction(params);
+	m_pCopyPlaneFn   = GetCopyPlaneFunction(params);
 
 	// set default ProcAmp ranges
 	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);

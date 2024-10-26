@@ -235,6 +235,7 @@ static ColorFormat_t fourcc_to_cformat(const DWORD fourcc)
 	case MAKEFOURCC('Y','1',0,16):      cformat = CF_Y16;       break;
 	case MAKEFOURCC('Y','3',11,16):     cformat = CF_YUV420P16; break;
 	case MAKEFOURCC('Y','3',10,16):     cformat = CF_YUV422P16; break;
+	case MAKEFOURCC('Y','3',0,10):      cformat = CF_YUV444P10; break;
 	case MAKEFOURCC('Y','3',0,16):      cformat = CF_YUV444P16; break;
 	case MAKEFOURCC('G','3',0,8):       cformat = CF_GBRP8;     break;
 	case MAKEFOURCC('G','3',0,16):      cformat = CF_GBRP16;    break;
@@ -321,6 +322,7 @@ static const FmtConvParams_t s_FmtConvMapping[] = {
 
 	{CF_YUV420P16, L"YUV420P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes420P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes420P16,       2, 3,        CS_YUV,  420,       16,    &CopyPlaneAsIs,           nullptr},
 	{CF_YUV422P16, L"YUV422P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes422P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes422P16,       2, 4,        CS_YUV,  422,       16,    &CopyPlaneAsIs,           nullptr},
+	{CF_YUV444P10, L"YUV444P10", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_YUV,  444,       10,    &CopyPlaneAsIs,           nullptr},
 	{CF_YUV444P16, L"YUV444P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_YUV,  444,       16,    &CopyPlaneAsIs,           nullptr},
 
 	{CF_GBRP8,     L"GBRP8",     D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes444P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes444P,       1, 6,        CS_RGB,  444,       8,     &CopyPlaneAsIs,           nullptr},
@@ -362,6 +364,14 @@ CopyFrameDataFn GetCopyFunction(const FmtConvParams_t& params)
 		return params.FuncSSSE3;
 	}
 	return params.Func;
+}
+
+CopyFrameDataFn GetCopyPlaneFunction(const FmtConvParams_t& params)
+{
+	if (params.cformat == CF_YUV444P10) {
+		return CopyPlane10to16;
+	}
+	return CopyPlaneAsIs;
 }
 
 void CopyPlaneAsIs(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
@@ -692,6 +702,22 @@ void CopyFrameR210(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src,
 			uint32_t g = ((t & 0x00fc0000) >> 8) | ((t & 0x00000f00) << 8);
 			uint32_t b = ((t & 0xff000000) >> 4) | ((t & 0x00030000) << 12);
 			dst32[i] = r | g | b;
+		}
+		src += src_pitch;
+		dst += dst_pitch;
+	}
+}
+
+void CopyPlane10to16(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
+{
+	ASSERT(src_pitch > 0);
+	UINT line_pixels = src_pitch / 2;
+
+	for (UINT y = 0; y < lines; ++y) {
+		uint16_t* src16 = (uint16_t*)src;
+		uint16_t* dst16 = (uint16_t*)dst;
+		for (UINT i = 0; i < line_pixels; i++) {
+			dst16[i] = src16[i] << 6;
 		}
 		src += src_pitch;
 		dst += dst_pitch;

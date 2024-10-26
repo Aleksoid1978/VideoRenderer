@@ -94,6 +94,7 @@ enum ColorFormat_t {
 	CF_YUV444P8,
 	CF_YUV420P16,
 	CF_YUV422P16,
+	CF_YUV444P10,
 	CF_YUV444P16,
 	CF_GBRP8,
 	CF_GBRP16,
@@ -153,6 +154,7 @@ ColorFormat_t GetColorFormat(const CMediaType* pmt);
 const FmtConvParams_t& GetFmtConvParams(const ColorFormat_t fmt);
 const FmtConvParams_t& GetFmtConvParams(const CMediaType* pmt);
 CopyFrameDataFn GetCopyFunction(const FmtConvParams_t& params);
+CopyFrameDataFn GetCopyPlaneFunction(const FmtConvParams_t& params);
 
 // YUY2, AYUV, RGB32 to D3DFMT_X8R8G8B8, ARGB32 to D3DFMT_A8R8G8B8
 void CopyPlaneAsIs(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
@@ -175,6 +177,8 @@ void CopyFrameYV12(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src,
 void CopyFrameY410(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 // r210
 void CopyFrameR210(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
+// YUV444P10
+void CopyPlane10to16(const UINT lines, BYTE * dst, UINT dst_pitch, const BYTE * src, int src_pitch);
 
 void ConvertXRGB10toXRGB8(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 
