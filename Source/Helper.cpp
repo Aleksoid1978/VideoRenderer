@@ -240,6 +240,7 @@ static ColorFormat_t fourcc_to_cformat(const DWORD fourcc)
 	case MAKEFOURCC('Y','3',0,10):      cformat = CF_YUV444P10; break;
 	case MAKEFOURCC('Y','3',0,16):      cformat = CF_YUV444P16; break;
 	case MAKEFOURCC('G','3',0,8):       cformat = CF_GBRP8;     break;
+	case MAKEFOURCC('G','3',0,10):      cformat = CF_GBRP10;    break;
 	case MAKEFOURCC('G','3',0,16):      cformat = CF_GBRP16;    break;
 	case FCC('b48r'):
 	case MAKEFOURCC('R','G','B',48):    cformat = CF_RGB48;     break;
@@ -330,6 +331,7 @@ static const FmtConvParams_t s_FmtConvMapping[] = {
 	{CF_YUV444P16, L"YUV444P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_YUV,  444,       16,    &CopyPlaneAsIs,           nullptr},
 
 	{CF_GBRP8,     L"GBRP8",     D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes444P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes444P,       1, 6,        CS_RGB,  444,       8,     &CopyPlaneAsIs,           nullptr},
+	{CF_GBRP10,    L"GBRP10",    D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_RGB,  444,       10,    &CopyPlaneAsIs,           nullptr},
 	{CF_GBRP16,    L"GBRP16",    D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_RGB,  444,       16,    &CopyPlaneAsIs,           nullptr},
 
 	{CF_RGB24,     L"RGB24",     D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,        nullptr, DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,        nullptr,       3, 2,        CS_RGB,  444,       8,     &CopyFrameRGB24, &CopyRGB24_SSSE3},
@@ -372,10 +374,15 @@ CopyFrameDataFn GetCopyFunction(const FmtConvParams_t& params)
 
 CopyFrameDataFn GetCopyPlaneFunction(const FmtConvParams_t& params)
 {
-	if (params.cformat == CF_YUV420P10 || params.cformat == CF_YUV422P10 || params.cformat == CF_YUV444P10) {
+	switch (params.cformat) {
+	case CF_YUV420P10:
+	case CF_YUV422P10:
+	case CF_YUV444P10:
+	case CF_GBRP10:
 		return CopyPlane10to16;
+	default:
+		return CopyPlaneAsIs;
 	}
-	return CopyPlaneAsIs;
 }
 
 void CopyPlaneAsIs(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)

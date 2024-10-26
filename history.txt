@@ -1,6 +1,6 @@
 0.8.8 dev
 ------------------------
-Added support for YUV420P10, YUV422P10 and YUV444P10 formats using MEDIASUBTYPE_LAV_RAWVIDEO.
+Added support for YUV420P10, YUV422P10, YUV444P10 and GBRP10 formats using MEDIASUBTYPE_LAV_RAWVIDEO.
 
 0.8.7.2295 - 2024-10-05
 ------------------------
