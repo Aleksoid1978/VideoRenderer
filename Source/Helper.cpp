@@ -233,7 +233,9 @@ static ColorFormat_t fourcc_to_cformat(const DWORD fourcc)
 	case FCC('Y800'):
 	case MAKEFOURCC('Y','8',0x20,0x20): cformat = CF_Y8;        break;
 	case MAKEFOURCC('Y','1',0,16):      cformat = CF_Y16;       break;
+	case MAKEFOURCC('Y','3',11,10):     cformat = CF_YUV420P10; break;
 	case MAKEFOURCC('Y','3',11,16):     cformat = CF_YUV420P16; break;
+	case MAKEFOURCC('Y','3',10,10):     cformat = CF_YUV422P10; break;
 	case MAKEFOURCC('Y','3',10,16):     cformat = CF_YUV422P16; break;
 	case MAKEFOURCC('Y','3',0,10):      cformat = CF_YUV444P10; break;
 	case MAKEFOURCC('Y','3',0,16):      cformat = CF_YUV444P16; break;
@@ -320,7 +322,9 @@ static const FmtConvParams_t s_FmtConvMapping[] = {
 	{CF_YUV422P8,  L"YUV422P8",  D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes422P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes422P,       1, 4,        CS_YUV,  422,       8,     &CopyPlaneAsIs,           nullptr},
 	{CF_YUV444P8,  L"YUV444P8",  D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes444P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes444P,       1, 6,        CS_YUV,  444,       8,     &CopyPlaneAsIs,           nullptr},
 
+	{CF_YUV420P10, L"YUV420P10", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes420P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes420P16,       2, 3,        CS_YUV,  420,       10,    &CopyPlaneAsIs,           nullptr},
 	{CF_YUV420P16, L"YUV420P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes420P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes420P16,       2, 3,        CS_YUV,  420,       16,    &CopyPlaneAsIs,           nullptr},
+	{CF_YUV422P10, L"YUV422P10", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes422P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes422P16,       2, 4,        CS_YUV,  422,       10,    &CopyPlaneAsIs,           nullptr},
 	{CF_YUV422P16, L"YUV422P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes422P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes422P16,       2, 4,        CS_YUV,  422,       16,    &CopyPlaneAsIs,           nullptr},
 	{CF_YUV444P10, L"YUV444P10", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_YUV,  444,       10,    &CopyPlaneAsIs,           nullptr},
 	{CF_YUV444P16, L"YUV444P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_YUV,  444,       16,    &CopyPlaneAsIs,           nullptr},
@@ -368,7 +372,7 @@ CopyFrameDataFn GetCopyFunction(const FmtConvParams_t& params)
 
 CopyFrameDataFn GetCopyPlaneFunction(const FmtConvParams_t& params)
 {
-	if (params.cformat == CF_YUV444P10) {
+	if (params.cformat == CF_YUV420P10 || params.cformat == CF_YUV422P10 || params.cformat == CF_YUV444P10) {
 		return CopyPlane10to16;
 	}
 	return CopyPlaneAsIs;
