@@ -545,7 +545,7 @@ HWND GetParentOwner(HWND hwnd)
 {
 	HWND hWndParent = hwnd;
 	HWND hWndT;
-	while ((::GetWindowLong(hWndParent, GWL_STYLE) & WS_CHILD) &&
+	while ((::GetWindowLongPtrW(hWndParent, GWL_STYLE) & WS_CHILD) &&
 		(hWndT = ::GetParent(hWndParent)) != NULL) {
 		hWndParent = hWndT;
 	}

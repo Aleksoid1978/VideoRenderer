@@ -554,7 +554,7 @@ void CopyFrameRGB48(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src
 	}
 }
 
-void CopyRGB48_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
+void CopyFrameRGB48_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
 	UINT line_pixels  = abs(src_pitch) / 6;
 	UINT line_pixels8 = line_pixels & ~(8u - 1);

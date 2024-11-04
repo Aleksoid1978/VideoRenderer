@@ -2064,7 +2064,7 @@ void CDX9VideoProcessor::SetStereo3dTransform(int value)
 
 	if (m_iStereo3dTransform == 1) {
 		if (!m_pPSHalfOUtoInterlace) {
-			CreatePShaderFromResource(&m_pPSHalfOUtoInterlace, IDF_PS_9_HALFOU_TO_INTERLACE);
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSHalfOUtoInterlace, IDF_PS_9_HALFOU_TO_INTERLACE));
 		}
 	} else {
 		m_pPSHalfOUtoInterlace.Release();
