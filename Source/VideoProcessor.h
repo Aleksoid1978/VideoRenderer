@@ -69,7 +69,6 @@ protected:
 
 	bool m_bVPScalingUseShaders = false;
 
-	CopyFrameDataFn m_pConvertFn   = nullptr;
 	CopyFrameDataFn m_pCopyPlaneFn = CopyPlaneAsIs;
 	CopyFrameDataFn m_pCopyGpuFn   = CopyPlaneAsIs;
 

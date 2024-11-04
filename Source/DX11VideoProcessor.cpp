@@ -670,7 +670,7 @@ void CDX11VideoProcessor::ReleaseVP()
 
 	m_srcParams      = {};
 	m_srcDXGIFormat  = DXGI_FORMAT_UNKNOWN;
-	m_pConvertFn     = nullptr;
+	m_pCopyPlaneFn   = CopyPlaneAsIs;
 	m_srcWidth       = 0;
 	m_srcHeight      = 0;
 }
@@ -1146,9 +1146,8 @@ HRESULT CDX11VideoProcessor::MemCopyToTexSrcVideo(const BYTE* srcData, const int
 	} else {
 		hr = m_pDeviceContext->Map(m_TexSrcVideo.pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 		if (SUCCEEDED(hr)) {
-			ASSERT(m_pConvertFn);
 			const BYTE* src = (srcPitch < 0) ? srcData + srcPitch * (1 - (int)m_srcLines) : srcData;
-			m_pConvertFn(m_srcLines, (BYTE*)mappedResource.pData, mappedResource.RowPitch, src, srcPitch);
+			m_pCopyPlaneFn(m_srcLines, (BYTE*)mappedResource.pData, mappedResource.RowPitch, src, srcPitch);
 			m_pDeviceContext->Unmap(m_TexSrcVideo.pTexture, 0);
 		}
 	}
@@ -1844,8 +1843,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 	m_srcHeight      = height;
 	m_srcParams      = params;
 	m_srcDXGIFormat  = dxgiFormat;
-	m_pConvertFn     = GetCopyFunction(params);
-	m_pCopyPlaneFn   = GetCopyPlaneFunction(params);
+	m_pCopyPlaneFn   = GetCopyPlaneFunction(params, VP_D3D11);
 
 	DLog(L"CDX11VideoProcessor::InitializeD3D11VP() completed successfully");
 
@@ -1868,8 +1866,7 @@ HRESULT CDX11VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, cons
 	m_srcHeight      = height;
 	m_srcParams      = params;
 	m_srcDXGIFormat  = srcDXGIFormat;
-	m_pConvertFn     = GetCopyFunction(params);
-	m_pCopyPlaneFn   = GetCopyPlaneFunction(params);
+	m_pCopyPlaneFn   = GetCopyPlaneFunction(params, VP_D3D11_SHADER);
 
 	// set default ProcAmp ranges
 	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);

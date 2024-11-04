@@ -302,53 +302,53 @@ static DX11PlaneConfig_t DX11Plane_RGB10A2 = { DXGI_FORMAT_R10G10B10A2_UNORM,  D
 static DX11PlaneConfig_t DX11Plane_RGBA16  = { DXGI_FORMAT_R16G16B16A16_UNORM, DXGI_FORMAT_UNKNOWN, DXGI_FORMAT_UNKNOWN, 1, 1 }; // Y210, Y216, Y416
 
 static const FmtConvParams_t s_FmtConvMapping[] = {
-	// cformat    | str         | DXVA2Format    | D3DFormat(DX9)     |pDX9Planes| VP11Format                | DX11Format                |  pDX11Planes  |Packsize|PitchCoeff| CSType|Subsampling|CDepth| Func           |FuncSSSE3
-	{CF_NONE,      L"unknown",   D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,         nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,               nullptr,       0, 0,        CS_YUV,    0,       0,     nullptr,                  nullptr},
-	{CF_NV12,      L"NV12",      D3DFMT_NV12,     D3DFMT_NV12,     &DX9PlanesNV12, DXGI_FORMAT_NV12,           DXGI_FORMAT_NV12,          &DX11PlanesNV12,       1, 3,        CS_YUV,  420,       8,     &CopyPlaneAsIs,           nullptr},
-	{CF_P010,      L"P010",      D3DFMT_P010,     D3DFMT_P010,     &DX9PlanesP01x, DXGI_FORMAT_P010,           DXGI_FORMAT_P010,          &DX11PlanesP01x,       2, 3,        CS_YUV,  420,       16,    &CopyPlaneAsIs,           nullptr},
-	{CF_P016,      L"P016",      D3DFMT_P016,     D3DFMT_P016,     &DX9PlanesP01x, DXGI_FORMAT_P016,           DXGI_FORMAT_P016,          &DX11PlanesP01x,       2, 3,        CS_YUV,  420,       16,    &CopyPlaneAsIs,           nullptr},
-	{CF_YUY2,      L"YUY2",      D3DFMT_YUY2,     D3DFMT_YUY2,    &DX9Plane_ARGB8, DXGI_FORMAT_YUY2,           DXGI_FORMAT_YUY2,         &DX11Plane_RGBA8,       2, 2,        CS_YUV,  422,       8,     &CopyPlaneAsIs,           nullptr},
-	{CF_P210,      L"P210",      D3DFMT_P210,     D3DFMT_P210,     &DX9PlanesP21x, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11PlanesP21x,       2, 4,        CS_YUV,  422,       16,    &CopyPlaneAsIs,           nullptr},
-	{CF_P216,      L"P216",      D3DFMT_P216,     D3DFMT_P216,     &DX9PlanesP21x, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11PlanesP21x,       2, 4,        CS_YUV,  422,       16,    &CopyPlaneAsIs,           nullptr},
-	{CF_Y210,      L"Y210",      D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,         nullptr, DXGI_FORMAT_Y210,           DXGI_FORMAT_Y210,        &DX11Plane_RGBA16,       4, 2,        CS_YUV,  422,       10,    &CopyPlaneAsIs,           nullptr},
-	{CF_Y216,      L"Y216",      D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,         nullptr, DXGI_FORMAT_Y216,           DXGI_FORMAT_Y216,        &DX11Plane_RGBA16,       4, 2,        CS_YUV,  422,       16,    &CopyPlaneAsIs,           nullptr},
-	{CF_AYUV,      L"AYUV",      D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,        nullptr, DXGI_FORMAT_AYUV,           DXGI_FORMAT_AYUV,         &DX11Plane_RGBA8,       4, 2,        CS_YUV,  444,       8,     &CopyPlaneAsIs,           nullptr},
-	{CF_Y410,      L"Y410",      D3DFMT_Y410,     D3DFMT_A2B10G10R10,     nullptr, DXGI_FORMAT_Y410,           DXGI_FORMAT_Y410,       &DX11Plane_RGB10A2,       4, 2,        CS_YUV,  444,       10,    &CopyPlaneAsIs,           nullptr},
-	{CF_Y416,      L"Y416",      D3DFMT_Y416,     D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_Y416,           DXGI_FORMAT_Y416,        &DX11Plane_RGBA16,       8, 2,        CS_YUV,  444,       16,    &CopyPlaneAsIs,           nullptr},
+	// cformat    | str         | DXVA2Format    | D3DFormat(DX9)     |pDX9Planes| VP11Format                | DX11Format                |  pDX11Planes  |Packsize|PitchCoeff| CSType|Subsampling|CDepth
+	{CF_NONE,      L"unknown",   D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,         nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_UNKNOWN,               nullptr,       0, 0,        CS_YUV,    0,        0 },
+	{CF_NV12,      L"NV12",      D3DFMT_NV12,     D3DFMT_NV12,     &DX9PlanesNV12, DXGI_FORMAT_NV12,           DXGI_FORMAT_NV12,          &DX11PlanesNV12,       1, 3,        CS_YUV,  420,        8 },
+	{CF_P010,      L"P010",      D3DFMT_P010,     D3DFMT_P010,     &DX9PlanesP01x, DXGI_FORMAT_P010,           DXGI_FORMAT_P010,          &DX11PlanesP01x,       2, 3,        CS_YUV,  420,       16 },
+	{CF_P016,      L"P016",      D3DFMT_P016,     D3DFMT_P016,     &DX9PlanesP01x, DXGI_FORMAT_P016,           DXGI_FORMAT_P016,          &DX11PlanesP01x,       2, 3,        CS_YUV,  420,       16 },
+	{CF_YUY2,      L"YUY2",      D3DFMT_YUY2,     D3DFMT_YUY2,    &DX9Plane_ARGB8, DXGI_FORMAT_YUY2,           DXGI_FORMAT_YUY2,         &DX11Plane_RGBA8,       2, 2,        CS_YUV,  422,        8 },
+	{CF_P210,      L"P210",      D3DFMT_P210,     D3DFMT_P210,     &DX9PlanesP21x, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11PlanesP21x,       2, 4,        CS_YUV,  422,       16 },
+	{CF_P216,      L"P216",      D3DFMT_P216,     D3DFMT_P216,     &DX9PlanesP21x, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11PlanesP21x,       2, 4,        CS_YUV,  422,       16 },
+	{CF_Y210,      L"Y210",      D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,         nullptr, DXGI_FORMAT_Y210,           DXGI_FORMAT_Y210,        &DX11Plane_RGBA16,       4, 2,        CS_YUV,  422,       10 },
+	{CF_Y216,      L"Y216",      D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,         nullptr, DXGI_FORMAT_Y216,           DXGI_FORMAT_Y216,        &DX11Plane_RGBA16,       4, 2,        CS_YUV,  422,       16 },
+	{CF_AYUV,      L"AYUV",      D3DFMT_UNKNOWN,  D3DFMT_X8R8G8B8,        nullptr, DXGI_FORMAT_AYUV,           DXGI_FORMAT_AYUV,         &DX11Plane_RGBA8,       4, 2,        CS_YUV,  444,        8 },
+	{CF_Y410,      L"Y410",      D3DFMT_Y410,     D3DFMT_A2B10G10R10,     nullptr, DXGI_FORMAT_Y410,           DXGI_FORMAT_Y410,       &DX11Plane_RGB10A2,       4, 2,        CS_YUV,  444,       10 },
+	{CF_Y416,      L"Y416",      D3DFMT_Y416,     D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_Y416,           DXGI_FORMAT_Y416,        &DX11Plane_RGBA16,       8, 2,        CS_YUV,  444,       16 },
 
-	{CF_YV12,      L"YV12",      D3DFMT_YV12,     D3DFMT_YV12,     &DX9Planes420P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes420P,       1, 3,        CS_YUV,  420,       8,     &CopyFrameYV12,           nullptr},
-	{CF_YV16,      L"YV16",      D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes422P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes422P,       1, 4,        CS_YUV,  422,       8,     &CopyPlaneAsIs,           nullptr},
-	{CF_YV24,      L"YV24",      D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes444P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes444P,       1, 6,        CS_YUV,  444,       8,     &CopyPlaneAsIs,           nullptr},
+	{CF_YV12,      L"YV12",      D3DFMT_YV12,     D3DFMT_YV12,     &DX9Planes420P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes420P,       1, 3,        CS_YUV,  420,        8 },
+	{CF_YV16,      L"YV16",      D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes422P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes422P,       1, 4,        CS_YUV,  422,        8 },
+	{CF_YV24,      L"YV24",      D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes444P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes444P,       1, 6,        CS_YUV,  444,        8 },
 
-	{CF_YUV420P8,  L"YUV420P8",  D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes420P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes420P,       1, 3,        CS_YUV,  420,       8,     &CopyPlaneAsIs,           nullptr},
-	{CF_YUV422P8,  L"YUV422P8",  D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes422P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes422P,       1, 4,        CS_YUV,  422,       8,     &CopyPlaneAsIs,           nullptr},
-	{CF_YUV444P8,  L"YUV444P8",  D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes444P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes444P,       1, 6,        CS_YUV,  444,       8,     &CopyPlaneAsIs,           nullptr},
+	{CF_YUV420P8,  L"YUV420P8",  D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes420P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes420P,       1, 3,        CS_YUV,  420,        8 },
+	{CF_YUV422P8,  L"YUV422P8",  D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes422P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes422P,       1, 4,        CS_YUV,  422,        8 },
+	{CF_YUV444P8,  L"YUV444P8",  D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes444P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes444P,       1, 6,        CS_YUV,  444,        8 },
 
-	{CF_YUV420P10, L"YUV420P10", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes420P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes420P16,       2, 3,        CS_YUV,  420,       10,    &CopyPlane10to16,         nullptr},
-	{CF_YUV420P16, L"YUV420P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes420P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes420P16,       2, 3,        CS_YUV,  420,       16,    &CopyPlaneAsIs,           nullptr},
-	{CF_YUV422P10, L"YUV422P10", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes422P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes422P16,       2, 4,        CS_YUV,  422,       10,    &CopyPlane10to16,         nullptr},
-	{CF_YUV422P16, L"YUV422P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes422P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes422P16,       2, 4,        CS_YUV,  422,       16,    &CopyPlaneAsIs,           nullptr},
-	{CF_YUV444P10, L"YUV444P10", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_YUV,  444,       10,    &CopyPlane10to16,         nullptr},
-	{CF_YUV444P16, L"YUV444P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_YUV,  444,       16,    &CopyPlaneAsIs,           nullptr},
+	{CF_YUV420P10, L"YUV420P10", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes420P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes420P16,       2, 3,        CS_YUV,  420,       10 },
+	{CF_YUV420P16, L"YUV420P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes420P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes420P16,       2, 3,        CS_YUV,  420,       16 },
+	{CF_YUV422P10, L"YUV422P10", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes422P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes422P16,       2, 4,        CS_YUV,  422,       10 },
+	{CF_YUV422P16, L"YUV422P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes422P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes422P16,       2, 4,        CS_YUV,  422,       16 },
+	{CF_YUV444P10, L"YUV444P10", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_YUV,  444,       10 },
+	{CF_YUV444P16, L"YUV444P16", D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_YUV,  444,       16 },
 
-	{CF_GBRP8,     L"GBRP8",     D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes444P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes444P,       1, 6,        CS_RGB,  444,       8,     &CopyPlaneAsIs,           nullptr},
-	{CF_GBRP10,    L"GBRP10",    D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_RGB,  444,       10,    &CopyPlane10to16,         nullptr},
-	{CF_GBRP16,    L"GBRP16",    D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_RGB,  444,       16,    &CopyPlaneAsIs,           nullptr},
+	{CF_GBRP8,     L"GBRP8",     D3DFMT_UNKNOWN,  D3DFMT_PLANAR,   &DX9Planes444P, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,        &DX11Planes444P,       1, 6,        CS_RGB,  444,        8 },
+	{CF_GBRP10,    L"GBRP10",    D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_RGB,  444,       10 },
+	{CF_GBRP16,    L"GBRP16",    D3DFMT_UNKNOWN,  D3DFMT_PLANAR, &DX9Planes444P16, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_PLANAR,      &DX11Planes444P16,       2, 6,        CS_RGB,  444,       16 },
 
-	{CF_RGB24,     L"RGB24",     D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,        nullptr, DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,        nullptr,       3, 2,        CS_RGB,  444,       8,     &CopyFrameRGB24, &CopyRGB24_SSSE3},
-	{CF_XRGB32,    L"RGB32",     D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,        nullptr, DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,        nullptr,       4, 2,        CS_RGB,  444,       8,     &CopyPlaneAsIs,           nullptr},
-	{CF_ARGB32,    L"ARGB32",    D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,        nullptr, DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM,        nullptr,       4, 2,        CS_RGB,  444,       8,     &CopyPlaneAsIs,           nullptr},
+	{CF_RGB24,     L"RGB24",     D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,        nullptr, DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,        nullptr,       3, 2,        CS_RGB,  444,        8 },
+	{CF_XRGB32,    L"RGB32",     D3DFMT_X8R8G8B8, D3DFMT_X8R8G8B8,        nullptr, DXGI_FORMAT_B8G8R8X8_UNORM, DXGI_FORMAT_B8G8R8X8_UNORM,        nullptr,       4, 2,        CS_RGB,  444,        8 },
+	{CF_ARGB32,    L"ARGB32",    D3DFMT_A8R8G8B8, D3DFMT_A8R8G8B8,        nullptr, DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM,        nullptr,       4, 2,        CS_RGB,  444,        8 },
 
-	{CF_r210,      L"r210",      D3DFMT_UNKNOWN,  D3DFMT_A2B10G10R10,     nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R10G10B10A2_UNORM,     nullptr,       4, 2,        CS_RGB,  444,       10,    &CopyFrameR210,           nullptr},
+	{CF_r210,      L"r210",      D3DFMT_UNKNOWN,  D3DFMT_A2B10G10R10,     nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R10G10B10A2_UNORM,     nullptr,       4, 2,        CS_RGB,  444,       10 },
 
-	{CF_RGB48,     L"RGB48",     D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16,    &CopyFrameRGB48,          nullptr},
-	{CF_BGR48,     L"BGR48",     D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16,    &CopyFrameBGR48,          nullptr},
-	{CF_BGRA64,    L"BGRA64",    D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_RGB,  444,       16,    &CopyFrameBGRA64,         nullptr},
-	{CF_B64A,      L"b64a",      D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_RGB,  444,       16,    &CopyFrameB64A,           nullptr},
+	{CF_RGB48,     L"RGB48",     D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16 },
+	{CF_BGR48,     L"BGR48",     D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       6, 2,        CS_RGB,  444,       16 },
+	{CF_BGRA64,    L"BGRA64",    D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_RGB,  444,       16 },
+	{CF_B64A,      L"b64a",      D3DFMT_UNKNOWN,  D3DFMT_A16B16G16R16,    nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16G16B16A16_UNORM,    nullptr,       8, 2,        CS_RGB,  444,       16 },
 
-	{CF_Y8,        L"Y8",        D3DFMT_UNKNOWN,  D3DFMT_L8,              nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R8_UNORM,              nullptr,       1, 2,        CS_GRAY, 400,       8,     &CopyPlaneAsIs,           nullptr},
-	{CF_Y10,       L"Y10",       D3DFMT_UNKNOWN,  D3DFMT_L16,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16_UNORM,             nullptr,       2, 2,        CS_GRAY, 400,       10,    &CopyPlane10to16,         nullptr},
-	{CF_Y16,       L"Y16",       D3DFMT_UNKNOWN,  D3DFMT_L16,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16_UNORM,             nullptr,       2, 2,        CS_GRAY, 400,       16,    &CopyPlaneAsIs,           nullptr},
+	{CF_Y8,        L"Y8",        D3DFMT_UNKNOWN,  D3DFMT_L8,              nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R8_UNORM,              nullptr,       1, 2,        CS_GRAY, 400,        8 },
+	{CF_Y10,       L"Y10",       D3DFMT_UNKNOWN,  D3DFMT_L16,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16_UNORM,             nullptr,       2, 2,        CS_GRAY, 400,       10 },
+	{CF_Y16,       L"Y16",       D3DFMT_UNKNOWN,  D3DFMT_L16,             nullptr, DXGI_FORMAT_UNKNOWN,        DXGI_FORMAT_R16_UNORM,             nullptr,       2, 2,        CS_GRAY, 400,       16 },
 };
 // Remarks:
 // 1. The table lists all possible formats. The real situation depends on the capabilities of the graphics card and drivers.
@@ -366,26 +366,39 @@ const FmtConvParams_t& GetFmtConvParams(const CMediaType* pmt)
 	return GetFmtConvParams(fmt);
 }
 
-CopyFrameDataFn GetCopyFunction(const FmtConvParams_t& params)
-{
-	if (CPUInfo::HaveSSSE3() && params.FuncSSSE3) {
-		return params.FuncSSSE3;
-	}
-	return params.Func;
-}
-
-CopyFrameDataFn GetCopyPlaneFunction(const FmtConvParams_t& params)
+CopyFrameDataFn GetCopyPlaneFunction(const FmtConvParams_t& params, const int vp)
 {
 	switch (params.cformat) {
+	case CF_YV12:
+		if (vp == VP_DXVA2) {
+			return CopyFrameYV12;
+		}
+		break;
 	case CF_YUV420P10:
 	case CF_YUV422P10:
 	case CF_YUV444P10:
 	case CF_GBRP10:
 	case CF_Y10:
 		return CopyPlane10to16;
-	default:
-		return CopyPlaneAsIs;
+	case CF_RGB24:
+		if (CPUInfo::HaveSSSE3()) {
+			return CopyFrameRGB24_SSSE3;
+		} else {
+			return CopyFrameRGB24;
+		}
+	case CF_r210:
+		return CopyFrameR210;
+	case CF_RGB48:
+		return CopyFrameRGB48;
+	case CF_BGR48:
+		return CopyFrameBGR48;
+	case CF_BGRA64:
+		return CopyFrameBGRA64;
+	case CF_B64A:
+		return CopyFrameB64A;
 	}
+
+	return CopyPlaneAsIs;
 }
 
 void CopyPlaneAsIs(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
@@ -458,7 +471,7 @@ void CopyFrameRGB24(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src
 	}
 }
 
-void CopyRGB24_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
+void CopyFrameRGB24_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
 	UINT line_pixels   = abs(src_pitch) / 3;
 	UINT line_pixels4  = line_pixels & ~(4u - 1);

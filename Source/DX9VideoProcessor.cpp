@@ -684,7 +684,7 @@ void CDX9VideoProcessor::ReleaseVP()
 
 	m_srcParams      = {};
 	m_srcDXVA2Format = D3DFMT_UNKNOWN;
-	m_pConvertFn     = nullptr;
+	m_pCopyPlaneFn   = CopyPlaneAsIs;
 	m_srcWidth       = 0;
 	m_srcHeight      = 0;
 }
@@ -764,8 +764,7 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 	m_srcHeight      = height;
 	m_srcParams      = params;
 	m_srcDXVA2Format = dxva2format;
-	m_pConvertFn     = GetCopyFunction(params);
-	m_pCopyPlaneFn   = GetCopyPlaneFunction(params);
+	m_pCopyPlaneFn   = GetCopyPlaneFunction(params, VP_DXVA2);
 
 	m_DXVA2VP.GetProcAmpRanges(m_DXVA2ProcAmpRanges);
 	m_DXVA2VP.SetProcAmpValues(m_DXVA2ProcAmpValues);
@@ -794,8 +793,7 @@ HRESULT CDX9VideoProcessor::InitializeTexVP(const FmtConvParams_t& params, const
 	m_srcHeight      = height;
 	m_srcParams      = params;
 	m_srcDXVA2Format = d3dformat;
-	m_pConvertFn     = GetCopyFunction(params);
-	m_pCopyPlaneFn   = GetCopyPlaneFunction(params);
+	m_pCopyPlaneFn   = GetCopyPlaneFunction(params, VP_D3D9_SHADER);
 
 	// set default ProcAmp ranges
 	SetDefaultDXVA2ProcAmpRanges(m_DXVA2ProcAmpRanges);
@@ -1488,9 +1486,8 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 
 				hr = pDXVA2VPSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 				if (S_OK == hr) {
-					ASSERT(m_pConvertFn);
 					const BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcLines) : data;
-					m_pConvertFn(m_srcLines, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
+					m_pCopyPlaneFn(m_srcLines, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
 					hr = pDXVA2VPSurface->UnlockRect();
 				}
 			} else {
@@ -1522,9 +1519,8 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				else {
 					hr = m_TexSrcVideo.pSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 					if (S_OK == hr) {
-						ASSERT(m_pConvertFn);
 						const BYTE* src = (m_srcPitch < 0) ? data + m_srcPitch * (1 - (int)m_srcLines) : data;
-						m_pConvertFn(m_srcLines, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
+						m_pCopyPlaneFn(m_srcLines, (BYTE*)lr.pBits, lr.Pitch, src, m_srcPitch);
 						hr = m_TexSrcVideo.pSurface->UnlockRect();
 					}
 				}

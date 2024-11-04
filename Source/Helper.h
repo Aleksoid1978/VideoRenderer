@@ -40,6 +40,13 @@ constexpr auto D3DFMT_Y416 = static_cast<D3DFORMAT>(FCC('Y416'));
 constexpr auto D3DFMT_PLANAR      = static_cast<D3DFORMAT>(0xFFFF);
 constexpr auto DXGI_FORMAT_PLANAR = static_cast<DXGI_FORMAT>(0xFFFF);
 
+enum {
+	VP_DXVA2 = 1,
+	VP_D3D9_SHADER,
+	VP_D3D11,
+	VP_D3D11_SHADER,
+};
+
 constexpr UINT PCIV_AMDATI = 0x1002;
 constexpr UINT PCIV_NVIDIA = 0x10DE;
 constexpr UINT PCIV_INTEL  = 0x8086;
@@ -150,22 +157,19 @@ struct FmtConvParams_t {
 	ColorSystem_t      CSType;
 	int                Subsampling;
 	int                CDepth;
-	CopyFrameDataFn    Func;
-	CopyFrameDataFn    FuncSSSE3;
 };
 
 ColorFormat_t GetColorFormat(const CMediaType* pmt);
 const FmtConvParams_t& GetFmtConvParams(const ColorFormat_t fmt);
 const FmtConvParams_t& GetFmtConvParams(const CMediaType* pmt);
-CopyFrameDataFn GetCopyFunction(const FmtConvParams_t& params);
-CopyFrameDataFn GetCopyPlaneFunction(const FmtConvParams_t& params);
+CopyFrameDataFn GetCopyPlaneFunction(const FmtConvParams_t& params, const int vp);
 
 // YUY2, AYUV, RGB32 to D3DFMT_X8R8G8B8, ARGB32 to D3DFMT_A8R8G8B8
 void CopyPlaneAsIs(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 void CopyGpuFrame_SSE41(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 // RGB24 to D3DFMT_X8R8G8B8
 void CopyFrameRGB24(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
-void CopyRGB24_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch); // 30% faster than CopyFrameRGB24().
+void CopyFrameRGB24_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch); // 30% faster than CopyFrameRGB24().
 // RGB48, b48r to D3DFMT_A16B16G16R16
 void CopyFrameRGB48(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 void CopyRGB48_SSSE3(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch); // Not faster than CopyFrameRGB48().
