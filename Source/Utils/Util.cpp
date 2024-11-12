@@ -88,13 +88,13 @@ static LPCWSTR GetWinVer()
 	if (IsWindows8Point1OrGreater()) {
 		return L"8.1";
 	}
-	else if (IsWindows8OrGreater()) {
+	if (IsWindows8OrGreater()) {
 		return L"8";
 	}
-	else if (IsWindows7SP1OrGreater()) {
+	if (IsWindows7SP1OrGreater()) {
 		return L"7 SP1";
 	}
-	else if (IsWindows7OrGreater()) {
+	if (IsWindows7OrGreater()) {
 		return L"7";
 	}
 	return L"Vista or older";

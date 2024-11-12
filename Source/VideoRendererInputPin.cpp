@@ -41,12 +41,10 @@ STDMETHODIMP CVideoRendererInputPin::NonDelegatingQueryInterface(REFIID riid, vo
 	if (riid == __uuidof(IMFGetService) && m_pBaseRenderer->m_VideoProcessor->Type() == VP_DX9) {
 		return GetInterface((IMFGetService*)this, ppv);
 	}
-	else if (riid == __uuidof(ID3D11DecoderConfiguration) && m_pBaseRenderer->m_VideoProcessor->Type() == VP_DX11) {
+	if (riid == __uuidof(ID3D11DecoderConfiguration) && m_pBaseRenderer->m_VideoProcessor->Type() == VP_DX11) {
 		return GetInterface((ID3D11DecoderConfiguration*)this, ppv);
 	}
-	else {
-		return __super::NonDelegatingQueryInterface(riid, ppv);
-	}
+	return __super::NonDelegatingQueryInterface(riid, ppv);
 }
 
 STDMETHODIMP CVideoRendererInputPin::GetAllocator(IMemAllocator **ppAllocator)

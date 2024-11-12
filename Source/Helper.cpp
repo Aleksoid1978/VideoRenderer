@@ -167,10 +167,10 @@ std::wstring DXVA2VPDeviceToString(const GUID& guid)
 	if (guid == DXVA2_VideoProcProgressiveDevice) {
 		return L"ProgressiveDevice";
 	}
-	else if (guid == DXVA2_VideoProcBobDevice) {
+	if (guid == DXVA2_VideoProcBobDevice) {
 		return L"BobDevice";
 	}
-	else if (guid == DXVA2_VideoProcSoftwareDevice) {
+	if (guid == DXVA2_VideoProcSoftwareDevice) {
 		return L"SoftwareDevice";
 	}
 

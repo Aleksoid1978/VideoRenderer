@@ -788,7 +788,7 @@ HRESULT CD3D11VP::SetSuperRes(const int iSuperRes)
 	if (m_VendorId == PCIV_NVIDIA) {
 		return SetSuperResNvidia(enable);
 	}
-	else if (m_VendorId == PCIV_INTEL) {
+	if (m_VendorId == PCIV_INTEL) {
 		return SetSuperResIntel(enable);
 	}
 

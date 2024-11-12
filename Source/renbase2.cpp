@@ -983,7 +983,8 @@ CBaseVideoRenderer2::NonDelegatingQueryInterface(REFIID riid,__deref_out VOID **
 
     if (riid == IID_IQualProp) {
         return GetInterface( (IQualProp *)this, ppv);
-    } else if (riid == IID_IQualityControl) {
+    }
+    if (riid == IID_IQualityControl) {
         return GetInterface( (IQualityControl *)this, ppv);
     }
     return CBaseRenderer::NonDelegatingQueryInterface(riid,ppv);
