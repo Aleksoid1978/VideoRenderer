@@ -176,7 +176,7 @@ HRESULT AlphaBlt(IDirect3DDevice9* pD3DDev, const RECT* pSrc, const RECT* pDst, 
 	return S_OK;
 }
 
-bool bInitVP = false;
+bool g_bInitVP = false;
 
 typedef BOOL(WINAPI* pSystemParametersInfoA)(
 	_In_ UINT uiAction,
@@ -191,7 +191,7 @@ static BOOL WINAPI pNewSystemParametersInfoA(
 	_Pre_maybenull_ _Post_valid_ PVOID pvParam,
 	_In_ UINT fWinIni)
 {
-	if (bInitVP) {
+	if (g_bInitVP) {
 		DLog(L"Blocking call SystemParametersInfoA({:#06x},..) function during initialization VP", uiAction);
 		return FALSE;
 	}
@@ -209,7 +209,7 @@ static LONG WINAPI pNewSetWindowLongA(
 	_In_ int nIndex,
 	_In_ LONG dwNewLong)
 {
-	if (bInitVP) {
+	if (g_bInitVP) {
 		DLog(L"Blocking call SetWindowLongA() function during initialization VP");
 		return 0L;
 	}
@@ -235,7 +235,7 @@ static BOOL WINAPI pNewSetWindowPos(
 	_In_ int cy,
 	_In_ UINT uFlags)
 {
-	if (bInitVP) {
+	if (g_bInitVP) {
 		DLog(L"call SetWindowPos() function during initialization VP");
 		uFlags |= SWP_ASYNCWINDOWPOS;
 	}
@@ -251,7 +251,7 @@ static BOOL WINAPI pNewShowWindow(
 	_In_ HWND hWnd,
 	_In_ int nCmdShow)
 {
-	if (bInitVP) {
+	if (g_bInitVP) {
 		DLog(L"Blocking call ShowWindow() function during initialization VP");
 		return FALSE;
 	}
@@ -396,7 +396,7 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 		MH_EnableHook(MH_ALL_HOOKS);
 	}
 
-	bInitVP = true;
+	g_bInitVP = true;
 
 	const UINT currentAdapter = GetAdapter(m_hWnd, m_pD3DEx);
 	bool bTryToReset = (currentAdapter == m_nCurrentAdapter) && m_pD3DDevEx;
@@ -500,11 +500,11 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 	}
 
 	if (FAILED(hr)) {
-		bInitVP = false;
+		g_bInitVP = false;
 		return hr;
 	}
 	if (!m_pD3DDevEx) {
-		bInitVP = false;
+		g_bInitVP = false;
 		return E_FAIL;
 	}
 
@@ -597,7 +597,7 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 		m_pCopyGpuFn = CopyPlaneAsIs;
 	}
 
-	bInitVP = false;
+	g_bInitVP = false;
 
 	m_pFilter->OnDisplayModeChange();
 	UpdateStatsStatic();
@@ -615,7 +615,7 @@ HRESULT CDX9VideoProcessor::ResetInternal()
 	DLog(L"CDX9VideoProcessor::ResetInternal()");
 	HRESULT hr = S_OK;
 
-	bInitVP = true;
+	g_bInitVP = true;
 
 	if (m_pFilter->m_bIsFullscreen) {
 		ZeroMemory(&m_DisplayMode, sizeof(D3DDISPLAYMODEEX));
@@ -634,7 +634,7 @@ HRESULT CDX9VideoProcessor::ResetInternal()
 		DLogIf(FAILED(hr), L"CDX9VideoProcessor::ResetInternal() : ResetEx() failed with error {}", HR2Str(hr));
 	}
 
-	bInitVP = false;
+	g_bInitVP = false;
 
 	return hr;
 }

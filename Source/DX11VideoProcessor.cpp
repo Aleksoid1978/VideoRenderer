@@ -37,7 +37,7 @@
 #include "../external/minhook/include/MinHook.h"
 
 bool g_bPresent = false;
-bool bCreateSwapChain = false;
+bool g_bCreateSwapChain = false;
 
 typedef BOOL(WINAPI* pSetWindowPos)(
 	_In_ HWND hWnd,
@@ -76,7 +76,7 @@ static LONG WINAPI pNewSetWindowLongADX11(
 	_In_ int nIndex,
 	_In_ LONG dwNewLong)
 {
-	if (bCreateSwapChain) {
+	if (g_bCreateSwapChain) {
 		DLog(L"Blocking call SetWindowLongA() function during create fullscreen swap chain");
 		return 0L;
 	}
@@ -1410,9 +1410,9 @@ HRESULT CDX11VideoProcessor::InitSwapChain(bool bWindowChanged)
 		fullscreenDesc.RefreshRate.Denominator = 1;
 		fullscreenDesc.Windowed = FALSE;
 
-		bCreateSwapChain = true;
+		g_bCreateSwapChain = true;
 		hr = m_pDXGIFactory2->CreateSwapChainForHwnd(m_pDevice, m_hWnd, &desc1, &fullscreenDesc, nullptr, &m_pDXGISwapChain1);
-		bCreateSwapChain = false;
+		g_bCreateSwapChain = false;
 		DLogIf(FAILED(hr), L"CDX11VideoProcessor::InitSwapChain() : CreateSwapChainForHwnd(fullscreen) failed with error {}", HR2Str(hr));
 
 		m_lastFullscreenHMonitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY);
