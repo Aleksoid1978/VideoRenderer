@@ -200,7 +200,6 @@ HRESULT CVRMainPPage::OnActivate()
 	}
 	if (!IsWindows10OrGreater()) {
 		GetDlgItem(IDC_CHECK12).EnableWindow(FALSE);
-		GetDlgItem(IDC_STATIC4).EnableWindow(FALSE);
 		GetDlgItem(IDC_STATIC5).EnableWindow(FALSE);
 		GetDlgItem(IDC_COMBO7).EnableWindow(FALSE);
 		GetDlgItem(IDC_STATIC6).EnableWindow(FALSE);
