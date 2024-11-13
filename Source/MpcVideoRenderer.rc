@@ -84,25 +84,25 @@ BEGIN
     CONTROL         "Use dithering",IDC_CHECK10,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,206,59,10
     CONTROL         "Use Blend deinterlacing for YUV 4:2:0",IDC_CHECK17,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,219,139,10
-    GROUPBOX        "HDR",IDC_STATIC,171,35,176,98
+    GROUPBOX        "HDR",IDC_STATIC,171,35,176,112
     CONTROL         "Prefer Dolby Vision over PQ and HLG",IDC_CHECK18,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,47,135,10
     CONTROL         "Passthrough to display",IDC_CHECK12,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,60,89,10
-    CONTROL         "Convert to SDR (if passthrough is impossible)",IDC_CHECK14,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,104,167,10
     LTEXT           "Windows HDR:",IDC_STATIC5,178,75,51,8
     COMBOBOX        IDC_COMBO7,232,73,110,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Subtitle and OSD brightness:",IDC_STATIC6,178,90,99,8
     CONTROL         "",IDC_SLIDER1,"msctls_trackbar32",WS_TABSTOP | 0x400,279,89,63,12
-    LTEXT           "SDR display nits:",IDC_STATIC8,178,119,60,8
-    EDITTEXT        IDC_EDIT1,242,118,32,12,ES_AUTOHSCROLL | ES_READONLY | ES_NUMBER,WS_EX_RIGHT
-    CONTROL         "",IDC_SLIDER2,"msctls_trackbar32",WS_TABSTOP | 0x400,279,118,63,12
-    LTEXT           "Swap effect:",IDC_STATIC3,178,140,43,8
-    COMBOBOX        IDC_COMBO4,266,138,76,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Use exclusive fullscreen",IDC_CHECK11,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,153,93,10
-    CONTROL         "Wait for VBlank before Present",IDC_CHECK15,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,166,117,10
-    CONTROL         "Adjust the frame presentation time",IDC_CHECK13,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,179,133,10
+    LTEXT           "If passthrough is impossible or not used",IDC_STATIC,178,106,135,8
+    CONTROL         "Convert to SDR",IDC_CHECK14,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,118,67,10
+    LTEXT           "SDR display nits:",IDC_STATIC8,178,132,60,8
+    EDITTEXT        IDC_EDIT1,242,131,32,12,ES_AUTOHSCROLL | ES_READONLY | ES_NUMBER,WS_EX_RIGHT
+    CONTROL         "",IDC_SLIDER2,"msctls_trackbar32",WS_TABSTOP | 0x400,279,131,63,12
+    LTEXT           "Swap effect:",IDC_STATIC3,178,152,43,8
+    COMBOBOX        IDC_COMBO4,266,150,76,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Use exclusive fullscreen",IDC_CHECK11,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,165,93,10
+    CONTROL         "Wait for VBlank before Present",IDC_CHECK15,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,178,117,10
+    CONTROL         "Adjust the frame presentation time",IDC_CHECK13,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,191,133,10
     CONTROL         "Reinitialize device when changing display",IDC_CHECK16,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,192,151,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,204,151,10
     PUSHBUTTON      "Default",IDC_BUTTON1,305,217,37,14
     EDITTEXT        IDC_EDIT2,76,235,266,12,ES_READONLY | NOT WS_BORDER,WS_EX_RIGHT
 END
