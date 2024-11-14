@@ -91,7 +91,7 @@ BEGIN
     COMBOBOX        IDC_COMBO7,232,73,110,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Subtitle and OSD brightness:",IDC_STATIC6,178,90,99,8
     CONTROL         "",IDC_SLIDER1,"msctls_trackbar32",WS_TABSTOP | 0x400,279,89,63,12
-    LTEXT           "If passthrough is impossible or not used",IDC_STATIC,178,106,135,8
+    LTEXT           "If passthrough is impossible or disabled, then:",IDC_STATIC,178,106,156,8
     CONTROL         "Convert to SDR",IDC_CHECK14,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,118,67,10
     LTEXT           "SDR display nits:",IDC_STATIC8,178,132,60,8
     EDITTEXT        IDC_EDIT1,242,131,32,12,ES_AUTOHSCROLL | ES_READONLY | ES_NUMBER,WS_EX_RIGHT
