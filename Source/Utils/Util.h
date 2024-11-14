@@ -52,6 +52,7 @@ inline void DebugLogFmt(std::wstring_view format, Args&& ...args)
 #define SAFE_DELETE(p)       { if (p) { delete (p); (p) = nullptr; } }
 
 #define QI(i) (riid == __uuidof(i)) ? GetInterface((i*)this, ppv) :
+#define IFQIRETURN(i) if (riid == __uuidof(i)) { return GetInterface((i*)this, ppv); }
 
 #define ALIGN(x, a)           __ALIGN_MASK(x,(decltype(x))(a)-1)
 #define __ALIGN_MASK(x, mask) (((x)+(mask))&~(mask))
