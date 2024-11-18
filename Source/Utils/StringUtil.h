@@ -135,12 +135,10 @@ inline std::wstring A2WStr(const std::string_view sv)
 // converting strings of different formats
 //
 
-std::string ConvertWideToANSI(const std::wstring& wstr);
+std::wstring ConvertAnsiToWide(const std::string_view sv);
 
-std::wstring ConvertAnsiToWide(const std::string& str);
-std::wstring ConvertAnsiToWide(const char* pstr, int size);
+std::wstring ConvertUtf8ToWide(const std::string_view sv);
 
-std::string ConvertWideToUtf8(const std::wstring& wstr);
+std::string ConvertWideToANSI(const std::wstring_view wsv);
 
-std::wstring ConvertUtf8ToWide(const std::string& str);
-std::wstring ConvertUtf8ToWide(const char* pstr, int size);
+std::string ConvertWideToUtf8(const std::wstring_view wsv);
