@@ -87,7 +87,7 @@ struct Tex9Video_t : Tex_t
 				const UINT chromaWidth  = width / pPlanes->div_chroma_w;
 				const UINT chromaHeight = height / pPlanes->div_chroma_h;
 				hr = Plane2.Create(pDevice, pPlanes->FmtPlane2, chromaWidth, chromaHeight, usage);
-				
+
 				if (S_OK == hr && pPlanes->FmtPlane3) {
 					hr = Plane3.Create(pDevice, pPlanes->FmtPlane3, chromaWidth, chromaHeight, usage);
 				}
