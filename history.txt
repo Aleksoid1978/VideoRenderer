@@ -1,6 +1,7 @@
 0.8.8 dev
 ------------------------
 Added support for YUV420P10, YUV422P10, YUV444P10, GBRP10 and Y10 formats using MEDIASUBTYPE_LAV_RAWVIDEO.
+Enabled "Super Resolution" only for 8-bit video due to unclear support in drivers.
 
 0.8.7.2295 - 2024-10-05
 ------------------------
