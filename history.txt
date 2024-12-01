@@ -2,6 +2,10 @@
 ------------------------
 Added support for YUV420P10, YUV422P10, YUV444P10, GBRP10 and Y10 formats using MEDIASUBTYPE_LAV_RAWVIDEO.
 Enabled "Super Resolution" only for 8-bit video due to unclear support in drivers.
+Added clarification when the "Convert to SDR" setting will work.
+"Super Resolution" will only be enabled for 8-bit video due to driver limitations.
+Added the ability to work with incorrect YUV frames (4:2:0/4:2:2 with odd dimensions).
+Recommended MPC-BE 1.8.1.43 or newer.
 
 0.8.7.2295 - 2024-10-05
 ------------------------
