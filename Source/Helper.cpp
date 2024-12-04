@@ -751,8 +751,20 @@ void CopyPlane10to16(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* sr
 	}
 }
 
-void ConvertXRGB10toXRGB8(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
+void ConvertR10G10B10A2toBGR32(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
 {
+	// R10G10B10A2
+	// R - 0x000003ff
+	// G - 0x000ffc00
+	// B - 0x3ff00000
+	// A - 0xc0000000
+	//
+	// BGR32 
+	// B - 0x000000ff
+	// G - 0x0000ff00
+	// R - 0x00ff0000
+	// X - 0xff000000
+
 	UINT line_pixels = abs(src_pitch) / 4;
 
 	for (UINT y = 0; y < lines; ++y) {
