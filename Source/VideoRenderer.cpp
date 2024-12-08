@@ -1316,6 +1316,10 @@ STDMETHODIMP CMpcVideoRenderer::Flt_GetInt64(LPCSTR field, __int64 *value)
 STDMETHODIMP CMpcVideoRenderer::Flt_GetBin(LPCSTR field, LPVOID* value, unsigned* size)
 {
 	if (!strcmp(field, "displayedImage")) {
+		if (m_State != State_Running) {
+			Redraw();
+		}
+
 		CAutoLock cRendererLock(&m_RendererLock);
 
 		HRESULT hr = m_VideoProcessor->GetDisplayedImage((BYTE**)value, size);
