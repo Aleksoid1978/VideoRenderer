@@ -772,9 +772,10 @@ void ConvertR10G10B10A2toBGR32(const UINT lines, BYTE* dst, UINT dst_pitch, cons
 		uint32_t* dst32 = (uint32_t*)dst;
 		for (UINT i = 0; i < line_pixels; i++) {
 			uint32_t t = src32[i];
-			dst32[i] = ((t & 0x000003fc) << 14)
-					 | ((t & 0x000ff000) >> 4)
-					 | ((t & 0x3fc00000) >> 22);
+			dst32[i] = ((t & 0x3fc00000) >> 22) // B
+					 | ((t & 0x000ff000) >> 4)  // G
+					 | ((t & 0x000003fc) << 14) // R
+					 | 0xff00000; // X
 		}
 		src += src_pitch;
 		dst += dst_pitch;
@@ -798,6 +799,30 @@ void ConvertR10G10B10A2toBGR48(const UINT lines, BYTE* dst, UINT dst_pitch, cons
 			*dst16++ = (uint16_t)((t & 0x3ff00000) >> 14); // B
 			*dst16++ = (uint16_t)((t & 0x000ffc00) >> 4);  // G
 			*dst16++ = (uint16_t)((t & 0x000003ff) << 6);  // R 
+		}
+		src += src_pitch;
+		dst += dst_pitch;
+	}
+}
+
+void ConvertR10G10B10A2toBGR64(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch)
+{
+	// R10G10B10A2
+	// R - 0x000003ff
+	// G - 0x000ffc00
+	// B - 0x3ff00000
+	// A - 0xc0000000
+	UINT line_pixels = abs(src_pitch) / 4;
+
+	for (UINT y = 0; y < lines; ++y) {
+		uint32_t* src32 = (uint32_t*)src;
+		uint16_t* dst16 = (uint16_t*)dst;
+		for (UINT i = 0; i < line_pixels; i++) {
+			uint32_t t = src32[i];
+			*dst16++ = (uint16_t)((t & 0x3ff00000) >> 14); // B
+			*dst16++ = (uint16_t)((t & 0x000ffc00) >> 4);  // G
+			*dst16++ = (uint16_t)((t & 0x000003ff) << 6);  // R 
+			*dst16++ = 0xffff; // X
 		}
 		src += src_pitch;
 		dst += dst_pitch;
