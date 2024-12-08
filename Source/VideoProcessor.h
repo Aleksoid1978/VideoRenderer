@@ -121,7 +121,7 @@ protected:
 
 	UINT32 m_uHalfRefreshPeriodMs = 0;
 
-	bool m_bAllowHiBitdepthBitmaps = false;
+	bool m_bAllowDeepColorBitmaps = false;
 
 	// AlphaBitmap
 	bool m_bAlphaBitmapEnable = false;
@@ -202,6 +202,7 @@ public:
 	bool GetFlip() { return m_bFlip; }
 	void SetFlip(bool value) { m_bFlip = value; }
 	virtual void SetStereo3dTransform(int value) = 0;
+	void SetAllowDeepColorBitmaps(bool value) { m_bAllowDeepColorBitmaps = value; }
 
 	virtual void ClearPreScaleShaders() = 0;
 	virtual void ClearPostScaleShaders() = 0;

@@ -1379,6 +1379,11 @@ STDMETHODIMP CMpcVideoRenderer::Flt_SetBool(LPCSTR field, bool value)
 		return S_OK;
 	}
 
+	if (!strcmp(field, "allowDeepColorBitmaps")) {
+		m_VideoProcessor->SetAllowDeepColorBitmaps(value);
+		return S_OK;
+	}
+
 	return E_INVALIDARG;
 }
 
