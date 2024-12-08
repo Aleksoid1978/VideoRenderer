@@ -1,7 +1,8 @@
 0.9.0 dev
 ------------------------
 Functions for getting the current and displayed video frame now use top-down RGB bitmaps.
-Recommended MPC-BE 1.8.2 or newer.
+Added the ability to get the displayed video frame on the 10-bit display in RGB48 format.
+Recommended MPC-BE 1.8.2.11 or newer.
 
 0.8.9.2318 - 2024-12-05
 ------------------------
