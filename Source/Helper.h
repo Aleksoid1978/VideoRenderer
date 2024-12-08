@@ -189,6 +189,7 @@ void CopyFrameR210(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src,
 void CopyPlane10to16(const UINT lines, BYTE * dst, UINT dst_pitch, const BYTE * src, int src_pitch);
 
 void ConvertR10G10B10A2toBGR32(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
+void ConvertR10G10B10A2toBGR48(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 
 void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d);
 

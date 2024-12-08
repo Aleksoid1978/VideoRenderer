@@ -121,6 +121,8 @@ protected:
 
 	UINT32 m_uHalfRefreshPeriodMs = 0;
 
+	bool m_bAllowHiBitdepthBitmaps = false;
+
 	// AlphaBitmap
 	bool m_bAlphaBitmapEnable = false;
 	RECT m_AlphaBitmapRectSrc = {};
