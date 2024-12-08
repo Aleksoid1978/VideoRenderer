@@ -3184,7 +3184,20 @@ HRESULT CDX11VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned* pSize)
 
 	m_pDeviceContext->CopyResource(pTexture2DShared, pBackBuffer);
 
-	const UINT dib_bitdepth = (desc2.Format == DXGI_FORMAT_R10G10B10A2_UNORM && m_bAllowDeepColorBitmaps) ? 48 : 32;
+	UINT dib_bitdepth;
+	CopyFrameDataFn pConvertToDibFunc;
+	if (desc2.Format == DXGI_FORMAT_R10G10B10A2_UNORM) {
+		if (m_bAllowDeepColorBitmaps) {
+			dib_bitdepth = 48;
+			pConvertToDibFunc = ConvertR10G10B10A2toBGR48;
+		} else {
+			dib_bitdepth = 32;
+			pConvertToDibFunc = ConvertR10G10B10A2toBGR32;
+		}
+	} else {
+		dib_bitdepth = 32;
+		pConvertToDibFunc = CopyPlaneAsIs;
+	}
 	const UINT dib_pitch    = CalcDibRowPitch(desc.Width, dib_bitdepth);
 	const UINT dib_size     = dib_pitch * desc.Height;
 
@@ -3206,16 +3219,7 @@ HRESULT CDX11VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned* pSize)
 	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 	hr = m_pDeviceContext->Map(pTexture2DShared, 0, D3D11_MAP_READ, 0, &mappedResource);
 	if (SUCCEEDED(hr)) {
-		if (desc2.Format == DXGI_FORMAT_R10G10B10A2_UNORM) {
-			if (m_bAllowDeepColorBitmaps) {
-				ConvertR10G10B10A2toBGR48(desc.Height, (BYTE*)(pBIH + 1), dib_pitch, (BYTE*)mappedResource.pData, mappedResource.RowPitch);
-			} else {
-				ConvertR10G10B10A2toBGR32(desc.Height, (BYTE*)(pBIH + 1), dib_pitch, (BYTE*)mappedResource.pData, mappedResource.RowPitch);
-			}
-		}
-		else {
-			CopyPlaneAsIs(desc.Height, (BYTE*)(pBIH + 1), dib_pitch, (BYTE*)mappedResource.pData, mappedResource.RowPitch);
-		}
+		pConvertToDibFunc(desc.Height, (BYTE*)(pBIH + 1), dib_pitch, (BYTE*)mappedResource.pData, mappedResource.RowPitch);
 		m_pDeviceContext->Unmap(pTexture2DShared, 0);
 		*ppDib = p;
 	} else {
