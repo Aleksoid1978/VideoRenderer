@@ -775,7 +775,7 @@ void ConvertR10G10B10A2toBGR32(const UINT lines, BYTE* dst, UINT dst_pitch, cons
 			dst32[i] = ((t & 0x3fc00000) >> 22) // B
 					 | ((t & 0x000ff000) >> 4)  // G
 					 | ((t & 0x000003fc) << 14) // R
-					 | 0xff00000; // X
+					 | 0xff000000; // X
 		}
 		src += src_pitch;
 		dst += dst_pitch;
