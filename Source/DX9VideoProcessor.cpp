@@ -1719,27 +1719,27 @@ HRESULT CDX9VideoProcessor::Reset()
 
 HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 {
-	CSize framesize(m_srcRectWidth, m_srcRectHeight);
+	UINT w = m_srcRectWidth;
+	UINT h = m_srcRectHeight;
 	if (m_srcAnamorphic) {
-		framesize.cx = MulDiv(framesize.cy, m_srcAspectRatioX, m_srcAspectRatioY);
+		w = MulDiv(h, m_srcAspectRatioX, m_srcAspectRatioY);
 	}
 	if (m_iRotation == 90 || m_iRotation == 270) {
-		std::swap(framesize.cx, framesize.cy);
+		std::swap(w, h);
 	}
-	const auto w = framesize.cx;
-	const auto h = framesize.cy;
 	const CRect imageRect(0, 0, w, h);
+
+	const UINT dib_bitdepth = 32;
+	const UINT dib_pitch    = CalcDibRowPitch(w, dib_bitdepth);
 
 	BITMAPINFOHEADER* pBIH = (BITMAPINFOHEADER*)pDIBImage;
 	ZeroMemory(pBIH, sizeof(BITMAPINFOHEADER));
 	pBIH->biSize      = sizeof(BITMAPINFOHEADER);
 	pBIH->biWidth     = w;
-	pBIH->biHeight    = h;
+	pBIH->biHeight    = -(LONG)h; // top-down RGB bitmap
 	pBIH->biPlanes    = 1;
-	pBIH->biBitCount  = 32;
-	pBIH->biSizeImage = DIBSIZE(*pBIH);
-
-	UINT dst_pitch = pBIH->biSizeImage / h;
+	pBIH->biBitCount  = dib_bitdepth;
+	pBIH->biSizeImage = dib_pitch * h;
 
 	HRESULT hr = S_OK;
 	CComPtr<IDirect3DSurface9> pRGB32Surface;
@@ -1774,7 +1774,7 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 	D3DLOCKED_RECT lr;
 	hr = pRGB32Surface->LockRect(&lr, nullptr, D3DLOCK_READONLY);
 	if (S_OK == hr) {
-		CopyPlaneAsIs(h, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)lr.pBits + lr.Pitch * (h - 1), -lr.Pitch);
+		CopyPlaneAsIs(h, (BYTE*)(pBIH + 1), dib_pitch, (BYTE*)lr.pBits, lr.Pitch);
 		hr = pRGB32Surface->UnlockRect();
 	}
 
@@ -1807,7 +1807,11 @@ HRESULT CDX9VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned *pSize)
 		return hr;
 	}
 
-	*pSize = width * height * 4 + sizeof(BITMAPINFOHEADER);
+	const UINT dib_bitdepth = 32;
+	const UINT dib_pitch    = CalcDibRowPitch(width, dib_bitdepth);
+	const UINT dib_size	    = dib_pitch * height;
+
+	*pSize = sizeof(BITMAPINFOHEADER) + dib_size;
 	BYTE* p = (BYTE*)LocalAlloc(LMEM_FIXED, *pSize); // only this allocator can be used
 	if (!p) {
 		return E_OUTOFMEMORY;
@@ -1817,17 +1821,15 @@ HRESULT CDX9VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned *pSize)
 	ZeroMemory(pBIH, sizeof(BITMAPINFOHEADER));
 	pBIH->biSize      = sizeof(BITMAPINFOHEADER);
 	pBIH->biWidth     = width;
-	pBIH->biHeight    = height;
-	pBIH->biBitCount  = 32;
+	pBIH->biHeight    = -(LONG)height; // top-down RGB bitmap
+	pBIH->biBitCount  = dib_bitdepth;
 	pBIH->biPlanes    = 1;
-	pBIH->biSizeImage = DIBSIZE(*pBIH);
-
-	UINT dst_pitch = pBIH->biSizeImage / height;
+	pBIH->biSizeImage = dib_size;
 
 	D3DLOCKED_RECT lr;
 	hr = pDestSurface->LockRect(&lr, nullptr, D3DLOCK_READONLY);
 	if (S_OK == hr) {
-		CopyPlaneAsIs(height, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)lr.pBits + lr.Pitch * (height - 1), -lr.Pitch);
+		CopyPlaneAsIs(height, (BYTE*)(pBIH + 1), dib_pitch, (BYTE*)lr.pBits, lr.Pitch);
 		hr = pDestSurface->UnlockRect();
 	}
 

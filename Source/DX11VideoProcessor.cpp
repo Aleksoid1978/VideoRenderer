@@ -3079,27 +3079,27 @@ HRESULT CDX11VideoProcessor::Reset()
 
 HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 {
-	CSize framesize(m_srcRectWidth, m_srcRectHeight);
+	UINT w = m_srcRectWidth;
+	UINT h = m_srcRectHeight;
 	if (m_srcAnamorphic) {
-		framesize.cx = MulDiv(framesize.cy, m_srcAspectRatioX, m_srcAspectRatioY);
+		w = MulDiv(h, m_srcAspectRatioX, m_srcAspectRatioY);
 	}
 	if (m_iRotation == 90 || m_iRotation == 270) {
-		std::swap(framesize.cx, framesize.cy);
+		std::swap(w, h);
 	}
-	const auto w = framesize.cx;
-	const auto h = framesize.cy;
 	const CRect imageRect(0, 0, w, h);
+
+	const UINT dib_bitdepth = 32;
+	const UINT dib_pitch    = CalcDibRowPitch(w, dib_bitdepth);
 
 	BITMAPINFOHEADER* pBIH = (BITMAPINFOHEADER*)pDIBImage;
 	ZeroMemory(pBIH, sizeof(BITMAPINFOHEADER));
 	pBIH->biSize      = sizeof(BITMAPINFOHEADER);
 	pBIH->biWidth     = w;
-	pBIH->biHeight    = h;
+	pBIH->biHeight    = -(LONG)h; // top-down RGB bitmap
 	pBIH->biPlanes    = 1;
-	pBIH->biBitCount  = 32;
-	pBIH->biSizeImage = DIBSIZE(*pBIH);
-
-	UINT dst_pitch = pBIH->biSizeImage / h;
+	pBIH->biBitCount  = dib_bitdepth;
+	pBIH->biSizeImage = dib_pitch * h;
 
 	HRESULT hr = S_OK;
 	CComPtr<ID3D11Texture2D> pRGB32Texture2D;
@@ -3144,7 +3144,7 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 
 	D3D11_MAPPED_SUBRESOURCE mr = {};
 	if (S_OK == m_pDeviceContext->Map(pRGB32Texture2D_Shared, 0, D3D11_MAP_READ, 0, &mr)) {
-		CopyPlaneAsIs(h, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)mr.pData + mr.RowPitch * (h - 1), -(int)mr.RowPitch);
+		CopyPlaneAsIs(h, (BYTE*)(pBIH + 1), dib_pitch, (BYTE*)mr.pData, mr.RowPitch);
 		m_pDeviceContext->Unmap(pRGB32Texture2D_Shared, 0);
 	} else {
 		return E_FAIL;
@@ -3184,7 +3184,11 @@ HRESULT CDX11VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned* pSize)
 
 	m_pDeviceContext->CopyResource(pTexture2DShared, pBackBuffer);
 
-	*pSize = desc.Width * desc.Height * 4 + sizeof(BITMAPINFOHEADER);
+	const UINT dib_bitdepth = 32;
+	const UINT dib_pitch    = CalcDibRowPitch(desc.Width, dib_bitdepth);
+	const UINT dib_size     = dib_pitch * desc.Height;
+
+	*pSize = sizeof(BITMAPINFOHEADER) + dib_size;
 	BYTE* p = (BYTE*)LocalAlloc(LMEM_FIXED, *pSize); // only this allocator can be used
 	if (!p) {
 		return E_OUTOFMEMORY;
@@ -3194,21 +3198,19 @@ HRESULT CDX11VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned* pSize)
 	ZeroMemory(pBIH, sizeof(BITMAPINFOHEADER));
 	pBIH->biSize      = sizeof(BITMAPINFOHEADER);
 	pBIH->biWidth     = desc.Width;
-	pBIH->biHeight    = desc.Height;
-	pBIH->biBitCount  = 32;
+	pBIH->biHeight    = -(LONG)desc.Height; // top-down RGB bitmap
+	pBIH->biBitCount  = dib_bitdepth;
 	pBIH->biPlanes    = 1;
-	pBIH->biSizeImage = DIBSIZE(*pBIH);
-
-	UINT dst_pitch = pBIH->biSizeImage / desc.Height;
+	pBIH->biSizeImage = dib_size;
 
 	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 	hr = m_pDeviceContext->Map(pTexture2DShared, 0, D3D11_MAP_READ, 0, &mappedResource);
 	if (SUCCEEDED(hr)) {
 		if (desc2.Format == DXGI_FORMAT_R10G10B10A2_UNORM) {
-			ConvertR10G10B10A2toBGR32(desc.Height, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)mappedResource.pData + mappedResource.RowPitch * (desc.Height - 1), -(int)mappedResource.RowPitch);
+			ConvertR10G10B10A2toBGR32(desc.Height, (BYTE*)(pBIH + 1), dib_pitch, (BYTE*)mappedResource.pData, mappedResource.RowPitch);
 		}
 		else {
-			CopyPlaneAsIs(desc.Height, (BYTE*)(pBIH + 1), dst_pitch, (BYTE*)mappedResource.pData + mappedResource.RowPitch * (desc.Height - 1), -(int)mappedResource.RowPitch);
+			CopyPlaneAsIs(desc.Height, (BYTE*)(pBIH + 1), dib_pitch, (BYTE*)mappedResource.pData, mappedResource.RowPitch);
 		}
 		m_pDeviceContext->Unmap(pTexture2DShared, 0);
 		*ppDib = p;

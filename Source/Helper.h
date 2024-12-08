@@ -196,6 +196,12 @@ void set_colorspace(const DXVA2_ExtendedFormat extfmt, mp_colorspace& colorspace
 
 BITMAPINFOHEADER* GetBIHfromVIHs(const AM_MEDIA_TYPE* mt);
 
+inline UINT CalcDibRowPitch(const UINT width, const UINT bitcount)
+{
+	// see DIBWIDTHBYTES in amvideo.h
+	return ALIGN(width * bitcount, 32) / 8;
+}
+
 HRESULT SaveToBMP(BYTE* src, const UINT src_pitch, const UINT width, const UINT height, const UINT bitdepth, const wchar_t* filename);
 
 HRESULT SaveToImage(BYTE* src, const UINT pitch, const UINT width, const UINT height, const UINT bitdepth, const std::wstring_view filename);

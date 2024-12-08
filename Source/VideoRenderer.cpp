@@ -913,7 +913,7 @@ STDMETHODIMP CMpcVideoRenderer::GetCurrentImage(long *pBufferSize, long *pDIBIma
 	if (w <= 0 || h <= 0) {
 		return E_FAIL;
 	}
-	long size = w * h * 4 + sizeof(BITMAPINFOHEADER);
+	long size = sizeof(BITMAPINFOHEADER) + CalcDibRowPitch(w, 32) * h;
 
 	if (pDIBImage == nullptr) {
 		*pBufferSize = size;

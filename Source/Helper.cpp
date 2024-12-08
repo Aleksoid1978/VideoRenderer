@@ -906,7 +906,7 @@ HRESULT SaveToBMP(BYTE* src, const UINT src_pitch, const UINT width, const UINT 
 		ZeroMemory(bih, sizeof(BITMAPINFOHEADER));
 		bih->biSize = sizeof(BITMAPINFOHEADER);
 		bih->biWidth = width;
-		bih->biHeight = -(LONG)height;
+		bih->biHeight = -(LONG)height; // top-down RGB bitmap
 		bih->biBitCount = bitdepth;
 		bih->biPlanes = 1;
 		bih->biSizeImage = DIBSIZE(*bih);

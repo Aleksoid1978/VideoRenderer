@@ -78,24 +78,6 @@ HRESULT Dump4ByteSurface(IDirect3DSurface9* pSurface, const wchar_t* filename)
 	return E_FAIL;
 }
 
-bool RetrieveBitmapData(unsigned w, unsigned h, unsigned bpp, BYTE* dst, BYTE* src, int srcpitch)
-{
-	unsigned linesize = w * bpp / 8;
-	if ((int)linesize > srcpitch) {
-		return false;
-	}
-
-	src += srcpitch * (h - 1);
-
-	for (unsigned y = 0; y < h; ++y) {
-		memcpy(dst, src, linesize);
-		src -= srcpitch;
-		dst += linesize;
-	}
-
-	return true;
-}
-
 HRESULT DumpDX9Surface(IDirect3DSurface9* pSurface, const wchar_t* filename)
 {
 	CheckPointer(pSurface, E_POINTER);
@@ -125,20 +107,23 @@ HRESULT DumpDX9Surface(IDirect3DSurface9* pSurface, const wchar_t* filename)
 		return hr;
 	};
 
-	unsigned len = desc.Width * desc.Height * 4;
-	std::unique_ptr<BYTE[]> dib(new(std::nothrow) BYTE[sizeof(BITMAPINFOHEADER) + len]);
+	const UINT dib_bitdepth = 32;
+	const UINT dib_pitch = CalcDibRowPitch(desc.Width, dib_bitdepth);
+	const UINT dib_size = dib_pitch * desc.Height;
+
+	std::unique_ptr<BYTE[]> dib(new(std::nothrow) BYTE[sizeof(BITMAPINFOHEADER) + dib_size]);
 	if (!dib) {
 		return E_OUTOFMEMORY;
 	}
 
 	BITMAPINFOHEADER* bih = (BITMAPINFOHEADER*)dib.get();
 	ZeroMemory(bih, sizeof(BITMAPINFOHEADER));
-	bih->biSize = sizeof(BITMAPINFOHEADER);
-	bih->biWidth = desc.Width;
-	bih->biHeight = desc.Height;
-	bih->biBitCount = 32;
-	bih->biPlanes = 1;
-	bih->biSizeImage = DIBSIZE(*bih);
+	bih->biSize      = sizeof(BITMAPINFOHEADER);
+	bih->biWidth     = desc.Width;
+	bih->biHeight    = -(LONG)desc.Height; // top-down RGB bitmap
+	bih->biBitCount  = dib_bitdepth;
+	bih->biPlanes    = 1;
+	bih->biSizeImage = dib_size;
 
 	D3DLOCKED_RECT r;
 	hr = pTarget->LockRect(&r, nullptr, D3DLOCK_READONLY);
@@ -146,20 +131,20 @@ HRESULT DumpDX9Surface(IDirect3DSurface9* pSurface, const wchar_t* filename)
 		return hr;
 	}
 
-	RetrieveBitmapData(desc.Width, desc.Height, 32, (BYTE*)(bih + 1), (BYTE*)r.pBits, r.Pitch);
+	CopyPlaneAsIs(desc.Height, (BYTE*)(bih + 1), dib_pitch, (BYTE*)r.pBits, r.Pitch);
 
 	pTarget->UnlockRect();
 
 	BITMAPFILEHEADER bfh;
 	bfh.bfType = 0x4d42;
 	bfh.bfOffBits = sizeof(bfh) + sizeof(BITMAPINFOHEADER);
-	bfh.bfSize = bfh.bfOffBits + len;
+	bfh.bfSize = bfh.bfOffBits + dib_size;
 	bfh.bfReserved1 = bfh.bfReserved2 = 0;
 
 	FILE* fp;
 	if (_wfopen_s(&fp, filename, L"wb") == 0) {
 		fwrite(&bfh, sizeof(bfh), 1, fp);
-		fwrite(dib.get(), sizeof(BITMAPINFOHEADER) + len, 1, fp);
+		fwrite(dib.get(), sizeof(BITMAPINFOHEADER) + dib_size, 1, fp);
 		fclose(fp);
 	} else {
 		hr = E_ACCESSDENIED;

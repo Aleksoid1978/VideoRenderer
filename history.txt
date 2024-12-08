@@ -1,5 +1,7 @@
 0.9.0 dev
 ------------------------
+Functions for getting the current and displayed video frame now use top-down RGB bitmaps.
+Recommended MPC-BE 1.8.2 or newer.
 
 0.8.9.2318 - 2024-12-05
 ------------------------
