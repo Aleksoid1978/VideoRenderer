@@ -192,6 +192,8 @@ void ConvertR10G10B10A2toBGR32(const UINT lines, BYTE* dst, UINT dst_pitch, cons
 void ConvertR10G10B10A2toBGR48(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 void ConvertR10G10B10A2toBGR64(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 
+void fill_u32(void* dst, uint32_t c, size_t count);
+
 void ClipToSurface(const int texW, const int texH, RECT& s, RECT& d);
 
 void set_colorspace(const DXVA2_ExtendedFormat extfmt, mp_colorspace& colorspace);
