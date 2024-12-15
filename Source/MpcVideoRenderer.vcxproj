@@ -83,6 +83,11 @@
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="SubPic\MemSubPic.cpp" />
+    <ClCompile Include="SubPic\SubPicImpl.cpp" />
+    <ClCompile Include="SubPic\SubPicQueueImpl.cpp" />
+    <ClCompile Include="SubPic\XySubPicProvider.cpp" />
+    <ClCompile Include="SubPic\XySubPicQueueImpl.cpp" />
     <ClCompile Include="Times.cpp" />
     <ClCompile Include="Utils\CPUInfo.cpp" />
     <ClCompile Include="Utils\StringUtil.cpp" />
@@ -116,6 +121,12 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="SubPic\ISubPic.h" />
+    <ClInclude Include="SubPic\MemSubPic.h" />
+    <ClInclude Include="SubPic\SubPicImpl.h" />
+    <ClInclude Include="SubPic\SubPicQueueImpl.h" />
+    <ClInclude Include="SubPic\XySubPicProvider.h" />
+    <ClInclude Include="SubPic\XySubPicQueueImpl.h" />
     <ClInclude Include="Times.h" />
     <ClInclude Include="Utils\CPUInfo.h" />
     <ClInclude Include="Utils\gpu_memcpy_sse4.h" />

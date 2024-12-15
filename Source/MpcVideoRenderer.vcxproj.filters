@@ -19,6 +19,9 @@
     <Filter Include="Utils">
       <UniqueIdentifier>{ba2bad6e-f01e-4ea9-9209-8005fcd5bc5e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SubPic">
+      <UniqueIdentifier>{3575701a-6d18-4391-9ec1-9cefb63193ba}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -101,6 +104,21 @@
     </ClCompile>
     <ClCompile Include="MediaSampleSideData.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SubPic\SubPicQueueImpl.cpp">
+      <Filter>SubPic</Filter>
+    </ClCompile>
+    <ClCompile Include="SubPic\XySubPicProvider.cpp">
+      <Filter>SubPic</Filter>
+    </ClCompile>
+    <ClCompile Include="SubPic\XySubPicQueueImpl.cpp">
+      <Filter>SubPic</Filter>
+    </ClCompile>
+    <ClCompile Include="SubPic\SubPicImpl.cpp">
+      <Filter>SubPic</Filter>
+    </ClCompile>
+    <ClCompile Include="SubPic\MemSubPic.cpp">
+      <Filter>SubPic</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -199,6 +217,24 @@
     </ClInclude>
     <ClInclude Include="Utils\gpu_memcpy_sse4.h">
       <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="SubPic\ISubPic.h">
+      <Filter>SubPic</Filter>
+    </ClInclude>
+    <ClInclude Include="SubPic\SubPicQueueImpl.h">
+      <Filter>SubPic</Filter>
+    </ClInclude>
+    <ClInclude Include="SubPic\XySubPicProvider.h">
+      <Filter>SubPic</Filter>
+    </ClInclude>
+    <ClInclude Include="SubPic\XySubPicQueueImpl.h">
+      <Filter>SubPic</Filter>
+    </ClInclude>
+    <ClInclude Include="SubPic\SubPicImpl.h">
+      <Filter>SubPic</Filter>
+    </ClInclude>
+    <ClInclude Include="SubPic\MemSubPic.h">
+      <Filter>SubPic</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

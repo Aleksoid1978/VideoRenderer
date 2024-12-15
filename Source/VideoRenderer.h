@@ -31,6 +31,8 @@
 #include "../Include/ISubRender11.h"
 #include "../Include/ID3DFullscreenControl.h"
 #include "../Include/FilterInterfacesImpl.h"
+#include "../Include/SubRenderIntf.h"
+#include "SubPic/ISubPic.h"
 
 const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_NV12},
@@ -81,6 +83,7 @@ class __declspec(uuid("71F080AA-8661-4093-B15E-4F6903E77D0A"))
 	, public ISubRender11
 	, public CExFilterConfigImpl
 	, public ID3DFullscreenControl
+	, public ISubRenderConsumer2
 {
 private:
 	friend class CVideoRendererInputPin;
@@ -129,6 +132,10 @@ private:
 	std::atomic_bool m_bDisplayModeChanging = false;
 
 	bool m_bSetNewMediaTypeToInputPin = false;
+
+	CComPtr<ISubPicProvider>  m_pSubPicProvider;
+	CComPtr<ISubPicAllocator> m_pSubPicAllocator;
+	CComPtr<ISubPicQueue>     m_pSubPicQueue;
 
 public:
 	CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr);
@@ -281,6 +288,33 @@ public:
 	// ID3DFullscreenControl
 	STDMETHODIMP SetD3DFullscreen(bool bEnabled);
 	STDMETHODIMP GetD3DFullscreen(bool* pbEnabled);
+
+	// ISubRenderConsumer2
+	STDMETHODIMP Clear(REFERENCE_TIME clearNewerThan = 0);
+
+	// ISubRenderConsumer
+	STDMETHODIMP GetMerit(ULONG* plMerit);
+	STDMETHODIMP Connect(ISubRenderProvider* subtitleRenderer);
+	STDMETHODIMP Disconnect();
+	STDMETHODIMP DeliverFrame(REFERENCE_TIME start, REFERENCE_TIME stop, LPVOID context, ISubRenderFrame* subtitleFrame);
+
+	// ISubRenderOptions
+	STDMETHODIMP GetBool(LPCSTR field, bool* value) { return E_INVALIDARG; }
+	STDMETHODIMP GetInt(LPCSTR field, int* value) { return E_INVALIDARG; }
+	STDMETHODIMP GetSize(LPCSTR field, SIZE* value);
+	STDMETHODIMP GetRect(LPCSTR field, RECT* value);
+	STDMETHODIMP GetUlonglong(LPCSTR field, ULONGLONG* value);
+	STDMETHODIMP GetDouble(LPCSTR field, double* value);
+	STDMETHODIMP GetString(LPCSTR field, LPWSTR* value, int* chars);
+	STDMETHODIMP GetBin(LPCSTR field, LPVOID* value, int* size) { return E_INVALIDARG; }
+	STDMETHODIMP SetBool(LPCSTR field, bool value) { return E_INVALIDARG; }
+	STDMETHODIMP SetInt(LPCSTR field, int value) { return E_INVALIDARG; }
+	STDMETHODIMP SetSize(LPCSTR field, SIZE value) { return E_INVALIDARG; }
+	STDMETHODIMP SetRect(LPCSTR field, RECT value) { return E_INVALIDARG; }
+	STDMETHODIMP SetUlonglong(LPCSTR field, ULONGLONG value) { return E_INVALIDARG; }
+	STDMETHODIMP SetDouble(LPCSTR field, double value) { return E_INVALIDARG; }
+	STDMETHODIMP SetString(LPCSTR field, LPWSTR value, int chars) { return E_INVALIDARG; }
+	STDMETHODIMP SetBin(LPCSTR field, LPVOID value, int size) { return E_INVALIDARG; }
 
 	LRESULT OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 

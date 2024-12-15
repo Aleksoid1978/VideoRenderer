@@ -12,10 +12,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Include", "Include", "{C7CA
 	ProjectSection(SolutionItems) = preProject
 		Include\FilterInterfaces.h = Include\FilterInterfaces.h
 		Include\FilterInterfacesImpl.h = Include\FilterInterfacesImpl.h
+		Include\ID3DFullscreenControl.h = Include\ID3DFullscreenControl.h
 		Include\ID3DVideoMemoryConfiguration.h = Include\ID3DVideoMemoryConfiguration.h
 		Include\IMediaSideData.h = Include\IMediaSideData.h
 		Include\ISubRender.h = Include\ISubRender.h
 		Include\ISubRender11.h = Include\ISubRender11.h
+		Include\SubRenderIntf.h = Include\SubRenderIntf.h
 		Include\Version.h = Include\Version.h
 	EndProjectSection
 EndProject
