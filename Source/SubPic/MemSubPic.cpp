@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2022 see Authors.txt
+ * (C) 2006-2024 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -21,43 +21,7 @@
 
 #include "stdafx.h"
 #include "MemSubPic.h"
-
-void fill_u32(void* dst, uint32_t c, size_t count)
-{
-#ifndef _WIN64
-	__asm {
-		mov eax, c
-		mov ecx, count
-		mov edi, dst
-		cld
-		rep stosd
-	}
-#else
-	size_t& n = count;
-	size_t o = n - (n % 4);
-
-	__m128i val = _mm_set1_epi32((int)c);
-	if (((uintptr_t)dst & 0x0F) == 0) { // 16-byte aligned
-		for (size_t i = 0; i < o; i += 4) {
-			_mm_store_si128((__m128i*) & (((DWORD*)dst)[i]), val);
-		}
-	}
-	else {
-		for (size_t i = 0; i < o; i += 4) {
-			_mm_storeu_si128((__m128i*) & (((DWORD*)dst)[i]), val);
-		}
-	}
-
-	switch (n - o) {
-	case 3:
-		((DWORD*)dst)[o + 2] = c;
-	case 2:
-		((DWORD*)dst)[o + 1] = c;
-	case 1:
-		((DWORD*)dst)[o + 0] = c;
-	}
-#endif
-}
+#include "Helper.h"
 
 //
 // CMemSubPic
