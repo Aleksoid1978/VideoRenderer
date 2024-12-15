@@ -1573,7 +1573,7 @@ STDMETHODIMP CMpcVideoRenderer::Disconnect()
 
 STDMETHODIMP CMpcVideoRenderer::DeliverFrame(REFERENCE_TIME start, REFERENCE_TIME stop, LPVOID context, ISubRenderFrame* subtitleFrame)
 {
-	DLog(L"ISubRenderConsumer::DeliverFrame");
+	//DLog(L"ISubRenderConsumer::DeliverFrame");
 	HRESULT hr = E_FAIL;
 
 	if (CComQIPtr<IXyCompatProvider> pXyProvider = m_pSubPicProvider.p) {
@@ -1689,6 +1689,15 @@ STDMETHODIMP CMpcVideoRenderer::GetString(LPCSTR field, LPWSTR* value, int* char
 	return E_INVALIDARG;
 }
 
+CComPtr<ISubPic> CMpcVideoRenderer::GetSubPic(REFERENCE_TIME rtStart)
+{
+	CComPtr<ISubPic> pSubPic;
+	if (m_pSubPicQueue) {
+		const auto rtNow = m_rtStartTime + rtStart;
+		bool ret = m_pSubPicQueue->LookupSubPic(rtNow, m_filterState == State_Running, pSubPic);
+	}
+	return pSubPic;
+}
 
 HRESULT CMpcVideoRenderer::Redraw()
 {
