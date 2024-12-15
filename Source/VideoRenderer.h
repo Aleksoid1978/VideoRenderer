@@ -316,6 +316,8 @@ public:
 	STDMETHODIMP SetString(LPCSTR field, LPWSTR value, int chars) { return E_INVALIDARG; }
 	STDMETHODIMP SetBin(LPCSTR field, LPVOID value, int size) { return E_INVALIDARG; }
 
+	CComPtr<ISubPic> GetSubPic(REFERENCE_TIME rtStart);
+
 	LRESULT OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	void SwitchFullScreen();

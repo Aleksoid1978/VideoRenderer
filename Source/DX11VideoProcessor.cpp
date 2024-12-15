@@ -2862,6 +2862,17 @@ HRESULT CDX11VideoProcessor::FinalPass(const Tex2D_t& Tex, ID3D11Texture2D* pRen
 
 void CDX11VideoProcessor::DrawSubtitles(ID3D11Texture2D* pRenderTarget)
 {
+	CComPtr<ISubPic> pSubPic = m_pFilter->GetSubPic(m_rtStart);
+	if (pSubPic) {
+		CRect rcSource, rcDest;
+		HRESULT hr = pSubPic->GetSourceAndDest(m_windowRect, m_videoRect, rcSource, rcDest, FALSE, {}, 0, FALSE);
+		if (SUCCEEDED(hr)) {
+			DLog(L"TEST SubPic: rcSource ({},{},{},{}) , rcDest ({},{},{},{})",
+				rcSource.left, rcSource.top, rcSource.right, rcSource.bottom,
+				rcDest.left, rcDest.top, rcDest.right, rcDest.bottom);
+		}
+	}
+
 	if (m_pFilter->m_pSub11CallBack) {
 		ID3D11RenderTargetView* pRenderTargetView;
 		HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
