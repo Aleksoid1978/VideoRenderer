@@ -83,6 +83,8 @@
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="SubPic\DX11SubPic.cpp" />
+    <ClCompile Include="SubPic\DX9SubPic.cpp" />
     <ClCompile Include="SubPic\MemSubPic.cpp" />
     <ClCompile Include="SubPic\SubPicImpl.cpp" />
     <ClCompile Include="SubPic\SubPicQueueImpl.cpp" />
@@ -121,6 +123,8 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="SubPic\DX11SubPic.h" />
+    <ClInclude Include="SubPic\DX9SubPic.h" />
     <ClInclude Include="SubPic\ISubPic.h" />
     <ClInclude Include="SubPic\MemSubPic.h" />
     <ClInclude Include="SubPic\SubPicImpl.h" />

@@ -120,6 +120,12 @@
     <ClCompile Include="SubPic\MemSubPic.cpp">
       <Filter>SubPic</Filter>
     </ClCompile>
+    <ClCompile Include="SubPic\DX9SubPic.cpp">
+      <Filter>SubPic</Filter>
+    </ClCompile>
+    <ClCompile Include="SubPic\DX11SubPic.cpp">
+      <Filter>SubPic</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -234,6 +240,12 @@
       <Filter>SubPic</Filter>
     </ClInclude>
     <ClInclude Include="SubPic\MemSubPic.h">
+      <Filter>SubPic</Filter>
+    </ClInclude>
+    <ClInclude Include="SubPic\DX9SubPic.h">
+      <Filter>SubPic</Filter>
+    </ClInclude>
+    <ClInclude Include="SubPic\DX11SubPic.h">
       <Filter>SubPic</Filter>
     </ClInclude>
   </ItemGroup>
