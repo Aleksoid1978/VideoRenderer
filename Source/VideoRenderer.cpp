@@ -27,6 +27,9 @@
 #include "VideoRendererInputPin.h"
 #include "../Include/Version.h"
 #include "VideoRenderer.h"
+#include "SubPic/XySubPicProvider.h"
+#include "SubPic/XySubPicQueueImpl.h"
+#include "SubPic/MemSubPic.h"
 
 #define WM_SWITCH_FULLSCREEN (WM_APP + 0x1000)
 
@@ -637,19 +640,33 @@ STDMETHODIMP CMpcVideoRenderer::NonDelegatingQueryInterface(REFIID riid, void** 
 {
 	CheckPointer(ppv, E_POINTER);
 
-	return
-		QI(IKsPropertySet)
-		QI(IMFGetService)
-		QI(IBasicVideo)
-		QI(IBasicVideo2)
-		QI(IVideoWindow)
-		QI(ISpecifyPropertyPages)
-		QI(IVideoRenderer)
-		QI(IExFilterConfig)
-		(riid == __uuidof(ISubRender) && m_VideoProcessor && m_VideoProcessor->Type() == 9) ? GetInterface((ISubRender*)this, ppv) :
-		(riid == __uuidof(ISubRender11) && m_VideoProcessor && m_VideoProcessor->Type() == 11) ? GetInterface((ISubRender11*)this, ppv) :
-		(riid == __uuidof(ID3DFullscreenControl) && m_bEnableFullscreenControl) ? GetInterface((ID3DFullscreenControl*)this, ppv) :
-		__super::NonDelegatingQueryInterface(riid, ppv);
+	IFQIRETURN(IKsPropertySet)
+	IFQIRETURN(IMFGetService)
+	IFQIRETURN(IBasicVideo)
+	IFQIRETURN(IBasicVideo2)
+	IFQIRETURN(IVideoWindow)
+	IFQIRETURN(ISpecifyPropertyPages)
+	IFQIRETURN(IVideoRenderer)
+	IFQIRETURN(IExFilterConfig)
+	if (riid == __uuidof(ISubRender) && m_VideoProcessor && m_VideoProcessor->Type() == 9) {
+		return GetInterface((ISubRender*)this, ppv);
+	}
+	if (riid == __uuidof(ISubRender11) && m_VideoProcessor && m_VideoProcessor->Type() == 11) {
+		return GetInterface((ISubRender11*)this, ppv);
+	}
+	if (riid == __uuidof(ID3DFullscreenControl) && m_bEnableFullscreenControl) {
+		return GetInterface((ID3DFullscreenControl*)this, ppv);
+	}
+	if (riid == __uuidof(ISubRenderConsumer2)) {
+		return GetInterface((ISubRenderConsumer2*)this, ppv);
+	}
+	if (riid == __uuidof(ISubRenderConsumer)) {
+		return GetInterface((ISubRenderConsumer*)this, ppv);
+	}
+	if (riid == __uuidof(ISubRenderOptions)) {
+		return GetInterface((ISubRenderOptions*)this, ppv);
+	}
+	return __super::NonDelegatingQueryInterface(riid, ppv);
 }
 
 // IMediaFilter
@@ -1491,6 +1508,187 @@ STDMETHODIMP CMpcVideoRenderer::GetD3DFullscreen(bool* pbEnabled)
 	*pbEnabled = m_bIsD3DFullscreen;
 	return S_OK;
 }
+
+// ISubRenderConsumer2
+
+STDMETHODIMP CMpcVideoRenderer::Clear(REFERENCE_TIME clearNewerThan /* = 0 */)
+{
+	DLog(L"ISubRenderConsumer2::Clear");
+	return m_pSubPicQueue->Invalidate(clearNewerThan);
+}
+
+// ISubRenderConsumer
+
+STDMETHODIMP CMpcVideoRenderer::GetMerit(ULONG* plMerit)
+{
+	DLog(L"ISubRenderConsumer::Clear");
+	CheckPointer(plMerit, E_POINTER);
+	*plMerit = 4 << 16;
+	return S_OK;
+}
+
+STDMETHODIMP CMpcVideoRenderer::Connect(ISubRenderProvider* subtitleRenderer)
+{
+	DLog(L"ISubRenderConsumer::Connect");
+
+	if (m_pSubPicProvider) {
+		return E_ABORT;
+	}
+
+	HRESULT hr = subtitleRenderer->SetBool("combineBitmaps", true);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	if (CComQIPtr<ISubRenderConsumer> pSubConsumer = m_pSubPicQueue.p) {
+		hr = pSubConsumer->Connect(subtitleRenderer);
+	}
+	else {
+		if (!m_pSubPicAllocator) {
+			m_pSubPicAllocator = new CMemSubPicAllocator(0, { 1280, 720 });
+		}
+
+		CComPtr<ISubPicProvider> pSubPicProvider = (ISubPicProvider*)new CXySubPicProvider(subtitleRenderer);
+		CComPtr<ISubPicQueue> pSubPicQueue       = (ISubPicQueue*)new CXySubPicQueueNoThread(m_pSubPicAllocator, &hr);
+
+		if (SUCCEEDED(hr)) {
+			CAutoLock cAutoLock(&m_InterfaceLock);
+			pSubPicQueue->SetSubPicProvider(pSubPicProvider);
+			m_pSubPicProvider = pSubPicProvider;
+			m_pSubPicQueue = pSubPicQueue;
+
+			m_pSubPicAllocator->SetInverseAlpha(true);
+		}
+	}
+
+	return hr;
+}
+
+STDMETHODIMP CMpcVideoRenderer::Disconnect()
+{
+	DLog(L"ISubRenderConsumer::Disconnect");
+	m_pSubPicProvider.Release();
+	return m_pSubPicQueue->SetSubPicProvider(m_pSubPicProvider);
+}
+
+STDMETHODIMP CMpcVideoRenderer::DeliverFrame(REFERENCE_TIME start, REFERENCE_TIME stop, LPVOID context, ISubRenderFrame* subtitleFrame)
+{
+	DLog(L"ISubRenderConsumer::DeliverFrame");
+	HRESULT hr = E_FAIL;
+
+	if (CComQIPtr<IXyCompatProvider> pXyProvider = m_pSubPicProvider.p) {
+		hr = pXyProvider->DeliverFrame(start, stop, context, subtitleFrame);
+	}
+
+	return hr;
+}
+
+// ISubRenderOptions
+
+STDMETHODIMP CMpcVideoRenderer::GetSize(LPCSTR field, SIZE* value)
+{
+	CheckPointer(value, E_POINTER);
+
+	if (!strcmp(field, "originalVideoSize")) {
+		*value = m_videoSize;
+		return S_OK;
+	}
+	else if (!strcmp(field, "arAdjustedVideoSize")) {
+		*value = m_videoSize;
+		if (m_videoAspectRatio.cx > 0 && m_videoAspectRatio.cy > 0) {
+			value->cx = MulDiv(m_videoSize.cx, m_videoAspectRatio.cx, m_videoAspectRatio.cy);
+		}
+		return S_OK;
+	}
+
+	return E_INVALIDARG;
+}
+
+STDMETHODIMP CMpcVideoRenderer::GetRect(LPCSTR field, RECT* value)
+{
+	CheckPointer(value, E_POINTER);
+	if (!strcmp(field, "videoOutputRect") || !strcmp(field, "subtitleTargetRect")) {
+		if (m_videoRect.IsRectEmpty()) {
+			if (m_windowRect.IsRectEmpty()) {
+				*value = { 0, 0, 1280, 720 };
+			}
+			else {
+				*value = m_windowRect;
+			}
+		}
+		else {
+			value->left = 0;
+			value->top = 0;
+			value->right = m_videoRect.Width();
+			value->bottom = m_videoRect.Height();
+		}
+		return S_OK;
+	}
+
+	return E_INVALIDARG;
+}
+
+STDMETHODIMP CMpcVideoRenderer::GetUlonglong(LPCSTR field, ULONGLONG* value)
+{
+	CheckPointer(value, E_POINTER);
+	if (!strcmp(field, "frameRate")) {
+		// TODO: check it
+		*value = (REFERENCE_TIME)(10000000.0 / m_FrameStats.GetAverageFps());
+		return S_OK;
+	}
+
+	return E_INVALIDARG;
+}
+
+STDMETHODIMP CMpcVideoRenderer::GetDouble(LPCSTR field, double* value)
+{
+	CheckPointer(value, E_POINTER);
+	if (!strcmp(field, "refreshRate")) {
+		// TODO: check it
+		*value = 1000.0 / m_FrameStats.GetAverageFps();
+		// hmm, calculate Refresh Time in milliseconds (not Refresh Rate)
+		return S_OK;
+	}
+
+	return E_INVALIDARG;
+}
+
+STDMETHODIMP CMpcVideoRenderer::GetString(LPCSTR field, LPWSTR* value, int* chars)
+{
+	CheckPointer(value, E_POINTER);
+	CheckPointer(chars, E_POINTER);
+	std::wstring str;
+
+	if (!strcmp(field, "name")) {
+		str = L"MPC Video Renderer";
+	}
+	else if (!strcmp(field, "version")) {
+		str = _CRT_WIDE(VERSION_STR);
+	}
+	else if (!strcmp(field, "yuvMatrix")) {
+		str = L"TV.709";
+		// TODO
+	}
+
+	if (str.length()) {
+		const int len = str.length();
+		const size_t sz = (len + 1) * sizeof(WCHAR);
+		LPWSTR buf = (LPWSTR)LocalAlloc(LPTR, sz);
+
+		if (!buf) {
+			return E_OUTOFMEMORY;
+		}
+
+		wcscpy_s(buf, len + 1, str.data());
+		*chars = len;
+		*value = buf;
+
+		return S_OK;
+	}
+
+	return E_INVALIDARG;
+}
+
 
 HRESULT CMpcVideoRenderer::Redraw()
 {
