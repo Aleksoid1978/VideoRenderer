@@ -1521,7 +1521,7 @@ STDMETHODIMP CMpcVideoRenderer::Clear(REFERENCE_TIME clearNewerThan /* = 0 */)
 
 STDMETHODIMP CMpcVideoRenderer::GetMerit(ULONG* plMerit)
 {
-	DLog(L"ISubRenderConsumer::Clear");
+	DLog(L"ISubRenderConsumer::GetMerit");
 	CheckPointer(plMerit, E_POINTER);
 	*plMerit = 4 << 16;
 	return S_OK;
