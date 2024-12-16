@@ -2586,10 +2586,31 @@ HRESULT CDX9VideoProcessor::FinalPass(IDirect3DTexture9* pTexture, IDirect3DSurf
 
 void CDX9VideoProcessor::DrawSubtitles(IDirect3DSurface9* pRenderTarget)
 {
+	HRESULT hr = S_OK;
+
+	CComPtr<ISubPic> pSubPic = m_pFilter->GetSubPic(m_rtStart);
+	if (pSubPic) {
+		RECT rcSource, rcDest;
+		hr = pSubPic->GetSourceAndDest(m_windowRect, m_videoRect, &rcSource, &rcDest, FALSE, {}, 0, FALSE);
+		if (SUCCEEDED(hr)) {
+			HRESULT hr_ec = m_pD3DDevEx->EndScene();
+
+			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
+			if (SUCCEEDED(hr)) {
+				hr = pSubPic->AlphaBlt(&rcSource, &rcDest, nullptr);
+			}
+
+			if (SUCCEEDED(hr_ec)) {
+				hr_ec = m_pD3DDevEx->BeginScene();
+			}
+		}
+		return;
+	}
+
 	if (m_pFilter->m_pSubCallBack) {
 		HRESULT hr_ec = m_pD3DDevEx->EndScene();
 
-		HRESULT hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
+		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 		if (SUCCEEDED(hr)) {
 			const SIZE windowSize = m_windowRect.Size();
 			const CRect rSrcPri(POINT(0, 0), windowSize);
