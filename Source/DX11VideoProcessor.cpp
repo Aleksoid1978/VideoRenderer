@@ -3693,6 +3693,14 @@ HRESULT CDX11VideoProcessor::AddPostScaleShader(const std::wstring& name, const 
 	return hr;
 }
 
+ISubPicAllocator* CDX11VideoProcessor::GetSubPicAllocator()
+{
+	if (!m_pSubPicAllocator && m_pDevice) {
+		m_pSubPicAllocator = new CDX11SubPicAllocator(m_pDevice, { 1280, 720 });
+	}
+	return m_pSubPicAllocator;
+}
+
 void CDX11VideoProcessor::UpdateStatsPresent()
 {
 	DXGI_SWAP_CHAIN_DESC1 swapchain_desc;

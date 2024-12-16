@@ -31,6 +31,7 @@
 #include "D3DUtil/D3D11Font.h"
 #include "D3DUtil/D3D11Geometry.h"
 #include "VideoProcessor.h"
+#include "SubPic/DX11SubPic.h"
 
 #define TEST_SHADER 0
 
@@ -180,6 +181,8 @@ private:
 
 	D3DCOLOR m_dwStatsTextColor = D3DCOLOR_XRGB(255, 255, 255);
 
+	// SubPic
+	CComPtr<CDX11SubPicAllocator> m_pSubPicAllocator;
 	bool m_bCallbackDeviceIsSet = false;
 	void SetCallbackDevice();
 
@@ -261,6 +264,8 @@ public:
 
 	HRESULT AddPreScaleShader(const std::wstring& name, const std::string& srcCode) override;
 	HRESULT AddPostScaleShader(const std::wstring& name, const std::string& srcCode) override;
+
+	ISubPicAllocator* GetSubPicAllocator() override;
 
 private:
 	void UpdateTexures();

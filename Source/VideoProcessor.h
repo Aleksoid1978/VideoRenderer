@@ -23,6 +23,7 @@
 #include <evr9.h>
 #include "DisplayConfig.h"
 #include "FrameStats.h"
+#include "SubPic/ISubPic.h"
 
 enum : int {
 	VP_DX9 = 9,
@@ -223,6 +224,8 @@ public:
 	void SetDisplayInfo(const DisplayConfig_t& dc, const bool primary, const bool fullscreen);
 
 	bool GetDoubleRate() { return m_bDoubleFrames; }
+
+	virtual ISubPicAllocator* GetSubPicAllocator() { return nullptr; };
 
 protected:
 	inline bool SourceIsPQorHLG() {

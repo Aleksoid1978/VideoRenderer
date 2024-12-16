@@ -2157,6 +2157,14 @@ HRESULT CDX9VideoProcessor::AddPostScaleShader(const std::wstring& name, const s
 	return hr;
 }
 
+ISubPicAllocator* CDX9VideoProcessor::GetSubPicAllocator()
+{
+	if (!m_pSubPicAllocator && m_pD3DDevEx) {
+		m_pSubPicAllocator = new CDX9SubPicAllocator(m_pD3DDevEx, { 1280, 720 }, true/*Hmm*/);
+	}
+	return m_pSubPicAllocator;
+}
+
 void CDX9VideoProcessor::UpdateTexures()
 {
 	if (!m_srcWidth || !m_srcHeight) {
