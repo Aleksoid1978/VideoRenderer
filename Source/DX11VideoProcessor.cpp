@@ -2862,20 +2862,34 @@ HRESULT CDX11VideoProcessor::FinalPass(const Tex2D_t& Tex, ID3D11Texture2D* pRen
 
 void CDX11VideoProcessor::DrawSubtitles(ID3D11Texture2D* pRenderTarget)
 {
+	HRESULT hr = S_OK;
+
 	CComPtr<ISubPic> pSubPic = m_pFilter->GetSubPic(m_rtStart);
 	if (pSubPic) {
-		CRect rcSource, rcDest;
-		HRESULT hr = pSubPic->GetSourceAndDest(m_windowRect, m_videoRect, rcSource, rcDest, FALSE, {}, 0, FALSE);
+		RECT rcSource, rcDest;
+		hr = pSubPic->GetSourceAndDest(m_windowRect, m_videoRect, &rcSource, &rcDest, FALSE, {}, 0, FALSE);
 		if (SUCCEEDED(hr)) {
-			DLog(L"TEST SubPic: rcSource ({},{},{},{}) , rcDest ({},{},{},{})",
-				rcSource.left, rcSource.top, rcSource.right, rcSource.bottom,
-				rcDest.left, rcDest.top, rcDest.right, rcDest.bottom);
+			ID3D11RenderTargetView* pRenderTargetView;
+			hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+			if (SUCCEEDED(hr)) {
+				// Set render target and shaders
+				m_pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
+				m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
+				m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
+				m_pDeviceContext->PSSetShader(m_pPS_BitmapToFrame, nullptr, 0);
+
+				// call the function for drawing subtitles
+				hr = pSubPic->AlphaBlt(&rcSource, &rcDest, nullptr);
+
+				pRenderTargetView->Release();
+			}
 		}
+		return;
 	}
 
 	if (m_pFilter->m_pSub11CallBack) {
 		ID3D11RenderTargetView* pRenderTargetView;
-		HRESULT hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
+		hr = m_pDevice->CreateRenderTargetView(pRenderTarget, nullptr, &pRenderTargetView);
 		if (SUCCEEDED(hr)) {
 			const CRect rSrcPri(POINT(0, 0), m_windowRect.Size());
 			const CRect rDstVid(m_videoRect);
