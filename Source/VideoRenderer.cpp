@@ -29,7 +29,6 @@
 #include "VideoRenderer.h"
 #include "SubPic/XySubPicProvider.h"
 #include "SubPic/XySubPicQueueImpl.h"
-#include "SubPic/MemSubPic.h"
 
 #define WM_SWITCH_FULLSCREEN (WM_APP + 0x1000)
 
@@ -1544,12 +1543,13 @@ STDMETHODIMP CMpcVideoRenderer::Connect(ISubRenderProvider* subtitleRenderer)
 		hr = pSubConsumer->Connect(subtitleRenderer);
 	}
 	else {
-		if (!m_pSubPicAllocator) {
-			m_pSubPicAllocator = new CMemSubPicAllocator(0, { 1280, 720 });
+		ISubPicAllocator* pSubPicAllocator = m_VideoProcessor->GetSubPicAllocator();
+		if (!pSubPicAllocator) {
+			return E_FAIL;
 		}
 
 		CComPtr<ISubPicProvider> pSubPicProvider = (ISubPicProvider*)new CXySubPicProvider(subtitleRenderer);
-		CComPtr<ISubPicQueue> pSubPicQueue       = (ISubPicQueue*)new CXySubPicQueueNoThread(m_pSubPicAllocator, &hr);
+		CComPtr<ISubPicQueue> pSubPicQueue       = (ISubPicQueue*)new CXySubPicQueueNoThread(pSubPicAllocator, &hr);
 
 		if (SUCCEEDED(hr)) {
 			CAutoLock cAutoLock(&m_InterfaceLock);
@@ -1557,7 +1557,7 @@ STDMETHODIMP CMpcVideoRenderer::Connect(ISubRenderProvider* subtitleRenderer)
 			m_pSubPicProvider = pSubPicProvider;
 			m_pSubPicQueue = pSubPicQueue;
 
-			m_pSubPicAllocator->SetInverseAlpha(true);
+			pSubPicAllocator->SetInverseAlpha(true);
 		}
 	}
 

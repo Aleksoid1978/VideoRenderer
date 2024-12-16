@@ -134,7 +134,6 @@ private:
 	bool m_bSetNewMediaTypeToInputPin = false;
 
 	CComPtr<ISubPicProvider>  m_pSubPicProvider;
-	CComPtr<ISubPicAllocator> m_pSubPicAllocator;
 	CComPtr<ISubPicQueue>     m_pSubPicQueue;
 
 public:
