@@ -148,7 +148,6 @@ private:
 	CD3D11Lines     m_Lines;
 	CD3D11Polyline  m_SyncLine;
 
-	bool m_bDecoderDevice = false;
 	bool m_bIsFullscreen = false;
 
 	int m_iVPSuperRes = SUPERRES_Disable;
@@ -221,7 +220,7 @@ private:
 	bool HandleHDRToggle();
 
 public:
-	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, const bool bDecoderDevice);
+	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
 	HRESULT InitSwapChain(bool bWindowChanged);
 
 	BOOL VerifyMediaType(const CMediaType* pmt) override;

@@ -619,7 +619,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged,
 
 	DLog(L"CDX11VideoProcessor::Init() : D3D11CreateDevice() successfully with feature level {}.{}", (featurelevel >> 12), (featurelevel >> 8) & 0xF);
 
-	hr = SetDevice(pDevice, nullptr, false);
+	hr = SetDevice(pDevice, nullptr);
 	pDevice->Release();
 
 	if (S_OK == hr) {
@@ -1151,7 +1151,7 @@ HRESULT CDX11VideoProcessor::MemCopyToTexSrcVideo(const BYTE* srcData, const int
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext, const bool bDecoderDevice)
+HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext)
 {
 	DLog(L"CDX11VideoProcessor::SetDevice()");
 
@@ -1337,8 +1337,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 			m_TexDither.Release();
 		}
 	}
-
-	m_bDecoderDevice = bDecoderDevice;
 
 	m_pFilter->OnDisplayModeChange();
 	UpdateStatsStatic();
