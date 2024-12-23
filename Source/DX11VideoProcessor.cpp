@@ -568,10 +568,6 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged,
 	}
 	m_nCurrentAdapter = currentAdapter;
 
-	if (m_bDecoderDevice && m_pDXGISwapChain1) {
-		return S_OK;
-	}
-
 	ReleaseSwapChain();
 	m_pDXGIFactory2.Release();
 	ReleaseDevice();
@@ -1346,6 +1342,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	m_pFilter->OnDisplayModeChange();
 	UpdateStatsStatic();
+	UpdateStatsByWindow();
 	UpdateStatsByDisplay();
 
 	return hr;
