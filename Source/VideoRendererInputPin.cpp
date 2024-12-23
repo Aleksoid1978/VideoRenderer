@@ -188,7 +188,7 @@ STDMETHODIMP CVideoRendererInputPin::ActivateD3D11Decoding(ID3D11Device *pDevice
 	HRESULT hr = E_FAIL;
 	if (m_pBaseRenderer->m_VideoProcessor->Type() == VP_DX11) {
 		if (auto pDX11VP = dynamic_cast<CDX11VideoProcessor*>(m_pBaseRenderer->m_VideoProcessor.get())) {
-			hr = pDX11VP->SetDevice(pDevice, pContext, true);
+			hr = pDX11VP->SetDevice(pDevice, pContext);
 		}
 	}
 	m_bD3D11 = (hr == S_OK);
