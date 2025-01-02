@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2024 see Authors.txt
+* (C) 2018-2025 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -184,6 +184,7 @@ private:
 	CComPtr<CDX11SubPicAllocator> m_pSubPicAllocator;
 	bool m_bCallbackDeviceIsSet = false;
 	void SetCallbackDevice();
+	void UpdateSubPic();
 
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Settings_t& config, HRESULT& hr);
