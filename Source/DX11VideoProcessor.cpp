@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2024 see Authors.txt
+* (C) 2018-2025 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -514,6 +514,9 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 			}
 		}
 	}
+
+	m_pFilter->m_pSubPicQueue.Release();
+	m_pSubPicAllocator.Release();
 
 	ReleaseSwapChain();
 	m_pDXGIFactory2.Release();
@@ -1295,6 +1298,7 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 	}
 
 	SetCallbackDevice();
+	UpdateSubPic();
 
 	HRESULT hr3 = m_Font3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
 	DLogIf(FAILED(hr3), L"m_Font3D.InitDeviceObjects() failed with error {}", HR2Str(hr3));
@@ -4064,5 +4068,21 @@ void CDX11VideoProcessor::SetCallbackDevice()
 {
 	if (!m_bCallbackDeviceIsSet && m_pDevice && m_pFilter->m_pSub11CallBack) {
 		m_bCallbackDeviceIsSet = SUCCEEDED(m_pFilter->m_pSub11CallBack->SetDevice11(m_pDevice));
+	}
+}
+
+void CDX11VideoProcessor::UpdateSubPic()
+{
+	ASSERT(m_pDevice);
+
+	if (m_pFilter->m_pSubPicProvider) {
+		if (m_pSubPicAllocator) {
+			m_pSubPicAllocator->ChangeDevice(m_pDevice);
+		}
+
+		if (m_pFilter->m_pSubPicQueue) {
+			m_pFilter->m_pSubPicQueue->Invalidate();
+			m_pFilter->m_pSubPicQueue->SetSubPicProvider(m_pFilter->m_pSubPicProvider);
+		}
 	}
 }
