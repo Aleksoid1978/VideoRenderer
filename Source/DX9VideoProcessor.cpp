@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2024 see Authors.txt
+* (C) 2018-2025 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -326,6 +326,9 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Setting
 
 CDX9VideoProcessor::~CDX9VideoProcessor()
 {
+	m_pFilter->m_pSubPicQueue.Release();
+	m_pSubPicAllocator.Release();
+
 	if (m_deviceThread.joinable()) {
 		m_evQuit.Set();
 		m_deviceThread.join();
@@ -536,6 +539,8 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 				return E_FAIL;
 			}
 		}
+
+		UpdateSubPic();
 
 		HRESULT hr2 = m_Font3D.InitDeviceObjects(m_pD3DDevEx);
 		DLogIf(FAILED(hr2), L"m_Font3D.InitDeviceObjects() failed with error {}", HR2Str(hr2));
@@ -3264,5 +3269,21 @@ STDMETHODIMP CDX9VideoProcessor::UpdateAlphaBitmapParameters(const MFVideoAlphaB
 		return ((pBmpParms->dwFlags & validFlags) == validFlags) ? S_OK : S_FALSE;
 	} else {
 		return MF_E_NOT_INITIALIZED;
+	}
+}
+
+void CDX9VideoProcessor::UpdateSubPic()
+{
+	ASSERT(m_pD3DDevEx);
+
+	if (m_pFilter->m_pSubPicProvider) {
+		if (m_pSubPicAllocator) {
+			m_pSubPicAllocator->ChangeDevice(m_pD3DDevEx);
+		}
+
+		if (m_pFilter->m_pSubPicQueue) {
+			m_pFilter->m_pSubPicQueue->Invalidate();
+			m_pFilter->m_pSubPicQueue->SetSubPicProvider(m_pFilter->m_pSubPicProvider);
+		}
 	}
 }
