@@ -117,9 +117,6 @@
     <ClCompile Include="SubPic\SubPicImpl.cpp">
       <Filter>SubPic</Filter>
     </ClCompile>
-    <ClCompile Include="SubPic\MemSubPic.cpp">
-      <Filter>SubPic</Filter>
-    </ClCompile>
     <ClCompile Include="SubPic\DX9SubPic.cpp">
       <Filter>SubPic</Filter>
     </ClCompile>
@@ -237,9 +234,6 @@
       <Filter>SubPic</Filter>
     </ClInclude>
     <ClInclude Include="SubPic\SubPicImpl.h">
-      <Filter>SubPic</Filter>
-    </ClInclude>
-    <ClInclude Include="SubPic\MemSubPic.h">
       <Filter>SubPic</Filter>
     </ClInclude>
     <ClInclude Include="SubPic\DX9SubPic.h">
