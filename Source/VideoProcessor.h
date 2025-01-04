@@ -1,5 +1,5 @@
 /*
- * (C) 2020-2024 see Authors.txt
+ * (C) 2020-2025 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -225,7 +225,7 @@ public:
 
 	bool GetDoubleRate() { return m_bDoubleFrames; }
 
-	virtual ISubPicAllocator* GetSubPicAllocator() { return nullptr; };
+	virtual ISubPicAllocator* GetSubPicAllocator() PURE;
 
 protected:
 	inline bool SourceIsPQorHLG() {
