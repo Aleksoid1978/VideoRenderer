@@ -85,7 +85,6 @@
     </ClCompile>
     <ClCompile Include="SubPic\DX11SubPic.cpp" />
     <ClCompile Include="SubPic\DX9SubPic.cpp" />
-    <ClCompile Include="SubPic\MemSubPic.cpp" />
     <ClCompile Include="SubPic\SubPicImpl.cpp" />
     <ClCompile Include="SubPic\SubPicQueueImpl.cpp" />
     <ClCompile Include="SubPic\XySubPicProvider.cpp" />
@@ -126,7 +125,6 @@
     <ClInclude Include="SubPic\DX11SubPic.h" />
     <ClInclude Include="SubPic\DX9SubPic.h" />
     <ClInclude Include="SubPic\ISubPic.h" />
-    <ClInclude Include="SubPic\MemSubPic.h" />
     <ClInclude Include="SubPic\SubPicImpl.h" />
     <ClInclude Include="SubPic\SubPicQueueImpl.h" />
     <ClInclude Include="SubPic\XySubPicProvider.h" />
