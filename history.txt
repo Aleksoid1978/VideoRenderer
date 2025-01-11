@@ -1,10 +1,10 @@
 0.9.0 dev
 ------------------------
-"Super Resolution" enabled for 10-bit video too only if ACM disabled (Windows 11 24H2).
 Functions for getting the current and displayed video frame now use top-down RGB bitmaps.
 Added the ability to get the displayed video frame on the 10-bit display in RGB48 format.
 Fixed reinitialization when changing display when using Direct3D 11.
 Added support for the ISubRenderConsumer2 interface, which allows connecting XySubFilter.
+"Super Resolution" will be used for 10-bit video only if ACM is disabled (Windows 11 24H2).
 Recommended MPC-BE 1.8.2.12 or newer.
 
 0.8.9.2318 - 2024-12-05
