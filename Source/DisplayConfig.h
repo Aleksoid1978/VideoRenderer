@@ -1,5 +1,5 @@
 /*
- * (C) 2020-2024 see Authors.txt
+ * (C) 2020-2025 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -126,6 +126,13 @@ struct DisplayConfig_t {
 		}
 
 		return advancedColor.advancedColorEnabled && !advancedColor.wideColorEnforced && !advancedColor.advancedColorForceDisabled;
+	}
+	bool ACMEnabled() const {
+		if (IsWindows11_24H2OrGreater()) {
+			return windows1124H2Colors.wideColorSupported && windows1124H2Colors.wideColorUserEnabled;
+		}
+
+		return false;
 	}
 };
 

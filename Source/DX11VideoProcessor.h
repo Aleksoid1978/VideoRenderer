@@ -161,6 +161,8 @@ private:
 	bool m_bHdrDisplaySwitching   = false; // switching HDR display in progress
 	bool m_bHdrDisplayModeEnabled = false;
 	bool m_bHdrAllowSwitchDisplay = true;
+	bool m_bACMEnabled            = false;
+
 	UINT m_srcVideoTransferFunction = 0; // need a description or rename
 
 	std::map<std::wstring, bool> m_hdrModeSavedState;

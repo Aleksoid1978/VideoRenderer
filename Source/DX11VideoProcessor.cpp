@@ -539,6 +539,8 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged,
 	m_bHdrDisplayModeEnabled = false;
 	m_DisplayBitsPerChannel = 8;
 
+	m_bACMEnabled = false;
+
 	MONITORINFOEXW mi = { sizeof(mi) };
 	GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 	DisplayConfig_t displayConfig = {};
@@ -547,6 +549,8 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged,
 		m_bHdrDisplayModeEnabled = displayConfig.HDREnabled();
 		m_bHdrPassthroughSupport = displayConfig.HDRSupported() && m_bHdrDisplayModeEnabled;
 		m_DisplayBitsPerChannel = displayConfig.bitsPerChannel;
+
+		m_bACMEnabled = !m_bHdrDisplayModeEnabled && displayConfig.ACMEnabled();
 	}
 
 	if (m_bIsFullscreen != m_pFilter->m_bIsFullscreen) {
@@ -1563,6 +1567,8 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 			m_bHdrDisplayModeEnabled = displayConfig.HDREnabled();
 			m_bHdrPassthroughSupport = displayConfig.HDRSupported() && m_bHdrDisplayModeEnabled;
 			m_DisplayBitsPerChannel = displayConfig.bitsPerChannel;
+
+			m_bACMEnabled = !m_bHdrDisplayModeEnabled && displayConfig.ACMEnabled();
 		}
 	}
 
@@ -1812,7 +1818,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return hr;
 	}
 
-	auto superRes = (m_bVPScaling && params.CDepth == 8 && !(m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR())) ? m_iVPSuperRes : SUPERRES_Disable;
+	auto superRes = (m_bVPScaling && (params.CDepth == 8 || !m_bACMEnabled) && !(m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR())) ? m_iVPSuperRes : SUPERRES_Disable;
 	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(superRes) == S_OK);
 
 	auto rtxHDR = m_bVPRTXVideoHDR && m_bHdrPassthroughSupport && m_bHdrPassthrough && m_iTexFormat != TEXFMT_8INT && !SourceIsHDR();
@@ -3588,7 +3594,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (changeSuperRes) {
-		auto superRes = (m_bVPScaling && m_srcParams.CDepth == 8 && !(m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR())) ? m_iVPSuperRes : SUPERRES_Disable;
+		auto superRes = (m_bVPScaling && (m_srcParams.CDepth == 8 || !m_bACMEnabled) && !(m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR())) ? m_iVPSuperRes : SUPERRES_Disable;
 		m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(superRes) == S_OK);
 	}
 
