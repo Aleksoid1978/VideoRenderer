@@ -27,6 +27,11 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      - name: Select Windows SDK 10.0.22621.0
+        run: |
+          (Get-Content .\\platform.props) | ForEach-Object { $_ -replace ">10.0<", ">10.0.22621.0<" } | Set-Content .\\platform.props
+        shell: pwsh
+
       - name: Build VideoRenderer
         run: |
           .\\build_mpcvr.cmd NoWait
