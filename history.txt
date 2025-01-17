@@ -1,4 +1,4 @@
-0.9.0 dev
+0.9.1.2353 - 2025-01-17
 ------------------------
 Functions for getting the current and displayed video frame now use top-down RGB bitmaps.
 Added the ability to get the displayed video frame on the 10-bit display in RGB48 format.
