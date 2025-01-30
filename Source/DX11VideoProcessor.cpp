@@ -1818,7 +1818,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return hr;
 	}
 
-	auto superRes = (m_bVPScaling && (params.CDepth == 8 || !m_bACMEnabled) && !(m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR())) ? m_iVPSuperRes : SUPERRES_Disable;
+	auto superRes = (m_bVPScaling && (params.CDepth == 8 || !m_bACMEnabled)) ? m_iVPSuperRes : SUPERRES_Disable;
 	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(superRes) == S_OK);
 
 	auto rtxHDR = m_bVPRTXVideoHDR && m_bHdrPassthroughSupport && m_bHdrPassthrough && m_iTexFormat != TEXFMT_8INT && !SourceIsHDR();
@@ -3863,12 +3863,9 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		str += std::format(L"\nScaling       : {}x{} -> {}x{}", m_srcRectWidth, m_srcRectHeight, dstW, dstH);
 	}
 	if (m_srcRectWidth != dstW || m_srcRectHeight != dstH) {
-		if (m_D3D11VP.IsReady() && m_bVPScaling && !m_bVPScalingUseShaders) {
+		if (m_D3D11VP.IsReady() && m_bVPScaling && !m_bVPScalingUseShaders)
 			str.append(L" D3D11");
-			if (m_bVPUseSuperRes) {
-				str.append(L" SuperResolution*");
-			}
-		} else {
+		else {
 			str += L' ';
 			if (m_strShaderX) {
 				str.append(m_strShaderX);
@@ -3881,6 +3878,9 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 			}
 		}
 	}
+	if (m_D3D11VP.IsReady() && m_bVPScaling && !m_bVPScalingUseShaders && m_bVPUseSuperRes && 
+		(dstW > m_srcRectWidth || dstH > m_srcRectHeight || dstW == m_srcRectWidth && dstH == m_srcRectHeight))
+		str.append(L" SuperResolution*");
 
 	if (m_strCorrection || m_pPostScaleShaders.size() || m_bDitherUsed) {
 		str.append(L"\nPostProcessing:");
