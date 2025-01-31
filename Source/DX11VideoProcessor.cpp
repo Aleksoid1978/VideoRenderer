@@ -1818,7 +1818,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 		return hr;
 	}
 
-	auto superRes = (m_bVPScaling && (params.CDepth == 8 || !m_bACMEnabled) && !(m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR())) ? m_iVPSuperRes : SUPERRES_Disable;
+	auto superRes = (m_bVPScaling && (params.CDepth == 8 || !m_bACMEnabled)) ? m_iVPSuperRes : SUPERRES_Disable;
 	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(superRes) == S_OK);
 
 	auto rtxHDR = m_bVPRTXVideoHDR && m_bHdrPassthroughSupport && m_bHdrPassthrough && m_iTexFormat != TEXFMT_8INT && !SourceIsHDR();
@@ -3594,7 +3594,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (changeSuperRes) {
-		auto superRes = (m_bVPScaling && (m_srcParams.CDepth == 8 || !m_bACMEnabled) && !(m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR())) ? m_iVPSuperRes : SUPERRES_Disable;
+		auto superRes = (m_bVPScaling && (m_srcParams.CDepth == 8 || !m_bACMEnabled)) ? m_iVPSuperRes : SUPERRES_Disable;
 		m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(superRes) == S_OK);
 	}
 
