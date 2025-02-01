@@ -1,7 +1,6 @@
 0.9.2 dev
 ------------------------
-"Super Resolution" will be used for HDR video with passthrough.
-
+"Super Resolution" now works with HDR passthrough. Requires GeForce driver version 572 or newer.
 
 0.9.1.2353 - 2025-01-17
 ------------------------
