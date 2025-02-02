@@ -292,10 +292,6 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 {
 	DLog(L"CMpcVideoRenderer::~CMpcVideoRenderer()");
 
-	if (m_hWndWindow) {
-		::SendMessageW(m_hWndWindow, WM_CLOSE, 0, 0);
-	}
-
 	UnregisterClassW(g_szClassName, g_hInst);
 
 	if (m_hWndParentMain) {
@@ -307,6 +303,10 @@ CMpcVideoRenderer::~CMpcVideoRenderer()
 	}
 
 	m_VideoProcessor.reset();
+
+	if (m_hWndWindow) {
+		::SendMessageW(m_hWndWindow, WM_CLOSE, 0, 0);
+	}
 
 	g_nInstance--; // always decrement g_nInstance in the destructor
 }
@@ -1070,11 +1070,6 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 	if (Owner && m_hWndParent != (HWND)Owner) {
 		m_hWndParent = (HWND)Owner;
 		return Init(true);
-	} else if (Owner == NULL) {
-		if (m_hWndWindow) {
-			::SendMessageW(m_hWndWindow, WM_CLOSE, 0, 0);
-			m_hWndWindow = nullptr;
-		}
 	}
 
 	return S_OK;
