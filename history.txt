@@ -1,6 +1,8 @@
 0.9.2 dev
 ------------------------
 "Super Resolution" now works with HDR passthrough. Requires GeForce driver version 572 or newer.
+Fixed window artifacts when using Swap effect Flip.
+Recommended MPC-BE 1.8.2.132 or newer.
 
 0.9.1.2353 - 2025-01-17
 ------------------------
