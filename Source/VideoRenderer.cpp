@@ -1044,7 +1044,7 @@ HRESULT CMpcVideoRenderer::Init(const bool bCreateWindow/* = false*/)
 			}
 
 			if (!m_windowRect.IsRectNull()) {
-				SetWindowPos(m_hWndWindow, nullptr, m_windowRect.left, m_windowRect.top, m_windowRect.Width(), m_windowRect.Height(), SWP_NOZORDER | SWP_NOACTIVATE);
+				SetWindowPos(m_hWndWindow, nullptr, m_windowRect.left, m_windowRect.top, m_windowRect.Width(), m_windowRect.Height(), SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOREDRAW);
 			}
 		}
 	}
@@ -1070,7 +1070,13 @@ STDMETHODIMP CMpcVideoRenderer::put_Owner(OAHWND Owner)
 	if (Owner && m_hWndParent != (HWND)Owner) {
 		m_hWndParent = (HWND)Owner;
 		return Init(true);
+	} else if (Owner == NULL) {
+		if (m_hWndWindow) {
+			::SendMessageW(m_hWndWindow, WM_CLOSE, 0, 0);
+			m_hWndWindow = nullptr;
+		}
 	}
+
 	return S_OK;
 }
 
