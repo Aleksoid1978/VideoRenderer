@@ -1,5 +1,6 @@
 0.9.4 dev
 ------------------------
+When playing HDR and outputting HDR Passthrough - images/thumbnails are saved "in normal form", in SDR.
 
 0.9.3.2363 - 2025-02-05
 ------------------------

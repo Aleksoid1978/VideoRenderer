@@ -3140,6 +3140,21 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 		return hr;
 	}
 
+	const bool bHdrPassthrough = (m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR());
+
+	if (bHdrPassthrough) {
+		if (m_D3D11VP.IsReady()) {
+			m_pPSCorrection.Release();
+
+			auto resId = m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 ? IDF_PS_11_CONVERT_PQ_TO_SDR : IDF_PS_11_FIXCONVERT_HLG_TO_SDR;
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, resId));
+			SetShaderLuminanceParams();
+		} else {
+			m_bHdrPassthrough = false;
+			UpdateConvertColorShader();
+		}
+	}
+
 	const auto backupVidRect = m_videoRect;
 	const auto backupWndRect = m_windowRect;
 	m_videoRect  = imageRect;
@@ -3158,6 +3173,20 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	m_windowRect = backupWndRect;
 	UpdateTexures();
 	UpdatePostScaleTexures();
+
+	if (bHdrPassthrough) {
+		if (m_D3D11VP.IsReady()) {
+			m_pCorrectionConstants.Release();
+			m_pPSCorrection.Release();
+
+			if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG) {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_CONVERT_HLG_TO_PQ));
+			}
+		} else {
+			m_bHdrPassthrough = true;
+			UpdateConvertColorShader();
+		}
+	}
 
 	if (FAILED(hr)) {
 		return hr;
