@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2024 see Authors.txt
+ * (C) 2018-2025 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -527,7 +527,6 @@ HRESULT CMpcVideoRenderer::Receive(IMediaSample* pSample)
 				return NOERROR;
 
 			m_bInReceive = TRUE;
-			CAutoLock cRendererLock(&m_RendererLock);
 		}
 		Ready();
 	}

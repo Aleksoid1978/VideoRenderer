@@ -3097,6 +3097,8 @@ HRESULT CDX11VideoProcessor::Reset()
 					if (m_iSwapEffect == SWAPEFFECT_Discard && !displayConfig.HDREnabled()) {
 						m_pFilter->Init(true);
 					} else {
+						CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
+
 						Init(m_hWnd, true);
 					}
 				}
