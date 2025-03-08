@@ -153,6 +153,9 @@
     <FxCompile Include="d3d11\ps_halfoverunder_to_interlace.hlsl">
       <Filter>d3d11</Filter>
     </FxCompile>
+    <FxCompile Include="ps_fix_hdr10.hlsl">
+      <Filter>d3d11</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="convert\hdr_tone_mapping.hlsl">

@@ -88,6 +88,8 @@
 #define IDF_PS_11_TEST                  900
 #define IDC_EDIT1                       1001
 #define IDC_EDIT2                       1002
+#define IDC_EDIT3                       1003
+#define IDC_EDIT_DISPLAYMAX             1003
 #define IDC_STATIC1                     1011
 #define IDC_STATIC2                     1012
 #define IDC_STATIC3                     1013
@@ -126,6 +128,10 @@
 #define IDC_BUTTON1                     1051
 #define IDC_SLIDER1                     1061
 #define IDC_SLIDER2                     1062
+#define IDC_COMBO9                      1066
+#define IDC_STATIC99                    1067
+#define IDF_PS_11_FIX_HDR10             1068
+#define IDC_STATIC100                   1068
 
 // Next default values for new objects
 // 
@@ -133,7 +139,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        106
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1065
+#define _APS_NEXT_CONTROL_VALUE         1068
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

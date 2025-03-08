@@ -153,7 +153,7 @@ public:
 
 	HRESULT InitVideoProcessor(
 		const DXGI_FORMAT inputFmt, const UINT width, const UINT height,
-		const DXVA2_ExtendedFormat exFmt, const bool interlaced, const bool bHdrPassthrough,
+		const DXVA2_ExtendedFormat exFmt, const bool interlaced, const bool bHdrEnabled,
 		DXGI_FORMAT& outputFmt);
 	void ReleaseVideoProcessor();
 
@@ -174,7 +174,7 @@ public:
 private:
 	HRESULT CheckColorSpaceNew(
 		const DXGI_FORMAT inputFormat, const DXGI_FORMAT outputFormat,
-		const DXVA2_ExtendedFormat exFmt, const bool bHdrPassthrough,
+		const DXVA2_ExtendedFormat exFmt, const bool bHdrEnabled,
 		DXGI_COLOR_SPACE_TYPE& cstype_input, DXGI_COLOR_SPACE_TYPE& cstype_output
 	);
 	void SetColorSpaceNew(DXGI_COLOR_SPACE_TYPE cstype_input, DXGI_COLOR_SPACE_TYPE cstype_output);

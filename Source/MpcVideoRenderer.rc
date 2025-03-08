@@ -86,7 +86,6 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,219,139,10
     GROUPBOX        "HDR",IDC_STATIC,171,35,176,112
     CONTROL         "Prefer Dolby Vision over PQ and HLG",IDC_CHECK18,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,47,135,10
-    CONTROL         "Passthrough to display",IDC_CHECK12,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,60,89,10
     LTEXT           "Windows HDR:",IDC_STATIC5,178,75,51,8
     COMBOBOX        IDC_COMBO7,232,73,110,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Subtitle and OSD brightness:",IDC_STATIC6,178,90,99,8
@@ -105,6 +104,10 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,204,151,10
     PUSHBUTTON      "Default",IDC_BUTTON1,305,217,37,14
     EDITTEXT        IDC_EDIT2,76,235,266,12,ES_READONLY | NOT WS_BORDER,WS_EX_RIGHT
+    COMBOBOX        IDC_COMBO9,208,58,76,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "HDR10:",IDC_STATIC99,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,178,60,24,8
+    EDITTEXT        IDC_EDIT_DISPLAYMAX,287,57,36,12,ES_AUTOHSCROLL | ES_NUMBER,WS_EX_RIGHT
+    CONTROL         "Nits",IDC_STATIC100,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,328,59,12,8
 END
 
 IDD_INFOPROPPAGE DIALOGEX 0, 0, 318, 153
@@ -161,6 +164,19 @@ BEGIN
     END
 END
 #endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_MAINPROPPAGE DLGINIT
+BEGIN
+    IDC_COMBO9, 0x403, 7, 0
+0x6749, 0x6f6e, 0x6572, "\000" 
+    0
+END
 
 
 /////////////////////////////////////////////////////////////////////////////

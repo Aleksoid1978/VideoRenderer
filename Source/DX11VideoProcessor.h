@@ -81,9 +81,15 @@ private:
 	// D3D11 Video Processor
 	CD3D11VP m_D3D11VP;
 
+	// Output Format convertion
 	CComPtr<ID3D11Buffer> m_pCorrectionConstants;
 	CComPtr<ID3D11PixelShader> m_pPSCorrection;
 	const wchar_t* m_strCorrection = nullptr;
+
+	// HDR tonemapping
+	CComPtr<ID3D11Buffer> m_pHDR10ToneMappingConstants;
+	CComPtr<ID3D11PixelShader> m_pPSHDR10ToneMapping;
+	const wchar_t* m_strHDR10ToneMapping = nullptr;
 
 	// D3D11 Shader Video Processor
 	CComPtr<ID3D11PixelShader> m_pPSConvertColor;
@@ -157,7 +163,7 @@ private:
 	bool m_bVPRTXVideoHDR = false;
 	bool m_bVPUseRTXVideoHDR = false;
 
-	bool m_bHdrPassthroughSupport = false;
+	bool m_bHdrSupport = false;
 	bool m_bHdrDisplaySwitching   = false; // switching HDR display in progress
 	bool m_bHdrDisplayModeEnabled = false;
 	bool m_bHdrAllowSwitchDisplay = true;
@@ -171,6 +177,7 @@ private:
 	struct HDRMetadata {
 		DXGI_HDR_METADATA_HDR10 hdr10 = {};
 		bool bValid = false;
+		uint64_t timestamp;
 	};
 	HDRMetadata m_hdr10 = {};
 	HDRMetadata m_lastHdr10 = {};
@@ -207,6 +214,7 @@ private:
 	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
 	void SetShaderLuminanceParams();
+	void SetHDR10ShaderParams(float, float, float, float, float, int);
 
 	HRESULT SetShaderDoviCurvesPoly();
 	HRESULT SetShaderDoviCurves();

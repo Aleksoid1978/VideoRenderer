@@ -62,7 +62,10 @@ protected:
 	bool m_bVBlankBeforePresent            = false;
 	bool m_bAdjustPresentTime              = true;
 	bool m_bHdrPreferDoVi                  = false;
-	bool m_bHdrPassthrough                 = true;
+	bool m_bHdrPassthrough                 = false;
+	bool m_bHdrLocalToneMapping            = true;
+	int  m_iHdrLocalToneMappingType		   = 0;
+	float m_fHdrDisplayMaxNits             = 1000.0f;
 	int  m_iHdrToggleDisplay               = HDRTD_Disabled;
 	int  m_iHdrOsdBrightness               = 0;
 	bool m_bConvertToSdr                   = true;

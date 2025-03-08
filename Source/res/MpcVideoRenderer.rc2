@@ -72,6 +72,7 @@ IDF_PS_11_CONVERT_PQ_TO_SDR     FILE                    "..\\_bin\\shaders\\ps_c
 IDF_PS_11_FIXCONVERT_PQ_TO_SDR  FILE                    "..\\_bin\\shaders\\ps_fixconvert_pq_to_sdr.cso"
 IDF_PS_11_FIXCONVERT_HLG_TO_SDR FILE                    "..\\_bin\\shaders\\ps_fixconvert_hlg_to_sdr.cso"
 IDF_PS_11_FIX_BT2020            FILE                    "..\\_bin\\shaders\\ps_fix_bt2020.cso"
+IDF_PS_11_FIX_HDR10             FILE                    "..\\_bin\\shaders\\ps_fix_hdr10.cso"
 IDF_PS_11_CONVERT_HLG_TO_PQ     FILE                    "..\\_bin\\shaders\\ps_convert_hlg_to_pq.cso"
 IDF_PS_11_CONVERT_BITMAP_TO_PQ  FILE                    "..\\_bin\\shaders\\ps_convert_bitmap_to_pq.cso"
 IDF_PS_11_CONVERT_BITMAP_TO_PQ1 FILE                    "..\\_bin\\shaders\\ps_convert_bitmap_to_pq1.cso"

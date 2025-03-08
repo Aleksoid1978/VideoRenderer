@@ -58,7 +58,10 @@
 #define OPT_ReinitByDisplay                L"ReinitWhenChangingDisplay"
 #define OPT_HdrPreferDoVi                  L"HdrPreferDoVi"
 #define OPT_HdrPassthrough                 L"HdrPassthrough"
+#define OPT_HdrLocaLToneMapping            L"HdrLocalToneMapping"
+#define OPT_HdrLocaLToneMappingType        L"HdrLocalToneMappingType"
 #define OPT_HdrToggleDisplay               L"HdrToggleDisplay"
+#define OPT_HdrDisplayNits                 L"HdrDisplayNits"
 #define OPT_HdrOsdBrightness               L"HdrOsdBrightness"
 #define OPT_ConvertToSdr                   L"ConvertToSdr"
 #define OPT_UseD3DFullscreen               L"UseD3DFullscreen"
@@ -241,6 +244,15 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrPassthrough, dw)) {
 			m_Sets.bHdrPassthrough = !!dw;
 		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrLocaLToneMapping, dw)) {
+			m_Sets.bHdrLocalToneMapping  = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrLocaLToneMappingType, dw)) {
+			m_Sets.iHdrLocalToneMappingType = discard<int>(dw, 0, 0, 2);
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrDisplayNits, dw)) {
+			m_Sets.fHdrDisplayMaxNits = discard<float>(dw, HDR_NITS_DEF, HDR_NITS_MIN, HDR_NITS_MAX);
+		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrToggleDisplay, dw)) {
 			m_Sets.iHdrToggleDisplay = discard<int>(dw, HDRTD_On, HDRTD_Disabled, HDRTD_OnOff);
 		}
@@ -257,6 +269,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 
 	if (!IsWindows10OrGreater()) {
 		m_Sets.bHdrPassthrough = false;
+		m_Sets.iHdrToggleDisplay = false;
 		m_Sets.iHdrToggleDisplay = HDRTD_Disabled;
 	}
 
@@ -1240,6 +1253,9 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_ReinitByDisplay,     m_Sets.bReinitByDisplay);
 		key.SetDWORDValue(OPT_HdrPreferDoVi,       m_Sets.bHdrPreferDoVi);
 		key.SetDWORDValue(OPT_HdrPassthrough,      m_Sets.bHdrPassthrough);
+		key.SetDWORDValue(OPT_HdrLocaLToneMapping, m_Sets.bHdrLocalToneMapping);
+		key.SetDWORDValue(OPT_HdrLocaLToneMappingType, m_Sets.iHdrLocalToneMappingType);
+		key.SetValue(OPT_HdrDisplayNits, REG_SZ, &m_Sets.fHdrDisplayMaxNits, sizeof(m_Sets.fHdrDisplayMaxNits));
 		key.SetDWORDValue(OPT_HdrToggleDisplay,    m_Sets.iHdrToggleDisplay);
 		key.SetDWORDValue(OPT_HdrOsdBrightness,    m_Sets.iHdrOsdBrightness);
 		key.SetDWORDValue(OPT_ConvertToSdr,        m_Sets.bConvertToSdr);
@@ -1732,42 +1748,42 @@ LRESULT CMpcVideoRenderer::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam,
 {
 	if (m_hWndDrain && !InSendMessage() && !m_bIsFullscreen) {
 		switch (uMsg) {
-			case WM_CHAR:
-			case WM_DEADCHAR:
-			case WM_KEYDOWN:
-			case WM_KEYUP:
-			case WM_LBUTTONDBLCLK:
-			case WM_LBUTTONDOWN:
-			case WM_LBUTTONUP:
-			case WM_MBUTTONDBLCLK:
-			case WM_MBUTTONDOWN:
-			case WM_MBUTTONUP:
-			case WM_MOUSEACTIVATE:
-			case WM_MOUSEMOVE:
-			case WM_NCLBUTTONDBLCLK:
-			case WM_NCLBUTTONDOWN:
-			case WM_NCLBUTTONUP:
-			case WM_NCMBUTTONDBLCLK:
-			case WM_NCMBUTTONDOWN:
-			case WM_NCMBUTTONUP:
-			case WM_NCMOUSEMOVE:
-			case WM_NCRBUTTONDBLCLK:
-			case WM_NCRBUTTONDOWN:
-			case WM_NCRBUTTONUP:
-			case WM_RBUTTONDBLCLK:
-			case WM_RBUTTONDOWN:
-			case WM_RBUTTONUP:
-			case WM_XBUTTONDOWN:
-			case WM_XBUTTONUP:
-			case WM_XBUTTONDBLCLK:
-			case WM_MOUSEWHEEL:
-			case WM_MOUSEHWHEEL:
-			case WM_SYSCHAR:
-			case WM_SYSDEADCHAR:
-			case WM_SYSKEYDOWN:
-			case WM_SYSKEYUP:
-				PostMessageW(m_hWndDrain, uMsg, wParam, lParam);
-				return 0L;
+		case WM_CHAR:
+		case WM_DEADCHAR:
+		case WM_KEYDOWN:
+		case WM_KEYUP:
+		case WM_LBUTTONDBLCLK:
+		case WM_LBUTTONDOWN:
+		case WM_LBUTTONUP:
+		case WM_MBUTTONDBLCLK:
+		case WM_MBUTTONDOWN:
+		case WM_MBUTTONUP:
+		case WM_MOUSEACTIVATE:
+		case WM_MOUSEMOVE:
+		case WM_NCLBUTTONDBLCLK:
+		case WM_NCLBUTTONDOWN:
+		case WM_NCLBUTTONUP:
+		case WM_NCMBUTTONDBLCLK:
+		case WM_NCMBUTTONDOWN:
+		case WM_NCMBUTTONUP:
+		case WM_NCMOUSEMOVE:
+		case WM_NCRBUTTONDBLCLK:
+		case WM_NCRBUTTONDOWN:
+		case WM_NCRBUTTONUP:
+		case WM_RBUTTONDBLCLK:
+		case WM_RBUTTONDOWN:
+		case WM_RBUTTONUP:
+		case WM_XBUTTONDOWN:
+		case WM_XBUTTONUP:
+		case WM_XBUTTONDBLCLK:
+		case WM_MOUSEWHEEL:
+		case WM_MOUSEHWHEEL:
+		case WM_SYSCHAR:
+		case WM_SYSDEADCHAR:
+		case WM_SYSKEYDOWN:
+		case WM_SYSKEYUP:
+			PostMessageW(m_hWndDrain, uMsg, wParam, lParam);
+			return 0L;
 		}
 	}
 

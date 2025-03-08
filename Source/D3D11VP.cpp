@@ -147,6 +147,7 @@ int GetBitDepth(const DXGI_FORMAT format)
 	case DXGI_FORMAT_Y210:
 	case DXGI_FORMAT_Y410:
 		return 10;
+	case DXGI_FORMAT_R16G16B16A16_FLOAT:
 	case DXGI_FORMAT_R16G16B16A16_UNORM:
 	case DXGI_FORMAT_R16_TYPELESS:
 	case DXGI_FORMAT_P016:
@@ -158,7 +159,7 @@ int GetBitDepth(const DXGI_FORMAT format)
 
 HRESULT CD3D11VP::InitVideoProcessor(
 	const DXGI_FORMAT inputFmt, const UINT width, const UINT height,
-	const DXVA2_ExtendedFormat exFmt, const bool interlaced, const bool bHdrPassthrough,
+	const DXVA2_ExtendedFormat exFmt, const bool interlaced, const bool bHdrEnabled,
 	DXGI_FORMAT& outputFmt)
 {
 	ReleaseVideoProcessor();
@@ -256,7 +257,7 @@ HRESULT CD3D11VP::InitVideoProcessor(
 				if (m_pVideoProcessorEnum1) {
 					hr = CheckColorSpaceNew(
 						inputFmt, outputFmt,
-						exFmt, bHdrPassthrough,
+						exFmt, bHdrEnabled,
 						cstype_input, cstype_output
 					);
 				}
@@ -276,7 +277,7 @@ HRESULT CD3D11VP::InitVideoProcessor(
 				if (m_pVideoProcessorEnum1) {
 					hr = CheckColorSpaceNew(
 						inputFmt, outputFmt,
-						exFmt, bHdrPassthrough,
+						exFmt, bHdrEnabled,
 						cstype_input, cstype_output
 					);
 				}
@@ -501,7 +502,7 @@ void CD3D11VP::SetProcAmpValues(DXVA2_ProcAmpValues *pValues)
 
 HRESULT CD3D11VP::CheckColorSpaceNew(
 	const DXGI_FORMAT inputFormat, const DXGI_FORMAT outputFormat,
-	const DXVA2_ExtendedFormat exFmt, const bool bHdrPassthrough,
+	const DXVA2_ExtendedFormat exFmt, const bool bHdrEnabled,
 	DXGI_COLOR_SPACE_TYPE& cstype_input, DXGI_COLOR_SPACE_TYPE& cstype_output
 )
 {
@@ -519,7 +520,7 @@ HRESULT CD3D11VP::CheckColorSpaceNew(
 	cstype_input = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 	cstype_output = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 
-	if (bHdrPassthrough) {
+	if (bHdrEnabled) {
 		cstype_input = (exFmt.VideoChromaSubsampling == DXVA2_VideoChromaSubsampling_Cosited)
 			? DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_TOPLEFT_P2020
 			: DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020;
@@ -680,7 +681,7 @@ HRESULT CD3D11VP::SetSuperResNvidia(const bool enable)
 	stream_extension_info = {
 		kStreamExtensionVersionV1,
 		kStreamExtensionMethodSuperResolution,
-		enable ? 1 : 0
+		enable ? 1U : 0
 	};
 
 	HRESULT hr = m_pVideoContext->VideoProcessorSetStreamExtension(
@@ -815,7 +816,7 @@ HRESULT CD3D11VP::SetRTXVideoHDRNvidia(const bool enable)
 	stream_extension_info = {
 		kStreamExtensionVersionV4,
 		kStreamExtensionMethodTrueHDR,
-		enable ? 1 : 0
+		enable ? 1U : 0
 	};
 
 	HRESULT hr = m_pVideoContext->VideoProcessorSetStreamExtension(

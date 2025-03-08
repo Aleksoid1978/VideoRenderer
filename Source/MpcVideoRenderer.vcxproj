@@ -50,6 +50,8 @@
       <ModuleDefinitionFile>MpcVideoRenderer.def</ModuleDefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <DelayLoadDLLs>d3d9.dll;dxva2.dll;dxgi.dll;d3d11.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>..\update_revision.cmd</Command>
