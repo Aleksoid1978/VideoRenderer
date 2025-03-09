@@ -1,6 +1,8 @@
 0.9.4 dev
 ------------------------
-When playing HDR and outputting HDR Passthrough - images/thumbnails are saved "in normal form", in SDR.
+Changed image acquisition functions for HDR Passthrough mode. HDR image will be converted to SDR.
+Fixed registration of a filter from a folder with Unicode characters.
+Fixed crashes in rare cases.
 
 0.9.3.2363 - 2025-02-05
 ------------------------
