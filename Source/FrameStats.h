@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2021 see Authors.txt
+* (C) 2018-2025 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -221,4 +221,3 @@ public:
 		return oldestIndex;
 	}
 };
-

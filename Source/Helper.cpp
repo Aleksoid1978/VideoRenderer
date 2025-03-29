@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2024 see Authors.txt
+* (C) 2018-2025 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -759,7 +759,7 @@ void ConvertR10G10B10A2toBGR32(const UINT lines, BYTE* dst, UINT dst_pitch, cons
 	// B - 0x3ff00000
 	// A - 0xc0000000
 	//
-	// BGR32 
+	// BGR32
 	// B - 0x000000ff
 	// G - 0x0000ff00
 	// R - 0x00ff0000
@@ -798,7 +798,7 @@ void ConvertR10G10B10A2toBGR48(const UINT lines, BYTE* dst, UINT dst_pitch, cons
 			uint32_t t = src32[i];
 			*dst16++ = (uint16_t)((t & 0x3ff00000) >> 14); // B
 			*dst16++ = (uint16_t)((t & 0x000ffc00) >> 4);  // G
-			*dst16++ = (uint16_t)((t & 0x000003ff) << 6);  // R 
+			*dst16++ = (uint16_t)((t & 0x000003ff) << 6);  // R
 		}
 		src += src_pitch;
 		dst += dst_pitch;
@@ -821,7 +821,7 @@ void ConvertR10G10B10A2toBGR64(const UINT lines, BYTE* dst, UINT dst_pitch, cons
 			uint32_t t = src32[i];
 			*dst16++ = (uint16_t)((t & 0x3ff00000) >> 14); // B
 			*dst16++ = (uint16_t)((t & 0x000ffc00) >> 4);  // G
-			*dst16++ = (uint16_t)((t & 0x000003ff) << 6);  // R 
+			*dst16++ = (uint16_t)((t & 0x000003ff) << 6);  // R
 			*dst16++ = 0xffff; // X
 		}
 		src += src_pitch;

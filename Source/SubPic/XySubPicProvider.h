@@ -1,5 +1,5 @@
 /*
- * (C) 2015-2017 see Authors.txt
+ * (C) 2015-2025 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -76,4 +76,3 @@ public:
 
 	STDMETHODIMP_(SUBTITLE_TYPE) GetType() { return ST_XYSUBPIC; };
 };
-
