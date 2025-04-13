@@ -445,7 +445,7 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 		}
 	}
 
-	if (!m_VideoProcessor->InitMediaType(&mt)) {
+	if (mt != m_inputMT && !m_VideoProcessor->InitMediaType(&mt)) {
 		return VFW_E_UNSUPPORTED_VIDEO;
 	}
 
