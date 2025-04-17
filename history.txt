@@ -1,4 +1,4 @@
-0.9.6 dev
+0.9.7.2387 - 2025-04-17
 ------------------------
 Fixed a potential crash when changing screen settings during playback.
 Updated MinHook v1.3.4.
