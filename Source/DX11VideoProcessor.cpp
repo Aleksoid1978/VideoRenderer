@@ -2262,7 +2262,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
-		if (size >= abs(m_srcPitch) * m_srcLines && S_OK == pSample->GetPointer(&data)) {
+		if (size >= static_cast<long>(abs(m_srcPitch) * m_srcLines) && S_OK == pSample->GetPointer(&data)) {
 			// do not use UpdateSubresource for D3D11 VP here
 			// because it can cause green screens and freezes on some configurations
 			hr = MemCopyToTexSrcVideo(data, m_srcPitch);

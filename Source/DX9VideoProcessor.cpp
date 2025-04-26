@@ -1469,7 +1469,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 
 		BYTE* data = nullptr;
 		const long size = pSample->GetActualDataLength();
-		if (size >= abs(m_srcPitch) * m_srcLines && S_OK == pSample->GetPointer(&data)) {
+		if (size >= static_cast<long>(abs(m_srcPitch) * m_srcLines) && S_OK == pSample->GetPointer(&data)) {
 			if (m_srcParams.cformat == CF_NONE) {
 				return E_FAIL;
 			}
