@@ -348,6 +348,8 @@ long CMpcVideoRenderer::CalcImageSize(CMediaType& mt, bool redefine_mt)
 	}
 
 	if (redefine_mt) {
+		CAutoLock cRendererLock(&m_RendererLock);
+
 		CSize Size(pBIH->biWidth, pBIH->biHeight);
 
 		BOOL ret = m_VideoProcessor->GetAlignmentSize(mt, Size);
