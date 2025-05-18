@@ -783,6 +783,10 @@ HRESULT CD3D11VP::SetSuperRes(const int iSuperRes)
 		case SUPERRES_1440p:
 			enable = checkDimension(2560u, 1440u);
 			break;
+		case SUPERRES_1620p:
+			// ex. material originally for 3840x16?0 screens to 5K2K size
+			enable = checkDimension(2880u, 1620u);
+			break;
 	}
 
 	if (m_VendorId == PCIV_NVIDIA) {
