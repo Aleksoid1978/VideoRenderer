@@ -227,7 +227,8 @@ static ColorFormat_t fourcc_to_cformat(const DWORD fourcc)
 	case FCC('YV12'): cformat = CF_YV12; break;
 	case FCC('YV16'): cformat = CF_YV16; break;
 	case FCC('YV24'): cformat = CF_YV24; break;
-	case FCC('I420'): cformat = CF_YUV420P8; break;
+	case FCC('I420'):
+	case FCC('IYUV'): cformat = CF_YUV420P8; break;
 	case FCC('Y42B'): cformat = CF_YUV422P8; break;
 	case FCC('444P'): cformat = CF_YUV444P8; break;
 	case FCC('Y800'):
