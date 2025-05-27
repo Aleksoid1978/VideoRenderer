@@ -1,5 +1,8 @@
 0.9.8 dev
 ------------------------
+Fixed a crash when receiving a video frame that was smaller than required.
+Fixed a potential crash when changing the input media type.
+Added support for 'I420' format.
 
 0.9.7.2387 - 2025-04-17
 ------------------------
