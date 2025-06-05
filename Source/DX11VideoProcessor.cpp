@@ -1635,6 +1635,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	case CF_BGR48:
 		m_srcPitch = ALIGN(m_srcPitch, 4);
 		break;
+	case CF_V210:
+		m_srcPitch = biSizeImage / biHeight; // tested for 640x480
 	}
 	if (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0) {
 		m_srcPitch = -m_srcPitch;

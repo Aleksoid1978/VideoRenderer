@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2024 see Authors.txt
+* (C) 2018-2025 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -88,8 +88,9 @@ enum ColorFormat_t {
 	CF_YUY2,
 	CF_P210,
 	CF_P216,
-	CF_Y210, // experimental
-	CF_Y216, // experimental
+	CF_Y210,
+	CF_Y216,
+	CF_V210, // experimental. will be converted to Y210 when copied
 	CF_AYUV,
 	CF_Y410,
 	CF_Y416,
@@ -181,6 +182,8 @@ void CopyFrameBGRA64(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* sr
 void CopyFrameB64A(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 // YV12
 void CopyFrameYV12(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
+// v210
+void CopyFrameV210(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 // Y410 (not used)
 void CopyFrameY410(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 // r210
