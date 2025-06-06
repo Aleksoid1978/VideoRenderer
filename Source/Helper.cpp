@@ -356,6 +356,7 @@ static const FmtConvParams_t s_FmtConvMapping[] = {
 // Remarks:
 // 1. The table lists all possible formats. The real situation depends on the capabilities of the graphics card and drivers.
 // 2. We do not use DXVA2 processor for AYUV format, it works very poorly.
+// 3. The Packsize for 'v210' cannot be calculated, so it is written as 8/3 (the smallest value). This gives a value of 2, which is crash-proof when used directly.
 
 const FmtConvParams_t& GetFmtConvParams(const ColorFormat_t fmt)
 {
@@ -723,18 +724,18 @@ void CopyFrameV210(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src,
 			uint32_t s0 = *src32++;
 			uint32_t s1 = *src32++;
 
-			*dst16++ = (s0 & 0x000ffc00) >> 4;
-			*dst16++ = (s0 & 0x000003ff) << 6;
-			*dst16++ = (s1 & 0x000003ff) << 6;
-			*dst16++ = (s0 & 0x3ff00000) >> 14;
-			*dst16++ = (s1 & 0x3ff00000) >> 14;
-			*dst16++ = (s1 & 0x000ffc00) >> 4;
+			*dst16++ = (s0 >> 4)  & 0xffc0;
+			*dst16++ = (s0 << 6)  & 0xffc0;
+			*dst16++ = (s1 << 6)  & 0xffc0;
+			*dst16++ = (s0 >> 14) & 0xffc0;
+			*dst16++ = (s1 >> 14) & 0xffc0;
+			*dst16++ = (s1 >> 4)  & 0xffc0;
 		}
 		if (remainder) {
 			uint32_t s = *src32++;
 
-			*dst16++ = (s & 0x000ffc00) >> 4;
-			*dst16++ = (s & 0x000003ff) << 6;
+			*dst16++ = (s >> 4) & 0xffc0;
+			*dst16++ = (s << 6) & 0xffc0;
 		}
 
 		src += src_pitch;
