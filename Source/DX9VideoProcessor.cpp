@@ -1025,7 +1025,7 @@ BOOL CDX9VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 		return FALSE;
 	}
 
-	if (pBIH->biWidth <= 0 || !pBIH->biHeight || (!pBIH->biSizeImage && pBIH->biCompression != BI_RGB)) {
+	if (pBIH->biWidth <= 0 || !pBIH->biHeight) {
 		return FALSE;
 	}
 
@@ -1130,10 +1130,6 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	UINT biWidth  = pBIH->biWidth;
 	UINT biHeight = labs(pBIH->biHeight);
-	UINT biSizeImage = pBIH->biSizeImage;
-	if (pBIH->biSizeImage == 0 && pBIH->biCompression == BI_RGB) { // biSizeImage may be zero for BI_RGB bitmaps
-		biSizeImage = biWidth * biHeight * pBIH->biBitCount / 8;
-	}
 
 	m_srcLines = biHeight * FmtParams.PitchCoeff / 2;
 	m_srcPitch = biWidth * FmtParams.Packsize;
