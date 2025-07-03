@@ -2521,6 +2521,9 @@ void CDX11VideoProcessor::UpdateTexures()
 		if (m_bVPScaling) {
 			CSize texsize = m_videoRect.Size();
 			hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, texsize.cx, texsize.cy, Tex2D_DefaultShaderRTarget);
+			if (FAILED(hr)) {
+				hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, m_srcRectWidth, m_srcRectHeight, Tex2D_DefaultShaderRTarget);
+			}
 		} else {
 			hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, m_srcRectWidth, m_srcRectHeight, Tex2D_DefaultShaderRTarget);
 		}

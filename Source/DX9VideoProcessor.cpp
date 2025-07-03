@@ -2184,6 +2184,9 @@ void CDX9VideoProcessor::UpdateTexures()
 				std::swap(texsize.cx, texsize.cy);
 			}
 			hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, texsize.cx, texsize.cy, D3DUSAGE_RENDERTARGET);
+			if (FAILED(hr)) {
+				hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, m_srcRectWidth, m_srcRectHeight, D3DUSAGE_RENDERTARGET);
+			}
 		} else {
 			hr = m_TexConvertOutput.CheckCreate(m_pD3DDevEx, m_DXVA2OutputFmt, m_srcRectWidth, m_srcRectHeight, D3DUSAGE_RENDERTARGET);
 		}
