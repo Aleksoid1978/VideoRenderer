@@ -1,3 +1,6 @@
+0.9.10 dev
+------------------------
+
 0.9.9.2400 - 2025-06-07
 ------------------------
 Fixed a crash when receiving a video frame that was smaller than required.
