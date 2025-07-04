@@ -1,22 +1,8 @@
-// Copyright (c) 2020-2024 v0lt, Aleksoid
 //
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
+// Copyright (c) 2020-2025 v0lt, Aleksoid
 //
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// SPDX-License-Identifier: MIT
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
 
 #include "stdafx.h"
 #include "Util.h"
@@ -143,6 +129,7 @@ std::wstring HR2Str(const HRESULT hr)
 		UNPACK_VALUE(DXGI_ERROR_SDK_COMPONENT_MISSING);
 		UNPACK_VALUE(WINCODEC_ERR_COMPONENTNOTFOUND);
 		UNPACK_VALUE(WINCODEC_ERR_UNSUPPORTEDPIXELFORMAT);
+		UNPACK_VALUE(WINCODEC_ERR_UNSUPPORTEDOPERATION);
 		UNPACK_VALUE(WINCODEC_ERR_PROPERTYUNEXPECTEDTYPE);
 		// some System Error Codes https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes
 		UNPACK_HR_WIN32(ERROR_GEN_FAILURE);
@@ -154,6 +141,8 @@ std::wstring HR2Str(const HRESULT hr)
 #endif
 #ifdef _MFERROR_H
 		UNPACK_VALUE(MF_E_INVALIDMEDIATYPE);
+		UNPACK_VALUE(MF_E_NOTACCEPTING);
+		UNPACK_VALUE(MF_E_NO_MORE_TYPES);
 		UNPACK_VALUE(MF_E_INVALID_FORMAT);
 #endif
 #ifdef _D3D9_H_
