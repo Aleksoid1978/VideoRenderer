@@ -51,7 +51,7 @@ HRESULT CompileShader(const std::string& srcCode, const D3D_SHADER_MACRO* pDefin
 
 		if (pErrorBlob) {
 			std::string strErrorMsgs((char*)pErrorBlob->GetBufferPointer(), pErrorBlob->GetBufferSize());
-			DLog(A2WStr(strErrorMsgs));
+			DLog(strErrorMsgs);
 		} else {
 			DLog(L"Unexpected compiler error");
 		}
