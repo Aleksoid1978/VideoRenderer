@@ -1286,6 +1286,18 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 		return hr;
 	}
 
+	HRESULT hr3 = m_Font3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+	DLogIf(FAILED(hr3), L"m_Font3D.InitDeviceObjects() failed with error {}", HR2Str(hr3));
+	if (SUCCEEDED(hr3)) {
+		hr3 = m_StatsBackground.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+		hr3 = m_Rect3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+		hr3 = m_Underlay.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+		hr3 = m_Lines.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+		hr3 = m_SyncLine.InitDeviceObjects(m_pDevice, m_pDeviceContext);
+		DLogIf(FAILED(hr3), L"Geometric primitives InitDeviceObjects() failed with error {}", HR2Str(hr3));
+	}
+	ASSERT(S_OK == hr3);
+
 	if (m_pFilter->m_inputMT.IsValid()) {
 		if (!InitMediaType(&m_pFilter->m_inputMT)) {
 			ReleaseDevice();
@@ -1303,18 +1315,6 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 	SetCallbackDevice();
 	UpdateSubPic();
-
-	HRESULT hr3 = m_Font3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
-	DLogIf(FAILED(hr3), L"m_Font3D.InitDeviceObjects() failed with error {}", HR2Str(hr3));
-	if (SUCCEEDED(hr3)) {
-		hr3 = m_StatsBackground.InitDeviceObjects(m_pDevice, m_pDeviceContext);
-		hr3 = m_Rect3D.InitDeviceObjects(m_pDevice, m_pDeviceContext);
-		hr3 = m_Underlay.InitDeviceObjects(m_pDevice, m_pDeviceContext);
-		hr3 = m_Lines.InitDeviceObjects(m_pDevice, m_pDeviceContext);
-		hr3 = m_SyncLine.InitDeviceObjects(m_pDevice, m_pDeviceContext);
-		DLogIf(FAILED(hr3), L"Geometric primitives InitDeviceObjects() failed with error {}", HR2Str(hr3));
-	}
-	ASSERT(S_OK == hr3);
 
 	SetStereo3dTransform(m_iStereo3dTransform);
 
