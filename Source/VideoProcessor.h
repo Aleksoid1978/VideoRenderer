@@ -202,14 +202,14 @@ public:
 	virtual void SetRotation(int value) = 0;
 	bool GetFlip() { return m_bFlip; }
 	void SetFlip(bool value) { m_bFlip = value; }
-	virtual void SetStereo3dTransform(int value) = 0;
+	virtual void SetStereo3dTransform(int value) {};
 	void SetAllowDeepColorBitmaps(bool value) { m_bAllowDeepColorBitmaps = value; }
 
-	virtual void ClearPreScaleShaders() = 0;
-	virtual void ClearPostScaleShaders() = 0;
+	virtual void ClearPreScaleShaders() {};
+	virtual void ClearPostScaleShaders() {};
 
-	virtual HRESULT AddPreScaleShader(const std::wstring& name, const std::string& srcCode) = 0;
-	virtual HRESULT AddPostScaleShader(const std::wstring& name, const std::string& srcCode) = 0;
+	virtual HRESULT AddPreScaleShader(const std::wstring& name, const std::string& srcCode) { return E_NOTIMPL; };
+	virtual HRESULT AddPostScaleShader(const std::wstring& name, const std::string& srcCode) { return E_NOTIMPL; };
 
 	virtual HRESULT GetCurentImage(long *pDIBImage) = 0;
 	virtual HRESULT GetDisplayedImage(BYTE **ppDib, unsigned *pSize) = 0;
@@ -225,7 +225,7 @@ public:
 
 	bool GetDoubleRate() { return m_bDoubleFrames; }
 
-	virtual ISubPicAllocator* GetSubPicAllocator() PURE;
+	virtual ISubPicAllocator* GetSubPicAllocator() { return nullptr; }
 
 protected:
 	inline bool SourceIsPQorHLG() {
