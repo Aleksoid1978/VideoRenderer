@@ -123,6 +123,7 @@
 #define IDC_COMBO6                      1046
 #define IDC_COMBO7                      1047
 #define IDC_COMBO8                      1048
+#define IDC_COMBO9                      1049
 #define IDC_BUTTON1                     1051
 #define IDC_SLIDER1                     1061
 #define IDC_SLIDER2                     1062
