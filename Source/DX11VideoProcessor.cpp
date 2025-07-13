@@ -1805,7 +1805,8 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 
 	const bool bHdrPassthrough = m_bHdrDisplayModeEnabled && (SourceIsPQorHLG() || (m_bVPUseRTXVideoHDR && params.CDepth == 8));
 	m_D3D11OutputFmt = m_InternalTexFmt;
-	HRESULT hr = m_D3D11VP.InitVideoProcessor(dxgiFormat, width, height, m_srcExFmt, m_bInterlaced, bHdrPassthrough, m_D3D11OutputFmt);
+	const int deinterlacing = m_bInterlaced ? m_iVPDinterlacing : DEINT_Disable;
+	HRESULT hr = m_D3D11VP.InitVideoProcessor(dxgiFormat, width, height, m_srcExFmt, deinterlacing, bHdrPassthrough, m_D3D11OutputFmt);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : InitVideoProcessor() failed with error {}", HR2Str(hr));
 		return hr;
@@ -2050,7 +2051,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					} else {
 						m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_INTERLACED_BOTTOM_FIELD_FIRST; // Bottom-field first
 					}
-					m_bDoubleFrames = m_bDeintDouble && m_D3D11VP.IsReady();
+					m_bDoubleFrames = m_iVPDinterlacing && m_bDeintDouble && m_D3D11VP.IsReady();
 				}
 			}
 		}

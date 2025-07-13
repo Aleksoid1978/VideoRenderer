@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2024 see Authors.txt
+* (C) 2019-2025 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -25,8 +25,6 @@
 #include "IVideoRenderer.h"
 
 #include "D3D11VP.h"
-
-#define ENABLE_FUTUREFRAMES 0
 
 int ValueDXVA2toD3D11(const DXVA2_Fixed32 fixed, const D3D11_VIDEO_PROCESSOR_FILTER_RANGE& range)
 {
@@ -158,7 +156,7 @@ int GetBitDepth(const DXGI_FORMAT format)
 
 HRESULT CD3D11VP::InitVideoProcessor(
 	const DXGI_FORMAT inputFmt, const UINT width, const UINT height,
-	const DXVA2_ExtendedFormat exFmt, const bool interlaced, const bool bHdrPassthrough,
+	const DXVA2_ExtendedFormat exFmt, const int deinterlacing, const bool bHdrPassthrough,
 	DXGI_FORMAT& outputFmt)
 {
 	ReleaseVideoProcessor();
@@ -167,7 +165,7 @@ HRESULT CD3D11VP::InitVideoProcessor(
 	// create VideoProcessorEnumerator
 	D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
 	ZeroMemory(&ContentDesc, sizeof(ContentDesc));
-	ContentDesc.InputFrameFormat = interlaced ? D3D11_VIDEO_FRAME_FORMAT_INTERLACED_TOP_FIELD_FIRST : D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
+	ContentDesc.InputFrameFormat = deinterlacing ? D3D11_VIDEO_FRAME_FORMAT_INTERLACED_TOP_FIELD_FIRST : D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 	ContentDesc.InputWidth   = width;
 	ContentDesc.InputHeight  = height;
 	ContentDesc.OutputWidth  = ContentDesc.InputWidth;
@@ -196,6 +194,8 @@ HRESULT CD3D11VP::InitVideoProcessor(
 		DLog(L"CD3D11VP::InitVideoProcessor() : {} is not supported for D3D11 VP input.", DXGIFormatToString(inputFmt));
 		return E_INVALIDARG;
 	}
+
+	m_bUseFutureFrames = (deinterlacing == DEINT_HackFutureFrames);
 
 	// get VideoProcessorCaps
 	hr = m_pVideoProcessorEnum->GetVideoProcessorCaps(&m_VPCaps);
@@ -290,7 +290,7 @@ HRESULT CD3D11VP::InitVideoProcessor(
 	}
 
 	m_RateConvIndex = 0;
-	if (interlaced) {
+	if (deinterlacing) {
 		// try to find best processor
 		const UINT preferredDeintCaps = D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BLEND
 			| D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB
@@ -407,11 +407,11 @@ void CD3D11VP::ReleaseVideoProcessor()
 
 HRESULT CD3D11VP::InitInputTextures(ID3D11Device* pDevice)
 {
-#if ENABLE_FUTUREFRAMES
-	m_VideoTextures.Resize(1 + m_RateConvCaps.PastFrames + m_RateConvCaps.FutureFrames);
-#else
-	m_VideoTextures.Resize(1 + m_RateConvCaps.PastFrames);
-#endif
+	UINT referenceFrames = 1 + m_RateConvCaps.PastFrames;
+	if (m_bUseFutureFrames) {
+		referenceFrames += m_RateConvCaps.FutureFrames;
+	}
+	m_VideoTextures.Resize(referenceFrames);
 
 	HRESULT hr = E_NOT_VALID_STATE;
 
@@ -441,11 +441,9 @@ ID3D11Texture2D* CD3D11VP::GetNextInputTexture(const D3D11_VIDEO_FRAME_FORMAT vf
 		if (!m_bPresentFrame) {
 			m_bPresentFrame = true;
 		}
-#if ENABLE_FUTUREFRAMES
-		else if (m_nFutureFrames < m_RateConvCaps.FutureFrames) {
+		else if (m_bUseFutureFrames && m_nFutureFrames < m_RateConvCaps.FutureFrames) {
 			m_nFutureFrames++;
 		}
-#endif
 		else if (m_nPastFrames < m_RateConvCaps.PastFrames) {
 			m_nPastFrames++;
 		}

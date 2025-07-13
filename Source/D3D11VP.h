@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2024 see Authors.txt
+* (C) 2019-2025 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -128,6 +128,7 @@ private:
 	VideoTextureBuffer m_VideoTextures;
 	UINT m_nInputFrameOrField = 0;
 	bool m_bPresentFrame      = false;
+	bool m_bUseFutureFrames   = false;
 	UINT m_nPastFrames        = 0;
 	UINT m_nFutureFrames      = 0;
 
@@ -153,7 +154,7 @@ public:
 
 	HRESULT InitVideoProcessor(
 		const DXGI_FORMAT inputFmt, const UINT width, const UINT height,
-		const DXVA2_ExtendedFormat exFmt, const bool interlaced, const bool bHdrPassthrough,
+		const DXVA2_ExtendedFormat exFmt, const int deinterlacing, const bool bHdrPassthrough,
 		DXGI_FORMAT& outputFmt);
 	void ReleaseVideoProcessor();
 
