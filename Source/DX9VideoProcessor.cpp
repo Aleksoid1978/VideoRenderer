@@ -1875,10 +1875,10 @@ HRESULT CDX9VideoProcessor::GetVPInfo(std::wstring& str)
 			if (dt & DXVA2_DeinterlaceTech_MotionVectorSteered)    str.append(L" MotionVectorSteered,");
 			if (dt & DXVA2_DeinterlaceTech_InverseTelecine)        str.append(L" InverseTelecine");
 			str_trim_end(str, ',');
-			str += std::format(L"\nReferenceSamples: Backward {}, Forward {}", DXVA2VPcaps.NumBackwardRefSamples, DXVA2VPcaps.NumForwardRefSamples);
 		} else {
 			str.append(L" none");
 		}
+		str += std::format(L"\nReferenceSamples: Backward {}, Forward {}", DXVA2VPcaps.NumBackwardRefSamples, DXVA2VPcaps.NumForwardRefSamples);
 	} else {
 		str.append(L"Shaders");
 	}
