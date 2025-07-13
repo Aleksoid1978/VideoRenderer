@@ -1335,7 +1335,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 					} else {
 						m_CurrentSampleFmt = DXVA2_SampleFieldInterleavedOddFirst;  // Bottom-field first
 					}
-					m_bDoubleFrames = m_bDeintDouble && m_DXVA2VP.IsReady();
+					m_bDoubleFrames = m_iVPDinterlacing && m_bDeintDouble && m_DXVA2VP.IsReady();
 				}
 			}
 		}
