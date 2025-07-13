@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2024 see Authors.txt
+* (C) 2019-2025 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -259,7 +259,7 @@ void CDXVA2VP::ReleaseVideoService()
 
 HRESULT CDXVA2VP::InitVideoProcessor(
 	const D3DFORMAT inputFmt, const UINT width, const UINT height,
-	const DXVA2_ExtendedFormat exFmt, const bool interlaced,
+	const DXVA2_ExtendedFormat exFmt, const int deinterlacing,
 	D3DFORMAT& outputFmt)
 {
 	CheckPointer(m_pDXVA2_VPService, E_FAIL);
@@ -272,7 +272,7 @@ HRESULT CDXVA2VP::InitVideoProcessor(
 	videodesc.SampleWidth = width;
 	videodesc.SampleHeight = height;
 	//videodesc.SampleFormat.value = m_srcExFmt.value; // do not need to fill it here
-	videodesc.SampleFormat.SampleFormat = interlaced ? DXVA2_SampleFieldInterleavedOddFirst : DXVA2_SampleProgressiveFrame;
+	videodesc.SampleFormat.SampleFormat = deinterlacing ? DXVA2_SampleFieldInterleavedOddFirst : DXVA2_SampleProgressiveFrame;
 	if (inputFmt == D3DFMT_X8R8G8B8 || inputFmt == D3DFMT_A8R8G8B8) {
 		videodesc.Format = D3DFMT_YUY2; // hack
 	} else {
@@ -309,7 +309,7 @@ HRESULT CDXVA2VP::InitVideoProcessor(
 
 	D3DFORMAT TestOutputFmt = outputFmt;
 
-	if (interlaced) {
+	if (deinterlacing) {
 		const UINT preferredDeintTech = DXVA2_DeinterlaceTech_EdgeFiltering // Intel
 			| DXVA2_DeinterlaceTech_FieldAdaptive
 			| DXVA2_DeinterlaceTech_PixelAdaptive // Nvidia, AMD
@@ -342,7 +342,10 @@ HRESULT CDXVA2VP::InitVideoProcessor(
 
 	outputFmt = TestOutputFmt;
 
-	m_NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples + m_DXVA2VPcaps.NumForwardRefSamples;
+	m_NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples;
+	if (deinterlacing == 2) {
+		m_NumRefSamples += m_DXVA2VPcaps.NumForwardRefSamples;
+	}
 	ASSERT(m_NumRefSamples <= MAX_DEINTERLACE_SURFACES);
 
 	m_VideoSamples.SetProps(m_NumRefSamples, exFmt);

@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2023 see Authors.txt
+* (C) 2019-2025 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -164,7 +164,7 @@ public:
 
 	HRESULT InitVideoProcessor(
 		const D3DFORMAT inputFmt, const UINT width, const UINT height,
-		const DXVA2_ExtendedFormat exFmt, const bool interlaced,
+		const DXVA2_ExtendedFormat exFmt, const int deinterlacing,
 		D3DFORMAT& outputFmt);
 	void ReleaseVideoProcessor();
 

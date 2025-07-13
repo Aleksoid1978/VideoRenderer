@@ -1229,8 +1229,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_VPEnableP01x,        m_Sets.VPFmts.bP01x);
 		key.SetDWORDValue(OPT_VPEnableYUY2,        m_Sets.VPFmts.bYUY2);
 		key.SetDWORDValue(OPT_VPEnableOther,       m_Sets.VPFmts.bOther);
-		// TODO
-		//key.SetDWORDValue(OPT_VPDinterlacing,      m_Sets.iVPDinterlacing);
+		key.SetDWORDValue(OPT_VPDinterlacing,      m_Sets.iVPDinterlacing);
 		key.SetDWORDValue(OPT_DoubleFrateDeint,    m_Sets.bDeintDouble);
 		key.SetDWORDValue(OPT_VPScaling,           m_Sets.bVPScaling);
 		key.SetDWORDValue(OPT_VPSuperResolution,   m_Sets.iVPSuperRes);

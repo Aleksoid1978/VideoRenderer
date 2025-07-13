@@ -761,7 +761,8 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 	}
 
 	m_DXVA2OutputFmt = m_InternalTexFmt;
-	HRESULT hr = m_DXVA2VP.InitVideoProcessor(dxva2format, width, height, m_srcExFmt, m_bInterlaced, m_DXVA2OutputFmt);
+	const int deinterlacing = m_bInterlaced ? m_iVPDinterlacing : DEINT_Disable;
+	HRESULT hr = m_DXVA2VP.InitVideoProcessor(dxva2format, width, height, m_srcExFmt, deinterlacing, m_DXVA2OutputFmt);
 	if (FAILED(hr)) {
 		return hr;
 	}
