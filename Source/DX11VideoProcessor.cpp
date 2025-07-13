@@ -3454,6 +3454,11 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 	m_VPFormats = config.VPFmts;
 
+	if (m_bInterlaced) {
+		changeVP = config.iVPDinterlacing != m_iVPDinterlacing;
+	}
+	m_iVPDinterlacing = config.iVPDinterlacing;
+
 	if (config.bVPScaling != m_bVPScaling) {
 		m_bVPScaling = config.bVPScaling;
 		changeTextures = true;

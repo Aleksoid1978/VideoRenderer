@@ -402,7 +402,10 @@ void CD3D11VP::ReleaseVideoProcessor()
 	m_srcFormat   = DXGI_FORMAT_UNKNOWN;
 	m_srcWidth    = 0;
 	m_srcHeight   = 0;
+
 	//m_bInterlaced = false;
+	m_nPastFrames   = 0;
+	m_nFutureFrames = 0;
 }
 
 HRESULT CD3D11VP::InitInputTextures(ID3D11Device* pDevice)
