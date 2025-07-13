@@ -23,6 +23,7 @@
 #include "DX9Helper.h"
 
 #include "DXVA2VP.h"
+#include "IVideoRenderer.h"
 
 // CDXVA2VP
 
@@ -343,7 +344,7 @@ HRESULT CDXVA2VP::InitVideoProcessor(
 	outputFmt = TestOutputFmt;
 
 	m_NumRefSamples = 1 + m_DXVA2VPcaps.NumBackwardRefSamples;
-	if (deinterlacing == 2) {
+	if (deinterlacing == DEINT_HackFutureFrames) {
 		m_NumRefSamples += m_DXVA2VPcaps.NumForwardRefSamples;
 	}
 	ASSERT(m_NumRefSamples <= MAX_DEINTERLACE_SURFACES);
