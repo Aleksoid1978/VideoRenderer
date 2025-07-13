@@ -50,6 +50,7 @@ protected:
 	int  m_iResizeStats                    = 0;
 	int  m_iTexFormat                      = TEXFMT_AUTOINT;
 	VPEnableFormats_t m_VPFormats          = {true, true, true, true};
+	int  m_iVPDinterlacing                 = DEINT_Enable;
 	bool m_bDeintDouble                    = true;
 	bool m_bVPScaling                      = true;
 	int  m_iChromaScaling                  = CHROMA_Bilinear;

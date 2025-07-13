@@ -41,6 +41,7 @@
 #define OPT_VPEnableP01x                   L"VPEnableP01x"
 #define OPT_VPEnableYUY2                   L"VPEnableYUY2"
 #define OPT_VPEnableOther                  L"VPEnableOther"
+#define OPT_VPDinterlacing                 L"VPDinterlacing"
 #define OPT_DoubleFrateDeint               L"DoubleFramerateDeinterlace"
 #define OPT_VPScaling                      L"VPScaling"
 #define OPT_VPSuperResolution              L"VPSuperResolution"
@@ -189,6 +190,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPEnableOther, dw)) {
 			m_Sets.VPFmts.bOther = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPDinterlacing, dw)) {
+			m_Sets.iVPDinterlacing = discard<int>(dw, DEINT_Enable, DEINT_Disable, DEINT_HackFutureFrames);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_DoubleFrateDeint, dw)) {
 			m_Sets.bDeintDouble = !!dw;
@@ -1225,6 +1229,8 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_VPEnableP01x,        m_Sets.VPFmts.bP01x);
 		key.SetDWORDValue(OPT_VPEnableYUY2,        m_Sets.VPFmts.bYUY2);
 		key.SetDWORDValue(OPT_VPEnableOther,       m_Sets.VPFmts.bOther);
+		// TODO
+		//key.SetDWORDValue(OPT_VPDinterlacing,      m_Sets.iVPDinterlacing);
 		key.SetDWORDValue(OPT_DoubleFrateDeint,    m_Sets.bDeintDouble);
 		key.SetDWORDValue(OPT_VPScaling,           m_Sets.bVPScaling);
 		key.SetDWORDValue(OPT_VPSuperResolution,   m_Sets.iVPSuperRes);

@@ -383,6 +383,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_iResizeStats         = config.iResizeStats;
 	m_iTexFormat           = config.iTexFormat;
 	m_VPFormats            = config.VPFmts;
+	m_iVPDinterlacing      = config.iVPDinterlacing;
 	m_bDeintDouble         = config.bDeintDouble;
 	m_bVPScaling           = config.bVPScaling;
 	m_iChromaScaling       = config.iChromaScaling;

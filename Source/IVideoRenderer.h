@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2024 see Authors.txt
+ * (C) 2018-2025 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -27,6 +27,12 @@ enum :int {
 	TEXFMT_8INT = 8,
 	TEXFMT_10INT = 10,
 	TEXFMT_16FLOAT = 16,
+};
+
+enum :int {
+	DEINT_Disable = 0,
+	DEINT_Enable = 1,
+	DEINT_HackFutureFrames = 2,
 };
 
 enum :int {
@@ -97,6 +103,7 @@ struct Settings_t {
 	int  iResizeStats;
 	int  iTexFormat;
 	VPEnableFormats_t VPFmts;
+	int  iVPDinterlacing;
 	bool bDeintDouble;
 	bool bVPScaling;
 	int iVPSuperRes;
@@ -136,6 +143,7 @@ struct Settings_t {
 		VPFmts.bP01x                    = true;
 		VPFmts.bYUY2                    = true;
 		VPFmts.bOther                   = true;
+		iVPDinterlacing                 = DEINT_Enable;
 		bDeintDouble                    = true;
 		bVPScaling                      = true;
 		iVPSuperRes                     = SUPERRES_Disable;
