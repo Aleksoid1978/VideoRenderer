@@ -382,14 +382,14 @@ void CDXVA2VP::ReleaseVideoProcessor()
 	m_srcHeight   = 0;
 }
 
-HRESULT CDXVA2VP::SetInputSurface(IDirect3DSurface9* pSurface, const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt)
+HRESULT CDXVA2VP::SetInputSurface(IDirect3DSurface9* pSurface, const UINT frameNum, const DXVA2_SampleFormat sampleFmt)
 {
 	CheckPointer(pSurface, E_POINTER);
 
 	DXVA2_VideoSample* videoSample = m_VideoSamples.GetNextVideoSample();
 	if (videoSample) {
-		videoSample->Start = start;
-		videoSample->End = end;
+		videoSample->Start = frameNum * 170000i64;
+		videoSample->End   = videoSample->Start + 170000i64;
 		videoSample->SampleFormat.SampleFormat = sampleFmt;
 
 		if (videoSample->SrcSurface) {
@@ -435,12 +435,12 @@ IDirect3DSurface9* CDXVA2VP::GetInputSurface()
 	return *ppSurface;
 }
 
-IDirect3DSurface9* CDXVA2VP::GetNextInputSurface(const REFERENCE_TIME start, const REFERENCE_TIME end, const DXVA2_SampleFormat sampleFmt)
+IDirect3DSurface9* CDXVA2VP::GetNextInputSurface(const UINT frameNum, const DXVA2_SampleFormat sampleFmt)
 {
 	DXVA2_VideoSample* videoSample = m_VideoSamples.GetNextVideoSample();
 	if (videoSample) {
-		videoSample->Start = start;
-		videoSample->End = end;
+		videoSample->Start = frameNum * 170000i64;
+		videoSample->End   = videoSample->Start + 170000i64;
 		videoSample->SampleFormat.SampleFormat = sampleFmt;
 	}
 

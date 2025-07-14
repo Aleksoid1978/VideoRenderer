@@ -1051,7 +1051,7 @@ BOOL CDX9VideoProcessor::GetAlignmentSize(const CMediaType& mt, SIZE& Size)
 		else {
 			CComPtr<IDirect3DSurface9> pSurface;
 			if (m_DXVA2VP.IsReady()) {
-				pSurface = m_DXVA2VP.GetNextInputSurface(0, 0, m_CurrentSampleFmt);
+				pSurface = m_DXVA2VP.GetNextInputSurface(0, m_CurrentSampleFmt);
 			} else {
 				pSurface = m_TexSrcVideo.pSurface;
 			}
@@ -1431,14 +1431,11 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 
 			if (m_DXVA2VP.IsReady()) {
-				const REFERENCE_TIME start_100ns = m_pFilter->m_FrameStats.GetFrames() * 170000i64;
-				const REFERENCE_TIME end_100ns = start_100ns + 170000i64;
-
 				if (m_DXVA2VP.GetNumRefSamples() > 1) {
-					IDirect3DSurface9* pDXVA2VPSurface = m_DXVA2VP.GetNextInputSurface(start_100ns, end_100ns, m_CurrentSampleFmt);
+					IDirect3DSurface9* pDXVA2VPSurface = m_DXVA2VP.GetNextInputSurface(m_pFilter->m_FrameStats.GetFrames(), m_CurrentSampleFmt);
 					hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, pDXVA2VPSurface, nullptr, D3DTEXF_NONE);
 				} else {
-					m_DXVA2VP.SetInputSurface(pSurface, start_100ns, end_100ns, m_CurrentSampleFmt);
+					m_DXVA2VP.SetInputSurface(pSurface, m_pFilter->m_FrameStats.GetFrames(), m_CurrentSampleFmt);
 				}
 			}
 			else if (m_TexSrcVideo.Plane2.pSurface) {
@@ -1477,10 +1474,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 			D3DLOCKED_RECT lr;
 
 			if (m_DXVA2VP.IsReady()) {
-				const REFERENCE_TIME start_100ns = m_pFilter->m_FrameStats.GetFrames() * 170000i64;
-				const REFERENCE_TIME end_100ns = start_100ns + 170000i64;
-
-				IDirect3DSurface9* pDXVA2VPSurface = m_DXVA2VP.GetNextInputSurface(start_100ns, end_100ns, m_CurrentSampleFmt);
+				IDirect3DSurface9* pDXVA2VPSurface = m_DXVA2VP.GetNextInputSurface(m_pFilter->m_FrameStats.GetFrames(), m_CurrentSampleFmt);
 
 				hr = pDXVA2VPSurface->LockRect(&lr, nullptr, D3DLOCK_DISCARD|D3DLOCK_NOSYSLOCK);
 				if (S_OK == hr) {
