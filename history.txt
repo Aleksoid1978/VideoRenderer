@@ -1,5 +1,8 @@
 0.9.10 dev
 ------------------------
+Fixed a crash when exceeding the frame size increase limit using the DXVA2/D3D11 video processor. In this case, frame size increase using shaders will be used.
+Fixed a crash when using exclusive full Screen and the "Exclusive full screen on additional window" setting in MPC-BE for two graphics adapters.
+Added "Deinterlacing" setting for DXVA2 and D3D11 video processors.
 
 0.9.9.2400 - 2025-06-07
 ------------------------
