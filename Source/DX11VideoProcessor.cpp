@@ -383,7 +383,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_iResizeStats         = config.iResizeStats;
 	m_iTexFormat           = config.iTexFormat;
 	m_VPFormats            = config.VPFmts;
-	m_iVPDinterlacing      = config.iVPDinterlacing;
+	m_iVPDeinterlacing     = config.iVPDeinterlacing;
 	m_bDeintDouble         = config.bDeintDouble;
 	m_bVPScaling           = config.bVPScaling;
 	m_iChromaScaling       = config.iChromaScaling;
@@ -1805,7 +1805,7 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 
 	const bool bHdrPassthrough = m_bHdrDisplayModeEnabled && (SourceIsPQorHLG() || (m_bVPUseRTXVideoHDR && params.CDepth == 8));
 	m_D3D11OutputFmt = m_InternalTexFmt;
-	const int deinterlacing = m_bInterlaced ? m_iVPDinterlacing : DEINT_Disable;
+	const int deinterlacing = m_bInterlaced ? m_iVPDeinterlacing : DEINT_Disable;
 	HRESULT hr = m_D3D11VP.InitVideoProcessor(dxgiFormat, width, height, m_srcExFmt, deinterlacing, bHdrPassthrough, m_D3D11OutputFmt);
 	if (FAILED(hr)) {
 		DLog(L"CDX11VideoProcessor::InitializeD3D11VP() : InitVideoProcessor() failed with error {}", HR2Str(hr));
@@ -2051,7 +2051,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					} else {
 						m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_INTERLACED_BOTTOM_FIELD_FIRST; // Bottom-field first
 					}
-					m_bDoubleFrames = m_iVPDinterlacing && m_bDeintDouble && m_D3D11VP.IsReady();
+					m_bDoubleFrames = m_iVPDeinterlacing && m_bDeintDouble && m_D3D11VP.IsReady();
 				}
 			}
 		}
@@ -3459,9 +3459,9 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	m_VPFormats = config.VPFmts;
 
 	if (m_bInterlaced) {
-		changeVP = config.iVPDinterlacing != m_iVPDinterlacing;
+		changeVP = config.iVPDeinterlacing != m_iVPDeinterlacing;
 	}
-	m_iVPDinterlacing = config.iVPDinterlacing;
+	m_iVPDeinterlacing = config.iVPDeinterlacing;
 
 	if (config.bVPScaling != m_bVPScaling) {
 		m_bVPScaling = config.bVPScaling;

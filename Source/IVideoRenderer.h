@@ -103,7 +103,7 @@ struct Settings_t {
 	int  iResizeStats;
 	int  iTexFormat;
 	VPEnableFormats_t VPFmts;
-	int  iVPDinterlacing;
+	int  iVPDeinterlacing;
 	bool bDeintDouble;
 	bool bVPScaling;
 	int iVPSuperRes;
@@ -143,7 +143,7 @@ struct Settings_t {
 		VPFmts.bP01x                    = true;
 		VPFmts.bYUY2                    = true;
 		VPFmts.bOther                   = true;
-		iVPDinterlacing                 = DEINT_Enable;
+		iVPDeinterlacing                = DEINT_Enable;
 		bDeintDouble                    = true;
 		bVPScaling                      = true;
 		iVPSuperRes                     = SUPERRES_Disable;

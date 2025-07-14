@@ -273,7 +273,7 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Setting
 	m_iResizeStats         = config.iResizeStats;
 	m_iTexFormat           = config.iTexFormat;
 	m_VPFormats            = config.VPFmts;
-	m_iVPDinterlacing      = config.iVPDinterlacing;
+	m_iVPDeinterlacing     = config.iVPDeinterlacing;
 	m_bDeintDouble         = config.bDeintDouble;
 	m_bVPScaling           = config.bVPScaling;
 	m_iChromaScaling       = config.iChromaScaling;
@@ -761,7 +761,7 @@ HRESULT CDX9VideoProcessor::InitializeDXVA2VP(const FmtConvParams_t& params, con
 	}
 
 	m_DXVA2OutputFmt = m_InternalTexFmt;
-	const int deinterlacing = m_bInterlaced ? m_iVPDinterlacing : DEINT_Disable;
+	const int deinterlacing = m_bInterlaced ? m_iVPDeinterlacing : DEINT_Disable;
 	HRESULT hr = m_DXVA2VP.InitVideoProcessor(dxva2format, width, height, m_srcExFmt, deinterlacing, m_DXVA2OutputFmt);
 	if (FAILED(hr)) {
 		return hr;
@@ -1335,7 +1335,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 					} else {
 						m_CurrentSampleFmt = DXVA2_SampleFieldInterleavedOddFirst;  // Bottom-field first
 					}
-					m_bDoubleFrames = m_iVPDinterlacing && m_bDeintDouble && m_DXVA2VP.IsReady();
+					m_bDoubleFrames = m_iVPDeinterlacing && m_bDeintDouble && m_DXVA2VP.IsReady();
 				}
 			}
 		}
@@ -1951,9 +1951,9 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	m_VPFormats = config.VPFmts;
 
 	if (m_bInterlaced) {
-		changeVP = config.iVPDinterlacing != m_iVPDinterlacing;
+		changeVP = config.iVPDeinterlacing != m_iVPDeinterlacing;
 	}
-	m_iVPDinterlacing = config.iVPDinterlacing;
+	m_iVPDeinterlacing = config.iVPDeinterlacing;
 
 	if (config.bVPScaling != m_bVPScaling) {
 		m_bVPScaling = config.bVPScaling;

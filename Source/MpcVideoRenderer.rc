@@ -66,7 +66,7 @@ BEGIN
     CONTROL         "P010/P016",IDC_CHECK8,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,78,47,51,10
     CONTROL         "YUY2",IDC_CHECK9,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,133,47,33,10
     CONTROL         "Other supported formats",IDC_CHECK4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,41,60,97,10
-    LTEXT           "Dinterlacing:",IDC_STATIC,10,74,53,8
+    LTEXT           "Deinterlacing:",IDC_STATIC,10,74,53,8
     COMBOBOX        IDC_COMBO9,73,73,86,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     CONTROL         "Double the frame rate when deinterlacing",IDC_CHECK3,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,86,152,10
