@@ -1431,12 +1431,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 			}
 
 			if (m_DXVA2VP.IsReady()) {
-				if (m_DXVA2VP.GetNumRefSamples() > 1) {
-					IDirect3DSurface9* pDXVA2VPSurface = m_DXVA2VP.GetNextInputSurface(m_pFilter->m_FrameStats.GetFrames(), m_CurrentSampleFmt);
-					hr = m_pD3DDevEx->StretchRect(pSurface, nullptr, pDXVA2VPSurface, nullptr, D3DTEXF_NONE);
-				} else {
-					m_DXVA2VP.SetInputSurface(pSurface, m_pFilter->m_FrameStats.GetFrames(), m_CurrentSampleFmt);
-				}
+				m_DXVA2VP.AddMediaSampleAndSurface(pSample, pSurface, m_pFilter->m_FrameStats.GetFrames(), m_CurrentSampleFmt);
 			}
 			else if (m_TexSrcVideo.Plane2.pSurface) {
 				D3DLOCKED_RECT lr_src;
@@ -2073,11 +2068,7 @@ void CDX9VideoProcessor::SetStereo3dTransform(int value)
 void CDX9VideoProcessor::Flush()
 {
 	if (m_DXVA2VP.IsReady()) {
-		if (m_iSrcFromGPU && m_DXVA2VP.GetNumRefSamples() == 1) {
-			m_DXVA2VP.ClearDecoderSurfaces(m_srcExFmt);
-		} else {
-			m_DXVA2VP.CleanSamplesData();
-		}
+		m_DXVA2VP.CleanSamples();
 	}
 
 	m_rtStart = 0;

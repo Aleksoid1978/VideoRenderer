@@ -32,6 +32,7 @@ class VideoSampleBuffer
 
 private:
 	struct DXVA2_SampleInfo {
+		CComPtr<IMediaSample> pSample;
 		REFERENCE_TIME Start;
 		REFERENCE_TIME End;
 		DXVA2_SampleFormat SampleFormat;
@@ -78,7 +79,8 @@ public:
 		return m_maxSize;
 	}
 
-	void Clean() {
+	/*
+	void CleanDXVA2Samples() {
 		for (auto& dxva2sample : m_DXVA2Samples) {
 			dxva2sample.Start = 0;
 			dxva2sample.End = 0;
@@ -91,6 +93,11 @@ public:
 				}
 			}
 		}
+	}
+	*/
+
+	void Clean() {
+		SetLocation(Surface_Unknown);
 	}
 
 	void Clear() {
@@ -113,7 +120,11 @@ public:
 	void SetLocation(const SurfaceLocation location) {
 		if (m_Location != location) {
 			m_Samples.clear();
-			SetEmptyDXVA2Samples();
+			if (location == Surface_Unknown) {
+				m_DXVA2Samples.clear();
+			} else {
+				SetEmptyDXVA2Samples();
+			}
 			m_Location = location;
 		}
 	}
@@ -126,7 +137,7 @@ public:
 		SetLocation(Surface_Internal);
 
 		if (m_Samples.size() < m_maxSize) {
-			m_Samples.emplace_back(DXVA2_SampleInfo{ 0, 0, DXVA2_SampleUnknown, pSurface });
+			m_Samples.emplace_back(DXVA2_SampleInfo{ nullptr, 0, 0, DXVA2_SampleUnknown, pSurface });
 		}
 		else if (m_Samples.size() > 1) {
 			m_Samples.emplace_back(std::move(m_Samples.front()));
@@ -143,7 +154,7 @@ public:
 		return &sample;
 	}
 
-	void AddExternalSampleInfo(const UINT frameNum, const DXVA2_SampleFormat sampleFmt, IDirect3DSurface9* pSrcSurface)
+	void AddExternalSampleInfo(IMediaSample* pSample, const UINT frameNum, const DXVA2_SampleFormat sampleFmt, IDirect3DSurface9* pSrcSurface)
 	{
 		if (!m_maxSize) {
 			return;
@@ -155,7 +166,7 @@ public:
 		}
 
 		REFERENCE_TIME start = frameNum * 170000i64;
-		m_Samples.emplace_back(DXVA2_SampleInfo{ start, start + 170000i64, sampleFmt, pSrcSurface });
+		m_Samples.emplace_back(DXVA2_SampleInfo{ pSample, start, start + 170000i64, sampleFmt, pSrcSurface });
 
 		UpdateDXVA2Samples();
 	}
@@ -228,10 +239,9 @@ public:
 	UINT GetNumRefSamples() { return m_NumRefSamples; }
 	void GetVPParams(GUID& guid, DXVA2_VideoProcessorCaps& caps) { guid = m_DXVA2VPGuid; caps = m_DXVA2VPcaps; }
 
-	HRESULT SetInputSurface(IDirect3DSurface9* pSurface, const UINT frameNum, const DXVA2_SampleFormat sampleFmt);
+	HRESULT AddMediaSampleAndSurface(IMediaSample* pSample, IDirect3DSurface9* pSurface, const UINT frameNum, const DXVA2_SampleFormat sampleFmt);
 	IDirect3DSurface9* GetNextInputSurface(const UINT frameNum, const DXVA2_SampleFormat sampleFmt);
-	void ClearDecoderSurfaces(const DXVA2_ExtendedFormat exFmt);
-	void CleanSamplesData();
+	void CleanSamples();
 
 	void SetRectangles(const CRect& srcRect, const CRect& dstRect);
 	void SetProcAmpValues(DXVA2_ProcAmpValues& PropValues);

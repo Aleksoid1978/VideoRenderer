@@ -382,11 +382,11 @@ void CDXVA2VP::ReleaseVideoProcessor()
 	m_srcHeight   = 0;
 }
 
-HRESULT CDXVA2VP::SetInputSurface(IDirect3DSurface9* pSurface, const UINT frameNum, const DXVA2_SampleFormat sampleFmt)
+HRESULT CDXVA2VP::AddMediaSampleAndSurface(IMediaSample* pSample, IDirect3DSurface9* pSurface, const UINT frameNum, const DXVA2_SampleFormat sampleFmt)
 {
 	CheckPointer(pSurface, E_POINTER);
 
-	m_VideoSamples.AddExternalSampleInfo(frameNum, sampleFmt, pSurface);
+	m_VideoSamples.AddExternalSampleInfo(pSample, frameNum, sampleFmt, pSurface);
 
 	return E_ABORT;
 }
@@ -425,12 +425,7 @@ IDirect3DSurface9* CDXVA2VP::GetNextInputSurface(const UINT frameNum, const DXVA
 	return sample ? sample->pSrcSurface.p : nullptr;
 }
 
-void CDXVA2VP::ClearDecoderSurfaces(const DXVA2_ExtendedFormat exFmt)
-{
-	m_VideoSamples.SetProps(m_VideoSamples.MaxSize(), exFmt);
-}
-
-void CDXVA2VP::CleanSamplesData()
+void CDXVA2VP::CleanSamples()
 {
 	m_VideoSamples.Clean();
 }
