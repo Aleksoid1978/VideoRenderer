@@ -41,7 +41,7 @@ private:
 
 	std::deque<DXVA2_SampleInfo> m_Samples;
 
-	SurfaceLocation m_Location = Surface_Internal;
+	SurfaceLocation m_Location = Surface_Unknown;
 	UINT m_maxSize = 1;
 	DXVA2_ExtendedFormat m_exFmt = {};
 
