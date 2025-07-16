@@ -24,13 +24,13 @@
 
 class VideoSampleBuffer
 {
+private:
 	enum SurfaceLocation {
 		Surface_Unknown,
 		Surface_Internal,
 		Surface_External
 	};
 
-private:
 	struct DXVA2_SampleInfo {
 		CComPtr<IMediaSample> pSample;
 		REFERENCE_TIME Start;
@@ -62,6 +62,20 @@ private:
 			dxva2Sample.SampleFormat.SampleFormat = sample.SampleFormat;
 			dxva2Sample.SrcSurface = sample.pSrcSurface.p;
 			idx++;
+		}
+	}
+
+	void SetLocation(const SurfaceLocation location)
+	{
+		if (m_Location != location) {
+			m_Samples.clear();
+			if (location == Surface_Unknown) {
+				m_DXVA2Samples.clear();
+			}
+			else {
+				SetEmptyDXVA2Samples();
+			}
+			m_Location = location;
 		}
 	}
 
@@ -105,7 +119,8 @@ public:
 		m_DXVA2Samples.clear();
 	}
 
-	void SetProps(const UINT maxSize, const DXVA2_ExtendedFormat exFmt) {
+	void SetProps(const UINT maxSize, const DXVA2_ExtendedFormat exFmt)
+	{
 		Clear();
 		m_Location = Surface_Unknown;
 		m_maxSize  = maxSize;
@@ -115,18 +130,6 @@ public:
 		if (m_exFmt.VideoTransferMatrix > DXVA2_VideoTransferMatrix_SMPTE240M) { m_exFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT709; }
 		if (m_exFmt.VideoPrimaries > DXVA2_VideoPrimaries_SMPTE_C) { m_exFmt.VideoPrimaries = DXVA2_VideoPrimaries_BT709; }
 		if (m_exFmt.VideoTransferFunction > DXVA2_VideoTransFunc_28) { m_exFmt.VideoTransferFunction = DXVA2_VideoTransFunc_709; }
-	}
-
-	void SetLocation(const SurfaceLocation location) {
-		if (m_Location != location) {
-			m_Samples.clear();
-			if (location == Surface_Unknown) {
-				m_DXVA2Samples.clear();
-			} else {
-				SetEmptyDXVA2Samples();
-			}
-			m_Location = location;
-		}
 	}
 
 	DXVA2_SampleInfo* GetNextInternalSampleInfo(const UINT frameNum, const DXVA2_SampleFormat sampleFmt, IDirect3DSurface9* pSurface)
@@ -171,23 +174,16 @@ public:
 		UpdateDXVA2Samples();
 	}
 
-	void SetRects(const CRect& SrcRect, const CRect& DstRect) {
+	void SetRects(const CRect& SrcRect, const CRect& DstRect)
+	{
 		for (auto& dxva2sample : m_DXVA2Samples) {
 			dxva2sample.SrcRect = SrcRect;
 			dxva2sample.DstRect = DstRect;
 		}
 	}
 
-	IDirect3DSurface9** GetSurface()
+	REFERENCE_TIME GetTargetFrameTime(size_t idx, const bool second)
 	{
-		if (m_Samples.size()) {
-			return &m_Samples.back().pSrcSurface.p;
-		} else {
-			return nullptr;
-		}
-	}
-
-	REFERENCE_TIME GetTargetFrameTime(size_t idx, const bool second) {
 		if (idx >= m_Samples.size()) {
 			idx = m_Samples.size() - 1;
 		}
