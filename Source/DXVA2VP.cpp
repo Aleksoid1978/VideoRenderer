@@ -386,31 +386,16 @@ HRESULT CDXVA2VP::SetInputSurface(IDirect3DSurface9* pSurface, const UINT frameN
 {
 	CheckPointer(pSurface, E_POINTER);
 
-	DXVA2_VideoSample* videoSample = m_VideoSamples.GetNextVideoSample();
-	if (videoSample) {
-		videoSample->Start = frameNum * 170000i64;
-		videoSample->End   = videoSample->Start + 170000i64;
-		videoSample->SampleFormat.SampleFormat = sampleFmt;
-
-		if (videoSample->SrcSurface) {
-			videoSample->SrcSurface->Release();
-		}
-		videoSample->SrcSurface = pSurface;
-		videoSample->SrcSurface->AddRef();
-
-		return S_OK;
-	}
+	m_VideoSamples.AddExternalSampleInfo(frameNum, sampleFmt, pSurface);
 
 	return E_ABORT;
 }
 
-IDirect3DSurface9* CDXVA2VP::GetInputSurface()
+IDirect3DSurface9* CDXVA2VP::GetNextInputSurface(const UINT frameNum, const DXVA2_SampleFormat sampleFmt)
 {
-	IDirect3DSurface9** ppSurface = m_VideoSamples.GetSurface();
-	if (ppSurface == nullptr) {
-		return nullptr;
-	}
-	if (*ppSurface == nullptr) {
+	IDirect3DSurface9* pSurface = nullptr;
+
+	if (m_VideoSamples.Size() < m_VideoSamples.MaxSize()) {
 		HRESULT hr = m_pDXVA2_VPService->CreateSurface(
 			m_srcWidth,
 			m_srcHeight,
@@ -419,35 +404,28 @@ IDirect3DSurface9* CDXVA2VP::GetInputSurface()
 			m_DXVA2VPcaps.InputPool,
 			0,
 			DXVA2_VideoProcessorRenderTarget,
-			ppSurface,
+			&pSurface,
 			nullptr
 		);
-		DLogIf(FAILED(hr), L"CDXVA2VP::GetInputSurface() : CreateSurface failed with error {}", HR2Str(hr));
 		if (S_OK == hr) {
 			IDirect3DDevice9* pDevice;
-			if (S_OK == (*ppSurface)->GetDevice(&pDevice)) {
-				hr = pDevice->ColorFill(*ppSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+			if (S_OK == pSurface->GetDevice(&pDevice)) {
+				hr = pDevice->ColorFill(pSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
 				pDevice->Release();
 			}
 		}
+		else {
+			DLogIf(L"CDXVA2VP::GetNextInputSurface() : CreateSurface failed with error {}", HR2Str(hr));
+			return nullptr;
+		}
 	}
 
-	return *ppSurface;
+	auto sample = m_VideoSamples.GetNextInternalSampleInfo(frameNum, sampleFmt, pSurface);
+
+	return sample ? sample->pSrcSurface.p : nullptr;
 }
 
-IDirect3DSurface9* CDXVA2VP::GetNextInputSurface(const UINT frameNum, const DXVA2_SampleFormat sampleFmt)
-{
-	DXVA2_VideoSample* videoSample = m_VideoSamples.GetNextVideoSample();
-	if (videoSample) {
-		videoSample->Start = frameNum * 170000i64;
-		videoSample->End   = videoSample->Start + 170000i64;
-		videoSample->SampleFormat.SampleFormat = sampleFmt;
-	}
-
-	return GetInputSurface();
-}
-
-void CDXVA2VP::ClearInputSurfaces(const DXVA2_ExtendedFormat exFmt)
+void CDXVA2VP::ClearDecoderSurfaces(const DXVA2_ExtendedFormat exFmt)
 {
 	m_VideoSamples.SetProps(m_VideoSamples.MaxSize(), exFmt);
 }
@@ -491,11 +469,7 @@ HRESULT CDXVA2VP::Process(IDirect3DSurface9* pRenderTarget, const DXVA2_SampleFo
 	}
 
 	// Initialize VPBlt parameters
-	if (second) {
-		m_BltParams.TargetFrame = (m_VideoSamples.GetFrameStart() + m_VideoSamples.GetFrameEnd()) / 2;
-	} else {
-		m_BltParams.TargetFrame = m_VideoSamples.GetFrameStart();
-	}
+	m_BltParams.TargetFrame = m_VideoSamples.GetTargetFrameTime(m_DXVA2VPcaps.NumBackwardRefSamples, second);
 
 	HRESULT hr = m_pDXVA2_VP->VideoProcessBlt(pRenderTarget, &m_BltParams, m_VideoSamples.Data(), m_VideoSamples.Size(), nullptr);
 	DLogIf(FAILED(hr), L"CDXVA2VP::Process() : VideoProcessBlt() failed with error {}", HR2Str(hr));

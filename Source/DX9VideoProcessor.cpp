@@ -2074,7 +2074,7 @@ void CDX9VideoProcessor::Flush()
 {
 	if (m_DXVA2VP.IsReady()) {
 		if (m_iSrcFromGPU && m_DXVA2VP.GetNumRefSamples() == 1) {
-			m_DXVA2VP.ClearInputSurfaces(m_srcExFmt);
+			m_DXVA2VP.ClearDecoderSurfaces(m_srcExFmt);
 		} else {
 			m_DXVA2VP.CleanSamplesData();
 		}

@@ -42,6 +42,7 @@
 #include <algorithm>
 #include <numeric>
 #include <vector>
+#include <deque>
 #include <string>
 #include <format>
 

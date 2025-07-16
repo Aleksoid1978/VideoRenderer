@@ -24,28 +24,54 @@
 
 class VideoSampleBuffer
 {
+	enum SurfaceLocation {
+		Surface_Unknown,
+		Surface_Internal,
+		Surface_External
+	};
+
 private:
-	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
+	struct DXVA2_SampleInfo {
+		REFERENCE_TIME Start;
+		REFERENCE_TIME End;
+		DXVA2_SampleFormat SampleFormat;
+		CComPtr<IDirect3DSurface9> pSrcSurface;
+	};
+
+	std::deque<DXVA2_SampleInfo> m_Samples;
+
+	SurfaceLocation m_Location = Surface_Internal;
 	UINT m_maxSize = 1;
 	DXVA2_ExtendedFormat m_exFmt = {};
 
-	void ReleaseSurfaces() {
-		for (auto& dxva2sample : m_DXVA2Samples) {
-			SAFE_RELEASE(dxva2sample.SrcSurface);
+	std::vector<DXVA2_VideoSample> m_DXVA2Samples;
+
+	void SetEmptyDXVA2Samples() {
+		m_DXVA2Samples.assign(m_maxSize, DXVA2_VideoSample{ 0, 0, m_exFmt, nullptr, {}, {}, {}, DXVA2_Fixed32OpaqueAlpha(), 0 });
+	}
+
+	void UpdateDXVA2Samples()
+	{
+		ASSERT(m_DXVA2Samples.size() >= m_Samples.size());
+		size_t idx = 0;
+		for (const auto& sample : m_Samples) {
+			auto& dxva2Sample = m_DXVA2Samples[idx];
+			dxva2Sample.Start      = sample.Start;
+			dxva2Sample.End        = sample.End;
+			dxva2Sample.SampleFormat.SampleFormat = sample.SampleFormat;
+			dxva2Sample.SrcSurface = sample.pSrcSurface.p;
+			idx++;
 		}
 	}
 
 public:
-	~VideoSampleBuffer() {
-		ReleaseSurfaces();
-	}
-
 	const DXVA2_VideoSample* Data() {
 		return m_DXVA2Samples.data();
 	}
 
 	const UINT Size() {
-		return m_DXVA2Samples.size();
+		ASSERT(m_DXVA2Samples.size() >= m_Samples.size());
+		return m_Samples.size();
 	}
 
 	const UINT MaxSize() {
@@ -57,24 +83,26 @@ public:
 			dxva2sample.Start = 0;
 			dxva2sample.End = 0;
 			dxva2sample.SampleFormat.SampleFormat = DXVA2_SampleUnknown;
-			IDirect3DDevice9* pDevice;
-			if (dxva2sample.SrcSurface && S_OK == dxva2sample.SrcSurface->GetDevice(&pDevice)) {
-				pDevice->ColorFill(dxva2sample.SrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
-				pDevice->Release();
+			if (dxva2sample.SrcSurface) {
+				IDirect3DDevice9* pDevice;
+				if (S_OK == dxva2sample.SrcSurface->GetDevice(&pDevice)) {
+					pDevice->ColorFill(dxva2sample.SrcSurface, nullptr, D3DCOLOR_XYUV(0, 128, 128));
+					pDevice->Release();
+				}
 			}
 		}
 	}
 
 	void Clear() {
-		ReleaseSurfaces();
+		m_Samples.clear();
 		m_DXVA2Samples.clear();
 	}
 
 	void SetProps(const UINT maxSize, const DXVA2_ExtendedFormat exFmt) {
 		Clear();
-
-		m_maxSize = maxSize;
-		m_exFmt   = exFmt;
+		m_Location = Surface_Unknown;
+		m_maxSize  = maxSize;
+		m_exFmt    = exFmt;
 
 		// replace values that are not included in the DXVA2 specification to obtain a more stable result for subsequent correction
 		if (m_exFmt.VideoTransferMatrix > DXVA2_VideoTransferMatrix_SMPTE240M) { m_exFmt.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT709; }
@@ -82,31 +110,54 @@ public:
 		if (m_exFmt.VideoTransferFunction > DXVA2_VideoTransFunc_28) { m_exFmt.VideoTransferFunction = DXVA2_VideoTransFunc_709; }
 	}
 
-	DXVA2_VideoSample* GetNextVideoSample()
+	void SetLocation(const SurfaceLocation location) {
+		if (m_Location != location) {
+			m_Samples.clear();
+			SetEmptyDXVA2Samples();
+			m_Location = location;
+		}
+	}
+
+	DXVA2_SampleInfo* GetNextInternalSampleInfo(const UINT frameNum, const DXVA2_SampleFormat sampleFmt, IDirect3DSurface9* pSurface)
 	{
 		if (!m_maxSize) {
 			return nullptr;
 		}
+		SetLocation(Surface_Internal);
 
-		if (m_DXVA2Samples.size() < m_maxSize) {
-			const DXVA2_VideoSample dxva2sample = { 0, 0, m_exFmt, nullptr, {}, {}, {}, DXVA2_Fixed32OpaqueAlpha(), 0 };
-			m_DXVA2Samples.emplace_back(dxva2sample);
+		if (m_Samples.size() < m_maxSize) {
+			m_Samples.emplace_back(DXVA2_SampleInfo{ 0, 0, DXVA2_SampleUnknown, pSurface });
 		}
-		else if (m_DXVA2Samples.size() > 1) {
-			IDirect3DSurface9* pSurface = m_DXVA2Samples.front().SrcSurface;
-
-			for (size_t i = 1; i < m_DXVA2Samples.size(); i++) {
-				auto pre = i - 1;
-				m_DXVA2Samples[pre].Start = m_DXVA2Samples[i].Start;
-				m_DXVA2Samples[pre].End = m_DXVA2Samples[i].End;
-				m_DXVA2Samples[pre].SampleFormat.SampleFormat = m_DXVA2Samples[i].SampleFormat.SampleFormat;
-				m_DXVA2Samples[pre].SrcSurface = m_DXVA2Samples[i].SrcSurface;
-			}
-
-			m_DXVA2Samples.back().SrcSurface = pSurface;
+		else if (m_Samples.size() > 1) {
+			m_Samples.emplace_back(std::move(m_Samples.front()));
+			m_Samples.pop_front();
 		}
 
-		return &m_DXVA2Samples.back();
+		auto& sample = m_Samples.back();
+		sample.Start = frameNum * 170000i64;
+		sample.End   = sample.Start + 170000i64;
+		sample.SampleFormat = sampleFmt;
+
+		UpdateDXVA2Samples();
+
+		return &sample;
+	}
+
+	void AddExternalSampleInfo(const UINT frameNum, const DXVA2_SampleFormat sampleFmt, IDirect3DSurface9* pSrcSurface)
+	{
+		if (!m_maxSize) {
+			return;
+		}
+		SetLocation(Surface_External);
+
+		if (m_Samples.size() >= m_maxSize) {
+			m_Samples.pop_front();
+		}
+
+		REFERENCE_TIME start = frameNum * 170000i64;
+		m_Samples.emplace_back(DXVA2_SampleInfo{ start, start + 170000i64, sampleFmt, pSrcSurface });
+
+		UpdateDXVA2Samples();
 	}
 
 	void SetRects(const CRect& SrcRect, const CRect& DstRect) {
@@ -118,19 +169,24 @@ public:
 
 	IDirect3DSurface9** GetSurface()
 	{
-		if (m_DXVA2Samples.size()) {
-			return &m_DXVA2Samples.back().SrcSurface;
+		if (m_Samples.size()) {
+			return &m_Samples.back().pSrcSurface.p;
 		} else {
 			return nullptr;
 		}
 	}
 
-	REFERENCE_TIME GetFrameStart() {
-		return m_DXVA2Samples.back().Start;
-	}
+	REFERENCE_TIME GetTargetFrameTime(size_t idx, const bool second) {
+		if (idx >= m_Samples.size()) {
+			idx = m_Samples.size() - 1;
+		}
 
-	REFERENCE_TIME GetFrameEnd() {
-		return m_DXVA2Samples.back().End;
+		auto time = m_DXVA2Samples[idx].Start;
+		if (second) {
+			time += 170000i64 / 2;
+		}
+
+		return time;
 	}
 };
 
@@ -173,9 +229,8 @@ public:
 	void GetVPParams(GUID& guid, DXVA2_VideoProcessorCaps& caps) { guid = m_DXVA2VPGuid; caps = m_DXVA2VPcaps; }
 
 	HRESULT SetInputSurface(IDirect3DSurface9* pSurface, const UINT frameNum, const DXVA2_SampleFormat sampleFmt);
-	IDirect3DSurface9* GetInputSurface();
 	IDirect3DSurface9* GetNextInputSurface(const UINT frameNum, const DXVA2_SampleFormat sampleFmt);
-	void ClearInputSurfaces(const DXVA2_ExtendedFormat exFmt);
+	void ClearDecoderSurfaces(const DXVA2_ExtendedFormat exFmt);
 	void CleanSamplesData();
 
 	void SetRectangles(const CRect& srcRect, const CRect& dstRect);
