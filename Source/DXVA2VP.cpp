@@ -415,7 +415,7 @@ IDirect3DSurface9* CDXVA2VP::GetNextInputSurface(const UINT frameNum, const DXVA
 			}
 		}
 		else {
-			DLogIf(L"CDXVA2VP::GetNextInputSurface() : CreateSurface failed with error {}", HR2Str(hr));
+			DLog(L"CDXVA2VP::GetNextInputSurface() : CreateSurface failed with error {}", HR2Str(hr));
 			return nullptr;
 		}
 	}
