@@ -393,7 +393,7 @@ HRESULT CDXVA2VP::AddMediaSampleAndSurface(IMediaSample* pSample, IDirect3DSurfa
 
 IDirect3DSurface9* CDXVA2VP::GetNextInputSurface(const UINT frameNum, const DXVA2_SampleFormat sampleFmt)
 {
-	IDirect3DSurface9* pSurface = nullptr;
+	CComPtr<IDirect3DSurface9> pSurface;
 
 	if (m_VideoSamples.Size() < m_VideoSamples.MaxSize()) {
 		HRESULT hr = m_pDXVA2_VPService->CreateSurface(
