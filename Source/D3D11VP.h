@@ -21,6 +21,7 @@
 #pragma once
 
 #include <d3d11.h>
+#include <unordered_map>
 
 class VideoTextureBuffer
 {
@@ -106,6 +107,91 @@ public:
 	}
 };
 
+class VideoInputData
+{
+private:
+	std::unordered_map<UINT, CComPtr<ID3D11VideoProcessorInputView>> m_InputDecoderViews;
+	std::deque<CComPtr<IMediaSample>> m_Samples;
+	std::vector<ID3D11VideoProcessorInputView*> m_InputViews;
+	CComPtr<ID3D11Texture2D> m_Texture;
+
+public:
+	const UINT Size() const {
+		return m_InputViews.size();
+	}
+
+	void Clear() {
+		m_InputViews.clear();
+		m_Samples.clear();
+	}
+
+	void ClearInputDecoderViews() {
+		m_InputDecoderViews.clear();
+
+		if (!m_InputViews.empty()) {
+			for (auto& view : m_InputViews) {
+				view = nullptr;
+			}
+		}
+	}
+
+	void Resize(unsigned len) {
+		Clear();
+		if (len) {
+			m_InputViews.resize(len);
+		}
+	}
+
+	void Rotate() {
+		ASSERT(m_InputViews.size());
+
+		if (m_InputViews.size() > 1) {
+			auto pInputView = m_InputViews.front();
+
+			for (size_t i = 1; i < m_InputViews.size(); i++) {
+				auto pre = i - 1;
+				m_InputViews[pre] = m_InputViews[i];
+			}
+
+			m_InputViews.back() = pInputView;
+		}
+	}
+
+	ID3D11VideoProcessorInputView** GetInputView(UINT num)
+	{
+		if (num < m_InputViews.size()) {
+			return &m_InputViews[num];
+		}
+		else {
+			return nullptr;
+		}
+	}
+
+	CComPtr<ID3D11Texture2D>& GetTexture()
+	{
+		return m_Texture;
+	}
+
+	CComPtr<ID3D11VideoProcessorInputView>& GetInputDecoderView(UINT num)
+	{
+		return m_InputDecoderViews[num];
+	}
+
+	void PushSample(IMediaSample* pSample) {
+		m_Samples.emplace_back(pSample);
+		if (m_Samples.size() > m_InputViews.size()) {
+			m_Samples.pop_front();
+		}
+	}
+
+	void SetInputView(ID3D11VideoProcessorInputView* view)
+	{
+		if (m_InputViews.size()) {
+			m_InputViews.back() = view;
+		}
+	}
+};
+
 // D3D11 Video Processor
 class CD3D11VP
 {
@@ -126,6 +212,7 @@ private:
 	D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS m_RateConvCaps = {};
 
 	VideoTextureBuffer m_VideoTextures;
+	VideoInputData m_VideoInputData;
 	UINT m_nInputFrameOrField = 0;
 	bool m_bPresentFrame      = false;
 	bool m_bUseFutureFrames   = false;
@@ -166,6 +253,7 @@ public:
 	BOOL IsPqSupported() { return m_bConvSupportedG2084; }
 
 	ID3D11Texture2D* GetNextInputTexture(const D3D11_VIDEO_FRAME_FORMAT vframeFormat);
+	void SetInputVideoData(ID3D11Texture2D* pTexture, IMediaSample* pSample, UINT ArraySlice, const D3D11_VIDEO_FRAME_FORMAT vframeFormat);
 	void ResetFrameOrder();
 
 	HRESULT SetRectangles(const RECT * pSrcRect, const RECT* pDstRect);

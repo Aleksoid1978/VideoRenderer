@@ -2246,11 +2246,11 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 		}
 #endif
 
-		// here should be used CopySubresourceRegion instead of CopyResource
-		D3D11_BOX srcBox = { 0, 0, 0, m_srcWidth, m_srcHeight, 1 };
 		if (m_D3D11VP.IsReady()) {
-			m_pDeviceContext->CopySubresourceRegion(m_D3D11VP.GetNextInputTexture(m_SampleFormat), 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, &srcBox);
+			m_D3D11VP.SetInputVideoData(pD3D11Texture2D, pSample, ArraySlice, m_SampleFormat);
 		} else {
+			// here should be used CopySubresourceRegion instead of CopyResource
+			D3D11_BOX srcBox = { 0, 0, 0, m_srcWidth, m_srcHeight, 1 };
 			m_pDeviceContext->CopySubresourceRegion(m_TexSrcVideo.pTexture, 0, 0, 0, 0, pD3D11Texture2D, ArraySlice, &srcBox);
 		}
 	}
