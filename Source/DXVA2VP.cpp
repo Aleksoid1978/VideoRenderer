@@ -420,9 +420,7 @@ IDirect3DSurface9* CDXVA2VP::GetNextInputSurface(const UINT frameNum, const DXVA
 		}
 	}
 
-	auto sample = m_VideoSamples.GetNextInternalSampleInfo(frameNum, sampleFmt, pSurface);
-
-	return sample ? sample->pSrcSurface.p : nullptr;
+	return m_VideoSamples.GetNextInternalSurface(frameNum, sampleFmt, pSurface);
 }
 
 void CDXVA2VP::CleanSamples()

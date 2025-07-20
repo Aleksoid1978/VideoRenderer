@@ -132,7 +132,7 @@ public:
 		if (m_exFmt.VideoTransferFunction > DXVA2_VideoTransFunc_28) { m_exFmt.VideoTransferFunction = DXVA2_VideoTransFunc_709; }
 	}
 
-	DXVA2_SampleInfo* GetNextInternalSampleInfo(const UINT frameNum, const DXVA2_SampleFormat sampleFmt, IDirect3DSurface9* pSurface)
+	IDirect3DSurface9* GetNextInternalSurface(const UINT frameNum, const DXVA2_SampleFormat sampleFmt, IDirect3DSurface9* pSurface)
 	{
 		if (!m_maxSize) {
 			return nullptr;
@@ -154,7 +154,7 @@ public:
 
 		UpdateDXVA2Samples();
 
-		return &sample;
+		return sample.pSrcSurface;
 	}
 
 	void AddExternalSampleInfo(IMediaSample* pSample, const UINT frameNum, const DXVA2_SampleFormat sampleFmt, IDirect3DSurface9* pSrcSurface)
