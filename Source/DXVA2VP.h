@@ -143,7 +143,7 @@ public:
 			m_Samples.emplace_back(DXVA2_SampleInfo{ nullptr, 0, 0, DXVA2_SampleUnknown, pSurface });
 		}
 		else if (m_Samples.size() > 1) {
-			m_Samples.emplace_back(m_Samples.front());
+			m_Samples.emplace_back(std::move(m_Samples.front()));
 			m_Samples.pop_front();
 		}
 
