@@ -1,5 +1,5 @@
 @cd /d "%~dp0"
-@regsvr32.exe MpcVideoRenderer.ax /u /s
+@regsvr32.exe "%~dp0/MpcVideoRenderer.ax" /u /s
 @if %errorlevel% NEQ 0 goto error
 :success
 @echo.
