@@ -607,6 +607,7 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 
 	m_pFilter->OnDisplayModeChange();
 	UpdateStatsStatic();
+	UpdateStatsByWindow();
 	UpdateStatsByDisplay();
 
 	if (pChangeDevice) {
