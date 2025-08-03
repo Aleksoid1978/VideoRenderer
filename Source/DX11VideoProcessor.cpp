@@ -3458,7 +3458,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 	m_VPFormats = config.VPFmts;
 
-	if (m_bInterlaced) {
+	if (!changeVP && m_bInterlaced) {
 		changeVP = config.iVPDeinterlacing != m_iVPDeinterlacing;
 	}
 	m_iVPDeinterlacing = config.iVPDeinterlacing;
