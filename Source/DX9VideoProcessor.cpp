@@ -1940,10 +1940,12 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	}
 	m_VPFormats = config.VPFmts;
 
-	if (!changeVP && m_bInterlaced) {
-		changeVP = config.iVPDeinterlacing != m_iVPDeinterlacing;
+	if (config.iVPDeinterlacing != m_iVPDeinterlacing) {
+		m_iVPDeinterlacing = config.iVPDeinterlacing;
+		if (m_bInterlaced) {
+			changeVP = true;
+		}
 	}
-	m_iVPDeinterlacing = config.iVPDeinterlacing;
 
 	if (config.bVPScaling != m_bVPScaling) {
 		m_bVPScaling = config.bVPScaling;
