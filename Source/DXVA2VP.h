@@ -22,7 +22,7 @@
 
 #include <dxva2api.h>
 
-class VideoSampleBuffer
+class VideoSampleBuffer9
 {
 private:
 	enum SurfaceLocation {
@@ -206,7 +206,7 @@ private:
 	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
 	GUID m_DXVA2VPGuid = GUID_NULL;
 	DXVA2_VideoProcessBltParams m_BltParams = {};
-	VideoSampleBuffer m_VideoSamples;
+	VideoSampleBuffer9 m_VideoSamples;
 
 	DXVA2_VideoProcessorCaps m_DXVA2VPcaps = {};
 	UINT m_NumRefSamples = 1;
