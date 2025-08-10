@@ -38,6 +38,7 @@
 
 bool g_bPresent = false;
 bool g_bCreateSwapChain = false;
+HWND g_hWnd = nullptr;
 
 typedef BOOL(WINAPI* pSetWindowPos)(
 	_In_ HWND hWnd,
@@ -58,7 +59,7 @@ static BOOL WINAPI pNewSetWindowPosDX11(
 	_In_ int cy,
 	_In_ UINT uFlags)
 {
-	if (g_bPresent) {
+	if (g_bPresent && g_hWnd == hWnd) {
 		DLog(L"call SetWindowPos() function during Present()");
 		uFlags |= SWP_ASYNCWINDOWPOS;
 	}
@@ -76,7 +77,7 @@ static LONG WINAPI pNewSetWindowLongADX11(
 	_In_ int nIndex,
 	_In_ LONG dwNewLong)
 {
-	if (g_bCreateSwapChain) {
+	if (g_bCreateSwapChain && g_hWnd == hWnd) {
 		DLog(L"Blocking call SetWindowLongA() function during create fullscreen swap chain");
 		return 0L;
 	}
@@ -535,7 +536,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged,
 	DLog(L"CDX11VideoProcessor::Init()");
 
 	const bool bWindowChanged = displayHdrChanged || (m_hWnd != hwnd);
-	m_hWnd = hwnd;
+	g_hWnd = m_hWnd = hwnd;
 	m_bHdrPassthroughSupport = false;
 	m_bHdrDisplayModeEnabled = false;
 	m_DisplayBitsPerChannel = 8;
