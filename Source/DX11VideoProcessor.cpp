@@ -3146,13 +3146,13 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 		return hr;
 	}
 
-	const bool bHdrPassthrough = (m_bHdrPassthroughSupport && m_bHdrPassthrough && SourceIsHDR());
+	const bool bHdrPassthrough = (m_bHdrPassthroughSupport && m_bHdrPassthrough && (SourceIsHDR() || m_bVPUseRTXVideoHDR));
 
 	if (bHdrPassthrough) {
 		if (m_D3D11VP.IsReady()) {
 			m_pPSCorrection.Release();
 
-			auto resId = m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 ? IDF_PS_11_CONVERT_PQ_TO_SDR : IDF_PS_11_FIXCONVERT_HLG_TO_SDR;
+			auto resId = (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 || m_bVPUseRTXVideoHDR) ? IDF_PS_11_CONVERT_PQ_TO_SDR : IDF_PS_11_FIXCONVERT_HLG_TO_SDR;
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, resId));
 			SetShaderLuminanceParams();
 		} else {
