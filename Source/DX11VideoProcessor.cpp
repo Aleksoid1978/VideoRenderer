@@ -1561,6 +1561,8 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 	m_bHdrDisplaySwitching = false;
 
 	if (bRet) {
+		Sleep(100);
+
 		MONITORINFOEXW mi = { sizeof(mi) };
 		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 		DisplayConfig_t displayConfig = {};
