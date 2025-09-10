@@ -426,6 +426,7 @@ IDirect3DSurface9* CDXVA2VP::GetNextInputSurface(const UINT frameNum, const DXVA
 void CDXVA2VP::CleanSamples()
 {
 	m_VideoSamples.Clean();
+	m_VideoSamples.Clear();
 }
 
 void CDXVA2VP::SetRectangles(const CRect& srcRect, const CRect& dstRect)
