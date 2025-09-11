@@ -2,6 +2,7 @@
 ------------------------
 Changed the way to get a screenshot when the "RTX Video HDR" setting is active.
 Improved enabling and disabling the HDR mode for the display.
+Fixed a crash when using the DXVA2 video processor and DXVA2 decoder in some situations.
 
 0.9.11.2440 - 2025-08-05
 ------------------------
