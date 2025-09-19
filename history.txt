@@ -1,3 +1,6 @@
+0.9.14 dev
+------------------------
+
 0.9.13.2451 - 2025-09-15
 ------------------------
 Changed the way to get a screenshot when the "RTX Video HDR" setting is active.
