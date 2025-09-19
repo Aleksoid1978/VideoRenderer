@@ -163,7 +163,7 @@ public:
 
 	void SetVideoRect(const CRect& videoRect)      override;
 	HRESULT SetWindowRect(const CRect& windowRect) override;
-	HRESULT Reset() override;
+	HRESULT Reset(bool bDisplayModeChange) override;
 
 	IDirect3DDeviceManager9* GetDeviceManager9() override { return m_pD3DDeviceManager; }
 	HRESULT GetCurentImage(long *pDIBImage) override;

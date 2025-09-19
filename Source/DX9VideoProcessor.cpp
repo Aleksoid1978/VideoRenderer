@@ -1704,7 +1704,7 @@ HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 	return S_OK;
 }
 
-HRESULT CDX9VideoProcessor::Reset()
+HRESULT CDX9VideoProcessor::Reset(bool)
 {
 	m_evReset.Set();
 	WaitForSingleObject(m_evThreadFinishJob, INFINITE);

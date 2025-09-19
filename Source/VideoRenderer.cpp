@@ -608,7 +608,7 @@ void CMpcVideoRenderer::OnDisplayModeChange(const bool bReset/* = false*/)
 	m_bDisplayModeChanging = true;
 
 	if (bReset && !m_VideoProcessor->IsInit()) {
-		m_VideoProcessor->Reset();
+		m_VideoProcessor->Reset(true);
 	}
 
 	m_hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
@@ -630,7 +630,7 @@ void CMpcVideoRenderer::OnWindowMove()
 			else if (m_VideoProcessor->Type() == VP_DX11) {
 				CAutoLock cRendererLock(&m_RendererLock);
 
-				m_VideoProcessor->Reset();
+				m_VideoProcessor->Reset(false);
 			}
 
 			m_hMon = hMon;

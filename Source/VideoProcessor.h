@@ -181,7 +181,7 @@ public:
 
 	void Start() { m_rtStart = 0; }
 	virtual void Flush() = 0;
-	virtual HRESULT Reset() = 0;
+	virtual HRESULT Reset(bool bDisplayModeChange) = 0;
 
 	virtual bool IsInit() const { return false; }
 

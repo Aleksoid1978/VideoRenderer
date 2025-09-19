@@ -446,65 +446,6 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	}
 }
 
-static bool ToggleHDR(const DisplayConfig_t& displayConfig, const bool bEnableAdvancedColor)
-{
-	auto GetCurrentDisplayMode = [](LPCWSTR lpszDeviceName) -> std::optional<DEVMODEW> {
-		DEVMODEW devmode = {};
-		devmode.dmSize = sizeof(DEVMODEW);
-		auto ret = EnumDisplaySettingsW(lpszDeviceName, ENUM_CURRENT_SETTINGS, &devmode);
-		if (ret) {
-			return devmode;
-		}
-
-		return {};
-	};
-
-	auto beforeModeOpt = GetCurrentDisplayMode(displayConfig.displayName);
-
-	LONG ret = 1;
-
-	if (IsWindows11_24H2OrGreater()) {
-		DISPLAYCONFIG_SET_HDR_STATE setHdrState = {};
-		setHdrState.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_SET_HDR_STATE);
-		setHdrState.header.size = sizeof(setHdrState);
-		setHdrState.header.adapterId = displayConfig.modeTarget.adapterId;
-		setHdrState.header.id = displayConfig.modeTarget.id;
-		setHdrState.enableHdr = bEnableAdvancedColor ? 1 : 0;
-
-		ret = DisplayConfigSetDeviceInfo(&setHdrState.header);
-		DLogIf(ERROR_SUCCESS != ret, L"ToggleHDR() : DisplayConfigSetDeviceInfo(DISPLAYCONFIG_SET_HDR_STATE) with '{}' failed with error {}", bEnableAdvancedColor, HR2Str(HRESULT_FROM_WIN32(ret)));
-	} else {
-		DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
-		setColorState.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
-		setColorState.header.size = sizeof(setColorState);
-		setColorState.header.adapterId = displayConfig.modeTarget.adapterId;
-		setColorState.header.id = displayConfig.modeTarget.id;
-		setColorState.enableAdvancedColor = bEnableAdvancedColor ? 1 : 0;
-
-		ret = DisplayConfigSetDeviceInfo(&setColorState.header);
-		DLogIf(ERROR_SUCCESS != ret, L"ToggleHDR() : DisplayConfigSetDeviceInfo(DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE) with '{}' failed with error {}", bEnableAdvancedColor, HR2Str(HRESULT_FROM_WIN32(ret)));
-	}
-
-	if (ret == ERROR_SUCCESS && beforeModeOpt.has_value()) {
-		auto afterModeOpt = GetCurrentDisplayMode(displayConfig.displayName);
-		if (afterModeOpt.has_value()) {
-			auto& beforeMode = *beforeModeOpt;
-			auto& afterMode = *afterModeOpt;
-			if (beforeMode.dmPelsWidth != afterMode.dmPelsWidth || beforeMode.dmPelsHeight != afterMode.dmPelsHeight
-					|| beforeMode.dmBitsPerPel != afterMode.dmBitsPerPel || beforeMode.dmDisplayFrequency != afterMode.dmDisplayFrequency) {
-				DLog(L"ToggleHDR() : Display mode changed from {}x{}@{} to {}x{}@{}, restoring",
-					 beforeMode.dmPelsWidth, beforeMode.dmPelsHeight, beforeMode.dmDisplayFrequency,
-					 afterMode.dmPelsWidth, afterMode.dmPelsHeight, afterMode.dmDisplayFrequency);
-
-				auto ret = ChangeDisplaySettingsExW(displayConfig.displayName, &beforeMode, nullptr, CDS_FULLSCREEN, nullptr);
-				DLogIf(DISP_CHANGE_SUCCESSFUL != ret, L"ToggleHDR() : ChangeDisplaySettingsExW() failed with error {}", HR2Str(HRESULT_FROM_WIN32(ret)));
-			}
-		}
-	}
-
-	return ret == ERROR_SUCCESS;
-}
-
 CDX11VideoProcessor::~CDX11VideoProcessor()
 {
 	for (const auto& [displayName, state] : m_hdrModeSavedState) {
@@ -1577,6 +1518,69 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 	}
 
 	return bRet;
+}
+
+bool CDX11VideoProcessor::ToggleHDR(const DisplayConfig_t& displayConfig, const bool bEnableAdvancedColor)
+{
+	DLog(L"ToggleHDR() : {} for '{}'", bEnableAdvancedColor, displayConfig.displayName);
+
+	auto GetCurrentDisplayMode = [](LPCWSTR lpszDeviceName) -> std::optional<DEVMODEW> {
+		DEVMODEW devmode = {};
+		devmode.dmSize = sizeof(DEVMODEW);
+		auto ret = EnumDisplaySettingsW(lpszDeviceName, ENUM_CURRENT_SETTINGS, &devmode);
+		if (ret) {
+			return devmode;
+		}
+
+		return {};
+	};
+
+	auto beforeModeOpt = GetCurrentDisplayMode(displayConfig.displayName);
+
+	LONG ret = 1;
+
+	if (IsWindows11_24H2OrGreater()) {
+		DISPLAYCONFIG_SET_HDR_STATE setHdrState = {};
+		setHdrState.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_SET_HDR_STATE);
+		setHdrState.header.size = sizeof(setHdrState);
+		setHdrState.header.adapterId = displayConfig.modeTarget.adapterId;
+		setHdrState.header.id = displayConfig.modeTarget.id;
+		setHdrState.enableHdr = bEnableAdvancedColor ? 1 : 0;
+
+		ret = DisplayConfigSetDeviceInfo(&setHdrState.header);
+		DLogIf(ERROR_SUCCESS != ret, L"ToggleHDR() : DisplayConfigSetDeviceInfo(DISPLAYCONFIG_SET_HDR_STATE) with '{}' failed with error {}", bEnableAdvancedColor, HR2Str(HRESULT_FROM_WIN32(ret)));
+	} else {
+		DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setColorState = {};
+		setColorState.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
+		setColorState.header.size = sizeof(setColorState);
+		setColorState.header.adapterId = displayConfig.modeTarget.adapterId;
+		setColorState.header.id = displayConfig.modeTarget.id;
+		setColorState.enableAdvancedColor = bEnableAdvancedColor ? 1 : 0;
+
+		ret = DisplayConfigSetDeviceInfo(&setColorState.header);
+		DLogIf(ERROR_SUCCESS != ret, L"ToggleHDR() : DisplayConfigSetDeviceInfo(DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE) with '{}' failed with error {}", bEnableAdvancedColor, HR2Str(HRESULT_FROM_WIN32(ret)));
+	}
+
+	if (ret == ERROR_SUCCESS && beforeModeOpt.has_value()) {
+		auto afterModeOpt = GetCurrentDisplayMode(displayConfig.displayName);
+		if (afterModeOpt.has_value()) {
+			auto& beforeMode = *beforeModeOpt;
+			auto& afterMode = *afterModeOpt;
+			if (beforeMode.dmPelsWidth != afterMode.dmPelsWidth || beforeMode.dmPelsHeight != afterMode.dmPelsHeight
+				|| beforeMode.dmBitsPerPel != afterMode.dmBitsPerPel || beforeMode.dmDisplayFrequency != afterMode.dmDisplayFrequency) {
+				DLog(L"ToggleHDR() : Display mode changed from {}x{}@{} to {}x{}@{}, restoring",
+					 beforeMode.dmPelsWidth, beforeMode.dmPelsHeight, beforeMode.dmDisplayFrequency,
+					 afterMode.dmPelsWidth, afterMode.dmPelsHeight, afterMode.dmDisplayFrequency);
+
+				auto ret = ChangeDisplaySettingsExW(displayConfig.displayName, &beforeMode, nullptr, CDS_FULLSCREEN, nullptr);
+				DLogIf(DISP_CHANGE_SUCCESSFUL != ret, L"ToggleHDR() : ChangeDisplaySettingsExW() failed with error {}", HR2Str(HRESULT_FROM_WIN32(ret)));
+
+				m_bDisplayModeChangeAfterHDRToggle = true;
+			}
+		}
+	}
+
+	return ret == ERROR_SUCCESS;
 }
 
 BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
@@ -3084,9 +3088,16 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 	return hr;
 }
 
-HRESULT CDX11VideoProcessor::Reset()
+HRESULT CDX11VideoProcessor::Reset(bool bDisplayModeChange)
 {
-	DLog(L"CDX11VideoProcessor::Reset()");
+	DLog(L"CDX11VideoProcessor::Reset({})", bDisplayModeChange);
+
+	if (bDisplayModeChange) {
+		if (m_bDisplayModeChangeAfterHDRToggle) {
+			m_bDisplayModeChangeAfterHDRToggle = false;
+			return S_OK;
+		}
+	}
 
 	if (m_bHdrPassthrough && SourceIsPQorHLG()) {
 		MONITORINFOEXW mi = { sizeof(mi) };

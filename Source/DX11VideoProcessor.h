@@ -33,6 +33,8 @@
 #include "VideoProcessor.h"
 #include "SubPic/DX11SubPic.h"
 
+#include <atomic>
+
 #define TEST_SHADER 0
 
 class CVideoRendererInputPin;
@@ -188,6 +190,8 @@ private:
 	void SetCallbackDevice();
 	void UpdateSubPic();
 
+	std::atomic_bool m_bDisplayModeChangeAfterHDRToggle = false;
+
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Settings_t& config, HRESULT& hr);
 	~CDX11VideoProcessor() override;
@@ -224,6 +228,7 @@ private:
 	}
 
 	bool HandleHDRToggle();
+	bool ToggleHDR(const DisplayConfig_t& displayConfig, const bool bEnableAdvancedColor);
 
 public:
 	HRESULT SetDevice(ID3D11Device *pDevice, ID3D11DeviceContext *pContext);
@@ -246,7 +251,7 @@ public:
 
 	void SetVideoRect(const CRect& videoRect)      override;
 	HRESULT SetWindowRect(const CRect& windowRect) override;
-	HRESULT Reset() override;
+	HRESULT Reset(bool bDisplayModeChange) override;
 	bool IsInit() const override { return m_bHdrDisplaySwitching; }
 
 	HRESULT GetCurentImage(long *pDIBImage) override;
