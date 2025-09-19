@@ -704,7 +704,10 @@ STDMETHODIMP CMpcVideoRenderer::Stop()
 	m_filterState = State_Stopped;
 	m_bValidBuffer = false;
 
-	m_VideoProcessor->Flush();
+	{
+		CAutoLock cRendererLock(&m_RendererLock);
+		m_VideoProcessor->Flush();
+	}
 
 	return CBaseVideoRenderer2::Stop();
 }
