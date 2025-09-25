@@ -1,5 +1,7 @@
 0.9.14 dev
 ------------------------
+Fixed HDR mode being disabled for the display after playback ended.
+Fixed a crash in DX9 mode in some situations.
 
 0.9.13.2451 - 2025-09-15
 ------------------------
