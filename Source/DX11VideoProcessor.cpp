@@ -675,6 +675,11 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_Alignment.cformat = {};
 	m_Alignment.cx = {};
 
+	m_pVertexBuffer.Release();
+	m_pResizeShaderConstantBuffer.Release();
+	m_pHalfOUtoInterlaceConstantBuffer.Release();
+	m_pFinalPassConstantBuffer.Release();
+
 	if (m_pDeviceContext) {
 		// need ClearState() (see ReleaseVP()) and Flush() for ID3D11DeviceContext when using DXGI_SWAP_EFFECT_DISCARD in Windows 8/8.1
 		m_pDeviceContext->Flush();
@@ -693,11 +698,6 @@ void CDX11VideoProcessor::ReleaseDevice()
 		SAFE_RELEASE(pDebugDevice);
 	}
 #endif
-
-	m_pVertexBuffer.Release();
-	m_pResizeShaderConstantBuffer.Release();
-	m_pHalfOUtoInterlaceConstantBuffer.Release();
-	m_pFinalPassConstantBuffer.Release();
 
 	m_pDevice.Release();
 }
