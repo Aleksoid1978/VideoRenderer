@@ -1455,18 +1455,14 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 						DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR ON failed");
 
 						if (bRet) {
-							if (auto it = m_hdrModeSavedState.find(deviceName); it == m_hdrModeSavedState.end()) {
-								m_hdrModeSavedState[std::move(deviceName)] = false;
-							}
+							m_hdrModeSavedState.try_emplace(std::move(deviceName), false);
 						}
 					} else if (bNeedToggleOff) {
 						bRet = ToggleHDR(displayConfig, false);
 						DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR OFF failed");
 
 						if (bRet) {
-							if (auto it = m_hdrModeSavedState.find(deviceName); it == m_hdrModeSavedState.end()) {
-								m_hdrModeSavedState[std::move(deviceName)] = true;
-							}
+							m_hdrModeSavedState.try_emplace(std::move(deviceName), true);
 						}
 					}
 				}
@@ -1490,9 +1486,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 					DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR OFF failed");
 
 					if (bRet) {
-						if (auto it = m_hdrModeSavedState.find(deviceName); it == m_hdrModeSavedState.end()) {
-							m_hdrModeSavedState[std::move(deviceName)] = true;
-						}
+						m_hdrModeSavedState.try_emplace(std::move(deviceName), true);
 					}
 				}
 			}
