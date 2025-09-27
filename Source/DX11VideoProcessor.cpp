@@ -1425,6 +1425,8 @@ BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 
 bool CDX11VideoProcessor::HandleHDRToggle()
 {
+	CAutoLock cRendererLock(&m_HDRToggleLock);
+
 	m_bHdrDisplaySwitching = true;
 	bool bRet = false;
 	if (m_bHdrPassthrough && SourceIsHDR()) {
@@ -1435,8 +1437,8 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 			if (displayConfig.HDRSupported() && m_iHdrToggleDisplay) {
 				bool bHDREnabled = false;
-				const auto it = m_hdrModeStartState.find(mi.szDevice);
-				if (it != m_hdrModeStartState.cend()) {
+				std::wstring deviceName(mi.szDevice);
+				if (auto it = m_hdrModeStartState.find(deviceName); it != m_hdrModeStartState.end()) {
 					bHDREnabled = it->second;
 				}
 
@@ -1451,9 +1453,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 					DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR ON failed");
 
 					if (bRet) {
-						std::wstring deviceName(mi.szDevice);
-						const auto& it = m_hdrModeSavedState.find(deviceName);
-						if (it == m_hdrModeSavedState.cend()) {
+						if (auto it = m_hdrModeSavedState.find(deviceName); it == m_hdrModeSavedState.end()) {
 							m_hdrModeSavedState[std::move(deviceName)] = false;
 						}
 					}
@@ -1462,9 +1462,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 					DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR OFF failed");
 
 					if (bRet) {
-						std::wstring deviceName(mi.szDevice);
-						const auto& it = m_hdrModeSavedState.find(deviceName);
-						if (it == m_hdrModeSavedState.cend()) {
+						if (auto it = m_hdrModeSavedState.find(deviceName); it == m_hdrModeSavedState.end()) {
 							m_hdrModeSavedState[std::move(deviceName)] = true;
 						}
 					}
@@ -1478,9 +1476,9 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 			// check if HDR was already enabled in Windows before starting
-			BOOL bWindowsHDREnabled = FALSE;
-			const auto& it = m_hdrModeStartState.find(mi.szDevice);
-			if (it != m_hdrModeStartState.cend()) {
+			bool bWindowsHDREnabled = false;
+			std::wstring deviceName(mi.szDevice);
+			if (auto it = m_hdrModeStartState.find(deviceName); it != m_hdrModeStartState.end()) {
 				bWindowsHDREnabled = it->second;
 			}
 
@@ -1490,16 +1488,13 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 				DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR OFF failed");
 
 				if (bRet) {
-					std::wstring deviceName(mi.szDevice);
-					const auto& it = m_hdrModeSavedState.find(deviceName);
-					if (it == m_hdrModeSavedState.cend()) {
+					if (auto it = m_hdrModeSavedState.find(deviceName); it == m_hdrModeSavedState.end()) {
 						m_hdrModeSavedState[std::move(deviceName)] = true;
 					}
 				}
 			}
 		}
 	}
-	m_bHdrDisplaySwitching = false;
 
 	if (bRet) {
 		Sleep(100);
@@ -1516,6 +1511,8 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 			m_bACMEnabled = !m_bHdrDisplayModeEnabled && displayConfig.ACMEnabled();
 		}
 	}
+
+	m_bHdrDisplaySwitching = false;
 
 	return bRet;
 }
@@ -3096,6 +3093,8 @@ HRESULT CDX11VideoProcessor::Reset(bool bDisplayModeChange)
 {
 	DLog(L"CDX11VideoProcessor::Reset({})", bDisplayModeChange);
 
+	CAutoLock cRendererLock(&m_HDRToggleLock);
+
 	if (bDisplayModeChange) {
 		if (m_bDisplayModeChangeAfterHDRToggle) {
 			m_bDisplayModeChangeAfterHDRToggle = false;
@@ -3111,11 +3110,6 @@ HRESULT CDX11VideoProcessor::Reset(bool bDisplayModeChange)
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 			const auto bHdrPassthroughSupport = displayConfig.HDRSupported() && displayConfig.HDREnabled();
 			if ((bHdrPassthroughSupport && !m_bHdrPassthroughSupport) || (!displayConfig.HDREnabled() && m_bHdrPassthroughSupport)) {
-				if (m_hdrModeSavedState.find(mi.szDevice) != m_hdrModeSavedState.end()) {
-					DLog(L"CDX11VideoProcessor::Reset() : Clear stored state for '{}'", mi.szDevice);
-					m_hdrModeSavedState.erase(mi.szDevice);
-				}
-
 				if (m_pFilter->m_inputMT.IsValid()) {
 					CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 					ReleaseSwapChain();

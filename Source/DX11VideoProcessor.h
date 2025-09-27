@@ -159,11 +159,11 @@ private:
 	bool m_bVPRTXVideoHDR = false;
 	bool m_bVPUseRTXVideoHDR = false;
 
-	bool m_bHdrPassthroughSupport = false;
-	bool m_bHdrDisplaySwitching   = false; // switching HDR display in progress
-	bool m_bHdrDisplayModeEnabled = false;
-	bool m_bHdrAllowSwitchDisplay = true;
-	bool m_bACMEnabled            = false;
+	bool m_bHdrPassthroughSupport             = false;
+	std::atomic_bool m_bHdrDisplaySwitching   = false; // switching HDR display in progress
+	bool m_bHdrDisplayModeEnabled             = false;
+	bool m_bHdrAllowSwitchDisplay             = true;
+	bool m_bACMEnabled                        = false;
 
 	UINT m_srcVideoTransferFunction = 0; // need a description or rename
 
@@ -191,6 +191,7 @@ private:
 	void UpdateSubPic();
 
 	std::atomic_bool m_bDisplayModeChangeAfterHDRToggle = false;
+	CCritSec m_HDRToggleLock;
 
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Settings_t& config, HRESULT& hr);
