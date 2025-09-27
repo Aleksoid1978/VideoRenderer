@@ -193,6 +193,8 @@ private:
 	std::atomic_bool m_bDisplayModeChangeAfterHDRToggle = false;
 	CCritSec m_HDRToggleLock;
 
+	bool m_bHDRModeChangeOutside = false;
+
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Settings_t& config, HRESULT& hr);
 	~CDX11VideoProcessor() override;

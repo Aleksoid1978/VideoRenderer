@@ -1429,35 +1429,63 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 
 	m_bHdrDisplaySwitching = true;
 	bool bRet = false;
-	if (m_bHdrPassthrough && SourceIsHDR()) {
-		MONITORINFOEXW mi = { sizeof(mi) };
-		GetMonitorInfoW(m_lastFullscreenHMonitor ? m_lastFullscreenHMonitor : MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
-		DisplayConfig_t displayConfig = {};
 
-		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
-			if (displayConfig.HDRSupported() && m_iHdrToggleDisplay) {
-				bool bHDREnabled = false;
-				std::wstring deviceName(mi.szDevice);
-				if (auto it = m_hdrModeStartState.find(deviceName); it != m_hdrModeStartState.end()) {
-					bHDREnabled = it->second;
-				}
+	if (!m_bHDRModeChangeOutside) {
+		if (m_bHdrPassthrough && SourceIsHDR()) {
+			MONITORINFOEXW mi = { sizeof(mi) };
+			GetMonitorInfoW(m_lastFullscreenHMonitor ? m_lastFullscreenHMonitor : MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
+			DisplayConfig_t displayConfig = {};
 
-				const bool bNeedToggleOn  = !displayConfig.HDREnabled() &&
-											(m_iHdrToggleDisplay == HDRTD_On || m_iHdrToggleDisplay == HDRTD_OnOff
-											 || m_bIsFullscreen && (m_iHdrToggleDisplay == HDRTD_On_Fullscreen || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen));
-				const bool bNeedToggleOff = displayConfig.HDREnabled() &&
-											!bHDREnabled && !m_bIsFullscreen && m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen;
-				DLog(L"HandleHDRToggle() : {}, {}", bNeedToggleOn, bNeedToggleOff);
-				if (bNeedToggleOn) {
-					bRet = ToggleHDR(displayConfig, true);
-					DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR ON failed");
+			if (GetDisplayConfig(mi.szDevice, displayConfig)) {
+				if (displayConfig.HDRSupported() && m_iHdrToggleDisplay) {
+					bool bHDREnabled = false;
+					std::wstring deviceName(mi.szDevice);
+					if (auto it = m_hdrModeStartState.find(deviceName); it != m_hdrModeStartState.end()) {
+						bHDREnabled = it->second;
+					}
 
-					if (bRet) {
-						if (auto it = m_hdrModeSavedState.find(deviceName); it == m_hdrModeSavedState.end()) {
-							m_hdrModeSavedState[std::move(deviceName)] = false;
+					const bool bNeedToggleOn = !displayConfig.HDREnabled() &&
+											   (m_iHdrToggleDisplay == HDRTD_On || m_iHdrToggleDisplay == HDRTD_OnOff
+											   || m_bIsFullscreen && (m_iHdrToggleDisplay == HDRTD_On_Fullscreen || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen));
+					const bool bNeedToggleOff = displayConfig.HDREnabled() &&
+												!bHDREnabled && !m_bIsFullscreen && m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen;
+					DLog(L"HandleHDRToggle() : {}, {}", bNeedToggleOn, bNeedToggleOff);
+					if (bNeedToggleOn) {
+						bRet = ToggleHDR(displayConfig, true);
+						DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR ON failed");
+
+						if (bRet) {
+							if (auto it = m_hdrModeSavedState.find(deviceName); it == m_hdrModeSavedState.end()) {
+								m_hdrModeSavedState[std::move(deviceName)] = false;
+							}
+						}
+					} else if (bNeedToggleOff) {
+						bRet = ToggleHDR(displayConfig, false);
+						DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR OFF failed");
+
+						if (bRet) {
+							if (auto it = m_hdrModeSavedState.find(deviceName); it == m_hdrModeSavedState.end()) {
+								m_hdrModeSavedState[std::move(deviceName)] = true;
+							}
 						}
 					}
-				} else if (bNeedToggleOff) {
+				}
+			}
+		} else if (m_iHdrToggleDisplay) {
+			MONITORINFOEXW mi = { sizeof(mi) };
+			GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
+			DisplayConfig_t displayConfig = {};
+
+			if (GetDisplayConfig(mi.szDevice, displayConfig)) {
+				// check if HDR was already enabled in Windows before starting
+				bool bWindowsHDREnabled = false;
+				std::wstring deviceName(mi.szDevice);
+				if (auto it = m_hdrModeStartState.find(deviceName); it != m_hdrModeStartState.end()) {
+					bWindowsHDREnabled = it->second;
+				}
+
+				if (displayConfig.HDRSupported() && displayConfig.HDREnabled() &&
+						(!bWindowsHDREnabled || (m_iHdrToggleDisplay == HDRTD_OnOff || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen && m_bIsFullscreen))) {
 					bRet = ToggleHDR(displayConfig, false);
 					DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR OFF failed");
 
@@ -1465,31 +1493,6 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 						if (auto it = m_hdrModeSavedState.find(deviceName); it == m_hdrModeSavedState.end()) {
 							m_hdrModeSavedState[std::move(deviceName)] = true;
 						}
-					}
-				}
-			}
-		}
-	} else if (m_iHdrToggleDisplay) {
-		MONITORINFOEXW mi = { sizeof(mi) };
-		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
-		DisplayConfig_t displayConfig = {};
-
-		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
-			// check if HDR was already enabled in Windows before starting
-			bool bWindowsHDREnabled = false;
-			std::wstring deviceName(mi.szDevice);
-			if (auto it = m_hdrModeStartState.find(deviceName); it != m_hdrModeStartState.end()) {
-				bWindowsHDREnabled = it->second;
-			}
-
-			if (displayConfig.HDRSupported() && displayConfig.HDREnabled() &&
-					(!bWindowsHDREnabled || (m_iHdrToggleDisplay == HDRTD_OnOff || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen && m_bIsFullscreen))) {
-				bRet = ToggleHDR(displayConfig, false);
-				DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR OFF failed");
-
-				if (bRet) {
-					if (auto it = m_hdrModeSavedState.find(deviceName); it == m_hdrModeSavedState.end()) {
-						m_hdrModeSavedState[std::move(deviceName)] = true;
 					}
 				}
 			}
@@ -3110,6 +3113,8 @@ HRESULT CDX11VideoProcessor::Reset(bool bDisplayModeChange)
 		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
 			const auto bHdrPassthroughSupport = displayConfig.HDRSupported() && displayConfig.HDREnabled();
 			if ((bHdrPassthroughSupport && !m_bHdrPassthroughSupport) || (!displayConfig.HDREnabled() && m_bHdrPassthroughSupport)) {
+				m_bHDRModeChangeOutside = true;
+
 				if (m_pFilter->m_inputMT.IsValid()) {
 					CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 					ReleaseSwapChain();
