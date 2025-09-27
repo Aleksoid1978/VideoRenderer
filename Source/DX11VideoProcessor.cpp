@@ -692,7 +692,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 		ID3D11Debug* pDebugDevice = nullptr;
 		HRESULT hr2 = m_pDevice->QueryInterface(IID_PPV_ARGS(&pDebugDevice));
 		if (S_OK == hr2) {
-			hr2 = pDebugDevice->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+			hr2 = pDebugDevice->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
 			ASSERT(S_OK == hr2);
 		}
 		SAFE_RELEASE(pDebugDevice);
