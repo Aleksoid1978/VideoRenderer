@@ -1,4 +1,4 @@
-0.9.14 dev
+0.9.15.2463 - 2025-10-01
 ------------------------
 Fixed HDR mode being disabled for the display after playback ended.
 Added handling for situations where the display's HDR mode is changed externally.
