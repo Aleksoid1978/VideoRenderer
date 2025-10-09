@@ -1527,6 +1527,8 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 
 HRESULT CDX9VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTime)
 {
+	CheckPointer(m_pD3DDevEx, E_FAIL);
+
 	uint64_t tick1 = GetPreciseTick();
 
 	if (field) {
