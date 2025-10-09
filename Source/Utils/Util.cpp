@@ -33,6 +33,7 @@ static LPCWSTR GetWinVer()
 		LPCWSTR version;
 	}
 	win10versions[] = {
+		{ 26200, L"11 25H2" },
 		{ 26100, L"11 24H2" },
 		{ 22631, L"11 23H2" },
 		{ 22621, L"11 22H2" },
