@@ -9,13 +9,21 @@
 template <typename... Args>
 inline void DebugLogFmt(std::wstring_view format, Args&& ...args)
 {
-	DbgLogInfo(LOG_TRACE, 3, std::vformat(format, std::make_wformat_args(args...)).c_str());
+	if (sizeof...(Args)) {
+		DbgLogInfo(LOG_TRACE, 3, std::vformat(format, std::make_wformat_args(args...)).c_str());
+	} else {
+		DbgLogInfo(LOG_TRACE, 3, format.data());
+	}
 }
 
 template <typename... Args>
 inline void DebugLogFmt(std::string_view format, Args&& ...args)
 {
-	DbgLogInfo(LOG_TRACE, 3, std::vformat(format, std::make_format_args(args...)).c_str());
+	if (sizeof...(Args)) {
+		DbgLogInfo(LOG_TRACE, 3, std::vformat(format, std::make_format_args(args...)).c_str());
+	} else {
+		DbgLogInfo(LOG_TRACE, 3, format.data());
+	}
 }
 
 #ifdef _DEBUG
