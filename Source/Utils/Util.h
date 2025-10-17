@@ -6,6 +6,7 @@
 
 #pragma once
 
+#ifdef _DEBUG
 template <typename... Args>
 inline void DebugLogFmt(std::wstring_view format, Args&& ...args)
 {
@@ -26,7 +27,6 @@ inline void DebugLogFmt(std::string_view format, Args&& ...args)
 	}
 }
 
-#ifdef _DEBUG
 #define DLog(...) DebugLogFmt(__VA_ARGS__)
 #define DLogIf(f,...) {if (f) DebugLogFmt(__VA_ARGS__);}
 #else
