@@ -7,28 +7,31 @@
 #pragma once
 
 #ifdef _DEBUG
-template <typename... Args>
-inline void DebugLogFmt(std::wstring_view format, Args&& ...args)
+
+inline void DebugLog(std::wstring_view str)
 {
-	if (sizeof...(Args)) {
-		DbgLogInfo(LOG_TRACE, 3, std::vformat(format, std::make_wformat_args(args...)).c_str());
-	} else {
-		DbgLogInfo(LOG_TRACE, 3, format.data());
-	}
+	DbgLogInfo(LOG_TRACE, 3, str.data());
+}
+
+inline void DebugLog(std::string_view str)
+{
+	DbgLogInfo(LOG_TRACE, 3, str.data());
 }
 
 template <typename... Args>
-inline void DebugLogFmt(std::string_view format, Args&& ...args)
+inline void DebugLog(std::wformat_string<Args...> fmt, Args&&... args)
 {
-	if (sizeof...(Args)) {
-		DbgLogInfo(LOG_TRACE, 3, std::vformat(format, std::make_format_args(args...)).c_str());
-	} else {
-		DbgLogInfo(LOG_TRACE, 3, format.data());
-	}
+	DbgLogInfo(LOG_TRACE, 3, std::format(fmt, std::forward<Args>(args)...).c_str());
 }
 
-#define DLog(...) DebugLogFmt(__VA_ARGS__)
-#define DLogIf(f,...) {if (f) DebugLogFmt(__VA_ARGS__);}
+template <typename... Args>
+inline void DebugLog(std::format_string<Args...> fmt, Args&&... args)
+{
+	DbgLogInfo(LOG_TRACE, 3, std::format(fmt, std::forward<Args>(args)...).c_str());
+}
+
+#define DLog(...) DebugLog(__VA_ARGS__)
+#define DLogIf(f,...) {if (f) DebugLog(__VA_ARGS__);}
 #else
 #define DLog(...) __noop
 #define DLogIf(f,...) __noop
