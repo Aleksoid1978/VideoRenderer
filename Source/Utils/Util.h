@@ -8,30 +8,29 @@
 
 #ifdef _DEBUG
 
-inline void DebugLog(std::wstring_view str)
+inline void DLog(std::wstring_view str)
 {
 	DbgLogInfo(LOG_TRACE, 3, str.data());
 }
 
-inline void DebugLog(std::string_view str)
+inline void DLog(std::string_view str)
 {
 	DbgLogInfo(LOG_TRACE, 3, str.data());
 }
 
 template <typename... Args>
-inline void DebugLog(std::wformat_string<Args...> fmt, Args&&... args)
+inline void DLog(std::wformat_string<Args...> fmt, Args&&... args)
 {
 	DbgLogInfo(LOG_TRACE, 3, std::format(fmt, std::forward<Args>(args)...).c_str());
 }
 
 template <typename... Args>
-inline void DebugLog(std::format_string<Args...> fmt, Args&&... args)
+inline void DLog(std::format_string<Args...> fmt, Args&&... args)
 {
 	DbgLogInfo(LOG_TRACE, 3, std::format(fmt, std::forward<Args>(args)...).c_str());
 }
 
-#define DLog(...) DebugLog(__VA_ARGS__)
-#define DLogIf(f,...) {if (f) DebugLog(__VA_ARGS__);}
+#define DLogIf(f,...) {if (f) DLog(__VA_ARGS__);}
 #else
 #define DLog(...) __noop
 #define DLogIf(f,...) __noop
