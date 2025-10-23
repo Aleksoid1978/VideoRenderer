@@ -1,4 +1,4 @@
-0.9.16 dev
+0.9.17.2472 - 2025-10-23
 ------------------------
 Fixed a crash in DX9 mode in some situations.
 
