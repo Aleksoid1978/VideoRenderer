@@ -195,6 +195,8 @@ private:
 
 	bool m_bHDRModeChangeOutside = false;
 
+	void FillDisplayParams();
+
 public:
 	CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Settings_t& config, HRESULT& hr);
 	~CDX11VideoProcessor() override;

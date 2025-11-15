@@ -22,7 +22,6 @@
 #include <uuids.h>
 #include <Mferror.h>
 #include <Mfidl.h>
-#include <dwmapi.h>
 #include <optional>
 #include "Helper.h"
 #include "Times.h"
@@ -472,12 +471,8 @@ CDX11VideoProcessor::~CDX11VideoProcessor()
 	MH_RemoveHook(SetWindowLongA);
 }
 
-HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged, bool* pChangeDevice/* = nullptr*/)
+void CDX11VideoProcessor::FillDisplayParams()
 {
-	DLog(L"CDX11VideoProcessor::Init()");
-
-	const bool bWindowChanged = displayHdrChanged || (m_hWnd != hwnd);
-	g_hWnd = m_hWnd = hwnd;
 	m_bHdrPassthroughSupport = false;
 	m_bHdrDisplayModeEnabled = false;
 	m_DisplayBitsPerChannel = 8;
@@ -485,7 +480,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged,
 	m_bACMEnabled = false;
 
 	MONITORINFOEXW mi = { sizeof(mi) };
-	GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
+	GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), reinterpret_cast<LPMONITORINFO>(&mi));
 	DisplayConfig_t displayConfig = {};
 
 	if (GetDisplayConfig(mi.szDevice, displayConfig)) {
@@ -494,7 +489,64 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged,
 		m_DisplayBitsPerChannel = displayConfig.bitsPerChannel;
 
 		m_bACMEnabled = !m_bHdrDisplayModeEnabled && displayConfig.ACMEnabled();
+
+#ifdef _DEBUG
+		auto displayDesc = std::format(L"\nDisplay: {} {}", mi.szDevice, DisplayConfigToString(displayConfig));
+		if (displayConfig.bitsPerChannel) {
+			auto colenc = ColorEncodingToString(displayConfig.colorEncoding);
+			if (colenc) {
+				displayDesc.append(std::format(L"\n  Color: {} {}-bit", colenc, displayConfig.bitsPerChannel));
+				if (displayConfig.HDRSupported()) {
+					displayDesc.append(L", HDR10: ");
+					displayDesc.append(displayConfig.HDREnabled() ? L"on" : L"off");
+
+					if (IsWindows11_24H2OrGreater()) {
+						auto ColorModeToStr = [](DISPLAYCONFIG_ADVANCED_COLOR_MODE ColorMode) {
+							std::wstring str;
+#define UNPACK_VALUE(VALUE) case VALUE: str = L"" #VALUE; break;
+							switch (ColorMode) {
+								UNPACK_VALUE(DISPLAYCONFIG_ADVANCED_COLOR_MODE_SDR);
+								UNPACK_VALUE(DISPLAYCONFIG_ADVANCED_COLOR_MODE_WCG);
+								UNPACK_VALUE(DISPLAYCONFIG_ADVANCED_COLOR_MODE_HDR);
+								default:
+									str = std::to_wstring(static_cast<int>(ColorMode));
+							};
+#undef UNPACK_VALUE
+
+							return str;
+						};
+
+						const auto& colors = displayConfig.windows1124H2Colors;
+						displayDesc.append(std::format(L"\n         Advanced Color: Supported: {}, Active: {}, Limited by OS policy: {}, HDR is supported: {}",
+													   colors.advancedColorSupported, colors.advancedColorActive,
+													   colors.advancedColorLimitedByPolicy, colors.highDynamicRangeSupported));
+						displayDesc.append(std::format(L"\n                         HDR enabled: {}, Wide supported: {}, Wide enabled: {}",
+													   colors.highDynamicRangeUserEnabled, colors.wideColorSupported,
+													   colors.wideColorUserEnabled));
+						displayDesc.append(std::format(L"\n                         Display color mode: {}", ColorModeToStr(colors.activeColorMode)));
+					} else {
+						const auto& colors = displayConfig.advancedColor;
+						displayDesc.append(std::format(L"\n         Advanced Color: Supported: {}, Enabled: {}, Wide forced: {}, Force disabled: {}",
+													   colors.advancedColorSupported, colors.advancedColorEnabled,
+													   colors.wideColorEnforced, colors.advancedColorForceDisabled));
+					}
+				}
+			}
+		}
+
+		DLog(L"CDX11VideoProcessor::FillDisplayParams():{}", displayDesc);
+#endif
 	}
+}
+
+HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged, bool* pChangeDevice/* = nullptr*/)
+{
+	DLog(L"CDX11VideoProcessor::Init()");
+
+	const bool bWindowChanged = displayHdrChanged || (m_hWnd != hwnd);
+	g_hWnd = m_hWnd = hwnd;
+
+	FillDisplayParams();
 
 	if (m_bIsFullscreen != m_pFilter->m_bIsFullscreen) {
 		m_srcVideoTransferFunction = 0;
@@ -1429,6 +1481,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 
 	m_bHdrDisplaySwitching = true;
 	bool bRet = false;
+	bool bEnableHDR = false;
 
 	if (!m_bHDRModeChangeOutside) {
 		if (m_bHdrPassthrough && SourceIsHDR()) {
@@ -1455,6 +1508,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 						DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR ON failed");
 
 						if (bRet) {
+							bEnableHDR = true;
 							m_hdrModeSavedState.try_emplace(std::move(deviceName), false);
 						}
 					} else if (bNeedToggleOff) {
@@ -1495,17 +1549,11 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 
 	if (bRet) {
 		Sleep(100);
+		FillDisplayParams();
 
-		MONITORINFOEXW mi = { sizeof(mi) };
-		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
-		DisplayConfig_t displayConfig = {};
-
-		if (GetDisplayConfig(mi.szDevice, displayConfig)) {
-			m_bHdrDisplayModeEnabled = displayConfig.HDREnabled();
-			m_bHdrPassthroughSupport = displayConfig.HDRSupported() && m_bHdrDisplayModeEnabled;
-			m_DisplayBitsPerChannel = displayConfig.bitsPerChannel;
-
-			m_bACMEnabled = !m_bHdrDisplayModeEnabled && displayConfig.ACMEnabled();
+		for (int i = 0; i < 5 && bEnableHDR && !m_bHdrDisplayModeEnabled; i++) {
+			Sleep(100);
+			FillDisplayParams();
 		}
 	}
 
