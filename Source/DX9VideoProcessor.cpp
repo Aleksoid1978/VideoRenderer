@@ -437,7 +437,7 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 #endif
 
 	ZeroMemory(&m_d3dpp, sizeof(m_d3dpp));
-	if (m_pFilter->m_bIsFullscreen) {
+	if (m_pFilter->m_bExclusiveScreen) {
 		m_d3dpp.Windowed = FALSE;
 		m_d3dpp.hDeviceWindow = m_hWnd;
 		m_d3dpp.SwapEffect = D3DSWAPEFFECT_FLIP;
@@ -624,7 +624,7 @@ HRESULT CDX9VideoProcessor::ResetInternal()
 
 	g_bInitVP = true;
 
-	if (m_pFilter->m_bIsFullscreen) {
+	if (m_pFilter->m_bExclusiveScreen) {
 		ZeroMemory(&m_DisplayMode, sizeof(D3DDISPLAYMODEEX));
 		m_DisplayMode.Size = sizeof(D3DDISPLAYMODEEX);
 		HRESULT hr = m_pD3DEx->GetAdapterDisplayModeEx(m_nCurrentAdapter, &m_DisplayMode, nullptr);
@@ -1682,7 +1682,7 @@ HRESULT CDX9VideoProcessor::SetWindowRect(const CRect& windowRect)
 	UpdateRenderRect();
 
 	if (m_pD3DDevEx && !m_windowRect.IsRectEmpty()) {
-		if (!m_pFilter->m_bIsFullscreen) {
+		if (!m_pFilter->m_bExclusiveScreen) {
 			UINT backBufW = m_windowRect.Width();
 			UINT backBufH = m_windowRect.Height();
 			if (m_d3dpp.SwapEffect == D3DSWAPEFFECT_DISCARD && m_d3dpp.Windowed) {
@@ -1976,7 +1976,7 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 
 	if (config.iSwapEffect != m_iSwapEffect) {
 		m_iSwapEffect = config.iSwapEffect;
-		changeWindow = !m_pFilter->m_bIsFullscreen;
+		changeWindow = !m_pFilter->m_bExclusiveScreen;
 	}
 
 	if (config.bHdrPreferDoVi != m_bHdrPreferDoVi) {

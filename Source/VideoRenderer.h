@@ -323,7 +323,7 @@ public:
 
 	void SwitchFullScreen();
 
-	bool m_bIsFullscreen = false;
+	bool m_bExclusiveScreen = false;
 	bool m_bIsD3DFullscreen = false;
 
 private:

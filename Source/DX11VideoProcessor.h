@@ -151,7 +151,7 @@ private:
 	CD3D11Lines     m_Lines;
 	CD3D11Polyline  m_SyncLine;
 
-	bool m_bIsFullscreen = false;
+	bool m_bExclusiveScreen = false;
 
 	int m_iVPSuperRes = SUPERRES_Disable;
 	bool m_bVPUseSuperRes = false; // but it is not exactly

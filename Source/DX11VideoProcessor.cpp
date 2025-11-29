@@ -548,7 +548,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged,
 
 	FillDisplayParams();
 
-	if (m_bIsFullscreen != m_pFilter->m_bIsFullscreen) {
+	if (m_bExclusiveScreen != m_pFilter->m_bExclusiveScreen) {
 		m_srcVideoTransferFunction = 0;
 	}
 
@@ -560,7 +560,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged,
 
 		SetCallbackDevice();
 
-		if (!m_pDXGISwapChain1 || m_bIsFullscreen != m_pFilter->m_bIsFullscreen || bWindowChanged) {
+		if (!m_pDXGISwapChain1 || m_bExclusiveScreen != m_pFilter->m_bExclusiveScreen || bWindowChanged) {
 			InitSwapChain(bWindowChanged);
 			UpdateStatsStatic();
 			m_pFilter->OnDisplayModeChange();
@@ -1351,13 +1351,13 @@ HRESULT CDX11VideoProcessor::SetDevice(ID3D11Device *pDevice, ID3D11DeviceContex
 
 HRESULT CDX11VideoProcessor::InitSwapChain(bool bWindowChanged)
 {
-	DLog(L"CDX11VideoProcessor::InitSwapChain() - {}", m_pFilter->m_bIsFullscreen ? L"fullscreen" : L"window");
+	DLog(L"CDX11VideoProcessor::InitSwapChain() - {}", m_pFilter->m_bExclusiveScreen ? L"fullscreen" : L"window");
 	CheckPointer(m_pDXGIFactory2, E_FAIL);
 
 	ReleaseSwapChain();
 
-	auto bFullscreenChange = m_bIsFullscreen != m_pFilter->m_bIsFullscreen;
-	m_bIsFullscreen = m_pFilter->m_bIsFullscreen;
+	auto bFullscreenChange = m_bExclusiveScreen != m_pFilter->m_bExclusiveScreen;
+	m_bExclusiveScreen = m_pFilter->m_bExclusiveScreen;
 
 	if (bFullscreenChange || bWindowChanged) {
 		HandleHDRToggle();
@@ -1382,7 +1382,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(bool bWindowChanged)
 	HRESULT hr = S_OK;
 	DXGI_SWAP_CHAIN_DESC1 desc1 = {};
 
-	if (m_bIsFullscreen) {
+	if (m_bExclusiveScreen) {
 		MONITORINFOEXW mi = { sizeof(mi) };
 		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST), &mi);
 		const CRect rc(mi.rcMonitor);
@@ -1499,9 +1499,9 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 
 					const bool bNeedToggleOn = !displayConfig.HDREnabled() &&
 											   (m_iHdrToggleDisplay == HDRTD_On || m_iHdrToggleDisplay == HDRTD_OnOff
-											   || m_bIsFullscreen && (m_iHdrToggleDisplay == HDRTD_On_Fullscreen || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen));
+											   || m_bExclusiveScreen && (m_iHdrToggleDisplay == HDRTD_On_Fullscreen || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen));
 					const bool bNeedToggleOff = displayConfig.HDREnabled() &&
-												!bHDREnabled && !m_bIsFullscreen && m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen;
+												!bHDREnabled && !m_bExclusiveScreen && m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen;
 					DLog(L"HandleHDRToggle() : {}, {}", bNeedToggleOn, bNeedToggleOff);
 					if (bNeedToggleOn) {
 						bRet = ToggleHDR(displayConfig, true);
@@ -1535,7 +1535,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 				}
 
 				if (displayConfig.HDRSupported() && displayConfig.HDREnabled() &&
-						(!bWindowsHDREnabled || (m_iHdrToggleDisplay == HDRTD_OnOff || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen && m_bIsFullscreen))) {
+						(!bWindowsHDREnabled || (m_iHdrToggleDisplay == HDRTD_OnOff || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen && m_bExclusiveScreen))) {
 					bRet = ToggleHDR(displayConfig, false);
 					DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR OFF failed");
 
@@ -3123,7 +3123,7 @@ HRESULT CDX11VideoProcessor::SetWindowRect(const CRect& windowRect)
 	const UINT w = m_windowRect.Width();
 	const UINT h = m_windowRect.Height();
 
-	if (m_pDXGISwapChain1 && !m_bIsFullscreen) {
+	if (m_pDXGISwapChain1 && !m_bExclusiveScreen) {
 		hr = m_pDXGISwapChain1->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
 	}
 
@@ -3559,7 +3559,7 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 	if (config.iSwapEffect != m_iSwapEffect) {
 		m_iSwapEffect = config.iSwapEffect;
-		changeWindow = !m_pFilter->m_bIsFullscreen;
+		changeWindow = !m_pFilter->m_bExclusiveScreen;
 	}
 
 	if (config.bHdrPreferDoVi != m_bHdrPreferDoVi) {
