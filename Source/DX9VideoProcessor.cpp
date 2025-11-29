@@ -997,7 +997,7 @@ void CDX9VideoProcessor::CalcStatsParams()
 		if (S_OK == m_Font3D.CreateFontBitmap(L"Consolas", m_StatsFontH, 0)) {
 			SIZE charSize = m_Font3D.GetMaxCharMetric();
 			m_StatsRect.right  = m_StatsRect.left + 61 * charSize.cx + 5 + 3;
-			m_StatsRect.bottom = m_StatsRect.top + 18 * charSize.cy + 5 + 3;
+			m_StatsRect.bottom = m_StatsRect.top + 19 * charSize.cy + 5 + 3;
 			m_StatsBackground.Set(m_StatsRect, D3DCOLOR_ARGB(80, 0, 0, 0));
 		}
 
@@ -2935,9 +2935,6 @@ void CDX9VideoProcessor::UpdateStatsPresent()
 {
 	if (m_d3dpp.SwapEffect) {
 		m_strStatsPresent.assign(L"\nPresentation  : ");
-		if (m_bVBlankBeforePresent) {
-			m_strStatsPresent.append(L"wait VBlank, ");
-		}
 		switch (m_d3dpp.SwapEffect) {
 		case D3DSWAPEFFECT_DISCARD:
 			m_strStatsPresent.append(L"Discard");
@@ -2957,6 +2954,19 @@ void CDX9VideoProcessor::UpdateStatsPresent()
 		}
 		m_strStatsPresent.append(L", ");
 		m_strStatsPresent.append(D3DFormatToString(m_d3dpp.BackBufferFormat));
+
+		if (m_bVBlankBeforePresent || m_bAdjustPresentTime) {
+			m_strStatsPresent.append(L"\nFrame sync    :");
+			if (m_bVBlankBeforePresent) {
+				m_strStatsPresent.append(L" wait VBlank");
+			}
+			if (m_bAdjustPresentTime) {
+				if (m_strStatsPresent.back() != ':') {
+					m_strStatsPresent += ',';
+				}
+				m_strStatsPresent.append(L" adjust present time");
+			}
+		}
 	}
 }
 
@@ -3098,12 +3108,14 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 	str.append(m_strStatsHDR);
 	str.append(m_strStatsPresent);
 
-	str += std::format(L"\nFrames: {:5}, skipped: {}/{}, failed: {}",
+	str += std::format(L"\nFrames        : {:5}, skipped: {}/{}, failed: {}",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
-	str += std::format(L"\nTimes(ms): Copy{:3}, Paint{:3}, Present{:3}",
+
+	str += std::format(L"\nTimes(ms)     : Copy{:3}, Paint{:3}, Present{:3}",
 		m_RenderStats.copyticks    * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.paintticks   * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
+
 	str += std::format(L"\nSync offset   : {:+3} ms", (m_RenderStats.syncoffset + 5000) / 10000);
 
 #if SYNC_OFFSET_EX

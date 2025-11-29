@@ -1093,7 +1093,7 @@ void CDX11VideoProcessor::CalcStatsParams()
 		if (S_OK == m_Font3D.CreateFontBitmap(L"Consolas", m_StatsFontH, 0)) {
 			SIZE charSize = m_Font3D.GetMaxCharMetric();
 			m_StatsRect.right  = m_StatsRect.left + 61 * charSize.cx + 5 + 3;
-			m_StatsRect.bottom = m_StatsRect.top + 18 * charSize.cy + 5 + 3;
+			m_StatsRect.bottom = m_StatsRect.top + 19 * charSize.cy + 5 + 3;
 		}
 		m_StatsBackground.Set(m_StatsRect, rtSize, D3DCOLOR_ARGB(80, 0, 0, 0));
 
@@ -3832,9 +3832,6 @@ void CDX11VideoProcessor::UpdateStatsPresent()
 	DXGI_SWAP_CHAIN_DESC1 swapchain_desc;
 	if (m_pDXGISwapChain1 && S_OK == m_pDXGISwapChain1->GetDesc1(&swapchain_desc)) {
 		m_strStatsPresent.assign(L"\nPresentation  : ");
-		if (m_bVBlankBeforePresent && m_pDXGIOutput) {
-			m_strStatsPresent.append(L"wait VBlank, ");
-		}
 		switch (swapchain_desc.SwapEffect) {
 		case DXGI_SWAP_EFFECT_DISCARD:
 			m_strStatsPresent.append(L"Discard");
@@ -3851,6 +3848,19 @@ void CDX11VideoProcessor::UpdateStatsPresent()
 		}
 		m_strStatsPresent.append(L", ");
 		m_strStatsPresent.append(DXGIFormatToString(swapchain_desc.Format));
+
+		if ((m_bVBlankBeforePresent && m_pDXGIOutput) || m_bAdjustPresentTime) {
+			m_strStatsPresent.append(L"\nFrame sync    :");
+			if (m_bVBlankBeforePresent && m_pDXGIOutput) {
+				m_strStatsPresent.append(L" wait VBlank");
+			}
+			if (m_bAdjustPresentTime) {
+				if (m_strStatsPresent.back() != ':') {
+					m_strStatsPresent += ',';
+				}
+				m_strStatsPresent.append(L" adjust present time");
+			}
+		}
 	}
 }
 
@@ -4005,11 +4015,12 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	str.append(m_strStatsHDR);
 	str.append(m_strStatsPresent);
 
-	str += std::format(L"\nFrames: {:5}, skipped: {}/{}, failed: {}",
+	str += std::format(L"\nFrames        : {:5}, skipped: {}/{}, failed: {}",
 		m_pFilter->m_FrameStats.GetFrames(), m_pFilter->m_DrawStats.m_dropped, m_RenderStats.dropped2, m_RenderStats.failed);
-	str += std::format(L"\nTimes(ms): Copy{:3}, Paint{:3}, Present{:3}",
-		m_RenderStats.copyticks * 1000 / GetPreciseTicksPerSecondI(),
-		m_RenderStats.paintticks * 1000 / GetPreciseTicksPerSecondI(),
+
+	str += std::format(L"\nTimes(ms)     : Copy{:3}, Paint{:3}, Present{:3}",
+		m_RenderStats.copyticks    * 1000 / GetPreciseTicksPerSecondI(),
+		m_RenderStats.paintticks   * 1000 / GetPreciseTicksPerSecondI(),
 		m_RenderStats.presentticks * 1000 / GetPreciseTicksPerSecondI());
 
 	str += std::format(L"\nSync offset   : {:+3} ms", (m_RenderStats.syncoffset + 5000) / 10000);
