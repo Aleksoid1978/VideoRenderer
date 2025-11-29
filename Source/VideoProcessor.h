@@ -222,7 +222,7 @@ public:
 	void CalcGraphParams();
 	virtual void CalcStatsParams() = 0;
 
-	void SetDisplayInfo(const DisplayConfig_t& dc, const bool primary, const bool fullscreen);
+	void SetDisplayInfo(const DisplayConfig_t& dc, const bool primary, const bool exclusiveScreen);
 
 	bool GetDoubleRate() { return m_bDoubleFrames; }
 

@@ -138,7 +138,7 @@ void CVideoProcessor::CalcGraphParams()
 	m_Yaxis = m_GraphRect.bottom - 50 * m_Yscale;
 }
 
-void CVideoProcessor::SetDisplayInfo(const DisplayConfig_t& dc, const bool primary, const bool fullscreen)
+void CVideoProcessor::SetDisplayInfo(const DisplayConfig_t& dc, const bool primary, const bool exclusiveScreen)
 {
 	if (dc.refreshRate.Numerator) {
 		m_uHalfRefreshPeriodMs = (UINT32)(500ull * dc.refreshRate.Denominator / dc.refreshRate.Numerator);
@@ -170,7 +170,7 @@ void CVideoProcessor::SetDisplayInfo(const DisplayConfig_t& dc, const bool prima
 	if (primary) {
 		m_strStatsDispInfo.append(L" Primary");
 	}
-	m_strStatsDispInfo.append(fullscreen ? L" fullscreen" : L" windowed");
+	m_strStatsDispInfo.append(exclusiveScreen ? L" exclusive" : L" windowed");
 
 	if (str.size()) {
 		m_strStatsDispInfo.append(str);
