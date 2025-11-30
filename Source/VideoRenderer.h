@@ -321,10 +321,9 @@ public:
 
 	LRESULT OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-	void SwitchFullScreen();
-
 	bool m_bExclusiveScreen = false;
 	bool m_bIsD3DFullscreen = false;
+	bool m_bFullScreen      = false;
 
 private:
 	HRESULT Redraw();

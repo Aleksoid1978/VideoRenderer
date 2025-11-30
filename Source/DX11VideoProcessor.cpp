@@ -1499,9 +1499,9 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 
 					const bool bNeedToggleOn = !displayConfig.HDREnabled() &&
 											   (m_iHdrToggleDisplay == HDRTD_On || m_iHdrToggleDisplay == HDRTD_OnOff
-											   || m_bExclusiveScreen && (m_iHdrToggleDisplay == HDRTD_On_Fullscreen || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen));
+											   || m_bExclusiveScreen || m_bFullScreen && (m_iHdrToggleDisplay == HDRTD_On_Fullscreen || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen));
 					const bool bNeedToggleOff = displayConfig.HDREnabled() &&
-												!bHDREnabled && !m_bExclusiveScreen && m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen;
+												!bHDREnabled && (!m_bExclusiveScreen || !m_bFullScreen) && m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen;
 					DLog(L"HandleHDRToggle() : {}, {}", bNeedToggleOn, bNeedToggleOff);
 					if (bNeedToggleOn) {
 						bRet = ToggleHDR(displayConfig, true);
@@ -4208,5 +4208,15 @@ void CDX11VideoProcessor::UpdateSubPic()
 			m_pFilter->m_pSubPicQueue->Invalidate();
 			m_pFilter->m_pSubPicQueue->SetSubPicProvider(m_pFilter->m_pSubPicProvider);
 		}
+	}
+}
+
+void CDX11VideoProcessor::SwitchFullScreen(bool set)
+{
+	m_bFullScreen = set;
+
+	if (HandleHDRToggle()) {
+		InitMediaType(&m_pFilter->m_inputMT);
+		InitSwapChain(false);
 	}
 }

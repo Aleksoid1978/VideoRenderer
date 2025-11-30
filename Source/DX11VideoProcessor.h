@@ -152,6 +152,7 @@ private:
 	CD3D11Polyline  m_SyncLine;
 
 	bool m_bExclusiveScreen = false;
+	bool m_bFullScreen = false;
 
 	int m_iVPSuperRes = SUPERRES_Disable;
 	bool m_bVPUseSuperRes = false; // but it is not exactly
@@ -278,6 +279,8 @@ public:
 	HRESULT AddPostScaleShader(const std::wstring& name, const std::string& srcCode) override;
 
 	ISubPicAllocator* GetSubPicAllocator() override;
+
+	void SwitchFullScreen(bool set) override;
 
 private:
 	void UpdateTexures();

@@ -228,6 +228,8 @@ public:
 
 	virtual ISubPicAllocator* GetSubPicAllocator() { return nullptr; }
 
+	virtual void SwitchFullScreen(bool set) {};
+
 protected:
 	inline bool SourceIsPQorHLG() {
 		return m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 || m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG;
