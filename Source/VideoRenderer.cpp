@@ -20,6 +20,7 @@
 
 #include "stdafx.h"
 #include <atomic>
+#include <optional>
 #include <evr.h> // for MR_VIDEO_ACCELERATION_SERVICE, because the <mfapi.h> does not contain it
 #include <Mferror.h>
 #include "Helper.h"
@@ -1107,6 +1108,8 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 
 	CAutoLock cRendererLock(&m_RendererLock);
 
+	std::optional<bool> bFullScreenOpt;
+
 	if (!m_bIsD3DFullscreen) {
 		auto hMon = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 		MONITORINFO mi = { mi.cbSize = sizeof(mi) };
@@ -1115,7 +1118,7 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 		auto fullScreen = (m_windowRect.Width() == rcMonitor.Width() && m_windowRect.Height() == rcMonitor.Height());
 		if (m_Sets.bExclusiveFS || m_bExclusiveScreen) {
 			auto SwitchExclusiveScreen = [this] (bool set) {
-				DLog(L"CMpcVideoRenderer::SetWindowPosition() : Switch {} exclusive screen", set ? L"to" : L"from");
+				DLog(L"CMpcVideoRenderer::SetWindowPosition() : Switch {} Exclusive screen", set ? L"to" : L"from");
 				m_bExclusiveScreen = set;
 
 				if (m_hWnd) {
@@ -1135,15 +1138,9 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 			}
 		} else {
 			if (!m_bFullScreen && fullScreen) {
-				DLog(L"Switch to FullScreen");
-
-				m_bFullScreen = true;
-				m_VideoProcessor->SwitchFullScreen(true);
+				bFullScreenOpt = true;
 			} else if (m_bFullScreen && !fullScreen) {
-				DLog(L"Switch from FullScreen");
-
-				m_bFullScreen = false;
-				m_VideoProcessor->SwitchFullScreen(false);
+				bFullScreenOpt = false;
 			}
 		}
 	}
@@ -1161,6 +1158,13 @@ STDMETHODIMP CMpcVideoRenderer::SetWindowPosition(long Left, long Top, long Widt
 	m_VideoProcessor->SetWindowRect(m_windowRect);
 
 	m_windowRect = windowRect;
+
+	if (bFullScreenOpt.has_value()) {
+		m_bFullScreen = *bFullScreenOpt;
+		DLog(L"CMpcVideoRenderer::SetWindowPosition() : Switch {} FullScreen", m_bFullScreen ? L"to" : L"from");
+
+		m_VideoProcessor->SwitchFullScreen(m_bFullScreen);
+	}
 
 	if (m_bForceRedrawing) {
 		Redraw();
