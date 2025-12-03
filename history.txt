@@ -1,5 +1,8 @@
 0.9.18 dev
 ------------------------
+Improved HDR display mode activation.
+The "Allow turn on/off (fullscreen)" option setting now works not only for exclusive full screen.
+Cosmetic changes to renderer statistics.
 
 0.9.17.2472 - 2025-10-23
 ------------------------
