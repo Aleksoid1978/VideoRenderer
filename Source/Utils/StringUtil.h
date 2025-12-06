@@ -108,9 +108,8 @@ inline void str_truncate_after_null(std::wstring& s)
 void str_replace(std::string& s, const std::string_view from, const std::string_view to);
 void str_replace(std::wstring& s, const std::wstring_view from, const std::wstring_view to);
 
-//
 // simple convert ASCII string to wide character string
-//
+// do NOT use for ANSI strings
 inline std::wstring A2WStr(const std::string_view sv)
 {
 	return std::wstring(sv.begin(), sv.end());
@@ -123,9 +122,15 @@ inline std::wstring A2WStr(const std::string_view sv)
 // convert system default Windows ANSI code page string to UTF-16 (wide character) string
 std::wstring ConvertAnsiToWide(const std::string_view sv);
 
+// convert UTF-8 string to UTF-16 (wide character) string
 std::wstring ConvertUtf8ToWide(const std::string_view sv);
 
-// convert UTF-16 (wide character) string to system default Windows ANSI code page string
-std::string ConvertWideToANSI(const std::wstring_view wsv);
+// An attempt will be made to convert the string from UTF-8 to UTF-16 (wide character) encoding.
+// If UTF-8 characters are not recognized, conversion will be made from the system default Windows ANSI code page.
+std::wstring ConvertUtf8orAnsiToWide(const std::string_view sv);
 
+// convert UTF-16 (wide character) string to system default Windows ANSI code page string
+std::string ConvertWideToAnsi(const std::wstring_view wsv);
+
+// convert UTF-16 (wide character) string to UTF-8 string
 std::string ConvertWideToUtf8(const std::wstring_view wsv);

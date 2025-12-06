@@ -82,7 +82,20 @@ std::wstring ConvertUtf8ToWide(const std::string_view sv)
 	return wstr;
 }
 
-std::string ConvertWideToANSI(const std::wstring_view wsv)
+std::wstring ConvertUtf8orAnsiToWide(const std::string_view sv)
+{
+	UINT codePage = CP_UTF8;
+	int count = MultiByteToWideChar(codePage, MB_ERR_INVALID_CHARS, sv.data(), (int)sv.length(), nullptr, 0);
+	if (count == 0) {
+		codePage = CP_ACP;
+		count = MultiByteToWideChar(codePage, 0, sv.data(), (int)sv.length(), nullptr, 0);
+	}
+	std::wstring wstr(count, 0);
+	MultiByteToWideChar(codePage, 0, sv.data(), (int)sv.length(), &wstr[0], count);
+	return wstr;
+}
+
+std::string ConvertWideToAnsi(const std::wstring_view wsv)
 {
 	int count = WideCharToMultiByte(CP_ACP, 0, wsv.data(), (int)wsv.length(), nullptr, 0, nullptr, nullptr);
 	std::string str(count, 0);
