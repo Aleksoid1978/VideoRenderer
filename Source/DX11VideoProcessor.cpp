@@ -1535,7 +1535,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 				}
 
 				if (displayConfig.HDRSupported() && displayConfig.HDREnabled() &&
-						(!bWindowsHDREnabled || (m_iHdrToggleDisplay == HDRTD_OnOff || m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen && m_bExclusiveScreen))) {
+						(!bWindowsHDREnabled || m_iHdrToggleDisplay == HDRTD_OnOff || (m_iHdrToggleDisplay == HDRTD_OnOff_Fullscreen && m_bExclusiveScreen))) {
 					bRet = ToggleHDR(displayConfig, false);
 					DLogIf(!bRet, L"CDX11VideoProcessor::HandleHDRToggle() : Toggle HDR OFF failed");
 
