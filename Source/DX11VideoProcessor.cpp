@@ -401,8 +401,10 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_iHdrOsdBrightness    = config.iHdrOsdBrightness;
 	m_bConvertToSdr        = config.bConvertToSdr;
 	m_iSDRDisplayNits      = config.iSDRDisplayNits;
+#ifdef _WIN64
 	m_bVPRTXVideoHDR       = config.bVPRTXVideoHDR;
 	m_iVPSuperRes          = config.iVPSuperRes;
+#endif
 
 	m_nCurrentAdapter = -1;
 
