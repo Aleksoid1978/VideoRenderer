@@ -386,6 +386,10 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_iVPDeinterlacing     = config.iVPDeinterlacing;
 	m_bDeintDouble         = config.bDeintDouble;
 	m_bVPScaling           = config.bVPScaling;
+#ifdef _WIN64
+	m_iVPSuperRes          = config.iVPSuperRes;
+	m_bVPRTXVideoHDR       = config.bVPRTXVideoHDR;
+#endif
 	m_iChromaScaling       = config.iChromaScaling;
 	m_iUpscaling           = config.iUpscaling;
 	m_iDownscaling         = config.iDownscaling;
@@ -401,10 +405,6 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_iHdrOsdBrightness    = config.iHdrOsdBrightness;
 	m_bConvertToSdr        = config.bConvertToSdr;
 	m_iSDRDisplayNits      = config.iSDRDisplayNits;
-#ifdef _WIN64
-	m_bVPRTXVideoHDR       = config.bVPRTXVideoHDR;
-	m_iVPSuperRes          = config.iVPSuperRes;
-#endif
 
 	m_nCurrentAdapter = -1;
 
