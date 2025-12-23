@@ -520,6 +520,34 @@ HRESULT CVRMainPPage::OnApplyChanges()
 	return S_OK;
 }
 
+HWND CVRMainPPage::CreateHintWindow(HWND parent, int timePop, int timeInit, int timeReshow)
+{
+	HWND hhint = CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASS, nullptr,
+		WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP, CW_USEDEFAULT,
+		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, parent, nullptr, nullptr, nullptr);
+
+	SetWindowPos(hhint, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+	SendMessageW(hhint, TTM_SETDELAYTIME, TTDT_AUTOPOP, MAKELONG(timePop, 0));
+	SendMessageW(hhint, TTM_SETDELAYTIME, TTDT_INITIAL, MAKELONG(timeInit, 0));
+	SendMessageW(hhint, TTM_SETDELAYTIME, TTDT_RESHOW, MAKELONG(timeReshow, 0));
+	SendMessageW(hhint, TTM_SETMAXTIPWIDTH, 0, 470);
+	return hhint;
+}
+
+void CVRMainPPage::AddHint(int id, const LPCWSTR text)
+{
+	if (!m_hHint) {
+		m_hHint = CreateHintWindow(m_Dlg, 15000);
+	}
+	TOOLINFOW ti;
+	ti.cbSize = sizeof(TOOLINFOW);
+	ti.uFlags = TTF_SUBCLASS | TTF_IDISHWND;
+	ti.hwnd = m_Dlg;
+	ti.uId = (LPARAM)GetDlgItem(id).m_hWnd;
+	ti.lpszText = const_cast<LPWSTR>(text);
+	SendMessageW(m_hHint, TTM_ADDTOOLW, 0, (LPARAM)&ti);
+}
+
 // CVRInfoPPage
 
 CVRInfoPPage::CVRInfoPPage(LPUNKNOWN lpunk, HRESULT* phr) :

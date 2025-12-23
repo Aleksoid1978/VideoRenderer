@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2024 see Authors.txt
+ * (C) 2018-2025 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -33,6 +33,8 @@ class __declspec(uuid("DA46D181-07D6-441D-B314-019AEB10148A"))
 
 	int m_oldSDRDisplayNits = SDR_NITS_DEF;
 
+	HWND m_hHint = nullptr;
+
 public:
 	CVRMainPPage(LPUNKNOWN lpunk, HRESULT* phr);
 	~CVRMainPPage();
@@ -53,6 +55,9 @@ private:
 	}
 	INT_PTR OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) override;
 	HRESULT OnApplyChanges() override;
+
+	HWND CreateHintWindow(HWND parent, int timePop = 1700, int timeInit = 70, int timeReshow = 7);
+	void AddHint(int id, const LPCWSTR text);
 };
 
 // CVRInfoPPage
