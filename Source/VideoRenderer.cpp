@@ -201,10 +201,10 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPScaling, dw)) {
 			m_Sets.bVPScaling = !!dw;
 		}
-#ifdef _WIN64
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPSuperResolution, dw)) {
 			m_Sets.iVPSuperRes = discard<int>(dw, SUPERRES_Disable, 0, SUPERRES_COUNT-1);
 		}
+#ifdef _WIN64
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_VPRTXVideoHDR, dw)) {
 			m_Sets.bVPRTXVideoHDR = !!dw;
 		}
@@ -1246,8 +1246,8 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_VPDeinterlacing,     m_Sets.iVPDeinterlacing);
 		key.SetDWORDValue(OPT_DoubleFrateDeint,    m_Sets.bDeintDouble);
 		key.SetDWORDValue(OPT_VPScaling,           m_Sets.bVPScaling);
-#ifdef _WIN64
 		key.SetDWORDValue(OPT_VPSuperResolution,   m_Sets.iVPSuperRes);
+#ifdef _WIN64
 		key.SetDWORDValue(OPT_VPRTXVideoHDR,       m_Sets.bVPRTXVideoHDR);
 #endif
 		key.SetDWORDValue(OPT_ChromaUpsampling,    m_Sets.iChromaScaling);

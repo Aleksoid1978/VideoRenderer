@@ -147,9 +147,9 @@ void CVRMainPPage::EnableControls()
 		GetDlgItem(IDC_COMBO7).EnableWindow(bEnable);
 		GetDlgItem(IDC_STATIC6).EnableWindow(bEnable);
 		GetDlgItem(IDC_SLIDER1).EnableWindow(bEnable);
-#ifdef _WIN64
 		GetDlgItem(IDC_STATIC7).EnableWindow(bEnable && m_SetsPP.bVPScaling);
 		GetDlgItem(IDC_COMBO8).EnableWindow(bEnable && m_SetsPP.bVPScaling);
+#ifdef _WIN64
 		GetDlgItem(IDC_CHECK19).EnableWindow(bEnable && m_SetsPP.bHdrPassthrough);
 #endif
 	}
