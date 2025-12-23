@@ -280,6 +280,28 @@ HRESULT CVRMainPPage::OnActivate()
 	SetCursor(m_hWnd, IDC_ARROW);
 	SetCursor(m_hWnd, IDC_COMBO1, IDC_HAND);
 
+	AddHint(IDC_COMBO8,
+		L"Available for Direct3D 11.\n"
+		"Requires hardware and driver support:\n"
+		"- Intel Graphics UHD 610 or later\n"
+		"- Nvidia RTX (x64 only)");
+	AddHint(IDC_CHECK19,
+		L"Available for Direct3D 11.\n"
+		"Requires hardware and driver support:\n"
+		"- Nvidia RTX (x64 only)");
+	AddHint(IDC_COMBO5,
+		L"Used for YUV 4:2:0/4:2:2 input formats\n"
+		"when the DVXA2/D3D11 Video Processor is not active.");
+	AddHint(IDC_COMBO2,
+		L"Used to increase image size when the\n"
+		"DVXA2/D3D11 Video Processor is not used for resizing.");
+	AddHint(IDC_COMBO3,
+		L"Used to reduce image size when the\n"
+		"DVXA2/D3D11 Video Processor is not used for resizing.");
+	AddHint(IDC_COMBO4,
+		L"'Flip' is more efficient, but 'Discard' may work\n"
+		"more correctly in some rare situations.");
+
 	return S_OK;
 }
 
