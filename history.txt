@@ -1,4 +1,4 @@
-0.9.18 dev
+0.9.19.2490 - 2025-12-25
 ------------------------
 Improved HDR display mode activation.
 The "Allow turn on/off (fullscreen)" option setting now works not only for exclusive full screen.
