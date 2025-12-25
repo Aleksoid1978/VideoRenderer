@@ -3,6 +3,8 @@
 Improved HDR display mode activation.
 The "Allow turn on/off (fullscreen)" option setting now works not only for exclusive full screen.
 Cosmetic changes to renderer statistics.
+Added tooltips for some settings.
+The RTX Video HDR setting is only available for the x64 version.
 
 0.9.17.2472 - 2025-10-23
 ------------------------
