@@ -78,7 +78,7 @@ private:
 		PS_COLOR_TRANSFORM Constants;
 	} m_PSConvColorData;
 
-	PS_DOVI_POLY_CURVE m_DoviReshapePolyCurves[3];
+	PS_DOVI_POLY_CURVE m_DoviReshapePolyCurves[3] = {};
 
 	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleX;
 	CComPtr<IDirect3DPixelShader9> m_pShaderUpscaleY;
