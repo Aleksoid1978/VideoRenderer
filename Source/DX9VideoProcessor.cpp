@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2025 see Authors.txt
+* (C) 2018-2026 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -383,19 +383,19 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 	if (!pOrigSystemParametersInfoA) {
 		pOrigSystemParametersInfoA = SystemParametersInfoA;
 		auto ret = HookFunc(&pOrigSystemParametersInfoA, pNewSystemParametersInfoA);
-		DLogIf(!ret, L"CMpcVideoRenderer::InitInternal() : hook for SystemParametersInfoA() fail");
+		DLogIf(!ret, L"CDX9VideoProcessor::InitInternal() : hook for SystemParametersInfoA() fail");
 
 		pOrigSetWindowLongA = SetWindowLongA;
 		ret = HookFunc(&pOrigSetWindowLongA, pNewSetWindowLongA);
-		DLogIf(!ret, L"CMpcVideoRenderer::InitInternal() : hook for SetWindowLongA() fail");
+		DLogIf(!ret, L"CDX9VideoProcessor::InitInternal() : hook for SetWindowLongA() fail");
 
 		pOrigSetWindowPos = SetWindowPos;
 		ret = HookFunc(&pOrigSetWindowPos, pNewSetWindowPos);
-		DLogIf(!ret, L"CMpcVideoRenderer::InitInternal() : hook for SetWindowPos() fail");
+		DLogIf(!ret, L"CDX9VideoProcessor::InitInternal() : hook for SetWindowPos() fail");
 
 		pOrigShowWindow = ShowWindow;
 		ret = HookFunc(&pOrigShowWindow, pNewShowWindow);
-		DLogIf(!ret, L"CMpcVideoRenderer::InitInternal() : hook for ShowWindow() fail");
+		DLogIf(!ret, L"CDX9VideoProcessor::InitInternal() : hook for ShowWindow() fail");
 
 		MH_EnableHook(MH_ALL_HOOKS);
 	}
@@ -1390,11 +1390,11 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 				}
 
 				if (bYCCtoRGBChanged) {
-					DLog(L"CDX11VideoProcessor::CopySample() : DoVi ycc_to_rgb_matrix is changed");
+					DLog(L"CDX9VideoProcessor::CopySample() : DoVi ycc_to_rgb_matrix is changed");
 					SetShaderConvertColorParams();
 				}
 				if (bRGBtoLMSChanged) {
-					DLog(L"CDX11VideoProcessor::CopySample() : DoVi rgb_to_lms_matrix is changed");
+					DLog(L"CDX9VideoProcessor::CopySample() : DoVi rgb_to_lms_matrix is changed");
 					UpdateConvertColorShader();
 				}
 				if (bMappingCurvesChanged) {

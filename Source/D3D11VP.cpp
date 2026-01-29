@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2025 see Authors.txt
+* (C) 2019-2026 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -915,7 +915,7 @@ HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAM
 	CComPtr<ID3D11VideoProcessorOutputView> pOutputView;
 	HRESULT hr = m_pVideoDevice->CreateVideoProcessorOutputView(pRenderTarget, m_pVideoProcessorEnum, &OutputViewDesc, &pOutputView);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::ProcessD3D11() : CreateVideoProcessorOutputView() failed with error {}", HR2Str(hr));
+		DLog(L"CD3D11VP::Process() : CreateVideoProcessorOutputView() failed with error {}", HR2Str(hr));
 		return hr;
 	}
 
@@ -953,7 +953,7 @@ HRESULT CD3D11VP::Process(ID3D11Texture2D* pRenderTarget, const D3D11_VIDEO_FRAM
 
 	hr = m_pVideoContext->VideoProcessorBlt(m_pVideoProcessor, pOutputView, StreamData.InputFrameOrField, 1, &StreamData);
 	if (FAILED(hr)) {
-		DLog(L"CDX11VideoProcessor::ProcessD3D11() : VideoProcessorBlt() failed with error {}", HR2Str(hr));
+		DLog(L"CD3D11VP::Process() : VideoProcessorBlt() failed with error {}", HR2Str(hr));
 	}
 
 	return hr;

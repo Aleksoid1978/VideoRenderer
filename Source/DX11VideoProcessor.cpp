@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2025 see Authors.txt
+* (C) 2018-2026 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -3102,7 +3102,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 		hr = ResizeShaderPass(*pInputTexture, pRenderTarget, rSrc, dstRect, rotation);
 	}
 
-	DLogIf(FAILED(hr), L"CDX9VideoProcessor::Process() : failed with error {}", HR2Str(hr));
+	DLogIf(FAILED(hr), L"CDX11VideoProcessor::Process() : failed with error {}", HR2Str(hr));
 
 	return hr;
 }
