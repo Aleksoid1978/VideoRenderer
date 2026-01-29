@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2025 see Authors.txt
+* (C) 2018-2026 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -876,7 +876,7 @@ void ConvertR10G10B10A2toBGR64(const UINT lines, BYTE* dst, UINT dst_pitch, cons
 	}
 }
 
-void fill_u32(void* dst, uint32_t c, size_t count)
+void fill_u32(void* dst, const uint32_t c, const size_t count)
 {
 #ifndef _WIN64
 	__asm {
@@ -887,28 +887,23 @@ void fill_u32(void* dst, uint32_t c, size_t count)
 		rep stosd
 	}
 #else
-	size_t& n = count;
-	size_t o = n - (n % 4);
+	const size_t count4 = count & ~(size_t)(4 - 1);
+	size_t i = 0;
 
 	__m128i val = _mm_set1_epi32((int)c);
 	if (((uintptr_t)dst & 0x0F) == 0) { // 16-byte aligned
-		for (size_t i = 0; i < o; i += 4) {
+		for (; i < count4; i += 4) {
 			_mm_store_si128((__m128i*) & (((uint32_t*)dst)[i]), val);
 		}
 	}
 	else {
-		for (size_t i = 0; i < o; i += 4) {
+		for (; i < count4; i += 4) {
 			_mm_storeu_si128((__m128i*) & (((uint32_t*)dst)[i]), val);
 		}
 	}
 
-	switch (n - o) {
-	case 3:
-		((uint32_t*)dst)[o + 2] = c;
-	case 2:
-		((uint32_t*)dst)[o + 1] = c;
-	case 1:
-		((uint32_t*)dst)[o + 0] = c;
+	for (; i < count; ++i) {
+		((uint32_t*)dst)[i] = c;
 	}
 #endif
 }
