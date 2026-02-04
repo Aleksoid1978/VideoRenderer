@@ -416,10 +416,9 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 		DLog(L"Graphics D3D9 adapter: {}", m_strAdapterDescription);
 	}
 
-	D3DCAPS9 DevCaps = {};
-	HRESULT hr = m_pD3DEx->GetDeviceCaps(m_nCurrentAdapter, D3DDEVTYPE_HAL, &DevCaps);
 #ifdef _DEBUG
-	if (S_OK == hr) {
+	D3DCAPS9 DevCaps = {};
+	if (S_OK == m_pD3DEx->GetDeviceCaps(m_nCurrentAdapter, D3DDEVTYPE_HAL, &DevCaps)) {
 		std::wstring dbgstr = L"DeviceCaps:";
 		dbgstr += std::format(L"\n  MaxTextureWidth                 : {}", DevCaps.MaxTextureWidth);
 		dbgstr += std::format(L"\n  MaxTextureHeight                : {}", DevCaps.MaxTextureHeight);
@@ -431,19 +430,10 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 		DLog(dbgstr);
 	}
 #endif
-	if (FAILED(hr) || D3DSHADER_VERSION_MAJOR(DevCaps.PixelShaderVersion) < 3) {
-		std::wstring errstr = std::format(
-			L"MPC Video Renderer requires Pixel Shader 3.0 support.\n"
-			L"'{}' supports only PS {}.{}.\n"
-			L"Please select a different video renderer in the player settings.",
-			m_strAdapterDescription, D3DSHADER_VERSION_MAJOR(DevCaps.PixelShaderVersion), D3DSHADER_VERSION_MINOR(DevCaps.PixelShaderVersion));
-		MessageBoxW(nullptr, errstr.c_str(), L"Error", MB_OK | MB_ICONERROR);
-		// do not return here
-	}
 
 	ZeroMemory(&m_DisplayMode, sizeof(D3DDISPLAYMODEEX));
 	m_DisplayMode.Size = sizeof(D3DDISPLAYMODEEX);
-	hr = m_pD3DEx->GetAdapterDisplayModeEx(m_nCurrentAdapter, &m_DisplayMode, nullptr);
+	HRESULT hr = m_pD3DEx->GetAdapterDisplayModeEx(m_nCurrentAdapter, &m_DisplayMode, nullptr);
 	DLog(L"Display Mode: {}x{}, {}{}", m_DisplayMode.Width, m_DisplayMode.Height, m_DisplayMode.RefreshRate, (m_DisplayMode.ScanLineOrdering == D3DSCANLINEORDERING_INTERLACED) ? 'i' : 'p');
 
 	ZeroMemory(&m_d3dpp, sizeof(m_d3dpp));
