@@ -87,6 +87,7 @@ enum ColorFormat_t {
 	CF_P010,
 	CF_P016,
 	CF_YUY2,
+	CF_UYVY,
 	CF_P210,
 	CF_P216,
 	CF_Y210,

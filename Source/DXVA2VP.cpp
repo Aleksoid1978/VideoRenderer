@@ -37,6 +37,7 @@ int GetBitDepth(const D3DFORMAT format)
 	case D3DFMT_YV12:
 	case D3DFMT_NV12:
 	case D3DFMT_YUY2:
+	case D3DFMT_UYVY:
 	case D3DFMT_AYUV:
 	default:
 		return 8;

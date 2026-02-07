@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2025 see Authors.txt
+ * (C) 2018-2026 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -41,6 +41,7 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_P210},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_P216},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_YUY2},
+	{&MEDIATYPE_Video, &MEDIASUBTYPE_UYVY},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_AYUV},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_Y210},
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_Y216},
