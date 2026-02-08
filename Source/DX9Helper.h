@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2022 see Authors.txt
+* (C) 2019-2026 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -78,7 +78,7 @@ struct Tex9Video_t : Tex_t
 		HRESULT hr;
 
 		if (pPlanes) {
-			if (format == D3DFMT_YUY2) {
+			if (format == D3DFMT_YUY2 || format == D3DFMT_UYVY) {
 				width /= 2;
 			}
 			hr = Create(pDevice, pPlanes->FmtPlane1, width, height, usage);

@@ -47,6 +47,7 @@ HRESULT CompileShader(const std::string& srcCode, const D3D_SHADER_MACRO* pDefin
 		"main", pTarget, 0, 0, ppShaderBlob, &pErrorBlob);
 
 	if (FAILED(hr)) {
+		ASSERT(0);
 		SAFE_RELEASE(*ppShaderBlob);
 
 		if (pErrorBlob) {
@@ -108,7 +109,7 @@ void ShaderGetPixels(
 	}
 	DLog(L"ConvertColorShader: frame consists of {} planes", planes);
 
-	const bool packed422 = (fmtParams.cformat == CF_YUY2
+	const bool packed422 = (fmtParams.cformat == CF_YUY2 || fmtParams.cformat == CF_UYVY
 		|| fmtParams.cformat == CF_Y210
 		|| fmtParams.cformat == CF_Y216
 		|| fmtParams.cformat == CF_V210);
@@ -191,7 +192,24 @@ void ShaderGetPixels(
 				code.append("float4 color = tex.Sample(samp, input.Tex).yxzw;\n");
 				break;
 			}
-			if (packed422) {
+			if (fmtParams.cformat == CF_UYVY) {
+				code.append("if (fmod(input.Tex.x*w, 2) < 1.0) {\n"
+					"color = float4(color.yxz, 1);\n"
+					"} else {\n");
+				if (chromaScaling == CHROMA_CatmullRom) {
+					code.append(
+						"float2 c0 = tex.Sample(samp, input.Tex, int2(-1, 0)).xz;\n"
+						"float2 c1 = color.xz;\n"
+						"float2 c2 = tex.Sample(samp, input.Tex, int2(1, 0)).xz;\n"
+						"float2 c3 = tex.Sample(samp, input.Tex, int2(2, 0)).xz;\n"
+						"float2 chroma = CATMULLROM_05(c0,c1,c2,c3);\n");
+				} else { // linear
+					code.append("float2 chroma = (color.xz + tex.Sample(samp, input.Tex, int2(1, 0)).xz) * 0.5;\n");
+				}
+				code.append("color = float4(color[3], chroma, 1);\n"
+					"}\n");
+			}
+			else if (packed422) {
 				code.append("if (fmod(input.Tex.x*w, 2) < 1.0) {\n"
 					"color = float4(color.xyw, 1);\n"
 					"} else {\n");
@@ -349,7 +367,24 @@ void ShaderGetPixels(
 				code.append("float4 color = tex2D(s0, tex).yxzw;\n");
 				break;
 			}
-			if (packed422) {
+			if (fmtParams.cformat == CF_UYVY) {
+				code.append("if (fmod(tex.x*w, 2) < 1.0) {\n"
+					"color = float4(color.yzx, 1);\n"
+					"} else {\n");
+				if (chromaScaling == CHROMA_CatmullRom) {
+					code.append(
+						"float2 c0 = tex2D(s0, tex + float2(-dx, 0)).zx;\n"
+						"float2 c1 = color.zx;\n"
+						"float2 c2 = tex2D(s0, tex + float2(dx, 0)).zx;\n"
+						"float2 c3 = tex2D(s0, tex + float2(2*dx, 0)).zx;\n"
+						"float2 chroma = CATMULLROM_05(c0,c1,c2,c3);\n");
+				} else { // linear
+					code.append("float2 chroma = (color.zx + tex2D(s0, tex + float2(dx, 0)).zx) * 0.5;\n");
+				}
+				code.append("color = float4(color[3], chroma, 1);\n"
+					"}\n");
+			}
+			else if (packed422) {
 				code.append("if (fmod(tex.x*w, 2) < 1.0) {\n"
 					"color = float4(color.zyw, 1);\n"
 					"} else {\n");
@@ -617,7 +652,7 @@ HRESULT GetShaderConvertColor(
 		}
 	}
 
-	const bool packed422 = (fmtParams.cformat == CF_YUY2
+	const bool packed422 = (fmtParams.cformat == CF_YUY2 || fmtParams.cformat == CF_UYVY
 		|| fmtParams.cformat == CF_Y210
 		|| fmtParams.cformat == CF_Y216
 		|| fmtParams.cformat == CF_V210);

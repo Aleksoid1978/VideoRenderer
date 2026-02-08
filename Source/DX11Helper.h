@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2022 see Authors.txt
+* (C) 2019-2026 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -124,7 +124,8 @@ struct Tex11Video_t : Tex2D_t
 			}
 		}
 		else if (pPlanes) {
-			if (format == DXGI_FORMAT_YUY2) {
+			if (format == DXGI_FORMAT_YUY2 || (format == DXGI_FORMAT_PLANAR && pPlanes->FmtPlane1 == DXGI_FORMAT_R8G8B8A8_UNORM)) {
+				// YUY2 or UYVY
 				width /= 2;
 			}
 			hr = Create(pDevice, pPlanes->FmtPlane1, width, height, type);

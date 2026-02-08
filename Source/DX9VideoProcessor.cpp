@@ -2273,7 +2273,7 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 		float sx = 0.0f;
 		float sy = 0.0f;
 
-		if (m_srcParams.cformat != CF_YUY2 && m_iChromaScaling == CHROMA_Bilinear) {
+		if (m_srcParams.cformat != CF_YUY2 && m_srcParams.cformat != CF_UYVY && m_iChromaScaling == CHROMA_Bilinear) {
 			if (m_srcParams.Subsampling == 420) {
 				switch (m_srcExFmt.VideoChromaSubsampling) {
 				case DXVA2_VideoChromaSubsampling_Cosited:
@@ -2312,7 +2312,7 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 			(float)m_srcRect.bottom * dy
 		};
 
-		if (m_srcParams.cformat == CF_YUY2) {
+		if (m_srcParams.cformat == CF_YUY2 || m_srcParams.cformat == CF_UYVY) {
 			fr.left  /= 2;
 			fr.right /= 2;
 		}
