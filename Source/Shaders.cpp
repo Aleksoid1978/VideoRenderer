@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2025 see Authors.txt
+* (C) 2019-2026 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -193,7 +193,7 @@ void ShaderGetPixels(
 			}
 			if (packed422) {
 				code.append("if (fmod(input.Tex.x*w, 2) < 1.0) {\n"
-					"color = float4(color[0], color[1], color[3], 1);\n"
+					"color = float4(color.xyw, 1);\n"
 					"} else {\n");
 				if (chromaScaling == CHROMA_CatmullRom) {
 					code.append(
@@ -205,7 +205,7 @@ void ShaderGetPixels(
 				} else { // linear
 					code.append("float2 chroma = (color.yw + tex.Sample(samp, input.Tex, int2(1, 0)).yw) * 0.5;\n");
 				}
-				code.append("color = float4(color[2], chroma, 1);\n"
+				code.append("color = float4(color.z, chroma, 1);\n"
 					"}\n");
 			}
 			break;
@@ -351,7 +351,7 @@ void ShaderGetPixels(
 			}
 			if (packed422) {
 				code.append("if (fmod(tex.x*w, 2) < 1.0) {\n"
-					"color = float4(color[2], color[1], color[3], 1);\n"
+					"color = float4(color.zyw, 1);\n"
 					"} else {\n");
 				if (chromaScaling == CHROMA_CatmullRom) {
 					code.append(
@@ -363,7 +363,7 @@ void ShaderGetPixels(
 				} else { // linear
 					code.append("float2 chroma = (color.yw + tex2D(s0, tex + float2(dx, 0)).yw) * 0.5;\n");
 				}
-				code.append("color = float4(color[0], chroma, 1);\n"
+				code.append("color = float4(color.x, chroma, 1);\n"
 					"}\n");
 			}
 			break;
