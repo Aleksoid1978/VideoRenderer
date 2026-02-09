@@ -115,7 +115,7 @@ private:
 	std::thread m_deviceThread;
 	void DeviceThreadFunc();
 
-	HRESULT InitInternal(bool* pChangeDevice = nullptr);
+	HRESULT InitInternal(bool bFullCreate, bool* pChangeDevice);
 	HRESULT ResetInternal();
 	void ResizeInternal();
 

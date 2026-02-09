@@ -357,7 +357,7 @@ void CDX9VideoProcessor::DeviceThreadFunc()
 		m_hrThread = E_FAIL;
 		switch (dwObject) {
 			case WAIT_OBJECT_0: // Init
-				m_hrThread = InitInternal(&m_bChangeDeviceThread);
+				m_hrThread = InitInternal(false, &m_bChangeDeviceThread);
 				m_evThreadFinishJob.Set();
 				break;
 			case WAIT_OBJECT_0 + 1: // Resize
@@ -374,7 +374,7 @@ void CDX9VideoProcessor::DeviceThreadFunc()
 	}
 }
 
-HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
+HRESULT CDX9VideoProcessor::InitInternal(bool bFullCreate, bool* pChangeDevice)
 {
 	DLog(L"CDX9VideoProcessor::InitInternal()");
 
@@ -403,7 +403,7 @@ HRESULT CDX9VideoProcessor::InitInternal(bool* pChangeDevice/* = nullptr*/)
 	g_bInitVP = true;
 
 	const UINT currentAdapter = GetAdapter(m_hWnd, m_pD3DEx);
-	bool bTryToReset = (currentAdapter == m_nCurrentAdapter) && m_pD3DDevEx;
+	bool bTryToReset = !bFullCreate && (currentAdapter == m_nCurrentAdapter) && m_pD3DDevEx;
 	if (!bTryToReset) {
 		ReleaseDevice();
 		m_nCurrentAdapter = currentAdapter;
@@ -641,6 +641,10 @@ HRESULT CDX9VideoProcessor::ResetInternal()
 		DLogIf(FAILED(hr), L"CDX9VideoProcessor::ResetInternal() : ResetEx() failed with error {}", HR2Str(hr));
 	}
 
+	if (FAILED(hr)) {
+		InitInternal(true, nullptr);
+	}
+
 	g_bInitVP = false;
 
 	return hr;
@@ -649,7 +653,11 @@ HRESULT CDX9VideoProcessor::ResetInternal()
 void CDX9VideoProcessor::ResizeInternal()
 {
 	HRESULT hr = m_pD3DDevEx->ResetEx(&m_d3dpp, nullptr);
-	DLogIf(FAILED(hr), L"CDX9VideoProcessor::ResizeInternal() : ResetEx() failed with error {}", HR2Str(hr));
+	if (FAILED(hr)) {
+		DLog(L"CDX9VideoProcessor::ResizeInternal() : ResetEx() failed with error {}", HR2Str(hr));
+
+		InitInternal(true, nullptr);
+	}
 }
 
 HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged, bool* pChangeDevice/* = nullptr*/)
