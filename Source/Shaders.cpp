@@ -360,7 +360,7 @@ void ShaderGetPixels(
 				code.append("float4 color = tex2D(s0, tex);\n");
 				break;
 			case CF_AYUV:
-				code.append("float4 color = tex2D(s0, tex).zyxw;\n");
+				code.append("float4 color = tex2D(s0, tex).xyzw;\n");
 				break;
 			case CF_Y410:
 			case CF_Y416:
