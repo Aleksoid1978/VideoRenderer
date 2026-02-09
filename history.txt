@@ -1,5 +1,8 @@
 0.9.20 dev
 ------------------------
+Added support for 'UYVY' format.
+Improved handling of the D3DERR_DEVICEHUNG error for Direct3D 9.
+Fixed conversion of 'AYUV' format using shaders for Direct3D 9.
 
 0.9.19.2490 - 2025-12-25
 ------------------------
