@@ -2161,9 +2161,18 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 		if (m_srcParams.CSType == CS_YUV && (m_bHdrPreferDoVi || !SourceIsPQorHLG())) {
 			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
-			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
-			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && CheckDoviMetadata(pDOVIMetadata, 1)) {
-
+			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadataV2, (const BYTE**)&pDOVIMetadata, &size);
+			if (SUCCEEDED(hr)) {
+				if (size != sizeof(MediaSideDataDOVIMetadata)) {
+					hr = E_FAIL;
+				}
+			} else {
+				hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
+				if (size != offsetof(MediaSideDataDOVIMetadata, Extensions)) {
+					hr = E_FAIL;
+				}
+			}
+			if (SUCCEEDED(hr) && CheckDoviMetadata(pDOVIMetadata, 1)) {
 				const bool bYCCtoRGBChanged = !m_PSConvColorData.bEnable ||
 					(memcmp(
 						&m_Dovi.msd.ColorMetadata.ycc_to_rgb_matrix,
@@ -2182,6 +2191,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 						&pDOVIMetadata->Mapping.curves,
 						sizeof(MediaSideDataDOVIMetadata::Mapping.curves)
 					) != 0);
+
 				const bool bMasteringLuminanceChanged = m_Dovi.msd.ColorMetadata.source_max_pq != pDOVIMetadata->ColorMetadata.source_max_pq
 					|| m_Dovi.msd.ColorMetadata.source_min_pq != pDOVIMetadata->ColorMetadata.source_min_pq;
 
@@ -2203,7 +2213,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					}
 				}
 
-				memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
+				memcpy(&m_Dovi.msd, pDOVIMetadata, size);
 				const bool doviStateChanged = !m_Dovi.bValid;
 				m_Dovi.bValid = true;
 
@@ -2427,12 +2437,19 @@ HRESULT CDX11VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTi
 	m_RenderStats.paintticks = tick3 - tick1;
 
 	if (m_pDXGISwapChain4) {
-		if (m_hdr10.bValid) {
-			if (m_DoviMaxMasteringLuminance > m_hdr10.hdr10.MaxMasteringLuminance) {
-				m_hdr10.hdr10.MaxMasteringLuminance = m_DoviMaxMasteringLuminance;
+		if (m_Dovi.bValid) {
+			if (!m_hdr10.bValid && m_lastHdr10.bValid) {
+				m_hdr10.bValid = true;
+				m_hdr10.hdr10 = m_lastHdr10.hdr10;
 			}
-			if (m_DoviMinMasteringLuminance && m_DoviMinMasteringLuminance != m_hdr10.hdr10.MinMasteringLuminance) {
-				m_hdr10.hdr10.MinMasteringLuminance = m_DoviMinMasteringLuminance;
+
+			if (m_hdr10.bValid) {
+				if (m_DoviMaxMasteringLuminance > m_hdr10.hdr10.MaxMasteringLuminance) {
+					m_hdr10.hdr10.MaxMasteringLuminance = m_DoviMaxMasteringLuminance;
+				}
+				if (m_DoviMinMasteringLuminance && m_DoviMinMasteringLuminance != m_hdr10.hdr10.MinMasteringLuminance) {
+					m_hdr10.hdr10.MinMasteringLuminance = m_DoviMinMasteringLuminance;
+				}
 			}
 		}
 
