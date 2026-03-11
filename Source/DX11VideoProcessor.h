@@ -1,5 +1,5 @@
 /*
-* (C) 2018-2025 see Authors.txt
+* (C) 2018-2026 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -86,6 +86,20 @@ private:
 	CComPtr<ID3D11Buffer> m_pCorrectionConstants;
 	CComPtr<ID3D11PixelShader> m_pPSCorrection;
 	const wchar_t* m_strCorrection = nullptr;
+
+	// HDR tonemapping
+	struct HDRParamsConstantBuffer_t {
+		float MasteringMinLuminanceNits;
+		float MasteringMaxLuminanceNits;
+		float maxCLL;
+		float maxFALL;
+		float displayMaxNits;
+		UINT selection; // 1 = ACES, 2 = Reinhard, 3 = Habel, 4 = Möbius, 5 = BT2390, 6 = ST 2094-10
+		float padding[2];
+	};
+	HDRParamsConstantBuffer_t m_lastHDRParamsConstantBuffer_t = {};
+	CComPtr<ID3D11Buffer> m_pHDR10ToneMappingConstants;
+	CComPtr<ID3D11PixelShader> m_pPSHDR10ToneMapping;
 
 	// D3D11 Shader Video Processor
 	CComPtr<ID3D11PixelShader> m_pPSConvertColor;
@@ -181,6 +195,17 @@ private:
 	UINT m_DoviMaxMasteringLuminance = 0;
 	UINT m_DoviMinMasteringLuminance = 0;
 
+	struct DoviExtensionMetadata_t {
+		uint16_t min_pq = 0;
+		uint16_t max_pq = 0;
+		uint16_t avg_pq = 0;
+		UINT min_pq_rescaled = 0;
+		UINT max_pq_rescaled = 0;
+		UINT avg_pq_rescaled = 0;
+		bool present = false;
+	};
+	DoviExtensionMetadata_t m_DoviExtensionMetadata;
+
 	HMONITOR m_lastFullscreenHMonitor = nullptr;
 
 	D3DCOLOR m_dwStatsTextColor = D3DCOLOR_XRGB(255, 255, 255);
@@ -217,6 +242,8 @@ private:
 	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
 	void SetShaderLuminanceParams();
+
+	void SetHDR10ShaderParams(float, float, float, float, float, int);
 
 	HRESULT SetShaderDoviCurvesPoly();
 	HRESULT SetShaderDoviCurves();

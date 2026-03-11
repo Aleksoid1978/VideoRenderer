@@ -399,6 +399,9 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_bAdjustPresentTime   = config.bAdjustPresentTime;
 	m_bHdrPreferDoVi       = config.bHdrPreferDoVi;
 	m_bHdrPassthrough      = config.bHdrPassthrough;
+	m_bHdrLocalToneMapping = config.bHdrLocalToneMapping;
+	m_iHdrLocalToneMappingType = config.iHdrLocalToneMappingType;
+	m_iHdrDisplayMaxNits   = config.iHdrDisplayMaxNits;
 	m_iHdrToggleDisplay    = config.iHdrToggleDisplay;
 	m_iHdrOsdBrightness    = config.iHdrOsdBrightness;
 	m_bConvertToSdr        = config.bConvertToSdr;
@@ -699,6 +702,8 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pPSConvertColor.Release();
 	m_pPSConvertColorDeint.Release();
 
+	m_pPSHDR10ToneMapping.Release();
+
 	m_pShaderUpscaleX.Release();
 	m_pShaderUpscaleY.Release();
 	m_pShaderDownscaleX.Release();
@@ -709,6 +714,8 @@ void CDX11VideoProcessor::ReleaseDevice()
 
 	m_pCorrectionConstants.Release();
 	m_pPostScaleConstants.Release();
+
+	m_pHDR10ToneMappingConstants.Release();
 
 #if TEST_SHADER
 	m_pPS_TEST.Release();
@@ -768,6 +775,9 @@ UINT CDX11VideoProcessor::GetPostScaleSteps()
 {
 	UINT nSteps = m_pPostScaleShaders.size();
 	if (m_pPSCorrection) {
+		nSteps++;
+	}
+	if (m_pPSHDR10ToneMapping) {
 		nSteps++;
 	}
 	if (m_pPSHalfOUtoInterlace) {
@@ -887,6 +897,46 @@ void CDX11VideoProcessor::SetShaderLuminanceParams()
 		D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
 		EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pCorrectionConstants));
 	}
+}
+
+void CDX11VideoProcessor::SetHDR10ShaderParams(float masteringMinLuminanceNits, float masteringMaxLuminanceNits,
+											   float maxCLL, float maxFALL,
+											   float displayMaxNits, int toneMappingType)
+{
+	if (masteringMinLuminanceNits <= 0) masteringMinLuminanceNits = 0;
+	if (masteringMaxLuminanceNits <= 0) masteringMaxLuminanceNits = 1000.f;
+	if (maxCLL <= 0) maxCLL = 1000.f;
+	if (maxFALL <= 0) maxFALL = maxCLL;
+	if (displayMaxNits < 100.f || displayMaxNits > 10000.f) displayMaxNits = 1000.f;
+	if (toneMappingType < 1 || toneMappingType > 6) toneMappingType = 1;
+
+	const HDRParamsConstantBuffer_t cbuffer = {
+		masteringMinLuminanceNits, masteringMaxLuminanceNits,
+		maxCLL, maxFALL,
+		displayMaxNits, static_cast<UINT>(toneMappingType)
+	};
+
+	if (m_pHDR10ToneMappingConstants) {
+		if (memcmp(&m_lastHDRParamsConstantBuffer_t, &cbuffer, sizeof(cbuffer)) == 0) {
+			return;
+		}
+
+		m_pDeviceContext->UpdateSubresource(m_pHDR10ToneMappingConstants, 0, nullptr, &cbuffer, 0, 0);
+	} else {
+		D3D11_BUFFER_DESC BufferDesc = {
+			.ByteWidth = sizeof(cbuffer),
+			.Usage = D3D11_USAGE_DEFAULT,
+			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+		};
+		D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
+		HRESULT result = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pHDR10ToneMappingConstants);
+		if (FAILED(result)) {
+			DLog(L"SetHDR10ShaderLuminanceParams() failed to create m_pHDR10ToneMappingConstants. Error: {}", result);
+		}
+		EXECUTE_ASSERT(S_OK == result);
+	}
+
+	m_lastHDRParamsConstantBuffer_t = cbuffer;
 }
 
 HRESULT CDX11VideoProcessor::SetShaderDoviCurvesPoly()
@@ -1363,7 +1413,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(bool bWindowChanged)
 		HandleHDRToggle();
 		UpdateBitmapShader();
 
-		if (m_bHdrPassthrough && SourceIsPQorHLG()) {
+		if ((m_bHdrPassthrough || m_bHdrLocalToneMapping) && SourceIsPQorHLG()) {
 			m_bHdrAllowSwitchDisplay = false;
 			InitMediaType(&m_pFilter->m_inputMT);
 			m_bHdrAllowSwitchDisplay = true;
@@ -1375,7 +1425,7 @@ HRESULT CDX11VideoProcessor::InitSwapChain(bool bWindowChanged)
 		}
 	}
 
-	const auto bHdrOutput = m_bHdrPassthroughSupport && m_bHdrPassthrough && (SourceIsHDR() || m_bVPUseRTXVideoHDR);
+	const auto bHdrOutput = m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping) && (SourceIsHDR() || m_bVPUseRTXVideoHDR);
 	const auto b10BitOutput = bHdrOutput || Preferred10BitOutput();
 	m_SwapChainFmt = b10BitOutput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
 
@@ -1484,7 +1534,7 @@ bool CDX11VideoProcessor::HandleHDRToggle()
 	bool bEnableHDR = false;
 
 	if (!m_bHDRModeChangeOutside) {
-		if (m_bHdrPassthrough && SourceIsHDR()) {
+		if ((m_bHdrPassthrough || m_bHdrLocalToneMapping) && SourceIsHDR()) {
 			MONITORINFOEXW mi = { sizeof(mi) };
 			GetMonitorInfoW(m_lastFullscreenHMonitor ? m_lastFullscreenHMonitor : MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 			DisplayConfig_t displayConfig = {};
@@ -1753,11 +1803,14 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_pPSConvertColorDeint.Release();
 	m_PSConvColorData.bEnable = false;
 
+	m_pPSHDR10ToneMapping.Release();
+	m_pHDR10ToneMappingConstants.Release();
+
 	UpdateTexParams(FmtParams.CDepth);
 
 	if (m_bHdrAllowSwitchDisplay && m_srcVideoTransferFunction != m_srcExFmt.VideoTransferFunction) {
 		auto ret = HandleHDRToggle();
-		if (!ret && (m_bHdrPassthrough && m_bHdrPassthroughSupport && SourceIsPQorHLG() && !m_pDXGISwapChain4)) {
+		if (!ret && ((m_bHdrPassthrough || m_bHdrLocalToneMapping) && m_bHdrPassthroughSupport && SourceIsPQorHLG() && !m_pDXGISwapChain4)) {
 			ret = true;
 		}
 		if (ret) {
@@ -1785,12 +1838,12 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_709
 								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_240M;
 
-			if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && !(m_bHdrPassthroughSupport && m_bHdrPassthrough) && m_bConvertToSdr) {
+			if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && !(m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping)) && m_bConvertToSdr) {
 				resId = m_D3D11VP.IsPqSupported() ? IDF_PS_11_CONVERT_PQ_TO_SDR : IDF_PS_11_FIXCONVERT_PQ_TO_SDR;
 				m_strCorrection = L"PQ to SDR";
 			}
 			else if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG) {
-				if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
+				if (m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping)) {
 					resId = IDF_PS_11_CONVERT_HLG_TO_PQ;
 					m_strCorrection = L"HLG to PQ";
 				}
@@ -1831,6 +1884,11 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	if (SUCCEEDED(hr)) {
+		if (m_bHdrPassthroughSupport && m_bHdrLocalToneMapping) {
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSHDR10ToneMapping, IDF_PS_11_HDR10_TONEMAP));
+			DLogIf(m_pPSHDR10ToneMapping, L"CDX11VideoProcessor::InitMediaType() m_pPSHDR10ToneMapping(type: '{}') created", m_iHdrLocalToneMappingType);
+		}
+
 		UpdateBitmapShader();
 		UpdateTexures();
 		UpdatePostScaleTexures();
@@ -2116,7 +2174,7 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 	m_hdr10 = {};
 	if (CComQIPtr<IMediaSideData> pMediaSideData = pSample) {
-		if (m_bHdrPassthrough && SourceIsPQorHLG()) {
+		if (SourceIsPQorHLG() && (m_bHdrPassthrough || m_bHdrLocalToneMapping)) {
 			MediaSideDataHDR* hdr = nullptr;
 			size_t size = 0;
 			hr = pMediaSideData->GetSideData(IID_MediaSideDataHDR, (const BYTE**)&hdr, &size);
@@ -2217,24 +2275,66 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				const bool doviStateChanged = !m_Dovi.bValid;
 				m_Dovi.bValid = true;
 
+				// based on libplacebo source code
+				constexpr float
+					PQ_M1 = 2610.f / (4096.f * 4.f),
+					PQ_M2 = 2523.f / 4096.f * 128.f,
+					PQ_C1 = 3424.f / 4096.f,
+					PQ_C2 = 2413.f / 4096.f * 32.f,
+					PQ_C3 = 2392.f / 4096.f * 32.f;
+
+				auto pl_hdr_rescale = [](float x) {
+					x = powf(x, 1.0f / PQ_M2);
+					x = fmaxf(x - PQ_C1, 0.0f) / (PQ_C2 - PQ_C3 * x);
+					x = powf(x, 1.0f / PQ_M1);
+					x *= 10000.0f;
+
+					return x;
+				};
+
+				if (size == sizeof(MediaSideDataDOVIMetadata)) {
+					bool level1Set = false;
+					for (uint32_t i = 0; i < LAV_DOVI_MAX_EXTENSIONS; ++i) {
+						if (pDOVIMetadata->Extensions[i].level == 1) {
+							m_DoviExtensionMetadata.present = true;
+							if (m_DoviExtensionMetadata.min_pq != pDOVIMetadata->Extensions[i].Level1.min_pq
+									|| m_DoviExtensionMetadata.max_pq != pDOVIMetadata->Extensions[i].Level1.max_pq
+									|| m_DoviExtensionMetadata.avg_pq != pDOVIMetadata->Extensions[i].Level1.avg_pq) {
+								m_DoviExtensionMetadata.min_pq = pDOVIMetadata->Extensions[i].Level1.min_pq;
+								m_DoviExtensionMetadata.max_pq = pDOVIMetadata->Extensions[i].Level1.max_pq;
+								m_DoviExtensionMetadata.avg_pq = pDOVIMetadata->Extensions[i].Level1.avg_pq;
+
+								m_DoviExtensionMetadata.min_pq_rescaled = static_cast<UINT>(pl_hdr_rescale(m_DoviExtensionMetadata.min_pq / 4095.f) * 10000.0);
+								m_DoviExtensionMetadata.max_pq_rescaled = static_cast<UINT>(pl_hdr_rescale(m_DoviExtensionMetadata.max_pq / 4095.f));
+								m_DoviExtensionMetadata.avg_pq_rescaled = static_cast<UINT>(pl_hdr_rescale(m_DoviExtensionMetadata.avg_pq / 4095.f));
+
+								level1Set = true;
+							}
+
+							break;
+						}
+					}
+
+					if (level1Set) {
+						for (uint32_t i = 0; i < 32; ++i) {
+							if (pDOVIMetadata->Extensions[i].level == 3) {
+								int targetMinNitsOffset = static_cast<int>(pl_hdr_rescale((pDOVIMetadata->Extensions[i].Level3.min_pq_offset - 2048) / 4095.f) * 10000.0);
+								int targetMaxNitsOffset = static_cast<int>(pl_hdr_rescale((pDOVIMetadata->Extensions[i].Level3.max_pq_offset - 2048) / 4095.f));
+								int targetAvgNitsOffset = static_cast<int>(pl_hdr_rescale((pDOVIMetadata->Extensions[i].Level3.avg_pq_offset - 2048) / 4095.f));
+
+								m_DoviExtensionMetadata.min_pq_rescaled += targetMinNitsOffset;
+								m_DoviExtensionMetadata.max_pq_rescaled += targetMaxNitsOffset;
+								m_DoviExtensionMetadata.avg_pq_rescaled += targetAvgNitsOffset;
+
+								break;
+							}
+						}
+
+						UpdateStatsStatic();
+					}
+				}
+
 				if (bMasteringLuminanceChanged) {
-					// based on libplacebo source code
-					constexpr float
-						PQ_M1 = 2610.f / (4096.f * 4.f),
-						PQ_M2 = 2523.f / 4096.f * 128.f,
-						PQ_C1 = 3424.f / 4096.f,
-						PQ_C2 = 2413.f / 4096.f * 32.f,
-						PQ_C3 = 2392.f / 4096.f * 32.f;
-
-					auto pl_hdr_rescale = [](float x) {
-						x = powf(x, 1.0f / PQ_M2);
-						x = fmaxf(x - PQ_C1, 0.0f) / (PQ_C2 - PQ_C3 * x);
-						x = powf(x, 1.0f / PQ_M1);
-						x *= 10000.0f;
-
-						return x;
-					};
-
 					m_DoviMaxMasteringLuminance = static_cast<UINT>(pl_hdr_rescale(m_Dovi.msd.ColorMetadata.source_max_pq / 4095.f));
 					m_DoviMinMasteringLuminance = static_cast<UINT>(pl_hdr_rescale(m_Dovi.msd.ColorMetadata.source_min_pq / 4095.f) * 10000.0);
 				}
@@ -2373,6 +2473,94 @@ HRESULT CDX11VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTi
 		}
 	}
 
+	if (m_pDXGISwapChain4) {
+		if (m_Dovi.bValid) {
+			if (!m_hdr10.bValid && m_lastHdr10.bValid) {
+				m_hdr10.bValid = true;
+				m_hdr10.hdr10 = m_lastHdr10.hdr10;
+			}
+
+			if (m_hdr10.bValid) {
+				if (m_DoviMaxMasteringLuminance > m_hdr10.hdr10.MaxMasteringLuminance) {
+					m_hdr10.hdr10.MaxMasteringLuminance = m_DoviMaxMasteringLuminance;
+				}
+				if (m_DoviMinMasteringLuminance && m_DoviMinMasteringLuminance != m_hdr10.hdr10.MinMasteringLuminance) {
+					m_hdr10.hdr10.MinMasteringLuminance = m_DoviMinMasteringLuminance;
+				}
+			}
+		}
+
+		const DXGI_COLOR_SPACE_TYPE colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
+		if (m_currentSwapChainColorSpace != colorSpace) {
+			UINT colorSpaceSupport = 0;
+			if (SUCCEEDED(m_pDXGISwapChain4->CheckColorSpaceSupport(colorSpace, &colorSpaceSupport))
+				&& (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) == DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) {
+				hr = m_pDXGISwapChain4->SetColorSpace1(colorSpace);
+				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetColorSpace1() failed with error {}", HR2Str(hr));
+				if (SUCCEEDED(hr)) {
+					m_currentSwapChainColorSpace = colorSpace;
+
+					if (m_hdr10.bValid) {
+						if (m_bHdrPassthrough) {
+							hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10.hdr10);
+							DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
+						}
+
+						m_lastHdr10 = m_hdr10;
+						UpdateStatsStatic();
+					} else if (m_lastHdr10.bValid) {
+						if (m_bHdrPassthrough) {
+							hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_lastHdr10.hdr10);
+							DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(lastHdr) failed with error {}", HR2Str(hr));
+						}
+					} else {
+						m_lastHdr10.bValid = true;
+
+						m_lastHdr10.hdr10.RedPrimary[0] = 34000; // Display P3 primaries
+						m_lastHdr10.hdr10.RedPrimary[1] = 16000;
+						m_lastHdr10.hdr10.GreenPrimary[0] = 13250;
+						m_lastHdr10.hdr10.GreenPrimary[1] = 34500;
+						m_lastHdr10.hdr10.BluePrimary[0] = 7500;
+						m_lastHdr10.hdr10.BluePrimary[1] = 3000;
+						m_lastHdr10.hdr10.WhitePoint[0] = 15635;
+						m_lastHdr10.hdr10.WhitePoint[1] = 16450;
+						m_lastHdr10.hdr10.MaxMasteringLuminance = m_DoviMaxMasteringLuminance ? m_DoviMaxMasteringLuminance : 1000; // 1000 nits
+						m_lastHdr10.hdr10.MinMasteringLuminance = m_DoviMinMasteringLuminance ? m_DoviMinMasteringLuminance : 50;   // 0.005 nits
+
+						if (m_bHdrPassthrough) {
+							hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_lastHdr10.hdr10);
+							DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(Display P3 standard) failed with error {}", HR2Str(hr));
+						}
+
+						UpdateStatsStatic();
+					}
+				}
+			}
+		} else if (m_currentSwapChainColorSpace == colorSpace && m_hdr10.bValid) {
+			if (memcmp(&m_hdr10.hdr10, &m_lastHdr10.hdr10, sizeof(m_hdr10.hdr10)) != 0) {
+				if (m_bHdrPassthrough) {
+					hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10.hdr10);
+					DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
+				}
+
+				m_lastHdr10 = m_hdr10;
+				UpdateStatsStatic();
+			}
+		}
+
+		if (m_bHdrLocalToneMapping) {
+			if (m_DoviExtensionMetadata.present) {
+				SetHDR10ShaderParams(m_DoviExtensionMetadata.min_pq_rescaled, m_DoviExtensionMetadata.max_pq_rescaled,
+									 m_DoviExtensionMetadata.max_pq_rescaled, m_DoviExtensionMetadata.avg_pq_rescaled,
+									 m_iHdrDisplayMaxNits, m_iHdrLocalToneMappingType);
+			} else if (m_lastHdr10.bValid) {
+				SetHDR10ShaderParams(m_lastHdr10.hdr10.MinMasteringLuminance, m_lastHdr10.hdr10.MaxMasteringLuminance,
+									 m_lastHdr10.hdr10.MaxContentLightLevel, m_lastHdr10.hdr10.MaxFrameAverageLightLevel,
+									 m_iHdrDisplayMaxNits, m_iHdrLocalToneMappingType);
+			}
+		}
+	}
+
 	if (!m_renderRect.IsRectEmpty()) {
 		hr = Process(pBackBuffer, m_srcRect, m_videoRect, m_FieldDrawn == 2);
 	}
@@ -2435,73 +2623,6 @@ HRESULT CDX11VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTi
 
 	uint64_t tick3 = GetPreciseTick();
 	m_RenderStats.paintticks = tick3 - tick1;
-
-	if (m_pDXGISwapChain4) {
-		if (m_Dovi.bValid) {
-			if (!m_hdr10.bValid && m_lastHdr10.bValid) {
-				m_hdr10.bValid = true;
-				m_hdr10.hdr10 = m_lastHdr10.hdr10;
-			}
-
-			if (m_hdr10.bValid) {
-				if (m_DoviMaxMasteringLuminance > m_hdr10.hdr10.MaxMasteringLuminance) {
-					m_hdr10.hdr10.MaxMasteringLuminance = m_DoviMaxMasteringLuminance;
-				}
-				if (m_DoviMinMasteringLuminance && m_DoviMinMasteringLuminance != m_hdr10.hdr10.MinMasteringLuminance) {
-					m_hdr10.hdr10.MinMasteringLuminance = m_DoviMinMasteringLuminance;
-				}
-			}
-		}
-
-		const DXGI_COLOR_SPACE_TYPE colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
-		if (m_currentSwapChainColorSpace != colorSpace) {
-			UINT colorSpaceSupport = 0;
-			if (SUCCEEDED(m_pDXGISwapChain4->CheckColorSpaceSupport(colorSpace, &colorSpaceSupport))
-					&& (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) == DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) {
-				hr = m_pDXGISwapChain4->SetColorSpace1(colorSpace);
-				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetColorSpace1() failed with error {}", HR2Str(hr));
-				if (SUCCEEDED(hr)) {
-					m_currentSwapChainColorSpace = colorSpace;
-
-					if (m_hdr10.bValid) {
-						hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10.hdr10);
-						DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
-
-						m_lastHdr10 = m_hdr10;
-						UpdateStatsStatic();
-					} else if (m_lastHdr10.bValid) {
-						hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_lastHdr10.hdr10);
-						DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(lastHdr) failed with error {}", HR2Str(hr));
-					} else {
-						m_lastHdr10.bValid = true;
-
-						m_lastHdr10.hdr10.RedPrimary[0] = 34000; // Display P3 primaries
-						m_lastHdr10.hdr10.RedPrimary[1] = 16000;
-						m_lastHdr10.hdr10.GreenPrimary[0] = 13250;
-						m_lastHdr10.hdr10.GreenPrimary[1] = 34500;
-						m_lastHdr10.hdr10.BluePrimary[0] = 7500;
-						m_lastHdr10.hdr10.BluePrimary[1] = 3000;
-						m_lastHdr10.hdr10.WhitePoint[0] = 15635;
-						m_lastHdr10.hdr10.WhitePoint[1] = 16450;
-						m_lastHdr10.hdr10.MaxMasteringLuminance = m_DoviMaxMasteringLuminance ? m_DoviMaxMasteringLuminance : 1000; // 1000 nits
-						m_lastHdr10.hdr10.MinMasteringLuminance = m_DoviMinMasteringLuminance ? m_DoviMinMasteringLuminance : 50;   // 0.005 nits
-						hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_lastHdr10.hdr10);
-						DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(Display P3 standard) failed with error {}", HR2Str(hr));
-
-						UpdateStatsStatic();
-					}
-				}
-			}
-		} else if (m_currentSwapChainColorSpace == colorSpace && m_hdr10.bValid) {
-			if (memcmp(&m_hdr10.hdr10, &m_lastHdr10.hdr10, sizeof(m_hdr10.hdr10)) != 0) {
-				hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10.hdr10);
-				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
-
-				m_lastHdr10 = m_hdr10;
-				UpdateStatsStatic();
-			}
-		}
-	}
 
 	if (m_bVBlankBeforePresent && m_pDXGIOutput) {
 		hr = m_pDXGIOutput->WaitForVBlank();
@@ -2659,8 +2780,8 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 	m_pPSConvertColorDeint.Release();
 	ID3DBlob* pShaderCode = nullptr;
 
-	int convertType = (m_bConvertToSdr && !(m_bHdrPassthroughSupport && m_bHdrPassthrough)) ? SHADER_CONVERT_TO_SDR
-		: (m_bHdrPassthroughSupport && m_bHdrPassthrough && m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG) ? SHADER_CONVERT_TO_PQ
+	int convertType = (m_bConvertToSdr && !(m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping))) ? SHADER_CONVERT_TO_SDR
+		: (m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping) && m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG) ? SHADER_CONVERT_TO_PQ
 		: SHADER_CONVERT_NONE;
 
 	MediaSideDataDOVIMetadata* pDOVIMetadata = m_Dovi.bValid ? &m_Dovi.msd : nullptr;
@@ -3009,7 +3130,7 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 			const bool bNeedShaderTransform =
 				(m_TexConvertOutput.desc.Width != dstRect.Width() || m_TexConvertOutput.desc.Height != dstRect.Height() || m_bFlip
 				|| dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom)
-				|| (m_bHdrPassthroughSupport && m_bHdrPassthrough); // At least on Nvidia we can sometimes get the "D3D11: Removing Device" error here when HDR Passthrough.
+				|| (m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping)); // At least on Nvidia we can sometimes get the "D3D11: Removing Device" error here when HDR Passthrough.
 			if (!bNeedShaderTransform && !numSteps) {
 				m_bVPScalingUseShaders = false;
 				hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
@@ -3065,6 +3186,11 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 		if (m_pPSCorrection) {
 			StepSetting();
 			hr = TextureCopyRect(*pInputTexture, pRT, rect, rect, m_pPSCorrection, m_pCorrectionConstants, 0, false);
+		}
+
+		if (m_pPSHDR10ToneMapping) {
+			StepSetting();
+			hr = TextureCopyRect(*pInputTexture, pRT, rect, rect, m_pPSHDR10ToneMapping, m_pHDR10ToneMappingConstants, 0, false);
 		}
 
 		if (m_pPostScaleShaders.size()) {
@@ -3164,7 +3290,7 @@ HRESULT CDX11VideoProcessor::Reset(bool bDisplayModeChange)
 		}
 	}
 
-	if (m_bHdrPassthrough && SourceIsPQorHLG()) {
+	if ((m_bHdrPassthrough || m_bHdrLocalToneMapping) && SourceIsPQorHLG()) {
 		MONITORINFOEXW mi = { sizeof(mi) };
 		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 		DisplayConfig_t displayConfig = {};
@@ -3224,9 +3350,14 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 		return hr;
 	}
 
-	const bool bHdrPassthrough = (m_bHdrPassthroughSupport && m_bHdrPassthrough && (SourceIsHDR() || m_bVPUseRTXVideoHDR));
+	const bool bHdrPassthrough = (m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping) && (SourceIsHDR() || m_bVPUseRTXVideoHDR));
+	const bool bSavedHdrPassthrough = m_bHdrPassthrough;
+	const bool bSavedHdrLocalToneMapping = m_bHdrLocalToneMapping;
 
 	if (bHdrPassthrough) {
+		m_pPSHDR10ToneMapping.Release();
+		m_pHDR10ToneMappingConstants.Release();
+
 		if (m_D3D11VP.IsReady()) {
 			m_pPSCorrection.Release();
 
@@ -3235,6 +3366,7 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 			SetShaderLuminanceParams();
 		} else {
 			m_bHdrPassthrough = false;
+			m_bHdrLocalToneMapping = false;
 			UpdateConvertColorShader();
 		}
 	}
@@ -3267,8 +3399,14 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_CONVERT_HLG_TO_PQ));
 			}
 		} else {
-			m_bHdrPassthrough = true;
+			m_bHdrPassthrough = bSavedHdrPassthrough;
+			m_bHdrLocalToneMapping = bSavedHdrLocalToneMapping;
 			UpdateConvertColorShader();
+		}
+
+		if (m_bHdrPassthroughSupport && m_bHdrLocalToneMapping) {
+			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSHDR10ToneMapping, IDF_PS_11_HDR10_TONEMAP));
+			DLogIf(m_pPSHDR10ToneMapping, L"CDX11VideoProcessor::InitMediaType() m_pPSHDR10ToneMapping(type: '{}') created", m_iHdrLocalToneMappingType);
 		}
 	}
 
@@ -3592,6 +3730,20 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		changeHDR = true;
 	}
 
+	if (config.bHdrLocalToneMapping != m_bHdrLocalToneMapping ||
+			config.iHdrLocalToneMappingType != m_iHdrLocalToneMappingType) {
+		m_bHdrLocalToneMapping = config.bHdrLocalToneMapping;
+		m_iHdrLocalToneMappingType = config.iHdrLocalToneMappingType;
+		//m_lastHdr10.hdr10 = {};
+		//changeHDR = true;
+	}
+
+	if (config.iHdrDisplayMaxNits != m_iHdrDisplayMaxNits) {
+		m_iHdrDisplayMaxNits = config.iHdrDisplayMaxNits;
+		//m_lastHdr10.hdr10 = {};
+		//changeHDR = true;
+	}
+
 	if (config.iHdrToggleDisplay != m_iHdrToggleDisplay) {
 		if (config.iHdrToggleDisplay == HDRTD_Disabled || m_iHdrToggleDisplay == HDRTD_Disabled) {
 			changeHDR = true;
@@ -3912,12 +4064,41 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 
 		if (SourceIsHDR() || m_bVPUseRTXVideoHDR) {
 			m_strStatsHDR.assign(L"\nHDR processing: ");
-			if (m_bHdrPassthroughSupport && m_bHdrPassthrough) {
-				m_strStatsHDR.append(L"Passthrough");
+			if (m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping)) {
+				if (m_bHdrPassthrough) {
+					m_strStatsHDR.append(L"Passthrough");
+				} else if (m_bHdrLocalToneMapping) {
+					m_strStatsHDR.append(L"Local tone mapping:");
+					switch (m_iHdrLocalToneMappingType) {
+						case 1:
+							m_strStatsHDR.append(L" ACES");
+							break;
+						case 2:
+							m_strStatsHDR.append(L" Reinhard");
+							break;
+						case 3:
+							m_strStatsHDR.append(L" Habel");
+							break;
+						case 4:
+							m_strStatsHDR.append(L" Mobius");
+							break;
+						case 5:
+							m_strStatsHDR.append(L" BT2390");
+							break;
+						case 6:
+							m_strStatsHDR.append(L" ST 2094-10");
+							break;
+						default:
+							break;
+					}
+					m_strStatsHDR.append(std::format(L"\n Display Max Nits: {} nits", m_iHdrDisplayMaxNits));
+				}
 				if (m_bVPUseRTXVideoHDR) {
 					m_strStatsHDR.append(L", RTX Video HDR*");
 				}
-				if (m_lastHdr10.bValid) {
+				if (m_bHdrLocalToneMapping && m_DoviExtensionMetadata.present) {
+					m_strStatsHDR += std::format(L", {} nits", m_DoviExtensionMetadata.max_pq_rescaled);
+				} else if (m_lastHdr10.bValid) {
 					m_strStatsHDR += std::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance);
 				}
 			} else if (m_bConvertToSdr) {

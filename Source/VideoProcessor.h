@@ -1,5 +1,5 @@
 /*
- * (C) 2020-2025 see Authors.txt
+ * (C) 2020-2026 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -64,6 +64,9 @@ protected:
 	bool m_bAdjustPresentTime              = true;
 	bool m_bHdrPreferDoVi                  = false;
 	bool m_bHdrPassthrough                 = true;
+	bool m_bHdrLocalToneMapping            = false;
+	int  m_iHdrLocalToneMappingType        = 0;
+	int  m_iHdrDisplayMaxNits              = 1000;
 	int  m_iHdrToggleDisplay               = HDRTD_Disabled;
 	int  m_iHdrOsdBrightness               = 0;
 	bool m_bConvertToSdr                   = true;

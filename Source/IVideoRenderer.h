@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2025 see Authors.txt
+ * (C) 2018-2026 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -90,6 +90,10 @@ enum :int {
 #define SDR_NITS_MAX 400
 #define SDR_NITS_STEP  5
 
+constexpr inline auto HDR_NITS_DEF = 1000;
+constexpr inline auto HDR_NITS_MIN = 100;
+constexpr inline auto HDR_NITS_MAX = 10000;
+
 struct VPEnableFormats_t {
 	bool bNV12;
 	bool bP01x;
@@ -125,6 +129,9 @@ struct Settings_t {
 	int  iHdrOsdBrightness;
 	bool bConvertToSdr;
 	int  iSDRDisplayNits;
+	bool bHdrLocalToneMapping;
+	int  iHdrLocalToneMappingType;
+	int iHdrDisplayMaxNits;
 
 	Settings_t() {
 		SetDefault();
@@ -162,8 +169,14 @@ struct Settings_t {
 		bHdrPreferDoVi                  = false;
 		if (IsWindows10OrGreater()) {
 			bHdrPassthrough             = true;
+			bHdrLocalToneMapping        = false;
+			iHdrLocalToneMappingType    = 1;
+			iHdrDisplayMaxNits          = 1000;
 		} else {
 			bHdrPassthrough             = false;
+			bHdrLocalToneMapping        = false;
+			iHdrLocalToneMappingType    = 1;
+			iHdrDisplayMaxNits          = 1000;
 		}
 		iHdrToggleDisplay               = HDRTD_Disabled;
 		bConvertToSdr                   = true;

@@ -85,9 +85,11 @@
 #define IDF_PS_11_HALFOU_TO_INTERLACE   870
 #define IDF_PS_11_FINAL_PASS            880
 #define IDF_PS_11_FINAL_PASS_10         881
+#define IDF_PS_11_HDR10_TONEMAP         882
 #define IDF_PS_11_TEST                  900
 #define IDC_EDIT1                       1001
 #define IDC_EDIT2                       1002
+#define IDC_EDIT_DISPLAYMAX             1003
 #define IDC_STATIC1                     1011
 #define IDC_STATIC2                     1012
 #define IDC_STATIC3                     1013
@@ -127,6 +129,9 @@
 #define IDC_BUTTON1                     1051
 #define IDC_SLIDER1                     1061
 #define IDC_SLIDER2                     1062
+#define IDC_COMBO10                     1063
+#define IDC_STATIC99                    1064
+#define IDC_STATIC100                   1065
 
 // Next default values for new objects
 // 

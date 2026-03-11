@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2025 see Authors.txt
+ * (C) 2018-2026 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -98,8 +98,15 @@ void CVRMainPPage::SetControls()
 	SendDlgItemMessageW(IDC_COMBO8, CB_SETCURSEL, m_SetsPP.iVPSuperRes, 0);
 	CheckDlgButton(IDC_CHECK19, m_SetsPP.bVPRTXVideoHDR       ? BST_CHECKED : BST_UNCHECKED);
 
+	if (m_SetsPP.bHdrPassthrough) {
+		ComboBox_SelectByItemData(m_hWnd, IDC_COMBO10, 0);
+	} else if (m_SetsPP.bHdrLocalToneMapping) {
+		ComboBox_SelectByItemData(m_hWnd, IDC_COMBO10, m_SetsPP.iHdrLocalToneMappingType);
+	} else {
+		ComboBox_SelectByItemData(m_hWnd, IDC_COMBO10, -1);
+	}
+
 	CheckDlgButton(IDC_CHECK18, m_SetsPP.bHdrPreferDoVi       ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(IDC_CHECK12, m_SetsPP.bHdrPassthrough      ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr        ? BST_CHECKED : BST_UNCHECKED);
 
 	SendDlgItemMessageW(IDC_COMBO7, CB_SETCURSEL, m_SetsPP.iHdrToggleDisplay, 0);
@@ -123,6 +130,9 @@ void CVRMainPPage::SetControls()
 	SendDlgItemMessageW(IDC_COMBO2, CB_SETCURSEL, m_SetsPP.iUpscaling, 0);
 	SendDlgItemMessageW(IDC_COMBO3, CB_SETCURSEL, m_SetsPP.iDownscaling, 0);
 	SendDlgItemMessageW(IDC_COMBO4, CB_SETCURSEL, m_SetsPP.iSwapEffect, 0);
+
+	m_SetsPP.iHdrDisplayMaxNits = discard<int>(m_SetsPP.iHdrDisplayMaxNits, HDR_NITS_DEF, HDR_NITS_MIN, HDR_NITS_MAX);
+	SetDlgItemTextW(IDC_EDIT_DISPLAYMAX, std::to_wstring(m_SetsPP.iHdrDisplayMaxNits).c_str());
 }
 
 void CVRMainPPage::EnableControls()
@@ -142,7 +152,7 @@ void CVRMainPPage::EnableControls()
 	}
 	else if (IsWindows10OrGreater()) {
 		const BOOL bEnable = m_SetsPP.bUseD3D11;
-		GetDlgItem(IDC_CHECK12).EnableWindow(bEnable);
+		GetDlgItem(IDC_COMBO10).EnableWindow(bEnable);
 		GetDlgItem(IDC_STATIC5).EnableWindow(bEnable);
 		GetDlgItem(IDC_COMBO7).EnableWindow(bEnable);
 		GetDlgItem(IDC_STATIC6).EnableWindow(bEnable);
@@ -157,6 +167,7 @@ void CVRMainPPage::EnableControls()
 	GetDlgItem(IDC_STATIC8).EnableWindow(m_SetsPP.bConvertToSdr);
 	GetDlgItem(IDC_EDIT1).EnableWindow(m_SetsPP.bConvertToSdr);
 	GetDlgItem(IDC_SLIDER2).EnableWindow(m_SetsPP.bConvertToSdr);
+	GetDlgItem(IDC_EDIT_DISPLAYMAX).EnableWindow(m_SetsPP.bHdrLocalToneMapping);
 }
 
 HRESULT CVRMainPPage::OnConnect(IUnknown *pUnk)
@@ -202,7 +213,7 @@ HRESULT CVRMainPPage::OnActivate()
 		m_SetsPP.bUseD3D11 = false;
 	}
 	if (!IsWindows10OrGreater()) {
-		GetDlgItem(IDC_CHECK12).EnableWindow(FALSE);
+		GetDlgItem(IDC_COMBO10).EnableWindow(FALSE);
 		GetDlgItem(IDC_STATIC5).EnableWindow(FALSE);
 		GetDlgItem(IDC_COMBO7).EnableWindow(FALSE);
 		GetDlgItem(IDC_STATIC6).EnableWindow(FALSE);
@@ -274,6 +285,15 @@ HRESULT CVRMainPPage::OnActivate()
 	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETPAGESIZE, 0, 5); // clicks on trackbar's channel
 
 	SetDlgItemTextW(IDC_EDIT2, GetNameAndVersion());
+
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Ignore", -1);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Passthrough", 0);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"ACES", 1);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Reinhard", 2);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Hable", 3);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Mobius", 4);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"BT2390", 5);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"ST 2094-10", 6);
 
 	SetControls();
 
@@ -396,12 +416,6 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				SetDirty();
 				return (LRESULT)1;
 			}
-			if (nID == IDC_CHECK12) {
-				m_SetsPP.bHdrPassthrough = IsDlgButtonChecked(IDC_CHECK12) == BST_CHECKED;
-				EnableControls();
-				SetDirty();
-				return (LRESULT)1;
-			}
 			if (nID == IDC_CHECK14) {
 				m_SetsPP.bConvertToSdr = IsDlgButtonChecked(IDC_CHECK14) == BST_CHECKED;
 				EnableControls();
@@ -498,6 +512,59 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				}
 				return (LRESULT)1;
 			}
+			if (nID == IDC_COMBO10) {
+				lValue = SendDlgItemMessageW(IDC_COMBO10, CB_GETCURSEL, 0, 0);
+				switch (lValue) {
+					case 0:
+						m_SetsPP.bHdrPassthrough = false;
+						m_SetsPP.bHdrLocalToneMapping = false;
+						break;
+					case 1:
+						m_SetsPP.bHdrPassthrough = true;
+						m_SetsPP.bHdrLocalToneMapping = false;
+						break;
+					case 2:
+						m_SetsPP.bHdrPassthrough = false;
+						m_SetsPP.bHdrLocalToneMapping = true;
+						m_SetsPP.iHdrLocalToneMappingType = 1;
+						break;
+					case 3:
+						m_SetsPP.bHdrPassthrough = false;
+						m_SetsPP.bHdrLocalToneMapping = true;
+						m_SetsPP.iHdrLocalToneMappingType = 2;
+						break;
+					case 4:
+						m_SetsPP.bHdrPassthrough = false;
+						m_SetsPP.bHdrLocalToneMapping = true;
+						m_SetsPP.iHdrLocalToneMappingType = 3;
+						break;
+					case 5:
+						m_SetsPP.bHdrPassthrough = false;
+						m_SetsPP.bHdrLocalToneMapping = true;
+						m_SetsPP.iHdrLocalToneMappingType = 4;
+						break;
+					case 6:
+						m_SetsPP.bHdrPassthrough = false;
+						m_SetsPP.bHdrLocalToneMapping = true;
+						m_SetsPP.iHdrLocalToneMappingType = 5;
+						break;
+					case 7:
+						m_SetsPP.bHdrPassthrough = false;
+						m_SetsPP.bHdrLocalToneMapping = true;
+						m_SetsPP.iHdrLocalToneMappingType = 6;
+						break;
+					default:
+						break;
+				}
+				SetDirty();
+				EnableControls();
+				return (LRESULT)1;
+			}
+		}
+		if (action == EN_CHANGE) {
+			if (nID == IDC_EDIT_DISPLAYMAX) {
+				SetDirty();
+			}
 		}
 	}
 	else if (uMsg == WM_HSCROLL) {
@@ -534,6 +601,23 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 
 HRESULT CVRMainPPage::OnApplyChanges()
 {
+	wchar_t data[32] = {};
+	GetDlgItemTextW(IDC_EDIT_DISPLAYMAX, data, 32);
+	int displayMaxNits;
+	try {
+		displayMaxNits = std::stoi(data);
+	} catch (const std::exception&) {
+		MessageBoxW(L"Invalid HDR Brightness. Please enter a valid number from 100 to 10000.", L"Error", MB_OK | MB_ICONERROR);
+		return S_FALSE;
+	}
+
+	if (displayMaxNits <= HDR_NITS_MIN || displayMaxNits > HDR_NITS_MAX) {
+		MessageBoxW(L"Invalid HDR Brightness. Please enter a valid number from 100 to 10000.", L"Error", MB_OK | MB_ICONERROR);
+		return S_FALSE;
+	}
+	// if not error then set to m_setsPP
+	m_SetsPP.iHdrDisplayMaxNits = displayMaxNits;
+
 	m_pVideoRenderer->SetSettings(m_SetsPP);
 	m_pVideoRenderer->SaveSettings();
 
