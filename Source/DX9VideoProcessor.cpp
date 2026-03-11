@@ -1364,9 +1364,18 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 
 		if (m_srcParams.CSType == CS_YUV && (m_bHdrPreferDoVi || !SourceIsPQorHLG())) {
 			MediaSideDataDOVIMetadata* pDOVIMetadata = nullptr;
-			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
-			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataDOVIMetadata) && CheckDoviMetadata(pDOVIMetadata, 0)) {
-
+			hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadataV2, (const BYTE**)&pDOVIMetadata, &size);
+			if (SUCCEEDED(hr)) {
+				if (size != sizeof(MediaSideDataDOVIMetadata)) {
+					hr = E_FAIL;
+				}
+			} else {
+				hr = pMediaSideData->GetSideData(IID_MediaSideDataDOVIMetadata, (const BYTE**)&pDOVIMetadata, &size);
+				if (size != offsetof(MediaSideDataDOVIMetadata, Extensions)) {
+					hr = E_FAIL;
+				}
+			}
+			if (SUCCEEDED(hr) && CheckDoviMetadata(pDOVIMetadata, 0)) {
 				const bool bYCCtoRGBChanged = !m_PSConvColorData.bEnable ||
 					(memcmp(
 						&m_Dovi.msd.ColorMetadata.ycc_to_rgb_matrix,
@@ -1386,7 +1395,7 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 						sizeof(MediaSideDataDOVIMetadata::Mapping.curves)
 					) != 0);
 
-				memcpy(&m_Dovi.msd, pDOVIMetadata, sizeof(MediaSideDataDOVIMetadata));
+				memcpy(&m_Dovi.msd, pDOVIMetadata, size);
 				const bool updateStats = !m_Dovi.bValid;
 				m_Dovi.bValid = true;
 
