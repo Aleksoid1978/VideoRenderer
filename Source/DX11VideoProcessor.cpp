@@ -1884,7 +1884,8 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	}
 
 	if (SUCCEEDED(hr)) {
-		if (m_bHdrPassthroughSupport && m_bHdrLocalToneMapping) {
+		if (m_bHdrPassthroughSupport && m_bHdrLocalToneMapping && SourceIsPQorHLG()) {
+			m_pPSHDR10ToneMapping.Release();
 			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSHDR10ToneMapping, IDF_PS_11_HDR10_TONEMAP));
 			DLogIf(m_pPSHDR10ToneMapping, L"CDX11VideoProcessor::InitMediaType() m_pPSHDR10ToneMapping(type: '{}') created", m_iHdrLocalToneMappingType);
 		}
