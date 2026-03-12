@@ -2510,45 +2510,47 @@ HRESULT CDX11VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTi
 		if (m_currentSwapChainColorSpace != colorSpace) {
 			UINT colorSpaceSupport = 0;
 			if (SUCCEEDED(m_pDXGISwapChain4->CheckColorSpaceSupport(colorSpace, &colorSpaceSupport))
-				&& (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) == DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) {
+					&& (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) == DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) {
 				hr = m_pDXGISwapChain4->SetColorSpace1(colorSpace);
 				DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetColorSpace1() failed with error {}", HR2Str(hr));
 				if (SUCCEEDED(hr)) {
 					m_currentSwapChainColorSpace = colorSpace;
 
-					if (m_hdr10.bValid) {
-						if (m_bHdrPassthrough) {
-							hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10.hdr10);
-							DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
+					if (!m_bVPUseRTXVideoHDR) {
+						if (m_hdr10.bValid) {
+							if (m_bHdrPassthrough) {
+								hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_hdr10.hdr10);
+								DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(hdr) failed with error {}", HR2Str(hr));
+							}
+
+							m_lastHdr10 = m_hdr10;
+							UpdateStatsStatic();
+						} else if (m_lastHdr10.bValid) {
+							if (m_bHdrPassthrough) {
+								hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_lastHdr10.hdr10);
+								DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(lastHdr) failed with error {}", HR2Str(hr));
+							}
+						} else {
+							m_lastHdr10.bValid = true;
+
+							m_lastHdr10.hdr10.RedPrimary[0] = 34000; // Display P3 primaries
+							m_lastHdr10.hdr10.RedPrimary[1] = 16000;
+							m_lastHdr10.hdr10.GreenPrimary[0] = 13250;
+							m_lastHdr10.hdr10.GreenPrimary[1] = 34500;
+							m_lastHdr10.hdr10.BluePrimary[0] = 7500;
+							m_lastHdr10.hdr10.BluePrimary[1] = 3000;
+							m_lastHdr10.hdr10.WhitePoint[0] = 15635;
+							m_lastHdr10.hdr10.WhitePoint[1] = 16450;
+							m_lastHdr10.hdr10.MaxMasteringLuminance = m_DoviMaxMasteringLuminance ? m_DoviMaxMasteringLuminance : 1000; // 1000 nits
+							m_lastHdr10.hdr10.MinMasteringLuminance = m_DoviMinMasteringLuminance ? m_DoviMinMasteringLuminance : 50;   // 0.005 nits
+
+							if (m_bHdrPassthrough) {
+								hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_lastHdr10.hdr10);
+								DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(Display P3 standard) failed with error {}", HR2Str(hr));
+							}
+
+							UpdateStatsStatic();
 						}
-
-						m_lastHdr10 = m_hdr10;
-						UpdateStatsStatic();
-					} else if (m_lastHdr10.bValid) {
-						if (m_bHdrPassthrough) {
-							hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_lastHdr10.hdr10);
-							DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(lastHdr) failed with error {}", HR2Str(hr));
-						}
-					} else {
-						m_lastHdr10.bValid = true;
-
-						m_lastHdr10.hdr10.RedPrimary[0] = 34000; // Display P3 primaries
-						m_lastHdr10.hdr10.RedPrimary[1] = 16000;
-						m_lastHdr10.hdr10.GreenPrimary[0] = 13250;
-						m_lastHdr10.hdr10.GreenPrimary[1] = 34500;
-						m_lastHdr10.hdr10.BluePrimary[0] = 7500;
-						m_lastHdr10.hdr10.BluePrimary[1] = 3000;
-						m_lastHdr10.hdr10.WhitePoint[0] = 15635;
-						m_lastHdr10.hdr10.WhitePoint[1] = 16450;
-						m_lastHdr10.hdr10.MaxMasteringLuminance = m_DoviMaxMasteringLuminance ? m_DoviMaxMasteringLuminance : 1000; // 1000 nits
-						m_lastHdr10.hdr10.MinMasteringLuminance = m_DoviMinMasteringLuminance ? m_DoviMinMasteringLuminance : 50;   // 0.005 nits
-
-						if (m_bHdrPassthrough) {
-							hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_lastHdr10.hdr10);
-							DLogIf(FAILED(hr), L"CDX11VideoProcessor::Render() : SetHDRMetaData(Display P3 standard) failed with error {}", HR2Str(hr));
-						}
-
-						UpdateStatsStatic();
 					}
 				}
 			}
@@ -2564,7 +2566,7 @@ HRESULT CDX11VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTi
 			}
 		}
 
-		if (m_bHdrLocalToneMapping) {
+		if (m_bHdrLocalToneMapping && m_currentSwapChainColorSpace == colorSpace) {
 			if (m_DoviExtensionMetadata.present) {
 				SetHDR10ShaderParams(m_DoviExtensionMetadata.min_pq_rescaled, m_DoviExtensionMetadata.max_pq_rescaled,
 									 m_DoviExtensionMetadata.max_pq_rescaled, m_DoviExtensionMetadata.avg_pq_rescaled,
