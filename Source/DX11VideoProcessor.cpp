@@ -909,9 +909,9 @@ void CDX11VideoProcessor::SetHDR10ShaderParams(float masteringMinLuminanceNits, 
 {
 	if (masteringMinLuminanceNits <= 0.f) masteringMinLuminanceNits = 0.f;
 	if (masteringMaxLuminanceNits <= 10.f) masteringMaxLuminanceNits = 1000.f;
-	if (displayMaxNits < 100.f || displayMaxNits > 10000.f) displayMaxNits = 1000.f;
-	if (maxCLL <= 10.f) maxCLL = displayMaxNits;
+	if (maxCLL <= 10.f) maxCLL = masteringMaxLuminanceNits;
 	if (maxFALL <= 1.f) maxFALL = maxCLL;
+	if (displayMaxNits < 100.f || displayMaxNits > 10000.f) displayMaxNits = 1000.f;
 	if (toneMappingType < 1 || toneMappingType > 6) toneMappingType = 1;
 
 	const HDRParamsConstantBuffer_t cbuffer = {
