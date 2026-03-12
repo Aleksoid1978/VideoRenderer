@@ -33,6 +33,8 @@
 #include "Shaders.h"
 #include "Utils/CPUInfo.h"
 
+#include <dxgi1_6.h>
+
 #include "../external/minhook/include/MinHook.h"
 
 bool g_bPresent = false;
@@ -769,6 +771,8 @@ void CDX11VideoProcessor::ReleaseSwapChain()
 	m_pDXGIOutput.Release();
 	m_pDXGISwapChain4.Release();
 	m_pDXGISwapChain1.Release();
+
+	m_MaxDisplayLuminance = 0;
 }
 
 UINT CDX11VideoProcessor::GetPostScaleSteps()
@@ -1507,6 +1511,16 @@ HRESULT CDX11VideoProcessor::InitSwapChain(bool bWindowChanged)
 		m_currentSwapChainColorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 		if (bHdrOutput) {
 			hr2 = m_pDXGISwapChain1->QueryInterface(IID_PPV_ARGS(&m_pDXGISwapChain4));
+
+			CComPtr<IDXGIOutput6> pDXGIOutput6;
+			if (SUCCEEDED(m_pDXGIOutput->QueryInterface(IID_PPV_ARGS(&pDXGIOutput6)))) {
+				DXGI_OUTPUT_DESC1 desc;
+				if (SUCCEEDED(pDXGIOutput6->GetDesc1(&desc))) {
+					m_MaxDisplayLuminance = static_cast<UINT>(desc.MaxLuminance);
+
+					m_pFilter->UpdateDisplayInfo();
+				}
+			}
 		}
 	}
 

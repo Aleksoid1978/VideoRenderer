@@ -161,6 +161,8 @@ protected:
 
 	int m_nStereoSubtitlesOffsetInPixels = 4;
 
+	UINT m_MaxDisplayLuminance = 0;
+
 	CVideoProcessor(CMpcVideoRenderer* pFilter) : m_pFilter(pFilter) {}
 
 public:

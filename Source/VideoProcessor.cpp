@@ -1,5 +1,5 @@
 /*
- * (C) 2020-2025 see Authors.txt
+ * (C) 2020-2026 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -158,9 +158,13 @@ void CVideoProcessor::SetDisplayInfo(const DisplayConfig_t& dc, const bool prima
 			if (colenc) {
 				str = std::format(L"\n  Color: {} {}-bit", colenc, dc.bitsPerChannel);
 				if (dc.HDRSupported()) {
-					str.append(std::format(L" HDR10: {}", dc.HDREnabled() ? L"on" : L"off"));
+					str.append(std::format(L" HDR10: {}", dc.HDREnabled() ? L"On" : L"Off"));
 					if (!dc.HDREnabled() && dc.ACMEnabled()) {
-						str.append(L" ACM: on");
+						str.append(L" ACM: On");
+					}
+
+					if (dc.HDREnabled() && m_MaxDisplayLuminance >= 100) {
+						str.append(std::format(L", Max Luminance: {} nits", m_MaxDisplayLuminance));
 					}
 				}
 			}
