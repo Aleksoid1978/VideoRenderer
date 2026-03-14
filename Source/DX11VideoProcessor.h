@@ -196,15 +196,16 @@ private:
 	UINT m_DoviMinMasteringLuminance = 0;
 
 	struct DoviExtensionMetadata_t {
-		uint16_t min_pq = 0;
-		uint16_t max_pq = 0;
-		uint16_t avg_pq = 0;
-		UINT min_pq_rescaled = 0;
-		UINT max_pq_rescaled = 0;
-		UINT avg_pq_rescaled = 0;
-		bool present = false;
-	};
-	DoviExtensionMetadata_t m_DoviExtensionMetadata;
+		struct L1_t {
+			uint16_t min_pq = 0;
+			uint16_t max_pq = 0;
+			uint16_t avg_pq = 0;
+			UINT min_pq_rescaled = 0;
+			UINT max_pq_rescaled = 0;
+			UINT avg_pq_rescaled = 0;
+			bool present = false;
+		} L1;
+	} m_DoviExtensionMetadata;
 
 	HMONITOR m_lastFullscreenHMonitor = nullptr;
 
