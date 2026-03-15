@@ -2312,38 +2312,40 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					bool level1Set = false;
 					for (uint32_t i = 0; i < LAV_DOVI_MAX_EXTENSIONS; ++i) {
 						if (pDOVIMetadata->Extensions[i].level == 1) {
+							auto& Level1 = pDOVIMetadata->Extensions[i].Level1;
+
 							m_DoviExtensionMetadata.L1.present = true;
-							if (m_DoviExtensionMetadata.L1.min_pq != pDOVIMetadata->Extensions[i].Level1.min_pq
-									|| m_DoviExtensionMetadata.L1.max_pq != pDOVIMetadata->Extensions[i].Level1.max_pq
-									|| m_DoviExtensionMetadata.L1.avg_pq != pDOVIMetadata->Extensions[i].Level1.avg_pq) {
-								m_DoviExtensionMetadata.L1.min_pq = pDOVIMetadata->Extensions[i].Level1.min_pq;
-								m_DoviExtensionMetadata.L1.max_pq = pDOVIMetadata->Extensions[i].Level1.max_pq;
-								m_DoviExtensionMetadata.L1.avg_pq = pDOVIMetadata->Extensions[i].Level1.avg_pq;
+							m_DoviExtensionMetadata.L1.min_pq = Level1.min_pq;
+							m_DoviExtensionMetadata.L1.max_pq = Level1.max_pq;
+							m_DoviExtensionMetadata.L1.avg_pq = Level1.avg_pq;
 
-								m_DoviExtensionMetadata.L1.min_pq_rescaled = static_cast<UINT>(pl_hdr_rescale(m_DoviExtensionMetadata.L1.min_pq / 4095.f) * 10000.0);
-								m_DoviExtensionMetadata.L1.max_pq_rescaled = static_cast<UINT>(pl_hdr_rescale(m_DoviExtensionMetadata.L1.max_pq / 4095.f));
-								m_DoviExtensionMetadata.L1.avg_pq_rescaled = static_cast<UINT>(pl_hdr_rescale(m_DoviExtensionMetadata.L1.avg_pq / 4095.f));
-
-								level1Set = true;
-							}
-
+							level1Set = true;
 							break;
 						}
 					}
 
 					if (level1Set) {
+						bool level3Set = false;
 						for (uint32_t i = 0; i < 32; ++i) {
 							if (pDOVIMetadata->Extensions[i].level == 3) {
-								int targetMinNitsOffset = static_cast<int>(pl_hdr_rescale((pDOVIMetadata->Extensions[i].Level3.min_pq_offset - 2048) / 4095.f) * 10000.0);
-								int targetMaxNitsOffset = static_cast<int>(pl_hdr_rescale((pDOVIMetadata->Extensions[i].Level3.max_pq_offset - 2048) / 4095.f));
-								int targetAvgNitsOffset = static_cast<int>(pl_hdr_rescale((pDOVIMetadata->Extensions[i].Level3.avg_pq_offset - 2048) / 4095.f));
+								auto& Level3 = pDOVIMetadata->Extensions[i].Level3;
 
-								m_DoviExtensionMetadata.L1.min_pq_rescaled += targetMinNitsOffset;
-								m_DoviExtensionMetadata.L1.max_pq_rescaled += targetMaxNitsOffset;
-								m_DoviExtensionMetadata.L1.avg_pq_rescaled += targetAvgNitsOffset;
+								m_DoviExtensionMetadata.L1.min_pq_rescaled = static_cast<UINT>(
+									(pl_hdr_rescale(m_DoviExtensionMetadata.L1.min_pq + Level3.min_pq_offset - 2048) / 4095.f) * 10000.0);
+								m_DoviExtensionMetadata.L1.max_pq_rescaled = static_cast<UINT>(
+									pl_hdr_rescale((m_DoviExtensionMetadata.L1.max_pq + Level3.max_pq_offset - 2048) / 4095.f));
+								m_DoviExtensionMetadata.L1.avg_pq_rescaled = static_cast<UINT>(
+									pl_hdr_rescale((m_DoviExtensionMetadata.L1.avg_pq + Level3.avg_pq_offset - 2048) / 4095.f));
 
+								level3Set = true;
 								break;
 							}
+						}
+
+						if (!level3Set) {
+							m_DoviExtensionMetadata.L1.min_pq_rescaled = static_cast<UINT>(pl_hdr_rescale(m_DoviExtensionMetadata.L1.min_pq / 4095.f) * 10000.0);
+							m_DoviExtensionMetadata.L1.max_pq_rescaled = static_cast<UINT>(pl_hdr_rescale(m_DoviExtensionMetadata.L1.max_pq / 4095.f));
+							m_DoviExtensionMetadata.L1.avg_pq_rescaled = static_cast<UINT>(pl_hdr_rescale(m_DoviExtensionMetadata.L1.avg_pq / 4095.f));
 						}
 
 						UpdateStatsStatic();
