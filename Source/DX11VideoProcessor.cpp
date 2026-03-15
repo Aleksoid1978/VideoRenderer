@@ -2309,7 +2309,6 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 				};
 
 				if (size == sizeof(MediaSideDataDOVIMetadata)) {
-					bool level1Set = false;
 					for (uint32_t i = 0; i < LAV_DOVI_MAX_EXTENSIONS; ++i) {
 						if (pDOVIMetadata->Extensions[i].level == 1) {
 							auto& Level1 = pDOVIMetadata->Extensions[i].Level1;
@@ -2319,42 +2318,52 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 							m_DoviExtensionMetadata.L1.max_pq = Level1.max_pq;
 							m_DoviExtensionMetadata.L1.avg_pq = Level1.avg_pq;
 
-							level1Set = true;
+							for (uint32_t k = 0; k < LAV_DOVI_MAX_EXTENSIONS; ++k) {
+								if (pDOVIMetadata->Extensions[k].level == 3) {
+									auto& Level3 = pDOVIMetadata->Extensions[k].Level3;
+
+									m_DoviExtensionMetadata.L1.min_pq = m_DoviExtensionMetadata.L1.min_pq + Level3.min_pq_offset - 2048;
+									m_DoviExtensionMetadata.L1.max_pq = m_DoviExtensionMetadata.L1.max_pq + Level3.max_pq_offset - 2048;
+									m_DoviExtensionMetadata.L1.avg_pq = m_DoviExtensionMetadata.L1.avg_pq + Level3.avg_pq_offset - 2048;
+
+									break;
+								}
+							}
+
+							m_DoviExtensionMetadata.L1.min_pq = static_cast<UINT>(pl_hdr_rescale(m_DoviExtensionMetadata.L1.min_pq / 4095.f));
+							m_DoviExtensionMetadata.L1.max_pq = static_cast<UINT>(pl_hdr_rescale(m_DoviExtensionMetadata.L1.max_pq / 4095.f));
+							m_DoviExtensionMetadata.L1.avg_pq = static_cast<UINT>(pl_hdr_rescale(m_DoviExtensionMetadata.L1.avg_pq / 4095.f));
+
+							if (m_bHdrPassthroughSupport && m_bHdrLocalToneMapping) {
+								if (m_DoviExtensionMetadata.L1 != m_DoviExtensionMetadata.L1Cached) {
+									m_DoviExtensionMetadata.L1Cached = m_DoviExtensionMetadata.L1;
+									UpdateStatsStatic();
+								}
+							}
+
 							break;
 						}
-					}
-
-					if (level1Set) {
-						bool level3Set = false;
-						for (uint32_t i = 0; i < 32; ++i) {
-							if (pDOVIMetadata->Extensions[i].level == 3) {
-								auto& Level3 = pDOVIMetadata->Extensions[i].Level3;
-
-								m_DoviExtensionMetadata.L1.min_pq_rescaled = static_cast<UINT>(
-									(pl_hdr_rescale(m_DoviExtensionMetadata.L1.min_pq + Level3.min_pq_offset - 2048) / 4095.f) * 10000.0);
-								m_DoviExtensionMetadata.L1.max_pq_rescaled = static_cast<UINT>(
-									pl_hdr_rescale((m_DoviExtensionMetadata.L1.max_pq + Level3.max_pq_offset - 2048) / 4095.f));
-								m_DoviExtensionMetadata.L1.avg_pq_rescaled = static_cast<UINT>(
-									pl_hdr_rescale((m_DoviExtensionMetadata.L1.avg_pq + Level3.avg_pq_offset - 2048) / 4095.f));
-
-								level3Set = true;
-								break;
-							}
-						}
-
-						if (!level3Set) {
-							m_DoviExtensionMetadata.L1.min_pq_rescaled = static_cast<UINT>(pl_hdr_rescale(m_DoviExtensionMetadata.L1.min_pq / 4095.f) * 10000.0);
-							m_DoviExtensionMetadata.L1.max_pq_rescaled = static_cast<UINT>(pl_hdr_rescale(m_DoviExtensionMetadata.L1.max_pq / 4095.f));
-							m_DoviExtensionMetadata.L1.avg_pq_rescaled = static_cast<UINT>(pl_hdr_rescale(m_DoviExtensionMetadata.L1.avg_pq / 4095.f));
-						}
-
-						UpdateStatsStatic();
 					}
 				}
 
 				if (bMasteringLuminanceChanged) {
 					m_DoviMaxMasteringLuminance = static_cast<UINT>(pl_hdr_rescale(m_Dovi.msd.ColorMetadata.source_max_pq / 4095.f));
-					m_DoviMinMasteringLuminance = static_cast<UINT>(pl_hdr_rescale(m_Dovi.msd.ColorMetadata.source_min_pq / 4095.f) * 10000.0);
+					m_DoviMinMasteringLuminance = static_cast<UINT>(pl_hdr_rescale(m_Dovi.msd.ColorMetadata.source_min_pq / 4095.f) * 10000.0f);
+
+					if (size == sizeof(MediaSideDataDOVIMetadata)) {
+						for (uint32_t i = 0; i < LAV_DOVI_MAX_EXTENSIONS; ++i) {
+							if (pDOVIMetadata->Extensions[i].level == 6) {
+								auto& Level6 = pDOVIMetadata->Extensions[i].Level6;
+
+								m_DoviMaxMasteringLuminance = Level6.max_luminance;
+								m_DoviMinMasteringLuminance = Level6.min_luminance;
+								m_DoviMaxContentLightLevel = Level6.max_cll;
+								m_DoviMaxFrameAverageLightLevel = Level6.max_fall;
+
+								break;
+							}
+						}
+					}
 				}
 
 				if (m_D3D11VP.IsReady()) {
@@ -2505,6 +2514,12 @@ HRESULT CDX11VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTi
 				if (m_DoviMinMasteringLuminance && m_DoviMinMasteringLuminance != m_hdr10.hdr10.MinMasteringLuminance) {
 					m_hdr10.hdr10.MinMasteringLuminance = m_DoviMinMasteringLuminance;
 				}
+				if (m_DoviMaxContentLightLevel && m_DoviMaxContentLightLevel != m_hdr10.hdr10.MaxContentLightLevel) {
+					m_hdr10.hdr10.MaxContentLightLevel = m_DoviMaxContentLightLevel;
+				}
+				if (m_DoviMaxFrameAverageLightLevel && m_DoviMaxFrameAverageLightLevel != m_hdr10.hdr10.MaxFrameAverageLightLevel) {
+					m_hdr10.hdr10.MaxFrameAverageLightLevel = m_DoviMaxFrameAverageLightLevel;
+				}
 			}
 		}
 
@@ -2545,6 +2560,12 @@ HRESULT CDX11VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTi
 							m_lastHdr10.hdr10.WhitePoint[1] = 16450;
 							m_lastHdr10.hdr10.MaxMasteringLuminance = m_DoviMaxMasteringLuminance ? m_DoviMaxMasteringLuminance : 1000; // 1000 nits
 							m_lastHdr10.hdr10.MinMasteringLuminance = m_DoviMinMasteringLuminance ? m_DoviMinMasteringLuminance : 50;   // 0.005 nits
+							if (m_DoviMaxContentLightLevel) {
+								m_hdr10.hdr10.MaxContentLightLevel = m_DoviMaxContentLightLevel;
+							}
+							if (m_DoviMaxFrameAverageLightLevel) {
+								m_hdr10.hdr10.MaxFrameAverageLightLevel = m_DoviMaxFrameAverageLightLevel;
+							}
 
 							if (m_bHdrPassthrough) {
 								hr = m_pDXGISwapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(DXGI_HDR_METADATA_HDR10), &m_lastHdr10.hdr10);
@@ -2570,8 +2591,8 @@ HRESULT CDX11VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTi
 
 		if (m_bHdrLocalToneMapping && m_currentSwapChainColorSpace == colorSpace) {
 			if (m_DoviExtensionMetadata.L1.present) {
-				SetHDR10ShaderParams(m_DoviExtensionMetadata.L1.min_pq_rescaled, m_DoviExtensionMetadata.L1.max_pq_rescaled,
-									 m_DoviExtensionMetadata.L1.max_pq_rescaled, m_DoviExtensionMetadata.L1.avg_pq_rescaled,
+				SetHDR10ShaderParams(m_DoviExtensionMetadata.L1.min_pq, m_DoviExtensionMetadata.L1.max_pq,
+									 m_DoviExtensionMetadata.L1.max_pq, m_DoviExtensionMetadata.L1.avg_pq,
 									 m_iHdrDisplayMaxNits, m_iHdrLocalToneMappingType);
 			} else if (m_lastHdr10.bValid) {
 				SetHDR10ShaderParams(m_lastHdr10.hdr10.MinMasteringLuminance, m_lastHdr10.hdr10.MaxMasteringLuminance,
@@ -3923,6 +3944,7 @@ void CDX11VideoProcessor::Flush()
 		m_D3D11VP.ResetFrameOrder();
 	}
 
+	m_DoviExtensionMetadata = {};
 	m_rtStart = 0;
 }
 
@@ -4115,7 +4137,15 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 					m_strStatsHDR.append(L", RTX Video HDR*");
 				}
 				if (m_bHdrLocalToneMapping && m_DoviExtensionMetadata.L1.present) {
-					m_strStatsHDR += std::format(L", {} nits", m_DoviExtensionMetadata.L1.max_pq_rescaled);
+					m_strStatsHDR += std::format(L", {} nits", m_DoviExtensionMetadata.L1.max_pq);
+#ifndef NDEBUG
+					if (m_DoviExtensionMetadata.L1.present) {
+						m_strStatsHDR.append(std::format(L"\n Dolby Vision metadata:\n  L1 : min/max/avg pq : {}/{}/{}",
+														 m_DoviExtensionMetadata.L1.min_pq,
+														 m_DoviExtensionMetadata.L1.max_pq,
+														 m_DoviExtensionMetadata.L1.avg_pq));
+					}
+#endif
 				} else if (m_lastHdr10.bValid) {
 					m_strStatsHDR += std::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance);
 				}

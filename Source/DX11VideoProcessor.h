@@ -194,17 +194,25 @@ private:
 
 	UINT m_DoviMaxMasteringLuminance = 0;
 	UINT m_DoviMinMasteringLuminance = 0;
+	UINT m_DoviMaxContentLightLevel = 0;
+	UINT m_DoviMaxFrameAverageLightLevel = 0;
 
 	struct DoviExtensionMetadata_t {
 		struct L1_t {
 			uint16_t min_pq = 0;
 			uint16_t max_pq = 0;
 			uint16_t avg_pq = 0;
-			UINT min_pq_rescaled = 0;
-			UINT max_pq_rescaled = 0;
-			UINT avg_pq_rescaled = 0;
 			bool present = false;
-		} L1;
+
+			bool operator==(const L1_t& other) const {
+				return min_pq == other.min_pq && max_pq == other.max_pq && avg_pq == other.avg_pq;
+			}
+			bool operator!=(const L1_t& other) const {
+				return !(*this == other);
+			}
+		};
+		L1_t L1;
+		L1_t L1Cached;
 	} m_DoviExtensionMetadata;
 
 	HMONITOR m_lastFullscreenHMonitor = nullptr;
