@@ -718,6 +718,7 @@ void CDX11VideoProcessor::ReleaseDevice()
 	m_pPostScaleConstants.Release();
 
 	m_pHDR10ToneMappingConstants.Release();
+	m_pDoViDynamicConstants.Release();
 
 #if TEST_SHADER
 	m_pPS_TEST.Release();
@@ -928,7 +929,7 @@ void CDX11VideoProcessor::SetHDR10ShaderParams(float masteringMinLuminanceNits, 
 	}
 
 	if (m_pHDR10ToneMappingConstants) {
-		if (memcmp(&m_lastHDRParamsConstantBuffer_t, &cbuffer, sizeof(cbuffer)) == 0) {
+		if (memcmp(&m_lastHDRParamsConstantBuffer, &cbuffer, sizeof(cbuffer)) == 0) {
 			return;
 		}
 
@@ -947,7 +948,39 @@ void CDX11VideoProcessor::SetHDR10ShaderParams(float masteringMinLuminanceNits, 
 		EXECUTE_ASSERT(S_OK == result);
 	}
 
-	m_lastHDRParamsConstantBuffer_t = cbuffer;
+	m_lastHDRParamsConstantBuffer = cbuffer;
+}
+
+void CDX11VideoProcessor::SetDolbyVisionDynamicParams()
+{
+	const DoViDynamicConstantsBuffer_t cbuffer = {
+		m_DoviExtensionMetadata.L2.trim_chroma_weight * 2.0f, m_DoviExtensionMetadata.L2.trim_saturation_gain * 2.0f,
+		m_DoviExtensionMetadata.L2.trim_slope * 2.0f, m_DoviExtensionMetadata.L2.trim_offset * 2.0f - 1.0f, m_DoviExtensionMetadata.L2.trim_power * 2.0f,
+		1
+	};
+
+	if (m_pDoViDynamicConstants) {
+		if (memcmp(&m_lastDoViDynamicConstantsBuffer, &cbuffer, sizeof(cbuffer)) == 0) {
+			return;
+		}
+
+		m_pDeviceContext->UpdateSubresource(m_pDoViDynamicConstants, 0, nullptr, &cbuffer, 0, 0);
+	} else {
+		D3D11_BUFFER_DESC BufferDesc = {
+			.ByteWidth = sizeof(cbuffer),
+			.Usage = D3D11_USAGE_DEFAULT,
+			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+		};
+		D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
+		HRESULT result = m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pDoViDynamicConstants);
+		if (FAILED(result))
+		{
+			DLog(L"SetDolbyVisionDynamicParams() failed to create m_pDoViDynamicConstants. Error: {}", result);
+		}
+		EXECUTE_ASSERT(S_OK == result);
+	}
+
+	m_lastDoViDynamicConstantsBuffer = cbuffer;
 }
 
 HRESULT CDX11VideoProcessor::SetShaderDoviCurvesPoly()
@@ -1826,6 +1859,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	m_pPSHDR10ToneMapping.Release();
 	m_pHDR10ToneMappingConstants.Release();
+	m_pDoViDynamicConstants.Release();
 
 	UpdateTexParams(FmtParams.CDepth);
 
@@ -2341,6 +2375,25 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 								}
 							}
 
+							break;
+						}
+					}
+
+					for (uint32_t i = 0; i < LAV_DOVI_MAX_EXTENSIONS; ++i) {
+						if (pDOVIMetadata->Extensions[i].level == 2) {
+							auto& Level2 = pDOVIMetadata->Extensions[i].Level2;
+
+							m_DoviExtensionMetadata.L2.present = true;
+							m_DoviExtensionMetadata.L2.trim_slope = Level2.trim_slope / 4096.0f;
+							m_DoviExtensionMetadata.L2.trim_offset = Level2.trim_offset / 4096.0f;
+							m_DoviExtensionMetadata.L2.trim_power = Level2.trim_power / 4096.0f;
+							m_DoviExtensionMetadata.L2.trim_saturation_gain = Level2.trim_saturation_gain / 4096.0f;
+							m_DoviExtensionMetadata.L2.trim_chroma_weight = Level2.trim_chroma_weight / 4096.0f;
+
+							SetDolbyVisionDynamicParams();
+#ifndef NDEBUG
+							UpdateStatsStatic();
+#endif
 							break;
 						}
 					}
@@ -3231,6 +3284,11 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 
 		if (m_pPSHDR10ToneMapping) {
 			StepSetting();
+
+			if (m_pDoViDynamicConstants) {
+				m_pDeviceContext->PSSetConstantBuffers(1, 1, &m_pDoViDynamicConstants.p);
+			}
+
 			hr = TextureCopyRect(*pInputTexture, pRT, rect, rect, m_pPSHDR10ToneMapping, m_pHDR10ToneMappingConstants, 0, false);
 		}
 
@@ -4139,11 +4197,25 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 				if (m_bHdrLocalToneMapping && m_DoviExtensionMetadata.L1.present) {
 					m_strStatsHDR += std::format(L", {} nits", m_DoviExtensionMetadata.L1.max_pq);
 #ifndef NDEBUG
-					if (m_DoviExtensionMetadata.L1.present) {
-						m_strStatsHDR.append(std::format(L"\n Dolby Vision metadata:\n  L1 : min/max/avg pq : {}/{}/{}",
-														 m_DoviExtensionMetadata.L1.min_pq,
-														 m_DoviExtensionMetadata.L1.max_pq,
-														 m_DoviExtensionMetadata.L1.avg_pq));
+					if (m_DoviExtensionMetadata.L1.present || m_DoviExtensionMetadata.L2.present) {
+						m_strStatsHDR.append(L"\n Dolby Vision metadata:");
+
+						if (m_DoviExtensionMetadata.L1.present) {
+							m_strStatsHDR.append(std::format(L"\n  L1: min/max/avg pq : {}/{}/{}",
+															 m_DoviExtensionMetadata.L1.min_pq,
+															 m_DoviExtensionMetadata.L1.max_pq,
+															 m_DoviExtensionMetadata.L1.avg_pq));
+						}
+
+						if (m_DoviExtensionMetadata.L2.present) {
+							m_strStatsHDR.append(
+								std::format(L"\n  L2: trim_slope: {:.2f}\n      trim_offset: {:.2f}\n      trim_power: {:.2f}\n      trim_saturation_gain: {:.2f}\n      trim_chroma_weight: {:.2f}",
+											m_DoviExtensionMetadata.L2.trim_slope,
+											m_DoviExtensionMetadata.L2.trim_offset,
+											m_DoviExtensionMetadata.L2.trim_power,
+											m_DoviExtensionMetadata.L2.trim_saturation_gain,
+											m_DoviExtensionMetadata.L2.trim_chroma_weight));
+						}
 					}
 #endif
 				} else if (m_lastHdr10.bValid) {

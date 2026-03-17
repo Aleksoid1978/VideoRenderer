@@ -97,8 +97,19 @@ private:
 		UINT selection; // 1 = ACES, 2 = Reinhard, 3 = Habel, 4 = Möbius, 5 = BT2390, 6 = ST 2094-10
 		float padding[2];
 	};
-	HDRParamsConstantBuffer_t m_lastHDRParamsConstantBuffer_t = {};
+	struct DoViDynamicConstantsBuffer_t {
+		float trim_chroma_weight;
+		float trim_saturation_gain;
+		float trim_slope;
+		float trim_offset;
+		float trim_power;
+		UINT enabled;
+		float padding[2];
+	};
+	HDRParamsConstantBuffer_t m_lastHDRParamsConstantBuffer = {};
+	DoViDynamicConstantsBuffer_t m_lastDoViDynamicConstantsBuffer = {};
 	CComPtr<ID3D11Buffer> m_pHDR10ToneMappingConstants;
+	CComPtr<ID3D11Buffer> m_pDoViDynamicConstants;
 	CComPtr<ID3D11PixelShader> m_pPSHDR10ToneMapping;
 
 	// D3D11 Shader Video Processor
@@ -213,6 +224,16 @@ private:
 		};
 		L1_t L1;
 		L1_t L1Cached;
+
+		struct L2_t {
+			float trim_slope = 0.f;
+			float trim_offset = 0.f;
+			float trim_power = 0.f;
+			float trim_saturation_gain = 0.f;
+			float trim_chroma_weight = 0.f;
+			bool present = false;
+		};
+		L2_t L2;
 	} m_DoviExtensionMetadata;
 
 	HMONITOR m_lastFullscreenHMonitor = nullptr;
@@ -253,6 +274,7 @@ private:
 	void SetShaderLuminanceParams();
 
 	void SetHDR10ShaderParams(float, float, float, float, float, int);
+	void SetDolbyVisionDynamicParams();
 
 	HRESULT SetShaderDoviCurvesPoly();
 	HRESULT SetShaderDoviCurves();
