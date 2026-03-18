@@ -954,8 +954,10 @@ void CDX11VideoProcessor::SetHDR10ShaderParams(float masteringMinLuminanceNits, 
 void CDX11VideoProcessor::SetDolbyVisionDynamicParams()
 {
 	const DoViDynamicConstantsBuffer_t cbuffer = {
-		m_DoviExtensionMetadata.L2.trim_chroma_weight * 2.0f, m_DoviExtensionMetadata.L2.trim_saturation_gain * 2.0f,
-		m_DoviExtensionMetadata.L2.trim_slope * 2.0f, m_DoviExtensionMetadata.L2.trim_offset * 2.0f - 1.0f, m_DoviExtensionMetadata.L2.trim_power * 2.0f,
+		//m_DoviExtensionMetadata.L2.trim_chroma_weight * 2.0f, m_DoviExtensionMetadata.L2.trim_saturation_gain * 2.0f,
+		//m_DoviExtensionMetadata.L2.trim_slope * 2.0f, m_DoviExtensionMetadata.L2.trim_offset * 2.0f - 1.0f, m_DoviExtensionMetadata.L2.trim_power * 2.0f,
+		m_DoviExtensionMetadata.L2.trim_chroma_weight - 0.5f, m_DoviExtensionMetadata.L2.trim_saturation_gain - 0.5f,
+		m_DoviExtensionMetadata.L2.trim_slope + 0.5f, m_DoviExtensionMetadata.L2.trim_offset - 0.5f, m_DoviExtensionMetadata.L2.trim_power + 0.5f,
 		1
 	};
 

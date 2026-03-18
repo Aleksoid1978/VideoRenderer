@@ -254,6 +254,21 @@ float3 ApplyL2Trim(float3 linearRGB)
 	return ICTCP_to_RGB(ictcp);
 }
 
+float4 DolbyVisionTrims(float4 color)
+{
+	color = LinearToST2084(color, 10000.0f);
+
+	color = pow((color * TrimSlope) + TrimOffset, TrimPower);
+
+	float Y = 0.2627f * color.r + 0.6780f * color.g + 0.0593f * color.b;
+
+	color = color * pow((1.0 + ChromaWeight) * color / Y, SaturationGain);
+
+	color = ST2084ToLinear(color, 10000.0f);
+
+	return color;
+}
+
 float4 main(PS_INPUT input) : SV_Target
 {
 	// Sample texture and convert from PQ to linear
@@ -262,7 +277,7 @@ float4 main(PS_INPUT input) : SV_Target
 
 	if (L2Enabled)
 	{
-		color.rgb = ApplyL2Trim(color.rgb);
+		color = DolbyVisionTrims(color);
 	}
 
 	if (selection == 5)
