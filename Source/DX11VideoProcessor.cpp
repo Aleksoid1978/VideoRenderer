@@ -2646,7 +2646,7 @@ HRESULT CDX11VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTi
 			if (m_DoviExtensionMetadata.L1.present) {
 				SetHDR10ShaderParams(m_DoviExtensionMetadata.L1.min_pq, m_DoviExtensionMetadata.L1.max_pq,
 									 m_DoviExtensionMetadata.L1.max_pq, m_DoviExtensionMetadata.L1.avg_pq,
-									 m_iHdrDisplayMaxNits, m_iHdrLocalToneMappingType);
+									 m_iHdrDisplayMaxNits, m_iHdrLocalToneMappingType == 5 ? 6 : m_iHdrLocalToneMappingType);
 			} else if (m_lastHdr10.bValid) {
 				SetHDR10ShaderParams(m_lastHdr10.hdr10.MinMasteringLuminance, m_lastHdr10.hdr10.MaxMasteringLuminance,
 									 m_lastHdr10.hdr10.MaxContentLightLevel, m_lastHdr10.hdr10.MaxFrameAverageLightLevel,
@@ -4181,10 +4181,11 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 							m_strStatsHDR.append(L" Mobius");
 							break;
 						case 5:
-							m_strStatsHDR.append(L" BT2390");
-							break;
-						case 6:
-							m_strStatsHDR.append(L" ST 2094-10");
+							if (m_DoviExtensionMetadata.L1.present) {
+								m_strStatsHDR.append(L" ST 2094-10");
+							} else {
+								m_strStatsHDR.append(L" BT2390");
+							}
 							break;
 						default:
 							break;

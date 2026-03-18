@@ -255,7 +255,7 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 			m_Sets.bHdrLocalToneMapping = !!dw;
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrLocaLToneMappingType, dw)) {
-			m_Sets.iHdrLocalToneMappingType = discard<int>(dw, 1, 1, 6);
+			m_Sets.iHdrLocalToneMappingType = discard<int>(dw, 1, 1, 5);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrDisplayNits, dw)) {
 			m_Sets.iHdrDisplayMaxNits = discard<int>(dw, HDR_NITS_DEF, HDR_NITS_MIN, HDR_NITS_MAX);

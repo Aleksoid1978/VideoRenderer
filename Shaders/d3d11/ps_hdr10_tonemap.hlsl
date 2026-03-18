@@ -125,8 +125,6 @@ float pl_smoothstep(float edge0, float edge1, float x)
 // --- ST 2094-10 EETF Tone Mapping Function
 float3 ST209410Tonemap(float3 color)
 {
-	return color; // TODO - correct algorithm
-
 	if (displayMaxNits >= maxCLL)
 		return color;
 

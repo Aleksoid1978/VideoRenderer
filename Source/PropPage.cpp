@@ -292,8 +292,7 @@ HRESULT CVRMainPPage::OnActivate()
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Reinhard", 2);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Hable", 3);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Mobius", 4);
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"BT2390", 5);
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"ST 2094-10", 6);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"BT2390/ST 2094-10", 5);
 
 	SetControls();
 
@@ -547,11 +546,6 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 						m_SetsPP.bHdrPassthrough = false;
 						m_SetsPP.bHdrLocalToneMapping = true;
 						m_SetsPP.iHdrLocalToneMappingType = 5;
-						break;
-					case 7:
-						m_SetsPP.bHdrPassthrough = false;
-						m_SetsPP.bHdrLocalToneMapping = true;
-						m_SetsPP.iHdrLocalToneMappingType = 6;
 						break;
 					default:
 						break;
