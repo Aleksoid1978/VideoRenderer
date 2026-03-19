@@ -773,6 +773,27 @@ HRESULT GetShaderConvertColor(
 					"};\n"
 				);
 			}
+
+			code.append(
+				"cbuffer DolbyConstants : register(b3) {\n"
+				"    float ChromaWeight;\n"
+				"    float SaturationGain;\n"
+				"    float TrimSlope;\n"
+				"    float TrimOffset;\n"
+				"    float TrimPower;\n"
+				"    uint L2Enabled;\n"
+				"    float L2Padding[2];\n"
+				"}; \n"
+			);
+			code.append(
+				"float4 DolbyVisionTrims(float4 color)\n"
+				"{\n"
+				"    color = pow((color * TrimSlope) + TrimOffset, TrimPower);\n"
+				"    float Y = 0.2627f * color.r + 0.6780f * color.g + 0.0593f * color.b;\n"
+				"    color = color * pow((1.0 + ChromaWeight) * color / Y, SaturationGain);\n"
+				"    return color;\n"
+				"}\n"
+			);
 		}
 		else {
 			code.append(
@@ -845,8 +866,16 @@ HRESULT GetShaderConvertColor(
 				"color = LinearToST2084(color, 1000.0);\n"
 			);
 		}
+
 		code.append(
 			"color = saturate(color);\n"
+		);
+		if (pDoviMetadata && bDX11) {
+			code.append(
+				"if (L2Enabled) color = DolbyVisionTrims(color);\n"
+			);
+		}
+		code.append(
 			"color = ST2084ToLinear(color, LuminanceScale);\n"
 			"color.rgb = ToneMappingHable(color.rgb);\n"
 			"color.rgb = mul(matrix_conv_prim, color.rgb);\n"

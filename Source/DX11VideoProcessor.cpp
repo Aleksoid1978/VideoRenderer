@@ -954,11 +954,9 @@ void CDX11VideoProcessor::SetHDR10ShaderParams(float masteringMinLuminanceNits, 
 void CDX11VideoProcessor::SetDolbyVisionDynamicParams()
 {
 	const DoViDynamicConstantsBuffer_t cbuffer = {
-		//m_DoviExtensionMetadata.L2.trim_chroma_weight * 2.0f, m_DoviExtensionMetadata.L2.trim_saturation_gain * 2.0f,
-		//m_DoviExtensionMetadata.L2.trim_slope * 2.0f, m_DoviExtensionMetadata.L2.trim_offset * 2.0f - 1.0f, m_DoviExtensionMetadata.L2.trim_power * 2.0f,
 		m_DoviExtensionMetadata.L2.trim_chroma_weight - 0.5f, m_DoviExtensionMetadata.L2.trim_saturation_gain - 0.5f,
 		m_DoviExtensionMetadata.L2.trim_slope + 0.5f, m_DoviExtensionMetadata.L2.trim_offset - 0.5f, m_DoviExtensionMetadata.L2.trim_power + 0.5f,
-		1
+		static_cast<UINT>(m_DoviExtensionMetadata.L2.present)
 	};
 
 	if (m_pDoViDynamicConstants) {
@@ -2392,7 +2390,6 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 							m_DoviExtensionMetadata.L2.trim_saturation_gain = Level2.trim_saturation_gain / 4096.0f;
 							m_DoviExtensionMetadata.L2.trim_chroma_weight = Level2.trim_chroma_weight / 4096.0f;
 
-							SetDolbyVisionDynamicParams();
 #ifndef NDEBUG
 							UpdateStatsStatic();
 #endif
@@ -2400,6 +2397,8 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 						}
 					}
 				}
+
+				SetDolbyVisionDynamicParams();
 
 				if (bMasteringLuminanceChanged) {
 					m_DoviMaxMasteringLuminance = static_cast<UINT>(pl_hdr_rescale(m_Dovi.msd.ColorMetadata.source_max_pq / 4095.f));
@@ -3016,6 +3015,9 @@ HRESULT CDX11VideoProcessor::ConvertColorPass(ID3D11Texture2D* pRenderTarget)
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_PSConvColorData.pConstants);
 	m_pDeviceContext->PSSetConstantBuffers(1, 1, &m_pCorrectionConstants.p);
 	m_pDeviceContext->PSSetConstantBuffers(2, 1, &m_pDoviCurvesConstantBuffer.p);
+	if (m_pDoViDynamicConstants) {
+		m_pDeviceContext->PSSetConstantBuffers(3, 1, &m_pDoViDynamicConstants.p);
+	}
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_PSConvColorData.pVertexBuffer, &Stride, &Offset);
 
@@ -4226,6 +4228,18 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 				}
 			} else if (m_bConvertToSdr) {
 				m_strStatsHDR.append(L"Convert to SDR");
+#ifndef NDEBUG
+				if (m_DoviExtensionMetadata.L2.present) {
+					m_strStatsHDR.append(L"\n Dolby Vision metadata:");
+					m_strStatsHDR.append(
+						std::format(L"\n  L2: trim_slope: {:.2f}\n      trim_offset: {:.2f}\n      trim_power: {:.2f}\n      trim_saturation_gain: {:.2f}\n      trim_chroma_weight: {:.2f}",
+									m_DoviExtensionMetadata.L2.trim_slope,
+									m_DoviExtensionMetadata.L2.trim_offset,
+									m_DoviExtensionMetadata.L2.trim_power,
+									m_DoviExtensionMetadata.L2.trim_saturation_gain,
+									m_DoviExtensionMetadata.L2.trim_chroma_weight));
+				}
+#endif
 			} else {
 				m_strStatsHDR.append(L"Not used");
 			}
