@@ -4006,8 +4006,12 @@ void CDX11VideoProcessor::Flush()
 		m_D3D11VP.ResetFrameOrder();
 	}
 
-	m_DoviExtensionMetadata = {};
 	m_rtStart = 0;
+
+	m_DoviExtensionMetadata = {};
+#ifndef NDEBUG
+	UpdateStatsStatic();
+#endif
 }
 
 void CDX11VideoProcessor::ClearPreScaleShaders()
