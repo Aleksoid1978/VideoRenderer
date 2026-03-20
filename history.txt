@@ -3,6 +3,8 @@
 Added support for 'UYVY' format.
 Improved handling of the D3DERR_DEVICEHUNG error for Direct3D 9.
 Fixed conversion of 'AYUV' format using shaders for Direct3D 9.
+Added a local tone mapping for HDR output (ACES, Reinhard, Habel, Mobius, BT2390, ST 2094-10). ST 2094-10 only applies to Dolby Vision.
+Added Dovi Extension Level 1/2 processing for the local tone mapping, Level 2 for HDR to SDR conversion when using D3D11.
 
 0.9.19.2490 - 2025-12-25
 ------------------------
