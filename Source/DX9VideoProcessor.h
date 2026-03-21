@@ -208,7 +208,7 @@ private:
 		IDirect3DPixelShader9* pShader, const int iRotation, const bool bFlip);
 
 	void UpdateStatsPresent();
-	void UpdateStatsStatic();
+	void UpdateStatsStatic() override;
 	//void UpdateStatsPostProc();
 	HRESULT DrawStats(IDirect3DSurface9* pRenderTarget);
 

@@ -201,7 +201,7 @@ public:
 	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
 
 	// Settings
-	void SetShowStats(bool value) { m_bShowStats   = value; }
+	void SetShowStats(bool value);
 	virtual void Configure(const Settings_t& config) = 0;
 
 	int GetRotation() { return m_iRotation; }
@@ -271,4 +271,7 @@ public:
 	// IMFVideoMixerBitmap
 	STDMETHODIMP ClearAlphaBitmap() override;
 	STDMETHODIMP GetAlphaBitmapParameters(MFVideoAlphaBitmapParams *pBmpParms) override;
+
+private:
+	virtual void UpdateStatsStatic() = 0;
 };

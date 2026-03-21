@@ -59,6 +59,16 @@ HRESULT CVideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
 	return S_OK;
 }
 
+void CVideoProcessor::SetShowStats(bool value)
+{
+	m_bShowStats = value;
+
+	if (m_bShowStats) {
+		CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
+		UpdateStatsStatic();
+	}
+}
+
 void CVideoProcessor::UpdateStatsByWindow()
 {
 	if (m_iResizeStats == 1) {
