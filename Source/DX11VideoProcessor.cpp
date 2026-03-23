@@ -981,6 +981,10 @@ void CDX11VideoProcessor::SetDolbyVisionDynamicParams()
 	}
 
 	m_lastDoViDynamicConstantsBuffer = cbuffer;
+
+#ifndef NDEBUG
+	UpdateStatsStatic();
+#endif
 }
 
 HRESULT CDX11VideoProcessor::SetShaderDoviCurvesPoly()
@@ -2471,10 +2475,6 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 						m_DoviExtensionMetadata.L2.trim_power = t_power / 4096.0f;
 						m_DoviExtensionMetadata.L2.trim_saturation_gain = t_sat / 4096.0f;
 						m_DoviExtensionMetadata.L2.trim_chroma_weight = t_chroma / 4096.0f;
-
-#ifndef NDEBUG
-						UpdateStatsStatic();
-#endif
 					}
 				}
 
