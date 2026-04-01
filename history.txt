@@ -1,4 +1,4 @@
-0.10.0 dev
+0.10.1.2531 - 2026-04-01
 ------------------------
 Added support for 'UYVY' format.
 Improved handling of the D3DERR_DEVICEHUNG error for Direct3D 9.
