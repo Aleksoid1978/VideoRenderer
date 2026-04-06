@@ -4313,7 +4313,15 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 					}
 #endif
 				} else if (m_lastHdr10.bValid) {
-					m_strStatsHDR += std::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance);
+					if (m_bHdrLocalToneMapping) {
+						m_strStatsHDR += std::format(L"\n HDR10 metadata  : Max Luminance: {}", m_lastHdr10.hdr10.MaxMasteringLuminance);
+						if (m_lastHdr10.hdr10.MaxContentLightLevel) {
+							m_strStatsHDR += std::format(L", MaxCLL: {}", m_lastHdr10.hdr10.MaxContentLightLevel);
+						}
+						m_strStatsHDR += L" nits";
+					} else {
+						m_strStatsHDR += std::format(L", {} nits", m_lastHdr10.hdr10.MaxMasteringLuminance);
+					}
 				}
 			} else if (m_bConvertToSdr) {
 				m_strStatsHDR.append(L"Convert to SDR");
