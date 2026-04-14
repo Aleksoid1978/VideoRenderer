@@ -299,6 +299,9 @@ HRESULT CVRMainPPage::OnActivate()
 	SetCursor(m_hWnd, IDC_ARROW);
 	SetCursor(m_hWnd, IDC_COMBO1, IDC_HAND);
 
+	AddHint(IDC_CHECK5,
+		L"It works fast, but it's not always good.\n"
+		"Disable it if you want to use shaders for resizing.");
 	AddHint(IDC_COMBO8,
 		L"Available for Direct3D 11.\n"
 		"Requires hardware and driver support:\n"
