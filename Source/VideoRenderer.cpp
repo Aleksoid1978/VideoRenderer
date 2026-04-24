@@ -858,16 +858,23 @@ STDMETHODIMP CMpcVideoRenderer::GetSourcePosition(long *pLeft, long *pTop, long 
 	CheckPointer(pHeight,E_POINTER);
 
 	CRect rect;
+	long lAspectX;
+	long lAspectY;
 	{
 		CAutoLock cVideoLock(&m_InterfaceLock);
 
 		m_VideoProcessor->GetSourceRect(rect);
+		m_VideoProcessor->GetAspectRatio(&lAspectX, &lAspectY);
 	}
 
 	*pLeft = rect.left;
 	*pTop = rect.top;
 	*pWidth = rect.Width();
 	*pHeight = rect.Height();
+
+	if (lAspectX && lAspectY) {
+		*pWidth = *pHeight * lAspectX / lAspectY;
+	}
 
 	return S_OK;
 }
@@ -919,7 +926,17 @@ STDMETHODIMP CMpcVideoRenderer::GetDestinationPosition(long *pLeft, long *pTop, 
 STDMETHODIMP CMpcVideoRenderer::GetVideoSize(long *pWidth, long *pHeight)
 {
 	// retrieves the native video's width and height.
-	return m_VideoProcessor->GetVideoSize(pWidth, pHeight);
+	m_VideoProcessor->GetVideoSize(pWidth, pHeight);
+
+	long lAspectX;
+	long lAspectY;
+
+	m_VideoProcessor->GetAspectRatio(&lAspectX, &lAspectY);
+	if (lAspectX && lAspectY) {
+		*pWidth = *pHeight * lAspectX / lAspectY;
+	}
+
+	return S_OK;
 }
 
 STDMETHODIMP CMpcVideoRenderer::GetCurrentImage(long *pBufferSize, long *pDIBImage)
