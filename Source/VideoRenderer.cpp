@@ -443,9 +443,9 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 	CAutoLock cVideoLock(&m_InterfaceLock);
 	CAutoLock cRendererLock(&m_RendererLock);
 
-	CSize aspect, framesize;
-	m_VideoProcessor->GetAspectRatio(&aspect.cx, &aspect.cy);
-	m_VideoProcessor->GetVideoSize(&framesize.cx, &framesize.cy);
+	CSize framesize, aspect;
+	m_VideoProcessor->GetVideoSize(framesize.cx, framesize.cy);
+	m_VideoProcessor->GetAspectRatio(aspect.cx, aspect.cy);
 
 	CMediaType mt(*pmt);
 
@@ -474,9 +474,9 @@ HRESULT CMpcVideoRenderer::SetMediaType(const CMediaType *pmt)
 		m_VideoProcessor->SetVideoRect(m_videoRect);
 	}
 
-	CSize aspectNew, framesizeNew;
-	m_VideoProcessor->GetAspectRatio(&aspectNew.cx, &aspectNew.cy);
-	m_VideoProcessor->GetVideoSize(&framesizeNew.cx, &framesizeNew.cy);
+	CSize framesizeNew, aspectNew;
+	m_VideoProcessor->GetVideoSize(framesizeNew.cx, framesizeNew.cy);
+	m_VideoProcessor->GetAspectRatio(aspectNew.cx, aspectNew.cy);
 
 	if (framesize.cx && aspect.cx && m_pSink) {
 		if (aspectNew != aspect || framesizeNew != framesize
@@ -864,7 +864,7 @@ STDMETHODIMP CMpcVideoRenderer::GetSourcePosition(long *pLeft, long *pTop, long 
 		CAutoLock cVideoLock(&m_InterfaceLock);
 
 		m_VideoProcessor->GetSourceRect(rect);
-		m_VideoProcessor->GetAspectRatio(&lAspectX, &lAspectY);
+		m_VideoProcessor->GetAspectRatio(lAspectX, lAspectY);
 	}
 
 	*pLeft = rect.left;
@@ -873,6 +873,7 @@ STDMETHODIMP CMpcVideoRenderer::GetSourcePosition(long *pLeft, long *pTop, long 
 	*pHeight = rect.Height();
 
 	if (lAspectX && lAspectY) {
+		// Apply aspect ratio (as in VMR9 and madVR) so that DVD-Video menu buttons are activated correctly with the mouse.
 		*pWidth = *pHeight * lAspectX / lAspectY;
 	}
 
@@ -925,14 +926,18 @@ STDMETHODIMP CMpcVideoRenderer::GetDestinationPosition(long *pLeft, long *pTop, 
 
 STDMETHODIMP CMpcVideoRenderer::GetVideoSize(long *pWidth, long *pHeight)
 {
+	CheckPointer(pWidth, E_POINTER);
+	CheckPointer(pHeight, E_POINTER);
+
 	// retrieves the native video's width and height.
-	m_VideoProcessor->GetVideoSize(pWidth, pHeight);
+	m_VideoProcessor->GetVideoSize(*pWidth, *pHeight);
 
 	long lAspectX;
 	long lAspectY;
 
-	m_VideoProcessor->GetAspectRatio(&lAspectX, &lAspectY);
+	m_VideoProcessor->GetAspectRatio(lAspectX, lAspectY);
 	if (lAspectX && lAspectY) {
+		// Apply aspect ratio (as in VMR9 and madVR) so that DVD-Video menu buttons are activated correctly with the mouse.
 		*pWidth = *pHeight * lAspectX / lAspectY;
 	}
 
@@ -951,8 +956,8 @@ STDMETHODIMP CMpcVideoRenderer::GetCurrentImage(long *pBufferSize, long *pDIBIma
 	long aspectX, aspectY;
 	int iRotation;
 
-	m_VideoProcessor->GetVideoSize(&framesize.cx, &framesize.cy);
-	m_VideoProcessor->GetAspectRatio(&aspectX, &aspectY);
+	m_VideoProcessor->GetVideoSize(framesize.cx, framesize.cy);
+	m_VideoProcessor->GetAspectRatio(aspectX, aspectY);
 	iRotation = m_VideoProcessor->GetRotation();
 
 	if (aspectX > 0 && aspectY > 0) {
@@ -990,7 +995,12 @@ STDMETHODIMP CMpcVideoRenderer::GetCurrentImage(long *pBufferSize, long *pDIBIma
 // IBasicVideo2
 STDMETHODIMP CMpcVideoRenderer::GetPreferredAspectRatio(long *plAspectX, long *plAspectY)
 {
-	return m_VideoProcessor->GetAspectRatio(plAspectX, plAspectY);
+	CheckPointer(plAspectX, E_POINTER);
+	CheckPointer(plAspectY, E_POINTER);
+
+	m_VideoProcessor->GetAspectRatio(*plAspectX, *plAspectY);
+
+	return S_OK;
 }
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)

@@ -27,36 +27,26 @@
 #include "VideoProcessor.h"
 #include <shellscalingapi.h>
 
-HRESULT CVideoProcessor::GetVideoSize(long *pWidth, long *pHeight)
+void CVideoProcessor::GetVideoSize(long& width, long& height)
 {
-	CheckPointer(pWidth, E_POINTER);
-	CheckPointer(pHeight, E_POINTER);
-
 	if (m_iRotation == 90 || m_iRotation == 270) {
-		*pWidth  = m_srcRectHeight;
-		*pHeight = m_srcRectWidth;
+		width  = m_srcRectHeight;
+		height = m_srcRectWidth;
 	} else {
-		*pWidth  = m_srcRectWidth;
-		*pHeight = m_srcRectHeight;
+		width  = m_srcRectWidth;
+		height = m_srcRectHeight;
 	}
-
-	return S_OK;
 }
 
-HRESULT CVideoProcessor::GetAspectRatio(long *plAspectX, long *plAspectY)
+void CVideoProcessor::GetAspectRatio(long& aspectX, long& aspectY)
 {
-	CheckPointer(plAspectX, E_POINTER);
-	CheckPointer(plAspectY, E_POINTER);
-
 	if (m_iRotation == 90 || m_iRotation == 270) {
-		*plAspectX = m_srcAspectRatioY;
-		*plAspectY = m_srcAspectRatioX;
+		aspectX = m_srcAspectRatioY;
+		aspectY = m_srcAspectRatioX;
 	} else {
-		*plAspectX = m_srcAspectRatioX;
-		*plAspectY = m_srcAspectRatioY;
+		aspectX = m_srcAspectRatioX;
+		aspectY = m_srcAspectRatioY;
 	}
-
-	return S_OK;
 }
 
 void CVideoProcessor::SetShowStats(bool value)

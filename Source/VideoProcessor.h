@@ -197,8 +197,8 @@ public:
 	virtual void SetVideoRect(const CRect& videoRect) = 0;
 	virtual HRESULT SetWindowRect(const CRect& windowRect) = 0;
 
-	HRESULT GetVideoSize(long *pWidth, long *pHeight);
-	HRESULT GetAspectRatio(long *plAspectX, long *plAspectY);
+	void GetVideoSize(long& width, long& height);
+	void GetAspectRatio(long& aspectX, long& aspectY);
 
 	// Settings
 	void SetShowStats(bool value);
