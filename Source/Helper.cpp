@@ -40,6 +40,8 @@ std::wstring GetVersionStr()
 #endif
 #ifdef _WIN64
 	version.append(L" x64");
+#else
+	version.append(L" 32-bit");
 #endif
 #ifdef _DEBUG
 	version.append(L" DEBUG");
