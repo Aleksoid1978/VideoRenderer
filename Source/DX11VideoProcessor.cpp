@@ -1549,13 +1549,15 @@ HRESULT CDX11VideoProcessor::InitSwapChain(bool bWindowChanged)
 		if (bHdrOutput) {
 			hr2 = m_pDXGISwapChain1->QueryInterface(IID_PPV_ARGS(&m_pDXGISwapChain4));
 
-			CComPtr<IDXGIOutput6> pDXGIOutput6;
-			if (SUCCEEDED(m_pDXGIOutput->QueryInterface(IID_PPV_ARGS(&pDXGIOutput6)))) {
-				DXGI_OUTPUT_DESC1 desc;
-				if (SUCCEEDED(pDXGIOutput6->GetDesc1(&desc))) {
-					m_MaxDisplayLuminance = static_cast<UINT>(desc.MaxLuminance);
+			if (m_pDXGIOutput) {
+				CComPtr<IDXGIOutput6> pDXGIOutput6;
+				if (SUCCEEDED(m_pDXGIOutput->QueryInterface(IID_PPV_ARGS(&pDXGIOutput6)))) {
+					DXGI_OUTPUT_DESC1 desc;
+					if (SUCCEEDED(pDXGIOutput6->GetDesc1(&desc))) {
+						m_MaxDisplayLuminance = static_cast<UINT>(desc.MaxLuminance);
 
-					m_pFilter->UpdateDisplayInfo();
+						m_pFilter->UpdateDisplayInfo();
+					}
 				}
 			}
 		}
