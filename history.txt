@@ -1,6 +1,7 @@
 0.10.6 dev
 ------------------------
 Fixed the issue with frame aspect ratios that are set to very large numbers.
+Corrected colors for Dolby Vision Profile 20.
 
 0.10.5.2552 - 2026-06-20
 ------------------------
