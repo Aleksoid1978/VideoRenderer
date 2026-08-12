@@ -1389,6 +1389,12 @@ STDMETHODIMP CMpcVideoRenderer::Flt_GetInt64(LPCSTR field, __int64 *value)
 				| ((uint64_t)VER_BUILD << 16)
 				| ((uint64_t)REV_NUM);
 		return S_OK;
+	} else if (!strcmp(field, "originalVideoSize")) {
+		long width, height;
+		m_VideoProcessor->GetVideoSize(width, height);
+		*value = (static_cast<__int64>(width) << 32) | (static_cast<__int64>(height) & 0xFFFFFFFF);
+
+		return S_OK;
 	}
 
 	return E_INVALIDARG;
@@ -1406,22 +1412,6 @@ STDMETHODIMP CMpcVideoRenderer::Flt_GetBin(LPCSTR field, LPVOID* value, unsigned
 		HRESULT hr = m_VideoProcessor->GetDisplayedImage((BYTE**)value, size);
 
 		return hr;
-	} else if (!strcmp(field, "originalVideoSize")) {
-		long width, height;
-		m_VideoProcessor->GetVideoSize(width, height);
-
-		BYTE* p = (BYTE*)LocalAlloc(LMEM_FIXED, sizeof(long) * 2);
-		if (!p) {
-			return E_OUTOFMEMORY;
-		}
-
-		memcpy(p, &width, sizeof(width));
-		memcpy(p + sizeof(width), &height, sizeof(height));
-
-		*value = p;
-		*size = sizeof(long) * 2;
-
-		return S_OK;
 	}
 
 	return E_INVALIDARG;
