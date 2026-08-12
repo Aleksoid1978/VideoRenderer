@@ -1390,9 +1390,11 @@ STDMETHODIMP CMpcVideoRenderer::Flt_GetInt64(LPCSTR field, __int64 *value)
 				| ((uint64_t)REV_NUM);
 		return S_OK;
 	} else if (!strcmp(field, "originalVideoSize")) {
-		long width, height;
-		m_VideoProcessor->GetVideoSize(width, height);
-		*value = (static_cast<__int64>(width) << 32) | (static_cast<__int64>(height) & 0xFFFFFFFF);
+		SIZE size;
+		m_VideoProcessor->GetVideoSize(size.cx, size.cy);
+
+		static_assert(sizeof(*value) == sizeof(size));
+		*value = *(__int64*)&size;
 
 		return S_OK;
 	}
