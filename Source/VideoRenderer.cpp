@@ -1406,6 +1406,22 @@ STDMETHODIMP CMpcVideoRenderer::Flt_GetBin(LPCSTR field, LPVOID* value, unsigned
 		HRESULT hr = m_VideoProcessor->GetDisplayedImage((BYTE**)value, size);
 
 		return hr;
+	} else if (!strcmp(field, "originalVideoSize")) {
+		long width, height;
+		m_VideoProcessor->GetVideoSize(width, height);
+
+		BYTE* p = (BYTE*)LocalAlloc(LMEM_FIXED, sizeof(long) * 2);
+		if (!p) {
+			return E_OUTOFMEMORY;
+		}
+
+		memcpy(p, &width, sizeof(width));
+		memcpy(p + sizeof(width), &height, sizeof(height));
+
+		*value = p;
+		*size = sizeof(long) * 2;
+
+		return S_OK;
 	}
 
 	return E_INVALIDARG;
