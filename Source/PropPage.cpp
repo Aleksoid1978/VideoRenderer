@@ -559,11 +559,6 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				return (LRESULT)1;
 			}
 		}
-		if (action == EN_CHANGE) {
-			if (nID == IDC_EDIT_DISPLAYMAX) {
-				SetDirty();
-			}
-		}
 	}
 	else if (uMsg == WM_HSCROLL) {
 		if ((HWND)lParam == GetDlgItem(IDC_SLIDER1)) {
