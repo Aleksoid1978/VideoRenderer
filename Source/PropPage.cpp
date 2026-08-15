@@ -601,22 +601,17 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 
 HRESULT CVRMainPPage::OnApplyChanges()
 {
-	wchar_t data[32] = {};
-	GetDlgItemTextW(IDC_EDIT_DISPLAYMAX, data, 32);
-	int displayMaxNits;
-	try {
-		displayMaxNits = std::stoi(data);
-	} catch (const std::exception&) {
+	BOOL translated = FALSE;
+	int displayMaxNits = GetDlgItemInt(IDC_EDIT_DISPLAYMAX, &translated, FALSE);
+	if (!translated) {
 		MessageBoxW(L"Invalid HDR Brightness. Please enter a valid number from 100 to 10000.", L"Error", MB_OK | MB_ICONERROR);
-		return S_FALSE;
 	}
-
-	if (displayMaxNits <= HDR_NITS_MIN || displayMaxNits > HDR_NITS_MAX) {
+	else if (displayMaxNits <= HDR_NITS_MIN || displayMaxNits > HDR_NITS_MAX) {
 		MessageBoxW(L"Invalid HDR Brightness. Please enter a valid number from 100 to 10000.", L"Error", MB_OK | MB_ICONERROR);
-		return S_FALSE;
 	}
-	// if not error then set to m_setsPP
-	m_SetsPP.iHdrDisplayMaxNits = displayMaxNits;
+	else {
+		m_SetsPP.iHdrDisplayMaxNits = displayMaxNits;
+	}
 
 	m_pVideoRenderer->SetSettings(m_SetsPP);
 	m_pVideoRenderer->SaveSettings();
