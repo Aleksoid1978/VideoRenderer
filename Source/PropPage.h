@@ -33,6 +33,7 @@ class __declspec(uuid("DA46D181-07D6-441D-B314-019AEB10148A"))
 
 	int m_oldSDRDisplayNits = SDR_NITS_DEF;
 
+	bool m_bActivated = false;
 	HWND m_hHint = nullptr;
 
 public:
@@ -46,10 +47,12 @@ private:
 	HRESULT OnConnect(IUnknown* pUnknown) override;
 	HRESULT OnDisconnect() override;
 	HRESULT OnActivate() override;
-	void SetDirty(BOOL bDirty = TRUE) {
-		m_bDirty = bDirty;
-		if (m_pPageSite) {
-			m_pPageSite->OnStatusChange(m_bDirty ? PROPPAGESTATUS_DIRTY : PROPPAGESTATUS_CLEAN);
+	void SetDirty() {
+		if (m_bActivated && !m_bDirty) {
+			m_bDirty = TRUE;
+			if (m_pPageSite) {
+				m_pPageSite->OnStatusChange(PROPPAGESTATUS_DIRTY);
+			}
 		}
 	}
 	INT_PTR OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) override;

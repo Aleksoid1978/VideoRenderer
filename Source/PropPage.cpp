@@ -324,7 +324,7 @@ HRESULT CVRMainPPage::OnActivate()
 		L"'Flip' is more efficient, but 'Discard' may work\n"
 		"more correctly in some rare situations.");
 
-	SetDirty(FALSE);
+	m_bActivated = true;
 
 	return S_OK;
 }
