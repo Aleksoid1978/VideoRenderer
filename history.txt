@@ -1,5 +1,8 @@
 0.10.8 dev
 ------------------------
+Added the ability to get the original frame size using IExFilterConfig::Flt_GetInt64("originalVideoSize").
+Fixed the initial inactivity of the "Apply" button.
+Recommended MPC-BE 1.9.1.12 or newer.
 
 0.10.7.2560 - 2026-08-01
 ------------------------
