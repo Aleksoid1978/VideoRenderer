@@ -1918,7 +1918,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 					m_strCorrection = L"Fix BT.2020";
 				}
 			}
-			else if (bTransFunc22 && m_srcExFmt.VideoPrimaries == MFVideoPrimaries_BT2020) {
+			else if ((bTransFunc22 || !m_bHdrPassthroughSupport) && m_srcExFmt.VideoPrimaries == MFVideoPrimaries_BT2020) {
 				resId = IDF_PS_11_FIX_BT2020;
 				m_strCorrection = L"Fix BT.2020";
 			}
