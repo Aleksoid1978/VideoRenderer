@@ -4394,8 +4394,8 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	}
 	str.append(m_strStatsVProc);
 
-	const int dstW = m_videoRect.Width();
-	const int dstH = m_videoRect.Height();
+	const UINT dstW = m_videoRect.Width();
+	const UINT dstH = m_videoRect.Height();
 	if (m_iRotation) {
 		str += std::format(L"\nScaling       : {}x{} r{}\u00B0> {}x{}", m_srcRectWidth, m_srcRectHeight, m_iRotation, dstW, dstH);
 	} else {
@@ -4404,7 +4404,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	if (m_srcRectWidth != dstW || m_srcRectHeight != dstH) {
 		if (m_D3D11VP.IsReady() && m_bVPScaling && !m_bVPScalingUseShaders) {
 			str.append(L" D3D11");
-			if (m_bVPUseSuperRes) {
+			if (m_bVPUseSuperRes && m_srcRectWidth < dstW && m_srcRectHeight < dstH) {
 				str.append(L" SuperResolution*");
 			}
 		} else {
