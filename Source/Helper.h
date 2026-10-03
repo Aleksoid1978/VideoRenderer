@@ -86,6 +86,7 @@ typedef void(*CopyFrameDataFn)(const UINT lines, BYTE* dst, UINT dst_pitch, cons
 enum ColorFormat_t {
 	CF_NONE = 0,
 	CF_NV12,
+	CF_NV16,
 	CF_P010,
 	CF_P016,
 	CF_YUY2,
