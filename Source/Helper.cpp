@@ -23,7 +23,7 @@
 #include <wincodec.h>
 #include "Utils/CPUInfo.h"
 #include "Utils/gpu_memcpy_sse4.h"
-#include "../Include/Version.h"
+#include "Version.h"
 #include "Helper.h"
 
 std::wstring GetVersionStr()

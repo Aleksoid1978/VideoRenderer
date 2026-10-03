@@ -28,9 +28,9 @@
 #include "Times.h"
 #include "resource.h"
 #include "VideoRenderer.h"
-#include "../Include/Version.h"
+#include "Version.h"
 #include "DX11VideoProcessor.h"
-#include "../Include/ID3DVideoMemoryConfiguration.h"
+#include <ID3DVideoMemoryConfiguration.h>
 #include "Shaders.h"
 #include "Utils/CPUInfo.h"
 

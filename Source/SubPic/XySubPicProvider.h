@@ -21,7 +21,7 @@
 #pragma once
 
 #include "ISubPic.h"
-#include "../Include/SubRenderIntf.h"
+#include <SubRenderIntf.h>
 
 
 interface __declspec(uuid("63679E0A-93AB-4656-AF40-589E4E985991"))

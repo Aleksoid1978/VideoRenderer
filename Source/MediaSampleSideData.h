@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "../Include/IMediaSideData.h"
+#include <IMediaSideData.h>
 #include <map>
 
 struct SideDataGUIDComparer

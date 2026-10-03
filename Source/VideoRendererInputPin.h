@@ -1,5 +1,5 @@
 /*
- * (C) 2018-2025 see Authors.txt
+ * (C) 2018-2026 see Authors.txt
  *
  * This file is part of MPC-BE.
  *
@@ -23,7 +23,7 @@
 #include <d3d11.h>
 #include <mfidl.h>
 #include <memory>
-#include "../Include/ID3DVideoMemoryConfiguration.h"
+#include <ID3DVideoMemoryConfiguration.h>
 
 class CMpcVideoRenderer;
 class CCustomAllocator;

@@ -23,10 +23,10 @@
 #include <dxva2api.h>
 #include <mfobjects.h>
 #include "Utils/Util.h"
-#include <../Include/MediaTypes.h>
+#include <MediaTypes.h>
 #include "Utils/StringUtil.h"
 #include "csputils.h"
-#include "../Include/IMediaSideData.h"
+#include <IMediaSideData.h>
 
 constexpr auto D3DFMT_YV12 = static_cast<D3DFORMAT>(FCC('YV12'));
 constexpr auto D3DFMT_NV12 = static_cast<D3DFORMAT>(FCC('NV12'));
