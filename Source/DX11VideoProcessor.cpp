@@ -775,6 +775,9 @@ void CDX11VideoProcessor::ReleaseSwapChain()
 	m_pDXGISwapChain1.Release();
 
 	m_MaxDisplayLuminance = 0;
+	m_pDisplayInfoFactory.Release();
+	m_displayInfoMonitor = nullptr;
+	m_nextDisplayInfoCheck = 0;
 }
 
 UINT CDX11VideoProcessor::GetPostScaleSteps()
@@ -1550,18 +1553,8 @@ HRESULT CDX11VideoProcessor::InitSwapChain(bool bWindowChanged)
 		if (bHdrOutput) {
 			hr2 = m_pDXGISwapChain1->QueryInterface(IID_PPV_ARGS(&m_pDXGISwapChain4));
 
-			if (m_pDXGIOutput) {
-				CComPtr<IDXGIOutput6> pDXGIOutput6;
-				if (SUCCEEDED(m_pDXGIOutput->QueryInterface(IID_PPV_ARGS(&pDXGIOutput6)))) {
-					DXGI_OUTPUT_DESC1 desc;
-					if (SUCCEEDED(pDXGIOutput6->GetDesc1(&desc))) {
-						m_MaxDisplayLuminance = static_cast<UINT>(desc.MaxLuminance);
-
-						m_pFilter->UpdateDisplayInfo();
-					}
-				}
-			}
 		}
+		RefreshDisplayLuminance(true);
 	}
 
 	return hr;
@@ -1584,6 +1577,66 @@ BOOL CDX11VideoProcessor::VerifyMediaType(const CMediaType* pmt)
 	}
 
 	return TRUE;
+}
+
+void CDX11VideoProcessor::RefreshDisplayLuminance(bool force)
+{
+	const auto now = GetTickCount64();
+	if (!force && now < m_nextDisplayInfoCheck) {
+		return;
+	}
+	// Poll validity cheaply; enumerate only when display capabilities change.
+	m_nextDisplayInfoCheck = now + 250;
+	const auto monitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+	if (!force && m_pDisplayInfoFactory && m_pDisplayInfoFactory->IsCurrent()
+			&& monitor == m_displayInfoMonitor) {
+		return;
+	}
+
+	// A swapchain's containing output can retain pre-HDR capabilities. Even a
+	// fresh HDR output can change again when adjusted luminance propagates.
+	m_pDisplayInfoFactory.Release();
+	m_displayInfoMonitor = monitor;
+	UINT luminance = 0;
+	if (SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&m_pDisplayInfoFactory)))) {
+		bool found = false;
+		for (UINT i = 0; !found; i++) {
+			CComPtr<IDXGIAdapter1> adapter;
+			if (FAILED(m_pDisplayInfoFactory->EnumAdapters1(i, &adapter))) {
+				break;
+			}
+			for (UINT j = 0; ; j++) {
+				CComPtr<IDXGIOutput> output;
+				if (FAILED(adapter->EnumOutputs(j, &output))) {
+					break;
+				}
+				DXGI_OUTPUT_DESC outputDesc = {};
+				if (SUCCEEDED(output->GetDesc(&outputDesc)) && outputDesc.AttachedToDesktop
+						&& outputDesc.Monitor == monitor) {
+					found = true;
+					CComPtr<IDXGIOutput6> output6;
+					if (SUCCEEDED(output->QueryInterface(IID_PPV_ARGS(&output6)))) {
+						DXGI_OUTPUT_DESC1 desc = {};
+						if (SUCCEEDED(output6->GetDesc1(&desc)) && std::isfinite(desc.MaxLuminance)
+								&& desc.MaxLuminance >= 0 && double(desc.MaxLuminance) <= UINT_MAX) {
+							luminance = static_cast<UINT>(desc.MaxLuminance);
+						} else {
+							// Retry transient query failure, without retaining stale nits.
+							m_pDisplayInfoFactory.Release();
+						}
+					}
+					break;
+				}
+			}
+		}
+		if (!found) {
+			m_pDisplayInfoFactory.Release();
+		}
+	}
+	if (luminance != m_MaxDisplayLuminance) {
+		m_MaxDisplayLuminance = luminance;
+		m_pFilter->UpdateDisplayInfo();
+	}
 }
 
 bool CDX11VideoProcessor::HandleHDRToggle()
@@ -2610,6 +2663,7 @@ HRESULT CDX11VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTi
 {
 	CheckPointer(m_TexSrcVideo.pTexture, E_FAIL);
 	CheckPointer(m_pDXGISwapChain1, E_FAIL);
+	RefreshDisplayLuminance();
 
 	if (field) {
 		m_FieldDrawn = field;
@@ -3695,6 +3749,7 @@ HRESULT CDX11VideoProcessor::GetDisplayedImage(BYTE **ppDib, unsigned* pSize)
 
 HRESULT CDX11VideoProcessor::GetVPInfo(std::wstring& str)
 {
+	CAutoLock cRendererLock(&m_pFilter->m_RendererLock);
 	str = L"DirectX 11";
 	str += std::format(L"\nGraphics adapter: {}", m_strAdapterDescription);
 	str.append(L"\nVideoProcessor  : ");

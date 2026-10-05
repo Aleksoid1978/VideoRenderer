@@ -161,6 +161,10 @@ private:
 	D3D11_VIDEO_FRAME_FORMAT m_SampleFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 
 	CComPtr<IDXGIFactory1> m_pDXGIFactory1;
+	CComPtr<IDXGIFactory1> m_pDisplayInfoFactory;
+	HMONITOR m_displayInfoMonitor = nullptr;
+	ULONGLONG m_nextDisplayInfoCheck = 0;
+	void RefreshDisplayLuminance(bool force = false);
 
 	bool m_bSubPicWasRendered = false;
 
