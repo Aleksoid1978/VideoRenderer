@@ -203,6 +203,8 @@ class CDXVA2VP
 private:
 	CComPtr<IDirectXVideoProcessorService> m_pDXVA2_VPService;
 	DWORD m_VendorId = 0;
+	DWORD m_DeviceId = 0;          // with the vendor, names the device the probe answer is kept for
+	std::wstring m_DriverVersion;  // and the driver it was measured on
 	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
 	GUID m_DXVA2VPGuid = GUID_NULL;
 	DXVA2_VideoProcessBltParams m_BltParams = {};

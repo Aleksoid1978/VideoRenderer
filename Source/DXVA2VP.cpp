@@ -249,6 +249,23 @@ HRESULT CDXVA2VP::InitVideoService(IDirect3DDevice9* pDevice, DWORD vendorId)
 
 	m_VendorId = vendorId;
 
+	// The device and driver the probe answer belongs to.  A different device or a new driver is
+	// asked again, because a driver that gets fixed must not keep being given the old answer.
+	m_DeviceId = 0;
+	m_DriverVersion.clear();
+	m_ProbedFormat = D3DFMT_UNKNOWN;
+	m_ProbedDestRange = DXVA2_NominalRange_Unknown;
+	D3DDEVICE_CREATION_PARAMETERS params = {};
+	CComPtr<IDirect3D9> pD3D;
+	D3DADAPTER_IDENTIFIER9 id = {};
+	if (SUCCEEDED(pDevice->GetCreationParameters(&params)) && SUCCEEDED(pDevice->GetDirect3D(&pD3D))
+			&& SUCCEEDED(pD3D->GetAdapterIdentifier(params.AdapterOrdinal, 0, &id))) {
+		m_DeviceId = id.DeviceId;
+		m_DriverVersion = std::format(L"{}.{}.{}.{}",
+			HIWORD(id.DriverVersion.HighPart), LOWORD(id.DriverVersion.HighPart),
+			HIWORD(id.DriverVersion.LowPart), LOWORD(id.DriverVersion.LowPart));
+	}
+
 	return hr;
 }
 
@@ -286,6 +303,32 @@ DXVA2_NominalRange CDXVA2VP::ProbeDestNominalRange(const D3DFORMAT inputFmt, con
 
 	if (!m_pDXVA2_VP || !m_pDXVA2_VPService || exFmt.NominalRange == DXVA2_NominalRange_0_255) {
 		return m_ProbedDestRange;
+	}
+
+	// The answer is kept in the settings key as nr_<vendor>_<device> = "<range>,<driver>".  It is
+	// only used when the driver is the one it was measured on; any other driver is asked again
+	// and the value replaced.  The probe itself costs little, so the point of keeping it is less
+	// the time saved than having a record of which device and driver answered what.
+	const std::wstring regName = std::format(L"nr_{:04x}_{:04x}", m_VendorId, m_DeviceId);
+	const bool canKeep = m_DeviceId && !m_DriverVersion.empty();
+	if (canKeep) {
+		CRegKey key;
+		if (ERROR_SUCCESS == key.Open(HKEY_CURRENT_USER, L"Software\\MPC-BE Filters\\MPC Video Renderer", KEY_READ)) {
+			wchar_t buf[64] = {};
+			ULONG len = (ULONG)std::size(buf);
+			if (ERROR_SUCCESS == key.QueryStringValue(regName.c_str(), buf, &len)) {
+				const std::wstring_view kept(buf);
+				const auto comma = kept.find(L',');
+				if (comma != kept.npos && kept.substr(comma + 1) == m_DriverVersion) {
+					const int range = _wtoi(std::wstring(kept.substr(0, comma)).c_str());
+					if (range == DXVA2_NominalRange_0_255 || range == DXVA2_NominalRange_16_235) {
+						m_ProbedDestRange = (DXVA2_NominalRange)range;
+						DLog(L"CDXVA2VP::ProbeDestNominalRange() : {} from the settings, measured on this driver", kept);
+						return m_ProbedDestRange;
+					}
+				}
+			}
+		}
 	}
 
 	const UINT size = width;
@@ -406,6 +449,12 @@ DXVA2_NominalRange CDXVA2VP::ProbeDestNominalRange(const D3DFORMAT inputFmt, con
 	const bool full0 = measured[0] > mid, full1 = measured[1] > mid;
 	if (full0 != full1) {
 		m_ProbedDestRange = full0 ? DXVA2_NominalRange_0_255 : DXVA2_NominalRange_16_235;
+		if (canKeep) {
+			CRegKey key;
+			if (ERROR_SUCCESS == key.Create(HKEY_CURRENT_USER, L"Software\\MPC-BE Filters\\MPC Video Renderer")) {
+				key.SetStringValue(regName.c_str(), std::format(L"{},{}", (int)m_ProbedDestRange, m_DriverVersion).c_str());
+			}
+		}
 	}
 	DLog(L"CDXVA2VP::ProbeDestNominalRange() : asking for 0-255 gives {}, for 16-235 gives {}, using {}",
 		measured[0], measured[1],
