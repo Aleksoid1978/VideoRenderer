@@ -375,6 +375,7 @@ HRESULT CDXVA2VP::InitVideoProcessor(
 		break;
 	//case PCIV_INTEL:
 		// for Intel, no hack is required (and the hack doesn't change anything)
+		// Intel UHD 750 (i5-11500), driver 30.0.101.1273
 	}
 
 	m_srcFormat   = inputFmt;
