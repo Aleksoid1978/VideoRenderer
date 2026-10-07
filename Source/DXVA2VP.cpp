@@ -354,12 +354,27 @@ HRESULT CDXVA2VP::InitVideoProcessor(
 
 	m_BltParams.DestFormat.value = 0; // output to RGB
 	m_BltParams.DestFormat.SampleFormat = DXVA2_SampleProgressiveFrame; // output to progressive RGB
-	if (exFmt.NominalRange == DXVA2_NominalRange_0_255 && (m_VendorId == PCIV_NVIDIA || m_VendorId == PCIV_AMDATI)) {
-		// hack for Nvidia and AMD, nothing helps Intel
-		m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_16_235;
-	} else {
-		// output to full range RGB
-		m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_0_255;
+
+	// output to full range RGB
+	m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_0_255;
+
+	switch (m_VendorId) {
+	case PCIV_AMDATI:
+		if (exFmt.NominalRange == DXVA2_NominalRange_16_235) {
+			// hack for AMD 
+			// AMD Vega 8 (Rizen 5 Mobile 3500U), driver 25.8.1
+			m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_16_235;
+		}
+		break;
+	case PCIV_NVIDIA:
+		if (exFmt.NominalRange == DXVA2_NominalRange_0_255) {
+			// hack for Nvidia
+			// Nvidia RTX 5060, driver 591.74
+			m_BltParams.DestFormat.NominalRange = DXVA2_NominalRange_16_235;
+		}
+		break;
+	//case PCIV_INTEL:
+		// for Intel, no hack is required (and the hack doesn't change anything)
 	}
 
 	m_srcFormat   = inputFmt;
