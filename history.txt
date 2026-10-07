@@ -2,6 +2,13 @@
 ------------------------
 Added the ability to get the original frame size using IExFilterConfig::Flt_GetInt64("originalVideoSize").
 Fixed the initial inactivity of the "Apply" button.
+Fixed BT.2020 support for some cases.
+Fixed HLG  support for some cases.
+Improved Dolby Vision support.
+Super Resolution support has been adjusted.
+Improved support for FCC color space.
+Added support for NV16 format.
+Fixes in the settings window.
 Recommended MPC-BE 1.9.1.12 or newer.
 
 0.10.7.2560 - 2026-08-01
