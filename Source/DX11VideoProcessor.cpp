@@ -1821,18 +1821,14 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 
 	m_srcLines = biHeight * FmtParams.PitchCoeff / 2;
 	m_srcPitch = biWidth * FmtParams.Packsize;
-	switch (FmtParams.cformat) {
-	case CF_Y8:
-	case CF_NV12:
-	case CF_RGB24:
-	case CF_BGR48:
-		m_srcPitch = ALIGN(m_srcPitch, 4);
-		break;
-	case CF_V210:
+	if (FmtParams.cformat == CF_V210) {
 		m_srcPitch = ALIGN((biWidth + 5) / 6 * 16, 128);
 	}
-	if (pBIH->biCompression == BI_RGB && pBIH->biHeight > 0) {
-		m_srcPitch = -m_srcPitch;
+	else if (pBIH->biCompression == BI_RGB) {
+		m_srcPitch = ALIGN(m_srcPitch, 4);
+		if (pBIH->biHeight > 0) {
+			m_srcPitch = -m_srcPitch;
+		}
 	}
 
 	UINT origW = biWidth;
