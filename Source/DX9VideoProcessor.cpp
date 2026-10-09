@@ -1146,6 +1146,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_srcPitch = biWidth * FmtParams.Packsize;
 	switch (FmtParams.cformat) {
 	case CF_YUY2:
+	case CF_UYVY:
 		m_srcPitch = ALIGN(m_srcPitch, 4);
 		break;
 	case CF_V210:
