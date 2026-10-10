@@ -8,6 +8,8 @@ Improved Dolby Vision support.
 Super Resolution support has been adjusted.
 Improved support for FCC color space.
 Added support for NV16 format.
+Fixed DXVA2 Video Processor operation for limited-range video on AMD graphics cards (driver bug workaround).
+Fixed support for video frames with unaligned data.
 Fixes in the settings window.
 Recommended MPC-BE 1.9.1.12 or newer.
 
