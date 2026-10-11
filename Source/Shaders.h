@@ -70,4 +70,5 @@ HRESULT GetShaderConvertColor(
 	const int chromaScaling,
 	const int convertType,
 	const bool blendDeinterlace,
+	const bool bSdrToneMapping,
 	ID3DBlob** ppCode);

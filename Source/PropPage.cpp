@@ -108,6 +108,7 @@ void CVRMainPPage::SetControls()
 
 	CheckDlgButton(IDC_CHECK18, m_SetsPP.bHdrPreferDoVi       ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr        ? BST_CHECKED : BST_UNCHECKED);
+	ComboBox_SelectByItemData(m_hWnd, IDC_COMBO_SDRTM, m_SetsPP.iSdrToneMappingType);
 
 	SendDlgItemMessageW(IDC_COMBO7, CB_SETCURSEL, m_SetsPP.iHdrToggleDisplay, 0);
 	SendDlgItemMessageW(IDC_SLIDER1, TBM_SETPOS, 1, m_SetsPP.iHdrOsdBrightness);
@@ -164,6 +165,8 @@ void CVRMainPPage::EnableControls()
 #endif
 	}
 
+	GetDlgItem(IDC_STATIC_SDRTM).EnableWindow(m_SetsPP.bConvertToSdr);
+	GetDlgItem(IDC_COMBO_SDRTM).EnableWindow(m_SetsPP.bConvertToSdr);
 	GetDlgItem(IDC_STATIC8).EnableWindow(m_SetsPP.bConvertToSdr);
 	GetDlgItem(IDC_EDIT1).EnableWindow(m_SetsPP.bConvertToSdr);
 	GetDlgItem(IDC_SLIDER2).EnableWindow(m_SetsPP.bConvertToSdr);
@@ -293,6 +296,9 @@ HRESULT CVRMainPPage::OnActivate()
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Hable", 3);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Mobius", 4);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"BT2390/ST 2094-10", 5);
+
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO_SDRTM, L"Fixed", SDRTM_Fixed);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO_SDRTM, L"Metadata", SDRTM_Metadata);
 
 	SetControls();
 
@@ -513,6 +519,14 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				lValue = SendDlgItemMessageW(IDC_COMBO4, CB_GETCURSEL, 0, 0);
 				if (lValue != m_SetsPP.iSwapEffect) {
 					m_SetsPP.iSwapEffect = lValue;
+					SetDirty();
+				}
+				return (LRESULT)1;
+			}
+			if (nID == IDC_COMBO_SDRTM) {
+				lValue = ComboBox_GetCurItemData(m_hWnd, IDC_COMBO_SDRTM);
+				if (lValue != m_SetsPP.iSdrToneMappingType) {
+					m_SetsPP.iSdrToneMappingType = lValue;
 					SetDirty();
 				}
 				return (LRESULT)1;

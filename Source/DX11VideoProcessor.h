@@ -271,6 +271,7 @@ private:
 
 	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
+	float GetSdrToneMappingPeak() const;
 	void SetShaderLuminanceParams();
 
 	void SetHDR10ShaderParams(float, float, float, float, float, int);

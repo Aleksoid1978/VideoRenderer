@@ -21,6 +21,7 @@
 #pragma once
 
 #include <evr9.h>
+#include <IMediaSideData.h>
 #include "DisplayConfig.h"
 #include "FrameStats.h"
 #include "SubPic/ISubPic.h"
@@ -34,6 +35,44 @@ enum : int {
 	STEREO3D_AsIs = 0,
 	STEREO3D_HalfOverUnder_to_Interlace,
 };
+
+// The peak that the HDR to SDR conversion maps onto the display's white: what the file
+// claims, clamped to something usable.  Both processors call this, so they agree.
+// Dolby Vision profile 5 has no HDR10 metadata, so its RPU is read the same way HDR passthrough
+// reads it: level 6 when present, otherwise the mastering peak in source_max_pq.
+inline float SdrToneMappingPeakNits(float maxCLL, float maxMasteringNits, const MediaSideDataDOVIMetadata* pDovi, const int displayNits)
+{
+	if (pDovi) {
+		float doviMastering = 0.0f;
+		float doviCLL = 0.0f;
+		for (const auto& ext : pDovi->Extensions) {
+			if (ext.level == 6) {
+				doviMastering = ext.Level6.max_luminance;
+				doviCLL = ext.Level6.max_cll;
+				break;
+			}
+		}
+		if (doviMastering <= 0.0f && pDovi->ColorMetadata.source_max_pq) {
+			// PQ to nits
+			constexpr float m1 = 2610.f / 16384.f, m2 = 2523.f / 32.f, c1 = 3424.f / 4096.f, c2 = 2413.f / 128.f, c3 = 2392.f / 128.f;
+			const float e = powf(pDovi->ColorMetadata.source_max_pq / 4095.0f, 1.0f / m2);
+			doviMastering = powf(std::max(e - c1, 0.0f) / (c2 - c3 * e), 1.0f / m1) * 10000.0f;
+		}
+		if (doviCLL > 0.0f) {
+			maxCLL = doviCLL;
+		}
+		maxMasteringNits = std::max(maxMasteringNits, doviMastering);
+	}
+
+	float peak = maxCLL;
+	if (peak <= 10.0f) {
+		peak = maxMasteringNits;
+	}
+	if (peak <= 10.0f) {
+		peak = 1000.0f; // nothing usable in the metadata
+	}
+	return std::clamp(peak, static_cast<float>(displayNits) + 1.0f, 10000.0f);
+}
 
 class CMpcVideoRenderer;
 
@@ -70,6 +109,7 @@ protected:
 	int  m_iHdrToggleDisplay               = HDRTD_Disabled;
 	int  m_iHdrOsdBrightness               = 0;
 	bool m_bConvertToSdr                   = true;
+	bool m_bSdrToneMapping                 = false;
 	int  m_iSDRDisplayNits                 = SDR_NITS_DEF;
 
 	bool m_bVPScalingUseShaders = false;
