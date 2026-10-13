@@ -1,3 +1,6 @@
+0.10.10 dev
+------------------------
+
 0.10.9.2605 - 2026-10-10
 ------------------------
 Added the ability to get the original frame size using IExFilterConfig::Flt_GetInt64("originalVideoSize").
