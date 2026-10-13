@@ -601,6 +601,7 @@ HRESULT GetShaderConvertColor(
 	const int chromaScaling,
 	const int convertType,
 	const bool blendDeinterlace,
+	const bool bSdrToneMapping,
 	ID3DBlob** ppCode)
 {
 	DLog(L"GetShaderConvertColor() started for {} {}x{} extfmt:{:#010x} chroma:{}", fmtParams.str, texW, texH, exFmt.value, chromaScaling);
@@ -649,6 +650,13 @@ HRESULT GetShaderConvertColor(
 		if (S_OK == hr) {
 			code.append((LPCSTR)data, size);
 			code += '\n';
+		}
+		if (bSdrToneMapping) {
+			hr = GetDataFromResource(data, size, IDF_HLSL_HDR_TONE_MAPPING_SPLINE);
+			if (S_OK == hr) {
+				code.append((LPCSTR)data, size);
+				code += '\n';
+			}
 		}
 	}
 
@@ -876,11 +884,13 @@ HRESULT GetShaderConvertColor(
 				"if (L2Enabled) color = DolbyVisionTrims(color);\n"
 			);
 		}
-		code.append(
-			"color = ST2084ToLinear(color, LuminanceScale);\n"
-			"color.rgb = ToneMappingHable(color.rgb);\n"
-			"color.rgb = mul(matrix_conv_prim, color.rgb);\n"
-		);
+		code.append("color = ST2084ToLinear(color, LuminanceScale);\n");
+		if (bSdrToneMapping) {
+			code.append("color.rgb = ToneMappingSdr(color.rgb, LuminanceScale, param2, matrix_conv_prim);\n");
+		} else {
+			code.append("color.rgb = ToneMappingHable(color.rgb);\n");
+		}
+		code.append("color.rgb = mul(matrix_conv_prim, color.rgb);\n");
 		isLinear = true;
 	}
 	else if (bConvertHLGtoPQ) {

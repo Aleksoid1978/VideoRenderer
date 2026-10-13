@@ -67,6 +67,11 @@ private:
 
 	CComPtr<IDirect3DPixelShader9> m_pPSCorrection;
 	const wchar_t* m_strCorrection = nullptr;
+
+	// what the file says about its brightness, for the SDR tone mapping curve.  Kept from the
+	// last sample that carried it, as Direct3D 11 keeps m_lastHdr10.
+	float m_fSdrMetaMaxCLL = 0.0f;
+	float m_fSdrMetaMaxMasteringNits = 0.0f;
 	CComPtr<IDirect3DPixelShader9> m_pPSConvertColor;
 	CComPtr<IDirect3DPixelShader9> m_pPSConvertColorDeint;
 	struct {
@@ -194,6 +199,7 @@ private:
 	HRESULT UpdateConvertColorShader();
 
 	HRESULT DxvaVPPass(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
+	float GetSdrToneMappingPeak() const;
 	HRESULT ConvertColorPass(IDirect3DSurface9* pRenderTarget);
 	HRESULT ResizeShaderPass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect);
 	HRESULT FinalPass(IDirect3DTexture9* pTexture, IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect);

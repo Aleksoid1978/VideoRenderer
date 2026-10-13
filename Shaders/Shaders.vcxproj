@@ -25,6 +25,9 @@
     <None Include="convert\hdr_tone_mapping.hlsl">
       <FileType>Document</FileType>
     </None>
+    <None Include="convert\hdr_tone_mapping_spline.hlsl">
+      <FileType>Document</FileType>
+    </None>
     <None Include="convert\conv_matrix.hlsl">
       <FileType>Document</FileType>
     </None>
@@ -71,6 +74,18 @@
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="d3d11\ps_fixconvert_pq_to_sdr.hlsl">
+      <ShaderModel>4.0</ShaderModel>
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="d3d11\ps_convert_pq_to_sdr_tonemap.hlsl">
+      <ShaderModel>4.0</ShaderModel>
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="d3d11\ps_fixconvert_pq_to_sdr_tonemap.hlsl">
+      <ShaderModel>4.0</ShaderModel>
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="d3d11\ps_fixconvert_hlg_to_sdr_tonemap.hlsl">
       <ShaderModel>4.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
@@ -151,6 +166,14 @@
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="d3d9\fixconvert_pq_to_sdr.hlsl">
+      <ShaderModel>3.0</ShaderModel>
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="d3d9\fixconvert_pq_to_sdr_tonemap.hlsl">
+      <ShaderModel>3.0</ShaderModel>
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="d3d9\fixconvert_hlg_to_sdr_tonemap.hlsl">
       <ShaderModel>3.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
