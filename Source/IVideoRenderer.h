@@ -188,7 +188,7 @@ struct Settings_t {
 		}
 		iHdrToggleDisplay               = HDRTD_Disabled;
 		bConvertToSdr                   = true;
-		iSdrToneMappingType             = SDRTM_Fixed;
+		iSdrToneMappingType             = SDRTM_Metadata;
 		iHdrOsdBrightness               = 0;
 		iSDRDisplayNits                 = SDR_NITS_DEF;
 	}
