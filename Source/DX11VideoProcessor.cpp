@@ -1845,6 +1845,9 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	case CF_V210:
 		m_srcPitch = ALIGN((biWidth + 5) / 6 * 16, 128);
 		break;
+	case CF_r210:
+		m_srcPitch = ALIGN(m_srcPitch, 256); // 64 pixels
+		break;
 	default:
 		if (pBIH->biCompression == BI_RGB) {
 			m_srcPitch = ALIGN(m_srcPitch, 4);
