@@ -289,7 +289,11 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Setting
 	m_bHdrPassthrough      = false;
 	m_iHdrToggleDisplay    = HDRTD_Disabled;
 	m_bConvertToSdr        = config.bConvertToSdr;
-	m_bSdrToneMapping      = config.iSdrToneMappingType == SDRTM_Metadata;
+	m_bSdrToneMapping      = config.iSdrToneMappingType != SDRTM_Fixed;
+	m_bSdrMeasurePeak      = config.iSdrToneMappingType == SDRTM_Measured;
+	m_iSdrPeakWindowMs     = config.iSdrPeakWindowMs;
+	m_iSdrPeakFloorNits    = config.iSdrPeakFloorNits;
+	m_bSdrPeakSceneCuts    = config.bSdrPeakSceneCuts;
 	m_iSDRDisplayNits      = config.iSDRDisplayNits;
 
 	m_nCurrentAdapter = D3DADAPTER_DEFAULT;
@@ -695,6 +699,7 @@ void CDX9VideoProcessor::ReleaseVP()
 
 	m_TexSrcVideo.Release();
 	m_TexConvertOutput.Release();
+	ReleaseHdrMeasure();
 	m_TexResize.Release();
 	m_TexsPostScale.Release();
 
@@ -1218,6 +1223,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_pPSConvertColor.Release();
 	m_pPSConvertColorDeint.Release();
 	m_PSConvColorData.bEnable = false;
+	m_bSdrMeasureActive = false;
 
 	UpdateTexParams(FmtParams.CDepth);
 
@@ -1230,8 +1236,15 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 			if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && m_bConvertToSdr) {
 				if (m_bSdrToneMapping) {
 					// a separate shader, so the one used by the Fixed method is untouched
-					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIXCONVERT_PQ_TO_SDR_TM));
-					m_strCorrection = L"PQ to SDR, tone mapped";
+					m_bSdrMeasureActive = m_bSdrMeasurePeak && HdrMeasureSupported()
+						&& SUCCEEDED(InitHdrMeasure(m_srcRectWidth, m_srcRectHeight));
+					if (m_bSdrMeasureActive) {
+						EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIXCONVERT_PQ_TO_SDR_TM_MEASURED));
+						m_strCorrection = L"PQ to SDR, tone mapped, measured";
+					} else {
+						EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIXCONVERT_PQ_TO_SDR_TM));
+						m_strCorrection = L"PQ to SDR, tone mapped";
+					}
 				} else {
 					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIXCONVERT_PQ_TO_SDR));
 					m_strCorrection = L"PQ to SDR";
@@ -2035,9 +2048,16 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 		}
 	}
 
-	const bool bSdrToneMapping = config.iSdrToneMappingType == SDRTM_Metadata;
-	if (bSdrToneMapping != m_bSdrToneMapping) {
+	// read every frame by the measurement, so nothing needs rebuilding
+	m_iSdrPeakWindowMs = config.iSdrPeakWindowMs;
+	m_iSdrPeakFloorNits = config.iSdrPeakFloorNits;
+	m_bSdrPeakSceneCuts = config.bSdrPeakSceneCuts;
+
+	const bool bSdrToneMapping = config.iSdrToneMappingType != SDRTM_Fixed;
+	const bool bSdrMeasurePeak = config.iSdrToneMappingType == SDRTM_Measured;
+	if (bSdrToneMapping != m_bSdrToneMapping || bSdrMeasurePeak != m_bSdrMeasurePeak) {
 		m_bSdrToneMapping = bSdrToneMapping;
+		m_bSdrMeasurePeak = bSdrMeasurePeak;
 		if (SourceIsHDR() && m_bConvertToSdr) {
 			// the curve lives in a different shader, so the shader has to be rebuilt
 			if (m_DXVA2VP.IsReady()) {
@@ -2418,6 +2438,204 @@ HRESULT CDX9VideoProcessor::DxvaVPPass(IDirect3DSurface9* pRenderTarget, const C
 	return m_DXVA2VP.Process(pRenderTarget, m_CurrentSampleFmt, second);
 }
 
+constexpr float kHdrReleaseSeconds = 1.0f;  // seconds for the peak to relax, with no window
+constexpr float kHdrSceneCutPQ     = 0.10f; // a change larger than this (in PQ) is a scene change
+constexpr float kHdrNoSceneCutPQ   = 2.0f;  // more than any change can be: the window never restarts
+
+// Direct3D 11 takes the peak of each frame from a histogram built by a compute shader.  There is
+// no compute shader here, so the frame is reduced 4x per pass down to a single texel, taking the
+// maximum of values that are themselves 2x2 averages (hdr_peak_first.hlsl says why), and the last
+// pass smooths that over time into a 2x1 state texture that the conversion samples.  Nothing is
+// read back for the conversion, so a frame is converted with its own measurement.
+bool CDX9VideoProcessor::HdrMeasureSupported()
+{
+	if (!m_pD3DEx || !m_pD3DDevEx) {
+		return false;
+	}
+	D3DDEVICE_CREATION_PARAMETERS params = {};
+	if (FAILED(m_pD3DDevEx->GetCreationParameters(&params))) {
+		return false;
+	}
+	D3DDISPLAYMODE mode = {};
+	if (FAILED(m_pD3DEx->GetAdapterDisplayMode(params.AdapterOrdinal, &mode))) {
+		return false;
+	}
+	// fp16 is not enough: the smoothing adds small differences to a value near 1 and would stall
+	return S_OK == m_pD3DEx->CheckDeviceFormat(params.AdapterOrdinal, params.DeviceType, mode.Format,
+		D3DUSAGE_RENDERTARGET, D3DRTYPE_TEXTURE, D3DFMT_A32B32G32R32F);
+}
+
+HRESULT CDX9VideoProcessor::InitHdrMeasure(const UINT width, const UINT height)
+{
+	if (!width || !height) {
+		return E_INVALIDARG;
+	}
+
+	std::vector<SIZE> levels;
+	UINT w = width, h = height;
+	do {
+		w = std::max(1u, (w + 3) / 4);
+		h = std::max(1u, (h + 3) / 4);
+		levels.push_back({ (LONG)w, (LONG)h });
+	} while (w > 1 || h > 1);
+
+	if (m_TexHdrPeak.size() == levels.size() && m_TexHdrState[0].pTexture) {
+		return S_OK; // already built for this size
+	}
+	ReleaseHdrMeasure();
+
+	m_TexHdrPeak.resize(levels.size());
+	for (size_t i = 0; i < levels.size(); i++) {
+		HRESULT hr = m_TexHdrPeak[i].Create(m_pD3DDevEx, D3DFMT_A32B32G32R32F,
+			levels[i].cx, levels[i].cy, D3DUSAGE_RENDERTARGET);
+		if (FAILED(hr)) {
+			ReleaseHdrMeasure();
+			return hr;
+		}
+	}
+	for (auto& tex : m_TexHdrState) {
+		HRESULT hr = tex.Create(m_pD3DDevEx, D3DFMT_A32B32G32R32F, 2, 1, D3DUSAGE_RENDERTARGET);
+		if (FAILED(hr)) {
+			ReleaseHdrMeasure();
+			return hr;
+		}
+		// zero means nothing has been measured yet, which the state shader starts from
+		m_pD3DDevEx->ColorFill(tex.pSurface, nullptr, D3DCOLOR_ARGB(0, 0, 0, 0));
+	}
+	m_pD3DDevEx->CreateOffscreenPlainSurface(2, 1, D3DFMT_A32B32G32R32F, D3DPOOL_SYSTEMMEM, &m_pHdrStateStaging, nullptr);
+
+	HRESULT hr = S_OK;
+	if (!m_pPSHdrPeakFirst) {
+		hr = CreatePShaderFromResource(&m_pPSHdrPeakFirst, IDF_PS_9_HDR_PEAK_FIRST);
+	}
+	if (SUCCEEDED(hr) && !m_pPSHdrPeakDown) {
+		hr = CreatePShaderFromResource(&m_pPSHdrPeakDown, IDF_PS_9_HDR_PEAK_DOWN);
+	}
+	if (SUCCEEDED(hr) && !m_pPSHdrPeakState) {
+		hr = CreatePShaderFromResource(&m_pPSHdrPeakState, IDF_PS_9_HDR_PEAK_STATE);
+	}
+	if (FAILED(hr)) {
+		ReleaseHdrMeasure();
+	}
+	return hr;
+}
+
+void CDX9VideoProcessor::ReleaseHdrMeasure()
+{
+	for (auto& tex : m_TexHdrPeak) {
+		tex.Release();
+	}
+	m_TexHdrPeak.clear();
+	for (auto& tex : m_TexHdrState) {
+		tex.Release();
+	}
+	m_pHdrStateStaging.Release();
+	m_pPSHdrPeakFirst.Release();
+	m_pPSHdrPeakDown.Release();
+	m_pPSHdrPeakState.Release();
+	m_nHdrStateWrite = 0;
+	m_bHdrStatsCopyPending = false;
+	m_fHdrMeasuredPeakNits = 0.0f;
+}
+
+HRESULT CDX9VideoProcessor::MeasureHdrPeak(IDirect3DTexture9* pTexture, const CRect& rect)
+{
+	if (!pTexture || m_TexHdrPeak.empty() || !m_TexHdrState[0].pTexture || !m_pPSHdrPeakState) {
+		return E_ABORT;
+	}
+
+	D3DSURFACE_DESC desc;
+	if (FAILED(pTexture->GetLevelDesc(0, &desc))) {
+		return E_FAIL;
+	}
+	CRect r;
+	r.IntersectRect(rect, CRect(0, 0, desc.Width, desc.Height));
+	if (r.IsRectEmpty()) {
+		return S_FALSE;
+	}
+
+	// the previous frame's numbers, copied last frame so that reading them cannot stall the GPU
+	if (m_bHdrStatsCopyPending && m_pHdrStateStaging) {
+		D3DLOCKED_RECT lr = {};
+		if (S_OK == m_pHdrStateStaging->LockRect(&lr, nullptr, D3DLOCK_READONLY)) {
+			m_fHdrMeasuredPeakNits = reinterpret_cast<const float*>(lr.pBits)[4]; // texel 1, red
+			m_pHdrStateStaging->UnlockRect();
+		}
+		m_bHdrStatsCopyPending = false;
+	}
+
+	float frameTime = m_rtAvgTimePerFrame > 0 ? static_cast<float>(m_rtAvgTimePerFrame) / 10000000.0f : 1.0f / 24.0f;
+	if (m_bDeintDouble && m_bInterlaced && m_DXVA2VP.IsReady()) {
+		frameTime *= 0.5f; // two Render() calls per source frame
+	}
+	frameTime = std::clamp(frameTime, 1.0f / 120.0f, 0.1f);
+
+	HRESULT hr = S_OK;
+	IDirect3DSurface9* pOldRT = nullptr;
+	m_pD3DDevEx->GetRenderTarget(0, &pOldRT);
+
+	// pass 1: the frame down to a quarter, as peak and mean.  The shader works the block out from
+	// VPOS, so it is given the origin and the step rather than trusting the texture coordinates.
+	float first[][4] = {
+		{ static_cast<float>(r.left), static_cast<float>(r.top),
+		  r.Width() / static_cast<float>(m_TexHdrPeak[0].Width), r.Height() / static_cast<float>(m_TexHdrPeak[0].Height) },
+		{ 1.0f / desc.Width, 1.0f / desc.Height, 0.0f, 0.0f }
+	};
+	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)first, 2);
+	hr = m_pD3DDevEx->SetPixelShader(m_pPSHdrPeakFirst);
+	hr = m_pD3DDevEx->SetRenderTarget(0, m_TexHdrPeak[0].pSurface);
+	hr = TextureCopyRect(pTexture, r, CRect(0, 0, m_TexHdrPeak[0].Width, m_TexHdrPeak[0].Height), D3DTEXF_LINEAR, 0, false);
+
+	// and on down to one texel
+	hr = m_pD3DDevEx->SetPixelShader(m_pPSHdrPeakDown);
+	for (size_t i = 1; i < m_TexHdrPeak.size(); i++) {
+		const auto& src = m_TexHdrPeak[i - 1];
+		const auto& dst = m_TexHdrPeak[i];
+		float t[][4] = {
+			{ 0.0f, 0.0f, src.Width / static_cast<float>(dst.Width), src.Height / static_cast<float>(dst.Height) },
+			{ 1.0f / src.Width, 1.0f / src.Height, 0.0f, 0.0f }
+		};
+		hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)t, 2);
+		hr = m_pD3DDevEx->SetRenderTarget(0, dst.pSurface);
+		// point, because the taps are exact texels: see hdr_peak_down.hlsl
+		hr = TextureCopyRect(src.pTexture, CRect(0, 0, src.Width, src.Height), CRect(0, 0, dst.Width, dst.Height), D3DTEXF_POINT, 0, false);
+	}
+
+	// the last pass carries the state forward, so it reads the texture it wrote last frame
+	const int read = m_nHdrStateWrite;
+	m_nHdrStateWrite = 1 - m_nHdrStateWrite;
+	const auto& prev = m_TexHdrState[read];
+	const auto& next = m_TexHdrState[m_nHdrStateWrite];
+
+	float stateConst[][4] = {
+		{ frameTime, kHdrReleaseSeconds, m_iSdrPeakWindowMs / 1000.0f,
+		  m_bSdrPeakSceneCuts ? kHdrSceneCutPQ : kHdrNoSceneCutPQ },
+		{ static_cast<float>(m_iSdrPeakFloorNits), 0.0f, 0.0f, 0.0f }
+	};
+	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)stateConst, 2);
+	hr = m_pD3DDevEx->SetPixelShader(m_pPSHdrPeakState);
+	hr = m_pD3DDevEx->SetRenderTarget(0, next.pSurface);
+	hr = m_pD3DDevEx->SetTexture(1, prev.pTexture);
+	hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+	hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+	hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+	hr = m_pD3DDevEx->SetSamplerState(1, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+	const auto& last = m_TexHdrPeak.back();
+	hr = TextureCopyRect(last.pTexture, CRect(0, 0, last.Width, last.Height), CRect(0, 0, 2, 1), D3DTEXF_POINT, 0, false);
+	hr = m_pD3DDevEx->SetTexture(1, nullptr);
+
+	// take a copy for the statistics, read next frame
+	if (m_pHdrStateStaging && m_bShowStats && S_OK == m_pD3DDevEx->GetRenderTargetData(next.pSurface, m_pHdrStateStaging)) {
+		m_bHdrStatsCopyPending = true;
+	}
+
+	if (pOldRT) {
+		m_pD3DDevEx->SetRenderTarget(0, pOldRT);
+		pOldRT->Release();
+	}
+	return hr;
+}
+
 float CDX9VideoProcessor::GetSdrToneMappingPeak() const
 {
 	if (!m_bSdrToneMapping) {
@@ -2756,13 +2974,23 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 
 		if (m_pPSCorrection) {
 			StepSetting();
+			const bool bMeasured = m_bSdrMeasureActive && MeasureHdrPeak(pInputTexture, rect) == S_OK;
 			float fConstDataHDR[][4] = {
 				{10000.0f / m_iSDRDisplayNits, GetSdrToneMappingPeak(), 0.0f, 0.0f}
 			};
 			hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstDataHDR, sizeof(fConstDataHDR) / sizeof(float[4]));
 			hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
 			hr = m_pD3DDevEx->SetRenderTarget(0, pRT);
+			if (bMeasured) {
+				// the state this frame wrote, which the measured shader reads at s1
+				m_pD3DDevEx->SetTexture(1, m_TexHdrState[m_nHdrStateWrite].pTexture);
+				m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+				m_pD3DDevEx->SetSamplerState(1, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+			}
 			hr = TextureCopyRect(pInputTexture, rect, rect, D3DTEXF_POINT, 0, false);
+			if (bMeasured) {
+				m_pD3DDevEx->SetTexture(1, nullptr);
+			}
 		}
 
 		if (m_pPostScaleShaders.size()) {
@@ -3164,6 +3392,9 @@ HRESULT CDX9VideoProcessor::DrawStats(IDirect3DSurface9* pRenderTarget)
 		str_trim_end(str, ',');
 	}
 	str.append(m_strStatsHDR);
+	if (m_bSdrMeasureActive && m_fHdrMeasuredPeakNits > 0.0f) {
+		str += std::format(L"\nHDR measured  : used {:.0f} nits", m_fHdrMeasuredPeakNits);
+	}
 	str.append(m_strStatsPresent);
 
 	str += std::format(L"\nFrames        : {:5}, skipped: {}/{}, failed: {}",
