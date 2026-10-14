@@ -85,6 +85,36 @@ private:
 
 	CComPtr<ID3D11Buffer> m_pCorrectionConstants;
 	CComPtr<ID3D11PixelShader> m_pPSCorrection;
+
+	// per-frame measurement of the content peak, for the HDR to SDR conversion
+	CComPtr<ID3D11ComputeShader>        m_pCSHdrHist;
+	CComPtr<ID3D11ComputeShader>        m_pCSHdrResolve;
+	CComPtr<ID3D11Buffer>               m_pHdrHistBuffer;
+	CComPtr<ID3D11UnorderedAccessView>  m_pHdrHistUAV;
+	CComPtr<ID3D11Buffer>               m_pHdrStateBuffer;
+	CComPtr<ID3D11UnorderedAccessView>  m_pHdrStateUAV;
+	CComPtr<ID3D11ShaderResourceView>   m_pHdrStateSRV;
+	CComPtr<ID3D11Buffer>               m_pHdrMeasureConstants;
+	CComPtr<ID3D11Buffer>               m_pHdrResolveConstants;
+	CComPtr<ID3D11Buffer>               m_pHdrStateStaging; // for the statistics only
+	bool  m_bSdrMeasureActive     = false; // the measuring variant of the correction shader is in use
+	bool  m_bHdrStatsCopyPending  = false;
+	float m_fHdrMeasuredPeakNits  = 0.0f;
+	float m_fHdrSmoothedPeakNits  = 0.0f;
+
+	struct HdrMeasureConstants_t {
+		UINT rectOrigin[2];
+		UINT rectSize[2];
+	};
+	struct HdrResolveConstants_t { // must match cbuffer ResolveConstants in cs_hdr_resolve.hlsl
+		float frameTime;
+		float releaseTime;
+		float sceneCutPQ;
+		float peakFraction;
+		float windowTime;
+		float peakFloor;
+		float padding[2];
+	};
 	const wchar_t* m_strCorrection = nullptr;
 
 	// HDR tonemapping
@@ -272,6 +302,11 @@ private:
 	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
 	float GetSdrToneMappingPeak() const;
+	bool HdrMeasureSupported() const;
+	HRESULT InitHdrMeasure();
+	void ReleaseHdrMeasure();
+	HRESULT MeasureHdrPeak(const Tex2D_t& tex, const CRect& rect);
+	void ReadHdrMeasureStats();
 	void SetShaderLuminanceParams();
 
 	void SetHDR10ShaderParams(float, float, float, float, float, int);

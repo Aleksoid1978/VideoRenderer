@@ -20,6 +20,10 @@
 #define IDF_PS_9_FIXCONVERT_HLG_TO_SDR  631
 #define IDF_PS_9_FIXCONVERT_PQ_TO_SDR_TM 634
 #define IDF_PS_9_FIXCONVERT_HLG_TO_SDR_TM 635
+#define IDF_PS_9_FIXCONVERT_PQ_TO_SDR_TM_MEASURED 636
+#define IDF_PS_9_HDR_PEAK_FIRST         637
+#define IDF_PS_9_HDR_PEAK_DOWN          638
+#define IDF_PS_9_HDR_PEAK_STATE         639
 #define IDF_PS_9_FIX_YCGCO              632
 #define IDF_PS_9_FIX_BT2020             633
 #define IDF_PS_9_INTERP_MITCHELL4_X     640
@@ -91,6 +95,10 @@
 #define IDF_PS_11_FINAL_PASS            880
 #define IDF_PS_11_FINAL_PASS_10         881
 #define IDF_PS_11_HDR10_TONEMAP         882
+#define IDF_CS_11_HDR_HIST              884
+#define IDF_CS_11_HDR_RESOLVE           885
+#define IDF_PS_11_CONVERT_PQ_TO_SDR_TM_MEASURED 886
+#define IDF_PS_11_FIXCONVERT_PQ_TO_SDR_TM_MEASURED 887
 #define IDF_PS_11_FIXCONVERT_HLG_TO_SDR_TM 888
 #define IDF_PS_11_TEST                  900
 #define IDC_EDIT1                       1001
