@@ -4433,6 +4433,7 @@ void CDX11VideoProcessor::Flush()
 	m_rtStart = 0;
 
 	m_DoviExtensionMetadata = {};
+	m_lastDoViDynamicConstantsBuffer = {};
 #ifndef NDEBUG
 	UpdateStatsStatic();
 #endif
