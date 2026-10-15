@@ -1043,6 +1043,7 @@ HRESULT CDX11VideoProcessor::InitHdrMeasure()
 void CDX11VideoProcessor::ReleaseHdrMeasure()
 {
 	m_bSdrMeasureActive = false;
+	m_bHdrLocalMeasureActive = false;
 	m_bHdrStatsCopyPending = false;
 	m_fHdrMeasuredPeakNits = 0.0f;
 	m_fHdrSmoothedPeakNits = 0.0f;
@@ -1063,7 +1064,7 @@ void CDX11VideoProcessor::ReleaseHdrMeasure()
 // m_pHdrStateBuffer, where the measuring variant of the conversion shader picks it up.
 HRESULT CDX11VideoProcessor::MeasureHdrPeak(const Tex2D_t& tex, const CRect& rect)
 {
-	if (!m_bSdrMeasureActive || !m_pHdrStateBuffer || !tex.pShaderResource) {
+	if (!(m_bSdrMeasureActive || m_bHdrLocalMeasureActive) || !m_pHdrStateBuffer || !tex.pShaderResource) {
 		return E_ABORT;
 	}
 
@@ -1167,6 +1168,15 @@ void CDX11VideoProcessor::SetShaderLuminanceParams()
 	}
 }
 
+// Spline measured (8) gets the measuring variant, which needs shader model 5.0.  Without it the
+// plain shader runs 8 as Spline, from the metadata.
+HRESULT CDX11VideoProcessor::CreateHDR10ToneMappingShader()
+{
+	m_bHdrLocalMeasureActive = m_iHdrLocalToneMappingType == 8 && HdrMeasureSupported() && SUCCEEDED(InitHdrMeasure());
+	return CreatePShaderFromResource(&m_pPSHDR10ToneMapping,
+		m_bHdrLocalMeasureActive ? IDF_PS_11_HDR10_TONEMAP_MEASURED : IDF_PS_11_HDR10_TONEMAP);
+}
+
 void CDX11VideoProcessor::SetHDR10ShaderParams(float masteringMinLuminanceNits, float masteringMaxLuminanceNits,
 											   float maxCLL, float maxFALL,
 											   float displayMaxNits, int toneMappingType)
@@ -1176,7 +1186,7 @@ void CDX11VideoProcessor::SetHDR10ShaderParams(float masteringMinLuminanceNits, 
 	if (maxCLL <= 10.f) maxCLL = masteringMaxLuminanceNits;
 	if (maxFALL <= 1.f) maxFALL = maxCLL;
 	if (displayMaxNits < 100.f || displayMaxNits > 10000.f) displayMaxNits = 1000.f;
-	if (toneMappingType < 1 || toneMappingType > 6) toneMappingType = 1;
+	if (toneMappingType < 1 || toneMappingType > 8) toneMappingType = 1;
 
 	const HDRParamsConstantBuffer_t cbuffer = {
 		masteringMinLuminanceNits, masteringMaxLuminanceNits,
@@ -1185,7 +1195,7 @@ void CDX11VideoProcessor::SetHDR10ShaderParams(float masteringMinLuminanceNits, 
 	};
 
 	if (!m_pPSHDR10ToneMapping) {
-		EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSHDR10ToneMapping, IDF_PS_11_HDR10_TONEMAP));
+		EXECUTE_ASSERT(S_OK == CreateHDR10ToneMappingShader());
 		DLogIf(m_pPSHDR10ToneMapping, L"CDX11VideoProcessor::SetHDR10ShaderParams() : m_pPSHDR10ToneMapping({}) created", m_iHdrLocalToneMappingType);
 
 		UpdatePostScaleTexures();
@@ -3704,7 +3714,16 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 				m_pDeviceContext->PSSetConstantBuffers(1, 1, &m_pDoViDynamicConstants.p);
 			}
 
+			const bool bMeasured = m_bHdrLocalMeasureActive && MeasureHdrPeak(*pInputTexture, rect) == S_OK;
+			if (bMeasured) {
+				m_pDeviceContext->PSSetShaderResources(1, 1, &m_pHdrStateSRV.p);
+			}
 			hr = TextureCopyRect(*pInputTexture, pRT, rect, rect, m_pPSHDR10ToneMapping, m_pHDR10ToneMappingConstants, 0, false);
+			if (bMeasured) {
+				ID3D11ShaderResourceView* pNullSRV = nullptr;
+				m_pDeviceContext->PSSetShaderResources(1, 1, &pNullSRV);
+				ReadHdrMeasureStats();
+			}
 		}
 
 		if (m_pPostScaleShaders.size()) {
@@ -3919,7 +3938,7 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 		}
 
 		if (m_bHdrPassthroughSupport && m_bHdrLocalToneMapping) {
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSHDR10ToneMapping, IDF_PS_11_HDR10_TONEMAP));
+			EXECUTE_ASSERT(S_OK == CreateHDR10ToneMappingShader());
 			DLogIf(m_pPSHDR10ToneMapping, L"CDX11VideoProcessor::InitMediaType() m_pPSHDR10ToneMapping(type: '{}') created", m_iHdrLocalToneMappingType);
 		}
 	}
@@ -4625,6 +4644,12 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 								m_strStatsHDR.append(L" BT2390");
 							}
 							break;
+						case 7:
+							m_strStatsHDR.append(L" Spline");
+							break;
+						case 8:
+							m_strStatsHDR.append(L" Spline, measured");
+							break;
 						default:
 							break;
 					}
@@ -4790,9 +4815,11 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 		str_trim_end(str, ',');
 	}
 	str.append(m_strStatsHDR);
-	if (m_bSdrMeasureActive && m_fHdrMeasuredPeakNits > 0.0f) {
-		// the shader keeps the peak above the display's own, so show what it actually used
-		const float usedNits = std::clamp(m_fHdrSmoothedPeakNits, static_cast<float>(m_iSDRDisplayNits) + 1.0f, 10000.0f);
+	if ((m_bSdrMeasureActive || m_bHdrLocalMeasureActive) && m_fHdrMeasuredPeakNits > 0.0f) {
+		// the SDR shader keeps the peak above the display's own, so show what it actually used
+		const float usedNits = m_bSdrMeasureActive
+			? std::clamp(m_fHdrSmoothedPeakNits, static_cast<float>(m_iSDRDisplayNits) + 1.0f, 10000.0f)
+			: std::min(m_fHdrSmoothedPeakNits, 10000.0f);
 		str += std::format(L"\nHDR measured  : frame peak {:.0f}, used {:.0f} nits", m_fHdrMeasuredPeakNits, usedNits);
 	}
 	str.append(m_strStatsPresent);

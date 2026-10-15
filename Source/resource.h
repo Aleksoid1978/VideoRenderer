@@ -95,6 +95,7 @@
 #define IDF_PS_11_FINAL_PASS            880
 #define IDF_PS_11_FINAL_PASS_10         881
 #define IDF_PS_11_HDR10_TONEMAP         882
+#define IDF_PS_11_HDR10_TONEMAP_MEASURED 883
 #define IDF_CS_11_HDR_HIST              884
 #define IDF_CS_11_HDR_RESOLVE           885
 #define IDF_PS_11_CONVERT_PQ_TO_SDR_TM_MEASURED 886

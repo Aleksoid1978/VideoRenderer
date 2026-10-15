@@ -1,7 +1,16 @@
 #include "../convert/st2084.hlsl"
+#include "../convert/hdr_tone_mapping.hlsl"
+#include "../convert/hdr_tone_mapping_spline.hlsl"
 
 Texture2D tex : register(t0);
 SamplerState samp : register(s0);
+
+#ifdef MEASURED
+// [1].z is the peak the measurement settled on, in nits, windowed and floored
+// (cs_hdr_resolve.hlsl).  It is 0 until a frame has been measured, and maxCLL
+// stands in until then.
+StructuredBuffer<float4> measured : register(t1);
+#endif
 
 struct PS_INPUT
 {
@@ -16,7 +25,7 @@ cbuffer HDRParamsConstantBuffer : register(b0)
 	float maxCLL;
 	float maxFALL;
 	float displayMaxNits;
-	uint selection; // 1 = ACES, 2 = Reinhard, 3 = Habel, 4 = Möbius, 5 = BT2390, 6 = ST 2094-10
+	uint selection; // 1 = ACES, 2 = Reinhard, 3 = Habel, 4 = Möbius, 5 = BT2390, 6 = ST 2094-10, 7 = Spline, 8 = Spline measured
 	float padding[2];
 };
 
@@ -281,6 +290,23 @@ float4 main(PS_INPUT input) : SV_Target
 	if (L2Enabled)
 	{
 		color = DolbyVisionTrims(color);
+	}
+
+	if (selection == 7 || selection == 8)
+	{
+		// The curve of the Metadata and Measured methods of the SDR conversion, onto the
+		// display peak.  maxCLL already falls back to the mastering peak and then 1000 nits,
+		// and with Dolby Vision it carries the L1 peak of the scene.
+		float contentNits = maxCLL;
+#ifdef MEASURED
+		const float peak = measured[1].z;
+		if (peak > 0.0f)
+			contentNits = min(peak, 10000.0f);
+#endif
+		static const float3x3 identity = float3x3(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+		color.rgb = ToneMappingSpline(color.rgb, displayMaxNits, contentNits, identity);
+		color = LinearToST2084(color, 10000.0f);
+		return float4(color.rgb, color.a);
 	}
 
 	if (selection == 5)

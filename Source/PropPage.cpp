@@ -296,6 +296,8 @@ HRESULT CVRMainPPage::OnActivate()
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Hable", 3);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Mobius", 4);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"BT2390/ST 2094-10", 5);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Spline", 7);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Spline, measured", 8);
 
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO_SDRTM, L"Fixed", SDRTM_Fixed);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO_SDRTM, L"Metadata", SDRTM_Metadata);
@@ -567,6 +569,16 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 						m_SetsPP.bHdrPassthrough = false;
 						m_SetsPP.bHdrLocalToneMapping = true;
 						m_SetsPP.iHdrLocalToneMappingType = 5;
+						break;
+					case 7:
+						m_SetsPP.bHdrPassthrough = false;
+						m_SetsPP.bHdrLocalToneMapping = true;
+						m_SetsPP.iHdrLocalToneMappingType = 7;
+						break;
+					case 8:
+						m_SetsPP.bHdrPassthrough = false;
+						m_SetsPP.bHdrLocalToneMapping = true;
+						m_SetsPP.iHdrLocalToneMappingType = 8;
 						break;
 					default:
 						break;
