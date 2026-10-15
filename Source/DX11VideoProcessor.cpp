@@ -581,7 +581,8 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged,
 
 		SetCallbackDevice();
 
-		if (!m_pDXGISwapChain1 || m_bExclusiveScreen != m_pFilter->m_bExclusiveScreen || bWindowChanged) {
+		if (m_hWnd &&
+				(!m_pDXGISwapChain1 || m_bExclusiveScreen != m_pFilter->m_bExclusiveScreen || bWindowChanged)) {
 			InitSwapChain(bWindowChanged);
 			UpdateStatsStatic();
 			m_pFilter->OnDisplayModeChange();
@@ -2305,8 +2306,8 @@ HRESULT CDX11VideoProcessor::InitializeD3D11VP(const FmtConvParams_t& params, co
 
 	m_bVPUseSuperRes = (m_D3D11VP.SetSuperRes(superRes) == S_OK);
 
-	if ((m_bVPUseRTXVideoHDR && !m_pDXGISwapChain4)
-			|| (!m_bVPUseRTXVideoHDR && m_pDXGISwapChain4 && !SourceIsHDR())) {
+	if (m_hWnd && ((m_bVPUseRTXVideoHDR && !m_pDXGISwapChain4)
+			|| (!m_bVPUseRTXVideoHDR && m_pDXGISwapChain4 && !SourceIsHDR()))) {
 		InitSwapChain(false);
 		InitMediaType(pmt);
 		return S_OK;
