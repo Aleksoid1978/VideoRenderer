@@ -203,12 +203,17 @@ class CDXVA2VP
 private:
 	CComPtr<IDirectXVideoProcessorService> m_pDXVA2_VPService;
 	DWORD m_VendorId = 0;
+	DWORD m_DeviceId = 0;          // with the vendor, names the device the probe answer is kept for
+	std::wstring m_DriverVersion;  // and the driver it was measured on
 	CComPtr<IDirectXVideoProcessor> m_pDXVA2_VP;
 	GUID m_DXVA2VPGuid = GUID_NULL;
 	DXVA2_VideoProcessBltParams m_BltParams = {};
 	VideoSampleBuffer9 m_VideoSamples;
 
 	DXVA2_VideoProcessorCaps m_DXVA2VPcaps = {};
+	// what this driver actually does with DestFormat.NominalRange, measured once per format
+	D3DFORMAT m_ProbedFormat = D3DFMT_UNKNOWN;
+	DXVA2_NominalRange m_ProbedDestRange = DXVA2_NominalRange_Unknown;
 	UINT m_NumRefSamples = 1;
 
 	// ProcAmp
@@ -219,6 +224,8 @@ private:
 	UINT m_srcWidth    = 0;
 	UINT m_srcHeight   = 0;
 
+	DXVA2_NominalRange ProbeDestNominalRange(const D3DFORMAT inputFmt, const D3DFORMAT outputFmt,
+		const DXVA2_ExtendedFormat& exFmt, const UINT width, const UINT height);
 	BOOL CreateDXVA2VPDevice(const GUID& devguid, const DXVA2_VideoDesc& videodesc, UINT preferredDeintTech, D3DFORMAT& outputFmt);
 
 public:
