@@ -151,6 +151,7 @@ struct Settings_t {
 	int  iSDRDisplayNits;
 	bool bHdrLocalToneMapping;
 	int  iHdrLocalToneMappingType;
+	bool bHdrLocalMeasurePeak;
 	int iHdrDisplayMaxNits;
 
 	Settings_t() {
@@ -191,11 +192,13 @@ struct Settings_t {
 			bHdrPassthrough             = true;
 			bHdrLocalToneMapping        = false;
 			iHdrLocalToneMappingType    = 1;
+			bHdrLocalMeasurePeak        = false;
 			iHdrDisplayMaxNits          = 1000;
 		} else {
 			bHdrPassthrough             = false;
 			bHdrLocalToneMapping        = false;
 			iHdrLocalToneMappingType    = 1;
+			bHdrLocalMeasurePeak        = false;
 			iHdrDisplayMaxNits          = 1000;
 		}
 		iHdrToggleDisplay               = HDRTD_Disabled;

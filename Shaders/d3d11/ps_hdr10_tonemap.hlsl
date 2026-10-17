@@ -1,7 +1,16 @@
 #include "../convert/st2084.hlsl"
+#include "../convert/hdr_tone_mapping.hlsl"
+#include "../convert/hdr_tone_mapping_spline.hlsl"
 
 Texture2D tex : register(t0);
 SamplerState samp : register(s0);
+
+#ifdef MEASURED
+// [1].z is the peak the measurement settled on, in nits, windowed and floored
+// (cs_hdr_resolve.hlsl).  It is 0 until a frame has been measured, and maxCLL
+// stands in until then.
+StructuredBuffer<float4> measured : register(t1);
+#endif
 
 struct PS_INPUT
 {
@@ -16,7 +25,7 @@ cbuffer HDRParamsConstantBuffer : register(b0)
 	float maxCLL;
 	float maxFALL;
 	float displayMaxNits;
-	uint selection; // 1 = ACES, 2 = Reinhard, 3 = Habel, 4 = Möbius, 5 = BT2390, 6 = ST 2094-10
+	uint selection; // 1 = ACES, 2 = Reinhard, 3 = Habel, 4 = Möbius, 5 = BT2390, 6 = ST 2094-10, 7 = Spline
 	float padding[2];
 };
 
@@ -30,6 +39,9 @@ cbuffer DolbyConstants : register(b1)
 	uint L2Enabled;
 	float L2Padding[2];
 };
+
+// The content peak every method maps from: maxCLL, or the measured peak when there is one.
+static float contentNits;
 
 float3 ACESFilmTonemap(float3 color)
 {
@@ -67,7 +79,7 @@ float3 MobiusTonemap(float3 color)
 float3 BT2390Tonemap(float3 color)
 {
 	//Safe Metadata Fallbacks (Fixes black screens on bad video files)
-	float safeMaxCLL = maxCLL;
+	float safeMaxCLL = contentNits;
 	if (safeMaxCLL <= 10.0f)
 		safeMaxCLL = MasteringMaxLuminanceNits;
 	if (safeMaxCLL <= 10.0f)
@@ -125,11 +137,11 @@ float pl_smoothstep(float edge0, float edge1, float x)
 // --- ST 2094-10 EETF Tone Mapping Function
 float3 ST209410Tonemap(float3 color)
 {
-	if (displayMaxNits >= maxCLL)
+	if (displayMaxNits >= contentNits)
 		return color;
 
 	float src_min = LinearToST2084(MasteringMinLuminanceNits, 10000.0f).x;
-	float src_max = LinearToST2084(maxCLL, 10000.0f).x;
+	float src_max = LinearToST2084(contentNits, 10000.0f).x;
 	float src_avg = LinearToST2084(maxFALL, 10000.0f).x;
 	float dst_min = LinearToST2084(0.0f, 10000.0f).x;
 	float dst_max = LinearToST2084(displayMaxNits, 10000.0f).x;
@@ -160,7 +172,7 @@ float3 ST209410Tonemap(float3 color)
 	float out_dst_knee = ST2084ToLinear(dst_knee, 10000.0f).x;
 
 	float x1 = MasteringMinLuminanceNits;
-	float x3 = maxCLL;
+	float x3 = contentNits;
 	float x2 = out_src_knee;
 
 	float y1 = 0.0f;
@@ -283,6 +295,24 @@ float4 main(PS_INPUT input) : SV_Target
 		color = DolbyVisionTrims(color);
 	}
 
+	// maxCLL already falls back to the mastering peak and then 1000 nits, and with Dolby
+	// Vision it carries the L1 peak of the scene.
+	contentNits = maxCLL;
+#ifdef MEASURED
+	const float peak = measured[1].z;
+	if (peak > 0.0f)
+		contentNits = min(peak, 10000.0f);
+#endif
+
+	if (selection == 7)
+	{
+		// the curve of the Metadata and Measured methods of the SDR conversion, onto the display peak
+		static const float3x3 identity = float3x3(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+		color.rgb = ToneMappingSpline(color.rgb, displayMaxNits, contentNits, identity);
+		color = LinearToST2084(color, 10000.0f);
+		return float4(color.rgb, color.a);
+	}
+
 	if (selection == 5)
 	{
 		color.rgb = BT2390Tonemap(color.rgb); // Apply BT.2390 EETF Tone Mapping
@@ -298,7 +328,7 @@ float4 main(PS_INPUT input) : SV_Target
 	}
 
 	float baseLum = max(displayMaxNits, MasteringMaxLuminanceNits);
-	float effectiveMaxLum = min(baseLum, maxCLL);
+	float effectiveMaxLum = min(baseLum, contentNits);
 	float fallAdjustment = min(baseLum / maxFALL, 1.0);
 
 	// Apply global normalization *before tone mapping*

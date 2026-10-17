@@ -86,7 +86,7 @@ private:
 	CComPtr<ID3D11Buffer> m_pCorrectionConstants;
 	CComPtr<ID3D11PixelShader> m_pPSCorrection;
 
-	// per-frame measurement of the content peak, for the HDR to SDR conversion
+	// per-frame measurement of the content peak, for the HDR to SDR conversion and local tone mapping
 	CComPtr<ID3D11ComputeShader>        m_pCSHdrHist;
 	CComPtr<ID3D11ComputeShader>        m_pCSHdrResolve;
 	CComPtr<ID3D11Buffer>               m_pHdrHistBuffer;
@@ -98,6 +98,7 @@ private:
 	CComPtr<ID3D11Buffer>               m_pHdrResolveConstants;
 	CComPtr<ID3D11Buffer>               m_pHdrStateStaging; // for the statistics only
 	bool  m_bSdrMeasureActive     = false; // the measuring variant of the correction shader is in use
+	bool  m_bHdrLocalMeasureActive = false; // the measuring variant of the local tone mapping shader is in use
 	bool  m_bHdrStatsCopyPending  = false;
 	float m_fHdrMeasuredPeakNits  = 0.0f;
 	float m_fHdrSmoothedPeakNits  = 0.0f;
@@ -309,6 +310,7 @@ private:
 	void ReadHdrMeasureStats();
 	void SetShaderLuminanceParams();
 
+	HRESULT CreateHDR10ToneMappingShader();
 	void SetHDR10ShaderParams(float, float, float, float, float, int);
 	void SetDolbyVisionDynamicParams();
 
