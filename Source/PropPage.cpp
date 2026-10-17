@@ -106,6 +106,7 @@ void CVRMainPPage::SetControls()
 		ComboBox_SelectByItemData(m_hWnd, IDC_COMBO10, -1);
 	}
 
+	CheckDlgButton(IDC_CHECK20, m_SetsPP.bHdrLocalMeasurePeak ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK18, m_SetsPP.bHdrPreferDoVi       ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr        ? BST_CHECKED : BST_UNCHECKED);
 	ComboBox_SelectByItemData(m_hWnd, IDC_COMBO_SDRTM, m_SetsPP.iSdrToneMappingType);
@@ -171,6 +172,7 @@ void CVRMainPPage::EnableControls()
 	GetDlgItem(IDC_EDIT1).EnableWindow(m_SetsPP.bConvertToSdr);
 	GetDlgItem(IDC_SLIDER2).EnableWindow(m_SetsPP.bConvertToSdr);
 	GetDlgItem(IDC_EDIT_DISPLAYMAX).EnableWindow(m_SetsPP.bHdrLocalToneMapping);
+	GetDlgItem(IDC_CHECK20).EnableWindow(m_SetsPP.bUseD3D11 && m_SetsPP.bHdrLocalToneMapping && IsWindows10OrGreater());
 }
 
 HRESULT CVRMainPPage::OnConnect(IUnknown *pUnk)
@@ -297,7 +299,6 @@ HRESULT CVRMainPPage::OnActivate()
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Mobius", 4);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"BT2390/ST 2094-10", 5);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Spline", 7);
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Spline, measured", 8);
 
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO_SDRTM, L"Fixed", SDRTM_Fixed);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO_SDRTM, L"Metadata", SDRTM_Metadata);
@@ -320,6 +321,10 @@ HRESULT CVRMainPPage::OnActivate()
 		L"Available for Direct3D 11.\n"
 		"Requires hardware and driver support:\n"
 		"- Nvidia RTX (x64 only)");
+	AddHint(IDC_CHECK20,
+		L"Available for Direct3D 11.\n"
+		"Tone map from the measured peak of each frame\n"
+		"instead of the peak in the metadata.");
 	AddHint(IDC_COMBO5,
 		L"Used for YUV 4:2:0/4:2:2 input formats\n"
 		"when the DVXA2/D3D11 Video Processor is not active.");
@@ -435,6 +440,12 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				SetDirty();
 				return (LRESULT)1;
 			}
+			if (nID == IDC_CHECK20) {
+				m_SetsPP.bHdrLocalMeasurePeak = IsDlgButtonChecked(IDC_CHECK20) == BST_CHECKED;
+				SetDirty();
+				return (LRESULT)1;
+			}
+
 			if (nID == IDC_CHECK19) {
 				m_SetsPP.bVPRTXVideoHDR = IsDlgButtonChecked(IDC_CHECK19) == BST_CHECKED;
 				SetDirty();
@@ -574,11 +585,6 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 						m_SetsPP.bHdrPassthrough = false;
 						m_SetsPP.bHdrLocalToneMapping = true;
 						m_SetsPP.iHdrLocalToneMappingType = 7;
-						break;
-					case 8:
-						m_SetsPP.bHdrPassthrough = false;
-						m_SetsPP.bHdrLocalToneMapping = true;
-						m_SetsPP.iHdrLocalToneMappingType = 8;
 						break;
 					default:
 						break;

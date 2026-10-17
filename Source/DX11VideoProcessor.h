@@ -86,7 +86,7 @@ private:
 	CComPtr<ID3D11Buffer> m_pCorrectionConstants;
 	CComPtr<ID3D11PixelShader> m_pPSCorrection;
 
-	// per-frame measurement of the content peak, for the HDR to SDR conversion and Spline measured
+	// per-frame measurement of the content peak, for the HDR to SDR conversion and local tone mapping
 	CComPtr<ID3D11ComputeShader>        m_pCSHdrHist;
 	CComPtr<ID3D11ComputeShader>        m_pCSHdrResolve;
 	CComPtr<ID3D11Buffer>               m_pHdrHistBuffer;

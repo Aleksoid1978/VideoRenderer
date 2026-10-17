@@ -404,6 +404,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_bHdrPassthrough      = config.bHdrPassthrough;
 	m_bHdrLocalToneMapping = config.bHdrLocalToneMapping;
 	m_iHdrLocalToneMappingType = config.iHdrLocalToneMappingType;
+	m_bHdrLocalMeasurePeak = config.bHdrLocalMeasurePeak;
 	m_iHdrDisplayMaxNits   = config.iHdrDisplayMaxNits;
 	m_iHdrToggleDisplay    = config.iHdrToggleDisplay;
 	m_iHdrOsdBrightness    = config.iHdrOsdBrightness;
@@ -1168,11 +1169,11 @@ void CDX11VideoProcessor::SetShaderLuminanceParams()
 	}
 }
 
-// Spline measured (8) gets the measuring variant, which needs shader model 5.0.  Without it the
-// plain shader runs 8 as Spline, from the metadata.
+// With the measured peak on, every method gets the measuring variant, which needs shader model 5.0.
+// Without it the plain shader tone maps from the metadata.
 HRESULT CDX11VideoProcessor::CreateHDR10ToneMappingShader()
 {
-	m_bHdrLocalMeasureActive = m_iHdrLocalToneMappingType == 8 && HdrMeasureSupported() && SUCCEEDED(InitHdrMeasure());
+	m_bHdrLocalMeasureActive = m_bHdrLocalMeasurePeak && HdrMeasureSupported() && SUCCEEDED(InitHdrMeasure());
 	return CreatePShaderFromResource(&m_pPSHDR10ToneMapping,
 		m_bHdrLocalMeasureActive ? IDF_PS_11_HDR10_TONEMAP_MEASURED : IDF_PS_11_HDR10_TONEMAP);
 }
@@ -1186,7 +1187,7 @@ void CDX11VideoProcessor::SetHDR10ShaderParams(float masteringMinLuminanceNits, 
 	if (maxCLL <= 10.f) maxCLL = masteringMaxLuminanceNits;
 	if (maxFALL <= 1.f) maxFALL = maxCLL;
 	if (displayMaxNits < 100.f || displayMaxNits > 10000.f) displayMaxNits = 1000.f;
-	if (toneMappingType < 1 || toneMappingType > 8) toneMappingType = 1;
+	if (toneMappingType < 1 || toneMappingType > 7) toneMappingType = 1;
 
 	const HDRParamsConstantBuffer_t cbuffer = {
 		masteringMinLuminanceNits, masteringMaxLuminanceNits,
@@ -1199,6 +1200,7 @@ void CDX11VideoProcessor::SetHDR10ShaderParams(float masteringMinLuminanceNits, 
 		DLogIf(m_pPSHDR10ToneMapping, L"CDX11VideoProcessor::SetHDR10ShaderParams() : m_pPSHDR10ToneMapping({}) created", m_iHdrLocalToneMappingType);
 
 		UpdatePostScaleTexures();
+		UpdateStatsStatic(); // whether the peak is measured is only known now
 	}
 
 	if (m_pHDR10ToneMappingConstants) {
@@ -4265,9 +4267,11 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	}
 
 	if (config.bHdrLocalToneMapping != m_bHdrLocalToneMapping ||
-			config.iHdrLocalToneMappingType != m_iHdrLocalToneMappingType) {
+			config.iHdrLocalToneMappingType != m_iHdrLocalToneMappingType ||
+			config.bHdrLocalMeasurePeak != m_bHdrLocalMeasurePeak) {
 		m_bHdrLocalToneMapping = config.bHdrLocalToneMapping;
 		m_iHdrLocalToneMappingType = config.iHdrLocalToneMappingType;
+		m_bHdrLocalMeasurePeak = config.bHdrLocalMeasurePeak;
 		changeHDR = true;
 	}
 
@@ -4647,11 +4651,11 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 						case 7:
 							m_strStatsHDR.append(L" Spline");
 							break;
-						case 8:
-							m_strStatsHDR.append(L" Spline, measured");
-							break;
 						default:
 							break;
+					}
+					if (m_bHdrLocalMeasureActive) {
+						m_strStatsHDR.append(L", measured");
 					}
 					m_strStatsHDR.append(std::format(L"\n Display Max Nits: {} nits", m_iHdrDisplayMaxNits));
 				}
