@@ -63,6 +63,7 @@
 #define OPT_HdrLocaLToneMapping            L"HdrLocalToneMapping"
 #define OPT_HdrLocaLToneMappingType        L"HdrLocalToneMappingType"
 #define OPT_HdrLocalMeasurePeak            L"HdrLocalMeasurePeak"
+#define OPT_HdrDoviToneMappingType         L"HdrDoviToneMappingType"
 #define OPT_HdrDisplayNits                 L"HdrDisplayNits"
 #define OPT_HdrToggleDisplay               L"HdrToggleDisplay"
 #define OPT_HdrOsdBrightness               L"HdrOsdBrightness"
@@ -282,6 +283,9 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrLocalMeasurePeak, dw)) {
 			m_Sets.bHdrLocalMeasurePeak = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrDoviToneMappingType, dw)) {
+			m_Sets.iHdrDoviToneMappingType = discard<int>(dw, 0, 0, 7);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_HdrDisplayNits, dw)) {
 			m_Sets.iHdrDisplayMaxNits = discard<int>(dw, HDR_NITS_DEF, HDR_NITS_MIN, HDR_NITS_MAX);
@@ -1347,6 +1351,7 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_HdrLocaLToneMapping, m_Sets.bHdrLocalToneMapping);
 		key.SetDWORDValue(OPT_HdrLocaLToneMappingType, m_Sets.iHdrLocalToneMappingType);
 		key.SetDWORDValue(OPT_HdrLocalMeasurePeak, m_Sets.bHdrLocalMeasurePeak);
+		key.SetDWORDValue(OPT_HdrDoviToneMappingType, m_Sets.iHdrDoviToneMappingType);
 		key.SetDWORDValue(OPT_HdrDisplayNits,      m_Sets.iHdrDisplayMaxNits);
 		key.SetDWORDValue(OPT_HdrToggleDisplay,    m_Sets.iHdrToggleDisplay);
 		key.SetDWORDValue(OPT_HdrOsdBrightness,    m_Sets.iHdrOsdBrightness);

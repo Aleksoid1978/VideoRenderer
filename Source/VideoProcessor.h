@@ -106,6 +106,7 @@ protected:
 	bool m_bHdrLocalToneMapping            = false;
 	int  m_iHdrLocalToneMappingType        = 0;
 	bool m_bHdrLocalMeasurePeak            = false;
+	int  m_iHdrDoviToneMappingType         = 0;
 	int  m_iHdrDisplayMaxNits              = 1000;
 	int  m_iHdrToggleDisplay               = HDRTD_Disabled;
 	int  m_iHdrOsdBrightness               = 0;

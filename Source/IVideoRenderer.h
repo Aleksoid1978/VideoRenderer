@@ -152,6 +152,7 @@ struct Settings_t {
 	bool bHdrLocalToneMapping;
 	int  iHdrLocalToneMappingType;
 	bool bHdrLocalMeasurePeak;
+	int  iHdrDoviToneMappingType; // 0 = the HDR10 method
 	int iHdrDisplayMaxNits;
 
 	Settings_t() {
@@ -193,12 +194,14 @@ struct Settings_t {
 			bHdrLocalToneMapping        = false;
 			iHdrLocalToneMappingType    = 1;
 			bHdrLocalMeasurePeak        = false;
+			iHdrDoviToneMappingType     = 0;
 			iHdrDisplayMaxNits          = 1000;
 		} else {
 			bHdrPassthrough             = false;
 			bHdrLocalToneMapping        = false;
 			iHdrLocalToneMappingType    = 1;
 			bHdrLocalMeasurePeak        = false;
+			iHdrDoviToneMappingType     = 0;
 			iHdrDisplayMaxNits          = 1000;
 		}
 		iHdrToggleDisplay               = HDRTD_Disabled;
