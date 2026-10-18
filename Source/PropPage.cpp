@@ -301,17 +301,11 @@ HRESULT CVRMainPPage::OnActivate()
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Reinhard", 2);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Hable", 3);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Mobius", 4);
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"BT2390/ST 2094-10", 5);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"BT2390", 5);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Spline", 7);
 
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"Same as HDR", 0);
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"ACES", 1);
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"Reinhard", 2);
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"Hable", 3);
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"Mobius", 4);
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"BT2390", 5);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"ST 2094-10", 6);
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"Spline", 7);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"Same as HDR", 0);
 
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO_SDRTM, L"Fixed", SDRTM_Fixed);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO_SDRTM, L"Metadata", SDRTM_Metadata);
@@ -341,9 +335,9 @@ HRESULT CVRMainPPage::OnActivate()
 		"A method tone maps it to the nits set on the right.\n"
 		"Ignore leaves it to the settings below.");
 	AddHint(IDC_COMBO_DVTM,
-		L"Replaces the HDR method for Dolby Vision\n"
+		L"Tone mapping method for Dolby Vision\n"
 		"with dynamic metadata.\n"
-		"Same as HDR uses ST 2094-10 in place of BT2390.");
+		"Same as HDR uses the method above.");
 	AddHint(IDC_CHECK20,
 		L"Available for Direct3D 11.\n"
 		"Tone map from the measured peak of each frame\n"

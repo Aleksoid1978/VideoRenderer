@@ -1170,15 +1170,11 @@ void CDX11VideoProcessor::SetShaderLuminanceParams()
 	}
 }
 
-// Dolby Vision with L1 metadata takes its own method when one is set.  Otherwise it takes the HDR
-// one, with ST 2094-10 in place of BT2390.
+// Dolby Vision with L1 metadata takes ST 2094-10, unless it is set to the HDR method.
 int CDX11VideoProcessor::HdrLocalToneMappingType() const
 {
-	if (m_DoviExtensionMetadata.L1.present) {
-		if (m_iHdrDoviToneMappingType > 0) {
-			return m_iHdrDoviToneMappingType;
-		}
-		return m_iHdrLocalToneMappingType == 5 ? 6 : m_iHdrLocalToneMappingType;
+	if (m_DoviExtensionMetadata.L1.present && m_iHdrDoviToneMappingType == 6) {
+		return 6;
 	}
 	return m_iHdrLocalToneMappingType;
 }
