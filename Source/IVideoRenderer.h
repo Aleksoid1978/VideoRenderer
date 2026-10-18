@@ -152,7 +152,7 @@ struct Settings_t {
 	bool bHdrLocalToneMapping;
 	int  iHdrLocalToneMappingType;
 	bool bHdrLocalMeasurePeak;
-	int  iHdrDoviToneMappingType; // 0 = the HDR10 method
+	int  iHdrDoviToneMappingType; // 0 = the HDR method
 	int iHdrDisplayMaxNits;
 
 	Settings_t() {

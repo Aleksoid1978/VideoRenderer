@@ -304,7 +304,7 @@ HRESULT CVRMainPPage::OnActivate()
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"BT2390/ST 2094-10", 5);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Spline", 7);
 
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"Same as HDR10", 0);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"Same as HDR", 0);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"ACES", 1);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"Reinhard", 2);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"Hable", 3);
@@ -334,9 +334,16 @@ HRESULT CVRMainPPage::OnActivate()
 		L"Available for Direct3D 11.\n"
 		"Requires hardware and driver support:\n"
 		"- Nvidia RTX (x64 only)");
+	AddHint(IDC_COMBO10,
+		L"Available for Direct3D 11.\n"
+		"Applies to HDR10, HLG and Dolby Vision.\n"
+		"Passthrough sends the video to the display as it is.\n"
+		"A method tone maps it to the nits set on the right.\n"
+		"Ignore leaves it to the settings below.");
 	AddHint(IDC_COMBO_DVTM,
-		L"Tone mapping method for Dolby Vision with dynamic metadata.\n"
-		"Same as HDR10 uses ST 2094-10 in place of BT2390.");
+		L"Replaces the HDR method for Dolby Vision\n"
+		"with dynamic metadata.\n"
+		"Same as HDR uses ST 2094-10 in place of BT2390.");
 	AddHint(IDC_CHECK20,
 		L"Available for Direct3D 11.\n"
 		"Tone map from the measured peak of each frame\n"
