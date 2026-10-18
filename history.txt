@@ -1,5 +1,10 @@
-0.10.10 dev
+0.11.0 dev
 ------------------------
+Added the ability to use metadata when converting HDR to SDR.
+Added Measured method for HDR to SDR conversion, which uses the peak luminance value for each frame.
+Added Spline method for HDR10 and Dolby Vision tone mapping.
+Fixed alignment for the 'r210' format.
+Fixed a crash when IVideoWindow::put_Owner was not called before initialization.
 
 0.10.9.2605 - 2026-10-10
 ------------------------
