@@ -106,6 +106,7 @@ void CVRMainPPage::SetControls()
 		ComboBox_SelectByItemData(m_hWnd, IDC_COMBO10, -1);
 	}
 
+	ComboBox_SelectByItemData(m_hWnd, IDC_COMBO_DVTM, m_SetsPP.iHdrDoviToneMappingType);
 	CheckDlgButton(IDC_CHECK20, m_SetsPP.bHdrLocalMeasurePeak ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK18, m_SetsPP.bHdrPreferDoVi       ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr        ? BST_CHECKED : BST_UNCHECKED);
@@ -172,7 +173,10 @@ void CVRMainPPage::EnableControls()
 	GetDlgItem(IDC_EDIT1).EnableWindow(m_SetsPP.bConvertToSdr);
 	GetDlgItem(IDC_SLIDER2).EnableWindow(m_SetsPP.bConvertToSdr);
 	GetDlgItem(IDC_EDIT_DISPLAYMAX).EnableWindow(m_SetsPP.bHdrLocalToneMapping);
-	GetDlgItem(IDC_CHECK20).EnableWindow(m_SetsPP.bUseD3D11 && m_SetsPP.bHdrLocalToneMapping && IsWindows10OrGreater());
+	const BOOL bLocal = m_SetsPP.bUseD3D11 && m_SetsPP.bHdrLocalToneMapping && IsWindows10OrGreater();
+	GetDlgItem(IDC_STATIC_DVTM).EnableWindow(bLocal);
+	GetDlgItem(IDC_COMBO_DVTM).EnableWindow(bLocal);
+	GetDlgItem(IDC_CHECK20).EnableWindow(bLocal);
 }
 
 HRESULT CVRMainPPage::OnConnect(IUnknown *pUnk)
@@ -297,8 +301,11 @@ HRESULT CVRMainPPage::OnActivate()
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Reinhard", 2);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Hable", 3);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Mobius", 4);
-	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"BT2390/ST 2094-10", 5);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"BT2390", 5);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO10, L"Spline", 7);
+
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"ST 2094-10", 6);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO_DVTM, L"Same as HDR", 0);
 
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO_SDRTM, L"Fixed", SDRTM_Fixed);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO_SDRTM, L"Metadata", SDRTM_Metadata);
@@ -321,6 +328,16 @@ HRESULT CVRMainPPage::OnActivate()
 		L"Available for Direct3D 11.\n"
 		"Requires hardware and driver support:\n"
 		"- Nvidia RTX (x64 only)");
+	AddHint(IDC_COMBO10,
+		L"Available for Direct3D 11.\n"
+		"Applies to HDR10, HLG and Dolby Vision.\n"
+		"Passthrough sends the video to the display as it is.\n"
+		"A method tone maps it to the nits set on the right.\n"
+		"Ignore leaves it to the settings below.");
+	AddHint(IDC_COMBO_DVTM,
+		L"Tone mapping method for Dolby Vision\n"
+		"with dynamic metadata.\n"
+		"Same as HDR uses the method above.");
 	AddHint(IDC_CHECK20,
 		L"Available for Direct3D 11.\n"
 		"Tone map from the measured peak of each frame\n"
@@ -533,6 +550,14 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				lValue = SendDlgItemMessageW(IDC_COMBO4, CB_GETCURSEL, 0, 0);
 				if (lValue != m_SetsPP.iSwapEffect) {
 					m_SetsPP.iSwapEffect = lValue;
+					SetDirty();
+				}
+				return (LRESULT)1;
+			}
+			if (nID == IDC_COMBO_DVTM) {
+				lValue = ComboBox_GetCurItemData(m_hWnd, IDC_COMBO_DVTM);
+				if (lValue != m_SetsPP.iHdrDoviToneMappingType) {
+					m_SetsPP.iHdrDoviToneMappingType = lValue;
 					SetDirty();
 				}
 				return (LRESULT)1;

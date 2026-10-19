@@ -310,6 +310,7 @@ private:
 	void ReadHdrMeasureStats();
 	void SetShaderLuminanceParams();
 
+	int HdrLocalToneMappingType() const;
 	HRESULT CreateHDR10ToneMappingShader();
 	void SetHDR10ShaderParams(float, float, float, float, float, int);
 	void SetDolbyVisionDynamicParams();

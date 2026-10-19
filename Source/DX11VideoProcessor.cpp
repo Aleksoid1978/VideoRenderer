@@ -405,6 +405,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_bHdrLocalToneMapping = config.bHdrLocalToneMapping;
 	m_iHdrLocalToneMappingType = config.iHdrLocalToneMappingType;
 	m_bHdrLocalMeasurePeak = config.bHdrLocalMeasurePeak;
+	m_iHdrDoviToneMappingType = config.iHdrDoviToneMappingType;
 	m_iHdrDisplayMaxNits   = config.iHdrDisplayMaxNits;
 	m_iHdrToggleDisplay    = config.iHdrToggleDisplay;
 	m_iHdrOsdBrightness    = config.iHdrOsdBrightness;
@@ -1167,6 +1168,15 @@ void CDX11VideoProcessor::SetShaderLuminanceParams()
 		D3D11_SUBRESOURCE_DATA InitData = { &cbuffer, 0, 0 };
 		EXECUTE_ASSERT(S_OK == m_pDevice->CreateBuffer(&BufferDesc, &InitData, &m_pCorrectionConstants));
 	}
+}
+
+// Dolby Vision with L1 metadata takes ST 2094-10, unless it is set to the HDR method.
+int CDX11VideoProcessor::HdrLocalToneMappingType() const
+{
+	if (m_DoviExtensionMetadata.L1.present && m_iHdrDoviToneMappingType == 6) {
+		return 6;
+	}
+	return m_iHdrLocalToneMappingType;
 }
 
 // With the measured peak on, every method gets the measuring variant, which needs shader model 5.0.
@@ -3061,7 +3071,7 @@ HRESULT CDX11VideoProcessor::Render(int field, const REFERENCE_TIME frameStartTi
 			if (m_DoviExtensionMetadata.L1.present) {
 				SetHDR10ShaderParams(m_DoviExtensionMetadata.L1.min_pq, m_DoviExtensionMetadata.L1.max_pq,
 									 m_DoviExtensionMetadata.L1.max_pq, m_DoviExtensionMetadata.L1.avg_pq,
-									 m_iHdrDisplayMaxNits, m_iHdrLocalToneMappingType == 5 ? 6 : m_iHdrLocalToneMappingType);
+									 m_iHdrDisplayMaxNits, HdrLocalToneMappingType());
 			} else if (m_lastHdr10.bValid) {
 				SetHDR10ShaderParams(m_lastHdr10.hdr10.MinMasteringLuminance, m_lastHdr10.hdr10.MaxMasteringLuminance,
 									 m_lastHdr10.hdr10.MaxContentLightLevel, m_lastHdr10.hdr10.MaxFrameAverageLightLevel,
@@ -4268,10 +4278,12 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 	if (config.bHdrLocalToneMapping != m_bHdrLocalToneMapping ||
 			config.iHdrLocalToneMappingType != m_iHdrLocalToneMappingType ||
-			config.bHdrLocalMeasurePeak != m_bHdrLocalMeasurePeak) {
+			config.bHdrLocalMeasurePeak != m_bHdrLocalMeasurePeak ||
+			config.iHdrDoviToneMappingType != m_iHdrDoviToneMappingType) {
 		m_bHdrLocalToneMapping = config.bHdrLocalToneMapping;
 		m_iHdrLocalToneMappingType = config.iHdrLocalToneMappingType;
 		m_bHdrLocalMeasurePeak = config.bHdrLocalMeasurePeak;
+		m_iHdrDoviToneMappingType = config.iHdrDoviToneMappingType;
 		changeHDR = true;
 	}
 
@@ -4628,7 +4640,7 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 					m_strStatsHDR.append(L"Passthrough");
 				} else if (m_bHdrLocalToneMapping) {
 					m_strStatsHDR.append(L"Local tone mapping:");
-					switch (m_iHdrLocalToneMappingType) {
+					switch (HdrLocalToneMappingType()) {
 						case 1:
 							m_strStatsHDR.append(L" ACES");
 							break;
@@ -4642,11 +4654,10 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 							m_strStatsHDR.append(L" Mobius");
 							break;
 						case 5:
-							if (m_DoviExtensionMetadata.L1.present) {
-								m_strStatsHDR.append(L" ST 2094-10");
-							} else {
-								m_strStatsHDR.append(L" BT2390");
-							}
+							m_strStatsHDR.append(L" BT2390");
+							break;
+						case 6:
+							m_strStatsHDR.append(L" ST 2094-10");
 							break;
 						case 7:
 							m_strStatsHDR.append(L" Spline");
