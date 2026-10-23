@@ -3835,7 +3835,7 @@ HRESULT CDX11VideoProcessor::Reset(bool bDisplayModeChange)
 		}
 	}
 
-	if ((m_bHdrPassthrough || m_bHdrLocalToneMapping) && SourceIsHDR10orHLG()) {
+	if ((m_bHdrPassthrough || m_bHdrLocalToneMapping) && SourceIsHDR()) {
 		MONITORINFOEXW mi = { sizeof(mi) };
 		GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), (MONITORINFO*)&mi);
 		DisplayConfig_t displayConfig = {};
