@@ -95,7 +95,7 @@ enum ColorFormat_t {
 	CF_P216,
 	CF_Y210,
 	CF_Y216,
-	CF_V210, // experimental. will be converted to Y210 when copied
+	CF_v210, // will be converted to Y210 when copied
 	CF_AYUV,
 	CF_Y410,
 	CF_Y416,
@@ -114,13 +114,13 @@ enum ColorFormat_t {
 	CF_GBRP8,
 	CF_GBRP10,
 	CF_GBRP16,
-	CF_RGB24,
-	CF_XRGB32,
-	CF_ARGB32,
-	CF_r210,
-	CF_RGB48,
-	CF_BGR48,
-	CF_BGRA64,
+	CF_RGB24,  // bbbbbbbb gggggggg rrrrrrrr
+	CF_XRGB32, // bbbbbbbb gggggggg rrrrrrrr xxxxxxxx
+	CF_ARGB32, // bbbbbbbb gggggggg rrrrrrrr aaaaaaaa
+	CF_r210,   // xxrrrrrr rrrrgggg ggggggbb bbbbbbbb
+	CF_RGB48,  // rrrrrrrr rrrrrrrr gggggggg gggggggg bbbbbbbb bbbbbbbb
+	CF_BGR48,  // bbbbbbbb bbbbbbbb gggggggg gggggggg rrrrrrrr rrrrrrrr
+	CF_BGRA64, // bbbbbbbb bbbbbbbb gggggggg gggggggg rrrrrrrr rrrrrrrr aaaaaaaa aaaaaaaa
 	CF_B64A,
 	CF_Y8,
 	CF_Y10,

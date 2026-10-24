@@ -1153,7 +1153,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	case CF_UYVY:
 		m_srcPitch = ALIGN(m_srcPitch, 4);
 		break;
-	case CF_V210:
+	case CF_v210:
 		m_srcPitch = ALIGN((biWidth + 5) / 6 * 16, 128);
 		break;
 	case CF_r210:

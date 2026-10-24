@@ -112,7 +112,7 @@ void ShaderGetPixels(
 	const bool packed422 = (fmtParams.cformat == CF_YUY2 || fmtParams.cformat == CF_UYVY
 		|| fmtParams.cformat == CF_Y210
 		|| fmtParams.cformat == CF_Y216
-		|| fmtParams.cformat == CF_V210);
+		|| fmtParams.cformat == CF_v210);
 	const bool blendDeint420 = (blendDeinterlace && fmtParams.Subsampling == 420);
 
 	const char* strChromaPos = "";
@@ -663,7 +663,7 @@ HRESULT GetShaderConvertColor(
 	const bool packed422 = (fmtParams.cformat == CF_YUY2 || fmtParams.cformat == CF_UYVY
 		|| fmtParams.cformat == CF_Y210
 		|| fmtParams.cformat == CF_Y216
-		|| fmtParams.cformat == CF_V210);
+		|| fmtParams.cformat == CF_v210);
 	const bool fix422 = (packed422 && texW * 2 == width);
 
 	code += std::format("#define w {}\n", fix422 ? width : texW);
