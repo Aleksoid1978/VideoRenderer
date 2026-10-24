@@ -252,9 +252,9 @@ static ColorFormat_t fourcc_to_cformat(const DWORD fourcc)
 	case FCC('b48r'):
 	case MAKEFOURCC('R','G','B',48):    cformat = CF_RGB48;     break;
 	case MAKEFOURCC('B','G','R',48):    cformat = CF_BGR48;     break;
-	case FCC('b64a'): cformat = CF_B64A; break;
+	case FCC('b64a'):                   cformat = CF_B64A;      break;
 	case MAKEFOURCC('B','R','A',64):    cformat = CF_BGRA64;    break;
-	case FCC('r210'): cformat = CF_r210; break;
+	case FCC('r210'):                   cformat = CF_r210;      break;
 	default: cformat = CF_NONE;
 	}
 

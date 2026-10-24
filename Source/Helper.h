@@ -117,11 +117,11 @@ enum ColorFormat_t {
 	CF_RGB24,  // bbbbbbbb gggggggg rrrrrrrr
 	CF_XRGB32, // bbbbbbbb gggggggg rrrrrrrr xxxxxxxx
 	CF_ARGB32, // bbbbbbbb gggggggg rrrrrrrr aaaaaaaa
-	CF_r210,   // xxrrrrrr rrrrgggg ggggggbb bbbbbbbb
+	CF_r210,   // xxrrrrrr rrrrgggg ggggggbb bbbbbbbb, 64-pixel alignment
 	CF_RGB48,  // rrrrrrrr rrrrrrrr gggggggg gggggggg bbbbbbbb bbbbbbbb
 	CF_BGR48,  // bbbbbbbb bbbbbbbb gggggggg gggggggg rrrrrrrr rrrrrrrr
 	CF_BGRA64, // bbbbbbbb bbbbbbbb gggggggg gggggggg rrrrrrrr rrrrrrrr aaaaaaaa aaaaaaaa
-	CF_B64A,
+	CF_B64A,   // aaaaaaaa aaaaaaaa rrrrrrrr rrrrrrrr gggggggg gggggggg bbbbbbbb bbbbbbbb
 	CF_Y8,
 	CF_Y10,
 	CF_Y16,
