@@ -118,6 +118,7 @@ enum ColorFormat_t {
 	CF_XRGB32, // bbbbbbbb gggggggg rrrrrrrr xxxxxxxx
 	CF_ARGB32, // bbbbbbbb gggggggg rrrrrrrr aaaaaaaa
 	CF_r210,   // xxrrrrrr rrrrgggg ggggggbb bbbbbbbb, 64-pixel alignment
+	CF_R10k,   // rrrrrrrr rrgggggg ggggbbbb bbbbbbxx
 	CF_RGB48,  // rrrrrrrr rrrrrrrr gggggggg gggggggg bbbbbbbb bbbbbbbb
 	CF_BGR48,  // bbbbbbbb bbbbbbbb gggggggg gggggggg rrrrrrrr rrrrrrrr
 	CF_BGRA64, // bbbbbbbb bbbbbbbb gggggggg gggggggg rrrrrrrr rrrrrrrr aaaaaaaa aaaaaaaa
@@ -193,6 +194,8 @@ void CopyFrameV210(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src,
 void CopyFrameY410(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 // r210
 void CopyFrameR210(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
+// R10k
+void CopyFrameR10k(const UINT lines, BYTE* dst, UINT dst_pitch, const BYTE* src, int src_pitch);
 // YUV444P10
 void CopyPlane10to16(const UINT lines, BYTE * dst, UINT dst_pitch, const BYTE * src, int src_pitch);
 
