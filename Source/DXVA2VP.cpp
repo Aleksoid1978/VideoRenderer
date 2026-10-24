@@ -249,6 +249,23 @@ HRESULT CDXVA2VP::InitVideoService(IDirect3DDevice9* pDevice, DWORD vendorId)
 
 	m_VendorId = vendorId;
 
+	// The device and driver the probe answer belongs to.  A different device or a new driver is
+	// asked again, because a driver that gets fixed must not keep being given the old answer.
+	m_DeviceId = 0;
+	m_DriverVersion.clear();
+	m_ProbedFormat = D3DFMT_UNKNOWN;
+	m_ProbedDestRange = DXVA2_NominalRange_Unknown;
+	D3DDEVICE_CREATION_PARAMETERS params = {};
+	CComPtr<IDirect3D9> pD3D;
+	D3DADAPTER_IDENTIFIER9 id = {};
+	if (SUCCEEDED(pDevice->GetCreationParameters(&params)) && SUCCEEDED(pDevice->GetDirect3D(&pD3D))
+			&& SUCCEEDED(pD3D->GetAdapterIdentifier(params.AdapterOrdinal, 0, &id))) {
+		m_DeviceId = id.DeviceId;
+		m_DriverVersion = std::format(L"{}.{}.{}.{}",
+			HIWORD(id.DriverVersion.HighPart), LOWORD(id.DriverVersion.HighPart),
+			HIWORD(id.DriverVersion.LowPart), LOWORD(id.DriverVersion.LowPart));
+	}
+
 	return hr;
 }
 
@@ -257,6 +274,193 @@ void CDXVA2VP::ReleaseVideoService()
 	ReleaseVideoProcessor();
 
 	m_pDXVA2_VPService.Release();
+}
+
+
+// Which DestFormat.NominalRange gets full range RGB out of this driver.
+//
+// The specification says a 16-235 source with a 0-255 destination is expanded, and some drivers do
+// not do it: the picture then comes out with black lifted and white lowered.  Asking those drivers
+// for 16-235 is what produces the expansion, which is the opposite of what it reads like.  Rather
+// than keep a list of which vendors are which, put a known value through the processor and look at
+// what comes back.
+//
+// Y 200 limited range is 214 when it has been expanded and 200 when it has not, so one Blt per
+// candidate answers it, with a margin no rounding or dither can blur.  Mid grey would be the worst
+// choice: it is where a range error moves the value least.  Anything unexpected leaves the answer
+// Unknown and the caller keeps its old behaviour.
+//
+// It only judges 16-235 sources, where expanded is right.  A full range source keeps whatever it
+// had before, since there the right answer is the unexpanded one and this has not been measured.
+DXVA2_NominalRange CDXVA2VP::ProbeDestNominalRange(const D3DFORMAT inputFmt, const D3DFORMAT outputFmt,
+	const DXVA2_ExtendedFormat& exFmt, const UINT width, const UINT height)
+{
+	if (m_ProbedFormat == inputFmt) {
+		return m_ProbedDestRange; // already asked, for this format
+	}
+	m_ProbedFormat = inputFmt;
+	m_ProbedDestRange = DXVA2_NominalRange_Unknown;
+
+	if (!m_pDXVA2_VP || !m_pDXVA2_VPService || exFmt.NominalRange == DXVA2_NominalRange_0_255) {
+		return m_ProbedDestRange;
+	}
+
+	// The answer is kept in the settings key as nr_<vendor>_<device> = "<range>,<driver>".  It is
+	// only used when the driver is the one it was measured on; any other driver is asked again
+	// and the value replaced.  The probe itself costs little, so the point of keeping it is less
+	// the time saved than having a record of which device and driver answered what.
+	const std::wstring regName = std::format(L"nr_{:04x}_{:04x}", m_VendorId, m_DeviceId);
+	const bool canKeep = m_DeviceId && !m_DriverVersion.empty();
+	if (canKeep) {
+		CRegKey key;
+		if (ERROR_SUCCESS == key.Open(HKEY_CURRENT_USER, L"Software\\MPC-BE Filters\\MPC Video Renderer", KEY_READ)) {
+			wchar_t buf[64] = {};
+			ULONG len = (ULONG)std::size(buf);
+			if (ERROR_SUCCESS == key.QueryStringValue(regName.c_str(), buf, &len)) {
+				const std::wstring_view kept(buf);
+				const auto comma = kept.find(L',');
+				if (comma != kept.npos && kept.substr(comma + 1) == m_DriverVersion) {
+					const int range = _wtoi(std::wstring(kept.substr(0, comma)).c_str());
+					if (range == DXVA2_NominalRange_0_255 || range == DXVA2_NominalRange_16_235) {
+						m_ProbedDestRange = (DXVA2_NominalRange)range;
+						DLog(L"CDXVA2VP::ProbeDestNominalRange() : {} from the settings, measured on this driver", kept);
+						return m_ProbedDestRange;
+					}
+				}
+			}
+		}
+	}
+
+	const UINT size = width;
+	const UINT sizeY = height;
+	CComPtr<IDirect3DSurface9> pIn, pOut, pSys;
+	HRESULT hr = m_pDXVA2_VPService->CreateSurface(size, sizeY, 0, inputFmt, m_DXVA2VPcaps.InputPool, 0,
+		DXVA2_VideoProcessorRenderTarget, &pIn, nullptr);
+	if (FAILED(hr)) {
+		DLog(L"CDXVA2VP::ProbeDestNominalRange() : input surface failed with error {}", HR2Str(hr));
+		return m_ProbedDestRange;
+	}
+	CComPtr<IDirect3DDevice9> pDevice;
+	if (FAILED(pIn->GetDevice(&pDevice))) {
+		return m_ProbedDestRange;
+	}
+	// A render target made by the device, not by the processor service: the processor is happy to
+	// write into either, but GetRenderTargetData only reads back the device's own, which is how
+	// Process() and the HDR measurement already do it.
+	hr = pDevice->CreateRenderTarget(size, sizeY, outputFmt, D3DMULTISAMPLE_NONE, 0, FALSE, &pOut, nullptr);
+	if (FAILED(hr)) {
+		DLog(L"CDXVA2VP::ProbeDestNominalRange() : output surface failed with error {}", HR2Str(hr));
+		return m_ProbedDestRange;
+	}
+
+	// Written by hand.  ColorFill does not work on these formats; GetNextInputSurface calls it on
+	// the same surfaces and ignores the result, which is why that is easy to miss.  Luma is Y 200,
+	// 0xC800 in the 16 bit layouts (800 of 1023 shifted up), chroma is neutral.  Y 200 limited is
+	// 0.8402 of the range at 8 bits and 0.8402 at 10, so one expectation covers both.
+	constexpr BYTE y8 = 200, c8 = 0x80;
+	constexpr uint16_t y16 = 0xC800, c16 = 0x8000;
+	bool planar = false, wide = false, uyvy = false;
+	switch (inputFmt) {
+	case D3DFMT_NV12: planar = true; break;            // planar 4:2:0, chroma plane after the luma
+	case D3DFMT_P010:
+	case D3DFMT_P016: planar = true; wide = true; break;
+	case D3DFMT_YUY2: break;                           // packed Y0 U Y1 V
+	case D3DFMT_UYVY: uyvy = true; break;              // packed U Y0 V Y1
+	default:
+		DLog(L"CDXVA2VP::ProbeDestNominalRange() : no fill for {}, leaving the answer open", D3DFormatToString(inputFmt));
+		return m_ProbedDestRange;
+	}
+
+	D3DLOCKED_RECT lrIn = {};
+	if (FAILED(pIn->LockRect(&lrIn, nullptr, D3DLOCK_NOSYSLOCK))) {
+		DLog(L"CDXVA2VP::ProbeDestNominalRange() : could not lock the input surface");
+		return m_ProbedDestRange;
+	}
+	const UINT rows = planar ? sizeY + sizeY / 2 : sizeY;
+	for (UINT y = 0; y < rows; y++) {
+		BYTE* row = (BYTE*)lrIn.pBits + (size_t)y * lrIn.Pitch;
+		if (planar) {
+			const bool luma = y < sizeY;
+			if (wide) {
+				uint16_t* p16 = (uint16_t*)row;
+				for (UINT x = 0; x < size; x++) { p16[x] = luma ? y16 : c16; }
+			} else {
+				memset(row, luma ? y8 : c8, size);
+			}
+		} else {
+			for (UINT x = 0; x < size * 2; x += 2) {   // two bytes per pixel, luma and chroma alternating
+				row[x + (uyvy ? 1 : 0)] = y8;
+				row[x + (uyvy ? 0 : 1)] = c8;
+			}
+		}
+	}
+	pIn->UnlockRect();
+
+	if (FAILED(pDevice->CreateOffscreenPlainSurface(size, sizeY, outputFmt, D3DPOOL_SYSTEMMEM, &pSys, nullptr))) {
+		return m_ProbedDestRange;
+	}
+	DXVA2_VideoSample sample = {};
+	sample.Start = 0;
+	sample.End = 1;
+	sample.SampleFormat = exFmt;
+	sample.SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
+	sample.SrcSurface = pIn;
+	sample.SrcRect = { 0, 0, (LONG)size, (LONG)sizeY };
+	sample.DstRect = sample.SrcRect;
+	sample.PlanarAlpha = DXVA2_Fixed32OpaqueAlpha();
+
+	DXVA2_VideoProcessBltParams blt = m_BltParams;
+	blt.TargetFrame = 0;
+	blt.TargetRect = sample.SrcRect;
+	blt.ConstrictionSize = {};
+	blt.DestFormat.value = 0;
+	blt.DestFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
+
+	// Y 200 in 16-235 is 214 once expanded to 0-255, and 200 if it is passed through.  Half way
+	// between the two is the only judgement here.
+	constexpr int expanded = 214;
+	constexpr int asIs = 200;
+	const DXVA2_NominalRange candidates[] = { DXVA2_NominalRange_0_255, DXVA2_NominalRange_16_235 };
+	int measured[2] = { -1, -1 };
+
+	for (int i = 0; i < 2; i++) {
+		blt.DestFormat.NominalRange = candidates[i];
+		const HRESULT hrBlt = m_pDXVA2_VP->VideoProcessBlt(pOut, &blt, &sample, 1, nullptr);
+		if (FAILED(hrBlt)) {
+			DLog(L"CDXVA2VP::ProbeDestNominalRange() : Blt failed for candidate {} with error {}", i, HR2Str(hrBlt));
+			return m_ProbedDestRange;
+		}
+		if (FAILED(pDevice->GetRenderTargetData(pOut, pSys))) {
+			DLog(L"CDXVA2VP::ProbeDestNominalRange() : read back failed");
+			return m_ProbedDestRange;
+		}
+		D3DLOCKED_RECT lr = {};
+		if (FAILED(pSys->LockRect(&lr, nullptr, D3DLOCK_READONLY))) {
+			return m_ProbedDestRange;
+		}
+		// the middle of the surface, away from any edge the processor may treat differently
+		const BYTE* row = (const BYTE*)lr.pBits + (sizeY / 2) * lr.Pitch;
+		const BYTE* px = row + (size / 2) * 4;
+		measured[i] = (px[0] + px[1] + px[2]) / 3;   // grey, so any channel would do
+		pSys->UnlockRect();
+	}
+
+	const int mid = (expanded + asIs) / 2;
+	const bool full0 = measured[0] > mid, full1 = measured[1] > mid;
+	if (full0 != full1) {
+		m_ProbedDestRange = full0 ? DXVA2_NominalRange_0_255 : DXVA2_NominalRange_16_235;
+		if (canKeep) {
+			CRegKey key;
+			if (ERROR_SUCCESS == key.Create(HKEY_CURRENT_USER, L"Software\\MPC-BE Filters\\MPC Video Renderer")) {
+				key.SetStringValue(regName.c_str(), std::format(L"{},{}", (int)m_ProbedDestRange, m_DriverVersion).c_str());
+			}
+		}
+	}
+	DLog(L"CDXVA2VP::ProbeDestNominalRange() : asking for 0-255 gives {}, for 16-235 gives {}, using {}",
+		measured[0], measured[1],
+		m_ProbedDestRange == DXVA2_NominalRange_0_255 ? L"0-255"
+			: m_ProbedDestRange == DXVA2_NominalRange_16_235 ? L"16-235" : L"neither, keeping the default");
+	return m_ProbedDestRange;
 }
 
 HRESULT CDXVA2VP::InitVideoProcessor(
@@ -376,6 +580,13 @@ HRESULT CDXVA2VP::InitVideoProcessor(
 	//case PCIV_INTEL:
 		// for Intel, no hack is required (and the hack doesn't change anything)
 		// Intel UHD 750 (i5-11500), driver 30.0.101.1273
+	}
+
+	// Ask this processor which request actually produces full range RGB.  When the probe cannot
+	// say, the vendor choice above stays.
+	const DXVA2_NominalRange probed = ProbeDestNominalRange(inputFmt, outputFmt, exFmt, width, height);
+	if (probed != DXVA2_NominalRange_Unknown) {
+		m_BltParams.DestFormat.NominalRange = probed;
 	}
 
 	m_srcFormat   = inputFmt;
