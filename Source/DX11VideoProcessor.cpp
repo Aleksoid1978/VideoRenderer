@@ -2824,18 +2824,16 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 					m_DoviMaxMasteringLuminance = static_cast<UINT>(PqToLinearNits(m_Dovi.msd.ColorMetadata.source_max_pq / 4095.f));
 					m_DoviMinMasteringLuminance = static_cast<UINT>(PqToLinearNits(m_Dovi.msd.ColorMetadata.source_min_pq / 4095.f) * 10000.0f);
 
-					if (size == sizeof(MediaSideDataDOVIMetadata)) {
-						for (uint32_t i = 0; i < LAV_DOVI_MAX_EXTENSIONS; ++i) {
-							if (pDOVIMetadata->Extensions[i].level == 6) {
-								auto& Level6 = pDOVIMetadata->Extensions[i].Level6;
+					for (uint32_t i = 0; i < LAV_DOVI_MAX_EXTENSIONS; ++i) {
+						if (pDOVIMetadata->Extensions[i].level == 6) {
+							auto& Level6 = pDOVIMetadata->Extensions[i].Level6;
 
-								m_DoviMaxMasteringLuminance = Level6.max_luminance;
-								m_DoviMinMasteringLuminance = Level6.min_luminance;
-								m_DoviMaxContentLightLevel = Level6.max_cll;
-								m_DoviMaxFrameAverageLightLevel = Level6.max_fall;
+							m_DoviMaxMasteringLuminance = Level6.max_luminance;
+							m_DoviMinMasteringLuminance = Level6.min_luminance;
+							m_DoviMaxContentLightLevel = Level6.max_cll;
+							m_DoviMaxFrameAverageLightLevel = Level6.max_fall;
 
-								break;
-							}
+							break;
 						}
 					}
 				}
