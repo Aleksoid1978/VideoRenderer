@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <IntDir>$(SolutionDir)_bin\obj\$(Configuration)_$(PlatformShortName)\$(ProjectName)\</IntDir>
+    <IntDir>$(SolutionDir)_obj\$(Configuration)_$(PlatformShortName)\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)_bin\lib\$(Configuration)_$(PlatformShortName)\</OutDir>
     <OutDir Condition="'$(TargetExt)'!='.lib'And'$(Configuration)'=='Debug'">$(SolutionDir)_bin\Filter_$(PlatformShortName)_Debug\</OutDir>
     <OutDir Condition="'$(TargetExt)'!='.lib'And'$(Configuration)'=='Release'">$(SolutionDir)_bin\Filter_$(PlatformShortName)\</OutDir>
