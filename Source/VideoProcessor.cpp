@@ -27,7 +27,7 @@
 #include "VideoProcessor.h"
 #include <shellscalingapi.h>
 
-void CVideoProcessor::GetVideoSize(long& width, long& height)
+void CVideoProcessor::GetVideoSize(long& width, long& height) const
 {
 	if (m_iRotation == 90 || m_iRotation == 270) {
 		width  = m_srcRectHeight;
@@ -38,7 +38,7 @@ void CVideoProcessor::GetVideoSize(long& width, long& height)
 	}
 }
 
-void CVideoProcessor::GetAspectRatio(long& aspectX, long& aspectY)
+void CVideoProcessor::GetAspectRatio(long& aspectX, long& aspectY) const
 {
 	if (m_iRotation == 90 || m_iRotation == 270) {
 		aspectX = m_srcAspectRatioY;
@@ -109,7 +109,7 @@ void CVideoProcessor::UpdateStatsByDisplay()
 	}
 }
 
-bool CVideoProcessor::CheckGraphPlacement()
+bool CVideoProcessor::CheckGraphPlacement() const
 {
 	return m_GraphRect.left >= 0 && m_GraphRect.top >= 0
 		&& !(m_GraphRect.left < m_StatsRect.right && m_GraphRect.top < m_StatsRect.bottom);

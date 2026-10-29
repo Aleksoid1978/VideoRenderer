@@ -143,7 +143,7 @@ public:
 	int Type() override { return VP_DX9; }
 
 	HRESULT Init(const HWND hwnd, const bool displayHdrChanged, bool* pChangeDevice = nullptr) override;
-	bool Initialized();
+	bool Initialized() const;
 
 private:
 	void ReleaseVP();

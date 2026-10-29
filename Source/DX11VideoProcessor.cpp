@@ -663,7 +663,7 @@ HRESULT CDX11VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged,
 	return hr;
 }
 
-bool CDX11VideoProcessor::Initialized()
+bool CDX11VideoProcessor::Initialized() const
 {
 	return (m_pDevice.p != nullptr && m_pDeviceContext.p != nullptr);
 }

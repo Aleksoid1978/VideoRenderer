@@ -219,7 +219,7 @@ public:
 	virtual HRESULT Init(const HWND hwnd, bool displayHdrChanged, bool* pChangeDevice = nullptr) = 0;
 
 	virtual IDirect3DDeviceManager9* GetDeviceManager9() { return nullptr; }
-	UINT GetCurrentAdapter() { return m_nCurrentAdapter; }
+	UINT GetCurrentAdapter() const { return m_nCurrentAdapter; }
 
 	virtual BOOL VerifyMediaType(const CMediaType* pmt) = 0;
 	virtual BOOL InitMediaType(const CMediaType* pmt) = 0;
@@ -236,23 +236,23 @@ public:
 
 	virtual bool IsInit() const { return false; }
 
-	ColorFormat_t GetColorFormat() { return m_srcParams.cformat; }
+	ColorFormat_t GetColorFormat() const { return m_srcParams.cformat; }
 
-	void GetSourceRect(CRect& sourceRect) { sourceRect = m_srcRect; }
-	void GetVideoRect(CRect& videoRect) { videoRect = m_videoRect; }
+	void GetSourceRect(CRect& sourceRect) const { sourceRect = m_srcRect; }
+	void GetVideoRect(CRect& videoRect) const { videoRect = m_videoRect; }
 	virtual void SetVideoRect(const CRect& videoRect) = 0;
 	virtual HRESULT SetWindowRect(const CRect& windowRect) = 0;
 
-	void GetVideoSize(long& width, long& height);
-	void GetAspectRatio(long& aspectX, long& aspectY);
+	void GetVideoSize(long& width, long& height) const;
+	void GetAspectRatio(long& aspectX, long& aspectY) const;
 
 	// Settings
 	void SetShowStats(bool value);
 	virtual void Configure(const Settings_t& config) = 0;
 
-	int GetRotation() { return m_iRotation; }
+	int GetRotation() const { return m_iRotation; }
 	virtual void SetRotation(int value) = 0;
-	bool GetFlip() { return m_bFlip; }
+	bool GetFlip() const { return m_bFlip; }
 	void SetFlip(bool value) { m_bFlip = value; }
 	virtual void SetStereo3dTransform(int value) {};
 	void SetAllowDeepColorBitmaps(bool value) { m_bAllowDeepColorBitmaps = value; }
@@ -269,13 +269,13 @@ public:
 
 	void UpdateStatsByWindow();
 	void UpdateStatsByDisplay();
-	bool CheckGraphPlacement();
+	bool CheckGraphPlacement() const;
 	void CalcGraphParams();
 	virtual void CalcStatsParams() = 0;
 
 	void SetDisplayInfo(const DisplayConfig_t& dc, const bool primary, const bool exclusiveScreen);
 
-	bool GetDoubleRate() { return m_bDoubleFrames; }
+	bool GetDoubleRate() const { return m_bDoubleFrames; }
 
 	virtual ISubPicAllocator* GetSubPicAllocator() { return nullptr; }
 
@@ -286,12 +286,12 @@ public:
 	};
 
 protected:
-	inline bool SourceIsHDR10orHLG() {
+	inline bool SourceIsHDR10orHLG() const {
 		return (m_decExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && m_decExFmt.VideoTransferMatrix != DXVA2_VideoTransferMatrix_Unknown)
 			|| m_decExFmt.VideoTransferFunction == MFVideoTransFunc_HLG;
 	}
 	// source is PQ, HLG or Dolby Vision
-	inline bool SourceIsHDR() {
+	inline bool SourceIsHDR() const {
 		return SourceIsHDR10orHLG() || m_Dovi.bValid;
 	}
 

@@ -680,7 +680,7 @@ HRESULT CDX9VideoProcessor::Init(const HWND hwnd, const bool displayHdrChanged, 
 	return m_hrThread;
 }
 
-bool CDX9VideoProcessor::Initialized()
+bool CDX9VideoProcessor::Initialized() const
 {
 	return (m_pD3DDevEx.p != nullptr);
 }

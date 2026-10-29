@@ -291,7 +291,7 @@ public:
 	int Type() override { return VP_DX11; }
 
 	HRESULT Init(const HWND hwnd, const bool displayHdrChanged, bool* pChangeDevice = nullptr) override;
-	bool Initialized();
+	bool Initialized() const;
 
 private:
 	void ReleaseVP();
@@ -326,7 +326,7 @@ private:
 
 	HRESULT MemCopyToTexSrcVideo(const BYTE* srcData, const int srcPitch);
 
-	bool Preferred10BitOutput() {
+	bool Preferred10BitOutput() const {
 		return m_DisplayBitsPerChannel >= 10 && (m_InternalTexFmt == DXGI_FORMAT_R10G10B10A2_UNORM || m_InternalTexFmt == DXGI_FORMAT_R16G16B16A16_FLOAT);
 	}
 
