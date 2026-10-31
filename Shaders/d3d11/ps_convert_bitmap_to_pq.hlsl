@@ -32,7 +32,8 @@ inline float3 transferPQ(float3 x)
     // REC.709 to BT.2020
     x = mul(matx, x);
     // linear to PQ
-    x = pow(x / SDR_peak_lum, ST2084_m1);
+    float3 L = x * (SDR_peak_lum / 10000.0f);
+    x = pow(L, ST2084_m1);
     x = (ST2084_c1 + ST2084_c2 * x) / (1.0f + ST2084_c3 * x);
     x = pow(x, ST2084_m2);
     return x;
