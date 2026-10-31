@@ -185,15 +185,17 @@ DirectX::XMFLOAT4 TransferPQ(DirectX::XMFLOAT4& colorF, const float SDR_peak_lum
 
 	float c[3] = { colorF.x, colorF.y, colorF.z };
 
+	float linear_rgb[3];
 	for (unsigned i = 0; i < 3; i++) {
-		// REC.709 to linear
-		c[i] = pow(c[i], 1.0f / 0.45f);
-		// REC.709 to BT.2020
-		c[i] = matx[i][0] * c[0] + matx[i][1] * c[1] + matx[i][2] * c[2];
-		// linear to PQ
-		c[i] = pow(c[i] / SDR_peak_lum, ST2084_m1);
-		c[i] = (ST2084_c1 + ST2084_c2 * c[i]) / (1.0f + ST2084_c3 * c[i]);
-		c[i] = pow(c[i], ST2084_m2);
+		linear_rgb[i] = powf(fmaxf(c[i], 0.0f), 1.0f / 0.45f);
+	}
+	float bt2020[3];
+	for (unsigned i = 0; i < 3; i++) {
+		bt2020[i] = matx[i][0] * linear_rgb[0] + matx[i][1] * linear_rgb[1] + matx[i][2] * linear_rgb[2];
+		float L = fmaxf(bt2020[i], 0.0f) * (SDR_peak_lum / 10000.0f);
+		float p = powf(L, ST2084_m1);
+		p = (ST2084_c1 + ST2084_c2 * p) / (1.0f + ST2084_c3 * p);
+		c[i] = powf(p, ST2084_m2);
 	}
 
 	colorF.x = c[0];
