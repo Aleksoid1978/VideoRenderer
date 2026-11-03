@@ -172,28 +172,45 @@ HRESULT DumpTexture2D(ID3D11DeviceContext* pDeviceContext, ID3D11Texture2D* pTex
 DirectX::XMFLOAT4 TransferPQ(DirectX::XMFLOAT4& colorF, const float SDR_peak_lum)
 {
 	// https://github.com/thexai/xbmc/blob/master/system/shaders/guishader_common.hlsl
-	const float ST2084_m1 = 2610.0f / (4096.0f * 4.0f);
-	const float ST2084_m2 = (2523.0f / 4096.0f) * 128.0f;
-	const float ST2084_c1 = 3424.0f / 4096.0f;
-	const float ST2084_c2 = (2413.0f / 4096.0f) * 32.0f;
-	const float ST2084_c3 = (2392.0f / 4096.0f) * 32.0f;
-	const float matx[3][3] = {
-		{0.627402f, 0.329292f, 0.043306f},
-		{0.069095f, 0.919544f, 0.011360f},
-		{0.016394f, 0.088028f, 0.895578f}
+	// ST.2084 (PQ) constants
+	static constexpr float ST2084_m1 = 2610.0f / (4096.0f * 4.0f);
+	static constexpr float ST2084_m2 = (2523.0f / 4096.0f) * 128.0f;
+	static constexpr float ST2084_c1 = 3424.0f / 4096.0f;
+	static constexpr float ST2084_c2 = (2413.0f / 4096.0f) * 32.0f;
+	static constexpr float ST2084_c3 = (2392.0f / 4096.0f) * 32.0f;
+
+	// REC.709 -> BT.2020 (linear RGB)
+	static constexpr float matx[3][3] = {
+		{ 0.627402f, 0.329292f, 0.043306f },
+		{ 0.069095f, 0.919544f, 0.011360f },
+		{ 0.016394f, 0.088028f, 0.895578f }
 	};
+
+	static constexpr float REC709_to_linear = 1.0f / 0.45f;
 
 	float c[3] = { colorF.x, colorF.y, colorF.z };
 
-	for (unsigned i = 0; i < 3; i++) {
-		// REC.709 to linear
-		c[i] = pow(c[i], 1.0f / 0.45f);
-		// REC.709 to BT.2020
-		c[i] = matx[i][0] * c[0] + matx[i][1] * c[1] + matx[i][2] * c[2];
-		// linear to PQ
-		c[i] = pow(c[i] / SDR_peak_lum, ST2084_m1);
-		c[i] = (ST2084_c1 + ST2084_c2 * c[i]) / (1.0f + ST2084_c3 * c[i]);
-		c[i] = pow(c[i], ST2084_m2);
+	// 1) REC.709 gamma -> linear (all channels first, no in-place mixing)
+	float linear_rgb[3];
+	for (unsigned i = 0; i < 3; ++i) {
+		linear_rgb[i] = powf(fmaxf(c[i], 0.0f), REC709_to_linear);
+	}
+
+	// 2) linear RGB -> linear BT.2020
+	// 3) linear -> PQ
+	for (unsigned i = 0; i < 3; ++i) {
+		const float bt2020 =
+			matx[i][0] * linear_rgb[0] +
+			matx[i][1] * linear_rgb[1] +
+			matx[i][2] * linear_rgb[2];
+
+		// normalize SDR signal by SDR_peak_lum
+		// SDR_peak_lum acts as a scale factor, not a physical nits value
+		const float L = fmaxf(bt2020, 0.0f) / SDR_peak_lum;
+
+		float p = powf(L, ST2084_m1);
+		p = (ST2084_c1 + ST2084_c2 * p) / (1.0f + ST2084_c3 * p);
+		c[i] = powf(p, ST2084_m2);
 	}
 
 	colorF.x = c[0];
