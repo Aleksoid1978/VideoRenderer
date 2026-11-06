@@ -211,6 +211,8 @@ protected:
 
 	CVideoProcessor(CMpcVideoRenderer* pFilter) : m_pFilter(pFilter) {}
 
+	bool m_bPGSSubtitles = false;
+
 public:
 	virtual ~CVideoProcessor() = default;
 
@@ -285,10 +287,16 @@ public:
 		return m_srcExFmt;
 	};
 
+	virtual void SetPGSSubtitles(bool bPGSSubtitles) = 0;
+
 protected:
+	// source is PQ
+	inline bool SourceIsHDR10() const {
+		return (m_decExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && m_decExFmt.VideoTransferMatrix != DXVA2_VideoTransferMatrix_Unknown);
+	}
+	// source is PQ or HLG
 	inline bool SourceIsHDR10orHLG() const {
-		return (m_decExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && m_decExFmt.VideoTransferMatrix != DXVA2_VideoTransferMatrix_Unknown)
-			|| m_decExFmt.VideoTransferFunction == MFVideoTransFunc_HLG;
+		return SourceIsHDR10() || m_decExFmt.VideoTransferFunction == MFVideoTransFunc_HLG;
 	}
 	// source is PQ, HLG or Dolby Vision
 	inline bool SourceIsHDR() const {

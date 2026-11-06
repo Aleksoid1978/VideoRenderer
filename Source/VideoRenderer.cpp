@@ -1522,6 +1522,11 @@ STDMETHODIMP CMpcVideoRenderer::Flt_SetBool(LPCSTR field, bool value)
 		return S_OK;
 	}
 
+	if (!strcmp(field, "pgs_subtitles")) {
+		m_VideoProcessor->SetPGSSubtitles(value);
+		return S_OK;
+	}
+
 	return E_INVALIDARG;
 }
 

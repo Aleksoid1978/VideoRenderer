@@ -379,6 +379,8 @@ public:
 
 	void SwitchFullScreen(bool set) override;
 
+	void SetPGSSubtitles(bool bPGSSubtitles) override;
+
 private:
 	void UpdateTexures();
 	void UpdatePostScaleTexures();

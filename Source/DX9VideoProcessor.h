@@ -203,6 +203,10 @@ public:
 
 	ISubPicAllocator* GetSubPicAllocator() override;
 
+	void SetPGSSubtitles(bool bPGSSubtitles) override {
+		m_bPGSSubtitles = bPGSSubtitles;
+	};
+
 private:
 	void UpdateTexures();
 	void UpdatePostScaleTexures();
