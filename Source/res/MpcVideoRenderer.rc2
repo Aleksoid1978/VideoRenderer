@@ -32,6 +32,7 @@ IDF_PS_9_CONVERT_YUY2           FILE                    "..\\_bin\\shaders\\conv
 IDF_PS_9_CONVERT_BIPLANAR       FILE                    "..\\_bin\\shaders\\convert_biplanar.cso"
 IDF_PS_9_CONVERT_PLANAR         FILE                    "..\\_bin\\shaders\\convert_planar.cso"
 IDF_PS_9_CONVERT_PLANAR_YV      FILE                    "..\\_bin\\shaders\\convert_planar_yv.cso"
+IDF_PS_9_CONVERT_PQ_TO_SDR      FILE                    "..\\_bin\\shaders\\convert_pq_to_sdr.cso"
 IDF_PS_9_FIXCONVERT_PQ_TO_SDR   FILE                    "..\\_bin\\shaders\\fixconvert_pq_to_sdr.cso"
 IDF_PS_9_FIXCONVERT_PQ_TO_SDR_TM FILE                    "..\\_bin\\shaders\\fixconvert_pq_to_sdr_tonemap.cso"
 IDF_PS_9_FIXCONVERT_HLG_TO_SDR_TM FILE                    "..\\_bin\\shaders\\fixconvert_hlg_to_sdr_tonemap.cso"

@@ -156,6 +156,23 @@
     <FxCompile Include="d3d11\ps_hdr10_tonemap.hlsl">
       <Filter>d3d11</Filter>
     </FxCompile>
+    <FxCompile Include="d3d11\ps_convert_pq_to_sdr_tonemap.hlsl" />
+    <FxCompile Include="d3d11\ps_fixconvert_pq_to_sdr_tonemap.hlsl" />
+    <FxCompile Include="d3d11\ps_fixconvert_hlg_to_sdr_tonemap.hlsl" />
+    <FxCompile Include="d3d11\ps_convert_pq_to_sdr_tonemap_measured.hlsl" />
+    <FxCompile Include="d3d11\ps_fixconvert_pq_to_sdr_tonemap_measured.hlsl" />
+    <FxCompile Include="d3d11\cs_hdr_hist.hlsl" />
+    <FxCompile Include="d3d11\cs_hdr_resolve.hlsl" />
+    <FxCompile Include="d3d11\ps_hdr10_tonemap_measured.hlsl" />
+    <FxCompile Include="d3d9\fixconvert_pq_to_sdr_tonemap.hlsl" />
+    <FxCompile Include="d3d9\fixconvert_hlg_to_sdr_tonemap.hlsl" />
+    <FxCompile Include="d3d9\fixconvert_pq_to_sdr_tonemap_measured.hlsl" />
+    <FxCompile Include="d3d9\hdr_peak_first.hlsl" />
+    <FxCompile Include="d3d9\hdr_peak_down.hlsl" />
+    <FxCompile Include="d3d9\hdr_peak_state.hlsl" />
+    <FxCompile Include="d3d9\convert_pq_to_sdr.hlsl">
+      <Filter>d3d9</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="convert\hdr_tone_mapping.hlsl">
@@ -176,5 +193,6 @@
     <None Include="convert\hlg.hlsl">
       <Filter>convert</Filter>
     </None>
+    <None Include="convert\hdr_tone_mapping_spline.hlsl" />
   </ItemGroup>
 </Project>
