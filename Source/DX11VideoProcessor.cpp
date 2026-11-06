@@ -3631,6 +3631,9 @@ void CDX11VideoProcessor::DrawSubtitles(ID3D11Texture2D* pRenderTarget)
 				m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
 				m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 				m_pDeviceContext->PSSetShader(m_pPS_BitmapToFrame, nullptr, 0);
+				if (m_bPGSSubtitles && SourceIsHDR10() && m_bConvertToSdr && m_pCorrectionConstants) {
+					m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pCorrectionConstants.p);
+				}
 
 				// call the function for drawing subtitles
 				hr = pSubPic->AlphaBlt(&rcSource, &rcDest, nullptr);
@@ -3654,6 +3657,9 @@ void CDX11VideoProcessor::DrawSubtitles(ID3D11Texture2D* pRenderTarget)
 			m_pDeviceContext->IASetInputLayout(m_pVSimpleInputLayout);
 			m_pDeviceContext->VSSetShader(m_pVS_Simple, nullptr, 0);
 			m_pDeviceContext->PSSetShader(m_pPS_BitmapToFrame, nullptr, 0);
+			if (m_bPGSSubtitles && SourceIsHDR10() && m_bConvertToSdr && m_pCorrectionConstants) {
+				m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pCorrectionConstants.p);
+			}
 
 			// call the function for drawing subtitles
 			hr = m_pFilter->m_pSub11CallBack->Render11(rtStart, 0, m_rtAvgTimePerFrame, rDstVid, rDstVid, rSrcPri,
