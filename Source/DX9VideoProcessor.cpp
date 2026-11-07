@@ -726,6 +726,8 @@ void CDX9VideoProcessor::ReleaseDevice()
 	m_pPSConvertColor.Release();
 	m_pPSConvertColorDeint.Release();
 
+	m_pPS_PQtoSDR.Release();
+
 	m_pShaderUpscaleX.Release();
 	m_pShaderUpscaleY.Release();
 	m_pShaderDownscaleX.Release();
@@ -1225,6 +1227,8 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_pPSConvertColorDeint.Release();
 	m_PSConvColorData.bEnable = false;
 	m_bSdrMeasureActive = false;
+
+	m_pPS_PQtoSDR.Release();
 
 	UpdateTexParams(FmtParams.CDepth);
 
@@ -2868,6 +2872,20 @@ void CDX9VideoProcessor::DrawSubtitles(IDirect3DSurface9* pRenderTarget)
 {
 	HRESULT hr = S_OK;
 
+	auto ApplyPQtoSDRForPGSSubtitles = [this] {
+		if (m_bConvertToSdr && m_bPGSSubtitles && SourceIsHDR10()) {
+			if (!m_pPS_PQtoSDR) {
+				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPS_PQtoSDR, IDF_PS_9_CONVERT_PQ_TO_SDR));
+			}
+
+			float fConstDataHDR[][4] = {
+				{ 10000.0f / m_iSDRDisplayNits, GetSdrToneMappingPeak(), 0.0f, 0.0f }
+			};
+			EXECUTE_ASSERT(S_OK == m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstDataHDR, sizeof(fConstDataHDR) / sizeof(float[4])));
+			EXECUTE_ASSERT(S_OK == m_pD3DDevEx->SetPixelShader(m_pPS_PQtoSDR));
+		}
+	};
+
 	CComPtr<ISubPic> pSubPic = m_pFilter->GetSubPic(m_rtStart);
 	if (pSubPic) {
 		RECT rcSource, rcDest;
@@ -2877,11 +2895,16 @@ void CDX9VideoProcessor::DrawSubtitles(IDirect3DSurface9* pRenderTarget)
 
 			hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 			if (SUCCEEDED(hr)) {
+				ApplyPQtoSDRForPGSSubtitles();
 				hr = pSubPic->AlphaBlt(&rcSource, &rcDest, nullptr);
 			}
 
 			if (SUCCEEDED(hr_ec)) {
 				hr_ec = m_pD3DDevEx->BeginScene();
+			}
+
+			if (SUCCEEDED(hr)) {
+				m_pD3DDevEx->SetPixelShader(nullptr);
 			}
 		}
 		return;
@@ -2892,6 +2915,8 @@ void CDX9VideoProcessor::DrawSubtitles(IDirect3DSurface9* pRenderTarget)
 
 		hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 		if (SUCCEEDED(hr)) {
+			ApplyPQtoSDRForPGSSubtitles();
+
 			const SIZE windowSize = m_windowRect.Size();
 			const CRect rSrcPri(POINT(0, 0), windowSize);
 			CRect rDstVid(m_videoRect);
@@ -2907,6 +2932,10 @@ void CDX9VideoProcessor::DrawSubtitles(IDirect3DSurface9* pRenderTarget)
 
 		if (SUCCEEDED(hr_ec)) {
 			hr_ec = m_pD3DDevEx->BeginScene();
+		}
+
+		if (SUCCEEDED(hr)) {
+			m_pD3DDevEx->SetPixelShader(nullptr);
 		}
 	}
 }

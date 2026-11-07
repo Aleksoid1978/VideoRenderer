@@ -68,6 +68,8 @@ private:
 	CComPtr<IDirect3DPixelShader9> m_pPSCorrection;
 	const wchar_t* m_strCorrection = nullptr;
 
+	CComPtr<IDirect3DPixelShader9> m_pPS_PQtoSDR;
+
 	// what the file says about its brightness, for the SDR tone mapping curve.  Kept from the
 	// last sample that carried it, as Direct3D 11 keeps m_lastHdr10.
 	float m_fSdrMetaMaxCLL = 0.0f;
