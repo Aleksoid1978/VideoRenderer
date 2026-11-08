@@ -2235,7 +2235,7 @@ HRESULT CDX9VideoProcessor::AddPostScaleShader(const std::wstring& name, const s
 ISubPicAllocator* CDX9VideoProcessor::GetSubPicAllocator()
 {
 	if (!m_pSubPicAllocator && m_pD3DDevEx) {
-		m_pSubPicAllocator = new CDX9SubPicAllocator(m_pD3DDevEx, { 1280, 720 }, true/*Hmm*/);
+		m_pSubPicAllocator = new CDX9SubPicAllocator(m_pD3DDevEx, { 1280, 720 }, 'MPC');
 	}
 	return m_pSubPicAllocator;
 }
