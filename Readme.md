@@ -18,16 +18,16 @@ MPC Video Renderer is a free and open-source video renderer for DirectShow. The 
 ## Minimum system requirements
 
 * An SSE2-capable CPU
-* Windows 7¹ or newer
+* Windows 7¹ SP1 or newer
 * DirectX 9.0c (PS 3.0) video card
 
-¹For Windows 7, you must have D3DCompiler_47.dll file. It can be installed via update KB4019990.
+¹For Windows 7 SP1, you must have D3DCompiler_47.dll file. It can be installed via update KB4019990. Windows 7 Starter is not supported.
 
 ## Recommended system requirements
 
 * An SSE2-capable CPU
 * Windows 10 or newer
-* DirectX 10/11 video card
+* DirectX 11 or newer video card
 
 ## License
 
