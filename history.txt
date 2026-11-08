@@ -1,5 +1,7 @@
 0.11.2 dev
 ------------------------
+Fixed the display of HDR PGS subtitles for SDR output.
+Recommended MPC-BE 1.9.3.7 or newer.
 
 0.11.1.2636 - 2026-10-30
 ------------------------
