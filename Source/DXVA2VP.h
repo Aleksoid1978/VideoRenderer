@@ -1,5 +1,5 @@
 /*
-* (C) 2019-2025 see Authors.txt
+* (C) 2019-2026 see Authors.txt
 *
 * This file is part of MPC-BE.
 *
@@ -218,6 +218,9 @@ private:
 	D3DFORMAT m_srcFormat = D3DFMT_UNKNOWN;
 	UINT m_srcWidth    = 0;
 	UINT m_srcHeight   = 0;
+
+	DXVA2_NominalRange ProbeDestNominalRange(const D3DFORMAT inputFmt, const D3DFORMAT outputFmt,
+		const DXVA2_ExtendedFormat& exFmt, const UINT width, const UINT height);
 
 	BOOL CreateDXVA2VPDevice(const GUID& devguid, const DXVA2_VideoDesc& videodesc, UINT preferredDeintTech, D3DFORMAT& outputFmt);
 
