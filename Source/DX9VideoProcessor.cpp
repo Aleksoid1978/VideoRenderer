@@ -695,6 +695,13 @@ void CDX9VideoProcessor::ReleaseVP()
 	m_DXVA2VP.ReleaseVideoProcessor();
 	m_strCorrection = nullptr;
 
+	// unbind before releasing, the AMD TeraScale driver (atiumd6a.dll) can crash otherwise
+	if (m_pD3DDevEx) {
+		for (DWORD i = 0; i < 4; i++) {
+			m_pD3DDevEx->SetTexture(i, nullptr);
+		}
+	}
+
 	m_TexSrcVideo.Release();
 	m_TexConvertOutput.Release();
 	ReleaseHdrMeasure();
@@ -713,6 +720,12 @@ void CDX9VideoProcessor::ReleaseDevice()
 	DLog(L"CDX9VideoProcessor::ReleaseDevice()");
 
 	ReleaseVP();
+
+	if (m_pD3DDevEx) {
+		for (DWORD i = 0; i < 4; i++) {
+			m_pD3DDevEx->SetTexture(i, nullptr);
+		}
+	}
 
 	m_TexDither.Release();
 	m_bAlphaBitmapEnable = false;
