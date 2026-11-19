@@ -72,8 +72,6 @@ private:
 
 	// what the file says about its brightness, for the SDR tone mapping curve.  Kept from the
 	// last sample that carried it, as Direct3D 11 keeps m_lastHdr10.
-	float m_fSdrMetaMaxCLL = 0.0f;
-	float m_fSdrMetaMaxMasteringNits = 0.0f;
 
 	// the peak of each frame, taken by reduction because Direct3D 9 has no compute shader
 	CComPtr<IDirect3DPixelShader9> m_pPSHdrPeakFirst;

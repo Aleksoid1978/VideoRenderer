@@ -411,6 +411,7 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_iHdrOsdBrightness    = config.iHdrOsdBrightness;
 	m_bConvertToSdr        = config.bConvertToSdr;
 	m_bSdrToneMapping      = config.iSdrToneMappingType != SDRTM_Fixed;
+	m_iSdrToneMappingCurve = config.iSdrToneMappingCurve;
 	m_bSdrMeasurePeak      = config.iSdrToneMappingType == SDRTM_Measured;
 	m_iSdrPeakWindowMs     = config.iSdrPeakWindowMs;
 	m_iSdrPeakFloorNits    = config.iSdrPeakFloorNits;
@@ -913,12 +914,11 @@ float CDX11VideoProcessor::GetSdrToneMappingPeak() const
 	if (!m_bSdrToneMapping) {
 		return 0.0f;
 	}
-	const auto& meta = m_hdr10.bValid ? m_hdr10 : m_lastHdr10;
 	return SdrToneMappingPeakNits(
-		meta.bValid ? static_cast<float>(meta.hdr10.MaxContentLightLevel) : 0.0f,
-		meta.bValid ? static_cast<float>(meta.hdr10.MaxMasteringLuminance) : 0.0f, // in nits, as CopySample stores it
+		m_fSdrMetaMaxCLL,
+		m_fSdrMetaMaxMasteringNits,
 		m_Dovi.bValid ? &m_Dovi.msd : nullptr,
-		m_iSDRDisplayNits);
+		EffectiveSdrDisplayNits());
 }
 
 // Tuning of the per-frame peak measurement
@@ -1154,7 +1154,7 @@ void CDX11VideoProcessor::ReadHdrMeasureStats()
 
 void CDX11VideoProcessor::SetShaderLuminanceParams()
 {
-	FLOAT cbuffer[4] = { 10000.0f / m_iSDRDisplayNits, GetSdrToneMappingPeak(), 0, 0 };
+	FLOAT cbuffer[4] = { 10000.0f / EffectiveSdrDisplayNits(), GetSdrToneMappingPeak(), static_cast<float>(m_iSdrToneMappingCurve), 0 };
 
 	if (m_pCorrectionConstants) {
 		m_pDeviceContext->UpdateSubresource(m_pCorrectionConstants, 0, nullptr, &cbuffer, 0, 0);
@@ -1197,7 +1197,7 @@ void CDX11VideoProcessor::SetHDR10ShaderParams(float masteringMinLuminanceNits, 
 	if (maxCLL <= 10.f) maxCLL = masteringMaxLuminanceNits;
 	if (maxFALL <= 1.f) maxFALL = maxCLL;
 	if (displayMaxNits < 100.f || displayMaxNits > 10000.f) displayMaxNits = 1000.f;
-	if (toneMappingType < 1 || toneMappingType > 7) toneMappingType = 1;
+	if (toneMappingType < 1 || toneMappingType > 9) toneMappingType = 1;
 
 	const HDRParamsConstantBuffer_t cbuffer = {
 		masteringMinLuminanceNits, masteringMaxLuminanceNits,
@@ -2050,6 +2050,11 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 {
 	DLog(L"CDX11VideoProcessor::InitMediaType()");
 
+	if (*pmt != m_pFilter->m_inputMT) {
+		m_fSdrMetaMaxCLL = 0.0f;
+		m_fSdrMetaMaxMasteringNits = 0.0f;
+	}
+
 	if (!VerifyMediaType(pmt)) {
 		return FALSE;
 	}
@@ -2175,6 +2180,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	m_pPSConvertColor.Release();
 	m_pPSConvertColorDeint.Release();
 	m_PSConvColorData.bEnable = false;
+	m_bSdrMeasureActive = false;
 
 	m_pPSHDR10ToneMapping.Release();
 	m_pHDR10ToneMappingConstants.Release();
@@ -2208,14 +2214,13 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 		if (SUCCEEDED(hr)) {
 			UINT resId = 0;
 			m_pCorrectionConstants.Release();
-			m_bSdrMeasureActive = false;
 			bool bTransFunc22 = m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_22
 								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_709
 								|| m_srcExFmt.VideoTransferFunction == DXVA2_VideoTransFunc_240M;
 
 			if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && !(m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping)) && m_bConvertToSdr) {
-				if (m_bSdrToneMapping) {
-					// a separate shader, so the one used by the Fixed method is untouched
+				if (UseSdrToneMappingShader()) {
+					// The original Fixed curve uses its own shader.
 					m_bSdrMeasureActive = m_bSdrMeasurePeak && HdrMeasureSupported() && SUCCEEDED(InitHdrMeasure());
 					if (m_bSdrMeasureActive) {
 						resId = m_D3D11VP.IsPqSupported() ? IDF_PS_11_CONVERT_PQ_TO_SDR_TM_MEASURED : IDF_PS_11_FIXCONVERT_PQ_TO_SDR_TM_MEASURED;
@@ -2235,7 +2240,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 					m_strCorrection = L"HLG to PQ";
 				}
 				else if (m_bConvertToSdr) {
-					if (m_bSdrToneMapping) {
+					if (UseSdrToneMappingShader()) {
 						// HLG white is 1000 nits, which is what the peak falls back to without MaxCLL.
 						// Measuring each frame is not offered here, since the histogram reads PQ.
 						resId = IDF_PS_11_FIXCONVERT_HLG_TO_SDR_TM;
@@ -2567,12 +2572,13 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 
 	m_hdr10 = {};
 	if (CComQIPtr<IMediaSideData> pMediaSideData = pSample) {
-		// m_bSdrToneMapping needs it too, and that path runs with the other two off
-		if (SourceIsHDR10orHLG() && (m_bHdrPassthrough || m_bHdrLocalToneMapping || m_bSdrToneMapping)) {
+		if (SourceIsHDR10orHLG() && (m_bHdrPassthrough || m_bHdrLocalToneMapping || m_bConvertToSdr)) {
+			const float previousSdrPeak = GetSdrToneMappingPeak();
 			MediaSideDataHDR* hdr = nullptr;
 			size_t size = 0;
 			hr = pMediaSideData->GetSideData(IID_MediaSideDataHDR, (const BYTE**)&hdr, &size);
 			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataHDR)) {
+				m_fSdrMetaMaxMasteringNits = static_cast<float>(hdr->max_display_mastering_luminance);
 				const auto& primaries_x = hdr->display_primaries_x;
 				const auto& primaries_y = hdr->display_primaries_y;
 				if (primaries_x[0] > 0. && primaries_x[1] > 0. && primaries_x[2] > 0.
@@ -2601,9 +2607,10 @@ HRESULT CDX11VideoProcessor::CopySample(IMediaSample* pSample)
 			if (SUCCEEDED(hr) && size == sizeof(MediaSideDataHDRContentLightLevel)) {
 				m_hdr10.hdr10.MaxContentLightLevel      = hdrCLL->MaxCLL;
 				m_hdr10.hdr10.MaxFrameAverageLightLevel = hdrCLL->MaxFALL;
-				if (m_bSdrToneMapping) {
-					SetShaderLuminanceParams(); // the curve is built from this
-				}
+				m_fSdrMetaMaxCLL = static_cast<float>(hdrCLL->MaxCLL);
+			}
+			if (GetSdrToneMappingPeak() != previousSdrPeak) {
+				SetShaderLuminanceParams();
 			}
 		}
 
@@ -3307,7 +3314,7 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 		m_srcWidth,
 		m_TexSrcVideo.desc.Width, m_TexSrcVideo.desc.Height,
 		m_srcRect, m_srcParams, m_srcExFmt, pDOVIMetadata,
-		m_iChromaScaling, convertType, false, m_bSdrToneMapping,
+		m_iChromaScaling, convertType, false, UseSdrToneMappingShader(),
 		&pShaderCode);
 	if (S_OK == hr) {
 		hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColor);
@@ -3319,7 +3326,7 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
 			m_srcWidth,
 			m_TexSrcVideo.desc.Width, m_TexSrcVideo.desc.Height,
 			m_srcRect, m_srcParams, m_srcExFmt, pDOVIMetadata,
-			m_iChromaScaling, convertType, true, m_bSdrToneMapping,
+			m_iChromaScaling, convertType, true, UseSdrToneMappingShader(),
 			&pShaderCode);
 		if (S_OK == hr) {
 			hr = m_pDevice->CreatePixelShader(pShaderCode->GetBufferPointer(), pShaderCode->GetBufferSize(), nullptr, &m_pPSConvertColorDeint);
@@ -4333,6 +4340,8 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 		m_iHdrToggleDisplay = config.iHdrToggleDisplay;
 	}
 
+	const bool changeSdrCurve = config.iSdrToneMappingCurve != m_iSdrToneMappingCurve;
+	m_iSdrToneMappingCurve = config.iSdrToneMappingCurve;
 	if ((config.iSdrToneMappingType != SDRTM_Fixed) != m_bSdrToneMapping) {
 		m_bSdrToneMapping = config.iSdrToneMappingType != SDRTM_Fixed;
 		changeHDR = true; // the conversion shader carries the curve
@@ -4381,19 +4390,21 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 
 	// apply new settings
 
+	const bool reloadSdr = changeSdrCurve && m_bConvertToSdr && SourceIsHDR()
+		&& !(m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping));
 	if (changeWindow) {
 		ReleaseSwapChain();
 		EXECUTE_ASSERT(S_OK == m_pFilter->Init(true));
 
-		if (changeHDR && (SourceIsHDR10orHLG() || m_bVPUseRTXVideoHDR || m_bVPRTXVideoHDR) || m_iHdrToggleDisplay) {
+		if (reloadSdr || changeHDR && (SourceIsHDR10orHLG() || m_bVPUseRTXVideoHDR || m_bVPRTXVideoHDR) || m_iHdrToggleDisplay) {
 			m_srcVideoTransferFunction = 0;
 			InitMediaType(&m_pFilter->m_inputMT);
 		}
 		return;
 	}
 
-	if (changeHDR) {
-		if (SourceIsHDR10orHLG() || m_bVPUseRTXVideoHDR || m_bVPRTXVideoHDR || m_iHdrToggleDisplay) {
+	if (changeHDR || reloadSdr) {
+		if (reloadSdr || SourceIsHDR10orHLG() || m_bVPUseRTXVideoHDR || m_bVPRTXVideoHDR || m_iHdrToggleDisplay) {
 			if (m_iSwapEffect == SWAPEFFECT_Discard) {
 				ReleaseSwapChain();
 				m_pFilter->Init(true);
@@ -4744,6 +4755,9 @@ void CDX11VideoProcessor::UpdateStatsStatic()
 				}
 			} else if (m_bConvertToSdr) {
 				m_strStatsHDR.append(L"Convert to SDR");
+				if (m_iSdrToneMappingCurve != SDRCurve_Default) {
+					m_strStatsHDR.append(m_iSdrToneMappingCurve == SDRCurve_SKIV ? L" (SKIV)" : L" (SKIV Piecewise)");
+				}
 #ifndef NDEBUG
 				if (m_DoviExtensionMetadata.L2.present) {
 					m_strStatsHDR.append(L"\n Dolby Vision metadata:");
@@ -4867,7 +4881,7 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	if ((m_bSdrMeasureActive || m_bHdrLocalMeasureActive) && m_fHdrMeasuredPeakNits > 0.0f) {
 		// the SDR shader keeps the peak above the display's own, so show what it actually used
 		const float usedNits = m_bSdrMeasureActive
-			? std::clamp(m_fHdrSmoothedPeakNits, static_cast<float>(m_iSDRDisplayNits) + 1.0f, 10000.0f)
+			? std::clamp(m_fHdrSmoothedPeakNits, static_cast<float>(EffectiveSdrDisplayNits()) + 1.0f, 10000.0f)
 			: std::min(m_fHdrSmoothedPeakNits, 10000.0f);
 		str += std::format(L"\nHDR measured  : frame peak {:.0f}, used {:.0f} nits", m_fHdrMeasuredPeakNits, usedNits);
 	}

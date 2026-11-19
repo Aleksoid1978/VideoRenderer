@@ -178,6 +178,9 @@
     <None Include="convert\hdr_tone_mapping.hlsl">
       <Filter>convert</Filter>
     </None>
+    <None Include="convert\sdr_tone_mapping.hlsl">
+      <Filter>convert</Filter>
+    </None>
     <None Include="convert\colorspace_gamut_conversion.hlsl">
       <Filter>convert</Filter>
     </None>

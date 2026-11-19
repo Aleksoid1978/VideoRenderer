@@ -25,6 +25,9 @@
     <None Include="convert\hdr_tone_mapping.hlsl">
       <FileType>Document</FileType>
     </None>
+    <None Include="convert\sdr_tone_mapping.hlsl">
+      <FileType>Document</FileType>
+    </None>
     <None Include="convert\hdr_tone_mapping_spline.hlsl">
       <FileType>Document</FileType>
     </None>

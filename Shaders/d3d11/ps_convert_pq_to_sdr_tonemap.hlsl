@@ -1,12 +1,12 @@
-// ps_convert_pq_to_sdr with the curve built from the content's brightness instead of the fixed one.
-// Used only by the Metadata method, so the shader for the Fixed method stays exactly as it was.
+// Configurable HDR to SDR tone mapping.
 Texture2D tex : register(t0);
 SamplerState samp : register(s0);
 
 cbuffer PS_PARAMETERS : register(b0)
 {
     float LuminanceScale;
-    float param2; // the content peak in nits, 0 when there is nothing usable
+    float param2; // the content peak in nits, 0 for Fixed
+    float sdrCurve;
 };
 
 #ifdef MEASURED
@@ -21,6 +21,7 @@ StructuredBuffer<float4> measured : register(t1);
 #include "../convert/hdr_tone_mapping.hlsl"
 #include "../convert/colorspace_gamut_conversion.hlsl"
 #include "../convert/hdr_tone_mapping_spline.hlsl"
+#include "../convert/sdr_tone_mapping.hlsl"
 
 struct PS_INPUT
 {
@@ -41,9 +42,9 @@ float4 main(PS_INPUT input) : SV_Target
     const float peak = measured[1].z;
     if (peak > 0.0f)
         contentNits = clamp(peak, 10000.0f / LuminanceScale + 1.0f, 10000.0f);
-    color.rgb = ToneMappingSdr(color.rgb, LuminanceScale, contentNits, convert_matrix_2020_to_709);
+    color.rgb = ConvertHdrToSdr(color.rgb, LuminanceScale, contentNits, convert_matrix_2020_to_709, sdrCurve);
 #else
-    color.rgb = ToneMappingSdr(color.rgb, LuminanceScale, param2, convert_matrix_2020_to_709);
+    color.rgb = ConvertHdrToSdr(color.rgb, LuminanceScale, param2, convert_matrix_2020_to_709, sdrCurve);
 #endif
     color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);
 

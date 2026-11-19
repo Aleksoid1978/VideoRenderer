@@ -1,15 +1,16 @@
-// fixconvert_pq_to_sdr with the curve built from the content's brightness instead of the fixed
-// one.  Used only by the Metadata method, so the shader for the Fixed method stays exactly as it was.
+// Configurable HDR to SDR tone mapping.
 sampler s0 : register(s0);
 float4 parameters : register(c0);
 #define LuminanceScale parameters[0]
 #define param2         parameters[1]
+#define sdrCurve       parameters[2]
 
 #include "../convert/conv_matrix.hlsl"
 #include "../convert/st2084.hlsl"
 #include "../convert/hdr_tone_mapping.hlsl"
 #include "../convert/colorspace_gamut_conversion.hlsl"
 #include "../convert/hdr_tone_mapping_spline.hlsl"
+#include "../convert/sdr_tone_mapping.hlsl"
 
 static const float4x4 fix_bt2020_matrix = mul(ycbcr2020nc_rgb, rgb_ycbcr709);
 
@@ -24,7 +25,7 @@ float4 main(float2 tex : TEXCOORD0) : COLOR
     color = saturate(color);
     color = ST2084ToLinear(color, LuminanceScale);
 
-    color.rgb = ToneMappingSdr(color.rgb, LuminanceScale, param2, convert_matrix_2020_to_709);
+    color.rgb = ConvertHdrToSdr(color.rgb, LuminanceScale, param2, convert_matrix_2020_to_709, sdrCurve);
     color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);
 
     // Linear to sRGB

@@ -98,6 +98,21 @@ enum :int {
 	SDRTM_COUNT
 };
 
+// The curve is independent from how the source peak is determined.
+enum : int {
+	SDRCurve_Default = 0,
+	SDRCurve_SKIV,
+	SDRCurve_SKIVPiecewise,
+	SDRCurve_COUNT
+};
+
+constexpr inline int SDR_SKIV_NITS = 203;
+
+constexpr inline int SdrDisplayNitsForCurve(int curve, int displayNits)
+{
+	return curve == SDRCurve_Default ? displayNits : SDR_SKIV_NITS;
+}
+
 // Tuning of SDRTM_Measured. Registry only: SdrPeakWindowMs, SdrPeakFloorNits and SdrPeakSceneCuts.
 #define SDR_PEAK_WINDOW_DEF 3000 // ms
 #define SDR_PEAK_WINDOW_MIN    0
@@ -154,6 +169,7 @@ struct Settings_t {
 	bool bHdrLocalMeasurePeak;
 	int  iHdrDoviToneMappingType; // 6 = ST 2094-10, 0 = the HDR method
 	int iHdrDisplayMaxNits;
+	int iSdrToneMappingCurve;
 
 	Settings_t() {
 		SetDefault();
@@ -207,6 +223,7 @@ struct Settings_t {
 		iHdrToggleDisplay               = HDRTD_Disabled;
 		bConvertToSdr                   = true;
 		iSdrToneMappingType             = SDRTM_Metadata;
+		iSdrToneMappingCurve            = SDRCurve_Default;
 		iSdrPeakWindowMs                = SDR_PEAK_WINDOW_DEF;
 		iSdrPeakFloorNits               = SDR_PEAK_FLOOR_DEF;
 		bSdrPeakSceneCuts               = false;

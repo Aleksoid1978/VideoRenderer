@@ -112,6 +112,9 @@ protected:
 	int  m_iHdrOsdBrightness               = 0;
 	bool m_bConvertToSdr                   = true;
 	bool m_bSdrToneMapping                 = false;
+	int  m_iSdrToneMappingCurve            = SDRCurve_Default;
+	float m_fSdrMetaMaxCLL = 0.0f;
+	float m_fSdrMetaMaxMasteringNits = 0.0f;
 	bool m_bSdrMeasurePeak                 = false;
 	int  m_iSdrPeakWindowMs                = SDR_PEAK_WINDOW_DEF;
 	int  m_iSdrPeakFloorNits               = SDR_PEAK_FLOOR_DEF;
@@ -290,6 +293,14 @@ public:
 	virtual void SetPGSSubtitles(bool bPGSSubtitles) = 0;
 
 protected:
+	int EffectiveSdrDisplayNits() const {
+		return SdrDisplayNitsForCurve(m_iSdrToneMappingCurve, m_iSDRDisplayNits);
+	}
+
+	bool UseSdrToneMappingShader() const {
+		return m_bSdrToneMapping || m_iSdrToneMappingCurve != SDRCurve_Default;
+	}
+
 	// source is PQ
 	inline bool SourceIsHDR10() const {
 		return (m_decExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && m_decExFmt.VideoTransferMatrix != DXVA2_VideoTransferMatrix_Unknown);
