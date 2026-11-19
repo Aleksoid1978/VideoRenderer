@@ -921,6 +921,22 @@ float CDX11VideoProcessor::GetSdrToneMappingPeak() const
 		EffectiveSdrDisplayNits());
 }
 
+UINT CDX11VideoProcessor::GetSdrConversionShader(bool measured)
+{
+	if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG && !m_bVPUseRTXVideoHDR) {
+		return UseSdrToneMappingShader() ? IDF_PS_11_FIXCONVERT_HLG_TO_SDR_TM : IDF_PS_11_FIXCONVERT_HLG_TO_SDR;
+	}
+
+	const bool nativePq = m_bVPUseRTXVideoHDR || m_D3D11VP.IsPqSupported();
+	if (measured) {
+		return nativePq ? IDF_PS_11_CONVERT_PQ_TO_SDR_TM_MEASURED : IDF_PS_11_FIXCONVERT_PQ_TO_SDR_TM_MEASURED;
+	}
+	if (UseSdrToneMappingShader()) {
+		return nativePq ? IDF_PS_11_CONVERT_PQ_TO_SDR_TM : IDF_PS_11_FIXCONVERT_PQ_TO_SDR_TM;
+	}
+	return nativePq ? IDF_PS_11_CONVERT_PQ_TO_SDR : IDF_PS_11_FIXCONVERT_PQ_TO_SDR;
+}
+
 // Tuning of the per-frame peak measurement
 constexpr UINT  kHdrHistBins       = 1024;    // must match HIST_BINS in cs_hdr_hist.hlsl and cs_hdr_resolve.hlsl
 constexpr float kHdrPeakFraction   = 1.0e-4f; // share of pixels that may be brighter than the reported peak
@@ -2223,16 +2239,14 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 					// The original Fixed curve uses its own shader.
 					m_bSdrMeasureActive = m_bSdrMeasurePeak && HdrMeasureSupported() && SUCCEEDED(InitHdrMeasure());
 					if (m_bSdrMeasureActive) {
-						resId = m_D3D11VP.IsPqSupported() ? IDF_PS_11_CONVERT_PQ_TO_SDR_TM_MEASURED : IDF_PS_11_FIXCONVERT_PQ_TO_SDR_TM_MEASURED;
 						m_strCorrection = L"PQ to SDR, tone mapped, measured";
 					} else {
-						resId = m_D3D11VP.IsPqSupported() ? IDF_PS_11_CONVERT_PQ_TO_SDR_TM : IDF_PS_11_FIXCONVERT_PQ_TO_SDR_TM;
 						m_strCorrection = L"PQ to SDR, tone mapped";
 					}
 				} else {
-					resId = m_D3D11VP.IsPqSupported() ? IDF_PS_11_CONVERT_PQ_TO_SDR : IDF_PS_11_FIXCONVERT_PQ_TO_SDR;
 					m_strCorrection = L"PQ to SDR";
 				}
+				resId = GetSdrConversionShader(m_bSdrMeasureActive);
 			}
 			else if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG) {
 				if (m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping)) {
@@ -2240,13 +2254,12 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 					m_strCorrection = L"HLG to PQ";
 				}
 				else if (m_bConvertToSdr) {
+					resId = GetSdrConversionShader(false);
 					if (UseSdrToneMappingShader()) {
 						// HLG white is 1000 nits, which is what the peak falls back to without MaxCLL.
 						// Measuring each frame is not offered here, since the histogram reads PQ.
-						resId = IDF_PS_11_FIXCONVERT_HLG_TO_SDR_TM;
 						m_strCorrection = L"HLG to SDR, tone mapped";
 					} else {
-						resId = IDF_PS_11_FIXCONVERT_HLG_TO_SDR;
 						m_strCorrection = L"HLG to SDR";
 					}
 				}
@@ -3298,13 +3311,13 @@ void CDX11VideoProcessor::UpdateDownscalingShaders()
 	UpdateScalingStrings();
 }
 
-HRESULT CDX11VideoProcessor::UpdateConvertColorShader()
+HRESULT CDX11VideoProcessor::UpdateConvertColorShader(bool captureSdr)
 {
 	m_pPSConvertColor.Release();
 	m_pPSConvertColorDeint.Release();
 	ID3DBlob* pShaderCode = nullptr;
 
-	int convertType = (m_bConvertToSdr && !(m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping))) ? SHADER_CONVERT_TO_SDR
+	int convertType = (captureSdr || (m_bConvertToSdr && !(m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping)))) ? SHADER_CONVERT_TO_SDR
 		: (m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping) && m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG) ? SHADER_CONVERT_TO_PQ
 		: SHADER_CONVERT_NONE;
 
@@ -3677,7 +3690,7 @@ void CDX11VideoProcessor::DrawSubtitles(ID3D11Texture2D* pRenderTarget)
 	}
 }
 
-HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
+HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second, bool capture)
 {
 	HRESULT hr = S_OK;
 	m_bDitherUsed = false;
@@ -3748,7 +3761,8 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 
 		if (m_pPSCorrection) {
 			StepSetting();
-			const bool bMeasured = m_bSdrMeasureActive && MeasureHdrPeak(*pInputTexture, rect) == S_OK;
+			// Capture the frame with the existing measurement without advancing the peak history.
+			const bool bMeasured = m_bSdrMeasureActive && (capture || MeasureHdrPeak(*pInputTexture, rect) == S_OK);
 			if (bMeasured) {
 				m_pDeviceContext->PSSetShaderResources(1, 1, &m_pHdrStateSRV.p);
 			}
@@ -3756,7 +3770,9 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 			if (bMeasured) {
 				ID3D11ShaderResourceView* pNullSRV = nullptr;
 				m_pDeviceContext->PSSetShaderResources(1, 1, &pNullSRV);
-				ReadHdrMeasureStats();
+				if (!capture) {
+					ReadHdrMeasureStats();
+				}
 			}
 		}
 
@@ -3937,24 +3953,32 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	}
 
 	const bool bHdrPassthrough = (m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping) && (SourceIsHDR() || m_bVPUseRTXVideoHDR));
-	const bool bSavedHdrPassthrough = m_bHdrPassthrough;
-	const bool bSavedHdrLocalToneMapping = m_bHdrLocalToneMapping;
+	const auto savedHdrToneMapping = m_pPSHDR10ToneMapping;
+	const auto savedCorrection = m_pPSCorrection;
+	const auto savedCorrectionConstants = m_pCorrectionConstants;
+	const auto savedConvertColor = m_pPSConvertColor;
+	const auto savedConvertColorDeint = m_pPSConvertColorDeint;
 
 	if (bHdrPassthrough) {
-		m_pPSHDR10ToneMapping.Release();
-		m_pHDR10ToneMappingConstants.Release();
-
 		if (m_D3D11VP.IsReady()) {
-			m_pPSCorrection.Release();
-
-			auto resId = (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 || m_bVPUseRTXVideoHDR) ? IDF_PS_11_CONVERT_PQ_TO_SDR : IDF_PS_11_FIXCONVERT_HLG_TO_SDR;
-			EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, resId));
-			SetShaderLuminanceParams();
+			// The capture target is SDR. During HDR playback, Measured falls back to metadata.
+			CComPtr<ID3D11PixelShader> captureCorrection;
+			hr = CreatePShaderFromResource(&captureCorrection, GetSdrConversionShader(false));
+			if (FAILED(hr)) {
+				return hr;
+			}
+			m_pPSCorrection = captureCorrection;
 		} else {
-			m_bHdrPassthrough = false;
-			m_bHdrLocalToneMapping = false;
-			UpdateConvertColorShader();
+			hr = UpdateConvertColorShader(true);
+			if (hr != S_OK) {
+				m_pPSConvertColor = savedConvertColor;
+				m_pPSConvertColorDeint = savedConvertColorDeint;
+				return FAILED(hr) ? hr : E_FAIL;
+			}
 		}
+		m_pPSHDR10ToneMapping.Release();
+		m_pCorrectionConstants.Release();
+		SetShaderLuminanceParams();
 	}
 
 	const auto backupVidRect = m_videoRect;
@@ -3967,34 +3991,22 @@ HRESULT CDX11VideoProcessor::GetCurentImage(long *pDIBImage)
 	auto pSub11CallBack = m_pFilter->m_pSub11CallBack;
 	m_pFilter->m_pSub11CallBack = nullptr;
 
-	hr = Process(pRGB32Texture2D, m_srcRect, imageRect, false);
+	hr = Process(pRGB32Texture2D, m_srcRect, imageRect, m_FieldDrawn == 2, true);
 
 	m_pFilter->m_pSub11CallBack = pSub11CallBack;
 
 	m_videoRect  = backupVidRect;
 	m_windowRect = backupWndRect;
-	UpdateTexures();
-	UpdatePostScaleTexures();
 
 	if (bHdrPassthrough) {
-		if (m_D3D11VP.IsReady()) {
-			m_pCorrectionConstants.Release();
-			m_pPSCorrection.Release();
-
-			if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG) {
-				EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_CONVERT_HLG_TO_PQ));
-			}
-		} else {
-			m_bHdrPassthrough = bSavedHdrPassthrough;
-			m_bHdrLocalToneMapping = bSavedHdrLocalToneMapping;
-			UpdateConvertColorShader();
-		}
-
-		if (m_bHdrPassthroughSupport && m_bHdrLocalToneMapping) {
-			EXECUTE_ASSERT(S_OK == CreateHDR10ToneMappingShader());
-			DLogIf(m_pPSHDR10ToneMapping, L"CDX11VideoProcessor::InitMediaType() m_pPSHDR10ToneMapping(type: '{}') created", m_iHdrLocalToneMappingType);
-		}
+		m_pPSHDR10ToneMapping = savedHdrToneMapping;
+		m_pPSCorrection = savedCorrection;
+		m_pCorrectionConstants = savedCorrectionConstants;
+		m_pPSConvertColor = savedConvertColor;
+		m_pPSConvertColorDeint = savedConvertColorDeint;
 	}
+	UpdateTexures();
+	UpdatePostScaleTexures();
 
 	if (FAILED(hr)) {
 		return hr;

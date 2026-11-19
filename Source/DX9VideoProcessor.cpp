@@ -1828,7 +1828,14 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 	auto pSubCallBack = m_pFilter->m_pSubCallBack;
 	m_pFilter->m_pSubCallBack = nullptr;
 
-	hr = Process(pRGB32Surface, m_srcRect, imageRect, 0);
+	hr = m_pD3DDevEx->BeginScene();
+	if (SUCCEEDED(hr)) {
+		hr = Process(pRGB32Surface, m_srcRect, imageRect, m_FieldDrawn == 2, true);
+		const HRESULT endScene = m_pD3DDevEx->EndScene();
+		if (SUCCEEDED(hr)) {
+			hr = endScene;
+		}
+	}
 
 	m_pFilter->m_pSubCallBack = pSubCallBack;
 
@@ -2961,7 +2968,7 @@ void CDX9VideoProcessor::DrawSubtitles(IDirect3DSurface9* pRenderTarget)
 	}
 }
 
-HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
+HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second, bool capture)
 {
 	HRESULT hr = S_OK;
 	m_bDitherUsed = false;
@@ -3025,7 +3032,7 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 
 		if (m_pPSCorrection) {
 			StepSetting();
-			const bool bMeasured = m_bSdrMeasureActive && MeasureHdrPeak(pInputTexture, rect) == S_OK;
+			const bool bMeasured = m_bSdrMeasureActive && (capture || MeasureHdrPeak(pInputTexture, rect) == S_OK);
 			float fConstDataHDR[][4] = {
 				{10000.0f / EffectiveSdrDisplayNits(), GetSdrToneMappingPeak(), static_cast<float>(m_iSdrToneMappingCurve), 0.0f}
 			};
