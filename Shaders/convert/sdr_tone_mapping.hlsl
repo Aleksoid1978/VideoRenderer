@@ -48,7 +48,7 @@ float3 ToneMappingSkiv(float3 rgb, float peakNits, float sdrWhiteNits, bool piec
     if (piecewise)
     {
         float outputWhite = LinearToST2084(sdrWhiteNits, 10000.0f).x;
-        float knee = LinearToST2084(0.67f * sdrWhiteNits, 10000.0f).x;
+        float knee = LinearToST2084(0.50f * sdrWhiteNits, 10000.0f).x;
         if (input <= knee)
             return rgb;
         peak = LinearToST2084(clamp(peakNits, sdrWhiteNits, 10000.0f), 10000.0f).x;
