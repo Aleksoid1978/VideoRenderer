@@ -9,12 +9,14 @@ sampler s1 : register(s1);
 float4 parameters : register(c0);
 #define LuminanceScale parameters[0]
 #define param2         parameters[1]
+#define sdrCurve       parameters[2]
 
 #include "../convert/conv_matrix.hlsl"
 #include "../convert/st2084.hlsl"
 #include "../convert/hdr_tone_mapping.hlsl"
 #include "../convert/colorspace_gamut_conversion.hlsl"
 #include "../convert/hdr_tone_mapping_spline.hlsl"
+#include "../convert/sdr_tone_mapping.hlsl"
 
 static const float4x4 fix_bt2020_matrix = mul(ycbcr2020nc_rgb, rgb_ycbcr709);
 
@@ -34,7 +36,7 @@ float4 main(float2 tex : TEXCOORD0) : COLOR
     if (peak > 0.0f)
         contentNits = clamp(peak, 10000.0f / LuminanceScale + 1.0f, 10000.0f);
 
-    color.rgb = ToneMappingSdr(color.rgb, LuminanceScale, contentNits, convert_matrix_2020_to_709);
+    color.rgb = ConvertHdrToSdr(color.rgb, LuminanceScale, contentNits, convert_matrix_2020_to_709, sdrCurve);
     color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);
 
     // Linear to sRGB

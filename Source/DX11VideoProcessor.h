@@ -106,6 +106,9 @@ private:
 	struct HdrMeasureConstants_t {
 		UINT rectOrigin[2];
 		UINT rectSize[2];
+		UINT measureLuminance;
+		UINT fixVpColors;
+		UINT padding[2];
 	};
 	struct HdrResolveConstants_t { // must match cbuffer ResolveConstants in cs_hdr_resolve.hlsl
 		float frameTime;
@@ -303,9 +306,13 @@ private:
 	HRESULT CreatePShaderFromResource(ID3D11PixelShader** ppPixelShader, UINT resid);
 	void SetShaderConvertColorParams();
 	float GetSdrToneMappingPeak() const;
+	UINT GetSdrConversionShader(bool measured);
 	bool HdrMeasureSupported() const;
 	HRESULT InitHdrMeasure();
 	void ReleaseHdrMeasure();
+	bool MeasureSkivLuminance() const {
+		return m_bSdrMeasureActive && m_iSdrToneMappingCurve != SDRCurve_Default;
+	}
 	HRESULT MeasureHdrPeak(const Tex2D_t& tex, const CRect& rect);
 	void ReadHdrMeasureStats();
 	void SetShaderLuminanceParams();
@@ -386,7 +393,7 @@ private:
 	void UpdatePostScaleTexures();
 	void UpdateUpscalingShaders();
 	void UpdateDownscalingShaders();
-	HRESULT UpdateConvertColorShader();
+	HRESULT UpdateConvertColorShader(bool captureSdr = false);
 	void UpdateBitmapShader();
 
 	HRESULT D3D11VPPass(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
@@ -395,7 +402,7 @@ private:
 	HRESULT FinalPass(const Tex2D_t& Tex, ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect);
 
 	void DrawSubtitles(ID3D11Texture2D* pRenderTarget);
-	HRESULT Process(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second);
+	HRESULT Process(ID3D11Texture2D* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second, bool capture = false);
 
 	HRESULT AlphaBlt(ID3D11ShaderResourceView* pShaderResource, ID3D11Texture2D* pRenderTarget,
 					 ID3D11Buffer* pVertexBuffer, D3D11_VIEWPORT* pViewPort,

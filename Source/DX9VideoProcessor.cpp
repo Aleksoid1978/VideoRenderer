@@ -288,6 +288,7 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Setting
 	m_iHdrToggleDisplay    = HDRTD_Disabled;
 	m_bConvertToSdr        = config.bConvertToSdr;
 	m_bSdrToneMapping      = config.iSdrToneMappingType != SDRTM_Fixed;
+	m_iSdrToneMappingCurve = config.iSdrToneMappingCurve;
 	m_bSdrMeasurePeak      = config.iSdrToneMappingType == SDRTM_Measured;
 	m_iSdrPeakWindowMs     = config.iSdrPeakWindowMs;
 	m_iSdrPeakFloorNits    = config.iSdrPeakFloorNits;
@@ -1118,6 +1119,11 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 {
 	DLog(L"CDX9VideoProcessor::InitMediaType()");
 
+	if (*pmt != m_pFilter->m_inputMT) {
+		m_fSdrMetaMaxCLL = 0.0f;
+		m_fSdrMetaMaxMasteringNits = 0.0f;
+	}
+
 	if (!VerifyMediaType(pmt)) {
 		return FALSE;
 	}
@@ -1252,8 +1258,8 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 		hr = InitializeDXVA2VP(FmtParams, origW, origH);
 		if (SUCCEEDED(hr)) {
 			if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && m_bConvertToSdr) {
-				if (m_bSdrToneMapping) {
-					// a separate shader, so the one used by the Fixed method is untouched
+				if (UseSdrToneMappingShader()) {
+					// The original Fixed curve uses its own shader.
 					m_bSdrMeasureActive = m_bSdrMeasurePeak && HdrMeasureSupported()
 						&& SUCCEEDED(InitHdrMeasure(m_srcRectWidth, m_srcRectHeight));
 					if (m_bSdrMeasureActive) {
@@ -1269,7 +1275,7 @@ BOOL CDX9VideoProcessor::InitMediaType(const CMediaType* pmt)
 				}
 			}
 			else if (m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG && m_bConvertToSdr) {
-				if (m_bSdrToneMapping) {
+				if (UseSdrToneMappingShader()) {
 					EXECUTE_ASSERT(S_OK == CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_9_FIXCONVERT_HLG_TO_SDR_TM));
 					m_strCorrection = L"HLG to SDR, tone mapped";
 				} else {
@@ -1396,8 +1402,8 @@ HRESULT CDX9VideoProcessor::CopySample(IMediaSample* pSample)
 	bool updateStats = false;
 
 	if (CComQIPtr<IMediaSideData> pMediaSideData = pSample) {
-		if (m_bSdrToneMapping) {
-			// the curve is built from this.  Direct3D 11 reads the same two for its own peak
+		if (m_bConvertToSdr) {
+			// Cache the metadata for the SDR curve even while the Fixed method is selected.
 			size_t hdrSize = 0;
 			MediaSideDataHDR* hdr = nullptr;
 			if (SUCCEEDED(pMediaSideData->GetSideData(IID_MediaSideDataHDR, (const BYTE**)&hdr, &hdrSize))
@@ -1822,7 +1828,14 @@ HRESULT CDX9VideoProcessor::GetCurentImage(long *pDIBImage)
 	auto pSubCallBack = m_pFilter->m_pSubCallBack;
 	m_pFilter->m_pSubCallBack = nullptr;
 
-	hr = Process(pRGB32Surface, m_srcRect, imageRect, 0);
+	hr = m_pD3DDevEx->BeginScene();
+	if (SUCCEEDED(hr)) {
+		hr = Process(pRGB32Surface, m_srcRect, imageRect, m_FieldDrawn == 2, true);
+		const HRESULT endScene = m_pD3DDevEx->EndScene();
+		if (SUCCEEDED(hr)) {
+			hr = endScene;
+		}
+	}
 
 	m_pFilter->m_pSubCallBack = pSubCallBack;
 
@@ -2073,7 +2086,9 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 
 	const bool bSdrToneMapping = config.iSdrToneMappingType != SDRTM_Fixed;
 	const bool bSdrMeasurePeak = config.iSdrToneMappingType == SDRTM_Measured;
-	if (bSdrToneMapping != m_bSdrToneMapping || bSdrMeasurePeak != m_bSdrMeasurePeak) {
+	if (bSdrToneMapping != m_bSdrToneMapping || bSdrMeasurePeak != m_bSdrMeasurePeak
+			|| config.iSdrToneMappingCurve != m_iSdrToneMappingCurve) {
+		m_iSdrToneMappingCurve = config.iSdrToneMappingCurve;
 		m_bSdrToneMapping = bSdrToneMapping;
 		m_bSdrMeasurePeak = bSdrMeasurePeak;
 		if (SourceIsHDR() && m_bConvertToSdr) {
@@ -2336,7 +2351,7 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 			m_srcWidth,
 			m_TexSrcVideo.Width, m_TexSrcVideo.Height,
 			m_srcRect, m_srcParams, m_srcExFmt, pDOVIMetadata,
-			m_iChromaScaling, convertType, false, m_bSdrToneMapping,
+			m_iChromaScaling, convertType, false, UseSdrToneMappingShader(),
 			&pShaderCode);
 		if (S_OK == hr) {
 			hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColor);
@@ -2348,7 +2363,7 @@ HRESULT CDX9VideoProcessor::UpdateConvertColorShader()
 				m_srcWidth,
 				m_TexSrcVideo.Width, m_TexSrcVideo.Height,
 				m_srcRect, m_srcParams, m_srcExFmt, pDOVIMetadata,
-				m_iChromaScaling, convertType, true, m_bSdrToneMapping,
+				m_iChromaScaling, convertType, true, UseSdrToneMappingShader(),
 				&pShaderCode);
 			if (S_OK == hr) {
 				hr = m_pD3DDevEx->CreatePixelShader((const DWORD*)pShaderCode->GetBufferPointer(), &m_pPSConvertColorDeint);
@@ -2659,7 +2674,7 @@ float CDX9VideoProcessor::GetSdrToneMappingPeak() const
 	if (!m_bSdrToneMapping) {
 		return 0.0f;
 	}
-	return SdrToneMappingPeakNits(m_fSdrMetaMaxCLL, m_fSdrMetaMaxMasteringNits, m_Dovi.bValid ? &m_Dovi.msd : nullptr, m_iSDRDisplayNits);
+	return SdrToneMappingPeakNits(m_fSdrMetaMaxCLL, m_fSdrMetaMaxMasteringNits, m_Dovi.bValid ? &m_Dovi.msd : nullptr, EffectiveSdrDisplayNits());
 }
 
 HRESULT CDX9VideoProcessor::ConvertColorPass(IDirect3DSurface9* pRenderTarget)
@@ -2667,7 +2682,7 @@ HRESULT CDX9VideoProcessor::ConvertColorPass(IDirect3DSurface9* pRenderTarget)
 	HRESULT hr = m_pD3DDevEx->SetRenderTarget(0, pRenderTarget);
 
 	float fConstDataHDR[][4] = {
-		{10000.0f / m_iSDRDisplayNits, GetSdrToneMappingPeak(), 0.0f, 0.0f}
+		{10000.0f / EffectiveSdrDisplayNits(), GetSdrToneMappingPeak(), static_cast<float>(m_iSdrToneMappingCurve), 0.0f}
 	};
 
 	hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)&m_PSConvColorData.Constants, sizeof(m_PSConvColorData.Constants) / sizeof(DirectX::XMFLOAT4));
@@ -2892,7 +2907,7 @@ void CDX9VideoProcessor::DrawSubtitles(IDirect3DSurface9* pRenderTarget)
 			}
 
 			float fConstDataHDR[][4] = {
-				{ 10000.0f / m_iSDRDisplayNits, GetSdrToneMappingPeak(), 0.0f, 0.0f }
+				{ 10000.0f / EffectiveSdrDisplayNits(), GetSdrToneMappingPeak(), 0.0f, 0.0f }
 			};
 			EXECUTE_ASSERT(S_OK == m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstDataHDR, sizeof(fConstDataHDR) / sizeof(float[4])));
 			EXECUTE_ASSERT(S_OK == m_pD3DDevEx->SetPixelShader(m_pPS_PQtoSDR));
@@ -2953,7 +2968,7 @@ void CDX9VideoProcessor::DrawSubtitles(IDirect3DSurface9* pRenderTarget)
 	}
 }
 
-HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second)
+HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRect& srcRect, const CRect& dstRect, const bool second, bool capture)
 {
 	HRESULT hr = S_OK;
 	m_bDitherUsed = false;
@@ -3017,9 +3032,9 @@ HRESULT CDX9VideoProcessor::Process(IDirect3DSurface9* pRenderTarget, const CRec
 
 		if (m_pPSCorrection) {
 			StepSetting();
-			const bool bMeasured = m_bSdrMeasureActive && MeasureHdrPeak(pInputTexture, rect) == S_OK;
+			const bool bMeasured = m_bSdrMeasureActive && (capture || MeasureHdrPeak(pInputTexture, rect) == S_OK);
 			float fConstDataHDR[][4] = {
-				{10000.0f / m_iSDRDisplayNits, GetSdrToneMappingPeak(), 0.0f, 0.0f}
+				{10000.0f / EffectiveSdrDisplayNits(), GetSdrToneMappingPeak(), static_cast<float>(m_iSdrToneMappingCurve), 0.0f}
 			};
 			hr = m_pD3DDevEx->SetPixelShaderConstantF(0, (float*)fConstDataHDR, sizeof(fConstDataHDR) / sizeof(float[4]));
 			hr = m_pD3DDevEx->SetPixelShader(m_pPSCorrection);
@@ -3332,6 +3347,9 @@ void CDX9VideoProcessor::UpdateStatsStatic()
 			m_strStatsHDR.assign(L"\nHDR processing: ");
 			if (m_bConvertToSdr) {
 				m_strStatsHDR.append(L"Convert to SDR");
+				if (m_iSdrToneMappingCurve != SDRCurve_Default) {
+					m_strStatsHDR.append(m_iSdrToneMappingCurve == SDRCurve_SKIV ? L" (SKIV)" : L" (SKIV Piecewise)");
+				}
 			} else {
 				m_strStatsHDR.append(L"Not used");
 			}

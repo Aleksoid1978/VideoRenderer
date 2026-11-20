@@ -111,12 +111,10 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK18, m_SetsPP.bHdrPreferDoVi       ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK14, m_SetsPP.bConvertToSdr        ? BST_CHECKED : BST_UNCHECKED);
 	ComboBox_SelectByItemData(m_hWnd, IDC_COMBO_SDRTM, m_SetsPP.iSdrToneMappingType);
+	ComboBox_SelectByItemData(m_hWnd, IDC_COMBO_SDRCURVE, m_SetsPP.iSdrToneMappingCurve);
 
 	SendDlgItemMessageW(IDC_COMBO7, CB_SETCURSEL, m_SetsPP.iHdrToggleDisplay, 0);
 	SendDlgItemMessageW(IDC_SLIDER1, TBM_SETPOS, 1, m_SetsPP.iHdrOsdBrightness);
-
-	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETPOS, 1, m_SetsPP.iSDRDisplayNits / SDR_NITS_STEP);
-	GetDlgItem(IDC_EDIT1).SetWindowTextW(std::to_wstring(m_SetsPP.iSDRDisplayNits).c_str());
 
 	CheckDlgButton(IDC_CHECK6, m_SetsPP.bInterpolateAt50pct   ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK10, m_SetsPP.bUseDither           ? BST_CHECKED : BST_UNCHECKED);
@@ -169,9 +167,15 @@ void CVRMainPPage::EnableControls()
 
 	GetDlgItem(IDC_STATIC_SDRTM).EnableWindow(m_SetsPP.bConvertToSdr);
 	GetDlgItem(IDC_COMBO_SDRTM).EnableWindow(m_SetsPP.bConvertToSdr);
-	GetDlgItem(IDC_STATIC8).EnableWindow(m_SetsPP.bConvertToSdr);
-	GetDlgItem(IDC_EDIT1).EnableWindow(m_SetsPP.bConvertToSdr);
-	GetDlgItem(IDC_SLIDER2).EnableWindow(m_SetsPP.bConvertToSdr);
+	GetDlgItem(IDC_STATIC_SDRCURVE).EnableWindow(m_SetsPP.bConvertToSdr);
+	GetDlgItem(IDC_COMBO_SDRCURVE).EnableWindow(m_SetsPP.bConvertToSdr);
+	const bool bAdjustSdrNits = m_SetsPP.bConvertToSdr && m_SetsPP.iSdrToneMappingCurve == SDRCurve_Default;
+	const int sdrNits = SdrDisplayNitsForCurve(m_SetsPP.iSdrToneMappingCurve, m_SetsPP.iSDRDisplayNits);
+	GetDlgItem(IDC_STATIC8).EnableWindow(bAdjustSdrNits);
+	GetDlgItem(IDC_EDIT1).EnableWindow(bAdjustSdrNits);
+	GetDlgItem(IDC_SLIDER2).EnableWindow(bAdjustSdrNits);
+	SendDlgItemMessageW(IDC_SLIDER2, TBM_SETPOS, 1, sdrNits / SDR_NITS_STEP);
+	GetDlgItem(IDC_EDIT1).SetWindowTextW(std::to_wstring(sdrNits).c_str());
 	GetDlgItem(IDC_EDIT_DISPLAYMAX).EnableWindow(m_SetsPP.bHdrLocalToneMapping);
 	const BOOL bLocal = m_SetsPP.bUseD3D11 && m_SetsPP.bHdrLocalToneMapping && IsWindows10OrGreater();
 	GetDlgItem(IDC_STATIC_DVTM).EnableWindow(bLocal);
@@ -311,6 +315,10 @@ HRESULT CVRMainPPage::OnActivate()
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO_SDRTM, L"Metadata", SDRTM_Metadata);
 	ComboBox_AddStringData(m_hWnd, IDC_COMBO_SDRTM, L"Measured", SDRTM_Measured);
 
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO_SDRCURVE, L"Default", SDRCurve_Default);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO_SDRCURVE, L"SKIV", SDRCurve_SKIV);
+	ComboBox_AddStringData(m_hWnd, IDC_COMBO_SDRCURVE, L"SKIV Piecewise", SDRCurve_SKIVPiecewise);
+
 	SetControls();
 
 	SetCursor(m_hWnd, IDC_ARROW);
@@ -334,6 +342,13 @@ HRESULT CVRMainPPage::OnActivate()
 		"Passthrough sends the video to the display as it is.\n"
 		"A method tone maps it to the nits set on the right.\n"
 		"Ignore leaves it to the settings below.");
+	AddHint(IDC_COMBO_SDRTM,
+		L"Fixed uses a 1000-nit source peak for SKIV curves.\n"
+		L"Metadata reads the peak from the video.\n"
+		L"Measured uses the frame peak when available. For SKIV on D3D11 PQ, it uses the 99.94th percentile of frame luminance.");
+	AddHint(IDC_COMBO_SDRCURVE,
+		L"SKIV curves use a fixed SDR white of 203 nits.\n"
+		L"SKIV Piecewise starts compressing above 50% of SDR white.");
 	AddHint(IDC_COMBO_DVTM,
 		L"Tone mapping method for Dolby Vision\n"
 		"with dynamic metadata.\n"
@@ -566,6 +581,15 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				lValue = ComboBox_GetCurItemData(m_hWnd, IDC_COMBO_SDRTM);
 				if (lValue != m_SetsPP.iSdrToneMappingType) {
 					m_SetsPP.iSdrToneMappingType = lValue;
+					SetDirty();
+				}
+				return (LRESULT)1;
+			}
+			if (nID == IDC_COMBO_SDRCURVE) {
+				lValue = ComboBox_GetCurItemData(m_hWnd, IDC_COMBO_SDRCURVE);
+				if (lValue != m_SetsPP.iSdrToneMappingCurve) {
+					m_SetsPP.iSdrToneMappingCurve = lValue;
+					EnableControls();
 					SetDirty();
 				}
 				return (LRESULT)1;

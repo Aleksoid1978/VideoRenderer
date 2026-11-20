@@ -601,7 +601,7 @@ HRESULT GetShaderConvertColor(
 	const int chromaScaling,
 	const int convertType,
 	const bool blendDeinterlace,
-	const bool bSdrToneMapping,
+	const bool bUseSdrToneMappingShader,
 	ID3DBlob** ppCode)
 {
 	DLog(L"GetShaderConvertColor() started for {} {}x{} extfmt:{:#010x} chroma:{}", fmtParams.str, texW, texH, exFmt.value, chromaScaling);
@@ -651,11 +651,13 @@ HRESULT GetShaderConvertColor(
 			code.append((LPCSTR)data, size);
 			code += '\n';
 		}
-		if (bSdrToneMapping) {
-			hr = GetDataFromResource(data, size, IDF_HLSL_HDR_TONE_MAPPING_SPLINE);
-			if (S_OK == hr) {
-				code.append((LPCSTR)data, size);
-				code += '\n';
+		if (bUseSdrToneMappingShader) {
+			for (const auto resourceId : { IDF_HLSL_HDR_TONE_MAPPING_SPLINE, IDF_HLSL_SDR_TONE_MAPPING }) {
+				hr = GetDataFromResource(data, size, resourceId);
+				if (S_OK == hr) {
+					code.append((LPCSTR)data, size);
+					code += '\n';
+				}
 			}
 		}
 	}
@@ -686,6 +688,7 @@ HRESULT GetShaderConvertColor(
 				"cbuffer PS_PARAMETERS : register(b1) {\n"
 				"float LuminanceScale;\n"
 				"float param2;\n"
+				"float sdrCurve;\n"
 				"};\n"
 			);
 		}
@@ -702,6 +705,7 @@ HRESULT GetShaderConvertColor(
 				"float4 parameters : register(c4);\n"
 				"#define LuminanceScale parameters[0]\n"
 				"#define param2         parameters[1]\n"
+				"#define sdrCurve       parameters[2]\n"
 			);
 		}
 	}
@@ -885,8 +889,8 @@ HRESULT GetShaderConvertColor(
 			);
 		}
 		code.append("color = ST2084ToLinear(color, LuminanceScale);\n");
-		if (bSdrToneMapping) {
-			code.append("color.rgb = ToneMappingSdr(color.rgb, LuminanceScale, param2, matrix_conv_prim);\n");
+		if (bUseSdrToneMappingShader) {
+			code.append("color.rgb = ConvertHdrToSdr(color.rgb, LuminanceScale, param2, matrix_conv_prim, sdrCurve);\n");
 		} else {
 			code.append("color.rgb = ToneMappingHable(color.rgb);\n");
 		}

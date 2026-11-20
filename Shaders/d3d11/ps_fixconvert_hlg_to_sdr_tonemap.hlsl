@@ -1,5 +1,4 @@
-// ps_fixconvert_hlg_to_sdr with the curve built from the content's brightness instead of the fixed
-// one.  Used only by the Metadata method, so the shader for the Fixed method stays exactly as it was.
+// Configurable HDR to SDR tone mapping.
 //
 // HLG carries no MaxCLL of its own as a rule, so param2 is usually the 1000 nit fallback.  That is
 // the right number here rather than a guess, since HLGtoLinear scales HLG white to 1000 nits.
@@ -12,13 +11,15 @@ SamplerState samp : register(s0);
 #include "../convert/hdr_tone_mapping.hlsl"
 #include "../convert/colorspace_gamut_conversion.hlsl"
 #include "../convert/hdr_tone_mapping_spline.hlsl"
+#include "../convert/sdr_tone_mapping.hlsl"
 
 static const float4x4 fix_bt2020_matrix = mul(ycbcr2020nc_rgb, rgb_ycbcr709);
 
 cbuffer PS_PARAMETERS : register(b0)
 {
     float LuminanceScale;
-    float param2; // the content peak in nits, 0 when there is nothing usable
+    float param2; // the content peak in nits, 0 for Fixed
+    float sdrCurve;
 };
 
 struct PS_INPUT
@@ -43,7 +44,7 @@ float4 main(PS_INPUT input) : SV_Target
     color = saturate(color);
     color = ST2084ToLinear(color, LuminanceScale);
 
-    color.rgb = ToneMappingSdr(color.rgb, LuminanceScale, param2, convert_matrix_2020_to_709);
+    color.rgb = ConvertHdrToSdr(color.rgb, LuminanceScale, param2, convert_matrix_2020_to_709, sdrCurve);
     color.rgb = Colorspace_Gamut_Conversion_2020_to_709(color.rgb);
 
     // Linear to sRGB

@@ -26,6 +26,7 @@ IDF_HLSL_ST2084                 FILE                    "..\\Shaders\\convert\\s
 IDF_HLSL_HLG                    FILE                    "..\\Shaders\\convert\\hlg.hlsl"
 IDF_HLSL_HDR_TONE_MAPPING       FILE                    "..\\Shaders\\convert\\hdr_tone_mapping.hlsl"
 IDF_HLSL_HDR_TONE_MAPPING_SPLINE FILE                    "..\\Shaders\\convert\\hdr_tone_mapping_spline.hlsl"
+IDF_HLSL_SDR_TONE_MAPPING       FILE                    "..\\Shaders\\convert\\sdr_tone_mapping.hlsl"
 
 IDF_PS_9_CONVERT_COLOR          FILE                    "..\\_bin\\shaders\\convert_color.cso"
 IDF_PS_9_CONVERT_YUY2           FILE                    "..\\_bin\\shaders\\convert_yuy2.cso"
