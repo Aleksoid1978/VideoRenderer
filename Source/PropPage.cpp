@@ -345,10 +345,10 @@ HRESULT CVRMainPPage::OnActivate()
 	AddHint(IDC_COMBO_SDRTM,
 		L"Fixed uses a 1000-nit source peak for SKIV curves.\n"
 		L"Metadata reads the peak from the video.\n"
-		L"Measured uses the frame peak when available.");
+		L"Measured uses the frame peak when available. For SKIV on D3D11 PQ, it uses the 99.94th percentile of frame luminance.");
 	AddHint(IDC_COMBO_SDRCURVE,
 		L"SKIV curves use a fixed SDR white of 203 nits.\n"
-		L"SKIV Piecewise starts compressing above 67% of SDR white.");
+		L"SKIV Piecewise starts compressing above 50% of SDR white.");
 	AddHint(IDC_COMBO_DVTM,
 		L"Tone mapping method for Dolby Vision\n"
 		"with dynamic metadata.\n"

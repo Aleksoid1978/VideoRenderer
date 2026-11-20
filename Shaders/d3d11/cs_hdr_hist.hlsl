@@ -6,6 +6,12 @@
 // uniform, so the resolution is about the same everywhere in the range.
 // max(R, G, B) is the quantity MaxCLL and MaxFALL are defined on (CTA-861.3).
 //
+// SKIV measures linear BT.2020 luminance instead, binned on the same PQ scale.
+#include "../convert/conv_matrix.hlsl"
+#include "../convert/st2084.hlsl"
+
+static const float4x4 fixBt2020 = mul(ycbcr2020nc_rgb, rgb_ycbcr709);
+
 // Pass 2 (cs_hdr_resolve.hlsl) turns the histogram into a peak and an average.
 
 #define HIST_BINS 1024
@@ -18,6 +24,9 @@ cbuffer MeasureConstants : register(b0)
 {
 	uint2 rectOrigin; // top-left corner of the video rectangle inside the texture
 	uint2 rectSize;
+	uint measureLuminance;
+	uint fixVpColors;
+	uint2 padding;
 };
 
 groupshared uint gsHist[HIST_BINS];
@@ -38,8 +47,15 @@ void main(uint3 groupId : SV_GroupID, uint3 threadId : SV_GroupThreadID, uint gr
 		for (uint dx = 0; dx < 2; dx++) {
 			const uint2 p = origin + uint2(dx, dy);
 			if (p.x < rectSize.x && p.y < rectSize.y) {
-				const float3 c = saturate(tex.Load(int3(rectOrigin + p, 0)).rgb);
-				const float m = max(c.r, max(c.g, c.b));
+				const float4 source = tex.Load(int3(rectOrigin + p, 0));
+				const float3 c = saturate(source.rgb);
+				float m = max(c.r, max(c.g, c.b));
+				if (measureLuminance) {
+					const float4 pqRgb = fixVpColors ? mul(fixBt2020, source) : source;
+					const float3 linearRgb = ST2084ToLinear(saturate(pqRgb), 1.0f).rgb;
+					const float y = dot(linearRgb, float3(0.2627002f, 0.6779981f, 0.0593017f));
+					m = LinearToST2084(y, 1.0f).x;
+				}
 				const uint bin = min((uint)(m * (HIST_BINS - 1) + 0.5f), HIST_BINS - 1);
 				InterlockedAdd(gsHist[bin], 1);
 			}

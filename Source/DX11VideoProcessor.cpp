@@ -1098,14 +1098,17 @@ HRESULT CDX11VideoProcessor::MeasureHdrPeak(const Tex2D_t& tex, const CRect& rec
 	}
 	frameTime = std::clamp(frameTime, 1.0f / 120.0f, 0.1f);
 
+	const bool skiv = MeasureSkivLuminance();
 	const HdrMeasureConstants_t measureConstants = {
 		{ static_cast<UINT>(r.left), static_cast<UINT>(r.top) },
-		{ static_cast<UINT>(r.Width()), static_cast<UINT>(r.Height()) }
+		{ static_cast<UINT>(r.Width()), static_cast<UINT>(r.Height()) },
+		skiv, skiv && m_D3D11VP.IsReady() && !m_D3D11VP.IsPqSupported(), {}
 	};
 	// the peak is the mean of the frame peaks over the window, restarted at a scene change if
 	// that is wanted.  madVR never restarts it, so off is what matches madVR.
 	const HdrResolveConstants_t resolveConstants = {
-		frameTime, kHdrReleaseSeconds, m_bSdrPeakSceneCuts ? kHdrSceneCutPQ : kHdrNoSceneCutPQ, kHdrPeakFraction,
+		frameTime, kHdrReleaseSeconds, m_bSdrPeakSceneCuts ? kHdrSceneCutPQ : kHdrNoSceneCutPQ,
+		skiv ? 0.0006f : kHdrPeakFraction,
 		m_iSdrPeakWindowMs / 1000.0f, static_cast<float>(m_iSdrPeakFloorNits)
 	};
 	m_pDeviceContext->UpdateSubresource(m_pHdrMeasureConstants, 0, nullptr, &measureConstants, 0, 0);
@@ -2193,6 +2196,7 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	UpdateDownscalingShaders();
 
 	m_pPSCorrection.Release();
+	m_strCorrection = nullptr;
 	m_pPSConvertColor.Release();
 	m_pPSConvertColorDeint.Release();
 	m_PSConvColorData.bEnable = false;
@@ -2288,6 +2292,15 @@ BOOL CDX11VideoProcessor::InitMediaType(const CMediaType* pmt)
 	// Tex Video Processor
 	if (FAILED(hr) && FmtParams.DX11Format != DXGI_FORMAT_UNKNOWN) {
 		m_bVPUseRTXVideoHDR = false;
+		if (m_bSdrMeasurePeak && m_iSdrToneMappingCurve != SDRCurve_Default &&
+			m_bConvertToSdr && m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_2084 && !m_Dovi.bValid &&
+			!(m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping)) &&
+			SUCCEEDED(InitHdrMeasure())) {
+			m_bSdrMeasureActive = SUCCEEDED(CreatePShaderFromResource(&m_pPSCorrection, IDF_PS_11_CONVERT_PQ_TO_SDR_TM_MEASURED));
+			if (m_bSdrMeasureActive) {
+				m_strCorrection = L"PQ to SDR, tone mapped, measured";
+			}
+		}
 		hr = InitializeTexVP(FmtParams, origW, origH);
 		if (SUCCEEDED(hr)) {
 			SetShaderConvertColorParams();
@@ -3248,7 +3261,7 @@ void CDX11VideoProcessor::UpdateTexures()
 	HRESULT hr = S_OK;
 
 	if (m_D3D11VP.IsReady()) {
-		if (m_bVPScaling) {
+		if (m_bVPScaling && !MeasureSkivLuminance()) {
 			CSize texsize = m_videoRect.Size();
 			hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_D3D11OutputFmt, texsize.cx, texsize.cy, Tex2D_DefaultShaderRTarget);
 			if (FAILED(hr)) {
@@ -3320,6 +3333,11 @@ HRESULT CDX11VideoProcessor::UpdateConvertColorShader(bool captureSdr)
 	int convertType = (captureSdr || (m_bConvertToSdr && !(m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping)))) ? SHADER_CONVERT_TO_SDR
 		: (m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping) && m_srcExFmt.VideoTransferFunction == MFVideoTransFunc_HLG) ? SHADER_CONVERT_TO_PQ
 		: SHADER_CONVERT_NONE;
+
+	if (convertType == SHADER_CONVERT_TO_SDR && MeasureSkivLuminance()) {
+		// Leave the PQ signal in the RGB intermediate for measurement and the correction pass.
+		convertType = SHADER_CONVERT_TO_PQ;
+	}
 
 	MediaSideDataDOVIMetadata* pDOVIMetadata = m_Dovi.bValid ? &m_Dovi.msd : nullptr;
 
@@ -3730,6 +3748,10 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 		pInputTexture = &m_TexSrcVideo;
 	}
 
+	// Measure at source size, so resizing/cropping the viewport cannot change the curve.
+	const bool measureSkiv = MeasureSkivLuminance();
+	const bool skivMeasured = measureSkiv && MeasureHdrPeak(*pInputTexture, rSrc) == S_OK;
+
 	if (numSteps) {
 		UINT step = 0;
 		Tex2D_t* pTex = m_TexsPostScale.GetFirstTex();
@@ -3761,8 +3783,9 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 
 		if (m_pPSCorrection) {
 			StepSetting();
-			// Capture the frame with the existing measurement without advancing the peak history.
-			const bool bMeasured = m_bSdrMeasureActive && (capture || MeasureHdrPeak(*pInputTexture, rect) == S_OK);
+			// SKIV uses a fresh per-frame peak. The default curve reuses its smoothed peak for capture.
+			const bool bMeasured = measureSkiv ? skivMeasured :
+				m_bSdrMeasureActive && (capture || MeasureHdrPeak(*pInputTexture, rect) == S_OK);
 			if (bMeasured) {
 				m_pDeviceContext->PSSetShaderResources(1, 1, &m_pHdrStateSRV.p);
 			}
@@ -4892,9 +4915,13 @@ HRESULT CDX11VideoProcessor::DrawStats(ID3D11Texture2D* pRenderTarget)
 	str.append(m_strStatsHDR);
 	if ((m_bSdrMeasureActive || m_bHdrLocalMeasureActive) && m_fHdrMeasuredPeakNits > 0.0f) {
 		// the SDR shader keeps the peak above the display's own, so show what it actually used
-		const float usedNits = m_bSdrMeasureActive
+		float usedNits = m_bSdrMeasureActive
 			? std::clamp(m_fHdrSmoothedPeakNits, static_cast<float>(EffectiveSdrDisplayNits()) + 1.0f, 10000.0f)
 			: std::min(m_fHdrSmoothedPeakNits, 10000.0f);
+		if (MeasureSkivLuminance()) {
+			const float floor = m_iSdrToneMappingCurve == SDRCurve_SKIV ? 120.0f : static_cast<float>(EffectiveSdrDisplayNits());
+			usedNits = std::clamp(m_fHdrMeasuredPeakNits, floor, 10000.0f);
+		}
 		str += std::format(L"\nHDR measured  : frame peak {:.0f}, used {:.0f} nits", m_fHdrMeasuredPeakNits, usedNits);
 	}
 	str.append(m_strStatsPresent);

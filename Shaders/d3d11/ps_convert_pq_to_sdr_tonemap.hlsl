@@ -39,9 +39,11 @@ float4 main(PS_INPUT input) : SV_Target
 
 #ifdef MEASURED
     float contentNits = param2;
-    const float peak = measured[1].z;
+    // SKIV uses the frame's luminance percentile before temporal smoothing and flooring.
+    const bool skiv = sdrCurve > 0.5f;
+    const float peak = skiv ? measured[1].x : measured[1].z;
     if (peak > 0.0f)
-        contentNits = clamp(peak, 10000.0f / LuminanceScale + 1.0f, 10000.0f);
+        contentNits = skiv ? peak : clamp(peak, 10000.0f / LuminanceScale + 1.0f, 10000.0f);
     color.rgb = ConvertHdrToSdr(color.rgb, LuminanceScale, contentNits, convert_matrix_2020_to_709, sdrCurve);
 #else
     color.rgb = ConvertHdrToSdr(color.rgb, LuminanceScale, param2, convert_matrix_2020_to_709, sdrCurve);

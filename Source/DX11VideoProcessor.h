@@ -106,6 +106,9 @@ private:
 	struct HdrMeasureConstants_t {
 		UINT rectOrigin[2];
 		UINT rectSize[2];
+		UINT measureLuminance;
+		UINT fixVpColors;
+		UINT padding[2];
 	};
 	struct HdrResolveConstants_t { // must match cbuffer ResolveConstants in cs_hdr_resolve.hlsl
 		float frameTime;
@@ -307,6 +310,9 @@ private:
 	bool HdrMeasureSupported() const;
 	HRESULT InitHdrMeasure();
 	void ReleaseHdrMeasure();
+	bool MeasureSkivLuminance() const {
+		return m_bSdrMeasureActive && m_iSdrToneMappingCurve != SDRCurve_Default;
+	}
 	HRESULT MeasureHdrPeak(const Tex2D_t& tex, const CRect& rect);
 	void ReadHdrMeasureStats();
 	void SetShaderLuminanceParams();
